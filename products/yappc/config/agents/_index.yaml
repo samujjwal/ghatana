@@ -1,130 +1,108 @@
-apiVersion: ghatana.yappc/v2
+apiVersion: ghatana.yappc/v3
 kind: AgentRegistryIndex
-
 metadata:
   version: 3.0.0
-  description: "Aggregated agent registry index - split from monolithic registry.yaml"
+  description: Aggregated agent registry index - split from monolithic registry.yaml
   migration:
     from: registry.yaml (monolithic)
-    date: "2026-03-08"
-
+    date: '2026-03-08'
+  status: active
+  schemaVersion: 3.0.0
 spec:
-  # Catalogs are loaded in priority order and merged
-  # Lower priority = loaded first, can be overridden by higher priority
   catalogs:
-    - name: platform
-      file: platform-catalog.yaml
-      priority: 1
-      description: "Platform-level orchestration agents"
-      agentCount: 14
-      
-    - name: devsecops
-      file: devsecops-catalog.yaml
-      priority: 2
-      description: "Security and DevOps agents"
-      agentCount: 39
-      
-    - name: lifecycle
-      file: lifecycle-catalog.yaml
-      priority: 3
-      description: "SDLC phase agents"
-      agentCount: 45
-      
-    - name: compliance
-      file: compliance-catalog.yaml
-      priority: 4
-      description: "Compliance and auditing agents"
-      agentCount: 24
-      
-    - name: cloud
-      file: cloud-catalog.yaml
-      priority: 5
-      description: "Cloud infrastructure agents"
-      agentCount: 32
-      
-    - name: integration
-      file: integration-catalog.yaml
-      priority: 6
-      description: "Third-party integration agents"
-      agentCount: 20
-      
-    - name: governance
-      file: governance-catalog.yaml
-      priority: 7
-      description: "Governance and guardrail agents"
-      agentCount: 20
-
-    - name: portfolio
-      file: portfolio-catalog.yaml
-      priority: 8
-      description: "Portfolio management, strategy, investment planning, and governance agents"
-      agentCount: 31
-
-    - name: discovery
-      file: discovery-catalog.yaml
-      priority: 9
-      description: "Market research, customer discovery, and opportunity assessment agents"
-      agentCount: 33
-
-    - name: ideation
-      file: ideation-catalog.yaml
-      priority: 10
-      description: "Ideation, concept design, and product framing agents"
-      agentCount: 30
-
-    - name: requirements
-      file: requirements-catalog.yaml
-      priority: 11
-      description: "Requirements engineering, specification, and traceability agents"
-      agentCount: 48
-
-    - name: ux
-      file: ux-catalog.yaml
-      priority: 12
-      description: "UX/UI design, interaction design, and design system agents"
-      agentCount: 52
-
-    - name: architecture
-      file: architecture-catalog.yaml
-      priority: 13
-      description: "System architecture, platform, plugin, and runtime architecture agents"
-      agentCount: 51
-
-    - name: engineering
-      file: engineering-catalog.yaml
-      priority: 14
-      description: "Engineering delivery, agile execution, frontend, backend, and code quality agents"
-      agentCount: 41
-
-    - name: ai
-      file: ai-catalog.yaml
-      priority: 15
-      description: "AI/ML integration, search, memory management, and agent runtime agents"
-      agentCount: 38
-
-    - name: operations
-      file: operations-catalog.yaml
-      priority: 16
-      description: "Operations, SRE, incident management, infrastructure, and support agents"
-      agentCount: 38
-
-    - name: product-intelligence
-      file: product-intelligence-catalog.yaml
-      priority: 17
-      description: "Product analytics, experimentation, feedback synthesis, and enhancement planning agents"
-      agentCount: 34
-
+  - name: platform
+    file: platform-catalog.yaml
+    priority: 1
+    description: Platform-level orchestration agents
+    agentCount: 14
+  - name: devsecops
+    file: devsecops-catalog.yaml
+    priority: 2
+    description: Security and DevOps agents
+    agentCount: 39
+  - name: lifecycle
+    file: lifecycle-catalog.yaml
+    priority: 3
+    description: SDLC phase agents
+    agentCount: 45
+  - name: compliance
+    file: compliance-catalog.yaml
+    priority: 4
+    description: Compliance and auditing agents
+    agentCount: 24
+  - name: cloud
+    file: cloud-catalog.yaml
+    priority: 5
+    description: Cloud infrastructure agents
+    agentCount: 32
+  - name: integration
+    file: integration-catalog.yaml
+    priority: 6
+    description: Third-party integration agents
+    agentCount: 20
+  - name: governance
+    file: governance-catalog.yaml
+    priority: 7
+    description: Governance and guardrail agents
+    agentCount: 20
+  - name: portfolio
+    file: portfolio-catalog.yaml
+    priority: 8
+    description: Portfolio management, strategy, investment planning, and governance agents
+    agentCount: 31
+  - name: discovery
+    file: discovery-catalog.yaml
+    priority: 9
+    description: Market research, customer discovery, and opportunity assessment agents
+    agentCount: 33
+  - name: ideation
+    file: ideation-catalog.yaml
+    priority: 10
+    description: Ideation, concept design, and product framing agents
+    agentCount: 30
+  - name: requirements
+    file: requirements-catalog.yaml
+    priority: 11
+    description: Requirements engineering, specification, and traceability agents
+    agentCount: 48
+  - name: ux
+    file: ux-catalog.yaml
+    priority: 12
+    description: UX/UI design, interaction design, and design system agents
+    agentCount: 52
+  - name: architecture
+    file: architecture-catalog.yaml
+    priority: 13
+    description: System architecture, platform, plugin, and runtime architecture agents
+    agentCount: 51
+  - name: engineering
+    file: engineering-catalog.yaml
+    priority: 14
+    description: Engineering delivery, agile execution, frontend, backend, and code quality agents
+    agentCount: 41
+  - name: ai
+    file: ai-catalog.yaml
+    priority: 15
+    description: AI/ML integration, search, memory management, and agent runtime agents
+    agentCount: 38
+  - name: operations
+    file: operations-catalog.yaml
+    priority: 16
+    description: Operations, SRE, incident management, infrastructure, and support agents
+    agentCount: 38
+  - name: product-intelligence
+    file: product-intelligence-catalog.yaml
+    priority: 17
+    description: Product analytics, experimentation, feedback synthesis, and enhancement planning agents
+    agentCount: 34
   aggregation:
     mode: merge
     deduplicate: true
     validate: true
-    
   statistics:
     totalAgents: 590
     totalCatalogs: 17
-    
-  # Backward compatibility - provides aggregated view
   compatibility:
     legacyRegistry: registry.yaml
     status: deprecated
-    sunsetDate: "2026-06-06"
+    sunsetDate: '2026-06-06'

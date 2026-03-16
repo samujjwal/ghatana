@@ -1,0 +1,187 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.com/schemas/yappc/policies-schema.json",
+  "title": "YAPPC Policies Configuration Schema",
+  "description": "Schema for YAPPC procedural and lifecycle policies YAML files",
+  "type": "object",
+  "required": ["policies"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "pattern": "^v\\d+\\.\\d+$",
+      "description": "API version of this schema (e.g., v1.0)"
+    },
+    "policies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "version", "rules"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Unique immutable policy identifier"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Human-readable policy name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Detailed policy description"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+            "description": "Semantic version of policy"
+          },
+          "policyType": {
+            "type": "string",
+            "enum": ["PROCEDURAL", "LIFECYCLE", "DECISION", "WORKFLOW"],
+            "description": "Type of policy"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Minimum confidence threshold for policy application (0-1)"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 100,
+            "description": "Execution priority; higher values execute first"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this policy is enabled"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "condition", "action"],
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9-]+$",
+                  "description": "Unique rule identifier within the policy"
+                },
+                "description": {
+                  "type": "string",
+                  "maxLength": 1000,
+                  "description": "Rule description"
+                },
+                "condition": {
+                  "type": "object",
+                  "description": "Rule condition",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["EXPRESSION", "PATTERN_MATCH", "THRESHOLD", "STATE_CHECK"],
+                      "description": "Condition evaluation type"
+                    },
+                    "value": {
+                      "description": "Condition value or expression"
+                    }
+                  }
+                },
+                "action": {
+                  "type": "object",
+                  "required": ["type"],
+                  "description": "Action to take when condition matches",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["EXECUTE", "ESCALATE", "RECORD", "MODIFY_STATE", "INVOKE_AGENT"],
+                      "description": "Action type"
+                    },
+                    "target": {
+                      "type": "string",
+                      "description": "Target for the action (agent ID, state key, etc.)"
+                    },
+                    "parameters": {
+                      "type": "object",
+                      "description": "Action parameters"
+                    }
+                  }
+                },
+                "appliesTo": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "agentType": {
+                        "type": "string",
+                        "description": "Agent type filter"
+                      },
+                      "state": {
+                        "type": "string",
+                        "description": "Agent state filter"
+                      },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Tag-based filter"
+                      }
+                    }
+                  },
+                  "description": "Conditions specifying when rule applies"
+                },
+                "enabledOn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": ["PERCEIVE", "REASON", "ACT", "CAPTURE", "REFLECT"]
+                  },
+                  "description": "GAA lifecycle phases where this rule is active"
+                }
+              }
+            },
+            "minItems": 1,
+            "description": "Array of policy rules"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "author": {
+                "type": "string",
+                "description": "Policy author or team"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Policy creation timestamp"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Policy last update timestamp"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Classification tags"
+              }
+            },
+            "description": "Policy metadata"
+          }
+        }
+      },
+      "minItems": 1,
+      "description": "Array of policies"
+    }
+  }
+}

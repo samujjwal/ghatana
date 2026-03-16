@@ -1,23 +1,53 @@
 id: concept-deduplicator
 name: Concept Deduplicator
 version: 1.0.0
-description: "Detect near-duplicate product concepts in a candidate list using semantic similarity and flag duplicates"
-
+namespace: yappc.micro-agents.ideation
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Detect near-duplicate product concepts in a candidate list using semantic similarity and
+  flag duplicates
+summary: Detect near-duplicate product concepts in a candidate list using semantic similarity and flag
+  duplicates
 metadata:
   level: 3
   domain: ideation
   type: micro-agent
-  tags: [deduplication, semantic-similarity, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "deduplication"
-        - "semantic-similarity"
-
+  tags:
+  - deduplication
+  - semantic-similarity
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: dedup_request
+    schema: dynamic
+  outputs:
+  - name: deduplicated_concepts
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: solution-framing-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +55,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [semantic_comparator]
-
+tools:
+- semantic_comparator
 capabilities:
-  - deduplication
-  - semantic-similarity
-
+- deduplication
+- semantic-similarity
 routing:
-  input_types: [dedup_request]
-  output_types: [deduplicated_concepts]
-
+  input_types:
+  - dedup_request
+  output_types:
+  - deduplicated_concepts
 delegation:
   can_delegate_to: []
   escalates_to: solution-framing-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 200
   max_latency_ms: 1000

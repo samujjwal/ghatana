@@ -140,8 +140,8 @@ public class AepAgentModule extends AbstractModule {
      * @return JDBC-backed task state store
      */
     @Provides
-    TaskStateStore taskStateStore() {
-        return new JdbcTaskStateStore(new JdbcTaskStateRepository());
+    TaskStateStore taskStateStore(DataSource dataSource) {
+        return new JdbcTaskStateStore(new JdbcTaskStateRepository(dataSource));
     }
 
     /**

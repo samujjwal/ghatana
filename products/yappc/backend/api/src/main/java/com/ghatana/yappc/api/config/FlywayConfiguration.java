@@ -7,6 +7,7 @@ package com.ghatana.yappc.api.config;
 import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.activej.inject.annotation.Provides;
 
 import javax.sql.DataSource;
 
@@ -146,5 +147,27 @@ public class FlywayConfiguration {
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
+    }
+
+    /**
+     * Provides and runs Flyway migrations at application startup.
+     *
+     * <p>This @Provides method is automatically invoked by the DI container during startup,
+     * ensuring all database migrations are applied before any business logic executes.
+     *
+     * @param dataSource the shared HikariCP connection pool
+     * @return initialized Flyway instance (migrations already applied)
+     * @throws RuntimeException if migrations fail
+     *
+     * @doc.type method
+     * @doc.purpose Provides Flyway migration execution at startup (YAPPC-5.5)
+     * @doc.layer infrastructure
+     * @doc.pattern Configuration, Factory
+     */
+    @Provides
+    Flyway provideFlyway(DataSource dataSource) {
+        logger.info("Flyway @Provides — running database migrations...");
+        runMigrations(dataSource);
+        return createFlyway(dataSource);
     }
 }

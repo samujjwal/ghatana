@@ -1,23 +1,53 @@
 id: investment-threshold-checker
 name: Investment Threshold Checker
 version: 1.0.0
-description: "Check whether an investment amount exceeds defined approval thresholds and return required approver tier"
-
+namespace: yappc.micro-agents.portfolio
+status: active
+owners:
+- team: product-leadership
+  contact: product-leadership@ghatana.com
+description: Check whether an investment amount exceeds defined approval thresholds and return required
+  approver tier
+summary: Check whether an investment amount exceeds defined approval thresholds and return required approver
+  tier
 metadata:
   level: 3
   domain: portfolio
   type: micro-agent
-  tags: [threshold-checking, approval-tier-determination, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "threshold-checking"
-        - "approval-tier-determination"
-
+  tags:
+  - threshold-checking
+  - approval-tier-determination
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: threshold_check_request
+    schema: dynamic
+  outputs:
+  - name: approval_tier
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: business-case-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +55,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [threshold_checker]
-
+tools:
+- threshold_checker
 capabilities:
-  - threshold-checking
-  - approval-tier-determination
-
+- threshold-checking
+- approval-tier-determination
 routing:
-  input_types: [threshold_check_request]
-  output_types: [approval_tier]
-
+  input_types:
+  - threshold_check_request
+  output_types:
+  - approval_tier
 delegation:
   can_delegate_to: []
   escalates_to: business-case-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 100
   max_latency_ms: 500

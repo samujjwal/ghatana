@@ -1,62 +1,84 @@
 id: content-hierarchy-task-agent
 name: Content Hierarchy Task Agent
 version: 1.0.0
-description: "Define content hierarchy and visual weight using typography scale, spacing, and colour to guide user attention"
-
+namespace: yappc.task-agents.ux
+status: active
+owners:
+- team: design
+  contact: design@ghatana.com
+description: Define content hierarchy and visual weight using typography scale, spacing, and colour to
+  guide user attention
+summary: Define content hierarchy and visual weight using typography scale, spacing, and colour to guide
+  user attention
 metadata:
   level: 3
   domain: ux
   type: worker
-  tags: [content-hierarchy-design, typography-spec, visual-weight-definition, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Define content hierarchy and visual weight using typography scale, spacing, and colour to guide user attention
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - content-hierarchy-design
+  - typography-spec
+  - visual-weight-definition
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: content_hierarchy_request
+    schema: dynamic
+  outputs:
+  - name: content_hierarchy_spec
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: screen-design-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [hierarchy_designer, typography_spec_writer]
-
+tools:
+- hierarchy_designer
+- typography_spec_writer
 capabilities:
-  - content-hierarchy-design
-  - typography-spec
-  - visual-weight-definition
-
+- content-hierarchy-design
+- typography-spec
+- visual-weight-definition
 routing:
-  input_types: [content_hierarchy_request]
-  output_types: [content_hierarchy_spec]
-
+  input_types:
+  - content_hierarchy_request
+  output_types:
+  - content_hierarchy_spec
 delegation:
   can_delegate_to: []
   escalates_to: screen-design-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 2000
   max_latency_ms: 10000

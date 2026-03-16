@@ -2,6 +2,8 @@
 # Evaluated by YappcPolicyEngine on phase transitions and governance gates.
 # Format: policies → rules → condition (type, parameters) + applies_to + action
 
+apiVersion: v1.0
+
 policies:
 
   - id: phase_advance_policy

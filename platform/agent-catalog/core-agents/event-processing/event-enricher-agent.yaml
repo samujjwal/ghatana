@@ -1,22 +1,37 @@
 id: event-enricher-agent
 name: Event Enricher Agent
-version: 1.0.0
+namespace: platform.event-processing
+version: 2.1.0
+status: active
+summary: >-
+  Enriches events with additional context from external or internal data sources
+  using a configurable multi-source lookup cache.
 description: >
   Enriches events with additional context from external or internal data sources.
   Supports lookup enrichment (key-value), join enrichment (query-based),
   derivation enrichment (computed fields), and geo-IP enrichment. Uses a
   configurable cache layer to minimise latency and protect downstream systems
   from overload.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 3
   domain: event-processing
-  tags: [enrichment, context, lookup, join, geo-ip, aep]
+  tags: [enrichment, context, lookup, join, geo-ip, aep, stream-processor]
   maturity: production
-  author: platform-team@ghatana.ai
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: stream-processor           # stateful; enriches ordered event stream
+  subtype: enrichment
+  roles: [enricher, context-injector, lookup-resolver]
+  criticality: high
+  autonomyLevel: autonomous
+  determinismGuarantee: config-scoped   # same config + same events + same sources → same result
+  stateMutability: local-state          # enrichment cache (checkpointed)
+  failureMode: dead-letter
 
 # AEP Operator configuration
 aep:
@@ -77,7 +92,7 @@ configuration:
     type: string
     default: PT5S
 
-io:
+interfaces:
   inputs:
     - name: sourceEvent
       type: JSON

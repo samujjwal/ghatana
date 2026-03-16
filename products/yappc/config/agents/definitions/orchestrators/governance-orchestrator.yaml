@@ -1,92 +1,124 @@
 id: governance-orchestrator
 name: Governance Orchestrator
 version: 1.0.0
-description: "Manages product governance: policy enforcement, compliance gate coordination, approval workflows, risk escalation, and audit trail management"
-
+namespace: yappc.orchestrators.portfolio
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-platform@ghatana.com
+description: 'Manages product governance: policy enforcement, compliance gate coordination, approval workflows,
+  risk escalation, and audit trail management'
+summary: 'Manages product governance: policy enforcement, compliance gate coordination, approval workflows,
+  risk escalation, an...'
 metadata:
   level: 1
   domain: portfolio
-  tags: [orchestrator, governance, compliance, approvals, level1]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: governance_intake
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        You are the Governance Orchestrator. Review the governance request:
-
-        Request: {{input}}
-        Applicable policies: {{context.policies}}
-        Compliance requirements: {{context.compliance}}
-        Risk thresholds: {{context.risk_thresholds}}
-
-        Determine:
-        1. Which governance policies apply
-        2. Required approvals and their order
-        3. Compliance gates that must pass
-        4. Risk level (LOW/MEDIUM/HIGH/CRITICAL)
-        5. Blocking vs advisory nature
-
-        Output as JSON: {applicable_policies, approval_chain, compliance_gates, risk_level, blocking}
-    - name: policy_evaluation
-      type: RULE_BASED
-      rules:
-        - "CRITICAL risk → mandatory human review before any action"
-        - "HIGH risk → senior approver + audit record"
-        - "MEDIUM risk → standard approver + audit trail"
-        - "LOW risk → auto-approve with audit log"
-    - name: approval_coordination
-      type: SERVICE_CALL
-      service: agent-dispatcher
-      endpoint: /dispatch
-      description: "Route to appropriate compliance agents for gate checks"
-    - name: audit_record
-      type: SERVICE_CALL
-      service: audit-service
-      endpoint: /record
-      description: "Write comprehensive audit trail entry for governance decision"
-
+  tags:
+  - orchestrator
+  - governance
+  - compliance
+  - approvals
+  - level1
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: governance_request
+    schema: dynamic
+  - name: policy_check
+    schema: dynamic
+  - name: approval_request
+    schema: dynamic
+  - name: compliance_gate
+    schema: dynamic
+  outputs:
+  - name: governance_decision
+    schema: dynamic
+  - name: approval_record
+    schema: dynamic
+  - name: compliance_report
+    schema: dynamic
+  - name: audit_trail
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - compliance-audit-orchestrator
+    - security-posture-orchestrator
+    escalation: portfolio-orchestrator
+  mcp:
+    enabled: false
+    note: MCP proxy optional via InteroperabilityService
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - chain-of-thought
+  - plan-and-solve
+  defaultReasoner: plan-and-solve
+  maxChainDepth: 5
 memory:
   episodic:
     enabled: true
     retention_days: 2555
-    categories: [governance-decisions, policy-violations, approval-records]
+    categories:
+    - governance-decisions
+    - policy-violations
+    - approval-records
   semantic:
     enabled: true
-    categories: [policy-library, compliance-requirements, risk-models]
+    categories:
+    - policy-library
+    - compliance-requirements
+    - risk-models
   procedural:
     enabled: true
-    categories: [approval-procedures, escalation-rules, compliance-gates]
-
-tools: [policy_engine, approval_coordinator, audit_writer, risk_scorer]
-
+    categories:
+    - approval-procedures
+    - escalation-rules
+    - compliance-gates
+tools:
+- policy_engine
+- approval_coordinator
+- audit_writer
+- risk_scorer
 capabilities:
-  - policy-enforcement
-  - approval-workflow
-  - compliance-gate-coordination
-  - risk-escalation
-  - audit-trail-management
-
+- policy-enforcement
+- approval-workflow
+- compliance-gate-coordination
+- risk-escalation
+- audit-trail-management
 routing:
-  input_types: [governance_request, policy_check, approval_request, compliance_gate]
-  output_types: [governance_decision, approval_record, compliance_report, audit_trail]
-
+  input_types:
+  - governance_request
+  - policy_check
+  - approval_request
+  - compliance_gate
+  output_types:
+  - governance_decision
+  - approval_record
+  - compliance_report
+  - audit_trail
 delegation:
   can_delegate_to:
-    - compliance-audit-orchestrator
-    - security-posture-orchestrator
+  - compliance-audit-orchestrator
+  - security-posture-orchestrator
   escalates_to: portfolio-orchestrator
-
 governance:
   requires_approval: false
   can_block: true
   audit_trail: comprehensive
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 30000

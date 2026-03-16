@@ -1,12 +1,27 @@
 id: http-ingestion-agent
+namespace: aep.operators.ingestion
 name: HTTP Ingestion Agent
 version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Receives events via HTTP/REST endpoints with webhook support and payload validation
 description: Receives events via HTTP/REST endpoints with webhook support and payload validation
 
 metadata:
   level: 3
   domain: event-processing
   tags: [http, ingestion, webhook, rest, api]
+
+identity:
+  agentType: stream_processor
+  subtype: ingestion
+  determinismGuarantee: full
+  stateMutability: local-state
+  failureMode: dead-letter
+  criticality: high
+  autonomyLevel: autonomous
 
 aep:
   operatorType: INGESTION
@@ -20,9 +35,6 @@ aep:
     maxRetries: 2
     deadLetterQueue: "http-ingestion-dlq"
 
-generator:
-  type: DETERMINISTIC
-
 capabilities:
   - http-ingestion
   - event-validation
@@ -34,6 +46,15 @@ tools:
   - name: payloadValidator
     type: SERVICE
     endpoint: /aep/http/validate
+
+interfaces:
+  inputs:
+    - name: rawHttpPayload
+      schema: object
+      required: true
+  outputs:
+    - name: rawHttpEvent
+      schema: raw.http
 
 memory:
   type: WORKING

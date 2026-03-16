@@ -7,7 +7,7 @@ package com.ghatana.agent.framework.planner;
 import com.ghatana.agent.AgentType;
 import com.ghatana.agent.framework.config.AgentDefinition;
 import com.ghatana.agent.framework.loader.AgentDefinitionLoader;
-import com.ghatana.agent.framework.runtime.BaseAgent;
+import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.tools.FunctionTool;
 import com.ghatana.agent.llm.LLMAgent;
 import com.ghatana.agent.llm.LLMAgentConfig;
@@ -93,7 +93,7 @@ public class PlannerAgentFactory {
      * @throws IllegalStateException    if the agent type requires an LLM model
      *                                  that has not been configured
      */
-    public BaseAgent<?, ?> createAgent(String yamlPath) {
+    public TypedAgent<?, ?> createAgent(String yamlPath) {
         Objects.requireNonNull(yamlPath, "yamlPath must not be null");
         log.info("Creating agent from YAML: {}", yamlPath);
 
@@ -115,10 +115,10 @@ public class PlannerAgentFactory {
     /**
      * Instantiate a concrete agent from a loaded {@link AgentDefinition}.
      */
-    private BaseAgent<?, ?> buildAgent(AgentDefinition definition) {
+    private TypedAgent<?, ?> buildAgent(AgentDefinition definition) {
         AgentType type = definition.getType();
 
-        if (type == AgentType.LLM || type == AgentType.PROBABILISTIC) {
+        if (type == AgentType.PROBABILISTIC) {
             if (llmModel == null) {
                 throw new IllegalStateException(
                         "LLM model not configured for agent type " + type + " (id=" +

@@ -1,6 +1,10 @@
 id: anomaly-detector-agent
 name: Anomaly Detector Agent
-version: 1.0.0
+namespace: platform.monitoring
+version: 2.1.0
+status: active
+summary: >-
+  Detects anomalies in metric streams using statistical and ML techniques with continuous model improvement via AEP policy feedback.
 description: >
   Detects anomalies in metric streams, event sequences, and log patterns using
   statistical and ML-based techniques. Supports Z-score, IQR, moving-average
@@ -8,18 +12,27 @@ description: >
   Emits structured anomaly events with severity scoring, root-cause hints, and
   confidence values. Integrates with the AEP learning system to improve
   detection accuracy over time via policy feedback.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 3
   domain: monitoring
   tags: [anomaly, detection, ml, statistics, observability, alerting]
   maturity: production
-  author: platform-team@ghatana.ai
 
-generator:
-  type: ADAPTIVE
+identity:
+  agentType: adaptive                     # detection model updates from feedback
+  roles: [anomaly-detector, alerter, pattern-learner]
+  criticality: high
+  autonomyLevel: semi-autonomous
+  determinismGuarantee: non-deterministic  # ML model outputs vary; improves over time
+  stateMutability: persistent             # trained model state persisted and evolved
+  failureMode: retry
 
-# AEP Operator configuration
+# AEP Operator configuration (embedded in AEP pipelines as analysis operator)
 aep:
   operatorType: ANALYSIS
   inputEventTypes:

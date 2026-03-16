@@ -1,69 +1,97 @@
-id: "db-guardian"
-name: "Database Guardian"
-version: "1.0.0"
-description: "Database design, schema migrations, query optimization expert"
-
+id: db-guardian
+name: Database Guardian
+version: 1.0.0
+namespace: yappc.definitions.data-engineering
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
+description: Database design, schema migrations, query optimization expert
+summary: Database design, schema migrations, query optimization expert
 metadata:
-  level: 2  # Expert level
-  domain: "data-engineering"
-  tags: ["database", "postgresql", "migrations", "performance"]
-
-generator:
-  type: "pipeline"
-  steps:
-    - type: "rule-based"
-      rules:
-        - "Validate schema normalization (up to 3NF)"
-        - "Check index strategies"
-        - "Verify foreign key constraints"
-        - "Assess query performance (EXPLAIN ANALYZE)"
-    - type: "template"
-      engine: "liquid"
-      template_path: "templates/db/migration.sql.liquid"
-    - type: "llm"
-      provider: "openai"
-      model: "gpt-4"
-      temperature: 0.3
-      prompt: |
-        Review this database schema:
-        {{schema}}
-        
-        Provide:
-        1. Normalization recommendations
-        2. Index strategy
-        3. Performance optimization
-        4. Migration script (up/down)
-
+  level: 2
+  domain: data-engineering
+  tags:
+  - database
+  - postgresql
+  - migrations
+  - performance
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: SchemaRequest
+    schema: dynamic
+  - name: MigrationRequest
+    schema: dynamic
+  - name: QueryOptimizationRequest
+    schema: dynamic
+  outputs:
+  - name: SchemaDefinition
+    schema: dynamic
+  - name: MigrationScript
+    schema: dynamic
+  - name: OptimizedQuery
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - database-designer-agent
+    - java-class-writer
+    escalation: systems-architect
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
 memory:
   episodic:
     enabled: true
-    retention_days: 180  # Long retention for schema evolution tracking
+    retention_days: 180
   semantic:
     enabled: true
-    categories: ["database-schemas", "migrations", "query-patterns"]
+    categories:
+    - database-schemas
+    - migrations
+    - query-patterns
   procedural:
     enabled: true
-
 tools:
-  - "file_read"
-  - "file_write"
-
+- file_read
+- file_write
 capabilities:
-  - "schema-design"
-  - "migration-generation"
-  - "query-optimization"
-  - "index-strategy"
-
+- schema-design
+- migration-generation
+- query-optimization
+- index-strategy
 routing:
-  input_types: ["SchemaRequest", "MigrationRequest", "QueryOptimizationRequest"]
-  output_types: ["SchemaDefinition", "MigrationScript", "OptimizedQuery"]
-
+  input_types:
+  - SchemaRequest
+  - MigrationRequest
+  - QueryOptimizationRequest
+  output_types:
+  - SchemaDefinition
+  - MigrationScript
+  - OptimizedQuery
 delegation:
   can_delegate_to:
-    - database-designer-agent
-    - java-class-writer
+  - database-designer-agent
+  - java-class-writer
   escalates_to: systems-architect
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 8000

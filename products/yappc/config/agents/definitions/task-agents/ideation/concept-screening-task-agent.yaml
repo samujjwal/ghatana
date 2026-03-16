@@ -1,62 +1,84 @@
 id: concept-screening-task-agent
 name: Concept Screening Task Agent
 version: 1.0.0
-description: "Screen concepts against feasibility, desirability, viability, and ethics criteria to produce a shortlist for deeper validation"
-
+namespace: yappc.task-agents.ideation
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Screen concepts against feasibility, desirability, viability, and ethics criteria to produce
+  a shortlist for deeper validation
+summary: Screen concepts against feasibility, desirability, viability, and ethics criteria to produce
+  a shortlist for deeper v...
 metadata:
   level: 3
   domain: ideation
   type: worker
-  tags: [concept-screening, multi-criteria-evaluation, shortlisting, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Screen concepts against feasibility, desirability, viability, and ethics criteria to produce a shortlist for deeper validation
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - concept-screening
+  - multi-criteria-evaluation
+  - shortlisting
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: screening_request
+    schema: dynamic
+  outputs:
+  - name: concept_shortlist
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: concept-validation-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [screening_matrix, criteria_evaluator]
-
+tools:
+- screening_matrix
+- criteria_evaluator
 capabilities:
-  - concept-screening
-  - multi-criteria-evaluation
-  - shortlisting
-
+- concept-screening
+- multi-criteria-evaluation
+- shortlisting
 routing:
-  input_types: [screening_request]
-  output_types: [concept_shortlist]
-
+  input_types:
+  - screening_request
+  output_types:
+  - concept_shortlist
 delegation:
   can_delegate_to: []
   escalates_to: concept-validation-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

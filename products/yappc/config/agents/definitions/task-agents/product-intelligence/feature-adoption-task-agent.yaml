@@ -1,62 +1,84 @@
 id: feature-adoption-task-agent
 name: Feature Adoption Task Agent
 version: 1.0.0
-description: "Track feature adoption curves from launch: activation rate, time-to-first-use, depth-of-adoption, and sustained engagement"
-
+namespace: yappc.task-agents.product-intelligence
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: 'Track feature adoption curves from launch: activation rate, time-to-first-use, depth-of-adoption,
+  and sustained engagement'
+summary: 'Track feature adoption curves from launch: activation rate, time-to-first-use, depth-of-adoption,
+  and sustained engag...'
 metadata:
   level: 3
   domain: product-intelligence
   type: worker
-  tags: [adoption-tracking, activation-rate, depth-of-adoption, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Track feature adoption curves from launch: activation rate, time-to-first-use, depth-of-adoption, and sustained engagement
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - adoption-tracking
+  - activation-rate
+  - depth-of-adoption
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: feature_adoption_request
+    schema: dynamic
+  outputs:
+  - name: feature_adoption_report
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: analytics-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [adoption_tracker, engagement_scorer]
-
+tools:
+- adoption_tracker
+- engagement_scorer
 capabilities:
-  - adoption-tracking
-  - activation-rate
-  - depth-of-adoption
-
+- adoption-tracking
+- activation-rate
+- depth-of-adoption
 routing:
-  input_types: [feature_adoption_request]
-  output_types: [feature_adoption_report]
-
+  input_types:
+  - feature_adoption_request
+  output_types:
+  - feature_adoption_report
 delegation:
   can_delegate_to: []
   escalates_to: analytics-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

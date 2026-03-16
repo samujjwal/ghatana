@@ -1,62 +1,85 @@
 id: slo-management-task-agent
 name: Slo Management Task Agent
 version: 1.0.0
-description: "Monitor SLO compliance status, compute burn rates across time windows, and generate alerts when budgets are at risk"
-
+namespace: yappc.task-agents.operations
+status: active
+owners:
+- team: sre
+  contact: sre@ghatana.com
+description: Monitor SLO compliance status, compute burn rates across time windows, and generate alerts
+  when budgets are at risk
+summary: Monitor SLO compliance status, compute burn rates across time windows, and generate alerts when
+  budgets are at risk
 metadata:
   level: 3
   domain: operations
   type: worker
-  tags: [slo-monitoring, burn-rate-computation, alert-generation, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Monitor SLO compliance status, compute burn rates across time windows, and generate alerts when budgets are at risk
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - slo-monitoring
+  - burn-rate-computation
+  - alert-generation
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: slo_management_request
+    schema: dynamic
+  outputs:
+  - name: slo_status_report
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: sre-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [slo_tracker, burn_rate_calculator, alert_generator]
-
+tools:
+- slo_tracker
+- burn_rate_calculator
+- alert_generator
 capabilities:
-  - slo-monitoring
-  - burn-rate-computation
-  - alert-generation
-
+- slo-monitoring
+- burn-rate-computation
+- alert-generation
 routing:
-  input_types: [slo_management_request]
-  output_types: [slo_status_report]
-
+  input_types:
+  - slo_management_request
+  output_types:
+  - slo_status_report
 delegation:
   can_delegate_to: []
   escalates_to: sre-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 1000
   max_latency_ms: 5000

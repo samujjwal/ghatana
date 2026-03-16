@@ -1,38 +1,59 @@
 id: entity-storage-agent
+namespace: data-cloud.storage
 name: Entity Storage Agent
 version: 1.0.0
-description: Manages entity persistence with CRUD operations, versioning, and consistency
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Deterministic CRUD entity storage with versioning, optimistic locking, and schema validation
+description: Deterministic CRUD entity storage with versioning, optimistic locking, and schema validation.
 
 metadata:
   level: 3
-  domain: data-management
-  tags: [entity, storage, crud, versioning, persistence]
+  domain: storage
+  tags: [entity, crud, storage, versioning, optimistic-locking]
 
-generator:
-  type: DETERMINISTIC
-  
+identity:
+  agentType: deterministic
+  subtype: rule-based
+  determinismGuarantee: full
+  stateMutability: external-state
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+
 capabilities:
   - entity-storage
-  - data-replication
-  
+  - entity-versioning
+  - schema-validation
+
 tools:
-  - name: dataCloudEntityStore
+  - name: entityStore
     type: SERVICE
-    endpoint: /datacloud/entities
+    endpoint: /data-cloud/entities/store
   - name: versionManager
     type: SERVICE
-    endpoint: /datacloud/versions
+    endpoint: /data-cloud/entities/versions
+  - name: schemaValidator
+    type: SERVICE
+    endpoint: /data-cloud/entities/validate
+
+interfaces:
+  inputs:
+    - name: entityRequest
+      schema: object
+      required: true
+  outputs:
+    - name: entityResult
+      schema: object
 
 memory:
   type: WORKING
-  scope: session
+  scope: entity_cache
   retention: short
 
-routing:
-  input: EntityOperationRequest
-  output: EntityOperationResult
-
 resources:
-  memory: "512MB"
-  cpu: "1"
+  memory: "2GB"
+  cpu: "4"
   timeout: "30s"

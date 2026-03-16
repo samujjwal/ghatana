@@ -1,12 +1,36 @@
 id: event-router-agent
+namespace: aep.operators.routing
 name: Event Router Agent
 version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Routes events to appropriate destinations using adaptive content-based rules and load balancing
 description: Routes events to appropriate destinations based on content-based rules and load balancing
 
 metadata:
   level: 3
   domain: event-processing
   tags: [routing, load-balancing, content-based, filtering, distribution]
+
+identity:
+  agentType: adaptive
+  subtype: bandit
+  determinismGuarantee: config-scoped
+  stateMutability: local-state
+  failureMode: fallback
+  criticality: high
+  autonomyLevel: autonomous
+
+learningModel:
+  learningLevel: L2
+  adaptationTargets:
+    - routing-efficiency
+    - load-balancing
+  learningSources:
+    - routing-outcome-feedback
+    - queue-depth-signals
 
 aep:
   operatorType: ROUTING
@@ -15,9 +39,6 @@ aep:
   backpressure:
     bufferSize: 3000
     overflowStrategy: DROP_OLDEST
-
-generator:
-  type: ADAPTIVE
 
 capabilities:
   - event-routing
@@ -30,6 +51,15 @@ tools:
   - name: loadBalancer
     type: SERVICE
     endpoint: /aep/routing/balance
+
+interfaces:
+  inputs:
+    - name: incomingEvent
+      schema: "*"
+      required: true
+  outputs:
+    - name: routedEvent
+      schema: routed.*
 
 memory:
   type: WORKING

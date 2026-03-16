@@ -20,6 +20,15 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:observability"))
 
+    // JDBC — for JdbcAgentRegistry
+    implementation(libs.hikaricp)
+    runtimeOnly(libs.postgresql)
+    testImplementation(libs.h2)
+
+    // JSON serialization of descriptors/configs
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jsr310)
+
     // Logging
     api(libs.slf4j.api)
     implementation(libs.log4j.core)
@@ -36,6 +45,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(project(":platform:java:testing"))
 }
 
 tasks.test {

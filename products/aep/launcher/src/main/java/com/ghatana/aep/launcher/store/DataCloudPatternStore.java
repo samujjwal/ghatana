@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Data-Cloud EntityStore-backed implementation of {@link PatternRepository}.
@@ -80,7 +81,18 @@ public final class DataCloudPatternStore implements PatternRepository {
             .registerModule(new JavaTimeModule());
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
+    /** Cache TTL: 60 seconds. */
+    private static final long CACHE_TTL_MS = 60_000L;
+
     private final DataCloudClient client;
+
+    // Keyed by pattern UUID → cached metadata + expiry
+    private final ConcurrentHashMap<UUID, CacheEntry> cache = new ConcurrentHashMap<>();
+
+    /** An entry holding a cached result and its wall-clock expiry time. */
+    private record CacheEntry(Optional<PatternMetadata> value, long expiresAtMs) {
+        boolean isValid() { return System.currentTimeMillis() < expiresAtMs; }
+    }
 
     /**
      * Constructs a new store backed by the given Data-Cloud client.
@@ -106,9 +118,9 @@ public final class DataCloudPatternStore implements PatternRepository {
         UUID id = spec.getId() != null ? spec.getId() : UUID.randomUUID();
         String tenantId = spec.getTenantId();
         Map<String, Object> data = toEntityData(id, spec);
-        // DataCloudClient.save(tenantId, collection, data) uses data.get("id") as the entity key.
         return client.save(tenantId, COLLECTION, data)
                 .map(this::toMetadata)
+                .whenResult(result -> cache.put(id, new CacheEntry(Optional.of(result), System.currentTimeMillis() + CACHE_TTL_MS)))
                 .whenException(e ->
                     log.error("[pattern-store] save failed id={} tenant={}: {}", id, tenantId, e.getMessage(), e));
     }
@@ -121,8 +133,14 @@ public final class DataCloudPatternStore implements PatternRepository {
      */
     @Override
     public Promise<Optional<PatternMetadata>> findById(UUID id) {
+        CacheEntry entry = cache.get(id);
+        if (entry != null && entry.isValid()) {
+            log.debug("[pattern-store] cache hit id={}", id);
+            return Promise.of(entry.value());
+        }
         return client.findById("system", COLLECTION, id.toString())
                 .map(optEntity -> optEntity.map(this::toMetadata))
+                .whenResult(result -> cache.put(id, new CacheEntry(result, System.currentTimeMillis() + CACHE_TTL_MS)))
                 .whenException(e ->
                     log.error("[pattern-store] findById failed id={}: {}", id, e.getMessage(), e));
     }
@@ -135,10 +153,18 @@ public final class DataCloudPatternStore implements PatternRepository {
      * @return the pattern metadata if found within that tenant
      */
     public Promise<Optional<PatternMetadata>> findByTenantAndId(String tenantId, UUID id) {
+        CacheEntry entry = cache.get(id);
+        if (entry != null && entry.isValid()) {
+            Optional<PatternMetadata> filtered = entry.value()
+                .filter(m -> tenantId.equals(m.getTenantId()));
+            log.debug("[pattern-store] cache hit (tenant) id={} tenant={}", id, tenantId);
+            return Promise.of(filtered);
+        }
         return client.findById(tenantId, COLLECTION, id.toString())
                 .map(optEntity -> optEntity
                     .filter(e -> tenantId.equals(e.data().get("tenantId")))
                     .map(this::toMetadata))
+                .whenResult(result -> cache.put(id, new CacheEntry(result, System.currentTimeMillis() + CACHE_TTL_MS)))
                 .whenException(e ->
                     log.error("[pattern-store] findByTenantAndId failed id={} tenant={}: {}",
                             id, tenantId, e.getMessage(), e));
@@ -185,8 +211,10 @@ public final class DataCloudPatternStore implements PatternRepository {
     public Promise<PatternMetadata> updatePattern(UUID id, PatternSpecification newSpec) {
         String tenantId = newSpec.getTenantId();
         Map<String, Object> data = toEntityData(id, newSpec);
+        cache.remove(id);
         return client.save(tenantId, COLLECTION, data)
                 .map(this::toMetadata)
+                .whenResult(result -> cache.put(id, new CacheEntry(Optional.of(result), System.currentTimeMillis() + CACHE_TTL_MS)))
                 .whenException(e ->
                     log.error("[pattern-store] updatePattern failed id={}: {}", id, e.getMessage(), e));
     }
@@ -200,6 +228,7 @@ public final class DataCloudPatternStore implements PatternRepository {
      */
     @Override
     public Promise<Void> updateStatus(UUID id, PatternStatus status) {
+        cache.remove(id); // invalidate before the async round-trip
         return client.findById("system", COLLECTION, id.toString())
                 .then(optEntity -> {
                     if (optEntity.isEmpty()) {
@@ -225,6 +254,7 @@ public final class DataCloudPatternStore implements PatternRepository {
     /** {@inheritDoc} */
     @Override
     public Promise<Void> delete(UUID id) {
+        cache.remove(id);
         return client.delete("system", COLLECTION, id.toString())
                 .map(ignored -> (Void) null)
                 .whenException(e ->

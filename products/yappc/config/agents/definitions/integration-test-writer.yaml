@@ -1,69 +1,79 @@
-id: "integration-test-writer"
-name: "Integration Test Writer"
-version: "1.0.0"
-description: "Integration test generation for multi-component interactions"
-
+id: integration-test-writer
+name: Integration Test Writer
+version: 1.0.0
+namespace: yappc.definitions.test-engineering
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
+description: Integration test generation for multi-component interactions
+summary: Integration test generation for multi-component interactions
 metadata:
-  level: 3  # Worker level
-  domain: "test-engineering"
-  tags: ["integration-tests", "testcontainers", "activej"]
-
-generator:
-  type: "pipeline"
-  steps:
-    - type: "rule-based"
-      rules:
-        - "Identify component dependencies"
-        - "Determine test containers needed (PostgreSQL, Redis, etc.)"
-        - "Validate ActiveJ eventloop usage in tests"
-    - type: "template"
-      engine: "liquid"
-      template_path: "templates/test/integration-test.java.liquid"
-    - type: "llm"
-      provider: "openai"
-      model: "gpt-3.5-turbo"
-      temperature: 0.3
-      prompt: |
-        Generate integration test logic for:
-        {{component}}
-        
-        Dependencies: {{dependencies}}
-        
-        Ensure:
-        - Extend EventloopTestBase
-        - Use runPromise() for async operations
-        - Setup test containers
-        - Clean up resources in @AfterEach
-
+  level: 3
+  domain: test-engineering
+  tags:
+  - integration-tests
+  - testcontainers
+  - activej
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: IntegrationTestRequest
+    schema: dynamic
+  outputs:
+  - name: IntegrationTest
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: test-strategist
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
 memory:
   episodic:
     enabled: true
     retention_days: 30
   semantic:
     enabled: true
-    categories: ["integration-patterns", "test-containers"]
+    categories:
+    - integration-patterns
+    - test-containers
   procedural:
     enabled: true
-
 tools:
-  - "file_read"
-  - "file_write"
-  - "ast_find_class"
-  - "ast_find_method"
-
+- file_read
+- file_write
+- ast_find_class
+- ast_find_method
 capabilities:
-  - "integration-test-generation"
-  - "testcontainers-setup"
-  - "async-test-patterns"
-
+- integration-test-generation
+- testcontainers-setup
+- async-test-patterns
 routing:
-  input_types: ["IntegrationTestRequest"]
-  output_types: ["IntegrationTest"]
-
+  input_types:
+  - IntegrationTestRequest
+  output_types:
+  - IntegrationTest
 delegation:
   can_delegate_to: []
-  escalates_to: "test-strategist"
-
+  escalates_to: test-strategist
 performance:
   expected_latency_ms: 2000
   max_latency_ms: 6000

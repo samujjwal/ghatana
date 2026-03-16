@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghatana.com/schemas/agent/v1/stream-processor-agent.json",
+  "title": "Stream Processor Agent Configuration",
+  "description": "Schema for STREAM_PROCESSOR agent type — stateful event-driven stream processing with checkpointing (AEP operators)",
+  "allOf": [
+    { "$ref": "agent-base-schema.json" }
+  ],
+  "properties": {
+    "spec": {
+      "properties": {
+        "type": { "const": "STREAM_PROCESSOR" },
+        "streamProcessor": {
+          "$ref": "#/$defs/StreamProcessorSpec"
+        }
+      },
+      "required": ["type", "streamProcessor"]
+    }
+  },
+
+  "$defs": {
+    "StreamProcessorSpec": {
+      "type": "object",
+      "properties": {
+        "subtype": {
+          "type": "string",
+          "enum": ["INGESTION", "ROUTING", "TRANSFORMATION", "CEP", "ENRICHMENT", "WINDOW_AGGREGATION", "FILTER"],
+          "default": "INGESTION",
+          "description": "Stream processor subtype determining processing semantics"
+        },
+        "checkpointPolicy": {
+          "$ref": "#/$defs/CheckpointPolicy",
+          "description": "Checkpoint configuration for fault tolerance and exactly-once semantics"
+        },
+        "backpressure": {
+          "$ref": "#/$defs/BackpressureConfig",
+          "description": "Backpressure strategy when downstream is saturated"
+        },
+        "windows": {
+          "$ref": "#/$defs/WindowConfig",
+          "description": "Time-window definitions for CEP and aggregation subtypes"
+        },
+        "eventBindings": {
+          "$ref": "#/$defs/EventBindings",
+          "description": "Declares which event types the operator consumes and produces"
+        },
+        "stateKeys": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keys of state maintained in the operator's local/external state store"
+        },
+        "reliabilityConfig": {
+          "$ref": "#/$defs/ReliabilityConfig",
+          "description": "Retry, dead-letter, and durability settings"
+        }
+      },
+      "required": ["subtype", "eventBindings"]
+    },
+
+    "CheckpointPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "intervalSeconds": { "type": "integer", "minimum": 1, "default": 30 },
+        "mode": {
+          "type": "string",
+          "enum": ["AT_LEAST_ONCE", "EXACTLY_ONCE"],
+          "default": "AT_LEAST_ONCE"
+        },
+        "storageBackend": {
+          "type": "string",
+          "enum": ["IN_MEMORY", "ROCKSDB", "REDIS", "S3"],
+          "default": "ROCKSDB"
+        }
+      }
+    },
+
+    "BackpressureConfig": {
+      "type": "object",
+      "properties": {
+        "bufferSize": { "type": "integer", "minimum": 1, "default": 1000 },
+        "overflowStrategy": {
+          "type": "string",
+          "enum": ["DROP_OLDEST", "DROP_LATEST", "BLOCK", "ERROR", "DEAD_LETTER"],
+          "default": "DROP_OLDEST"
+        },
+        "highWatermarkRatio": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1.0,
+          "default": 0.8,
+          "description": "Fraction of buffer at which backpressure is applied"
+        }
+      }
+    },
+
+    "WindowConfig": {
+      "type": "object",
+      "properties": {
+        "tumbling": {
+          "type": "object",
+          "properties": {
+            "sizeSeconds": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "sliding": {
+          "type": "object",
+          "properties": {
+            "sizeSeconds": { "type": "integer", "minimum": 1 },
+            "stepSeconds": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "session": {
+          "type": "object",
+          "properties": {
+            "gapTimeoutSeconds": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    },
+
+    "EventBindings": {
+      "type": "object",
+      "properties": {
+        "consumed": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Event type patterns consumed by this operator (support wildcards: *)"
+        },
+        "produced": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Event types produced by this operator"
+        }
+      },
+      "required": ["consumed", "produced"]
+    },
+
+    "ReliabilityConfig": {
+      "type": "object",
+      "properties": {
+        "maxRetries": { "type": "integer", "minimum": 0, "default": 3 },
+        "retryBackoffMs": { "type": "integer", "minimum": 0, "default": 1000 },
+        "deadLetterQueue": { "type": "string", "description": "DLQ name for unprocessable events" },
+        "checkpointIntervalSeconds": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

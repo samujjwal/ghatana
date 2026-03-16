@@ -220,7 +220,7 @@ public class ClusterManagementSystem {
                 long registrationTime = java.time.Duration.between(startTime, Instant.now()).toMillis();
                 
                 return new AutoScalingModels.NodeRegistrationResult(
-                    "reg-" + System.currentTimeMillis(),
+                    request.getRequestId(),
                     true,
                     node.getNodeId(),
                     null
@@ -233,7 +233,7 @@ public class ClusterManagementSystem {
                 long registrationTime = java.time.Duration.between(startTime, Instant.now()).toMillis();
                 
                 return new AutoScalingModels.NodeRegistrationResult(
-                    "reg-" + System.currentTimeMillis(),
+                    request.getRequestId(),
                     false,
                     request.getNodeId(),
                     e.getMessage()
@@ -286,7 +286,7 @@ public class ClusterManagementSystem {
                 long unregistrationTime = java.time.Duration.between(startTime, Instant.now()).toMillis();
                 
                 return new AutoScalingModels.NodeUnregistrationResult(
-                    "unreg-" + node.getNodeId(),
+                    request.getRequestId(),
                     true,
                     node.getNodeId(),
                     null
@@ -295,7 +295,7 @@ public class ClusterManagementSystem {
             } catch (Exception e) {
                 log.error("Node unregistration failed", e);
                 return new AutoScalingModels.NodeUnregistrationResult(
-                    "unreg-" + request.getNodeId(),
+                    request.getRequestId(),
                     false,
                     request.getNodeId(),
                     e.getMessage()
@@ -352,7 +352,7 @@ public class ClusterManagementSystem {
                 long processingTime = java.time.Duration.between(startTime, Instant.now()).toMillis();
                 
                 return new ClusterStatusResult(
-                    "status-" + System.currentTimeMillis(),
+                    request.getRequestId(),
                     true,
                     clusterId,
                     currentState,
@@ -363,7 +363,7 @@ public class ClusterManagementSystem {
             } catch (Exception e) {
                 log.error("Cluster status check failed", e);
                 return new ClusterStatusResult(
-                    "status-" + System.currentTimeMillis(),
+                    request.getRequestId(),
                     false,
                     clusterId,
                     ClusterState.FAILED,

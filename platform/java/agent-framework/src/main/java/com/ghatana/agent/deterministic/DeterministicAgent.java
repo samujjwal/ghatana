@@ -160,6 +160,8 @@ public class DeterministicAgent
             case FSM        -> evaluateFSM(ctx, input);
             case EXACT_MATCH-> evaluateExactMatch(ctx, input);
             case PATTERN    -> evaluatePattern(ctx, input);
+            // POLICY, OPERATOR, TEMPLATE: delegate to rule-based evaluation by default
+            case POLICY, OPERATOR, TEMPLATE -> evaluateRules(ctx, input);
         };
     }
 
@@ -323,13 +325,15 @@ public class DeterministicAgent
 
         PatternMatchStrategy strategy = detConfig.getPatternMatchStrategy();
         if (strategy == null) {
-            log.warn("PATTERN subtype configured but no PatternMatchStrategy supplied; skipping. " +
+            log.warn("PATTERN subtype configured but no PatternMatchStrategy supplied; " +
+                    "returning degraded response with input echo. " +
                     "Wrap InMemoryPatternEngine with PatternMatchStrategy before building the config.");
+            Map<String, Object> echoOutput = new LinkedHashMap<>(input);
             return Promise.of(AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of())
+                    .output(echoOutput)
                     .confidence(0.0)
-                    .status(AgentResultStatus.SKIPPED)
-                    .explanation("PATTERN subtype: no PatternMatchStrategy configured")
+                    .status(AgentResultStatus.DEGRADED)
+                    .explanation("PATTERN subtype: no PatternMatchStrategy configured; input echoed as degraded response")
                     .build());
         }
 

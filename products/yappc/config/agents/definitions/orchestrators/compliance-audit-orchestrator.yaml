@@ -1,63 +1,114 @@
 id: compliance-audit-orchestrator
 name: Compliance Audit Orchestrator
 version: 1.0.0
-description: Orchestrates end-to-end compliance audit for a framework — delegates to compliance-control-evaluation-agent and compliance-gap-analysis-agent, produces final report.
-
+namespace: yappc.orchestrators.compliance
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-platform@ghatana.com
+description: Orchestrates end-to-end compliance audit for a framework — delegates to compliance-control-evaluation-agent
+  and compliance-gap-analysis-agent, produces final report.
+summary: Orchestrates end-to-end compliance audit for a framework — delegates to compliance-control-evaluation-agent
+  and compl...
 metadata:
   level: 1
   domain: compliance
-  tags: [orchestrator, compliance, soc2, gdpr, iso27001]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: audit_coordination
-      type: RULE_BASED
-      rules:
-        - Load all controls for the framework
-        - Trigger compliance-control-evaluation-agent per control (parallel, batch 20)
-        - Aggregate pass/fail results
-        - Trigger compliance-gap-analysis-agent
-    - name: audit_report
-      type: TEMPLATE
-      engine: liquid
-      template_path: templates/compliance/audit-report.liquid
-
+  tags:
+  - orchestrator
+  - compliance
+  - soc2
+  - gdpr
+  - iso27001
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: framework-id
+    schema: dynamic
+  - name: workspace-id
+    schema: dynamic
+  - name: audit-request
+    schema: dynamic
+  outputs:
+  - name: compliance-audit-report
+    schema: dynamic
+  - name: gap-analysis
+    schema: dynamic
+  - name: compliance-score
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - compliance-control-evaluation-agent
+    - compliance-gap-analysis-agent
+    - sentinel
+    escalation: systems-architect
+  mcp:
+    enabled: false
+    note: MCP proxy optional via InteroperabilityService
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - chain-of-thought
+  - plan-and-solve
+  defaultReasoner: plan-and-solve
+  maxChainDepth: 5
 memory:
   episodic:
     enabled: true
     retention_days: 1095
-    categories: [compliance-audits, audit-history]
+    categories:
+    - compliance-audits
+    - audit-history
   semantic:
     enabled: true
-    categories: [framework-requirements, audit-patterns]
+    categories:
+    - framework-requirements
+    - audit-patterns
   procedural:
     enabled: true
-    categories: [audit-workflow, reporting-rules]
-
-tools: [framework_loader, audit_coordinator, report_generator]
-
+    categories:
+    - audit-workflow
+    - reporting-rules
+tools:
+- framework_loader
+- audit_coordinator
+- report_generator
 capabilities:
-  - compliance-audit-orchestration
-  - multi-agent-orchestration
-  - compliance-reporting
-
+- compliance-audit-orchestration
+- multi-agent-orchestration
+- compliance-reporting
 routing:
-  input_types: [framework-id, workspace-id, audit-request]
-  output_types: [compliance-audit-report, gap-analysis, compliance-score]
-
+  input_types:
+  - framework-id
+  - workspace-id
+  - audit-request
+  output_types:
+  - compliance-audit-report
+  - gap-analysis
+  - compliance-score
 delegation:
   can_delegate_to:
-    - compliance-control-evaluation-agent
-    - compliance-gap-analysis-agent
-    - sentinel
+  - compliance-control-evaluation-agent
+  - compliance-gap-analysis-agent
+  - sentinel
   escalates_to: systems-architect
-
 governance:
   requires_approval: true
   can_block: false
   audit_trail: comprehensive
-
 performance:
   expected_latency_ms: 60000
   max_latency_ms: 300000

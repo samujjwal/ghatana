@@ -1,65 +1,89 @@
 id: java-class-writer
 name: Java Class Writer
 version: 1.0.0
+namespace: yappc.definitions.code-generation
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
 description: Atomic worker agent for generating Java class files from specifications
-
+summary: Atomic worker agent for generating Java class files from specifications
 metadata:
-  level: 3  # Task Worker
+  level: 3
   domain: code-generation
   tags:
-    - worker
-    - java
-    - code-generation
-    - deterministic
-
-generator:
-  type: TEMPLATE
-  engine: liquid
-  template_path: templates/java/class.liquid
-  variables:
-    java_version: "21"
-    encoding: "UTF-8"
-    indent: "    "
-
+  - worker
+  - java
+  - code-generation
+  - deterministic
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: class-specification
+    schema: dynamic
+  - name: java-class-request
+    schema: dynamic
+  outputs:
+  - name: java-class-file
+    schema: dynamic
+  - name: compilation-result
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: &id001
+    - java-expert
+learningModel:
+  learningLevel: L1
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
 memory:
   episodic:
     enabled: true
     retention_days: 30
     categories:
-      - generated-classes
-      - compilation-results
+    - generated-classes
+    - compilation-results
   semantic:
     enabled: false
   procedural:
     enabled: false
-
 tools:
-  - java_compiler
-  - checkstyle_validator
-  - code_formatter
-
+- java_compiler
+- checkstyle_validator
+- code_formatter
 capabilities:
-  - code-generation
-  - java-class-generation
-
+- code-generation
+- java-class-generation
 routing:
   input_types:
-    - class-specification
-    - java-class-request
+  - class-specification
+  - java-class-request
   output_types:
-    - java-class-file
-    - compilation-result
-
+  - java-class-file
+  - compilation-result
 delegation:
-  can_delegate_to: []  # Atomic worker, no delegation
-  escalates_to:
-    - java-expert
-
+  can_delegate_to: []
+  escalates_to: *id001
 governance:
   requires_approval: false
   can_block: false
   audit_trail: minimal
-
 performance:
   expected_latency_ms: 500
   max_latency_ms: 2000

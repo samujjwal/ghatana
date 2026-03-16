@@ -1,62 +1,84 @@
 id: task-flow-task-agent
 name: Task Flow Task Agent
 version: 1.0.0
-description: "Design task flows showing user decision points, system responses, and alternative paths for a single user goal"
-
+namespace: yappc.task-agents.ux
+status: active
+owners:
+- team: design
+  contact: design@ghatana.com
+description: Design task flows showing user decision points, system responses, and alternative paths for
+  a single user goal
+summary: Design task flows showing user decision points, system responses, and alternative paths for a
+  single user goal
 metadata:
   level: 3
   domain: ux
   type: worker
-  tags: [task-flow-design, decision-mapping, alternative-path-definition, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Design task flows showing user decision points, system responses, and alternative paths for a single user goal
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - task-flow-design
+  - decision-mapping
+  - alternative-path-definition
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: task_flow_request
+    schema: dynamic
+  outputs:
+  - name: task_flow_diagram
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: flow-design-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [flow_designer, decision_mapper]
-
+tools:
+- flow_designer
+- decision_mapper
 capabilities:
-  - task-flow-design
-  - decision-mapping
-  - alternative-path-definition
-
+- task-flow-design
+- decision-mapping
+- alternative-path-definition
 routing:
-  input_types: [task_flow_request]
-  output_types: [task_flow_diagram]
-
+  input_types:
+  - task_flow_request
+  output_types:
+  - task_flow_diagram
 delegation:
   can_delegate_to: []
   escalates_to: flow-design-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

@@ -1,54 +1,73 @@
 id: data-migration-agent
+namespace: data-cloud.migration
 name: Data Migration Agent
 version: 1.0.0
-description: Orchestrates schema and data migrations with rollback capabilities
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Orchestrates data migration across storage systems with LLM-guided planning and rollback capability
+
+description: Orchestrates data migration across storage systems with LLM-guided planning and rollback capability.
 
 metadata:
-  level: 3
+  level: 2
   domain: data-lifecycle
-  tags: [migration, schema, data, transformation, rollback]
+  tags: [migration, data-movement, rollback, schema-mapping, etl]
 
-generator:
-  type: PIPELINE
-  steps:
-    - name: schema_analysis
-      type: SERVICE_CALL
-      service: schema-analyzer
-      endpoint: /datacloud/schema/analyze
-    - name: migration_planning
-      type: LLM
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: config-scoped
+  stateMutability: external-state
+  failureMode: fallback
+  criticality: high
+  autonomyLevel: semi-autonomous
+
+reasoningProfile:
+  primaryReasoner: service-call
+  reasonerPortfolio:
+    - type: service-call
+      role: source-extraction
+      description: Extract data from source storage system
+    - type: llm
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
-      prompt: |
-        Generate migration plan:
-        Source Schema: {{source_schema}}
-        Target Schema: {{target_schema}}
-        Data Volume: {{volume}}
-        Consider: downtime, rollback strategy, validation steps
+      role: migration-planning
+      description: Plan migration steps, validate schemas, generate rollback plan
 
 capabilities:
-  - schema-evolution
-  - data-replication
+  - data-migration
+  - rollback-recovery
+  - schema-mapping
 
 tools:
-  - name: migrationRunner
+  - name: migrationEngine
     type: SERVICE
-    endpoint: /datacloud/migrations/execute
+    endpoint: /data-cloud/migration/execute
   - name: rollbackManager
     type: SERVICE
-    endpoint: /datacloud/migrations/rollback
+    endpoint: /data-cloud/migration/rollback
+  - name: schemaMapper
+    type: SERVICE
+    endpoint: /data-cloud/migration/schema-map
+
+interfaces:
+  inputs:
+    - name: migrationRequest
+      schema: object
+      required: true
+  outputs:
+    - name: migrationResult
+      schema: object
 
 memory:
   type: SEMANTIC
-  scope: migration_history
+  scope: migration_state
   retention: long
 
-routing:
-  input: MigrationRequest
-  output: MigrationResult
-
 resources:
-  memory: "2GB"
+  memory: "4GB"
   cpu: "4"
-  timeout: "3600s"
+  timeout: "86400s"

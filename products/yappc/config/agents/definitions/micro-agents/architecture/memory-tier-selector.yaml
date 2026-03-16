@@ -1,22 +1,52 @@
 id: memory-tier-selector
 name: Memory Tier Selector
 version: 1.0.0
-description: "Select the appropriate memory tier (episodic, semantic, procedural, preference) for a given memory content type"
-
+namespace: yappc.micro-agents.architecture
+status: active
+owners:
+- team: platform
+  contact: platform@ghatana.com
+description: Select the appropriate memory tier (episodic, semantic, procedural, preference) for a given
+  memory content type
+summary: Select the appropriate memory tier (episodic, semantic, procedural, preference) for a given memory
+  content type
 metadata:
   level: 3
   domain: architecture
   type: micro-agent
-  tags: [memory-tier-selection, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "memory-tier-selection"
-
+  tags:
+  - memory-tier-selection
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: tier_select_request
+    schema: dynamic
+  outputs:
+  - name: memory_tier
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: memory-architecture-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -24,25 +54,22 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [tier_selector]
-
+tools:
+- tier_selector
 capabilities:
-  - memory-tier-selection
-
+- memory-tier-selection
 routing:
-  input_types: [tier_select_request]
-  output_types: [memory_tier]
-
+  input_types:
+  - tier_select_request
+  output_types:
+  - memory_tier
 delegation:
   can_delegate_to: []
   escalates_to: memory-architecture-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 100
   max_latency_ms: 500

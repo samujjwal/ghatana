@@ -1,90 +1,135 @@
 id: operations-orchestrator
 name: Operations Orchestrator
 version: 1.0.0
-description: "Top-level operations coordinator covering SRE, infrastructure provisioning, support, change management, cost management, and on-call operations"
-
+namespace: yappc.orchestrators.operations
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-platform@ghatana.com
+description: Top-level operations coordinator covering SRE, infrastructure provisioning, support, change
+  management, cost management, and on-call operations
+summary: Top-level operations coordinator covering SRE, infrastructure provisioning, support, change management,
+  cost manageme...
 metadata:
   level: 1
   domain: operations
-  tags: [orchestrator, operations, sre, infrastructure, level1]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: ops_request_triage
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Triage the operations request:
-
-        Request: {{input}}
-        System health snapshot: {{context.system_health}}
-        Active incidents: {{context.active_incidents}}
-        Change freeze windows: {{context.change_freeze}}
-
-        Classify urgency (P1-P4), category (reliability/infra/support/change/cost/on-call), and route to the appropriate sub-orchestrator. Output JSON with routing decision and rationale.
-    - name: operations_dispatch
-      type: SERVICE_CALL
-      service: agent-dispatcher
-      endpoint: /dispatch
-      description: "Route to sre-orchestrator, infra-provisioning-orchestrator, support-orchestrator, change-management-orchestrator, cost-management-orchestrator, or on-call-orchestrator"
-    - name: ops_outcome_review
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 1500
-      prompt: |
-        Review the outcomes of delegated operations work:
-
-        Original request: {{input}}
-        Operations result: {{operations_dispatch}}
-
-        Confirm resolution, identify follow-on actions, surface systemic risks. Output structured operations outcome report.
-
-memory:
-  episodic:
+  tags:
+  - orchestrator
+  - operations
+  - sre
+  - infrastructure
+  - level1
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: ops_request
+    schema: dynamic
+  - name: incident_alert
+    schema: dynamic
+  - name: change_request
+    schema: dynamic
+  - name: support_ticket
+    schema: dynamic
+  - name: cost_alert
+    schema: dynamic
+  outputs:
+  - name: ops_outcome_report
+    schema: dynamic
+  - name: incident_resolution
+    schema: dynamic
+  - name: change_summary
+    schema: dynamic
+  - name: cost_reduction_plan
+    schema: dynamic
+interoperability:
+  agentToAgent:
     enabled: true
-    retention_days: 365
-    categories: [ops-requests, incidents, change-records, cost-events]
-  semantic:
-    enabled: true
-    categories: [runbooks, system-topologies, on-call-patterns]
-  procedural:
-    enabled: true
-    categories: [escalation-chains, incident-response, change-gates]
-
-tools: [ops_router, system_health_dashboard, alert_aggregator, incident_tracker]
-
-capabilities:
-  - operations-coordination
-  - incident-response
-  - change-orchestration
-  - infra-lifecycle
-  - cost-governance
-
-routing:
-  input_types: [ops_request, incident_alert, change_request, support_ticket, cost_alert]
-  output_types: [ops_outcome_report, incident_resolution, change_summary, cost_reduction_plan]
-
-delegation:
-  can_delegate_to:
+    protocol: ghatana-a2a-v1
+    delegation:
     - sre-orchestrator
     - infra-provisioning-orchestrator
     - support-orchestrator
     - change-management-orchestrator
     - cost-management-orchestrator
     - on-call-orchestrator
+  mcp:
+    enabled: false
+    note: MCP proxy optional via InteroperabilityService
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - chain-of-thought
+  - plan-and-solve
+  defaultReasoner: plan-and-solve
+  maxChainDepth: 5
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+    - ops-requests
+    - incidents
+    - change-records
+    - cost-events
+  semantic:
+    enabled: true
+    categories:
+    - runbooks
+    - system-topologies
+    - on-call-patterns
+  procedural:
+    enabled: true
+    categories:
+    - escalation-chains
+    - incident-response
+    - change-gates
+tools:
+- ops_router
+- system_health_dashboard
+- alert_aggregator
+- incident_tracker
+capabilities:
+- operations-coordination
+- incident-response
+- change-orchestration
+- infra-lifecycle
+- cost-governance
+routing:
+  input_types:
+  - ops_request
+  - incident_alert
+  - change_request
+  - support_ticket
+  - cost_alert
+  output_types:
+  - ops_outcome_report
+  - incident_resolution
+  - change_summary
+  - cost_reduction_plan
+delegation:
+  can_delegate_to:
+  - sre-orchestrator
+  - infra-provisioning-orchestrator
+  - support-orchestrator
+  - change-management-orchestrator
+  - cost-management-orchestrator
+  - on-call-orchestrator
   escalates_to: null
-
 governance:
   requires_approval: false
   can_block: true
   audit_trail: comprehensive
-
 performance:
   expected_latency_ms: 2000
   max_latency_ms: 10000

@@ -1,63 +1,87 @@
 id: event-schema-task-agent
 name: Event Schema Task Agent
 version: 1.0.0
-description: "Design Avro/Protobuf event schemas with all required fields, metadata envelope, versioning markers, and compatibility constraints"
-
+namespace: yappc.task-agents.architecture
+status: active
+owners:
+- team: platform
+  contact: platform@ghatana.com
+description: Design Avro/Protobuf event schemas with all required fields, metadata envelope, versioning
+  markers, and compatibility constraints
+summary: Design Avro/Protobuf event schemas with all required fields, metadata envelope, versioning markers,
+  and compatibility...
 metadata:
   level: 3
   domain: architecture
   type: worker
-  tags: [event-schema-design, avro-spec, proto-spec, versioning, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Design Avro/Protobuf event schemas with all required fields, metadata envelope, versioning markers, and compatibility constraints
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
-memory:
-  episodic:
-    enabled: true
-    retention_days: 90
-    categories: [task-executions]
-  semantic:
-    enabled: true
-    categories: [domain-knowledge]
-  procedural:
-    enabled: false
-
-tools: [avro_schema_builder, proto_schema_builder, compatibility_validator]
-
-capabilities:
+  tags:
   - event-schema-design
   - avro-spec
   - proto-spec
   - versioning
-
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: event_schema_request
+    schema: dynamic
+  outputs:
+  - name: event_schema
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: event-architecture-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories:
+    - task-executions
+  semantic:
+    enabled: true
+    categories:
+    - domain-knowledge
+  procedural:
+    enabled: false
+tools:
+- avro_schema_builder
+- proto_schema_builder
+- compatibility_validator
+capabilities:
+- event-schema-design
+- avro-spec
+- proto-spec
+- versioning
 routing:
-  input_types: [event_schema_request]
-  output_types: [event_schema]
-
+  input_types:
+  - event_schema_request
+  output_types:
+  - event_schema
 delegation:
   can_delegate_to: []
   escalates_to: event-architecture-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

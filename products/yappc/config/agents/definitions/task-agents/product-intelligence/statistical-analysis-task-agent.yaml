@@ -1,63 +1,87 @@
 id: statistical-analysis-task-agent
 name: Statistical Analysis Task Agent
 version: 1.0.0
-description: "Run statistical significance tests (t-test, chi-square, CUPED) on experiment results and compute confidence intervals"
-
+namespace: yappc.task-agents.product-intelligence
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Run statistical significance tests (t-test, chi-square, CUPED) on experiment results and
+  compute confidence intervals
+summary: Run statistical significance tests (t-test, chi-square, CUPED) on experiment results and compute
+  confidence intervals
 metadata:
   level: 3
   domain: product-intelligence
   type: worker
-  tags: [statistical-testing, significance-computation, confidence-intervals, cuped, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Run statistical significance tests (t-test, chi-square, CUPED) on experiment results and compute confidence intervals
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
-memory:
-  episodic:
-    enabled: true
-    retention_days: 90
-    categories: [task-executions]
-  semantic:
-    enabled: true
-    categories: [domain-knowledge]
-  procedural:
-    enabled: false
-
-tools: [stats_engine, cuped_calculator, ci_calculator]
-
-capabilities:
+  tags:
   - statistical-testing
   - significance-computation
   - confidence-intervals
   - cuped
-
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: statistical_analysis_request
+    schema: dynamic
+  outputs:
+  - name: statistical_analysis_result
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: experimentation-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories:
+    - task-executions
+  semantic:
+    enabled: true
+    categories:
+    - domain-knowledge
+  procedural:
+    enabled: false
+tools:
+- stats_engine
+- cuped_calculator
+- ci_calculator
+capabilities:
+- statistical-testing
+- significance-computation
+- confidence-intervals
+- cuped
 routing:
-  input_types: [statistical_analysis_request]
-  output_types: [statistical_analysis_result]
-
+  input_types:
+  - statistical_analysis_request
+  output_types:
+  - statistical_analysis_result
 delegation:
   can_delegate_to: []
   escalates_to: experimentation-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

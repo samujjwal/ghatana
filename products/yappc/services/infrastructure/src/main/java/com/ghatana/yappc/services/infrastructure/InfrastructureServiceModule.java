@@ -5,8 +5,12 @@
 package com.ghatana.yappc.services.infrastructure;
 
 import com.ghatana.yappc.infrastructure.datacloud.adapter.SecurityServiceAdapter;
+import com.ghatana.yappc.infrastructure.security.OsvScannerAdapter;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,14 +54,26 @@ public class InfrastructureServiceModule extends AbstractModule {
     }
 
     /**
-     * Provides SecurityServiceAdapter for security scanning and SBOM.
+     * Provides SecurityServiceAdapter with composite scanner (SAST + dependency scanning).
      *
-     * <p>No-arg constructor; scans project paths for vulnerabilities
-     * and generates Software Bill of Materials.</p>
+     * <p>Composes StaticAnalysisScanner (SAST) + OsvScannerAdapter (dependency scanning)
+     * for comprehensive security coverage.</p>
      */
     @Provides
     SecurityServiceAdapter securityServiceAdapter() {
-        logger.info("Creating SecurityServiceAdapter");
-        return new SecurityServiceAdapter(new com.ghatana.yappc.infrastructure.datacloud.adapter.StaticAnalysisScanner(java.util.concurrent.Executors.newCachedThreadPool()));
+        logger.info("Creating SecurityServiceAdapter with CompositeSecurityScanner");
+        Executor executor = Executors.newCachedThreadPool();
+        
+        com.ghatana.yappc.infrastructure.datacloud.adapter.StaticAnalysisScanner staticAnalysisScanner = 
+            new com.ghatana.yappc.infrastructure.datacloud.adapter.StaticAnalysisScanner(executor);
+        
+        OsvScannerAdapter osvScanner = new OsvScannerAdapter(executor);
+        
+        com.ghatana.yappc.infrastructure.security.CompositeSecurityScanner compositeScanner =
+            new com.ghatana.yappc.infrastructure.security.CompositeSecurityScanner(
+                List.of(staticAnalysisScanner, osvScanner)
+            );
+        
+        return new SecurityServiceAdapter(compositeScanner);
     }
 }

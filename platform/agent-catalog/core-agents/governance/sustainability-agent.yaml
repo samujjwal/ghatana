@@ -1,15 +1,28 @@
 id: sustainability-agent
 name: Sustainability Agent
-version: 1.0.0
-description: Monitors carbon footprint, energy efficiency, and recommends green computing practices
+namespace: platform.governance
+version: 2.0.0
+status: active
+summary: >-
+  Monitors carbon footprint, energy efficiency, and recommends green computing practices.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 2
   domain: governance
   tags: [sustainability, green-computing, carbon, energy, efficiency, esg]
 
-generator:
-  type: ADAPTIVE
+identity:
+  agentType: adaptive                       # continuously updates sustainability model from metric feedback
+  roles: [carbon-monitor, efficiency-advisor, esg-reporter]
+  criticality: low
+  autonomyLevel: semi-autonomous
+  determinismGuarantee: non-deterministic   # recommendations evolve as baselines are learned
+  stateMutability: persistent               # maintains historical sustainability metrics
+  failureMode: skip
 
 capabilities:
   - sustainability

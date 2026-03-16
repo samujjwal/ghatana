@@ -1,65 +1,84 @@
 id: unified-data-orchestrator
+namespace: data-cloud.orchestration
 name: Unified Data Orchestrator
 version: 1.0.0
-description: High-level orchestrator that coordinates all data operations across storage, query, migration, and governance
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Level-1 master orchestrator governing all data cloud agents across storage, migration, quality, and lifecycle
+
+description: |
+  Level-1 master orchestrator governing all data cloud agents across storage,
+  migration, quality, and lifecycle. Uses rule-based analysis for routine operations
+  and LLM for complex cross-cutting coordination decisions.
 
 metadata:
   level: 1
   domain: orchestration
-  tags: [data, orchestration, unified, coordination, cross-domain]
+  tags: [unified, orchestration, master, data-cloud, coordination]
 
-generator:
-  type: PIPELINE
-  steps:
-    - name: analyze_request
-      type: RULE_BASED
-      rules:
-        - Identify data operation type
-        - Determine required capabilities
-        - Select appropriate worker agents
-    - name: coordinate_execution
-      type: LLM
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: config-scoped
+  stateMutability: external-state
+  failureMode: retry
+  criticality: mission-critical
+  autonomyLevel: semi-autonomous
+
+reasoningProfile:
+  primaryReasoner: rule-based
+  reasonerPortfolio:
+    - type: rule-based
+      role: operational-routing
+      description: Route routine operations to appropriate sub-orchestrators
+    - type: llm
       provider: OPENAI
       model: gpt-4
       temperature: 0.2
-      prompt: |
-        Orchestrate data operations:
-        Request: {{request}}
-        Available Agents: {{agents}}
-        Coordinate storage, query, migration, and quality checks
+      role: cross-cutting-coordination
+      description: Coordinate complex multi-agent scenarios and cross-cutting concerns
 
 capabilities:
   - data-pipeline-orchestration
-  - data-management
-  - data-quality
+  - master-coordination
+  - cross-agent-governance
 
 tools:
-  - name: orchestrationEngine
+  - name: orchestrationHub
     type: SERVICE
-    endpoint: /platform/orchestrate/coordinate
+    endpoint: /data-cloud/orchestrate/unified
 
-delegation:
-  can_delegate_to:
-    - entity-storage-agent
-    - event-stream-storage-agent
-    - query-optimization-agent
-    - data-migration-agent
-    - data-replication-agent
-    - data-archival-agent
-    - data-lineage-agent
-    - data-quality-agent
-    - data-pipeline-orchestrator-agent
+interfaces:
+  inputs:
+    - name: DataOrchestrationRequest
+      schema: object
+      required: true
+  outputs:
+    - name: DataOrchestrationResult
+      schema: object
+
+interoperability:
+  agentToAgent:
+    enabled: true
+    delegation:
+      - data-pipeline-orchestrator-agent
+      - entity-storage-agent
+      - event-stream-storage-agent
+      - data-quality-agent
+      - data-lineage-agent
+      - data-migration-agent
+      - schema-evolution-agent
+      - data-archival-agent
+      - data-replication-agent
 
 memory:
   type: SEMANTIC
-  scope: orchestration_history
+  scope: orchestration_state
   retention: long
 
-routing:
-  input: DataOrchestrationRequest
-  output: DataOrchestrationResult
-
 resources:
-  memory: "2GB"
-  cpu: "4"
-  timeout: "600s"
+  memory: "4GB"
+  cpu: "8"
+  timeout: "0"

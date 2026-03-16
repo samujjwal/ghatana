@@ -1,23 +1,51 @@
 id: requirement-template-applier
 name: Requirement Template Applier
 version: 1.0.0
-description: "Apply a standard requirement template (IEEE 830, user story, given-when-then) to a raw requirement"
-
+namespace: yappc.micro-agents.requirements
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Apply a standard requirement template (IEEE 830, user story, given-when-then) to a raw requirement
+summary: Apply a standard requirement template (IEEE 830, user story, given-when-then) to a raw requirement
 metadata:
   level: 3
   domain: requirements
   type: micro-agent
-  tags: [template-application, format-standardisation, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "template-application"
-        - "format-standardisation"
-
+  tags:
+  - template-application
+  - format-standardisation
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: template_apply_request
+    schema: dynamic
+  outputs:
+  - name: templated_requirement
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: spec-authoring-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +53,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [template_engine]
-
+tools:
+- template_engine
 capabilities:
-  - template-application
-  - format-standardisation
-
+- template-application
+- format-standardisation
 routing:
-  input_types: [template_apply_request]
-  output_types: [templated_requirement]
-
+  input_types:
+  - template_apply_request
+  output_types:
+  - templated_requirement
 delegation:
   can_delegate_to: []
   escalates_to: spec-authoring-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 100
   max_latency_ms: 500

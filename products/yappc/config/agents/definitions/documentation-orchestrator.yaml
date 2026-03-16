@@ -1,73 +1,104 @@
-id: "documentation-orchestrator"
-name: "Documentation Orchestrator"
-version: "1.0.0"
-description: "Coordinates comprehensive documentation generation across API docs, architecture diagrams, runbooks, and changelogs"
-
+id: documentation-orchestrator
+name: Documentation Orchestrator
+version: 1.0.0
+namespace: yappc.definitions.documentation
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
+description: Coordinates comprehensive documentation generation across API docs, architecture diagrams,
+  runbooks, and changelogs
+summary: Coordinates comprehensive documentation generation across API docs, architecture diagrams, runbooks,
+  and changelogs
 metadata:
-  level: 2  # Expert level
-  domain: "documentation"
-  tags: ["documentation", "knowledge-management", "orchestration"]
-
-generator:
-  type: "pipeline"
-  steps:
-    - type: "rule-based"
-      rules:
-        - "Identify documentation gaps"
-        - "Determine doc types needed (API, architecture, runbook, changelog)"
-        - "Assign to specialized doc generators"
-        - "Validate completeness"
-    - type: "llm"
-      provider: "openai"
-      model: "gpt-4"
-      temperature: 0.5
-      prompt: |
-        Documentation strategy for:
-        {{project}}
-        
-        Components: {{components}}
-        Audience: {{audience}}
-        
-        Create:
-        1. Documentation plan (types, priorities)
-        2. Content outline for each doc type
-        3. Cross-references and navigation
-        4. Maintenance schedule
-
+  level: 2
+  domain: documentation
+  tags:
+  - documentation
+  - knowledge-management
+  - orchestration
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: DocumentationRequest
+    schema: dynamic
+  - name: ProjectRelease
+    schema: dynamic
+  - name: ArchitectureChange
+    schema: dynamic
+  outputs:
+  - name: DocumentationPlan
+    schema: dynamic
+  - name: Documentation
+    schema: dynamic
+  - name: DocIndex
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - api-doc-generator
+    - architecture-diagram-agent
+    - runbook-generator
+    - changelog-generator
+    - documentation-writer
+    escalation: systems-architect
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
 memory:
   episodic:
     enabled: true
     retention_days: 90
   semantic:
     enabled: true
-    categories: ["documentation-patterns", "content-templates"]
+    categories:
+    - documentation-patterns
+    - content-templates
   procedural:
     enabled: true
-
 tools:
-  - "file_read"
-  - "file_write"
-  - "ast_parse"
-  - "file_list"
-
+- file_read
+- file_write
+- ast_parse
+- file_list
 capabilities:
-  - "documentation-planning"
-  - "content-coordination"
-  - "completeness-validation"
-
+- documentation-planning
+- content-coordination
+- completeness-validation
 routing:
-  input_types: ["DocumentationRequest", "ProjectRelease", "ArchitectureChange"]
-  output_types: ["DocumentationPlan", "Documentation", "DocIndex"]
-
+  input_types:
+  - DocumentationRequest
+  - ProjectRelease
+  - ArchitectureChange
+  output_types:
+  - DocumentationPlan
+  - Documentation
+  - DocIndex
 delegation:
   can_delegate_to:
-    - "api-doc-generator"
-    - "architecture-diagram-agent"
-    - "runbook-generator"
-    - "changelog-generator"
-    - "documentation-writer"
-  escalates_to: "systems-architect"
-
+  - api-doc-generator
+  - architecture-diagram-agent
+  - runbook-generator
+  - changelog-generator
+  - documentation-writer
+  escalates_to: systems-architect
 performance:
   expected_latency_ms: 5000
   max_latency_ms: 15000

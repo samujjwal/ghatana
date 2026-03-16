@@ -1,23 +1,51 @@
 id: boundary-leak-detector
 name: Boundary Leak Detector
 version: 1.0.0
-description: "Detect bounded context boundary leaks where domain concepts cross context boundaries inappropriately"
-
+namespace: yappc.micro-agents.architecture
+status: active
+owners:
+- team: platform
+  contact: platform@ghatana.com
+description: Detect bounded context boundary leaks where domain concepts cross context boundaries inappropriately
+summary: Detect bounded context boundary leaks where domain concepts cross context boundaries inappropriately
 metadata:
   level: 3
   domain: architecture
   type: micro-agent
-  tags: [boundary-checking, leak-detection, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "boundary-checking"
-        - "leak-detection"
-
+  tags:
+  - boundary-checking
+  - leak-detection
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: boundary_check_request
+    schema: dynamic
+  outputs:
+  - name: boundary_leaks
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: service-design-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +53,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [boundary_analyser]
-
+tools:
+- boundary_analyser
 capabilities:
-  - boundary-checking
-  - leak-detection
-
+- boundary-checking
+- leak-detection
 routing:
-  input_types: [boundary_check_request]
-  output_types: [boundary_leaks]
-
+  input_types:
+  - boundary_check_request
+  output_types:
+  - boundary_leaks
 delegation:
   can_delegate_to: []
   escalates_to: service-design-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 200
   max_latency_ms: 1000

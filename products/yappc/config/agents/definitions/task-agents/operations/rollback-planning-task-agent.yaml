@@ -1,62 +1,85 @@
 id: rollback-planning-task-agent
 name: Rollback Planning Task Agent
 version: 1.0.0
-description: "Generate step-by-step rollback plans for change requests with trigger criteria, execution sequence, and success validation"
-
+namespace: yappc.task-agents.operations
+status: active
+owners:
+- team: sre
+  contact: sre@ghatana.com
+description: Generate step-by-step rollback plans for change requests with trigger criteria, execution
+  sequence, and success validation
+summary: Generate step-by-step rollback plans for change requests with trigger criteria, execution sequence,
+  and success valid...
 metadata:
   level: 3
   domain: operations
   type: worker
-  tags: [rollback-plan-generation, trigger-criteria-definition, success-validation, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Generate step-by-step rollback plans for change requests with trigger criteria, execution sequence, and success validation
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - rollback-plan-generation
+  - trigger-criteria-definition
+  - success-validation
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: rollback_planning_request
+    schema: dynamic
+  outputs:
+  - name: rollback_plan
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: change-management-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [rollback_planner, sequence_generator, validation_definer]
-
+tools:
+- rollback_planner
+- sequence_generator
+- validation_definer
 capabilities:
-  - rollback-plan-generation
-  - trigger-criteria-definition
-  - success-validation
-
+- rollback-plan-generation
+- trigger-criteria-definition
+- success-validation
 routing:
-  input_types: [rollback_planning_request]
-  output_types: [rollback_plan]
-
+  input_types:
+  - rollback_planning_request
+  output_types:
+  - rollback_plan
 delegation:
   can_delegate_to: []
   escalates_to: change-management-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

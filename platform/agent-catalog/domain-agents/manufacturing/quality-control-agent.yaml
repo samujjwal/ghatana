@@ -1,6 +1,10 @@
 id: quality-control-agent
 name: Manufacturing Quality Control Agent
-version: 1.0.0
+namespace: platform.domain.manufacturing
+version: 2.1.0
+status: active
+summary: >-
+  Real-time SPC and defect detection for ISO 9001 / IATF 16949 manufacturing quality management.
 description: >
   Real-time quality control agent for manufacturing process monitoring, defect
   detection, and Statistical Process Control (SPC). Ingests sensor data, vision
@@ -9,21 +13,31 @@ description: >
   using configurable classification rules, and generate corrective action signals.
   Supports ISO 9001, IATF 16949 (automotive), and AS9100 (aerospace) quality
   management requirements.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 4
   domain: manufacturing
   tags: [manufacturing, quality, spc, defect-detection, iso9001, iatf16949, sensor, oee]
   maturity: production
-  author: platform-team@ghatana.ai
   standards:
     - ISO 9001
     - IATF 16949
     - AS9100
     - IEC 61511
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: deterministic
+  subtype: threshold                            # SPC control charts are threshold-based rules
+  roles: [quality-monitor, defect-detector, spc-evaluator, corrective-action-emitter]
+  criticality: critical
+  autonomyLevel: supervised                     # safety-critical; human-in-the-loop for corrective actions
+  determinismGuarantee: fully-deterministic     # same sensor readings + same thresholds → same decision
+  stateMutability: local-state                  # running statistics (mean, std) within control window
+  failureMode: fail-closed
 
 # AEP Operator configuration
 aep:

@@ -1,6 +1,10 @@
 id: inventory-optimization-agent
 name: Inventory Optimization Agent
-version: 1.0.0
+namespace: platform.domain.retail
+version: 2.1.0
+status: active
+summary: >-
+  Multi-echelon inventory optimizer using demand forecasting and adaptive replenishment signal generation.
 description: >
   Optimises retail inventory levels using demand forecasting, safety-stock
   calculation, and replenishment signal generation. Handles multi-echelon
@@ -8,16 +12,25 @@ description: >
   patterns, promotional lift modelling, and stockout risk scoring. Emits
   replenishment orders, overstock alerts, and markdown recommendations as
   downstream events.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 4
   domain: retail
   tags: [retail, inventory, forecasting, replenishment, demand, supply-chain]
   maturity: production
-  author: platform-team@ghatana.ai
 
-generator:
-  type: ADAPTIVE
+identity:
+  agentType: adaptive                        # demand model updates from sales history
+  roles: [inventory-optimizer, demand-forecaster, replenishment-signal-emitter]
+  criticality: high
+  autonomyLevel: semi-autonomous
+  determinismGuarantee: non-deterministic    # forecast model evolves with data drift
+  stateMutability: persistent               # maintains trained demand model + history
+  failureMode: skip
 
 # AEP Operator configuration
 aep:

@@ -1,69 +1,103 @@
 id: cloud-security-audit-orchestrator
 name: Cloud Security Audit Orchestrator
 version: 1.0.0
-description: Orchestrates cloud security audit — delegates to cloud-resource-discovery-agent and cloud-resource-risk-agent; produces risk-aggregated audit report.
-
+namespace: yappc.orchestrators.cloud-security
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-platform@ghatana.com
+description: Orchestrates cloud security audit — delegates to cloud-resource-discovery-agent and cloud-resource-risk-agent;
+  produces risk-aggregated audit report.
+summary: Orchestrates cloud security audit — delegates to cloud-resource-discovery-agent and cloud-resource-risk-agent;
+  produc...
 metadata:
   level: 1
   domain: cloud-security
-  tags: [orchestrator, cloud-audit, devsecops]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: audit_coordination
-      type: RULE_BASED
-      rules:
-        - Trigger cloud-resource-discovery-agent
-        - For each resource: trigger cloud-resource-risk-agent (parallel, batch 50)
-        - Aggregate results
-    - name: audit_summary
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.2
-      max_tokens: 3000
-      prompt: |
-        Summarize cloud security audit:
-        Resource Inventory: {{inventory}}
-        Risk Scores: {{risk_scores}}
-        Produce executive summary with top risks and remediation priorities.
-        Output as JSON: {total_resources, high_risk_count, avg_risk_score, top_risks, remediation_priorities}
-
+  tags:
+  - orchestrator
+  - cloud-audit
+  - devsecops
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: cloud-account-id
+    schema: dynamic
+  - name: audit-request
+    schema: dynamic
+  outputs:
+  - name: cloud-audit-report
+    schema: dynamic
+  - name: risk-summary
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - cloud-resource-discovery-agent
+    - cloud-resource-risk-agent
+    escalation: head-of-devops
+  mcp:
+    enabled: false
+    note: MCP proxy optional via InteroperabilityService
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - chain-of-thought
+  - plan-and-solve
+  defaultReasoner: plan-and-solve
+  maxChainDepth: 5
 memory:
   episodic:
     enabled: true
     retention_days: 365
-    categories: [cloud-audits, audit-trends]
+    categories:
+    - cloud-audits
+    - audit-trends
   semantic:
     enabled: true
-    categories: [cloud-patterns, risk-baselines]
+    categories:
+    - cloud-patterns
+    - risk-baselines
   procedural:
     enabled: true
-    categories: [audit-workflow, reporting-rules]
-
-tools: [audit_coordinator, cloud_reporter]
-
+    categories:
+    - audit-workflow
+    - reporting-rules
+tools:
+- audit_coordinator
+- cloud_reporter
 capabilities:
-  - cloud-security-audit
-  - multi-agent-orchestration
-  - cloud-risk-aggregation
-
+- cloud-security-audit
+- multi-agent-orchestration
+- cloud-risk-aggregation
 routing:
-  input_types: [cloud-account-id, audit-request]
-  output_types: [cloud-audit-report, risk-summary]
-
+  input_types:
+  - cloud-account-id
+  - audit-request
+  output_types:
+  - cloud-audit-report
+  - risk-summary
 delegation:
   can_delegate_to:
-    - cloud-resource-discovery-agent
-    - cloud-resource-risk-agent
+  - cloud-resource-discovery-agent
+  - cloud-resource-risk-agent
   escalates_to: head-of-devops
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: comprehensive
-
 performance:
   expected_latency_ms: 60000
   max_latency_ms: 300000

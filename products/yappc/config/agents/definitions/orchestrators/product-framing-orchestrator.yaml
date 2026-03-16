@@ -1,94 +1,121 @@
 id: product-framing-orchestrator
 name: Product Framing Orchestrator
 version: 1.0.0
-description: "Frames product initiatives: press release, FAQs, north-star framing, lean canvas, and product narrative for stakeholder alignment"
-
+namespace: yappc.orchestrators.ideation
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-platform@ghatana.com
+description: 'Frames product initiatives: press release, FAQs, north-star framing, lean canvas, and product
+  narrative for stakeholder alignment'
+summary: 'Frames product initiatives: press release, FAQs, north-star framing, lean canvas, and product
+  narrative for stakehold...'
 metadata:
   level: 1
   domain: ideation
-  tags: [orchestrator, product-framing, lean-canvas, narrative, level1]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: initiative_framing
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.4
-      max_tokens: 3000
-      prompt: |
-        Frame the product initiative using Amazon's working-backwards methodology:
-
-        Initiative: {{input}}
-        Customer context: {{context.customer_insights}}
-        Strategic context: {{context.strategy}}
-
-        Write a press release-style announcement (4-6 paragraphs) for the future state.
-        Then write 5 anticipated customer FAQs with answers.
-        Return as JSON: {press_release, faqs, key_benefit, target_persona}
-    - name: lean_canvas
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.3
-      max_tokens: 2500
-      prompt: |
-        Complete a Lean Canvas for the initiative:
-        Framing: {{initiative_framing}}
-        Business context: {{context.business_model}}
-
-        Fill all 9 blocks: problem, solution, unique_value_prop, unfair_advantage,
-        customer_segments, key_metrics, channels, cost_structure, revenue_streams.
-    - name: stakeholder_narrative
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.4
-      max_tokens: 2000
-      prompt: |
-        Write tailored stakeholder narratives for:
-        Lean Canvas: {{lean_canvas}}, Framing: {{initiative_framing}}
-        Audiences: executive, engineering, sales, customer-success.
-
-        For each: 3-sentence narrative emphasising the angle most relevant to them.
-
+  tags:
+  - orchestrator
+  - product-framing
+  - lean-canvas
+  - narrative
+  - level1
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: initiative_brief
+    schema: dynamic
+  - name: concept
+    schema: dynamic
+  - name: design_brief
+    schema: dynamic
+  outputs:
+  - name: product_frame
+    schema: dynamic
+  - name: lean_canvas
+    schema: dynamic
+  - name: press_release
+    schema: dynamic
+  - name: stakeholder_narratives
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - requirements-orchestrator
+    - product-intelligence-orchestrator
+    escalation: ideation-orchestrator
+  mcp:
+    enabled: false
+    note: MCP proxy optional via InteroperabilityService
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - chain-of-thought
+  - plan-and-solve
+  defaultReasoner: plan-and-solve
+  maxChainDepth: 5
 memory:
   episodic:
     enabled: true
     retention_days: 730
-    categories: [product-framings, lean-canvases, stakeholder-narratives]
+    categories:
+    - product-framings
+    - lean-canvases
+    - stakeholder-narratives
   semantic:
     enabled: true
-    categories: [framing-patterns, business-models, value-propositions]
+    categories:
+    - framing-patterns
+    - business-models
+    - value-propositions
   procedural:
     enabled: true
-    categories: [working-backwards, lean-canvas-guide, narrative-templates]
-
-tools: [narrative_builder, lean_canvas_builder, press_release_writer, faq_generator]
-
+    categories:
+    - working-backwards
+    - lean-canvas-guide
+    - narrative-templates
+tools:
+- narrative_builder
+- lean_canvas_builder
+- press_release_writer
+- faq_generator
 capabilities:
-  - product-framing
-  - lean-canvas-creation
-  - working-backwards
-  - stakeholder-narrative
-  - value-proposition-definition
-
+- product-framing
+- lean-canvas-creation
+- working-backwards
+- stakeholder-narrative
+- value-proposition-definition
 routing:
-  input_types: [initiative_brief, concept, design_brief]
-  output_types: [product_frame, lean_canvas, press_release, stakeholder_narratives]
-
+  input_types:
+  - initiative_brief
+  - concept
+  - design_brief
+  output_types:
+  - product_frame
+  - lean_canvas
+  - press_release
+  - stakeholder_narratives
 delegation:
   can_delegate_to:
-    - requirements-orchestrator
-    - product-intelligence-orchestrator
+  - requirements-orchestrator
+  - product-intelligence-orchestrator
   escalates_to: ideation-orchestrator
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 10000
   max_latency_ms: 60000

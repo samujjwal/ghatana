@@ -1,15 +1,31 @@
 id: cost-optimization-agent
 name: Cost Optimization Agent
-version: 1.0.0
-description: Analyzes resource usage, identifies cost savings, and recommends optimizations across storage, compute, and network
+namespace: platform.governance
+version: 2.0.0
+status: active
+summary: >-
+  Analyzes resource usage, identifies cost savings, and recommends optimizations across storage, compute, and network.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 2
   domain: governance
   tags: [cost, optimization, finops, resource, savings, efficiency]
 
-generator:
-  type: PIPELINE
+identity:
+  agentType: hybrid                         # SERVICE_CALL for data + LLM for reasoning
+  roles: [cost-analyzer, recommendation-engine, finops-advisor]
+  criticality: medium
+  autonomyLevel: semi-autonomous
+  determinismGuarantee: non-deterministic    # LLM recommendations vary per run
+  stateMutability: persistent               # maintains cost history across runs
+  failureMode: skip
+
+# Execution pipeline: deterministic data collection → LLM reasoning → recommendations
+pipeline:
   steps:
     - name: usage_analysis
       type: SERVICE_CALL

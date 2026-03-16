@@ -1,38 +1,68 @@
 id: query-optimization-agent
+namespace: data-cloud.query
 name: Query Optimization Agent
 version: 1.0.0
-description: Optimizes query plans, indexes, and execution strategies for data retrieval
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Adaptive query plan optimization using execution statistics and cost-based learning
+description: Adaptive query plan optimization using execution statistics and cost-based learning.
 
 metadata:
   level: 3
-  domain: data-management
-  tags: [query, optimization, indexing, performance, planning]
+  domain: query-optimization
+  tags: [query, optimization, execution-plan, cost-based, statistics]
 
-generator:
-  type: ADAPTIVE
-  
+identity:
+  agentType: adaptive
+  subtype: parameter-optimization
+  determinismGuarantee: config-scoped
+  stateMutability: external-state
+  failureMode: fallback
+  criticality: high
+  autonomyLevel: autonomous
+
+learningModel:
+  learningLevel: L2
+  adaptationTargets:
+    - query-execution-time
+    - resource-utilization
+  learningSources:
+    - query-execution-statistics
+    - plan-cost-feedback
+
 capabilities:
   - query-processing
-  - data-quality
+  - query-plan-optimization
+  - index-recommendation
 
 tools:
   - name: queryAnalyzer
     type: SERVICE
-    endpoint: /datacloud/query/analyze
-  - name: indexOptimizer
+    endpoint: /data-cloud/query/analyze
+  - name: planOptimizer
     type: SERVICE
-    endpoint: /datacloud/indexes/optimize
+    endpoint: /data-cloud/query/optimize
+  - name: statisticsCollector
+    type: SERVICE
+    endpoint: /data-cloud/query/stats
+
+interfaces:
+  inputs:
+    - name: queryRequest
+      schema: object
+      required: true
+  outputs:
+    - name: optimizedPlan
+      schema: object
 
 memory:
   type: EPISODIC
   scope: query_history
   retention: medium
 
-routing:
-  input: QueryOptimizationRequest
-  output: OptimizedQueryPlan
-
 resources:
-  memory: "1GB"
+  memory: "2GB"
   cpu: "2"
   timeout: "60s"

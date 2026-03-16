@@ -1,0 +1,77 @@
+id: cache-manager-agent
+namespace: data-cloud.query
+name: Cache Manager Agent
+version: 1.0.0
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Adaptive cache management for Redis/Dragonfly with hit-rate optimization targeting 85%+ cache efficiency
+
+description: |
+  Adaptive cache management for Redis/Dragonfly L2 caching with hit-rate optimization.
+  Uses multi-armed bandit to optimize LRU vs LFU eviction policies, TTL settings,
+  and pre-warming strategies targeting 85%+ cache hit rates.
+
+metadata:
+  level: 3
+  domain: query-optimization
+  tags: [cache, redis, dragonfly, hit-rate, lru, lfu, ttl, pre-warming]
+
+identity:
+  agentType: adaptive
+  subtype: bandit
+  determinismGuarantee: config-scoped
+  stateMutability: external-state
+  failureMode: fallback
+  criticality: high
+  autonomyLevel: autonomous
+
+learningModel:
+  learningLevel: L3
+  adaptationTargets:
+    - cache-hit-rate
+    - memory-efficiency
+    - eviction-policy
+  learningSources:
+    - hit-rate-signals
+    - p99-latency-signals
+    - memory-pressure-signals
+  driftControls:
+    hitRateTarget: 0.85
+    minSampleSize: 1000
+
+capabilities:
+  - query-processing
+  - cache-management
+  - pre-warming
+
+tools:
+  - name: cacheController
+    type: SERVICE
+    endpoint: /data-cloud/cache/control
+  - name: evictionOptimizer
+    type: SERVICE
+    endpoint: /data-cloud/cache/eviction
+  - name: preWarmingService
+    type: SERVICE
+    endpoint: /data-cloud/cache/prewarm
+
+interfaces:
+  inputs:
+    - name: cacheManagementRequest
+      schema: object
+      required: true
+  outputs:
+    - name: cacheManagementResult
+      schema: object
+
+memory:
+  type: WORKING
+  scope: cache_state
+  retention: short
+
+resources:
+  memory: "512MB"
+  cpu: "1"
+  timeout: "30s"

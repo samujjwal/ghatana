@@ -296,6 +296,50 @@ class AgentDefinitionLoaderTest {
     }
 
     // =========================================================================
+    //  New-format spec bridge (agentSpecVersion detection)
+    // =========================================================================
+
+    @Nested
+    @DisplayName("New-spec-format bridge")
+    class NewSpecFormatBridgeTests {
+
+        @Test
+        @DisplayName("auto-detects agentSpecVersion YAML and delegates to AgentSpecLoader")
+        void delegatesToAgentSpecLoaderForNewFormat() throws IOException {
+            String newFormatYaml = """
+                    agentSpecVersion: "2.0.0"
+                    metadata:
+                      id: agent.bridge.test
+                      name: Bridge Test Agent
+                      version: "1.0.0"
+                    identity:
+                      agentType: deterministic
+                    """;
+            AgentDefinitionLoader loader = new AgentDefinitionLoader();
+            AgentDefinition def = loader.loadFromString(newFormatYaml);
+
+            assertThat(def.getId()).isEqualTo("agent.bridge.test");
+            assertThat(def.getName()).isEqualTo("Bridge Test Agent");
+            assertThat(def.getType()).isEqualTo(AgentType.DETERMINISTIC);
+        }
+
+        @Test
+        @DisplayName("still loads old flat-format YAML without agentSpecVersion")
+        void loadsOldFlatFormatNormally() throws IOException {
+            String oldFormatYaml = """
+                    id: agent.old.format
+                    name: Old Format Agent
+                    type: PROBABILISTIC
+                    """;
+            AgentDefinitionLoader loader = new AgentDefinitionLoader();
+            AgentDefinition def = loader.loadFromString(oldFormatYaml);
+
+            assertThat(def.getId()).isEqualTo("agent.old.format");
+            assertThat(def.getType()).isEqualTo(AgentType.PROBABILISTIC);
+        }
+    }
+
+    // =========================================================================
     //  Helpers
     // =========================================================================
 

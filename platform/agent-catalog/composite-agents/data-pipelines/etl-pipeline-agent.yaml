@@ -1,6 +1,10 @@
 id: etl-pipeline-agent
 name: ETL Pipeline Composite Agent
-version: 1.0.0
+namespace: platform.composite.data-pipelines
+version: 2.1.0
+status: active
+summary: >-
+  Orchestrates extract-transform-load pipelines by composing schema-validation, enricher, transformer, and filter agents with lineage tracking.
 description: >
   Composite agent that orchestrates a full Extract-Transform-Load pipeline by
   composing the schema-validation, event-enricher, event-transformer, and
@@ -8,16 +12,25 @@ description: >
   parallel extraction from multiple sources, staged transformation with rollback
   on failure, incremental and full-load modes, checkpointed resumption on
   partial failure, and lineage tracking via Data-Cloud event sourcing.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 4
   domain: data-pipelines
   tags: [etl, pipeline, extract, transform, load, orchestration, composite, lineage]
   maturity: production
-  author: platform-team@ghatana.ai
 
-generator:
-  type: COMPOSITE
+identity:
+  agentType: composite                     # orchestrates sub-agents in a staged pipeline
+  roles: [pipeline-orchestrator, etl-coordinator, lineage-tracker]
+  criticality: high
+  autonomyLevel: autonomous
+  determinismGuarantee: config-scoped      # same config + same inputs → same pipeline output
+  stateMutability: local-state             # checkpoint state for resumption
+  failureMode: dead-letter
 
 # AEP Operator configuration
 aep:

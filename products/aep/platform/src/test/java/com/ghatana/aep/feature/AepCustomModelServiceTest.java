@@ -65,10 +65,10 @@ class AepCustomModelServiceTest extends EventloopTestBase {
                 dataSource, modelRegistry, meterRegistry,
                 Executors.newSingleThreadExecutor());
 
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
-        when(connection.createArrayOf(anyString(), any())).thenReturn(sqlArray);
-        when(preparedStatement.executeUpdate()).thenReturn(1);
+        lenient().when(dataSource.getConnection()).thenReturn(connection);
+        lenient().when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+        lenient().when(connection.createArrayOf(anyString(), any())).thenReturn(sqlArray);
+        lenient().when(preparedStatement.executeUpdate()).thenReturn(1);
     }
 
     // =========================================================================
@@ -145,9 +145,12 @@ class AepCustomModelServiceTest extends EventloopTestBase {
                     MODEL, V2, "s3://models/v2.onnx", "notahex",
                     null, null, Map.of(), Map.of(), Instant.now());
 
+            // validateSha256 fires synchronously before Promise.ofBlocking; runPromise
+            // re-throws the IAE directly (not wrapped), so isInstanceOf is correct.
             assertThatThrownBy(() -> runPromise(() -> service.registerArtifact(version)))
-                    .hasCauseInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("SHA");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("64-character hex");
+            clearFatalError(); // prevent @AfterEach from re-propagating the fatal error
 
             // No DB interaction when validation fails
             verifyNoInteractions(dataSource);
@@ -211,10 +214,13 @@ class AepCustomModelServiceTest extends EventloopTestBase {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false);
 
+            // IAE thrown inside Promise.ofBlocking; RuntimeException subclasses are
+            // re-thrown directly by runPromise without wrapping → isInstanceOf.
             assertThatThrownBy(() ->
                     runPromise(() -> service.validate(TENANT, MODEL, "vX", Map.of())))
-                    .hasCauseInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Version not found");
+            clearFatalError(); // prevent @AfterEach from re-propagating the fatal error
         }
 
         private void stubVersionRow(UUID modelId, Map<String, Double> thresholds)
@@ -265,10 +271,13 @@ class AepCustomModelServiceTest extends EventloopTestBase {
         @Test
         @DisplayName("startCanary with invalid traffic pct throws IllegalArgumentException")
         void startCanary_invalidPct_throws() {
+            // IAE thrown inside Promise.ofBlocking by AepCanaryDeployment.start();
+            // re-thrown directly by runPromise → isInstanceOf.
             assertThatThrownBy(() ->
                     runPromise(() -> service.startCanary(TENANT, MODEL, V1, V2, 101)))
-                    .hasCauseInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("canaryTrafficPct");
+            clearFatalError(); // prevent @AfterEach from re-propagating the fatal error
         }
 
         @Test
@@ -277,10 +286,13 @@ class AepCustomModelServiceTest extends EventloopTestBase {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false); // no canary found
 
+            // ISE thrown inside Promise.ofBlocking by requireActiveCanary();
+            // re-thrown directly by runPromise → isInstanceOf.
             assertThatThrownBy(() ->
                     runPromise(() -> service.adjustCanaryTraffic(TENANT, MODEL, 50)))
-                    .hasCauseInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("No active canary");
+            clearFatalError(); // prevent @AfterEach from re-propagating the fatal error
         }
 
         @Test

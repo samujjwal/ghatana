@@ -1,62 +1,84 @@
 id: audit-architecture-task-agent
 name: Audit Architecture Task Agent
 version: 1.0.0
-description: "Design comprehensive audit logging architecture with event capture, tamper-evidence, retention, and compliance reporting"
-
+namespace: yappc.task-agents.architecture
+status: active
+owners:
+- team: platform
+  contact: platform@ghatana.com
+description: Design comprehensive audit logging architecture with event capture, tamper-evidence, retention,
+  and compliance reporting
+summary: Design comprehensive audit logging architecture with event capture, tamper-evidence, retention,
+  and compliance reporting
 metadata:
   level: 3
   domain: architecture
   type: worker
-  tags: [audit-design, event-capture-spec, tamper-evidence-design, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Design comprehensive audit logging architecture with event capture, tamper-evidence, retention, and compliance reporting
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - audit-design
+  - event-capture-spec
+  - tamper-evidence-design
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: audit_architecture_request
+    schema: dynamic
+  outputs:
+  - name: audit_architecture_spec
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: security-architecture-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [audit_arch_designer, tamper_evidence_spec_builder]
-
+tools:
+- audit_arch_designer
+- tamper_evidence_spec_builder
 capabilities:
-  - audit-design
-  - event-capture-spec
-  - tamper-evidence-design
-
+- audit-design
+- event-capture-spec
+- tamper-evidence-design
 routing:
-  input_types: [audit_architecture_request]
-  output_types: [audit_architecture_spec]
-
+  input_types:
+  - audit_architecture_request
+  output_types:
+  - audit_architecture_spec
 delegation:
   can_delegate_to: []
   escalates_to: security-architecture-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

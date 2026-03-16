@@ -1,23 +1,53 @@
 id: constraint-parser
 name: Constraint Parser
 version: 1.0.0
-description: "Parse a constraint statement into structured form: constraint type, boundary condition, and rationale"
-
+namespace: yappc.micro-agents.requirements
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: 'Parse a constraint statement into structured form: constraint type, boundary condition,
+  and rationale'
+summary: 'Parse a constraint statement into structured form: constraint type, boundary condition, and
+  rationale'
 metadata:
   level: 3
   domain: requirements
   type: micro-agent
-  tags: [constraint-parsing, structured-extraction, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "constraint-parsing"
-        - "structured-extraction"
-
+  tags:
+  - constraint-parsing
+  - structured-extraction
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: parse_request
+    schema: dynamic
+  outputs:
+  - name: parsed_constraint
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: requirement-analysis-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +55,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [parser]
-
+tools:
+- parser
 capabilities:
-  - constraint-parsing
-  - structured-extraction
-
+- constraint-parsing
+- structured-extraction
 routing:
-  input_types: [parse_request]
-  output_types: [parsed_constraint]
-
+  input_types:
+  - parse_request
+  output_types:
+  - parsed_constraint
 delegation:
   can_delegate_to: []
   escalates_to: requirement-analysis-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 100
   max_latency_ms: 500

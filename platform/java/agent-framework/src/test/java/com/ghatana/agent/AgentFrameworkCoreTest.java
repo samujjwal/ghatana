@@ -43,12 +43,14 @@ class AgentFrameworkCoreTest {
     class AgentTypeTest {
 
         @Test
-        @DisplayName("has all 8 agent types")
-        void shouldHaveAll6Types() {
-            assertThat(AgentType.values()).hasSize(8);
+        @DisplayName("has all 10 agent types (9 canonical + 1 deprecated LLM)")
+        void shouldHaveAll10Types() {
+            assertThat(AgentType.values()).hasSize(10);
             assertThat(AgentType.values()).containsExactly(
                     AgentType.DETERMINISTIC,
                     AgentType.PROBABILISTIC,
+                    AgentType.STREAM_PROCESSOR,
+                    AgentType.PLANNING,
                     AgentType.HYBRID,
                     AgentType.ADAPTIVE,
                     AgentType.COMPOSITE,

@@ -1,23 +1,52 @@
 id: differentiation-scorer
 name: Differentiation Scorer
 version: 1.0.0
-description: "Score a product concept's differentiation against listed alternatives on a 1-10 scale with justification"
-
+namespace: yappc.micro-agents.ideation
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Score a product concept's differentiation against listed alternatives on a 1-10 scale with
+  justification
+summary: Score a product concepts differentiation against listed alternatives on a 1-10 scale with justification
 metadata:
   level: 3
   domain: ideation
   type: micro-agent
-  tags: [differentiation-scoring, competitive-comparison, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "differentiation-scoring"
-        - "competitive-comparison"
-
+  tags:
+  - differentiation-scoring
+  - competitive-comparison
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: differentiation_score_request
+    schema: dynamic
+  outputs:
+  - name: differentiation_score
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: differentiation-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +54,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [differentiation_scorer]
-
+tools:
+- differentiation_scorer
 capabilities:
-  - differentiation-scoring
-  - competitive-comparison
-
+- differentiation-scoring
+- competitive-comparison
 routing:
-  input_types: [differentiation_score_request]
-  output_types: [differentiation_score]
-
+  input_types:
+  - differentiation_score_request
+  output_types:
+  - differentiation_score
 delegation:
   can_delegate_to: []
   escalates_to: differentiation-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 200
   max_latency_ms: 1000

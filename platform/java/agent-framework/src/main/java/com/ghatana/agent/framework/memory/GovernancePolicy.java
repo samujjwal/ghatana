@@ -44,4 +44,25 @@ public interface GovernancePolicy {
      * @return true if should be redacted
      */
     boolean shouldRedact(@NotNull Object record);
+
+    /**
+     * Returns a no-op policy that retains everything, redacts nothing, and
+     * never deletes any record. Suitable for development and testing.
+     *
+     * @return no-op policy singleton
+     * @since 2.4.0
+     */
+    @NotNull
+    static GovernancePolicy noOp() {
+        return new GovernancePolicy() {
+            @Override
+            public @NotNull Duration getRetentionPeriod() { return Duration.ofDays(365); }
+            @Override
+            public @NotNull List<String> getRedactionPatterns() { return List.of(); }
+            @Override
+            public boolean shouldDelete(@NotNull Object record) { return false; }
+            @Override
+            public boolean shouldRedact(@NotNull Object record) { return false; }
+        };
+    }
 }

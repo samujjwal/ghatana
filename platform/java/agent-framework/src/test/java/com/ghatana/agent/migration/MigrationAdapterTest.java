@@ -681,24 +681,19 @@ class MigrationAdapterTest {
     class LegacyPlannerTests {
 
         @Test
-        @DisplayName("AgentRegistry is no longer annotated @Deprecated")
-        void agentRegistryNotDeprecated() {
-            assertThat(com.ghatana.agent.framework.planner.AgentRegistry.class
-                    .isAnnotationPresent(Deprecated.class)).isFalse();
-        }
-
-        @Test
-        @DisplayName("PlannerAgentFactory is no longer annotated @Deprecated")
+        @DisplayName("PlannerAgentFactory is no longer annotated @Deprecated (active replacement for AgentRegistry)")
         void plannerAgentFactoryNotDeprecated() {
             assertThat(com.ghatana.agent.framework.planner.PlannerAgentFactory.class
                     .isAnnotationPresent(Deprecated.class)).isFalse();
         }
 
         @Test
-        @DisplayName("PlannerAgentFactory.createAgent still returns null (stub)")
-        void factoryStillReturnsNull() {
+        @DisplayName("PlannerAgentFactory.createAgent throws for nonexistent YAML path")
+        void factoryThrowsForNonexistentYaml() {
             var factory = new com.ghatana.agent.framework.planner.PlannerAgentFactory();
-            assertThat(factory.createAgent("nonexistent.yaml")).isNull();
+            assertThatThrownBy(() -> factory.createAgent("nonexistent.yaml"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("nonexistent.yaml");
         }
     }
 

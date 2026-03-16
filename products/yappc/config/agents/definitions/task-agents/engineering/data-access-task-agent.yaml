@@ -1,62 +1,84 @@
 id: data-access-task-agent
 name: Data Access Task Agent
 version: 1.0.0
-description: "Implement data access layer using Prisma (Node) or JDBC repositories (Java) with query optimisation and connection pooling"
-
+namespace: yappc.task-agents.engineering
+status: active
+owners:
+- team: backend-core
+  contact: backend-core@ghatana.com
+description: Implement data access layer using Prisma (Node) or JDBC repositories (Java) with query optimisation
+  and connection pooling
+summary: Implement data access layer using Prisma (Node) or JDBC repositories (Java) with query optimisation
+  and connection po...
 metadata:
   level: 3
   domain: engineering
   type: worker
-  tags: [data-access-implementation, query-optimisation, connection-pooling, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Implement data access layer using Prisma (Node) or JDBC repositories (Java) with query optimisation and connection pooling
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - data-access-implementation
+  - query-optimisation
+  - connection-pooling
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: data_access_request
+    schema: dynamic
+  outputs:
+  - name: data_access_code
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: backend-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [prisma_generator, jdbc_query_builder]
-
+tools:
+- prisma_generator
+- jdbc_query_builder
 capabilities:
-  - data-access-implementation
-  - query-optimisation
-  - connection-pooling
-
+- data-access-implementation
+- query-optimisation
+- connection-pooling
 routing:
-  input_types: [data_access_request]
-  output_types: [data_access_code]
-
+  input_types:
+  - data_access_request
+  output_types:
+  - data_access_code
 delegation:
   can_delegate_to: []
   escalates_to: backend-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 4000
   max_latency_ms: 20000

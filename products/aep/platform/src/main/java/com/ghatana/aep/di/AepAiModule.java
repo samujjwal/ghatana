@@ -18,6 +18,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 
 import javax.sql.DataSource;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * ActiveJ DI module for AEP AI Platform integration.
@@ -150,17 +152,25 @@ public class AepAiModule extends AbstractModule {
      * shared {@link JdbcEventStore} as the purge target, and Micrometer for
      * observability.
      *
-     * @param dataSource      shared JDBC connection pool
-     * @param eventStore      JDBC-backed event store to enforce policies against
-     * @param meterRegistry   Micrometer registry for observability metrics
-     * @param executorService shared blocking executor (from {@link AepCoreModule})
+     * @param dataSource        shared JDBC connection pool
+     * @param eventStore        JDBC-backed event store to enforce policies against
+     * @param meterRegistry     Micrometer registry for observability metrics
+     * @param executorService   shared blocking executor (from {@link AepCoreModule})
+     * @param scheduler         shared scheduled executor (from {@link AepCoreModule})
      * @return singleton retention service
      */
     @Provides
     AepDataRetentionService aepDataRetentionService(DataSource dataSource,
                                                    JdbcEventStore eventStore,
                                                    MeterRegistry meterRegistry,
-                                                   ExecutorService executorService) {
-        return new AepDataRetentionService(dataSource, eventStore, meterRegistry, executorService);
+                                                   ExecutorService executorService,
+                                                   ScheduledExecutorService scheduler) {
+        AepDataRetentionService service =
+                new AepDataRetentionService(dataSource, eventStore, meterRegistry, executorService);
+        // Schedule periodic retention enforcement every 6 hours (initial delay 5 minutes at startup)
+        scheduler.scheduleAtFixedRate(
+                () -> service.runEnforcementCycle(),
+                5, 360, TimeUnit.MINUTES);
+        return service;
     }
 }

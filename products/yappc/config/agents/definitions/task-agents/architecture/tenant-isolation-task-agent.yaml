@@ -1,62 +1,84 @@
 id: tenant-isolation-task-agent
 name: Tenant Isolation Task Agent
 version: 1.0.0
-description: "Design multi-tenant isolation architecture ensuring data, compute, and network boundaries per tenant at all system layers"
-
+namespace: yappc.task-agents.architecture
+status: active
+owners:
+- team: platform
+  contact: platform@ghatana.com
+description: Design multi-tenant isolation architecture ensuring data, compute, and network boundaries
+  per tenant at all system layers
+summary: Design multi-tenant isolation architecture ensuring data, compute, and network boundaries per
+  tenant at all system la...
 metadata:
   level: 3
   domain: architecture
   type: worker
-  tags: [tenant-isolation-design, boundary-specification, data-segregation, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Design multi-tenant isolation architecture ensuring data, compute, and network boundaries per tenant at all system layers
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - tenant-isolation-design
+  - boundary-specification
+  - data-segregation
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: tenant_isolation_request
+    schema: dynamic
+  outputs:
+  - name: tenant_isolation_spec
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: security-architecture-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [isolation_designer, boundary_spec_builder]
-
+tools:
+- isolation_designer
+- boundary_spec_builder
 capabilities:
-  - tenant-isolation-design
-  - boundary-specification
-  - data-segregation
-
+- tenant-isolation-design
+- boundary-specification
+- data-segregation
 routing:
-  input_types: [tenant_isolation_request]
-  output_types: [tenant_isolation_spec]
-
+  input_types:
+  - tenant_isolation_request
+  output_types:
+  - tenant_isolation_spec
 delegation:
   can_delegate_to: []
   escalates_to: security-architecture-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 4000
   max_latency_ms: 20000

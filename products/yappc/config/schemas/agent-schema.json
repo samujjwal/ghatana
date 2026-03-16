@@ -1,0 +1,186 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.com/schemas/yappc/agent-schema.json",
+  "title": "YAPPC Agent Configuration Schema",
+  "description": "Schema for YAPPC agent definition YAML files",
+  "type": "object",
+  "required": ["id", "name", "version", "generator", "capabilities"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "pattern": "^v\\d+\\.\\d+$",
+      "description": "API version of this schema (e.g., v1.0)"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Unique immutable identifier for the agent"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Human-readable agent name"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Detailed description of agent purpose and capabilities"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "Semantic version of agent (e.g., 1.0 or 1.0.5)"
+    },
+    "agentType": {
+      "type": "string",
+      "enum": ["LLM", "RULE_BASED", "PIPELINE", "HYBRID"],
+      "description": "Type of agent implementation"
+    },
+    "generator": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "description": "Agent generation strategy",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["LLM", "RULE_BASED", "PIPELINE"],
+          "description": "Generation type"
+        },
+        "model": {
+          "type": "string",
+          "description": "LLM model identifier (e.g., gpt-4, claude-3-opus)"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "action"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Step name"
+              },
+              "action": {
+                "type": "string",
+                "description": "Action to perform in this step"
+              },
+              "condition": {
+                "type": "string",
+                "description": "Optional condition under which step executes"
+              }
+            }
+          },
+          "description": "Pipeline steps for PIPELINE generator type"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["condition", "action"],
+            "properties": {
+              "condition": {
+                "type": "string",
+                "description": "Rule condition"
+              },
+              "action": {
+                "type": "string",
+                "description": "Action when condition matches"
+              }
+            }
+          },
+          "description": "Rules for RULE_BASED generator type"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9_]+$"
+      },
+      "minItems": 1,
+      "description": "List of capabilities this agent provides"
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Tool name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Tool description"
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Tool parameters schema"
+          }
+        }
+      },
+      "description": "Tools available to this agent"
+    },
+    "supervisedBy": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+$"
+      },
+      "description": "List of agent IDs that supervise this agent"
+    },
+    "escalatesTo": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+$"
+      },
+      "description": "List of agent IDs for escalation"
+    },
+    "inputSchema": {
+      "type": "object",
+      "description": "JSON Schema for input validation"
+    },
+    "outputSchema": {
+      "type": "object",
+      "description": "JSON Schema for output validation"
+    },
+    "config": {
+      "type": "object",
+      "description": "Additional agent-specific configuration"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this agent is enabled"
+    },
+    "resilience": {
+      "type": "object",
+      "properties": {
+        "maxAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 3
+        },
+        "backoffMs": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1000
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 100,
+          "default": 30000
+        }
+      },
+      "description": "Resilience policy for agent execution"
+    }
+  }
+}

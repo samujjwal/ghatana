@@ -1,62 +1,84 @@
 id: bounded-context-task-agent
 name: Bounded Context Task Agent
 version: 1.0.0
-description: "Define bounded contexts with explicit context maps showing upstream/downstream relationships and integration patterns"
-
+namespace: yappc.task-agents.architecture
+status: active
+owners:
+- team: platform
+  contact: platform@ghatana.com
+description: Define bounded contexts with explicit context maps showing upstream/downstream relationships
+  and integration patterns
+summary: Define bounded contexts with explicit context maps showing upstream/downstream relationships
+  and integration patterns
 metadata:
   level: 3
   domain: architecture
   type: worker
-  tags: [bounded-context-definition, context-mapping, integration-pattern-selection, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Define bounded contexts with explicit context maps showing upstream/downstream relationships and integration patterns
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - bounded-context-definition
+  - context-mapping
+  - integration-pattern-selection
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: bounded_context_request
+    schema: dynamic
+  outputs:
+  - name: bounded_context_map
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: service-design-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [context_mapper, integration_pattern_library]
-
+tools:
+- context_mapper
+- integration_pattern_library
 capabilities:
-  - bounded-context-definition
-  - context-mapping
-  - integration-pattern-selection
-
+- bounded-context-definition
+- context-mapping
+- integration-pattern-selection
 routing:
-  input_types: [bounded_context_request]
-  output_types: [bounded_context_map]
-
+  input_types:
+  - bounded_context_request
+  output_types:
+  - bounded_context_map
 delegation:
   can_delegate_to: []
   escalates_to: service-design-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 4000
   max_latency_ms: 20000

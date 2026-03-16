@@ -1,22 +1,37 @@
 id: event-router-agent
 name: Event Router Agent
-version: 1.0.0
+namespace: platform.event-processing
+version: 2.1.0
+status: active
+summary: >
+  Dynamically routes events to downstream channels based on content predicates,
+  load-balancing strategies, or topic affinity with fan-out and priority support.
 description: >
-  Dynamically routes events to one or more downstream channels based on content-
-  based routing rules, load-balancing strategies, or topic affinity. Supports
-  fan-out (broadcast to multiple channels), content-based routing (field-value
-  predicate), round-robin and consistent-hash load balancing, and priority-based
-  routing. Acts as a pipeline multiplexer within AEP workflows.
+  Stateful stream processor that dispatches each incoming event to one or more
+  downstream channels. Supports content-based routing (field-value predicates),
+  fan-out broadcast, round-robin and consistent-hash load balancing, and
+  priority-ordering. Acts as a pipeline multiplexer within AEP workflows.
+  Maintains routing state (counters, position offsets) with checkpoint recovery.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 3
   domain: event-processing
-  tags: [routing, fan-out, load-balancing, cbr, multiplexer, aep]
+  tags: [routing, fan-out, load-balancing, cbr, multiplexer, aep, stream-processor]
   maturity: production
-  author: platform-team@ghatana.ai
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: stream-processor             # stateful; routes ordered event stream
+  subtype: routing
+  roles: [router, multiplexer, dispatcher]
+  criticality: high
+  autonomyLevel: autonomous
+  determinismGuarantee: config-scoped     # same config + same events → same routing
+  stateMutability: local-state            # window counters, offset tracking (checkpointed)
+  failureMode: dead-letter
 
 # AEP Operator configuration
 aep:
@@ -88,7 +103,7 @@ configuration:
     description: "Fallback channel when no predicate matches"
     type: string
 
-io:
+interfaces:
   inputs:
     - name: incomingEvent
       type: JSON

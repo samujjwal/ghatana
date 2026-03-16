@@ -1,108 +1,99 @@
 id: unit-test-writer
 name: Unit Test Writer
 version: 1.0.0
+namespace: yappc.definitions.testing
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
 description: Atomic worker for generating JUnit 5 unit tests with 100% coverage target
-
+summary: Atomic worker for generating JUnit 5 unit tests with 100% coverage target
 metadata:
-  level: 3  # Task Worker
+  level: 3
   domain: testing
   tags:
-    - worker
-    - testing
-    - junit
-    - coverage
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: source_analysis
-      type: RULE_BASED
-      rules:
-        - extract_public_methods
-        - identify_edge_cases
-        - detect_async_patterns
-    - name: test_skeleton_generation
-      type: TEMPLATE
-      engine: liquid
-      template_path: templates/java/junit5-test.liquid
-    - name: test_logic_generation
-      type: LLM
-      provider: OPENAI
-      model: gpt-4
-      temperature: 0.2
-      max_tokens: 3000
-      prompt: |
-        You are a testing expert specializing in JUnit 5 and ActiveJ.
-        
-        Source Class: {{class_name}}
-        Source Code: {{source_code}}
-        Test Skeleton: {{test_skeleton}}
-        Coverage Target: {{coverage_target}}%
-        
-        Generate comprehensive unit tests that:
-        1. Cover all public methods
-        2. Test edge cases and error conditions
-        3. Use EventloopTestBase for async tests (CRITICAL)
-        4. Include proper assertions and mocking
-        5. Follow AAA pattern (Arrange, Act, Assert)
-        
-        CRITICAL: For async tests, use runPromise(() -> ...) pattern. NEVER call .getResult() directly.
-        
-        Output complete JUnit 5 test class.
-    - name: coverage_validation
-      type: SERVICE_CALL
-      service: test-tools
-      endpoint: /tools/jacoco/analyze
-
+  - worker
+  - testing
+  - junit
+  - coverage
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: source-code
+    schema: dynamic
+  - name: test-request
+    schema: dynamic
+  outputs:
+  - name: test-class-file
+    schema: dynamic
+  - name: coverage-report
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: &id001
+    - test-generator-agent
+    - java-expert
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
 memory:
   episodic:
     enabled: true
     retention_days: 90
     categories:
-      - test-generations
-      - coverage-reports
-      - test-failures
+    - test-generations
+    - coverage-reports
+    - test-failures
   semantic:
     enabled: true
     categories:
-      - testing-patterns
-      - edge-case-examples
+    - testing-patterns
+    - edge-case-examples
   procedural:
     enabled: true
     categories:
-      - activej-test-patterns
-      - mocking-strategies
-
+    - activej-test-patterns
+    - mocking-strategies
 tools:
-  - jacoco_coverage
-  - test_runner
-  - mockito_helper
-  - assertion_generator
-
+- jacoco_coverage
+- test_runner
+- mockito_helper
+- assertion_generator
 capabilities:
-  - test-generation
-  - coverage-analysis
-  - activej-test-patterns
-
+- test-generation
+- coverage-analysis
+- activej-test-patterns
 routing:
   input_types:
-    - source-code
-    - test-request
+  - source-code
+  - test-request
   output_types:
-    - test-class-file
-    - coverage-report
-
+  - test-class-file
+  - coverage-report
 delegation:
-  can_delegate_to: []  # Atomic worker
-  escalates_to:
-    - test-generator-agent
-    - java-expert
-
+  can_delegate_to: []
+  escalates_to: *id001
 governance:
   requires_approval: false
   can_block: false
   audit_trail: minimal
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 10000

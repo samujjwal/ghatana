@@ -1,0 +1,90 @@
+id: schema-evolution-agent
+namespace: data-cloud.migration
+name: Schema Evolution Agent
+version: 1.0.0
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Manages schema changes with Flyway-style DDL, dual-write periods, and human approval for breaking changes
+
+description: |
+  Manages schema changes with Flyway-style DDL generation, dual-write periods, and
+  mandatory human approval for breaking changes. Supports auto-rollback on health
+  check failures.
+
+metadata:
+  level: 2
+  domain: data-lifecycle
+  tags: [schema, evolution, ddl, flyway, migration, breaking-change, dual-write]
+
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: config-scoped
+  stateMutability: external-state
+  failureMode: fallback
+  criticality: high
+  autonomyLevel: assisted
+
+governance:
+  approvals:
+    required: true
+    condition: breaking-schema-change
+    approvers:
+      - role: data-platform-lead
+    autoApprove:
+      condition: additive-change-only
+
+reasoningProfile:
+  primaryReasoner: llm
+  reasonerPortfolio:
+    - type: llm
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      role: ddl-generation
+      description: Generate Flyway-style DDL migration scripts
+    - type: service-call
+      role: schema-validation
+      description: Validate schema compatibility and detect breaking changes
+    - type: service-call
+      role: dual-write-orchestration
+      description: Coordinate dual-write period and traffic shifting
+
+capabilities:
+  - schema-evolution
+  - ddl-generation
+  - breaking-change-detection
+  - auto-rollback
+
+tools:
+  - name: schemaAnalyzer
+    type: SERVICE
+    endpoint: /data-cloud/schema/analyze
+  - name: ddlGenerator
+    type: SERVICE
+    endpoint: /data-cloud/schema/ddl
+  - name: migrationRunner
+    type: SERVICE
+    endpoint: /data-cloud/schema/migrate
+
+interfaces:
+  inputs:
+    - name: schemaChangeRequest
+      schema: object
+      required: true
+  outputs:
+    - name: schemaEvolutionResult
+      schema: object
+
+memory:
+  type: EPISODIC
+  scope: schema_history
+  retention: long
+  ttl: "365d"
+
+resources:
+  memory: "2GB"
+  cpu: "2"
+  timeout: "7200s"

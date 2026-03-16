@@ -1208,4 +1208,94 @@ New platform TypeScript library: **`platform/typescript/sso-client/`** (`@ghatan
 
 ---
 
-*Last Updated: 2026-01-22 — **Phase 4 COMPLETE** (Cross-Product Excellence): SSO (OIDC callback + platform JWT issuance + token exchange), Unified Grafana Dashboard (7 product sections, 20+ panels), Whisper large-v3 + medium + small model configs, User Preferences Service (Java ActiveJ, PostgreSQL, OpenAPI), SSO Client TypeScript library (`@ghatana/sso-client`, 18 tests), OpenAPI contracts for auth-service + auth-gateway v2.0.0 + user-profile-service. Previous: **Tutorputor Phase 3 COMPLETE** (AIEditingAssistant + Template System + Collaboration): AIEditingAssistant (`tutorputor-ai-proxy`): dual OpenAI/Ollama LLM backend. ContentTemplate system: `templates.ts` (5 built-in templates). CollaborationManager: WebSocket, exponential backoff, typed protocol. useTemplates/useCollaboration hooks. TemplatesPage.tsx gallery. templatePrefillAtom bridging TemplatesPage→GeneratePage. Previous: **Cross-Platform Stub Elimination Sprint COMPLETE** (~99% → ~100% across all products).*
+### Platform Java Agent Framework Hardening — ✅ COMPLETE (2026-01-23)
+
+Production-grade implementations across four platform Java modules, replacing all stubs with
+full JDBC, ActiveJ-Promise-based, multi-tenant implementations. All compile clean with zero
+errors; 17/17 tests pass.
+
+#### `platform/java/agent-resilience` — ✅ ResilientTypedAgent.processBatch() Fixed
+
+- ✅ **`ResilientTypedAgent.processBatch()`** — Rewrote stub: now routes each item through the full
+  bulkhead→circuit-breaker→retry stack sequentially (one-at-a-time to respect bulkhead permits).
+  Failed items produce `AgentResult.failure(ex, agentId, Duration.ZERO)` rather than crashing
+  the entire batch. Returns `Collections.unmodifiableList(accumulated)`.
+
+#### `platform/java/agent-registry` — ✅ JdbcAgentRegistry (NEW)
+
+- ✅ **`JdbcAgentRegistry.java`** (~300 lines) — Durable PostgreSQL-backed `AgentRegistry` implementation.
+  Multi-tenant: `tenantId` at construction time. In-memory hot cache (`ConcurrentHashMap`) for
+  TypedAgent instances (can't serialise compute objects). DB stores descriptor JSON + capability
+  index for cross-node discovery. Portable UPSERT (check-exists → INSERT or UPDATE; avoids
+  `ON CONFLICT` which H2 doesn't support in all modes). Capability index: explicit delete-then-insert
+  atomicity within a transaction. Deregistration cleans up capability rows explicitly before
+  soft-deleting the registration.
+- ✅ **`V001__create_agent_registry.sql`** — PostgreSQL DDL: `agent_registrations` table
+  (PK: agent_id + tenant_id), `agent_capabilities` table (FK + `ON DELETE CASCADE`), 4 indexes
+  (tenant scan, tenant+type, heartbeat, capability lookup), `updated_at` trigger.
+- ✅ **`build.gradle.kts`** — Added: `hikaricp`, `postgresql` (runtime), `h2` (test), `jackson-databind`,
+  `jackson-datatype-jsr310`, `project(":platform:java:testing")`.
+- ✅ **`AgentRegistryTest.java`** (17 tests — all pass) — Two `@Nested` test classes:
+  `InMemoryRegistryTests` (9 tests) + `JdbcRegistryTests` (8 tests). H2 in-memory with inline
+  DDL (`MODE=PostgreSQL`). Tests: register/resolve, deregister, listAgentIds, findByCapability,
+  stats, tenant isolation, re-registration, silent no-op on unknown deregister.
+
+#### `platform/java/agent-memory` — ✅ All Stubs Implemented
+
+- ✅ **`BM25Retriever.java`** (fully rewritten from stub) — Real PostgreSQL FTS implementation.
+  Constructor now takes `DataSource`. SQL: `ts_rank_cd(text_search_vector, plainto_tsquery('english', ?), 32)`
+  with `text_search_vector @@ plainto_tsquery(...)` filter. Two variants: unfiltered and
+  type-filtered (using `= ANY(?)` array parameter). Score normalization: `rank / (1 + rank)` →
+  `[0, 1]`. Returns `ScoredMemoryItem` with `retrievalMetadata` map.
+- ✅ **`JdbcTaskStateRepository.java`** (fully rewritten from stub) — Full JDBC CRUD with JSONB.
+  Constructor takes `DataSource`. SQL: `INSERT INTO task_states ... ON CONFLICT (task_id) DO UPDATE`
+  storing `phases/checkpoints/blockers/invariants/done_criteria/dependencies/environment` as JSONB.
+  `findActiveByAgent`: status IN `('IN_PROGRESS','PAUSED','BLOCKED','CREATED','PLANNING')` and
+  `archived_at IS NULL`. `archiveInactiveSince`: bulk `UPDATE archived_at = NOW()`. `mapRow()`:
+  Jackson `TypeReference<>` for JSONB→typed POJO deserialization.
+- ✅ **`PersistentMemoryPlane.java`** — Three stubs fully implemented:
+  - **`archiveToEventCloud()`**: Builds real `EventRecord` (tenantId, typeRef, eventId, occurrenceTime,
+    detectionTime, contentType=JSON, jsonBytes payload), calls
+    `eventCloud.append(new AppendRequest(event, AppendOptions.lenient()))`. Fire-and-forget:
+    failures logged but never propagated.
+  - **`getStats()`**: Runs `SELECT type, COUNT(*) FROM memory_items WHERE deleted_at IS NULL GROUP BY type`
+    + `SELECT COUNT(*) FROM task_states WHERE archived_at IS NULL`. Returns fully populated
+    `MemoryPlaneStats` builder. Gracefully falls back to zero-stats when no `DataSource` injected.
+  - **`checkpoint()`**: Creates `TaskCheckpoint` (UUID id, `"system"` phaseId, snapshot map with
+    taskId/checkpointId/checkpointTime) and delegates to `taskStateStore.addCheckpoint(taskId, checkpoint)`,
+    returning the persisted checkpoint ID.
+  - New 5-arg full constructor: `(itemRepository, taskStateStore, workingMemoryConfig, eventCloud, dataSource)`.
+    Existing 3-arg and 4-arg constructors delegate to it.
+
+#### `platform/agent-catalog` — Agent Catalog Extensions
+
+**AEP Catalog — New Operators:**
+- ✅ **`correlation-agent.yaml`** — Dedicated event correlation with session-key extraction, sliding/
+  session windows, causal chain detection (LLM), dual SERVICE+LLM pipeline. Distinct from the
+  general pattern-detection-agent. Emits: `correlation.session.started`, `correlation.chain.detected`.
+- ✅ **`anomaly-detection-agent.yaml`** — Pure ML anomaly detection: Z-score baseline, EMA deviation,
+  IQR outlier detection (via `anomaly-scorer` service). LLM-assisted severity classification
+  (`CRITICAL|HIGH|MEDIUM|LOW|FALSE_POSITIVE`) gated on `statisticalScore > 0.7`.
+  Emits: `anomaly.detected`, `anomaly.alert.triggered`. Alert deduplication window: 5m.
+
+**Data-Cloud Catalog — New Agents:**
+- ✅ **`cache-manager-agent.yaml`** — Multi-tier query result caching (L1 in-memory 30s +
+  L2 Redis/Dragonfly 300s). Proactive invalidation via `entity.updated/deleted` event subscription.
+  Hourly pre-warming for queries accessed ≥5 times/hour. Hit-rate target: 85%.
+- ✅ **`data-compaction-agent.yaml`** — Storage compaction: RocksDB LSM-tree level compaction (L1)
+  and Parquet small-file merge (L4 archive). Triggers: scheduled (weekly Sunday 2am),
+  space-amplification > 2x, or > 1000 small files. Scale-to-zero when idle.
+- ✅ **`schema-evolution-agent.yaml`** — Forward-compatible DDL migrations with LLM-assisted
+  compatibility analysis, automatic rollback, dual-write period (24h), and versioned schema
+  registry. `BREAKING` changes require `HUMAN_REQUIRED` approval. Single replica to prevent
+  concurrent migrations.
+
+#### Agent Framework Pre-existing Bugs Fixed
+- ✅ **`LLMGatewayFactory.java`** — `HttpClient.create(eventloop)` → `HttpClient.create(eventloop, dnsClient)`
+  with `DnsClient.builder(eventloop, InetAddress.getLoopbackAddress()).build()` (matches codebase pattern).
+- ✅ **`PlannerAgentFactory.java`** — Changed return type from `BaseAgent<?,?>` to `TypedAgent<?,?>`
+  (since `LLMAgent extends AbstractTypedAgent` which is a `TypedAgent`, not a `BaseAgent`).
+
+---
+
+*Last Updated: 2026-01-23 — **Agent Framework Hardening COMPLETE**: ResilientTypedAgent.processBatch() resilience stack, JdbcAgentRegistry (JDBC multi-tenant, 17 tests), BM25Retriever (real PostgreSQL FTS), JdbcTaskStateRepository (JDBC CRUD + JSONB), PersistentMemoryPlane (archiveToEventCloud + getStats + checkpoint), AEP catalog (correlation-agent, anomaly-detection-agent), Data-Cloud catalog (cache-manager-agent, data-compaction-agent, schema-evolution-agent), two agent-framework compile errors fixed. Previous: **Phase 4 COMPLETE** (Cross-Product Excellence): SSO (OIDC callback + platform JWT issuance + token exchange), Unified Grafana Dashboard (7 product sections, 20+ panels), Whisper large-v3 + medium + small model configs, User Preferences Service (Java ActiveJ, PostgreSQL, OpenAPI), SSO Client TypeScript library (`@ghatana/sso-client`, 18 tests), OpenAPI contracts for auth-service + auth-gateway v2.0.0 + user-profile-service. Previous: **Tutorputor Phase 3 COMPLETE** (AIEditingAssistant + Template System + Collaboration): AIEditingAssistant (`tutorputor-ai-proxy`): dual OpenAI/Ollama LLM backend. ContentTemplate system: `templates.ts` (5 built-in templates). CollaborationManager: WebSocket, exponential backoff, typed protocol. useTemplates/useCollaboration hooks. TemplatesPage.tsx gallery. templatePrefillAtom bridging TemplatesPage→GeneratePage. Previous: **Cross-Platform Stub Elimination Sprint COMPLETE** (~99% → ~100% across all products).*

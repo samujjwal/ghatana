@@ -1,96 +1,117 @@
 id: interaction-design-orchestrator
 name: Interaction Design Orchestrator
 version: 1.0.0
-description: "Designs interaction patterns: micro-interactions, animation specifications, gesture design, state transitions, and behaviour documentation"
-
+namespace: yappc.orchestrators.ux
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-platform@ghatana.com
+description: 'Designs interaction patterns: micro-interactions, animation specifications, gesture design,
+  state transitions, and behaviour documentation'
+summary: 'Designs interaction patterns: micro-interactions, animation specifications, gesture design,
+  state transitions, and be...'
 metadata:
   level: 1
   domain: ux
-  tags: [orchestrator, interaction-design, micro-interactions, animation, level1]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: interaction_inventory
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.3
-      max_tokens: 2500
-      prompt: |
-        Inventory interaction design requirements for:
-
-        Feature: {{input}}
-        UI designs: {{context.ui_designs}}
-        Platform: {{context.platform}}
-
-        Identify all interaction points requiring design:
-        1. Micro-interactions (hover, focus, active states)
-        2. State transitions (loading → success/error)
-        3. Navigation patterns (routing, back, breadcrumbs)
-        4. Gesture interactions (swipe, drag, pinch)
-        5. Feedback mechanisms (toasts, progress, confirmation)
-
-        Output as JSON: {micro_interactions, state_transitions, navigation_patterns, gestures, feedback_mechanisms}
-    - name: animation_specifications
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.2
-      max_tokens: 3000
-      prompt: |
-        Specify animations for each interaction:
-        Interactions: {{interaction_inventory}}
-        Animation guidelines: {{context.motion_guidelines}}
-
-        For each animation: {name, trigger, duration_ms, easing, css_or_frame_spec, reduced_motion_alt}
-    - name: behaviour_documentation
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.2
-      max_tokens: 3000
-      prompt: |
-        Document interaction behaviours for developer handoff:
-        Inventory: {{interaction_inventory}}, Animations: {{animation_specifications}}
-
-        Create behaviour spec for each component: {component, trigger, action, feedback, error_state, success_state}
-
+  tags:
+  - orchestrator
+  - interaction-design
+  - micro-interactions
+  - animation
+  - level1
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: ui_designs
+    schema: dynamic
+  - name: feature_spec
+    schema: dynamic
+  - name: platform_spec
+    schema: dynamic
+  outputs:
+  - name: interaction_spec
+    schema: dynamic
+  - name: animation_specs
+    schema: dynamic
+  - name: behaviour_docs
+    schema: dynamic
+  - name: prototype_interactions
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - frontend-engineering-orchestrator
+    escalation: ux-orchestrator
+  mcp:
+    enabled: false
+    note: MCP proxy optional via InteroperabilityService
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - chain-of-thought
+  - plan-and-solve
+  defaultReasoner: plan-and-solve
+  maxChainDepth: 5
 memory:
   episodic:
     enabled: true
     retention_days: 730
-    categories: [interaction-designs, animation-specs, behaviour-docs]
+    categories:
+    - interaction-designs
+    - animation-specs
+    - behaviour-docs
   semantic:
     enabled: true
-    categories: [interaction-patterns, animation-library, gesture-patterns]
+    categories:
+    - interaction-patterns
+    - animation-library
+    - gesture-patterns
   procedural:
     enabled: true
-    categories: [motion-principles, interaction-design-standards]
-
-tools: [interaction_designer, animation_specifier, behaviour_documenter]
-
+    categories:
+    - motion-principles
+    - interaction-design-standards
+tools:
+- interaction_designer
+- animation_specifier
+- behaviour_documenter
 capabilities:
-  - interaction-design
-  - micro-interaction-design
-  - animation-specification
-  - gesture-design
-  - behaviour-documentation
-
+- interaction-design
+- micro-interaction-design
+- animation-specification
+- gesture-design
+- behaviour-documentation
 routing:
-  input_types: [ui_designs, feature_spec, platform_spec]
-  output_types: [interaction_spec, animation_specs, behaviour_docs, prototype_interactions]
-
+  input_types:
+  - ui_designs
+  - feature_spec
+  - platform_spec
+  output_types:
+  - interaction_spec
+  - animation_specs
+  - behaviour_docs
+  - prototype_interactions
 delegation:
   can_delegate_to:
-    - frontend-engineering-orchestrator
+  - frontend-engineering-orchestrator
   escalates_to: ux-orchestrator
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 8000
   max_latency_ms: 60000

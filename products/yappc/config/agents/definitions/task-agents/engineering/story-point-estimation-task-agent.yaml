@@ -1,62 +1,83 @@
 id: story-point-estimation-task-agent
 name: Story Point Estimation Task Agent
 version: 1.0.0
-description: "Estimate story points using reference stories, complexity factors, and team velocity calibration"
-
+namespace: yappc.task-agents.engineering
+status: active
+owners:
+- team: backend-core
+  contact: backend-core@ghatana.com
+description: Estimate story points using reference stories, complexity factors, and team velocity calibration
+summary: Estimate story points using reference stories, complexity factors, and team velocity calibration
 metadata:
   level: 3
   domain: engineering
   type: worker
-  tags: [story-point-estimation, complexity-analysis, velocity-calibration, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Estimate story points using reference stories, complexity factors, and team velocity calibration
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - story-point-estimation
+  - complexity-analysis
+  - velocity-calibration
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: estimation_request
+    schema: dynamic
+  outputs:
+  - name: story_point_estimates
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: engineering-metrics-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [estimation_engine, reference_story_reader, velocity_tracker]
-
+tools:
+- estimation_engine
+- reference_story_reader
+- velocity_tracker
 capabilities:
-  - story-point-estimation
-  - complexity-analysis
-  - velocity-calibration
-
+- story-point-estimation
+- complexity-analysis
+- velocity-calibration
 routing:
-  input_types: [estimation_request]
-  output_types: [story_point_estimates]
-
+  input_types:
+  - estimation_request
+  output_types:
+  - story_point_estimates
 delegation:
   can_delegate_to: []
   escalates_to: engineering-metrics-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 2000
   max_latency_ms: 10000

@@ -1,6 +1,10 @@
 id: health-checker-agent
 name: Health Checker Agent
-version: 1.0.0
+namespace: platform.monitoring
+version: 2.1.0
+status: active
+summary: >-
+  Continuously probes service and infrastructure endpoints to emit structured health events for Micrometer and OpenTelemetry.
 description: >
   Continuously probes service and infrastructure endpoints to assess health
   status. Supports HTTP/HTTPS health probes, TCP port probes, gRPC health
@@ -8,16 +12,26 @@ description: >
   Emits structured health events with severity classification and supports
   configurable alerting thresholds. Designed for integration with Micrometer
   and OpenTelemetry exporters.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 3
   domain: monitoring
   tags: [health, probe, http, grpc, tcp, liveness, readiness, observability]
   maturity: production
-  author: platform-team@ghatana.ai
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: stream-processor              # generates health event stream (SOURCE operator)
+  subtype: ingestion
+  roles: [health-prober, event-source, liveness-checker]
+  criticality: high
+  autonomyLevel: autonomous
+  determinismGuarantee: fully-deterministic  # same config + same endpoint state → same events
+  stateMutability: local-state               # probe schedule / state (checkpointed)
+  failureMode: retry
 
 # AEP Operator configuration
 aep:

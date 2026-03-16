@@ -1,38 +1,59 @@
 id: data-replication-agent
+namespace: data-cloud.replication
 name: Data Replication Agent
 version: 1.0.0
-description: Manages cross-node data replication, consistency, and conflict resolution
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Deterministic data replication with rule-based conflict resolution across storage replicas
+description: Deterministic data replication with rule-based conflict resolution across storage replicas.
 
 metadata:
   level: 3
-  domain: data-lifecycle
-  tags: [replication, consistency, cross-node, conflict-resolution, sync]
+  domain: data-replication
+  tags: [replication, conflict-resolution, consistency, multi-region]
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: deterministic
+  subtype: rule-based
+  determinismGuarantee: full
+  stateMutability: external-state
+  failureMode: retry
+  criticality: high
+  autonomyLevel: autonomous
 
 capabilities:
   - data-replication
-  - entity-storage
+  - conflict-resolution
+  - consistency-management
 
 tools:
-  - name: replicationManager
+  - name: replicationEngine
     type: SERVICE
-    endpoint: /datacloud/replication/manage
+    endpoint: /data-cloud/replication/execute
   - name: conflictResolver
     type: SERVICE
-    endpoint: /datacloud/replication/resolve
+    endpoint: /data-cloud/replication/conflicts
+  - name: consistencyChecker
+    type: SERVICE
+    endpoint: /data-cloud/replication/consistency
+
+interfaces:
+  inputs:
+    - name: replicationRequest
+      schema: object
+      required: true
+  outputs:
+    - name: replicationResult
+      schema: object
 
 memory:
   type: WORKING
   scope: replication_state
   retention: medium
 
-routing:
-  input: ReplicationRequest
-  output: ReplicationStatus
-
 resources:
-  memory: "1GB"
-  cpu: "2"
-  timeout: "300s"
+  memory: "2GB"
+  cpu: "4"
+  timeout: "0"

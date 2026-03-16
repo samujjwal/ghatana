@@ -1,12 +1,27 @@
 id: kafka-ingestion-agent
+namespace: aep.operators.ingestion
 name: Kafka Ingestion Agent
 version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Ingests events from Kafka topics with offset management and consumer group coordination
 description: Ingests events from Kafka topics with offset management and consumer group coordination
 
 metadata:
   level: 3
   domain: event-processing
   tags: [kafka, ingestion, streaming, consumer, offset-management]
+
+identity:
+  agentType: stream_processor
+  subtype: ingestion
+  determinismGuarantee: full
+  stateMutability: local-state
+  failureMode: dead-letter
+  criticality: high
+  autonomyLevel: autonomous
 
 aep:
   operatorType: INGESTION
@@ -20,9 +35,6 @@ aep:
     maxRetries: 3
     deadLetterQueue: "kafka-ingestion-dlq"
 
-generator:
-  type: DETERMINISTIC
-
 capabilities:
   - event-ingestion
   - stream-processing
@@ -35,6 +47,15 @@ tools:
     type: SERVICE
     endpoint: /aep/kafka/offsets
 
+interfaces:
+  inputs:
+    - name: kafkaTopic
+      schema: string
+      required: true
+  outputs:
+    - name: rawKafkaEvent
+      schema: raw.kafka
+
 memory:
   type: WORKING
   scope: consumer_state
@@ -43,4 +64,4 @@ memory:
 resources:
   memory: "1GB"
   cpu: "2"
-  timeout: "0"  # Long-running
+  timeout: "0"

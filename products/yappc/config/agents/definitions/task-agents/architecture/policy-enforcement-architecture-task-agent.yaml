@@ -1,62 +1,84 @@
 id: policy-enforcement-architecture-task-agent
 name: Policy Enforcement Architecture Task Agent
 version: 1.0.0
-description: "Design policy enforcement architecture using OPA/CEL for authorisation decisions at API gateway and service internals"
-
+namespace: yappc.task-agents.architecture
+status: active
+owners:
+- team: platform
+  contact: platform@ghatana.com
+description: Design policy enforcement architecture using OPA/CEL for authorisation decisions at API gateway
+  and service internals
+summary: Design policy enforcement architecture using OPA/CEL for authorisation decisions at API gateway
+  and service internals
 metadata:
   level: 3
   domain: architecture
   type: worker
-  tags: [policy-enforcement-design, opa-integration, decision-point-placement, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Design policy enforcement architecture using OPA/CEL for authorisation decisions at API gateway and service internals
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - policy-enforcement-design
+  - opa-integration
+  - decision-point-placement
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: policy_enforcement_request
+    schema: dynamic
+  outputs:
+  - name: policy_enforcement_spec
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: security-architecture-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [policy_arch_designer, opa_config_generator]
-
+tools:
+- policy_arch_designer
+- opa_config_generator
 capabilities:
-  - policy-enforcement-design
-  - opa-integration
-  - decision-point-placement
-
+- policy-enforcement-design
+- opa-integration
+- decision-point-placement
 routing:
-  input_types: [policy_enforcement_request]
-  output_types: [policy_enforcement_spec]
-
+  input_types:
+  - policy_enforcement_request
+  output_types:
+  - policy_enforcement_spec
 delegation:
   can_delegate_to: []
   escalates_to: security-architecture-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 4000
   max_latency_ms: 20000

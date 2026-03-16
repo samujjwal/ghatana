@@ -1,62 +1,84 @@
 id: product-narrative-task-agent
 name: Product Narrative Task Agent
 version: 1.0.0
-description: "Write compelling product narratives in Amazon PR/FAQ format with press release, FAQs, and internal FAQ sections"
-
+namespace: yappc.task-agents.ideation
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Write compelling product narratives in Amazon PR/FAQ format with press release, FAQs, and
+  internal FAQ sections
+summary: Write compelling product narratives in Amazon PR/FAQ format with press release, FAQs, and internal
+  FAQ sections
 metadata:
   level: 3
   domain: ideation
   type: worker
-  tags: [pr-faq-writing, narrative-structuring, benefit-articulation, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Write compelling product narratives in Amazon PR/FAQ format with press release, FAQs, and internal FAQ sections
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - pr-faq-writing
+  - narrative-structuring
+  - benefit-articulation
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: narrative_request
+    schema: dynamic
+  outputs:
+  - name: product_pr_faq
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: solution-framing-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [prfaq_template_engine, narrative_writer]
-
+tools:
+- prfaq_template_engine
+- narrative_writer
 capabilities:
-  - pr-faq-writing
-  - narrative-structuring
-  - benefit-articulation
-
+- pr-faq-writing
+- narrative-structuring
+- benefit-articulation
 routing:
-  input_types: [narrative_request]
-  output_types: [product_pr_faq]
-
+  input_types:
+  - narrative_request
+  output_types:
+  - product_pr_faq
 delegation:
   can_delegate_to: []
   escalates_to: solution-framing-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

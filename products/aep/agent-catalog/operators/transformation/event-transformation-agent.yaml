@@ -1,12 +1,39 @@
 id: event-transformation-agent
+namespace: aep.operators.transformation
 name: Event Transformation Agent
 version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Transforms event formats, enriches data, and applies LLM-assisted mapping rules
 description: Transforms event formats, enriches data, and applies mapping rules
 
 metadata:
   level: 3
   domain: event-processing
   tags: [transformation, enrichment, mapping, filtering, conversion]
+
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: config-scoped
+  stateMutability: local-state
+  failureMode: retry
+  criticality: high
+  autonomyLevel: autonomous
+
+reasoningProfile:
+  primaryReasoner: deterministic-parsing
+  reasonerPortfolio:
+    - type: service-call
+      role: input-parsing
+      description: Parse raw event input into structured form
+    - type: llm
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      role: schema-mapping
 
 aep:
   operatorType: TRANSFORMATION
@@ -19,24 +46,6 @@ aep:
     checkpointInterval: "20s"
     maxRetries: 3
 
-generator:
-  type: PIPELINE
-  steps:
-    - name: parse_input
-      type: SERVICE_CALL
-      service: event-parser
-      endpoint: /aep/transform/parse
-    - name: apply_mapping
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      prompt: |
-        Transform event:
-        Input: {{event}}
-        Mapping Rules: {{rules}}
-        Output Schema: {{output_schema}}
-
 capabilities:
   - event-transformation
   - data-enrichment
@@ -48,6 +57,15 @@ tools:
   - name: enrichmentService
     type: SERVICE
     endpoint: /aep/transform/enrich
+
+interfaces:
+  inputs:
+    - name: rawEvent
+      schema: raw.*
+      required: true
+  outputs:
+    - name: transformedEvent
+      schema: transformed.*
 
 memory:
   type: EPISODIC

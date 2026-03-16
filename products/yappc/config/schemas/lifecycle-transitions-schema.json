@@ -1,0 +1,206 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.com/schemas/yappc/lifecycle-transitions-schema.json",
+  "title": "YAPPC Lifecycle Transitions Schema",
+  "description": "Schema for YAPPC GAA lifecycle transitions and phase configuration",
+  "type": "object",
+  "required": ["lifecycle", "stages"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "pattern": "^v\\d+\\.\\d+$",
+      "description": "API version of this schema (e.g., v1.0)"
+    },
+    "lifecycle": {
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "description": "Lifecycle definition",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Z_]+$",
+          "description": "Lifecycle name (e.g., GAA_STANDARD)"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+          "description": "Lifecycle version"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Lifecycle description"
+        }
+      }
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "order"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z_]+$",
+            "description": "Unique stage identifier (e.g., PERCEIVE, REASON, ACT, CAPTURE, REFLECT)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable stage name"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Execution order in lifecycle"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Stage description and purpose"
+          },
+          "isAsync": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this stage can execute asynchronously"
+          },
+          "isCritical": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether phase failure halts the lifecycle"
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "description": "Maximum execution time for this stage in milliseconds"
+          },
+          "allowRetry": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether transient failures trigger retry"
+          },
+          "retryPolicy": {
+            "type": "object",
+            "properties": {
+              "maxAttempts": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 3,
+                "description": "Maximum retry attempts"
+              },
+              "backoffMs": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 1000,
+                "description": "Initial backoff duration in milliseconds"
+              },
+              "backoffMultiplier": {
+                "type": "number",
+                "minimum": 1,
+                "default": 2,
+                "description": "Backoff multiplier for exponential backoff"
+              },
+              "maxBackoffMs": {
+                "type": "integer",
+                "minimum": 1000,
+                "description": "Maximum backoff duration"
+              }
+            },
+            "description": "Retry policy for this stage"
+          }
+        }
+      },
+      "minItems": 1,
+      "description": "Lifecycle stages in order"
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "type": "string",
+            "pattern": "^[A-Z_]+$",
+            "description": "Source stage ID"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^[A-Z_]+$",
+            "description": "Target stage ID"
+          },
+          "condition": {
+            "type": "string",
+            "description": "Optional condition to enable this transition"
+          },
+          "onSuccess": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to transition on success"
+          },
+          "onFailure": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether to allow transition on failure"
+          }
+        }
+      },
+      "description": "Valid transitions between stages"
+    },
+    "errorHandling": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Global error handling configuration",
+      "properties": {
+        "onStageFail": {
+          "type": "string",
+          "enum": ["HALT", "SKIP", "FALLBACK_STAGE", "ESCALATE"],
+          "default": "HALT",
+          "description": "Action on critical stage failure"
+        },
+        "fallbackStage": {
+          "type": "string",
+          "pattern": "^[A-Z_]+$",
+          "description": "Fallback stage if FALLBACK_STAGE is selected"
+        },
+        "escalationTargets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "description": "Agent IDs for escalation"
+        },
+        "dlqEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to send unrecoverable failures to DLQ"
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "trackLatency": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to track stage latency metrics"
+        },
+        "trackThroughput": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to track stage throughput"
+        },
+        "trackErrors": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to track error occurrences"
+        }
+      },
+      "description": "Metrics collection configuration"
+    }
+  }
+}

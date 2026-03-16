@@ -1,62 +1,84 @@
 id: navigation-model-task-agent
 name: Navigation Model Task Agent
 version: 1.0.0
-description: "Define the navigation model including hierarchy structure, navigation patterns (tabs/drawers/breadcrumbs), and entry points"
-
+namespace: yappc.task-agents.ux
+status: active
+owners:
+- team: design
+  contact: design@ghatana.com
+description: Define the navigation model including hierarchy structure, navigation patterns (tabs/drawers/breadcrumbs),
+  and entry points
+summary: Define the navigation model including hierarchy structure, navigation patterns (tabs/drawers/breadcrumbs),
+  and entry...
 metadata:
   level: 3
   domain: ux
   type: worker
-  tags: [navigation-design, hierarchy-definition, pattern-selection, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Define the navigation model including hierarchy structure, navigation patterns (tabs/drawers/breadcrumbs), and entry points
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - navigation-design
+  - hierarchy-definition
+  - pattern-selection
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: navigation_model_request
+    schema: dynamic
+  outputs:
+  - name: navigation_model
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: flow-design-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [navigation_modeller, pattern_library]
-
+tools:
+- navigation_modeller
+- pattern_library
 capabilities:
-  - navigation-design
-  - hierarchy-definition
-  - pattern-selection
-
+- navigation-design
+- hierarchy-definition
+- pattern-selection
 routing:
-  input_types: [navigation_model_request]
-  output_types: [navigation_model]
-
+  input_types:
+  - navigation_model_request
+  output_types:
+  - navigation_model
 delegation:
   can_delegate_to: []
   escalates_to: flow-design-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

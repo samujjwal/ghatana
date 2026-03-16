@@ -88,6 +88,7 @@ public class ApiApplication extends HttpServerLauncher {
   @Provides
   AsyncServlet servlet(
       Reactor reactor,
+      org.flywaydb.core.Flyway flyway,  // Ensure migrations run before servlet starts
       JwtTokenProvider jwtTokenProvider,
       AuditController auditController,
       VersionController versionController,

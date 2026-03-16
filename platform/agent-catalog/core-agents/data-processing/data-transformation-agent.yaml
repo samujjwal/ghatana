@@ -1,15 +1,36 @@
 id: data-transformation-agent
 name: Data Transformation Agent
-version: 1.0.0
-description: Transforms structured data between formats and schemas (ETL/batch). Not for event-stream payloads — use AEP event-transformation-agent for streaming.
+namespace: platform.data-processing
+version: 2.0.0
+status: active
+summary: >-
+  Transforms structured data between formats and schemas (ETL/batch). For streaming payloads use event-transformer-agent.
+description: >
+  Transforms structured data between formats and schemas (ETL/batch).
+  Not for event-stream payloads — use AEP event-transformer-agent for streaming.
+  Combines deterministic schema parsing with LLM-assisted field mapping for
+  complex or ambiguous transformations.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 3
   domain: data-processing
   tags: [transformation, mapping, conversion, etl, batch, structured-data]
 
-generator:
-  type: PIPELINE
+identity:
+  agentType: hybrid                         # deterministic parsing + LLM mapping reasoning
+  roles: [data-transformer, schema-converter, etl-processor]
+  criticality: medium
+  autonomyLevel: supervised
+  determinismGuarantee: non-deterministic   # LLM step may produce different mappings
+  stateMutability: stateless
+  failureMode: dead-letter
+
+# Execution pipeline: deterministic parsing → LLM-assisted transformation
+pipeline:
   steps:
     - name: parse_source
       type: SERVICE_CALL

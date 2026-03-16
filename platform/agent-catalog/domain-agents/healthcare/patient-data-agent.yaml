@@ -1,6 +1,10 @@
 id: patient-data-agent
 name: Patient Data Processing Agent
-version: 1.0.0
+namespace: platform.domain.healthcare
+version: 2.1.0
+status: active
+summary: >-
+  HIPAA-compliant FHIR R4 clinical event processor with adverse-event detection and care-pathway optimisation.
 description: >
   HIPAA-compliant agent for healthcare patient data processing, clinical event
   analysis, and care pathway optimisation. Handles HL7 FHIR R4 resource
@@ -8,20 +12,30 @@ description: >
   adverse-event detection, and personalised care pathway recommendations.
   All PHI data is redacted before telemetry emission; the agent enforces
   data minimisation and purpose-limitation principles (HIPAA 164.514).
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 4
   domain: healthcare
   tags: [healthcare, hipaa, fhir, hl7, phi, clinical, care-pathway, ehr]
   maturity: production
-  author: platform-team@ghatana.ai
   regulatoryFrameworks:
     - HIPAA
     - HL7 FHIR R4
     - GDPR (Art. 9 — special category data)
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: deterministic
+  subtype: rule-based                           # clinical coding rules, threshold-based adverse-event detection
+  roles: [fhir-processor, clinical-coder, adverse-event-detector, care-pathway-advisor]
+  criticality: critical
+  autonomyLevel: supervised                     # PHI data — human review gates required
+  determinismGuarantee: fully-deterministic     # same input → same clinical code / care recommendation
+  stateMutability: local-state                  # patient session state during processing
+  failureMode: dead-letter                      # never silently drop clinical events
 
 # AEP Operator configuration
 aep:

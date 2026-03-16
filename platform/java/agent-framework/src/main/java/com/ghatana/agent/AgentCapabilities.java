@@ -3,7 +3,7 @@ package com.ghatana.agent;
 import java.util.Set;
 
 /**
- * Metadata describing an Agent's capabilities.
+ * Metadata describing an Agent's basic capabilities.
  *
  * @param name The display name of the agent
  * @param role The role or function of the agent
@@ -11,10 +11,17 @@ import java.util.Set;
  * @param supportedTaskTypes Set of task types this agent can handle
  * @param tools Set of tool names this agent can use
  *
+ * @deprecated Use {@link AgentDescriptor} instead.
+ *             {@code AgentDescriptor} provides richer identity metadata including
+ *             type, subtype, SLAs, determinism guarantees, state mutability,
+ *             and failure modes. {@link AgentDescriptor#toCapabilities()} provides
+ *             backward-compatible conversion.
+ *
  * @doc.type record
- * @doc.purpose Agent metadata and capabilities
+ * @doc.purpose Deprecated simple agent metadata — use AgentDescriptor for new code
  * @doc.layer core
  */
+@Deprecated
 public record AgentCapabilities(
     String name,
     String role,

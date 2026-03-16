@@ -1,38 +1,72 @@
 id: data-archival-agent
+namespace: data-cloud.archival
 name: Data Archival Agent
 version: 1.0.0
-description: Automates data archival, retention policy enforcement, and tiered storage
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Manages tiered data archival with adaptive scheduling and storage optimization
+
+description: |
+  Manages tiered data archival with adaptive scheduling and storage optimization.
+  Automatically moves cold data to cheaper storage tiers based on access patterns
+  and retention policies.
 
 metadata:
   level: 3
   domain: data-lifecycle
-  tags: [archival, retention, tiered-storage, compliance, cost-optimization]
+  tags: [archival, tiered-storage, retention, cold-data, s3, glacier]
 
-generator:
-  type: ADAPTIVE
+identity:
+  agentType: adaptive
+  subtype: bandit
+  determinismGuarantee: config-scoped
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+
+learningModel:
+  learningLevel: L2
+  adaptationTargets:
+    - archival-schedule-optimization
+    - tier-selection
+  learningSources:
+    - access-pattern-signals
+    - storage-cost-feedback
 
 capabilities:
   - data-archival
-  - data-quality-assurance
+  - tiered-storage
+  - retention-policy-enforcement
 
 tools:
-  - name: archivalPolicyEngine
+  - name: archivalEngine
     type: SERVICE
-    endpoint: /datacloud/archival/policies
-  - name: storageTierManager
+    endpoint: /data-cloud/archival/execute
+  - name: tierSelector
     type: SERVICE
-    endpoint: /datacloud/archival/tiers
+    endpoint: /data-cloud/archival/tiers
+  - name: retentionEvaluator
+    type: SERVICE
+    endpoint: /data-cloud/retention/evaluate
+
+interfaces:
+  inputs:
+    - name: archivalRequest
+      schema: object
+      required: true
+  outputs:
+    - name: archivalResult
+      schema: object
 
 memory:
   type: EPISODIC
   scope: archival_history
   retention: long
 
-routing:
-  input: ArchivalPolicyRequest
-  output: ArchivalExecutionPlan
-
 resources:
-  memory: "512MB"
-  cpu: "1"
-  timeout: "600s"
+  memory: "1GB"
+  cpu: "2"
+  timeout: "3600s"

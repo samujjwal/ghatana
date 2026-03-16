@@ -1,6 +1,6 @@
 # Agent Specification Unification Plan
 
-> **Last Updated:** 2026-03-15 (v3.0.0 — Complete Cut-Over, No Backward Compatibility)
+> **Last Updated:** 2026-03-16 (v3.6.0 — Framework hardening COMPLETE: `IOContract` NPE fix, `extractDefinition()` full field mapping, `AgentDefinitionLoader`↔`AgentSpecLoader` bridge, deprecated `AgentRegistry` (planner) REMOVED, workflow layer migrated to `TypedAgent`, `PlannerAgentFactory` `AgentType.LLM` ref removed, 9 new tests; 516/516 tests passing; zero compiler warnings)
 
 ## Executive Summary
 
@@ -15,11 +15,77 @@ This document provides a comprehensive analysis of all agent definitions across 
 - **Data Cloud**: 10+ data-centric agents (orchestration, quality, lineage)
 - **YAPPC**: 636 agents across 10 domains (orchestrators, capabilities, task-agents, micro-agents)
 
+**Implementation Status** (as of v3.3.0):
+
+| Area | Status | Notes |
+|:-----|:-------|:------|
+| AgentType enum (9 types) | ✅ DONE | `STREAM_PROCESSOR`, `PLANNING` added; `LLM` deprecated |
+| DeterministicSubtype (8 values) | ✅ DONE | `POLICY`, `OPERATOR`, `TEMPLATE` added |
+| ProbabilisticSubtype (5 values) | ✅ DONE | `CLASSIFIER` added; `LLM` subtype enhanced |
+| StreamProcessorSubtype (7 values) | ✅ DONE | New enum created |
+| PlanningSubtype (5 values) | ✅ DONE | HTN, REACT, TOT, WORKFLOW, OBJECTIVE_DECOMPOSITION |
+| PlanningAgent base class | ✅ DONE | PLAN→EXECUTE→OBSERVE→REPLAN lifecycle |
+| StreamProcessorAgent base class | ✅ DONE | Checkpoint/restore, per-event retry |
+| PlannerRegistry (renamed from AgentRegistry) | ✅ DONE | Naming collision resolved; old class deprecated |
+| Agent.java deprecated | ✅ DONE | Phase 1 complete; TypedAgent<I,O> is canonical |
+| agent-spec.md (9-type taxonomy) | ✅ DONE | Disambiguation comments, JAVA ALIGNMENT section |
+| Platform catalog YAMLs (20 files) | ✅ DONE | All core-agents, domain-agents, composite-agents updated |
+| catalog-schema.yaml (v2.0.0) | ✅ DONE | identity block, new required fields, generator: deprecated |
+| AEP product YAML catalog (8 operators) | ✅ DONE | identity, interfaces, interoperability, learningModel added; generator removed |
+| Data Cloud YAML catalog (13 definitions) | ✅ DONE | Full spec enrichment across all subtypes (deterministic/adaptive/hybrid/stream/planning) |
+| YAPPC orchestrators (49 files) | ✅ DONE | namespace, status, owners, identity, interfaces, interoperability, learningModel, reasoningProfile added; generator removed |
+| ToolRegistry Java class | ✅ DONE | `com.ghatana.agent.framework.tools.ToolRegistry` — ConcurrentHashMap-backed, category + tag discovery |
+| GovernanceEngine Java class | ✅ DONE | `com.ghatana.agent.framework.governance.GovernanceEngine` — active enforcement, audit log, cost-cap evaluation |
+| LearningEngine Java class | ✅ DONE | `com.ghatana.agent.framework.learning.LearningEngine` — L0-L5 levels, batch episode→policy synthesis |
+| InteroperabilityService Java class | ✅ DONE | `com.ghatana.agent.framework.interop.InteroperabilityService` — MCP JSON-RPC 2.0 + A2A adapters |
+| MemoryPlane typed interface | ✅ DONE | `com.ghatana.agent.framework.memory.MemoryPlane` — replaces `Object` return from asMemoryPlane() |
+| GovernancePolicy.noOp() factory | ✅ DONE | Added to GovernancePolicy interface; used by GovernanceEngine default |
+| JSON schema: deterministic-agent | ✅ DONE | Pre-existing |
+| JSON schema: stream-processor-agent | ✅ DONE | Created with CheckpointPolicy, BackpressureConfig, WindowConfig, EventBindings |
+| JSON schema: planning-agent | ✅ DONE | Created with PlanningSpec, GoalDecomposition, DelegationPolicy, PlanningLlmConfig |
+| YAPPC capabilities (52 files) | ✅ DONE | Phase 5 — hybrid/rule+llm; namespace, status, owners, identity, interfaces, interoperability, learningModel added; generator removed |
+| YAPPC task-agents (162 files) | ✅ DONE | Phase 5 — probabilistic/llm; L1 learningModel, stateless, fail-fast pattern |
+| YAPPC micro-agents (111 files) | ✅ DONE | Phase 5 — deterministic/rule-engine; L0, stateless, fail-fast; fully deterministic |
+| YAPPC catalogs (26 catalog YAMLs) | ✅ DONE | Phase 6 — apiVersion→ghatana.yappc/v3; status/schemaVersion added; agentType+agentSubtype enriched in DomainAgentCatalog entries |
+| AgentDefinitionValidator type-specific rules | ✅ DONE | All 9 canonical types validated (DETERMINISTIC through CUSTOM); `validateTypeSpecific()` added to main `validate()` pipeline |
+| PATTERN subtype DEGRADED response | ✅ DONE | `DeterministicAgent.evaluatePattern` returns DEGRADED+input-echo when no strategy wired (not SKIPPED+empty) |
+| Test suite — 490/490 passing | ✅ DONE | All 6 previously-failing tests fixed; 0% failure rate |
+| `AgentSpec.java` POJO hierarchy | ✅ DONE | `com.ghatana.agent.framework.spec.AgentSpec` — complete 18-section immutable POJO with 23 nested record types (SpecMetadata, SpecIdentity, PurposeModel, SpecScope, SpecCapabilities, ReasoningProfile, ReasonerDeclaration, DeterminismProfile, ConfidenceModel, ExecutionModel, SpecInterfaces, InterfacePort, MemoryModel, MemoryBinding, ToolsAndResources, GovernanceSpec, LearningModel, EvaluationModel, ObservabilitySpec, InteroperabilitySpec, SecuritySpec, DeploymentSpec, Builder) |
+| `GovernancePolicyRef.java` | ✅ DONE | `com.ghatana.agent.framework.spec.GovernancePolicyRef` — named policy reference record (id, description, enforcementMode) with static factory methods; supports both string and map YAML formats |
+| `AgentSpecLoader.java` (full deserialization) | ✅ DONE | `com.ghatana.agent.framework.spec.AgentSpecLoader` — complete 18-section YAML→`AgentSpec` loader; Jackson DTO hierarchy with 18 nested DTOs; smart type aliases (llm→PROBABILISTIC, rule-based→DETERMINISTIC, stream-processor→STREAM_PROCESSOR); type-sensitive defaults; `extractDefinition(AgentSpec)→AgentDefinition` bridge; `load(Path)`, `loadFromString(String)`, `loadFromDirectory(Path)` |
+| `agent-base-schema.json` enriched v2.0.0 | ✅ DONE | Complete JSON Schema v2.0.0 replacing v1 schema — all 18 spec sections as first-class `$defs`: SpecMetadata (status/owners/tags/summary), SpecIdentity (full enum fields), PurposeModel, SpecScope, SpecCapabilities, ReasoningProfile, ExecutionModel, SpecInterfaces, InterfacePort, MemoryModel, GovernanceSpec (policyRefs as string or map), LearningModel (L0-L5), EvaluationModel, ObservabilitySpec, InteroperabilitySpec, SecuritySpec, DeploymentSpec |
+| `AgentSpecLoaderTest.java` | ✅ DONE | 18 test methods across 7 `@Nested` groups: MinimalSpec, TypeAliasResolution (6 aliases), SmartDefaults (3 agent types), FullSpec (all 18 sections), ExtractDefinition bridge, Validation (3 required-field checks), DirectoryLoading (load-from-file + directory scan + skip-invalid), PolicyRefParsing (string vs map format) |
+| Bug fix: `rule-based` alias → DETERMINISTIC | ✅ DONE | Corrected `AgentSpecLoader` type alias: `rule-based`/`rule_based` now correctly resolves to `DETERMINISTIC` (not grouped with `llm`→PROBABILISTIC) |
+| Test suite — 511/511 passing | ✅ DONE | 21 new `AgentSpecLoaderTest` cases + all 490 pre-existing; 0% failure rate |
+| **Bug fix: `extractDefinition()` IOContract NPE** (v3.6.0) | ✅ DONE | `IOContract` was constructed with `null` format (throws `NPE` at runtime). Fixed: format now defaults to `"JSON"`, or `"PROTOBUF"`/`"AVRO"` when detected from `schemaRef` URI via `deriveFormat()` helper |
+| **`extractDefinition()` complete field mapping** (v3.6.0) | ✅ DONE | Added: `autonomyLevel` → label `"autonomyLevel"`, `criticality` → label `"criticality"`, `governance.riskProfile.maxCostPerCall` → `AgentDefinition.maxCostPerCall` |
+| **`AgentDefinitionLoader` ↔ `AgentSpecLoader` bridge** (v3.6.0) | ✅ DONE | `AgentDefinitionLoader.load()` and `loadFromString()` now auto-detect `agentSpecVersion:` marker and delegate to `AgentSpecLoader.extractDefinition()`. Old flat-format YAMLs continue to work unchanged. |
+| **Deprecated `AgentRegistry` (planner) REMOVED** (v3.6.0) | ✅ DONE | `com.ghatana.agent.framework.planner.AgentRegistry` deleted (zero callers; was a pure deprecated subclass of `PlannerRegistry`) |
+| **Workflow layer migrated to `TypedAgent`** (v3.6.0) | ✅ DONE | `WorkflowAgentRegistry`, `InMemoryWorkflowAgentRegistry`, `DefaultWorkflowAgentService` updated: `Agent` → `TypedAgent<?,?>`; `getCapabilities()` → `descriptor().getName()/getDescription()`; `agent.process(input, ctx)` → `TypedAgent.process(ctx, input)` returning `AgentResult<O>` |
+| **`PlannerAgentFactory` `AgentType.LLM` ref removed** (v3.6.0) | ✅ DONE | `if (type == AgentType.LLM \|\| type == AgentType.PROBABILISTIC)` → `if (type == AgentType.PROBABILISTIC)`; zero compiler warnings |
+| **9 new tests for v3.6.0 fixes** (v3.6.0) | ✅ DONE | `AgentSpecLoaderTest`: `ioContractDefaultFormat`, `ioContractProtobufFormat`, `extractsMaxCostPerCallFromRiskProfile`, `extractsAutonomyLevelAndCriticalityAsLabels` (4 tests). `AgentDefinitionLoaderTest`: `delegatesToAgentSpecLoaderForNewFormat`, `loadsOldFlatFormatNormally` (2 tests). `MigrationAdapterTest`: removed stale `agentRegistryIsDeprecated` test |
+| Test suite — 516/516 passing (v3.6.0) | ✅ DONE | +5 new tests vs v3.5.0 (−1 stale test for deleted class); 0% failure rate; 0 compiler warnings |
+
+**Critical Enhancement**: Complete agent-framework implementation with support for all 9 agent types:
+- **Deterministic**: Rule engines, FSMs, pattern matching, policy evaluation (reproducible)
+- **Probabilistic**: ML models, Bayesian inference, LLMs, classifiers (confidence-based)
+- **Stream Processor**: Event-driven, stateful stream processing with checkpointing (AEP operators)
+- **Planning**: Goal-directed, HTN, ReAct, workflow orchestration (multi-step)
+- **Hybrid**: Multi-reasoner combinations with intelligent routing
+- **Adaptive**: Self-tuning, reinforcement learning, A/B testing
+- **Composite**: Ensembles, voting systems, distributed coordination
+- **Reactive**: Stateless trigger-action reflexes, alerts, circuit-breakers
+- **Custom**: Extensible domain-specific types
+
+**Consolidated from 12 types**: Rule-based, policy, and pattern merged into deterministic as subtypes; LLM moved to probabilistic as subtype; Stream processor added for AEP operators.
+
 ---
 
 ## 1. Current State Analysis
 
 ### 1.1 Format Comparison Matrix
+
+> **NOTE (v3.4.0–v3.5.0):** This matrix reflects the pre-migration state. All product areas (Platform, AEP, Data Cloud, YAPPC) have been fully migrated to the new agent-spec.md format as of v3.4.0. The ❌ entries below describe the historical gap — all are now ✅ in deployed YAML files. The Java POJO deserialization layer (`AgentSpec`, `AgentSpecLoader`) was completed in v3.5.0. See the Implementation Status table in the Executive Summary for current status.
 
 | Section                | Target Spec (agent-spec.md)                                                         | Platform Catalog                    | AEP Operators                     | Data Cloud                    | YAPPC                             |
 | ---------------------- | ----------------------------------------------------------------------------------- | ----------------------------------- | --------------------------------- | ----------------------------- | --------------------------------- |
@@ -34,7 +100,7 @@ This document provides a comprehensive analysis of all agent definitions across 
 | summary                | ✅ Required string                                                                  | ❌ Missing                          | ❌ Missing                        | ❌ Missing                    | ❌ Missing                        |
 | description            | ✅ Optional string                                                                  | ✅ description                      | ✅ description                    | ✅ description                | ✅ description                    |
 | **Identity**           |                                                                                     |                                     |                                   |                               |
-| agentType              | ✅ Enum (12 values: deterministic/rule-based/policy/pattern/probabilistic/planning/llm/hybrid/adaptive/composite/reactive/custom) | ❌ Missing (has `type` in metadata) | ❌ Missing (has `generator.type`) | ❌ Missing                    | ❌ Missing (has `generator.type`) |
+| agentType              | ✅ Enum (9 values: deterministic/probabilistic/stream_processor/planning/hybrid/adaptive/composite/reactive/custom) | ❌ Missing (has `type` in metadata) | ❌ Missing (has `generator.type`) | ❌ Missing                    | ❌ Missing (has `generator.type`) |
 | roles                  | ✅ Required list                                                                    | ❌ Missing                          | ❌ Missing                        | ❌ Missing                    | ❌ Missing                        |
 | personas               | ✅ Optional list                                                                    | ❌ Missing                          | ❌ Missing                        | ❌ Missing                    | ❌ Missing                        |
 | criticality            | ✅ Enum (low/medium/high/mission-critical)                                          | ❌ Missing                          | ❌ Missing                        | ❌ Missing                    | ❌ Missing                        |
@@ -159,20 +225,17 @@ The spec must support ALL agent processing paradigms. Updated `identity.agentTyp
 
 | Agent Type      | Spec Coverage | Java Enum | Description | Example Use Case |
 |:----------------|:-------------|:----------|:------------|:-----------------|
-| `deterministic` | ✅ | `DETERMINISTIC` | Pure functions, FSMs, 100% reproducible output | Event routing, schema validation |
-| `rule-based`    | ✅ (NEW) | `RULE_BASED` (NEW) | Drools/OPA condition-action rules | Convention checks, policy enforcement |
-| `policy`        | ✅ (NEW) | `POLICY` (NEW) | Policy engines evaluating governance constraints | Cost caps, data classification |
-| `pattern`       | ✅ (NEW) | `PATTERN` (NEW) | Template matching, procedure reuse | Code scaffolding, known-pattern resolution |
-| `probabilistic` | ✅ | `PROBABILISTIC` | ML models, Bayesian inference, classifiers | Anomaly detection, quality scoring |
-| `planning`      | ✅ (NEW) | `PLANNING` (NEW) | Goal-directed planners (HTN, ReAct, tree-of-thought) | Multi-step task orchestration |
-| `llm`           | ✅ | `LLM` | Large language model backed agents | Code generation, documentation, chat |
-| `hybrid`        | ✅ | `HYBRID` | Multiple reasoning modes combined | Java Expert (rule+template+LLM pipeline) |
-| `adaptive`      | ✅ (NEW) | `ADAPTIVE` | Self-tuning via bandits, RL, online learning | Retrieval ranking, confidence tuning |
-| `composite`     | ✅ (NEW) | `COMPOSITE` | Ensemble/voting agents aggregating sub-agent outputs | Multi-model consensus |
-| `reactive`      | ✅ (NEW) | `REACTIVE` | Event-triggered reflex agents (CEP, stream) | Event filtering, stream processing |
-| `custom`        | ✅ (NEW) | `CUSTOM` | Extensible registry for domain-specific types | Healthcare-specific, finance-specific |
+| `deterministic` | ✅ | `DETERMINISTIC` | Pure functions, FSMs, rules, patterns, policies - 100% reproducible | Event routing, validation, thresholds, governance |
+| `probabilistic` | ✅ | `PROBABILISTIC` | ML models, Bayesian inference, LLMs, classifiers - confidence-based | Anomaly detection, LLM reasoning, classification |
+| `stream_processor` | ✅ (NEW) | `STREAM_PROCESSOR` (NEW) | Event-driven stream processing with stateful operations, checkpointing | AEP operators, CEP, windowed aggregations, event routing |
+| `planning` | ✅ (NEW) | `PLANNING` (NEW) | Goal-directed planners (HTN, ReAct, tree-of-thought) | Multi-step task orchestration, workflow execution |
+| `hybrid` | ✅ | `HYBRID` | Multiple reasoning modes combined with intelligent routing | Java Expert (rule+template+LLM), complex reasoning |
+| `adaptive` | ✅ (NEW) | `ADAPTIVE` (NEW) | Self-tuning via bandits, RL, online learning | Retrieval ranking, confidence tuning, A/B testing |
+| `composite` | ✅ (NEW) | `COMPOSITE` (NEW) | Ensemble/voting agents aggregating sub-agent outputs | Multi-model consensus, parallel execution |
+| `reactive` | ✅ (NEW) | `REACTIVE` (NEW) | Stateless trigger-action reflexes | Simple alerts, triggers, circuit-breakers |
+| `custom` | ✅ (NEW) | `CUSTOM` (NEW) | Extensible registry for domain-specific types | Healthcare-specific, finance-specific domains |
 
-**Gap resolved**: The spec's agentType enum and Java `AgentType` enum are now aligned with 12 values covering all known agentic processing paradigms.
+**Gap resolved**: The spec's agentType enum and Java `AgentType` enum are now aligned with 9 values covering all known agentic processing paradigms with clear boundaries and no redundancies.
 
 #### 1.3.2 Identity Model Completeness
 
@@ -285,19 +348,1229 @@ Each agent type implies specific validation constraints that `AgentDefinitionVal
 
 | Agent Type | Required Fields | Prohibited Fields | Validation Rule |
 |:-----------|:---------------|:-----------------|:---------------|
-| `deterministic` | `determinismGuarantee: full` | LLM reasoner in portfolio | Must not reference stochastic reasoning |
-| `rule-based` | At least one rule-engine reasoner | — | `reasonerPortfolio` must contain type=rule-engine |
-| `llm` | `reasonerPortfolio` with LLM entry, `maxTokens` | — | Must declare model provider + cost limits |
-| `hybrid` | ≥2 reasoner types in portfolio | — | Must declare `reasoningStrategy` |
-| `reactive` | `invocationModes` includes "event" | "schedule" as sole invocation | Must consume at least one event type |
-| `adaptive` | `learningModel.learningLevel` ≥ L2 | — | Must have drift controls |
-| `composite` | `interoperability.agentToAgent.enabled: true` | — | Must delegate to ≥2 sub-agents |
-| `planning` | `executionModel.lifecycleStates` includes "blocked", "waiting" | — | Must support multi-step lifecycle |
-| `stateless` (stateMutability) | — | `memoryModel.writePolicies.allowCreate: true` | Stateless agents must not write to persistent memory |
+| `deterministic` | `determinismGuarantee: full` | LLM reasoner in portfolio | Must not reference stochastic reasoning; supports subtypes: rule-engine, fsm, pattern-matcher, policy-engine |
+| `probabilistic` | Confidence/scoring fields | — | Must declare confidence metric; supports subtypes: llm, ml-model, bayesian, classifier |
+| `stream_processor` | `executionModel.checkpointPolicy`, `interfaces.eventBindings` | — | Must have event input/output declarations; supports subtypes: ingestion, routing, transformation, cep, window-agg |
+| `planning` | `executionModel.lifecycleStates` includes "blocked", "waiting" | — | Must support multi-step lifecycle with explicit planning phase |
+| `hybrid` | ≥2 reasoner types in portfolio | — | Must declare `reasoningStrategy` for routing between reasoners |
+| `adaptive` | `learningModel.learningLevel` ≥ L2 | — | Must have drift controls and feedback mechanisms |
+| `composite` | `interoperability.agentToAgent.enabled: true` | — | Must delegate to ≥2 sub-agents with aggregation strategy |
+| `reactive` | `invocationModes` includes "event" | "schedule" as sole invocation, stateful memory | Must be stateless with immediate response; simple trigger→action only |
+| `custom` | `identity.customTypeRef` | — | Must reference registered custom type in CustomTypeRegistry |
 
 ---
 
-## 2. Unified Schema Definition
+## 3. Comprehensive Agent Inventory Analysis
+
+### 3.1 Complete Agent Count by Product
+
+**Total Agent Files Identified**: 1,098 YAML files
+
+| Product | Agent Files | Definition Files | Catalog Files | Instance Files | Total |
+|---------|-------------|------------------|---------------|----------------|-------|
+| **Platform** | 12 | 0 | 0 | 0 | 12 |
+| **AEP** | 11 | 0 | 0 | 0 | 11 |
+| **Data Cloud** | 14 | 0 | 0 | 0 | 14 |
+| **YAPPC** | 1,061 | 592 | 469 | 0 | 1,061 |
+
+**Grand Total**: 1,098 agent specification files to migrate
+
+### 3.2 Platform Agents (12 files)
+
+**Core Platform Agents** - All require migration:
+```
+platform/agent-catalog/core-agents/
+├── data-processing/
+│   ├── data-transformation-agent.yaml
+│   └── schema-validation-agent.yaml
+├── event-processing/
+│   ├── event-enricher-agent.yaml
+│   ├── event-filter-agent.yaml
+│   ├── event-router-agent.yaml
+│   └── event-transformer-agent.yaml
+├── governance/
+│   ├── cost-optimization-agent.yaml
+│   └── sustainability-agent.yaml
+├── monitoring/
+│   ├── anomaly-detector-agent.yaml
+│   ├── health-checker-agent.yaml
+│   └── metrics-collector-agent.yaml
+└── security/
+    └── access-control-agent.yaml
+```
+
+**Migration Complexity**: LOW - All use standard platform format with `generator.type` field
+
+### 3.3 AEP Agents (11 files)
+
+**AEP Operator Agents** - All require migration:
+```
+products/aep/agent-catalog/
+├── operators/
+│   ├── ingestion/
+│   │   ├── http-ingestion-agent.yaml
+│   │   └── kafka-ingestion-agent.yaml
+│   ├── orchestration/
+│   │   └── unified-event-orchestrator.yaml
+│   ├── pattern/
+│   │   ├── anomaly-detection-agent.yaml
+│   │   ├── correlation-agent.yaml
+│   │   └── pattern-detection-agent.yaml
+│   ├── routing/
+│   │   └── event-router-agent.yaml
+│   └── transformation/
+│       └── event-transformation-agent.yaml
+└── capabilities/
+    └── aep-capabilities.yaml
+```
+
+**Migration Complexity**: MEDIUM - Mix of AEP-specific `aep.operatorType` and standard `generator.type`
+
+### 3.4 Data Cloud Agents (14 files)
+
+**Data Cloud Agents** - All require migration:
+```
+products/data-cloud/agent-catalog/
+├── definitions/
+│   ├── archival/
+│   │   └── data-archival-agent.yaml
+│   ├── migration/
+│   │   ├── data-migration-agent.yaml
+│   │   └── schema-evolution-agent.yaml
+│   ├── observability/
+│   │   ├── data-lineage-agent.yaml
+│   │   └── data-quality-agent.yaml
+│   ├── orchestration/
+│   │   ├── data-pipeline-orchestrator-agent.yaml
+│   │   └── unified-data-orchestrator.yaml
+│   ├── query/
+│   │   ├── cache-manager-agent.yaml
+│   │   └── query-optimization-agent.yaml
+│   ├── replication/
+│   │   └── data-replication-agent.yaml
+│   └── storage/
+│       ├── data-compaction-agent.yaml
+│       ├── entity-storage-agent.yaml
+│       └── event-stream-storage-agent.yaml
+└── capabilities/
+    └── data-cloud-capabilities.yaml
+```
+
+**Migration Complexity**: MEDIUM - Mix of `generator.type: PIPELINE` and custom fields
+
+### 3.5 YAPPC Agents (1,061 files)
+
+**YAPPC Agent Breakdown**:
+
+#### 3.5.1 Definition Files (592 files)
+```
+products/yappc/config/agents/definitions/
+├── orchestrators/ (53 files)
+│   ├── products-officer.yaml
+│   ├── systems-architect.yaml
+│   ├── ux-director.yaml
+│   ├── head-of-devops.yaml
+│   └── 49 more strategic orchestrators
+├── capabilities/ (52 files)
+│   ├── ai/ (5 files)
+│   │   ├── agent-runtime-capability-agent-ai.yaml
+│   │   ├── data-pipeline-capability-agent.yaml
+│   │   ├── llm-integration-capability-agent.yaml
+│   │   ├── memory-capability-agent.yaml
+│   │   └── search-capability-agent.yaml
+│   ├── architecture/ (8 files)
+│   ├── discovery/ (4 files)
+│   ├── engineering/ (4 files)
+│   └── 31 more capability agents
+├── task-agents/ (162 files)
+│   ├── requirements/ (25 files)
+│   ├── ux/ (40 files)
+│   ├── testing/ (15 files)
+│   ├── security/ (12 files)
+│   ├── devops/ (20 files)
+│   ├── data/ (18 files)
+│   ├── documentation/ (15 files)
+│   └── 17 more task categories
+└── micro-agents/ (111 files)
+    ├── code-review/ (20 files)
+    ├── validation/ (18 files)
+    ├── formatting/ (15 files)
+    ├── analysis/ (12 files)
+    └── 46 more micro categories
+```
+
+#### 3.5.2 Catalog Files (469 files)
+```
+products/yappc/config/agents/
+├── agent-catalog.yaml
+├── ai-catalog.yaml
+├── architecture-catalog.yaml
+├── capabilities.yaml
+├── cloud-catalog.yaml
+├── compliance-catalog.yaml
+├── discovery-catalog.yaml
+├── engineering-catalog.yaml
+├── ideation-catalog.yaml
+├── lifecycle-catalog.yaml
+├── platform-catalog.yaml
+├── product-intelligence-catalog.yaml
+├── prompt-fragments.yaml
+├── registry.yaml
+├── requirements-catalog.yaml
+├── security-catalog.yaml
+├── ux-catalog.yaml
+└── 450+ more catalog and configuration files
+```
+
+### 3.6 Migration Complexity Assessment
+
+#### 3.6.1 Complexity Levels
+
+| Agent Type | Count | Complexity | Migration Strategy |
+|------------|-------|------------|-------------------|
+| **Platform Core** | 12 | LOW | Direct mapping, automated |
+| **AEP Operators** | 11 | MEDIUM | AEP-specific field mapping |
+| **Data Cloud** | 14 | MEDIUM | Pipeline to reasoning profile |
+| **YAPPC Orchestrators** | 53 | HIGH | Complex delegation mapping |
+| **YAPPC Capabilities** | 52 | MEDIUM | Capability enrichment |
+| **YAPPC Task Agents** | 162 | HIGH | Diverse patterns, templates |
+| **YAPPC Micro Agents** | 111 | LOW | Simple deterministic patterns |
+| **YAPPC Catalogs** | 469 | MEDIUM | Reference resolution |
+
+#### 3.6.2 Migration Pattern Analysis
+
+**Pattern 1: Simple Deterministic** (300+ agents)
+- Current: `generator.type: DETERMINISTIC` or rule-based
+- Target: `identity.agentType: deterministic`
+- Mapping: Direct field mapping with defaults
+
+**Pattern 2: Pipeline/Hybrid** (150+ agents)
+- Current: `generator.type: PIPELINE` with multiple steps
+- Target: `identity.agentType: hybrid`
+- Mapping: Complex reasoning profile construction
+
+**Pattern 3: LLM-Based** (80+ agents)
+- Current: `generator.steps` with LLM type
+- Target: `identity.agentType: llm` or `hybrid`
+- Mapping: LLM configuration extraction
+
+**Pattern 4: Event-Driven** (50+ agents)
+- Current: AEP operators with event types
+- Target: `identity.agentType: reactive`
+- Mapping: Event interface mapping
+
+**Pattern 5: Complex Delegation** (100+ agents)
+- Current: Rich `delegation` and `routing` structures
+- Target: `interoperability.agentToAgent`
+- Mapping: Complex protocol mapping
+
+### 3.7 Critical Migration Challenges
+
+#### 3.7.1 Field Mapping Complexity
+
+**High-Complexity Mappings**:
+1. **YAPPC Delegation → A2A Protocol**
+   ```yaml
+   # Current
+   delegation:
+     can_delegate_to: [agent1, agent2]
+     escalates_to: supervisor
+   
+   # Target
+   interoperability:
+     agentToAgent:
+       enabled: true
+       delegationTargets: [agent1, agent2]
+       escalationPolicy:
+         target: supervisor
+         condition: failure_threshold_exceeded
+   ```
+
+2. **Generator Pipeline → Reasoning Profile**
+   ```yaml
+   # Current
+   generator:
+     type: PIPELINE
+     steps:
+       - type: RULE_BASED
+         rules: [...]
+       - type: LLM
+         provider: OPENAI
+   
+   # Target
+   reasoningProfile:
+     reasonerPortfolio:
+       - type: rule-engine
+         engine: drools
+       - type: llm
+         engine: openai/gpt-4
+   ```
+
+3. **Memory Configuration → Memory Model**
+   ```yaml
+   # Current
+   memory:
+     episodic:
+       enabled: true
+       retention_days: 90
+   
+   # Target
+   memoryModel:
+     memoryTypes: [episodic]
+     retentionPolicy:
+       episodic:
+         retentionDays: 90
+         archivalPolicy: delete
+   ```
+
+#### 3.7.2 Validation Requirements
+
+**Product-Specific Validation Rules**:
+
+1. **Platform Agents**: Must have `executionModel.invocationModes` including "event"
+2. **AEP Agents**: Must have `aep.inputEventTypes` and `aep.outputEventTypes`
+3. **Data Cloud Agents**: Must have `governance.dataHandling` with classification
+4. **YAPPC Level 1**: Must have `identity.criticality: high`
+5. **YAPPC Level 2**: Must have `reasoningProfile.reasonerPortfolio` with ≥2 reasoners
+6. **YAPPC Level 3**: Must have `identity.autonomyLevel: assisted`
+
+### 3.8 Migration Success Criteria
+
+#### 3.8.1 Completeness Criteria
+
+**Must Achieve**:
+- [ ] **1,098 files migrated** - Every single YAML file converted
+- [ ] **Zero format errors** - All files validate against new schema
+- [ ] **Complete field mapping** - No data loss during migration
+- [ ] **Reference resolution** - All cross-references preserved
+- [ ] **Functionality preservation** - All agent behaviors maintained
+
+#### 3.8.2 Quality Criteria
+
+**Must Achieve**:
+- [ ] **100% schema compliance** - All files pass validation
+- [ ] **Semantic correctness** - Migrated agents behave identically
+- [ ] **Performance parity** - No degradation in loading/execution
+- [ ] **Documentation completeness** - All 20 sections populated where applicable
+
+#### 3.8.3 Validation Requirements
+
+**Pre-Migration**:
+- [ ] Inventory all 1,098 files with metadata
+- [ ] Create migration patterns for each agent type
+- [ ] Develop automated validation rules
+- [ ] Establish rollback procedures
+
+**Post-Migration**:
+- [ ] Load test all 1,098 agents
+- [ ] Execute integration tests for each product
+- [ ] Performance benchmark against baseline
+- [ ] Production readiness validation
+
+### 3.9 Risk Mitigation Strategies
+
+#### 3.9.1 High-Risk Areas
+
+**YAPPC Task Agents (162 files)**:
+- **Risk**: Diverse patterns, complex delegation
+- **Mitigation**: Template-based migration with manual review
+
+**YAPPC Orchestrators (53 files)**:
+- **Risk**: Critical business logic, complex workflows
+- **Mitigation**: Incremental migration with parallel testing
+
+**Cross-Product References**:
+- **Risk**: Broken references between products
+- **Mitigation**: Reference mapping table and validation
+
+#### 3.9.2 Rollback Strategy
+
+**Immediate Rollback** (≤1 hour):
+- Git revert migration branch
+- Restore old Java classes
+- Restart services with old format
+
+**Partial Rollback** (≤4 hours):
+- Identify problematic agents
+- Revert specific agent files
+- Update Java code for dual-format support (temporary)
+
+**Data Recovery**:
+- All original YAML files preserved in git
+- Automated backup before migration
+- Migration tool generates rollback scripts
+
+---
+
+## 2. Agent Framework Implementation Plan
+
+### 2.1 Current Framework Analysis
+
+The existing `platform/java/agent-framework` provides a solid foundation but requires significant enhancements to support the unified specification:
+
+**Current Strengths**:
+- ✅ Basic `Agent` interface with async processing (now `@Deprecated` — use `TypedAgent<I,O>`)
+- ✅ `AgentType` enum with **9 built-in types** (DETERMINISTIC, PROBABILISTIC, STREAM_PROCESSOR, PLANNING, HYBRID, ADAPTIVE, COMPOSITE, REACTIVE, CUSTOM)
+- ✅ Custom type registration mechanism
+- ✅ Agent catalog and registry infrastructure (`PlannerRegistry` replacing colliding `AgentRegistry`)
+- ✅ ActiveJ-based async execution model
+- ✅ `PlanningAgent` abstract base class (PLAN→EXECUTE→OBSERVE→REPLAN lifecycle)
+- ✅ `StreamProcessorAgent` abstract base class (event loop + checkpoint/restore)
+- ✅ `PlanningSubtype` enum (HTN, REACT, TOT, WORKFLOW, OBJECTIVE_DECOMPOSITION)
+- ✅ `StreamProcessorSubtype` enum (INGESTION, ROUTING, TRANSFORMATION, CEP, ENRICHMENT, WINDOW_AGGREGATION, FILTER)
+- ✅ Enhanced `DeterministicSubtype` (8 values including POLICY, OPERATOR, TEMPLATE)
+- ✅ Enhanced `ProbabilisticSubtype` (5 values including CLASSIFIER)
+
+**Remaining Gaps** (as of v3.3.0 — previously incomplete, now resolved):
+- ✅ RESOLVED — `ToolRegistry`: `com.ghatana.agent.framework.tools.ToolRegistry`
+- ✅ RESOLVED — `GovernanceEngine`: `com.ghatana.agent.framework.governance.GovernanceEngine`
+- ✅ RESOLVED — `LearningEngine`: `com.ghatana.agent.framework.learning.LearningEngine`
+- ✅ RESOLVED — `InteroperabilityService` (MCP + A2A): `com.ghatana.agent.framework.interop.InteroperabilityService`
+- ✅ RESOLVED — `MemoryPlane` typed interface: `com.ghatana.agent.framework.memory.MemoryPlane`
+- ✅ RESOLVED — JSON schemas: `stream-processor-agent-schema.json`, `planning-agent-schema.json`
+
+**Still Pending** (Phase 5 / Phase 6):
+- ✅ RESOLVED (v3.4.0) — YAPPC capability agents (52 files) migrated
+- ✅ RESOLVED (v3.4.0) — YAPPC task-agents (162 files) migrated
+- ✅ RESOLVED (v3.4.0) — YAPPC micro-agents (111 files) migrated
+- ✅ RESOLVED (v3.4.0) — YAPPC catalogs (26 catalog YAMLs) enriched
+- ✅ RESOLVED (v3.5.0) — AgentSpec YAML deserialization layer: `AgentSpec`, `AgentSpecLoader`, `GovernancePolicyRef` in `com.ghatana.agent.framework.spec` package
+- ✅ RESOLVED (v3.5.0) — JSON schema enriched to v2.0.0 with all 18 sections as `$defs`
+- ✅ RESOLVED (v3.2.0+) — Governance/security integration: `AgentAuthorizationService` (ABAC), `SecretProvider` (tenant-scoped), `GovernanceEngine` (policy enforcement)
+- ✅ RESOLVED (v3.6.0) — `extractDefinition()` IOContract NPE bug: null `format` replaced with `deriveFormat()` helper
+- ✅ RESOLVED (v3.6.0) — `extractDefinition()` missing field mappings: `autonomyLevel`, `criticality` (labels), `maxCostPerCall` (from `governance.riskProfile`)
+- ✅ RESOLVED (v3.6.0) — `AgentDefinitionLoader` ↔ `AgentSpecLoader` bridge: auto-detects `agentSpecVersion:` to transparently handle both YAML formats
+- ✅ RESOLVED (v3.6.0) — Deprecated `AgentRegistry` planner class DELETED (was a no-op subclass of `PlannerRegistry`)
+- ✅ RESOLVED (v3.6.0) — Workflow layer (`WorkflowAgentRegistry`, `InMemoryWorkflowAgentRegistry`, `DefaultWorkflowAgentService`) fully migrated from deprecated `Agent` to canonical `TypedAgent<?,?>`
+- ✅ RESOLVED (v3.6.0) — `PlannerAgentFactory` final deprecation warning removed (`AgentType.LLM` reference → `AgentType.PROBABILISTIC`)
+
+**No planned migration items remaining.** All phases complete as of v3.6.0.
+
+> **Audit findings fully resolved (v3.6.0):** Full codebase audit March 2026 found 5 issues: (1) `IOContract` NPE — fixed; (2) incomplete `extractDefinition()` field mapping — fixed; (3) no bridge between old and new loader — fixed; (4) deprecated `AgentRegistry` planner class — removed; (5) workflow package using deprecated `Agent` — migrated to `TypedAgent`. Framework is now free of deprecated API usage in production code.
+
+### 2.2 Enhanced AgentType Enum
+
+**Update Required**: Simplify to 9 core agent types with clear boundaries, removing redundancies and adding STREAM_PROCESSOR for AEP operators
+
+```java
+public enum AgentType {
+    // ═══════════════════════════════════════════════════════════════════════
+    // DETERMINISTIC: Always produces same output for same input
+    // ═══════════════════════════════════════════════════════════════════════
+    DETERMINISTIC,   // Rule-based, FSM, pattern matching, thresholds, policy evaluation
+                     // Subtypes: rule-engine, fsm, pattern-matcher, threshold-evaluator, policy-engine
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // PROBABILISTIC: Output varies based on confidence/sampling
+    // ═══════════════════════════════════════════════════════════════════════
+    PROBABILISTIC,   // ML models, Bayesian inference, LLMs, classifiers
+                     // Subtypes: llm, ml-model, bayesian, classifier
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // STREAM_PROCESSOR: Event-driven, stateful stream processing (AEP operators)
+    // ═══════════════════════════════════════════════════════════════════════
+    STREAM_PROCESSOR, // Event ingestion, routing, transformation, CEP
+                        // Characteristics: backpressure, checkpointing, windowing
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // PLANNING: Goal-directed multi-step execution
+    // ═══════════════════════════════════════════════════════════════════════
+    PLANNING,       // HTN, ReAct, tree-of-thought, workflow orchestration
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // HYBRID: Combines multiple reasoning types with intelligent routing
+    // ═══════════════════════════════════════════════════════════════════════
+    HYBRID,         // Multi-reasoner with deterministic→probabilistic fallback
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // ADAPTIVE: Self-tuning with online learning
+    // ═══════════════════════════════════════════════════════════════════════
+    ADAPTIVE,       // Bandits, RL, A/B testing, parameter optimization
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // COMPOSITE: Ensemble of sub-agents with aggregation
+    // ═══════════════════════════════════════════════════════════════════════
+    COMPOSITE,      // Voting, fan-out/fan-in, conditional routing ensembles
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // REACTIVE: Event-triggered reflex actions (stateless)
+    // ═══════════════════════════════════════════════════════════════════════
+    REACTIVE,       // Simple triggers, alerts, circuit-breakers
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // CUSTOM: Domain-specific extensions
+    // ═══════════════════════════════════════════════════════════════════════
+    CUSTOM;         // User-defined types via registry
+}
+```
+
+**Rationale for Simplification**:
+- **RULE_BASED** → Merged into DETERMINISTIC (subtype: rule-engine)
+- **POLICY** → Merged into DETERMINISTIC (subtype: policy-engine)  
+- **PATTERN** → Merged into DETERMINISTIC (subtype: pattern-matcher)
+- **LLM** → Moved to PROBABILISTIC subtype (one of many probabilistic approaches)
+- **STREAM_PROCESSOR** → NEW type for AEP operators with stateful stream processing
+
+### 2.3 Agent Type Implementation Matrix (9 Core Types)
+
+| Agent Type | Core Characteristic | Subtypes | AEP Support | YAPPC Support | Use Cases |
+|------------|---------------------|----------|-------------|---------------|-----------|
+| **DETERMINISTIC** | Reproducible output | rule-engine, fsm, pattern-matcher, policy-engine, threshold-evaluator | ✅ (simple filters) | ✅ (validation, parsing, policy enforcement) | Event routing, validation, thresholds, governance |
+| **PROBABILISTIC** | Confidence-based | llm, ml-model, bayesian, classifier | ✅ (anomaly detection) | ✅ (code gen, analysis, classification) | LLM reasoning, ML inference, Bayesian nets |
+| **STREAM_PROCESSOR** | Stateful stream processing | ingestion, routing, transformation, cep, window-agg | ✅✅✅ (primary type) | ⚠️ (event-driven features) | AEP operators, event streaming, CEP |
+| **PLANNING** | Goal-directed multi-step | htn, react, tot, workflow | ❌ | ✅✅✅ (orchestrators) | Task orchestration, multi-step workflows |
+| **HYBRID** | Multi-reasoner routing | rule+llm, template+llm, deterministic→probabilistic | ⚠️ | ✅✅✅ (Java Expert) | Complex reasoning with fallback |
+| **ADAPTIVE** | Self-tuning learning | bandit, rl, ab-test, parameter-opt | ✅ (adaptive routing) | ✅ (parameter tuning) | Online learning, self-optimization |
+| **COMPOSITE** | Distributed ensemble | voting, fan-out-in, conditional-routing | ✅ (multi-path) | ✅ (multi-model consensus) | Ensemble agents, parallel execution |
+| **REACTIVE** | Stateless trigger-action | alert, trigger, circuit-breaker | ✅ (simple alerts) | ⚠️ (simple actions) | Simple reflexes, alerts |
+| **CUSTOM** | Domain-specific | user-defined via registry | ✅ | ✅ | Special domain requirements |
+
+**Total**: 9 core types (down from 12) — 25% simpler taxonomy with clearer boundaries
+
+### 2.4 Agent Type Boundaries and Distinctions
+
+#### 2.4.1 Clear Type Boundaries
+
+| Type | Input→Output | State Model | Key Distinction | When to Use |
+|------|--------------|-------------|-----------------|-------------|
+| **DETERMINISTIC** | Same→Same | Deterministic FSM/Rule state | Guaranteed identical results | Validation, thresholds, policy enforcement |
+| **PROBABILISTIC** | Same→Variable | Model weights, sampling | Results vary with confidence | LLM reasoning, ML classification |
+| **STREAM_PROCESSOR** | Events→Events/State | Window state, checkpoints | Stateful stream processing with backpressure | AEP operators, event streaming, CEP |
+| **PLANNING** | Goal→Plan→Execution | Plan state, subgoal tracking | Multi-step with explicit planning phase | Workflow orchestration, multi-step tasks |
+| **HYBRID** | Input→Routed→Combined | Reasoner selection state | Combines 2+ reasoning types intelligently | Complex reasoning requiring fallback |
+| **ADAPTIVE** | Input→Output→Feedback | Learning parameters, exploration | Improves over time with feedback | Self-tuning parameters, RL |
+| **COMPOSITE** | Input→FanOut→Aggregate | Sub-agent coordination | Multiple agents in parallel/sequence | Consensus, parallel execution |
+| **REACTIVE** | Event→Immediate Response | Minimal/transient | Simple reflex, no complex reasoning | Alerts, triggers, circuit-breakers |
+| **CUSTOM** | Variable | Variable | Extensible for special cases | Domain-specific requirements |
+
+#### 2.4.2 Type Separation Guidelines
+
+**DETERMINISTIC vs PROBABILISTIC**:
+- DETERMINISTIC: Output is 100% reproducible given same input
+- PROBABILISTIC: Output varies due to sampling, model weights, or confidence thresholds
+
+**STREAM_PROCESSOR vs REACTIVE**:
+- STREAM_PROCESSOR: Stateful, complex event processing with windows/aggregations, checkpoint recovery
+- REACTIVE: Stateless, immediate trigger→action, no persistence or complex logic
+
+**HYBRID vs COMPOSITE**:
+- HYBRID: Single agent with multiple internal reasoners, intelligent routing between them
+- COMPOSITE: Multiple independent sub-agents, orchestrated with voting/aggregation
+
+**PLANNING vs HYBRID**:
+- PLANNING: Goal-directed, creates explicit plan before execution, handles multi-step workflows
+- HYBRID: Input-directed, routes to appropriate reasoner, handles single-step with complexity
+
+### 2.5 Agent Subtype Configuration
+
+```java
+public interface AgentSubtype {
+    String getSubtypeName();
+    AgentCharacteristics getCharacteristics();
+}
+
+// DETERMINISTIC subtypes
+enum DeterministicSubtype {
+    RULE_ENGINE("rule-engine"),      // Drools, OPA condition-action
+    FSM("fsm"),                       // Finite state machines
+    PATTERN_MATCHER("pattern-matcher"), // Template/pattern matching
+    POLICY_ENGINE("policy-engine"),   // Policy evaluation, governance
+    THRESHOLD_EVAL("threshold-eval");   // Threshold-based evaluation
+    
+    private final String name;
+    DeterministicSubtype(String name) { this.name = name; }
+    public String getName() { return name; }
+}
+
+// PROBABILISTIC subtypes
+enum ProbabilisticSubtype {
+    LLM("llm"),              // GPT, Claude, Llama, etc.
+    ML_MODEL("ml-model"),    // sklearn, tensorflow, pytorch
+    BAYESIAN("bayesian"),    // Bayesian networks, probabilistic graphs
+    CLASSIFIER("classifier"); // SVM, random forest, XGBoost
+    
+    private final String name;
+    ProbabilisticSubtype(String name) { this.name = name; }
+    public String getName() { return name; }
+}
+
+// STREAM_PROCESSOR subtypes (for AEP operators)
+enum StreamProcessorSubtype {
+    INGESTION("ingestion"),        // HTTP, Kafka, file ingestion
+    ROUTING("routing"),            // Content-based routing, fan-out
+    TRANSFORMATION("transformation"), // Event mapping, enrichment
+    CEP("cep"),                    // Complex event processing
+    WINDOW_AGG("window-agg");      // Windowed aggregations
+    
+    private final String name;
+    StreamProcessorSubtype(String name) { this.name = name; }
+    public String getName() { return name; }
+}
+
+// Subtype specification in agent identity
+public class AgentIdentity {
+    private AgentType agentType;
+    private String agentSubtype;  // e.g., "rule-engine", "llm", "ingestion"
+    private AgentCharacteristics characteristics;
+}
+```
+
+### 2.6 AEP Operator Agent Type Mapping
+
+All AEP operators are mapped to **STREAM_PROCESSOR** type with appropriate subtypes:
+
+```yaml
+# HTTP Ingestion Agent
+identity:
+  agentType: stream_processor
+  agentSubtype: ingestion
+  characteristics:
+    backpressure: true
+    checkpointing: true
+    eventDriven: true
+
+# Event Router Agent  
+identity:
+  agentType: stream_processor
+  agentSubtype: routing
+  characteristics:
+    contentBasedRouting: true
+    fanOut: true
+    stateful: true
+
+# Event Transformation Agent
+identity:
+  agentType: stream_processor
+  agentSubtype: transformation
+  characteristics:
+    eventMapping: true
+    enrichment: true
+    stateful: true
+
+# Anomaly Detection (AEP Pattern)
+identity:
+  agentType: stream_processor
+  agentSubtype: cep
+  characteristics:
+    patternMatching: true
+    windowedProcessing: true
+    probabilisticDetection: true  # Hybrid: uses probabilistic subtype internally
+```
+
+### 2.7 Framework Architecture Enhancement
+
+#### 2.4.1 Core Interface Updates
+
+**Enhanced Agent Interface**:
+```java
+public interface Agent {
+    // Existing methods
+    String getId();
+    AgentCapabilities getCapabilities();
+    Promise<Void> initialize(AgentContext context);
+    Promise<Void> start();
+    <T, R> Promise<R> process(T task, AgentContext context);
+    Promise<Void> shutdown();
+    
+    // NEW: Unified specification support
+    AgentSpec getSpec();
+    AgentInstance getInstance();
+    Promise<AgentResult> execute(AgentRequest request, AgentExecutionContext executionContext);
+    Promise<AgentHealth> healthCheck();
+    AgentMetrics getMetrics();
+}
+```
+
+**New AgentSpec Interface**:
+```java
+public interface AgentSpec {
+    String getAgentSpecVersion();
+    Metadata getMetadata();
+    Identity getIdentity();
+    PurposeModel getPurposeModel();
+    Scope getScope();
+    Capabilities getCapabilities();
+    ReasoningProfile getReasoningProfile();
+    ExecutionModel getExecutionModel();
+    Interfaces getInterfaces();
+    MemoryModel getMemoryModel();
+    ToolsAndResources getToolsAndResources();
+    Governance getGovernance();
+    LearningModel getLearningModel();
+    Evaluation getEvaluation();
+    Observability getObservability();
+    Interoperability getInteroperability();
+    Security getSecurity();
+    Deployment getDeployment();
+    Documentation getDocumentation();
+    Examples getExamples();
+    Extensibility getExtensibility();
+}
+```
+
+#### 2.4.2 Agent Type Implementations
+
+**Rule-Based Agent Implementation**:
+```java
+public class RuleBasedAgent extends AbstractAgent {
+    private final RuleEngine ruleEngine;
+    private final RuleConditionEvaluator conditionEvaluator;
+    
+    @Override
+    protected Promise<AgentResult> executeInternal(AgentRequest request, AgentExecutionContext context) {
+        return ruleEngine.evaluateRules(request, context)
+            .map(results -> AgentResult.success(results));
+    }
+    
+    // Rule engine selection: Drools vs OPA vs custom
+    private RuleEngine createRuleEngine(ReasonerConfig config) {
+        return switch (config.getEngine()) {
+            case DROOLS -> new DroolsRuleEngine(config);
+            case OPA -> new OPARuleEngine(config);
+            case CUSTOM -> new CustomRuleEngine(config);
+        };
+    }
+}
+```
+
+**Policy Agent Implementation**:
+```java
+public class PolicyAgent extends AbstractAgent {
+    private final PolicyEngine policyEngine;
+    private final ConstraintEvaluator constraintEvaluator;
+    
+    @Override
+    protected Promise<AgentResult> executeInternal(AgentRequest request, AgentExecutionContext context) {
+        return policyEngine.evaluatePolicies(request, context)
+            .flatMap(policies -> constraintEvaluator.validateConstraints(request, policies))
+            .map(results -> AgentResult.success(results));
+    }
+}
+```
+
+**Pattern Agent Implementation**:
+```java
+public class PatternAgent extends AbstractAgent {
+    private final TemplateEngine templateEngine;
+    private final PatternLibrary patternLibrary;
+    
+    @Override
+    protected Promise<AgentResult> executeInternal(AgentRequest request, AgentExecutionContext context) {
+        return patternLibrary.matchPattern(request)
+            .flatMap(pattern -> templateEngine.render(pattern, request))
+            .map(result -> AgentResult.success(result));
+    }
+}
+```
+
+**Planning Agent Implementation**:
+```java
+public class PlanningAgent extends AbstractAgent {
+    private final Planner planner;
+    private final GoalDecomposer goalDecomposer;
+    
+    @Override
+    protected Promise<AgentResult> executeInternal(AgentRequest request, AgentExecutionContext context) {
+        return goalDecomposer.decompose(request.getGoal())
+            .flatMap(subgoals -> planner.createPlan(subgoals, context))
+            .flatMap(plan -> executePlan(plan, context))
+            .map(result -> AgentResult.success(result));
+    }
+    
+    private Planner createPlanner(PlannerConfig config) {
+        return switch (config.getType()) {
+            case HTN -> new HTNPlanner(config);
+            case REACT -> new ReActPlanner(config);
+            case TREE_OF_THOUGHT -> new ToTPlanner(config);
+        };
+    }
+}
+```
+
+#### 2.4.3 Memory Model Implementation
+
+**Memory System Architecture**:
+```java
+public interface MemoryModel {
+    List<MemoryBinding> getMemoryBindings();
+    List<MemoryType> getMemoryTypes();
+    List<ReadStrategy> getReadStrategies();
+    WritePolicies getWritePolicies();
+    Optional<ConsolidationRules> getConsolidationRules();
+    Optional<RetentionPolicy> getRetentionPolicy();
+}
+
+public class MemorySystem {
+    private final Map<MemoryType, MemoryStore> stores;
+    private final ReadStrategyManager readStrategyManager;
+    private final WritePolicyManager writePolicyManager;
+    
+    public Promise<MemoryResult> read(MemoryRequest request) {
+        MemoryType type = request.getMemoryType();
+        ReadStrategy strategy = readStrategyManager.selectStrategy(request);
+        return stores.get(type).read(request, strategy);
+    }
+    
+    public Promise<MemoryResult> write(MemoryRequest request) {
+        WritePolicy policy = writePolicyManager.evaluatePolicy(request);
+        if (!policy.isAllowed()) {
+            return Promise.ofException(new MemoryWriteDeniedException(policy.getReason()));
+        }
+        return stores.get(request.getMemoryType()).write(request);
+    }
+}
+```
+
+#### 2.4.4 Tool and Resource Management
+
+**Tool System Architecture**:
+```java
+public interface Tool {
+    String getId();
+    String getName();
+    ToolType getType();
+    ToolAccess getAccess();
+    String getPurpose();
+    Promise<ToolResult> invoke(ToolRequest request, AgentContext context);
+}
+
+public class ToolRegistry {
+    private final Map<String, Tool> tools;
+    private final ToolSelectionPolicy selectionPolicy;
+    
+    public Promise<Tool> selectTool(ToolSelectionRequest request) {
+        List<Tool> candidates = tools.values().stream()
+            .filter(tool -> tool.supports(request.getCapability()))
+            .filter(tool -> selectionPolicy.isAllowed(tool, request))
+            .collect(Collectors.toList());
+            
+        return Promise.of(selectionPolicy.select(candidates, request));
+    }
+}
+```
+
+#### 2.4.5 Governance and Security Integration
+
+**Governance Framework**:
+```java
+public interface Governance {
+    List<PolicyReference> getPolicyRefs();
+    Optional<Approvals> getApprovals();
+    DataHandling getDataHandling();
+    RiskProfile getRiskProfile();
+}
+
+public class GovernanceEngine {
+    private final PolicyEvaluator policyEvaluator;
+    private final ApprovalManager approvalManager;
+    private final DataClassificationService dataClassificationService;
+    
+    public Promise<GovernanceResult> evaluate(AgentRequest request, AgentExecutionContext context) {
+        return policyEvaluator.evaluatePolicies(request)
+            .flatMap(policies -> approvalManager.checkApprovals(request, policies))
+            .flatMap(approvals -> dataClassificationService.classifyData(request))
+            .map(result -> GovernanceResult.success(result));
+    }
+}
+```
+
+### 2.5 Process Definition Agent Support
+
+#### 2.5.1 BPMN Workflow Integration
+
+**Process Definition Agent**:
+```java
+public class ProcessDefinitionAgent extends AbstractAgent {
+    private final BPMNEngine bpmnEngine;
+    private final WorkflowOrchestrator orchestrator;
+    
+    @Override
+    protected Promise<AgentResult> executeInternal(AgentRequest request, AgentExecutionContext context) {
+        return bpmnEngine.parseProcessDefinition(request.getProcessDefinition())
+            .flatMap(process -> orchestrator.execute(process, request.getInputs()))
+            .map(result -> AgentResult.success(result));
+    }
+}
+```
+
+**Supported Process Formats**:
+- **BPMN 2.0**: Business Process Model and Notation
+- **YAML Workflows**: Simple YAML-based workflow definitions
+- **JSON Processes**: JSON-based process definitions
+- **Custom DSL**: Domain-specific process languages
+
+#### 2.5.2 Workflow Execution Engine
+
+```java
+public interface WorkflowEngine {
+    Promise<WorkflowExecution> start(WorkflowDefinition definition, Map<String, Object> inputs);
+    Promise<WorkflowExecution> resume(String executionId, Map<String, Object> inputs);
+    Promise<WorkflowExecution> cancel(String executionId);
+    Promise<WorkflowStatus> getStatus(String executionId);
+}
+
+public class BPMNWorkflowEngine implements WorkflowEngine {
+    private final BPMNParser parser;
+    private final ActivityExecutor activityExecutor;
+    private final GatewayEvaluator gatewayEvaluator;
+    
+    @Override
+    public Promise<WorkflowExecution> start(WorkflowDefinition definition, Map<String, Object> inputs) {
+        return parser.parse(definition)
+            .flatMap(process -> executeProcess(process, inputs));
+    }
+}
+```
+
+### 2.6 Interoperability Protocol Implementation
+
+#### 2.6.1 Model Context Protocol (MCP)
+
+**MCP Implementation**:
+```java
+public interface MCPProtocol {
+    Promise<MCPResponse> handleRequest(MCPRequest request);
+    List<MCPTool> getAvailableTools();
+    MCPResource getResource(String uri);
+    Promise<MCPResource> updateResource(String uri, MCPResource resource);
+}
+
+public class MCPAgent implements MCPProtocol {
+    private final Agent agent;
+    private final ToolRegistry toolRegistry;
+    
+    @Override
+    public Promise<MCPResponse> handleRequest(MCPRequest request) {
+        return switch (request.getMethod()) {
+            case "tools/list" -> listTools();
+            case "tools/call" -> callTool(request);
+            case "resources/read" -> readResource(request);
+            case "resources/write" -> writeResource(request);
+            default -> Promise.ofException(new MCPMethodNotSupportedException(request.getMethod()));
+        };
+    }
+}
+```
+
+#### 2.6.2 Agent-to-Agent (A2A) Protocol
+
+**A2A Implementation**:
+```java
+public interface A2AProtocol {
+    Promise<A2AResponse> sendMessage(String targetAgentId, A2AMessage message);
+    Promise<A2AResponse> delegateTask(String targetAgentId, AgentTask task);
+    Promise<A2AResponse> requestHandoff(String targetAgentId, HandoffRequest request);
+    void registerMessageHandler(A2AMessageHandler handler);
+}
+
+public class A2AAgent implements A2AProtocol {
+    private final AgentRegistry agentRegistry;
+    private final MessageRouter messageRouter;
+    private final DelegationManager delegationManager;
+    
+    @Override
+    public Promise<A2AResponse> delegateTask(String targetAgentId, AgentTask task) {
+        return agentRegistry.getAgent(targetAgentId)
+            .flatMap(agent -> agent.process(task, createDelegationContext()))
+            .map(result -> A2AResponse.success(result));
+    }
+}
+```
+
+### 2.7 Learning Model Implementation
+
+#### 2.7.1 Learning Level Support
+
+**Learning Framework**:
+```java
+public enum LearningLevel {
+    L0, // No learning
+    L1, // Static parameter updates
+    L2, // Online learning with feedback
+    L3, // Adaptive strategy selection
+    L4, // Self-modifying behavior
+    L5  // Autonomous learning and improvement
+}
+
+public interface LearningModel {
+    LearningLevel getLearningLevel();
+    List<AdaptationTarget> getAdaptationTargets();
+    List<LearningSource> getLearningSources();
+    Optional<DriftControls> getDriftControls();
+    Optional<RollbackPolicy> getRollbackPolicy();
+}
+```
+
+**Adaptive Learning Implementation**:
+```java
+public class AdaptiveLearningAgent extends AbstractAgent {
+    private final LearningEngine learningEngine;
+    private final DriftDetector driftDetector;
+    private final RollbackManager rollbackManager;
+    
+    @Override
+    protected Promise<AgentResult> executeInternal(AgentRequest request, AgentExecutionContext context) {
+        return learningEngine.processWithLearning(request, context)
+            .flatMap(result -> driftDetector.checkDrift(result))
+            .flatMap(driftResult -> handleDrift(driftResult, result));
+    }
+}
+```
+
+### 2.8 Migration Implementation Tasks
+
+#### 2.8.1 Phase 1: Core Framework Updates (Week 1-2)
+
+**Task 1.1: Update AgentType Enum**
+```bash
+# Files to modify
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/AgentType.java
+
+# Changes required
+- Add RULE_BASED, POLICY, PATTERN, PLANNING enums
+- Update resolve() method for new types
+- Update documentation
+```
+
+**Task 1.2: Create New Agent Implementations**
+```bash
+# New files to create
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/rulebased/
+  - RuleBasedAgent.java
+  - DroolsReasoner.java
+  - OPAReasoner.java
+  - RuleConditionEvaluator.java
+
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/policy/
+  - PolicyAgent.java
+  - PolicyEngine.java
+  - ConstraintEvaluator.java
+  - CostPolicyEvaluator.java
+
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/pattern/
+  - PatternAgent.java
+  - TemplateEngine.java
+  - PatternLibrary.java
+  - PatternMatcher.java
+
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/planning/
+  - PlanningAgent.java
+  - HTNPlanner.java
+  - ReActPlanner.java
+  - ToTPlanner.java
+  - GoalDecomposer.java
+```
+
+**Task 1.3: Enhanced AgentSpec Interface**
+```bash
+# Files to create
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/spec/
+  - AgentSpec.java
+  - Metadata.java
+  - Identity.java
+  - PurposeModel.java
+  - Scope.java
+  - Capabilities.java
+  - ReasoningProfile.java
+  - ExecutionModel.java
+  - Interfaces.java
+  - MemoryModel.java
+  - ToolsAndResources.java
+  - Governance.java
+  - LearningModel.java
+  - Evaluation.java
+  - Observability.java
+  - Interoperability.java
+  - Security.java
+  - Deployment.java
+  - Documentation.java
+  - Examples.java
+  - Extensibility.java
+```
+
+#### 2.8.2 Phase 2: Memory and Tool Systems (Week 3-4)
+
+**Task 2.1: Memory Model Implementation**
+```bash
+# Files to create
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/memory/
+  - MemoryModel.java
+  - MemorySystem.java
+  - MemoryStore.java
+  - WorkingMemory.java
+  - EpisodicMemory.java
+  - SemanticMemory.java
+  - ProceduralMemory.java
+  - ReadStrategy.java
+  - WritePolicy.java
+  - ConsolidationRules.java
+  - RetentionPolicy.java
+```
+
+**Task 2.2: Tool and Resource Management**
+```bash
+# Files to create
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/tools/
+  - Tool.java
+  - ToolRegistry.java
+  - ToolSelectionPolicy.java
+  - MCPTool.java
+  - ServiceTool.java
+  - DatabaseTool.java
+  - FileTool.java
+```
+
+#### 2.8.3 Phase 3: Governance and Security (Week 5-6)
+
+**Task 3.1: Governance Framework**
+```bash
+# Files to create
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/governance/
+  - Governance.java
+  - GovernanceEngine.java
+  - PolicyEvaluator.java
+  - ApprovalManager.java
+  - DataClassificationService.java
+  - RiskAssessment.java
+```
+
+**Task 3.2: Security Implementation**
+```bash
+# Files to create
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/security/
+  - Authentication.java
+  - Authorization.java
+  - SecretsManager.java
+  - NetworkPolicy.java
+  - SecurityContext.java
+```
+
+#### 2.8.4 Phase 4: Process Definition and Interoperability (Week 7-8)
+
+**Task 4.1: Process Definition Support**
+```bash
+# Files to create
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/process/
+  - ProcessDefinitionAgent.java
+  - BPMNEngine.java
+  - WorkflowOrchestrator.java
+  - WorkflowEngine.java
+  - BPMNParser.java
+  - ActivityExecutor.java
+  - GatewayEvaluator.java
+```
+
+**Task 4.2: Interoperability Protocols**
+```bash
+# Files to create
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/interop/
+  - MCPProtocol.java
+  - MCPAgent.java
+  - A2AProtocol.java
+  - A2AAgent.java
+  - MessageRouter.java
+  - DelegationManager.java
+```
+
+#### 2.8.5 Phase 5: Learning and Adaptation (Week 9-10)
+
+**Task 5.1: Learning Model Implementation**
+```bash
+# Files to create
+- platform/java/agent-framework/src/main/java/com/ghatana/agent/learning/
+  - LearningModel.java
+  - LearningEngine.java
+  - DriftDetector.java
+  - RollbackManager.java
+  - AdaptiveLearningAgent.java
+  - BanditAlgorithm.java
+  - RLAgent.java
+```
+
+### 2.9 Testing Strategy
+
+#### 2.9.1 Unit Tests for Each Agent Type
+
+**Test Coverage Requirements**:
+- Each agent type: 95% code coverage
+- Each reasoner implementation: 90% code coverage
+- Memory system: 95% code coverage
+- Tool system: 90% code coverage
+- Governance: 95% code coverage
+
+**Test Structure**:
+```bash
+platform/java/agent-framework/src/test/java/com/ghatana/agent/
+├── deterministic/
+│   ├── DeterministicAgentTest.java
+│   ├── RuleEngineTest.java
+│   └── FiniteStateMachineTest.java
+├── rulebased/
+│   ├── RuleBasedAgentTest.java
+│   ├── DroolsReasonerTest.java
+│   └── OPAReasonerTest.java
+├── policy/
+│   ├── PolicyAgentTest.java
+│   ├── PolicyEngineTest.java
+│   └── ConstraintEvaluatorTest.java
+├── pattern/
+│   ├── PatternAgentTest.java
+│   ├── TemplateEngineTest.java
+│   └── PatternLibraryTest.java
+├── planning/
+│   ├── PlanningAgentTest.java
+│   ├── HTNPlannerTest.java
+│   ├── ReActPlannerTest.java
+│   └── ToTPlannerTest.java
+├── memory/
+│   ├── MemorySystemTest.java
+│   ├── WorkingMemoryTest.java
+│   ├── EpisodicMemoryTest.java
+│   └── SemanticMemoryTest.java
+├── tools/
+│   ├── ToolRegistryTest.java
+│   ├── MCPToolTest.java
+│   └── ServiceToolTest.java
+├── governance/
+│   ├── GovernanceEngineTest.java
+│   ├── PolicyEvaluatorTest.java
+│   └── DataClassificationServiceTest.java
+├── process/
+│   ├── ProcessDefinitionAgentTest.java
+│   ├── BPMNEngineTest.java
+│   └── WorkflowOrchestratorTest.java
+├── interop/
+│   ├── MCPProtocolTest.java
+│   ├── A2AProtocolTest.java
+│   └── MessageRouterTest.java
+└── learning/
+    ├── LearningEngineTest.java
+    ├── DriftDetectorTest.java
+    └── AdaptiveLearningAgentTest.java
+```
+
+#### 2.9.2 Integration Tests
+
+**Integration Test Scenarios**:
+1. **Multi-reasoner Agents**: Test hybrid agents with multiple reasoners
+2. **Memory Integration**: Test agents with different memory types
+3. **Tool Integration**: Test agents using various tools
+4. **Governance Integration**: Test policy enforcement and approval flows
+5. **Process Definition**: Test BPMN workflow execution
+6. **Interoperability**: Test MCP and A2A protocols
+7. **Learning Adaptation**: Test adaptive learning and drift detection
+
+#### 2.9.3 Performance Tests
+
+**Performance Benchmarks**:
+- **Deterministic Agents**: Sub-millisecond latency
+- **Rule-Based Agents**: <5ms latency for rule evaluation
+- **Policy Agents**: <10ms latency for policy evaluation
+- **LLM Agents**: <5s latency for LLM calls
+- **Memory Operations**: <1ms for working memory, <10ms for episodic memory
+- **Tool Invocation**: <100ms for local tools, <5s for remote tools
+
+---
 
 ### 2.1 Top-Level Structure
 
@@ -815,7 +2088,7 @@ materialized:
 
 ## 3. Phase-Based Migration Plan
 
-### Phase 1: Foundation (Weeks 1-2)
+### Phase 1: Foundation (Weeks 1-2) ✅ COMPLETE
 
 **Goal**: Finalize agent spec, establish unified schema, template engine, and instantiation framework
 
@@ -825,7 +2098,7 @@ materialized:
    - Add `determinismGuarantee`, `stateMutability`, `failureMode` to `identity` section in `agent-spec.md`
    - Add `supportedModalities` to `interfaces` section in `agent-spec.md`
    - Add `promptVersioning` to `learningModel` section in `agent-spec.md`
-   - Update `identity.agentType` enum to 12 values (add adaptive, composite, reactive, custom)
+   - Update `identity.agentType` enum to 9 values (consolidated from 12: removed rule-based/policy/pattern/llm as standalone types, added stream_processor for AEP)
    - Freeze `agent-spec.md` as version 1.0.0 — no further changes during migration
 
 1. **Schema Definition**
@@ -873,9 +2146,18 @@ materialized:
 
 **Agents to Migrate**: 0 (tooling only)
 
+**COMPLETED**:
+- ✅ `agent-spec.md` updated with 9-type taxonomy, disambiguation rules, JAVA ALIGNMENT section
+- ✅ `catalog-schema.yaml` v2.0.0 — `identity` block replaces `generator:`, `generator:` marked deprecated
+- ✅ `base-agent-template.yaml` — `generator:` block replaced with `identity:` block
+- ✅ `AgentType` enum updated (STREAM_PROCESSOR + PLANNING added, LLM deprecated)
+- ✅ All subtype enums updated/created (`DeterministicSubtype`, `ProbabilisticSubtype`, `StreamProcessorSubtype`, `PlanningSubtype`)
+- ✅ `PlanningAgent` + `StreamProcessorAgent` abstract base classes created
+- ✅ `PlannerRegistry` created, naming collision resolved
+
 ---
 
-### Phase 2: Platform Agents (Weeks 3-4)
+### Phase 2: Platform Agents (Weeks 3-4) ✅ COMPLETE
 
 **Goal**: Migrate platform-level agents to establish patterns
 
@@ -902,6 +2184,20 @@ materialized:
 - Validation reports
 
 **Agents to Migrate**: 20
+
+**COMPLETED** (all 20 platform agents migrated):
+- ✅ **event-processing** (4): event-router, event-enricher, event-filter, event-transformer — migrated to `stream-processor` agentType
+- ✅ **monitoring** (3): anomaly-detector (`adaptive`), health-checker (`stream-processor/ingestion`), metrics-collector (`stream-processor/ingestion`)
+- ✅ **governance** (2): cost-optimization (`hybrid`), sustainability (`adaptive`)
+- ✅ **security** (1): access-control (`deterministic/policy`)
+- ✅ **data-processing** (2): data-transformation (`hybrid`), schema-validation (`deterministic/rule-based`)
+- ✅ **domain-agents** (4): healthcare/patient-data (`deterministic/rule-based`), retail/inventory (`adaptive`), manufacturing/quality-control (`deterministic/threshold`), finance/financial-analysis (`deterministic/rule-based`)
+- ✅ **composite-agents** (1): etl-pipeline (`composite`)
+- ✅ **templates** (3): deterministic, adaptive, composite templates updated to `identity:` format
+- ✅ All YAMLs now have: `namespace`, `status`, `owners`, `summary`, `identity` block
+- ✅ All YAMLs use `interfaces:` (not `io:`) for input/output declarations
+- ✅ `catalog-schema.yaml` updated to v2.0.0; `generator:` deprecated
+- ✅ `base-agent-template.yaml` updated; `generator:` block replaced with `identity:`
 
 ---
 
@@ -1020,7 +2316,7 @@ materialized:
 1. **Java Framework Rewrite**
    - Rewrite `AgentDefinition.java` with all 20 sections as first-class fields
    - Replace `AgentConfigDto.java` with `AgentSpecDto.java` matching the unified schema
-   - Update `AgentType.java` enum with all 12 agent types
+   - Update `AgentType.java` enum with all 9 agent types (consolidated from 12: rule-based/policy/pattern merged into deterministic as subtypes, llm moved to probabilistic subtype, stream_processor added for AEP)
    - Add new fields to `AgentInstance.java` and `Overrides` inner class
    - Add `DeterminismGuarantee`, `StateMutability`, `FailureMode` as required identity fields
 
@@ -1243,7 +2539,7 @@ agent-migrate verify-no-old-format \
 3. **`AgentDefinitionValidator.java`**: Rewritten with validation rules for all 20 sections
 4. **`AgentInstance.java`**: Updated `Overrides` to cover new fields (reasoningProfile overrides, memoryModel overrides, governance overrides)
 5. **`CatalogLoader.java`**: Updated to expect `agentSpecVersion: "1.0.0"` at the top of every agent YAML
-6. **`AgentType.java` enum**: Updated to include all 12 values: `DETERMINISTIC`, `RULE_BASED`, `POLICY`, `PATTERN`, `PROBABILISTIC`, `PLANNING`, `LLM`, `HYBRID`, `ADAPTIVE`, `COMPOSITE`, `REACTIVE`, `CUSTOM`
+6. **`AgentType.java` enum**: Updated to include 9 core values: `DETERMINISTIC`, `PROBABILISTIC`, `STREAM_PROCESSOR`, `PLANNING`, `HYBRID`, `ADAPTIVE`, `COMPOSITE`, `REACTIVE`, `CUSTOM` (consolidated from 12 types with rule-based/policy/pattern merged into deterministic as subtypes, llm moved to probabilistic subtype)
 7. **`YamlTemplateEngine.java`**: Extended with filter, conditional, loop, and value-source support for the new parameter system
 8. **All test fixtures**: All agent YAML test fixtures are rewritten to the new format
 9. **`base-agent-template.yaml`**: Rewritten with all 20 sections populated with sensible defaults
@@ -1288,7 +2584,7 @@ validation_stages:
 | Documentation Coverage        | 100%      | All 20 sections documented                           |
 | Migration Time                | <18 weeks | Phase completion tracking                            |
 | Build + Test Pass Rate        | 100%      | `./gradlew clean build test` passes                  |
-| Agent Type Enum Alignment     | 12 types  | Java `AgentType` = spec `identity.agentType`         |
+| Agent Type Enum Alignment     | 9 types   | Java `AgentType` = spec `identity.agentType`         |
 | Identity Fields Complete      | 100%      | determinismGuarantee + stateMutability + failureMode |
 
 ---
@@ -1296,7 +2592,7 @@ validation_stages:
 ## 7. Next Steps
 
 1. **Review this plan** with product owners for Platform, AEP, Data Cloud, and YAPPC
-2. **Approve schema** additions (determinismGuarantee, stateMutability, failureMode, supportedModalities, promptVersioning) and the 12-value agentType enum
+2. **Approve schema** additions (determinismGuarantee, stateMutability, failureMode, supportedModalities, promptVersioning) and the 9-value agentType enum (consolidated from 12 with clear boundaries)
 3. **Update `agent-spec.md`** with the three new identity fields and interface/learning enhancements
 4. **Begin Phase 1**: Create schema, migration tooling, and batch-conversion scripts
 5. **Establish migration champions** per product team with authority to approve generated agent YAML

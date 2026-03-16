@@ -1,23 +1,53 @@
 id: ticket-deduplicator
 name: Ticket Deduplicator
 version: 1.0.0
-description: "Detect whether an incoming support ticket is a duplicate of an existing open ticket using semantic matching"
-
+namespace: yappc.micro-agents.operations
+status: active
+owners:
+- team: sre
+  contact: sre@ghatana.com
+description: Detect whether an incoming support ticket is a duplicate of an existing open ticket using
+  semantic matching
+summary: Detect whether an incoming support ticket is a duplicate of an existing open ticket using semantic
+  matching
 metadata:
   level: 3
   domain: operations
   type: micro-agent
-  tags: [ticket-deduplication, semantic-matching, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "ticket-deduplication"
-        - "semantic-matching"
-
+  tags:
+  - ticket-deduplication
+  - semantic-matching
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: dedup_request
+    schema: dynamic
+  outputs:
+  - name: duplicate_verdict
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: support-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +55,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [semantic_matcher]
-
+tools:
+- semantic_matcher
 capabilities:
-  - ticket-deduplication
-  - semantic-matching
-
+- ticket-deduplication
+- semantic-matching
 routing:
-  input_types: [dedup_request]
-  output_types: [duplicate_verdict]
-
+  input_types:
+  - dedup_request
+  output_types:
+  - duplicate_verdict
 delegation:
   can_delegate_to: []
   escalates_to: support-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 200
   max_latency_ms: 1000

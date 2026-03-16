@@ -1,62 +1,85 @@
 id: semantic-memory-task-agent
 name: Semantic Memory Task Agent
 version: 1.0.0
-description: "Maintain semantic knowledge graph with concept extraction, relationship mapping, and graph-based retrieval"
-
+namespace: yappc.task-agents.ai
+status: active
+owners:
+- team: ai-platform
+  contact: ai-platform@ghatana.com
+description: Maintain semantic knowledge graph with concept extraction, relationship mapping, and graph-based
+  retrieval
+summary: Maintain semantic knowledge graph with concept extraction, relationship mapping, and graph-based
+  retrieval
 metadata:
   level: 3
   domain: ai
   type: worker
-  tags: [semantic-memory-store, concept-extraction, graph-retrieval, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Maintain semantic knowledge graph with concept extraction, relationship mapping, and graph-based retrieval
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - semantic-memory-store
+  - concept-extraction
+  - graph-retrieval
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: semantic_memory_request
+    schema: dynamic
+  outputs:
+  - name: semantic_memory_result
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: memory-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [semantic_graph_store, concept_extractor, graph_retriever]
-
+tools:
+- semantic_graph_store
+- concept_extractor
+- graph_retriever
 capabilities:
-  - semantic-memory-store
-  - concept-extraction
-  - graph-retrieval
-
+- semantic-memory-store
+- concept-extraction
+- graph-retrieval
 routing:
-  input_types: [semantic_memory_request]
-  output_types: [semantic_memory_result]
-
+  input_types:
+  - semantic_memory_request
+  output_types:
+  - semantic_memory_result
 delegation:
   can_delegate_to: []
   escalates_to: memory-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 500
   max_latency_ms: 2500

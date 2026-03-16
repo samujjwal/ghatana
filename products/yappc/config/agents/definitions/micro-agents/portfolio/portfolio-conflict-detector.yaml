@@ -1,23 +1,51 @@
 id: portfolio-conflict-detector
 name: Portfolio Conflict Detector
 version: 1.0.0
-description: "Detect conflicting objectives or resource claims between initiatives in a portfolio"
-
+namespace: yappc.micro-agents.portfolio
+status: active
+owners:
+- team: product-leadership
+  contact: product-leadership@ghatana.com
+description: Detect conflicting objectives or resource claims between initiatives in a portfolio
+summary: Detect conflicting objectives or resource claims between initiatives in a portfolio
 metadata:
   level: 3
   domain: portfolio
   type: micro-agent
-  tags: [conflict-detection, resource-conflict, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "conflict-detection"
-        - "resource-conflict"
-
+  tags:
+  - conflict-detection
+  - resource-conflict
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: conflict_check_request
+    schema: dynamic
+  outputs:
+  - name: conflict_report
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: portfolio-analysis-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +53,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [conflict_detector]
-
+tools:
+- conflict_detector
 capabilities:
-  - conflict-detection
-  - resource-conflict
-
+- conflict-detection
+- resource-conflict
 routing:
-  input_types: [conflict_check_request]
-  output_types: [conflict_report]
-
+  input_types:
+  - conflict_check_request
+  output_types:
+  - conflict_report
 delegation:
   can_delegate_to: []
   escalates_to: portfolio-analysis-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 200
   max_latency_ms: 1000

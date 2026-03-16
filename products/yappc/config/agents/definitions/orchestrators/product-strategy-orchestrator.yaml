@@ -1,103 +1,128 @@
 id: product-strategy-orchestrator
 name: Product Strategy Orchestrator
 version: 1.0.0
-description: "Drives product strategy: vision articulation, market positioning, product-market fit analysis, strategic roadmap, and north-star metric definition"
-
+namespace: yappc.orchestrators.portfolio
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-platform@ghatana.com
+description: 'Drives product strategy: vision articulation, market positioning, product-market fit analysis,
+  strategic roadmap, and north-star metric definition'
+summary: 'Drives product strategy: vision articulation, market positioning, product-market fit analysis,
+  strategic roadmap, and...'
 metadata:
   level: 1
   domain: portfolio
-  tags: [orchestrator, product-strategy, vision, roadmap, level1]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: market_context_analysis
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.3
-      max_tokens: 3500
-      prompt: |
-        You are the Product Strategy Orchestrator. Analyse the market context for the given product:
-
-        Product: {{input.product}}
-        Market data: {{context.market_data}}
-        Competitive landscape: {{context.competitors}}
-        Customer insights: {{context.customer_insights}}
-
-        Produce:
-        1. Market opportunity sizing and segmentation
-        2. Competitive differentiation analysis
-        3. Target customer profile and jobs-to-be-done
-        4. Product-market fit assessment (current vs desired)
-        5. Strategic options (build vs buy, go-to-market variants)
-
-        Output as JSON: {market_opportunity, differentiation, customer_profile, pmf_score, strategic_options}
-    - name: vision_definition
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.4
-      max_tokens: 2000
-      prompt: |
-        Draft a compelling product vision and positioning statement:
-        Market context: {{market_context_analysis}}
-        Brand guidelines: {{context.brand}}
-
-        Output: {vision_statement, positioning_statement, north_star_metric, strategic_bets}
-    - name: roadmap_synthesis
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.2
-      max_tokens: 3000
-      prompt: |
-        Create a strategic roadmap aligned to the vision:
-        Vision: {{vision_definition}}
-        Initiative pipeline: {{context.initiatives}}
-        Resource constraints: {{context.constraints}}
-
-        Return: {roadmap_themes, quarterly_milestones, dependencies, risks}
-
+  tags:
+  - orchestrator
+  - product-strategy
+  - vision
+  - roadmap
+  - level1
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: mission-critical
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: strategy_request
+    schema: dynamic
+  - name: market_update
+    schema: dynamic
+  - name: competitive_alert
+    schema: dynamic
+  - name: vision_review
+    schema: dynamic
+  outputs:
+  - name: strategy_document
+    schema: dynamic
+  - name: vision_statement
+    schema: dynamic
+  - name: roadmap
+    schema: dynamic
+  - name: positioning_brief
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - market-research-orchestrator
+    - opportunity-assessment-orchestrator
+    - discovery-orchestrator
+    escalation: portfolio-orchestrator
+  mcp:
+    enabled: false
+    note: MCP proxy optional via InteroperabilityService
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - chain-of-thought
+  - plan-and-solve
+  defaultReasoner: plan-and-solve
+  maxChainDepth: 5
 memory:
   episodic:
     enabled: true
     retention_days: 1095
-    categories: [strategy-decisions, market-analyses, competitive-moves]
+    categories:
+    - strategy-decisions
+    - market-analyses
+    - competitive-moves
   semantic:
     enabled: true
-    categories: [strategic-frameworks, market-knowledge, competitor-profiles, positioning-models]
+    categories:
+    - strategic-frameworks
+    - market-knowledge
+    - competitor-profiles
+    - positioning-models
   procedural:
     enabled: true
-    categories: [strategy-review-cadence, market-analysis-procedures]
-
-tools: [market_analyzer, competitive_intelligence_tool, vision_builder, roadmap_planner]
-
+    categories:
+    - strategy-review-cadence
+    - market-analysis-procedures
+tools:
+- market_analyzer
+- competitive_intelligence_tool
+- vision_builder
+- roadmap_planner
 capabilities:
-  - product-strategy
-  - market-analysis
-  - vision-definition
-  - roadmap-planning
-  - north-star-metric-definition
-
+- product-strategy
+- market-analysis
+- vision-definition
+- roadmap-planning
+- north-star-metric-definition
 routing:
-  input_types: [strategy_request, market_update, competitive_alert, vision_review]
-  output_types: [strategy_document, vision_statement, roadmap, positioning_brief]
-
+  input_types:
+  - strategy_request
+  - market_update
+  - competitive_alert
+  - vision_review
+  output_types:
+  - strategy_document
+  - vision_statement
+  - roadmap
+  - positioning_brief
 delegation:
   can_delegate_to:
-    - market-research-orchestrator
-    - opportunity-assessment-orchestrator
-    - discovery-orchestrator
+  - market-research-orchestrator
+  - opportunity-assessment-orchestrator
+  - discovery-orchestrator
   escalates_to: portfolio-orchestrator
-
 governance:
   requires_approval: true
   approval_chain:
-    - portfolio-orchestrator
+  - portfolio-orchestrator
   can_block: false
   audit_trail: comprehensive
-
 performance:
   expected_latency_ms: 15000
   max_latency_ms: 90000

@@ -40,8 +40,17 @@ metadata:
   maturity: experimental      # experimental | alpha | beta | production
   author: "{{TEAM_EMAIL}}"
 
-generator:
-  type: ADAPTIVE
+# REQUIRED — choose the most specific subtype for your use case
+# AdaptiveSubtype values: REINFORCEMENT_LEARNING | ONLINE_LEARNING | BANDIT | META_LEARNING | SELF_OPTIMIZING
+identity:
+  agentType: adaptive               # DO NOT CHANGE — this is the adaptive template
+  subtype: "{{SUBTYPE}}"            # e.g. online-learning, reinforcement-learning, bandit
+  roles: ["{{ROLE_1}}"]             # e.g. [forecaster, policy-learner, anomaly-detector]
+  criticality: "{{CRITICALITY}}"    # critical | high | medium | low
+  autonomyLevel: semi-autonomous    # Adaptive agents typically require supervision
+  determinismGuarantee: non-deterministic  # model outputs vary as it learns
+  stateMutability: persistent       # trained model state MUST be persisted
+  failureMode: retry                # fall back to previous policy on model failure
 
 # AEP integration
 aep:

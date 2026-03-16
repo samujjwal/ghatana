@@ -5,15 +5,29 @@ import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Canonical definition of an Agent in the Ghatana platform.
- * <p>
- * An Agent is an autonomous entity capable of performing tasks, making decisions,
- * and interacting with its environment through tools and events.
+ * Original untyped agent contract.
+ *
+ * @deprecated Use {@link TypedAgent} instead.
+ *
+ * <p>This interface is retained for backward compatibility with legacy consumers
+ * (virtual-org, yappc workflow engine, early versions of tutorputor). New code
+ * must implement {@link TypedAgent} exclusively.
+ *
+ * <h2>Migration Path</h2>
+ * <pre>
+ *   Phase 1 (complete): Wrap legacy agents with {@link com.ghatana.agent.migration.LegacyAgentAdapter}
+ *   Phase 2 (in progress): Migrate product code to implement {@link TypedAgent} directly
+ *   Phase 3 (planned v3.0.0): Remove this interface and all adapters
+ * </pre>
+ *
+ * @see TypedAgent
+ * @see com.ghatana.agent.migration.LegacyAgentAdapter
  *
  * @doc.type interface
- * @doc.purpose Canonical Agent definition
+ * @doc.purpose Deprecated untyped agent contract — do not use in new code
  * @doc.layer core
  */
+@Deprecated
 public interface Agent {
 
     /**
@@ -24,7 +38,10 @@ public interface Agent {
 
     /**
      * Returns the capabilities of this agent.
+     *
+     * @deprecated Use {@link TypedAgent#descriptor()} for richer metadata.
      */
+    @Deprecated
     @NotNull
     AgentCapabilities getCapabilities();
 

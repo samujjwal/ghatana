@@ -1,23 +1,52 @@
 id: pii-redactor
 name: Pii Redactor
 version: 1.0.0
-description: "Detect and redact PII entities (names, emails, phone numbers, addresses) from text before persistence"
-
+namespace: yappc.micro-agents.ai
+status: active
+owners:
+- team: ai-platform
+  contact: ai-platform@ghatana.com
+description: Detect and redact PII entities (names, emails, phone numbers, addresses) from text before
+  persistence
+summary: Detect and redact PII entities (names, emails, phone numbers, addresses) from text before persistence
 metadata:
   level: 3
   domain: ai
   type: micro-agent
-  tags: [pii-detection, pii-redaction, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "pii-detection"
-        - "pii-redaction"
-
+  tags:
+  - pii-detection
+  - pii-redaction
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: redact_request
+    schema: dynamic
+  outputs:
+  - name: redacted_text
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: memory-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +54,24 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [pii_detector, redactor]
-
+tools:
+- pii_detector
+- redactor
 capabilities:
-  - pii-detection
-  - pii-redaction
-
+- pii-detection
+- pii-redaction
 routing:
-  input_types: [redact_request]
-  output_types: [redacted_text]
-
+  input_types:
+  - redact_request
+  output_types:
+  - redacted_text
 delegation:
   can_delegate_to: []
   escalates_to: memory-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 200
   max_latency_ms: 1000

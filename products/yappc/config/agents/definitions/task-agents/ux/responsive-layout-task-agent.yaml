@@ -1,62 +1,84 @@
 id: responsive-layout-task-agent
 name: Responsive Layout Task Agent
 version: 1.0.0
-description: "Define responsive layout specifications for mobile/tablet/desktop breakpoints with component adaptation rules"
-
+namespace: yappc.task-agents.ux
+status: active
+owners:
+- team: design
+  contact: design@ghatana.com
+description: Define responsive layout specifications for mobile/tablet/desktop breakpoints with component
+  adaptation rules
+summary: Define responsive layout specifications for mobile/tablet/desktop breakpoints with component
+  adaptation rules
 metadata:
   level: 3
   domain: ux
   type: worker
-  tags: [responsive-specification, breakpoint-definition, adaptation-rules, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Define responsive layout specifications for mobile/tablet/desktop breakpoints with component adaptation rules
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - responsive-specification
+  - breakpoint-definition
+  - adaptation-rules
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: responsive_layout_request
+    schema: dynamic
+  outputs:
+  - name: responsive_layout_spec
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: screen-design-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [responsive_spec_writer, breakpoint_definer]
-
+tools:
+- responsive_spec_writer
+- breakpoint_definer
 capabilities:
-  - responsive-specification
-  - breakpoint-definition
-  - adaptation-rules
-
+- responsive-specification
+- breakpoint-definition
+- adaptation-rules
 routing:
-  input_types: [responsive_layout_request]
-  output_types: [responsive_layout_spec]
-
+  input_types:
+  - responsive_layout_request
+  output_types:
+  - responsive_layout_spec
 delegation:
   can_delegate_to: []
   escalates_to: screen-design-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

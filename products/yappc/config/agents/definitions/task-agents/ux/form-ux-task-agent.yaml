@@ -1,62 +1,84 @@
 id: form-ux-task-agent
 name: Form Ux Task Agent
 version: 1.0.0
-description: "Design form UX with field ordering, validation feedback, inline help, progressive disclosure, and submission flow"
-
+namespace: yappc.task-agents.ux
+status: active
+owners:
+- team: design
+  contact: design@ghatana.com
+description: Design form UX with field ordering, validation feedback, inline help, progressive disclosure,
+  and submission flow
+summary: Design form UX with field ordering, validation feedback, inline help, progressive disclosure,
+  and submission flow
 metadata:
   level: 3
   domain: ux
   type: worker
-  tags: [form-design, validation-ux, error-handling-ux, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Design form UX with field ordering, validation feedback, inline help, progressive disclosure, and submission flow
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - form-design
+  - validation-ux
+  - error-handling-ux
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: form_ux_request
+    schema: dynamic
+  outputs:
+  - name: form_ux_specification
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: screen-design-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [form_designer, validation_ux_spec]
-
+tools:
+- form_designer
+- validation_ux_spec
 capabilities:
-  - form-design
-  - validation-ux
-  - error-handling-ux
-
+- form-design
+- validation-ux
+- error-handling-ux
 routing:
-  input_types: [form_ux_request]
-  output_types: [form_ux_specification]
-
+  input_types:
+  - form_ux_request
+  output_types:
+  - form_ux_specification
 delegation:
   can_delegate_to: []
   escalates_to: screen-design-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

@@ -1,23 +1,51 @@
 id: duplication-detector
 name: Duplication Detector
 version: 1.0.0
-description: "Detect duplicated code blocks across a codebase above a configurable similarity threshold"
-
+namespace: yappc.micro-agents.engineering
+status: active
+owners:
+- team: backend-core
+  contact: backend-core@ghatana.com
+description: Detect duplicated code blocks across a codebase above a configurable similarity threshold
+summary: Detect duplicated code blocks across a codebase above a configurable similarity threshold
 metadata:
   level: 3
   domain: engineering
   type: micro-agent
-  tags: [duplication-detection, similarity-checking, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "duplication-detection"
-        - "similarity-checking"
-
+  tags:
+  - duplication-detection
+  - similarity-checking
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: dup_detect_request
+    schema: dynamic
+  outputs:
+  - name: duplication_report
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: code-quality-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +53,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [duplication_detector]
-
+tools:
+- duplication_detector
 capabilities:
-  - duplication-detection
-  - similarity-checking
-
+- duplication-detection
+- similarity-checking
 routing:
-  input_types: [dup_detect_request]
-  output_types: [duplication_report]
-
+  input_types:
+  - dup_detect_request
+  output_types:
+  - duplication_report
 delegation:
   can_delegate_to: []
   escalates_to: code-quality-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 200
   max_latency_ms: 1000

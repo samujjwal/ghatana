@@ -1,62 +1,84 @@
 id: sentiment-analysis-task-agent
 name: Sentiment Analysis Task Agent
 version: 1.0.0
-description: "Perform fine-grained sentiment analysis on feedback items classifying positive, neutral, negative with aspect-level sentiment"
-
+namespace: yappc.task-agents.product-intelligence
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Perform fine-grained sentiment analysis on feedback items classifying positive, neutral,
+  negative with aspect-level sentiment
+summary: Perform fine-grained sentiment analysis on feedback items classifying positive, neutral, negative
+  with aspect-level s...
 metadata:
   level: 3
   domain: product-intelligence
   type: worker
-  tags: [sentiment-analysis, aspect-level-sentiment, sentiment-classification, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Perform fine-grained sentiment analysis on feedback items classifying positive, neutral, negative with aspect-level sentiment
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - sentiment-analysis
+  - aspect-level-sentiment
+  - sentiment-classification
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: sentiment_request
+    schema: dynamic
+  outputs:
+  - name: sentiment_analysis_result
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: feedback-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [sentiment_analyser, aspect_extractor]
-
+tools:
+- sentiment_analyser
+- aspect_extractor
 capabilities:
-  - sentiment-analysis
-  - aspect-level-sentiment
-  - sentiment-classification
-
+- sentiment-analysis
+- aspect-level-sentiment
+- sentiment-classification
 routing:
-  input_types: [sentiment_request]
-  output_types: [sentiment_analysis_result]
-
+  input_types:
+  - sentiment_request
+  output_types:
+  - sentiment_analysis_result
 delegation:
   can_delegate_to: []
   escalates_to: feedback-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 2000
   max_latency_ms: 10000

@@ -1,27 +1,41 @@
 id: financial-analysis-agent
 name: Financial Analysis Agent
-version: 1.0.0
+namespace: platform.domain.finance
+version: 2.1.0
+status: active
+summary: >-
+  Auditable financial data processor for Basel III / IFRS 9 compliant risk assessment, fraud scoring, and PnL computation.
 description: >
   Domain-specific agent for financial data processing, risk assessment, and
   regulatory compliance. Handles transaction analysis, fraud scoring, portfolio
   risk evaluation, PnL computation, and Basel III/IFRS 9 compliant reporting.
   All computations are deterministic and auditable; every calculation step is
   logged to the event store for regulatory audit trail requirements.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 4
   domain: finance
   tags: [finance, risk, fraud, compliance, basel3, ifrs9, pnl, trading]
   maturity: production
-  author: platform-team@ghatana.ai
   regulatoryFrameworks:
     - Basel III
     - IFRS 9
     - MiFID II
     - GDPR
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: deterministic
+  subtype: rule-based                            # financial rules + threshold checks (auditable)
+  roles: [financial-analyzer, fraud-scorer, risk-evaluator, compliance-reporter]
+  criticality: critical
+  autonomyLevel: supervised                      # regulatory submissions require human approval
+  determinismGuarantee: fully-deterministic      # same input → same risk score (reproducible audit)
+  stateMutability: stateless                     # all state is in the event log (event sourcing)
+  failureMode: fail-closed                       # conservative: reject on error vs. accept wrong result
 
 # AEP Operator configuration
 aep:

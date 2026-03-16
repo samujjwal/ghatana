@@ -1,23 +1,53 @@
 id: scope-boundary-checker
 name: Scope Boundary Checker
 version: 1.0.0
-description: "Check whether a proposed feature is within the defined MVP/V1 scope boundary and return in-scope/out-of-scope verdict"
-
+namespace: yappc.micro-agents.ideation
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Check whether a proposed feature is within the defined MVP/V1 scope boundary and return in-scope/out-of-scope
+  verdict
+summary: Check whether a proposed feature is within the defined MVP/V1 scope boundary and return in-scope/out-of-scope
+  verdict
 metadata:
   level: 3
   domain: ideation
   type: micro-agent
-  tags: [scope-checking, boundary-enforcement, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "scope-checking"
-        - "boundary-enforcement"
-
+  tags:
+  - scope-checking
+  - boundary-enforcement
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: scope_check_request
+    schema: dynamic
+  outputs:
+  - name: scope_verdict
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: concept-validation-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +55,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [scope_checker]
-
+tools:
+- scope_checker
 capabilities:
-  - scope-checking
-  - boundary-enforcement
-
+- scope-checking
+- boundary-enforcement
 routing:
-  input_types: [scope_check_request]
-  output_types: [scope_verdict]
-
+  input_types:
+  - scope_check_request
+  output_types:
+  - scope_verdict
 delegation:
   can_delegate_to: []
   escalates_to: concept-validation-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 100
   max_latency_ms: 500

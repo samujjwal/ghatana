@@ -1,62 +1,82 @@
 id: data-pipeline-orchestrator-agent
+namespace: data-cloud.orchestration
 name: Data Pipeline Orchestrator Agent
 version: 1.0.0
-description: Coordinates multi-stage data processing pipelines with dependency management
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Level-2 orchestrator coordinating data pipeline execution across storage, quality, and migration agents
+
+description: |
+  Level-2 orchestrator that coordinates data pipeline execution across storage,
+  quality, and migration agents. Combines rule-based scheduling with LLM-assisted
+  dynamic pipeline adjustment.
 
 metadata:
   level: 2
   domain: orchestration
-  tags: [pipeline, orchestration, workflow, data-processing, coordination]
+  tags: [pipeline, orchestration, coordination, scheduling, data-flow]
 
-generator:
-  type: PIPELINE
-  steps:
-    - name: pipeline_planning
-      type: RULE_BASED
-      rules:
-        - Analyze stage dependencies
-        - Determine optimal execution order
-        - Identify parallelization opportunities
-    - name: execution_coordination
-      type: LLM
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: config-scoped
+  stateMutability: external-state
+  failureMode: retry
+  criticality: high
+  autonomyLevel: semi-autonomous
+
+reasoningProfile:
+  primaryReasoner: rule-based
+  reasonerPortfolio:
+    - type: rule-based
+      role: pipeline-scheduling
+      description: Rule-based pipeline step sequencing and dependency resolution
+    - type: llm
       provider: OPENAI
       model: gpt-4
       temperature: 0.2
-      prompt: |
-        Coordinate data pipeline:
-        Stages: {{stages}}
-        Dependencies: {{dependencies}}
-        Manage execution, handle failures, ensure data consistency
+      role: dynamic-adjustment
+      description: Dynamically adjust pipeline parameters based on runtime conditions
 
 capabilities:
   - data-pipeline-orchestration
-  - data-quality
+  - pipeline-scheduling
+  - dependency-management
 
 tools:
-  - name: pipelineManager
+  - name: pipelineScheduler
     type: SERVICE
-    endpoint: /datacloud/pipelines/manage
-  - name: stageExecutor
+    endpoint: /data-cloud/pipeline/schedule
+  - name: dependencyResolver
     type: SERVICE
-    endpoint: /datacloud/pipelines/execute
+    endpoint: /data-cloud/pipeline/dependencies
 
-delegation:
-  can_delegate_to:
-    - data-migration-agent
-    - data-quality-agent
-    - query-optimization-agent
-    - data-replication-agent
+interfaces:
+  inputs:
+    - name: pipelineRequest
+      schema: object
+      required: true
+  outputs:
+    - name: pipelineResult
+      schema: object
+
+interoperability:
+  agentToAgent:
+    enabled: true
+    delegation:
+      - entity-storage-agent
+      - data-quality-agent
+      - data-migration-agent
+      - data-compaction-agent
 
 memory:
   type: SEMANTIC
-  scope: pipeline_history
+  scope: pipeline_state
   retention: long
-
-routing:
-  input: PipelineOrchestrationRequest
-  output: PipelineExecutionResult
 
 resources:
   memory: "2GB"
   cpu: "4"
-  timeout: "3600s"
+  timeout: "86400s"

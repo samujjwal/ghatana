@@ -65,9 +65,9 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
                 dataSource, eventStore, meterRegistry,
                 Executors.newSingleThreadExecutor());
 
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
-        when(preparedStatement.executeUpdate()).thenReturn(1);
+        lenient().when(dataSource.getConnection()).thenReturn(connection);
+        lenient().when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+        lenient().when(preparedStatement.executeUpdate()).thenReturn(1);
     }
 
     // =========================================================================
@@ -144,9 +144,11 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
         @Test
         @DisplayName("upsertPolicy with null policy throws NullPointerException")
         void upsertPolicy_null_throwsNpe() {
+            // requireNonNull fires synchronously before Promise.ofBlocking; runPromise
+            // re-throws the NPE directly (not wrapped), so isInstanceOf is correct.
             assertThatThrownBy(() ->
                     runPromise(() -> service.upsertPolicy(null)))
-                    .hasCauseInstanceOf(NullPointerException.class);
+                    .isInstanceOf(NullPointerException.class);
         }
 
         @Test
@@ -260,9 +262,11 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
         @Test
         @DisplayName("enforceErasure with null tenantId throws NullPointerException")
         void enforceErasure_nullTenant_throwsNpe() {
+            // requireNonNull fires synchronously before Promise.ofBlocking; runPromise
+            // re-throws the NPE directly (not wrapped), so isInstanceOf is correct.
             assertThatThrownBy(() ->
                     runPromise(() -> service.enforceErasure(null)))
-                    .hasCauseInstanceOf(NullPointerException.class);
+                    .isInstanceOf(NullPointerException.class);
         }
 
         @Test
@@ -270,10 +274,13 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
         void enforceErasure_storeFailure_recordsErrorAndRethrows() throws Exception {
             doThrow(new RuntimeException("purge failed")).when(eventStore).purgeOlderThan(any());
 
+            // The RuntimeException propagates through the failed Promise and is
+            // re-thrown directly by runPromise (not wrapped), so isInstanceOf/hasMessage.
             assertThatThrownBy(() ->
                     runPromise(() -> service.enforceErasure("failing-tenant")))
-                    .hasCauseInstanceOf(RuntimeException.class)
-                    .hasRootCauseMessage("purge failed");
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("purge failed");
+            clearFatalError(); // prevent @AfterEach from re-propagating the fatal error
         }
     }
 

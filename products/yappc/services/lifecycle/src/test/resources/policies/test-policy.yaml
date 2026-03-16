@@ -1,4 +1,6 @@
 # Test stub policy for PolicyConfigLoaderTest
+apiVersion: v1.0
+
 policies:
 
   - id: test_stub_policy

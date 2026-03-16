@@ -335,17 +335,17 @@ public class PluginHealthCheckFactory {
                 long elapsedMs = System.currentTimeMillis() - start;
                 return HealthCheckResult.healthy(
                         backendType + " reachable",
-                        Map.of("host", host, "port", port, "responseTimeMs", elapsedMs),
+                        Map.<String, Object>of("host", host, "port", port, "responseTimeMs", elapsedMs),
                         Duration.ofMillis(elapsedMs));
 
             } catch (Exception e) {
                 long elapsedMs = System.currentTimeMillis() - start;
                 return HealthCheckResult.unhealthy(
                         backendType + " unreachable: " + e.getMessage(),
-                        Map.of("host", host, "port", port,
+                        Map.<String, Object>of("host", host, "port", port,
                                 "error", e.getClass().getSimpleName(),
                                 "responseTimeMs", elapsedMs),
-                        Duration.ofMillis(elapsedMs));
+                        Duration.ofMillis(elapsedMs), e);
             }
         });
     }
@@ -365,7 +365,7 @@ public class PluginHealthCheckFactory {
                 return HealthCheckResult.unhealthy(
                         backendType + " endpoint URL not configured",
                         Map.of(),
-                        Duration.ZERO);
+                        Duration.ZERO, null);
             }
 
             try {
@@ -388,20 +388,20 @@ public class PluginHealthCheckFactory {
                 return ok
                         ? HealthCheckResult.healthy(
                                 backendType + " responded HTTP " + status,
-                                Map.of("url", url, "statusCode", status, "responseTimeMs", elapsedMs),
+                                Map.<String, Object>of("url", url, "statusCode", status, "responseTimeMs", elapsedMs),
                                 Duration.ofMillis(elapsedMs))
                         : HealthCheckResult.unhealthy(
                                 backendType + " returned HTTP " + status,
-                                Map.of("url", url, "statusCode", status, "responseTimeMs", elapsedMs),
-                                Duration.ofMillis(elapsedMs));
+                                Map.<String, Object>of("url", url, "statusCode", status, "responseTimeMs", elapsedMs),
+                                Duration.ofMillis(elapsedMs), null);
 
             } catch (Exception e) {
                 long elapsedMs = System.currentTimeMillis() - start;
                 return HealthCheckResult.unhealthy(
                         backendType + " unreachable: " + e.getMessage(),
-                        Map.of("url", url, "error", e.getClass().getSimpleName(),
+                        Map.<String, Object>of("url", url, "error", e.getClass().getSimpleName(),
                                 "responseTimeMs", elapsedMs),
-                        Duration.ofMillis(elapsedMs));
+                        Duration.ofMillis(elapsedMs), e);
             }
         });
     }
@@ -450,3 +450,4 @@ public class PluginHealthCheckFactory {
     }
 
     private record HostPort(String host, int port) {}
+}

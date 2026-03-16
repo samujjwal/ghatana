@@ -222,6 +222,8 @@ public class AgentConfigMaterializer {
         AgentConfig config = switch (agentType) {
             case DETERMINISTIC -> materializeDeterministic(dto);
             case PROBABILISTIC, LLM -> materializeProbabilistic(dto);
+            case STREAM_PROCESSOR -> materializeStreamProcessor(dto);
+            case PLANNING -> materializePlanning(dto);
             case HYBRID -> materializeHybrid(dto);
             case ADAPTIVE -> materializeAdaptive(dto);
             case COMPOSITE -> materializeComposite(dto);
@@ -499,6 +501,30 @@ public class AgentConfigMaterializer {
             }
         }
 
+        return builder.build();
+    }
+
+    /**
+     * Materializes a STREAM_PROCESSOR agent config from a DTO.
+     * Uses base AgentConfig; {@link com.ghatana.agent.stream.StreamProcessorAgentConfig#from(AgentConfig)}
+     * handles full field extraction from agent properties.
+     */
+    @NotNull
+    private AgentConfig materializeStreamProcessor(AgentConfigDto dto) {
+        var builder = AgentConfig.builder();
+        applyBaseFields(builder, dto, AgentType.STREAM_PROCESSOR);
+        return builder.build();
+    }
+
+    /**
+     * Materializes a PLANNING agent config from a DTO.
+     * Uses base AgentConfig; {@link com.ghatana.agent.planning.PlanningAgentConfig#from(AgentConfig)}
+     * handles subtype and parameter extraction at agent initialization time.
+     */
+    @NotNull
+    private AgentConfig materializePlanning(AgentConfigDto dto) {
+        var builder = AgentConfig.builder();
+        applyBaseFields(builder, dto, AgentType.PLANNING);
         return builder.build();
     }
 

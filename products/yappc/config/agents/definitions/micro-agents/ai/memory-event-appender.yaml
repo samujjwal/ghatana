@@ -1,23 +1,51 @@
 id: memory-event-appender
 name: Memory Event Appender
 version: 1.0.0
-description: "Append a single memory event to the episodic event log with timestamp and metadata"
-
+namespace: yappc.micro-agents.ai
+status: active
+owners:
+- team: ai-platform
+  contact: ai-platform@ghatana.com
+description: Append a single memory event to the episodic event log with timestamp and metadata
+summary: Append a single memory event to the episodic event log with timestamp and metadata
 metadata:
   level: 3
   domain: ai
   type: micro-agent
-  tags: [event-appending, event-log-write, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "event-appending"
-        - "event-log-write"
-
+  tags:
+  - event-appending
+  - event-log-write
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: append_request
+    schema: dynamic
+  outputs:
+  - name: append_result
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: memory-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +53,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [event_log_writer]
-
+tools:
+- event_log_writer
 capabilities:
-  - event-appending
-  - event-log-write
-
+- event-appending
+- event-log-write
 routing:
-  input_types: [append_request]
-  output_types: [append_result]
-
+  input_types:
+  - append_request
+  output_types:
+  - append_result
 delegation:
   can_delegate_to: []
   escalates_to: memory-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 100
   max_latency_ms: 500

@@ -21,14 +21,17 @@
 version: "1.0.0"
 
 # ---------------------------------------------------------------------------
-# Generator — inheriting agents should declare type and, for LLM mode, model
+# Identity — every inheriting agent MUST declare agentType and criticality.
+# Override other fields as needed.
 # ---------------------------------------------------------------------------
-generator:
-  type: ADAPTIVE
-  provider: "{{ defaultProvider }}"
-  model: "{{ defaultModel }}"
-  temperature: "{{ defaultTemperature }}"
-  maxTokens: "{{ defaultMaxTokens }}"
+identity:
+  agentType: "{{ agentType }}"                             # deterministic | probabilistic | stream-processor | planning | hybrid | adaptive | composite | reactive | custom
+  subtype: "{{ agentSubtype }}"                            # type-specific fine-grained subtype (optional)
+  criticality: "{{ defaultCriticality }}"                  # critical | high | medium | low
+  autonomyLevel: "{{ defaultAutonomyLevel }}"              # autonomous | semi-autonomous | supervised
+  determinismGuarantee: "{{ defaultDeterminismGuarantee }}"  # fully-deterministic | config-scoped | non-deterministic
+  stateMutability: "{{ defaultStateMutability }}"          # stateless | local-state | persistent
+  failureMode: "{{ defaultFailureMode }}"                  # fail-fast | fail-silent | fail-closed | dead-letter | retry | skip
 
 # ---------------------------------------------------------------------------
 # Memory defaults

@@ -1,117 +1,119 @@
 id: java-expert
 name: Java Expert
 version: 1.0.0
+namespace: yappc.definitions.backend
+status: active
+owners:
+- team: backend-core
+  contact: backend-core@ghatana.com
 description: Domain expert for Java/ActiveJ backend development, API design, and concurrency
-
+summary: Domain expert for Java/ActiveJ backend development, API design, and concurrency
 metadata:
-  level: 2  # Domain Expert
+  level: 2
   domain: backend
   tags:
-    - expert
-    - java
-    - backend
-    - activej
-    - rest-api
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: spec_analysis
-      type: RULE_BASED
-      description: Validate Java conventions and ActiveJ patterns
-    - name: code_generation
-      type: TEMPLATE
-      engine: liquid
-      templates:
-        controller: templates/java/controller.liquid
-        service: templates/java/service.liquid
-        repository: templates/java/repository.liquid
-    - name: code_refinement
-      type: LLM
-      provider: OPENAI
-      model: gpt-4
-      temperature: 0.3
-      max_tokens: 4000
-      prompt: |
-        You are a Java expert specializing in ActiveJ framework.
-        
-        Specification: {{spec}}
-        Output Type: {{output_type}}
-        Generated Code: {{generated_code}}
-        
-        Refine the generated code to:
-        1. Follow Java 21 best practices
-        2. Use ActiveJ Promise for async operations
-        3. Add proper error handling
-        4. Include JavaDoc comments with @doc tags
-        5. Ensure NEVER blocking the event loop
-        
-        Output refined Java code with proper formatting.
-    - name: compilation_validation
-      type: SERVICE_CALL
-      service: java-tools
-      endpoint: /tools/maven/compile
-
+  - expert
+  - java
+  - backend
+  - activej
+  - rest-api
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: code-generation-request
+    schema: dynamic
+  - name: refactoring-request
+    schema: dynamic
+  - name: api-design-request
+    schema: dynamic
+  outputs:
+  - name: java-code
+    schema: dynamic
+  - name: api-endpoint
+    schema: dynamic
+  - name: test-file
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - java-class-writer
+    - unit-test-writer
+    - code-reviewer-agent
+    escalation: &id001
+    - systems-architect
+    - build-orchestrator-agent
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
 memory:
   episodic:
     enabled: true
     retention_days: 180
     categories:
-      - code-generations
-      - compilation-results
-      - review-feedback
+    - code-generations
+    - compilation-results
+    - review-feedback
   semantic:
     enabled: true
     categories:
-      - java-patterns
-      - activej-examples
-      - code-snippets
+    - java-patterns
+    - activej-examples
+    - code-snippets
   procedural:
     enabled: true
     categories:
-      - java-conventions
-      - activej-rules
-      - error-handling-patterns
-
+    - java-conventions
+    - activej-rules
+    - error-handling-patterns
 tools:
-  - maven_executor
-  - checkstyle_validator
-  - activej_inspector
-  - code_formatter
-  - test_runner
-
+- maven_executor
+- checkstyle_validator
+- activej_inspector
+- code_formatter
+- test_runner
 capabilities:
-  - code-generation
-  - api-generation
-  - code-analysis
-  - refactoring
-  - error-handling
-  - activej-async
-
+- code-generation
+- api-generation
+- code-analysis
+- refactoring
+- error-handling
+- activej-async
 routing:
   input_types:
-    - code-generation-request
-    - refactoring-request
-    - api-design-request
+  - code-generation-request
+  - refactoring-request
+  - api-design-request
   output_types:
-    - java-code
-    - api-endpoint
-    - test-file
-
+  - java-code
+  - api-endpoint
+  - test-file
 delegation:
   can_delegate_to:
-    - java-class-writer
-    - unit-test-writer
-    - code-reviewer-agent
-  escalates_to:
-    - systems-architect
-    - build-orchestrator-agent
-
+  - java-class-writer
+  - unit-test-writer
+  - code-reviewer-agent
+  escalates_to: *id001
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 10000

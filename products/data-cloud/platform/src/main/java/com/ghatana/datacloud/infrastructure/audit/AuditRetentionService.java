@@ -82,7 +82,6 @@ public final class AuditRetentionService {
     // Tracks the cutoff timestamp used in each tenant's last cleanup — used to
     // estimate the age of the oldest surviving event without an extra DB query.
     private final ConcurrentHashMap<String, Long> lastCleanupCutoffEpochMs;
-    private final AtomicLong totalEventsDeleted;
 
     /**
      * Retention mode for audit events.

@@ -1,62 +1,83 @@
 id: requirement-normalisation-task-agent
 name: Requirement Normalisation Task Agent
 version: 1.0.0
-description: "Normalise requirement language to consistent tense, voice, and SHALL/SHOULD/MAY modal verb convention"
-
+namespace: yappc.task-agents.requirements
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Normalise requirement language to consistent tense, voice, and SHALL/SHOULD/MAY modal verb
+  convention
+summary: Normalise requirement language to consistent tense, voice, and SHALL/SHOULD/MAY modal verb convention
 metadata:
   level: 3
   domain: requirements
   type: worker
-  tags: [language-normalisation, modal-verb-standardisation, consistency-enforcement, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Normalise requirement language to consistent tense, voice, and SHALL/SHOULD/MAY modal verb convention
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - language-normalisation
+  - modal-verb-standardisation
+  - consistency-enforcement
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: normalisation_request
+    schema: dynamic
+  outputs:
+  - name: normalised_requirements
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: requirement-quality-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [normaliser, modal_verb_enforcer]
-
+tools:
+- normaliser
+- modal_verb_enforcer
 capabilities:
-  - language-normalisation
-  - modal-verb-standardisation
-  - consistency-enforcement
-
+- language-normalisation
+- modal-verb-standardisation
+- consistency-enforcement
 routing:
-  input_types: [normalisation_request]
-  output_types: [normalised_requirements]
-
+  input_types:
+  - normalisation_request
+  output_types:
+  - normalised_requirements
 delegation:
   can_delegate_to: []
   escalates_to: requirement-quality-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 2000
   max_latency_ms: 10000

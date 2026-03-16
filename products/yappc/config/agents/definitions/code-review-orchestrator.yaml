@@ -1,78 +1,106 @@
-id: "code-review-orchestrator"
-name: "Code Review Orchestrator"
-version: "1.0.0"
-description: "Orchestrates comprehensive code review process with static analysis, security scanning, and quality gates"
-
+id: code-review-orchestrator
+name: Code Review Orchestrator
+version: 1.0.0
+namespace: yappc.definitions.quality-assurance
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
+description: Orchestrates comprehensive code review process with static analysis, security scanning, and
+  quality gates
+summary: Orchestrates comprehensive code review process with static analysis, security scanning, and quality
+  gates
 metadata:
-  level: 2  # Expert level
-  domain: "quality-assurance"
-  tags: ["code-review", "quality-gates", "orchestration"]
-
-generator:
-  type: "pipeline"
-  steps:
-    - type: "rule-based"
-      rules:
-        - "Trigger all static analysis agents in parallel"
-        - "Collect results from all scanners"
-        - "Aggregate quality metrics"
-        - "Calculate composite quality score"
-    - type: "llm"
-      provider: "openai"
-      model: "gpt-4"
-      temperature: 0.3
-      prompt: |
-        Review aggregated code analysis:
-        
-        Static Analysis: {{static_analysis}}
-        Security Scan: {{security_scan}}
-        Complexity: {{complexity}}
-        Style: {{style}}
-        
-        Provide:
-        1. Overall quality assessment (0-100)
-        2. Critical issues requiring immediate attention
-        3. Recommended improvements
-        4. Approval decision (approve/request-changes/reject)
-
+  level: 2
+  domain: quality-assurance
+  tags:
+  - code-review
+  - quality-gates
+  - orchestration
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: PullRequest
+    schema: dynamic
+  - name: CodeCommit
+    schema: dynamic
+  - name: ReviewRequest
+    schema: dynamic
+  outputs:
+  - name: ReviewReport
+    schema: dynamic
+  - name: QualityScore
+    schema: dynamic
+  - name: ApprovalDecision
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - code-reviewer
+    - vuln-scanner
+    - performance-optimizer
+    escalation: sentinel
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
 memory:
   episodic:
     enabled: true
     retention_days: 60
   semantic:
     enabled: true
-    categories: ["code-patterns", "quality-metrics", "review-decisions"]
+    categories:
+    - code-patterns
+    - quality-metrics
+    - review-decisions
   procedural:
     enabled: true
-
 tools:
-  - "checkstyle_validate"
-  - "pmd_analyze"
-  - "spotbugs_scan"
-  - "sonar_analyze"
-  - "metrics_complexity"
-  - "file_read"
-
+- checkstyle_validate
+- pmd_analyze
+- spotbugs_scan
+- sonar_analyze
+- metrics_complexity
+- file_read
 capabilities:
-  - "code-review-orchestration"
-  - "quality-gate-enforcement"
-  - "aggregate-analysis"
-
+- code-review-orchestration
+- quality-gate-enforcement
+- aggregate-analysis
 routing:
-  input_types: ["PullRequest", "CodeCommit", "ReviewRequest"]
-  output_types: ["ReviewReport", "QualityScore", "ApprovalDecision"]
-
+  input_types:
+  - PullRequest
+  - CodeCommit
+  - ReviewRequest
+  output_types:
+  - ReviewReport
+  - QualityScore
+  - ApprovalDecision
 delegation:
   can_delegate_to:
-    - "code-reviewer"
-    - "vuln-scanner"
-    - "performance-optimizer"
-  escalates_to: "sentinel"
-
+  - code-reviewer
+  - vuln-scanner
+  - performance-optimizer
+  escalates_to: sentinel
 governance:
   requires_approval: false
-  can_block: true  # Can block merges if quality gates fail
-
+  can_block: true
 performance:
   expected_latency_ms: 8000
   max_latency_ms: 20000

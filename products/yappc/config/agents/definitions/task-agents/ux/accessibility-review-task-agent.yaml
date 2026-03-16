@@ -1,63 +1,86 @@
 id: accessibility-review-task-agent
 name: Accessibility Review Task Agent
 version: 1.0.0
-description: "Perform WCAG 2.2 AA accessibility review covering colour contrast, keyboard navigation, screen reader compatibility, and ARIA"
-
+namespace: yappc.task-agents.ux
+status: active
+owners:
+- team: design
+  contact: design@ghatana.com
+description: Perform WCAG 2.2 AA accessibility review covering colour contrast, keyboard navigation, screen
+  reader compatibility, and ARIA
+summary: Perform WCAG 2
 metadata:
   level: 3
   domain: ux
   type: worker
-  tags: [wcag-audit, contrast-checking, keyboard-nav-testing, aria-validation, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Perform WCAG 2.2 AA accessibility review covering colour contrast, keyboard navigation, screen reader compatibility, and ARIA
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
-memory:
-  episodic:
-    enabled: true
-    retention_days: 90
-    categories: [task-executions]
-  semantic:
-    enabled: true
-    categories: [domain-knowledge]
-  procedural:
-    enabled: false
-
-tools: [contrast_checker, keyboard_nav_tester, aria_validator]
-
-capabilities:
+  tags:
   - wcag-audit
   - contrast-checking
   - keyboard-nav-testing
   - aria-validation
-
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: a11y_review_request
+    schema: dynamic
+  outputs:
+  - name: a11y_audit_report
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: accessibility-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories:
+    - task-executions
+  semantic:
+    enabled: true
+    categories:
+    - domain-knowledge
+  procedural:
+    enabled: false
+tools:
+- contrast_checker
+- keyboard_nav_tester
+- aria_validator
+capabilities:
+- wcag-audit
+- contrast-checking
+- keyboard-nav-testing
+- aria-validation
 routing:
-  input_types: [a11y_review_request]
-  output_types: [a11y_audit_report]
-
+  input_types:
+  - a11y_review_request
+  output_types:
+  - a11y_audit_report
 delegation:
   can_delegate_to: []
   escalates_to: accessibility-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

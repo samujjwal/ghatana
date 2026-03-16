@@ -1,12 +1,39 @@
 id: pattern-detection-agent
+namespace: aep.operators.pattern
 name: Pattern Detection Agent
 version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Detects patterns, correlations, and anomalies in event streams using LLM reasoning
 description: Detects patterns, correlations, and anomalies in event streams
 
 metadata:
   level: 3
   domain: event-processing
   tags: [pattern, detection, correlation, anomaly, cep, complex-event-processing]
+
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: high
+  autonomyLevel: semi-autonomous
+
+reasoningProfile:
+  primaryReasoner: llm
+  reasonerPortfolio:
+    - type: service-call
+      role: window-aggregation
+      description: Aggregate events in time windows for pattern analysis
+    - type: llm
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      role: pattern-matching
 
 aep:
   operatorType: PATTERN
@@ -18,24 +45,6 @@ aep:
   reliability:
     checkpointInterval: "30s"
     maxRetries: 3
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: window_aggregation
-      type: SERVICE_CALL
-      service: window-aggregator
-      endpoint: /aep/patterns/window
-    - name: pattern_matching
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.2
-      prompt: |
-        Detect patterns in event stream:
-        Events: {{events}}
-        Pattern Rules: {{rules}}
-        Detect: sequences, correlations, anomalies
 
 capabilities:
   - pattern-detection
@@ -49,6 +58,17 @@ tools:
   - name: correlationAnalyzer
     type: SERVICE
     endpoint: /aep/patterns/correlate
+
+interfaces:
+  inputs:
+    - name: eventStream
+      schema: "*"
+      required: true
+  outputs:
+    - name: patternEvent
+      schema: pattern.detected
+    - name: anomalyEvent
+      schema: anomaly.detected
 
 memory:
   type: EPISODIC

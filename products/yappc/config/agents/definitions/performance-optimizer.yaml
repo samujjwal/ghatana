@@ -1,70 +1,87 @@
-id: "performance-optimizer"
-name: "Performance Optimizer"
-version: "1.0.0"
-description: "Application performance analysis and optimization"
-
+id: performance-optimizer
+name: Performance Optimizer
+version: 1.0.0
+namespace: yappc.definitions.performance-engineering
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
+description: Application performance analysis and optimization
+summary: Application performance analysis and optimization
 metadata:
-  level: 2  # Expert level
-  domain: "performance-engineering"
-  tags: ["performance", "optimization", "profiling", "scalability"]
-
-generator:
-  type: "pipeline"
-  steps:
-    - type: "rule-based"
-      rules:
-        - "Identify N+1 queries in database access"
-        - "Check for blocking I/O operations"
-        - "Analyze memory allocation patterns"
-        - "Validate caching strategies"
-        - "Check ActiveJ Promise chain efficiency"
-    - type: "llm"
-      provider: "openai"
-      model: "gpt-4"
-      temperature: 0.4
-      prompt: |
-        Analyze this code for performance:
-        {{code}}
-        
-        Profiling data:
-        {{profiling_data}}
-        
-        Provide:
-        1. Performance bottlenecks
-        2. Optimization recommendations
-        3. Scalability concerns
-        4. Memory optimization strategies
-        5. Refactored code (if applicable)
-
+  level: 2
+  domain: performance-engineering
+  tags:
+  - performance
+  - optimization
+  - profiling
+  - scalability
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: PerformanceAnalysisRequest
+    schema: dynamic
+  - name: OptimizationRequest
+    schema: dynamic
+  outputs:
+  - name: PerformanceReport
+    schema: dynamic
+  - name: OptimizationPlan
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: systems-architect
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
 memory:
   episodic:
     enabled: true
     retention_days: 60
   semantic:
     enabled: true
-    categories: ["performance-patterns", "optimization-techniques", "profiling-data"]
+    categories:
+    - performance-patterns
+    - optimization-techniques
+    - profiling-data
   procedural:
     enabled: true
-
 tools:
-  - "metrics_complexity"
-  - "activej_inspect"
-  - "file_read"
-
+- metrics_complexity
+- activej_inspect
+- file_read
 capabilities:
-  - "performance-profiling"
-  - "bottleneck-identification"
-  - "optimization-recommendations"
-  - "scalability-analysis"
-
+- performance-profiling
+- bottleneck-identification
+- optimization-recommendations
+- scalability-analysis
 routing:
-  input_types: ["PerformanceAnalysisRequest", "OptimizationRequest"]
-  output_types: ["PerformanceReport", "OptimizationPlan"]
-
+  input_types:
+  - PerformanceAnalysisRequest
+  - OptimizationRequest
+  output_types:
+  - PerformanceReport
+  - OptimizationPlan
 delegation:
   can_delegate_to: []
-  escalates_to: "systems-architect"
-
+  escalates_to: systems-architect
 performance:
   expected_latency_ms: 4000
   max_latency_ms: 10000

@@ -1,23 +1,53 @@
 id: complexity-scorer
 name: Complexity Scorer
 version: 1.0.0
-description: "Compute cyclomatic and cognitive complexity scores for a code module and flag violations against thresholds"
-
+namespace: yappc.micro-agents.engineering
+status: active
+owners:
+- team: backend-core
+  contact: backend-core@ghatana.com
+description: Compute cyclomatic and cognitive complexity scores for a code module and flag violations
+  against thresholds
+summary: Compute cyclomatic and cognitive complexity scores for a code module and flag violations against
+  thresholds
 metadata:
   level: 3
   domain: engineering
   type: micro-agent
-  tags: [complexity-scoring, threshold-checking, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "complexity-scoring"
-        - "threshold-checking"
-
+  tags:
+  - complexity-scoring
+  - threshold-checking
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: complexity_request
+    schema: dynamic
+  outputs:
+  - name: complexity_scores
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: code-quality-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +55,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [complexity_calculator]
-
+tools:
+- complexity_calculator
 capabilities:
-  - complexity-scoring
-  - threshold-checking
-
+- complexity-scoring
+- threshold-checking
 routing:
-  input_types: [complexity_request]
-  output_types: [complexity_scores]
-
+  input_types:
+  - complexity_request
+  output_types:
+  - complexity_scores
 delegation:
   can_delegate_to: []
   escalates_to: code-quality-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 200
   max_latency_ms: 1000

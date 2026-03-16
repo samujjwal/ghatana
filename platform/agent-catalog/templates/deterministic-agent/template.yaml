@@ -37,9 +37,17 @@ metadata:
   maturity: experimental      # experimental | alpha | beta | production
   author: "{{TEAM_EMAIL}}"    # e.g. platform-team@ghatana.ai
 
-# REQUIRED — do not change type
-generator:
-  type: DETERMINISTIC
+# REQUIRED — choose the most specific subtype for your use case
+# DeterministicSubtype values: RULE_BASED | THRESHOLD | PATTERN | FSM | EXACT_MATCH | POLICY | OPERATOR | TEMPLATE
+identity:
+  agentType: deterministic          # DO NOT CHANGE — this is the deterministic template
+  subtype: "{{SUBTYPE}}"            # e.g. rule-based, threshold, policy, pattern
+  roles: ["{{ROLE_1}}"]             # e.g. [parser, validator, classifier]
+  criticality: "{{CRITICALITY}}"    # critical | high | medium | low
+  autonomyLevel: autonomous         # autonomous | semi-autonomous | supervised
+  determinismGuarantee: fully-deterministic  # same input → same output (no ML, no randomness)
+  stateMutability: stateless        # override to local-state if you maintain per-request window state
+  failureMode: fail-fast            # fail-fast | fail-silent | dead-letter | retry
 
 # AEP integration — every agent MUST integrate with the Agentic Event Processor
 aep:
@@ -84,7 +92,7 @@ configuration:
   # ↑ Add as many fields as the agent needs. Keep each field minimal.
 
 # Input and output schemas
-io:
+interfaces:
   inputs:
     - name: "{{INPUT_NAME}}"
       type: JSON                # JSON | AVRO | PROTOBUF | TEXT | BINARY

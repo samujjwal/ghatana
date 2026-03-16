@@ -1,21 +1,35 @@
 id: event-transformer-agent
 name: Event Transformer Agent
-version: 1.0.0
+namespace: platform.event-processing
+version: 2.1.0
+status: active
+summary: >-
+  Transforms events between schemas using configurable JSONPath mapping rules with type coercion and conditional logic.
 description: >
   Transforms events from one schema to another using configurable mapping rules.
   Supports JSON Pointer path mapping, type coercion, field renaming, computed
   fields, and conditional transformations. Designed as an AEP Operator that
   integrates natively into event-processing pipelines.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 3
   domain: event-processing
-  tags: [transform, mapping, schema, event, aep, etl]
+  tags: [transform, mapping, schema, event, aep, etl, stream-processor]
   maturity: production
-  author: platform-team@ghatana.ai
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: stream-processor           # stateless per-event schema mapping in ordered stream
+  subtype: transformation
+  roles: [transformer, mapper, schema-adapter]
+  criticality: high
+  autonomyLevel: autonomous
+  determinismGuarantee: fully-deterministic  # same rules + same events → same output
+  stateMutability: stateless                  # mapping cache is read-only runtime config
+  failureMode: dead-letter
 
 # AEP Operator configuration — wires into the pipeline execution model
 aep:
@@ -61,7 +75,7 @@ configuration:
     type: boolean
     default: true
 
-io:
+interfaces:
   inputs:
     - name: sourceEvent
       type: JSON

@@ -1,70 +1,97 @@
-id: "cloud-pilot"
-name: "Cloud Pilot"
-version: "1.0.0"
-description: "Cloud infrastructure, Kubernetes, Docker, AWS/GCP expert"
-
+id: cloud-pilot
+name: Cloud Pilot
+version: 1.0.0
+namespace: yappc.definitions.devops-infrastructure
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
+description: Cloud infrastructure, Kubernetes, Docker, AWS/GCP expert
+summary: Cloud infrastructure, Kubernetes, Docker, AWS/GCP expert
 metadata:
-  level: 2  # Expert level
-  domain: "devops-infrastructure"
-  tags: ["kubernetes", "docker", "aws", "gcp", "terraform"]
-
-generator:
-  type: "pipeline"
-  steps:
-    - type: "rule-based"
-      rules:
-        - "Validate Kubernetes resource limits"
-        - "Check security best practices (RBAC, network policies)"
-        - "Verify Dockerfile multi-stage build"
-        - "Assess cost optimization"
-    - type: "template"
-      engine: "liquid"
-      template_path: "templates/k8s/deployment.yaml.liquid"
-    - type: "llm"
-      provider: "openai"
-      model: "gpt-4"
-      temperature: 0.4
-      prompt: |
-        Review this infrastructure configuration:
-        {{config}}
-        
-        Provide:
-        1. Security hardening recommendations
-        2. Cost optimization strategies
-        3. High availability setup
-        4. Monitoring/observability integration
-
+  level: 2
+  domain: devops-infrastructure
+  tags:
+  - kubernetes
+  - docker
+  - aws
+  - gcp
+  - terraform
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: InfrastructureRequest
+    schema: dynamic
+  - name: DeploymentRequest
+    schema: dynamic
+  outputs:
+  - name: KubernetesManifest
+    schema: dynamic
+  - name: Dockerfile
+    schema: dynamic
+  - name: TerraformScript
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - infrastructure-architect-agent
+    - deployment-agent
+    - environment-manager-agent
+    escalation: systems-architect
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
 memory:
   episodic:
     enabled: true
     retention_days: 90
   semantic:
     enabled: true
-    categories: ["k8s-patterns", "docker-images", "cloud-architecture"]
+    categories:
+    - k8s-patterns
+    - docker-images
+    - cloud-architecture
   procedural:
     enabled: true
-
 tools:
-  - "file_read"
-  - "file_write"
-
+- file_read
+- file_write
 capabilities:
-  - "kubernetes-manifest-generation"
-  - "dockerfile-creation"
-  - "terraform-scripting"
-  - "cloud-architecture"
-
+- kubernetes-manifest-generation
+- dockerfile-creation
+- terraform-scripting
+- cloud-architecture
 routing:
-  input_types: ["InfrastructureRequest", "DeploymentRequest"]
-  output_types: ["KubernetesManifest", "Dockerfile", "TerraformScript"]
-
+  input_types:
+  - InfrastructureRequest
+  - DeploymentRequest
+  output_types:
+  - KubernetesManifest
+  - Dockerfile
+  - TerraformScript
 delegation:
   can_delegate_to:
-    - infrastructure-architect-agent
-    - deployment-agent
-    - environment-manager-agent
+  - infrastructure-architect-agent
+  - deployment-agent
+  - environment-manager-agent
   escalates_to: systems-architect
-
 performance:
   expected_latency_ms: 2500
   max_latency_ms: 7000

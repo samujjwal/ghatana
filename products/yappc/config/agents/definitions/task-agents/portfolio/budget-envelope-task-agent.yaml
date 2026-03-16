@@ -1,62 +1,84 @@
 id: budget-envelope-task-agent
 name: Budget Envelope Task Agent
 version: 1.0.0
-description: "Calculate and validate budget envelopes for initiatives based on historical actuals, team capacity, and cost drivers"
-
+namespace: yappc.task-agents.portfolio
+status: active
+owners:
+- team: product-leadership
+  contact: product-leadership@ghatana.com
+description: Calculate and validate budget envelopes for initiatives based on historical actuals, team
+  capacity, and cost drivers
+summary: Calculate and validate budget envelopes for initiatives based on historical actuals, team capacity,
+  and cost drivers
 metadata:
   level: 3
   domain: portfolio
   type: worker
-  tags: [budget-calculation, cost-driver-analysis, variance-tracking, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Calculate and validate budget envelopes for initiatives based on historical actuals, team capacity, and cost drivers
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - budget-calculation
+  - cost-driver-analysis
+  - variance-tracking
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: budget_request
+    schema: dynamic
+  outputs:
+  - name: budget_envelope
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: business-case-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [budget_calculator, cost_actuals_reader]
-
+tools:
+- budget_calculator
+- cost_actuals_reader
 capabilities:
-  - budget-calculation
-  - cost-driver-analysis
-  - variance-tracking
-
+- budget-calculation
+- cost-driver-analysis
+- variance-tracking
 routing:
-  input_types: [budget_request]
-  output_types: [budget_envelope]
-
+  input_types:
+  - budget_request
+  output_types:
+  - budget_envelope
 delegation:
   can_delegate_to: []
   escalates_to: business-case-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 2000
   max_latency_ms: 10000

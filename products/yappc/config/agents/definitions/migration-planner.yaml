@@ -1,73 +1,98 @@
-id: "migration-planner"
-name: "Migration Planner"
-version: "1.0.0"
-description: "Plans and orchestrates systematic migrations, upgrades, and refactoring initiatives"
-
+id: migration-planner
+name: Migration Planner
+version: 1.0.0
+namespace: yappc.definitions.architecture
+status: active
+owners:
+- team: platform
+  contact: platform@ghatana.com
+description: Plans and orchestrates systematic migrations, upgrades, and refactoring initiatives
+summary: Plans and orchestrates systematic migrations, upgrades, and refactoring initiatives
 metadata:
-  level: 2  # Expert level
-  domain: "architecture"
-  tags: ["migration", "refactoring", "upgrades"]
-
-generator:
-  type: "pipeline"
-  steps:
-    - type: "rule-based"
-      rules:
-        - "Analyze current state vs target state"
-        - "Identify breaking changes"
-        - "Calculate migration complexity"
-        - "Generate rollback strategy"
-    - type: "llm"
-      provider: "openai"
-      model: "gpt-4"
-      temperature: 0.4
-      prompt: |
-        Migration plan from:
-        Current: {{current_state}}
-        Target: {{target_state}}
-        
-        Breaking Changes: {{breaking_changes}}
-        Dependencies: {{dependencies}}
-        
-        Provide:
-        1. Phased migration plan (with milestones)
-        2. Risk assessment per phase
-        3. Rollback strategy
-        4. Testing strategy
-        5. Communication plan
-
+  level: 2
+  domain: architecture
+  tags:
+  - migration
+  - refactoring
+  - upgrades
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: MigrationRequest
+    schema: dynamic
+  - name: UpgradeRequest
+    schema: dynamic
+  - name: RefactoringRequest
+    schema: dynamic
+  outputs:
+  - name: MigrationPlan
+    schema: dynamic
+  - name: RollbackStrategy
+    schema: dynamic
+  - name: TestStrategy
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
+    - code-reviewer-agent
+    - test-generator-agent
+    - documentation-writer
+    escalation: systems-architect
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
 memory:
   episodic:
     enabled: true
     retention_days: 180
   semantic:
     enabled: true
-    categories: ["migration-patterns", "refactoring-strategies"]
+    categories:
+    - migration-patterns
+    - refactoring-strategies
   procedural:
     enabled: true
-
 tools:
-  - "file_read"
-  - "ast_parse"
-  - "dependency_analyze"
-  - "git_diff"
-
+- file_read
+- ast_parse
+- dependency_analyze
+- git_diff
 capabilities:
-  - "migration-planning"
-  - "breaking-change-detection"
-  - "rollback-strategy"
-
+- migration-planning
+- breaking-change-detection
+- rollback-strategy
 routing:
-  input_types: ["MigrationRequest", "UpgradeRequest", "RefactoringRequest"]
-  output_types: ["MigrationPlan", "RollbackStrategy", "TestStrategy"]
-
+  input_types:
+  - MigrationRequest
+  - UpgradeRequest
+  - RefactoringRequest
+  output_types:
+  - MigrationPlan
+  - RollbackStrategy
+  - TestStrategy
 delegation:
   can_delegate_to:
-    - code-reviewer-agent
-    - test-generator-agent
-    - documentation-writer
+  - code-reviewer-agent
+  - test-generator-agent
+  - documentation-writer
   escalates_to: systems-architect
-
 performance:
   expected_latency_ms: 6000
   max_latency_ms: 15000

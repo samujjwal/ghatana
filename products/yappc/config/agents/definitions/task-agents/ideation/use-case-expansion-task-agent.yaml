@@ -1,62 +1,84 @@
 id: use-case-expansion-task-agent
 name: Use Case Expansion Task Agent
 version: 1.0.0
-description: "Expand a core use case into full use case coverage including edge cases, alternative flows, and exception handling"
-
+namespace: yappc.task-agents.ideation
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Expand a core use case into full use case coverage including edge cases, alternative flows,
+  and exception handling
+summary: Expand a core use case into full use case coverage including edge cases, alternative flows, and
+  exception handling
 metadata:
   level: 3
   domain: ideation
   type: worker
-  tags: [use-case-expansion, edge-case-identification, alternative-flow-mapping, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Expand a core use case into full use case coverage including edge cases, alternative flows, and exception handling
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - use-case-expansion
+  - edge-case-identification
+  - alternative-flow-mapping
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: use_case_expansion_request
+    schema: dynamic
+  outputs:
+  - name: expanded_use_cases
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: solution-framing-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [use_case_expander, edge_case_generator]
-
+tools:
+- use_case_expander
+- edge_case_generator
 capabilities:
-  - use-case-expansion
-  - edge-case-identification
-  - alternative-flow-mapping
-
+- use-case-expansion
+- edge-case-identification
+- alternative-flow-mapping
 routing:
-  input_types: [use_case_expansion_request]
-  output_types: [expanded_use_cases]
-
+  input_types:
+  - use_case_expansion_request
+  output_types:
+  - expanded_use_cases
 delegation:
   can_delegate_to: []
   escalates_to: solution-framing-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

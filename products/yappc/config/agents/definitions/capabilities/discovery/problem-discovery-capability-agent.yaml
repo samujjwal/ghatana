@@ -1,94 +1,120 @@
 id: problem-discovery-capability-agent
 name: Problem Discovery Capability Agent
 version: 1.0.0
-description: "Structures problem space exploration: problem statement synthesis, root cause analysis, hypothesis formation, and problem prioritisation using evidence-based methods"
-
+namespace: yappc.capabilities.discovery
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: 'Structures problem space exploration: problem statement synthesis, root cause analysis,
+  hypothesis formation, and problem prioritisation using evidence-based methods'
+summary: 'Structures problem space exploration: problem statement synthesis, root cause analysis, hypothesis
+  formation, and pro...'
 metadata:
   level: 2
   domain: discovery
-  tags: [capability, problem-discovery, root-cause, hypothesis, problem-space, level2]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: problem_statement_synthesis
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.2
-      max_tokens: 2500
-      prompt: |
-        Synthesise clear problem statements from raw signals:
-
-        Raw signals: {{input.signals}}
-        Customer research insights: {{context.customer_insights}}
-        Business context: {{context.business_context}}
-
-        Produce 3-5 well-formed problem statements using format: "When [situation], [persona] struggles to [goal] because [barrier]. This leads to [consequence]." Rank by impact and evidence quality.
-    - name: root_cause_analysis
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2500
-      prompt: |
-        Perform root cause analysis on top problem:
-
-        Problem statement: {{problem_statement_synthesis.top_problem}}
-        Evidence: {{context.evidence}}
-
-        Apply 5-Why and fishbone analysis. Identify: root causes (systemic vs symptomatic), contributing factors, causal chain, modifiable vs fixed constraints. Output structured analysis.
-    - name: hypothesis_formulation
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.2
-      max_tokens: 2000
-      prompt: |
-        Formulate testable hypotheses for problem solutions:
-
-        Root causes: {{root_cause_analysis}}
-        Constraints: {{context.constraints}}
-
-        For each root cause generate 2 hypotheses in format: "We believe that [solution] will [outcome] for [persona] because [rationale]. We will know this is true when [metric]." Rank by testability and impact.
-
-memory:
-  episodic:
+  tags:
+  - capability
+  - problem-discovery
+  - root-cause
+  - hypothesis
+  - problem-space
+  - level2
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: problem_discovery_request
+    schema: dynamic
+  - name: signal_batch
+    schema: dynamic
+  - name: customer_pain_report
+    schema: dynamic
+  outputs:
+  - name: problem_statement_set
+    schema: dynamic
+  - name: root_cause_report
+    schema: dynamic
+  - name: hypothesis_set
+    schema: dynamic
+  - name: problem_priority_list
+    schema: dynamic
+interoperability:
+  agentToAgent:
     enabled: true
-    retention_days: 365
-    categories: [problem-discoveries, root-cause-analyses, hypotheses, evidence-packs]
-  semantic:
-    enabled: true
-    categories: [problem-patterns, causal-models, hypothesis-library]
-  procedural:
-    enabled: true
-    categories: [5-why-technique, fishbone-method, hypothesis-formation]
-
-tools: [problem_space_mapper, root_cause_analyser, hypothesis_tracker]
-
-capabilities:
-  - problem-statement-synthesis
-  - root-cause-analysis
-  - hypothesis-formation
-  - problem-prioritisation
-
-routing:
-  input_types: [problem_discovery_request, signal_batch, customer_pain_report]
-  output_types: [problem_statement_set, root_cause_report, hypothesis_set, problem_priority_list]
-
-delegation:
-  can_delegate_to:
+    protocol: ghatana-a2a-v1
+    delegation:
     - problem-statement-task-agent
     - root-cause-task-agent
     - hypothesis-formulation-task-agent
     - signal-synthesis-task-agent
+    escalation: discovery-orchestrator
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+    - problem-discoveries
+    - root-cause-analyses
+    - hypotheses
+    - evidence-packs
+  semantic:
+    enabled: true
+    categories:
+    - problem-patterns
+    - causal-models
+    - hypothesis-library
+  procedural:
+    enabled: true
+    categories:
+    - 5-why-technique
+    - fishbone-method
+    - hypothesis-formation
+tools:
+- problem_space_mapper
+- root_cause_analyser
+- hypothesis_tracker
+capabilities:
+- problem-statement-synthesis
+- root-cause-analysis
+- hypothesis-formation
+- problem-prioritisation
+routing:
+  input_types:
+  - problem_discovery_request
+  - signal_batch
+  - customer_pain_report
+  output_types:
+  - problem_statement_set
+  - root_cause_report
+  - hypothesis_set
+  - problem_priority_list
+delegation:
+  can_delegate_to:
+  - problem-statement-task-agent
+  - root-cause-task-agent
+  - hypothesis-formulation-task-agent
+  - signal-synthesis-task-agent
   escalates_to: discovery-orchestrator
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 5000
   max_latency_ms: 15000

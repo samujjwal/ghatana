@@ -1,100 +1,126 @@
 id: platform-architecture-orchestrator
 name: Platform Architecture Orchestrator
 version: 1.0.0
-description: "Drives platform-level architectural decisions: infrastructure topology, shared services design, cross-cutting concerns, deployment strategy, and platform evolution"
-
+namespace: yappc.orchestrators.architecture
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-platform@ghatana.com
+description: 'Drives platform-level architectural decisions: infrastructure topology, shared services
+  design, cross-cutting concerns, deployment strategy, and platform evolution'
+summary: 'Drives platform-level architectural decisions: infrastructure topology, shared services design,
+  cross-cutting concern...'
 metadata:
   level: 1
   domain: architecture
-  tags: [orchestrator, platform-architecture, infrastructure, shared-services, level1]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: platform_context_analysis
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.2
-      max_tokens: 3000
-      prompt: |
-        Analyse platform architecture context:
-        Request: {{input}}
-        Current platform: {{context.platform_state}}
-        Workload requirements: {{context.workload_requirements}}
-
-        Assess:
-        1. Platform evolution impact (additive, breaking, migration-required)
-        2. Shared service candidates
-        3. Deployment topology options
-        4. Tenant isolation implications
-        5. Observability and audit requirements
-
-        Output: {evolution_type, shared_services, topology_options, tenant_impact, observability_reqs}
-    - name: topology_design
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.2
-      max_tokens: 3000
-      prompt: |
-        Design deployment topology:
-        Context: {{platform_context_analysis}}
-        Cloud targets: {{context.cloud_targets}}
-
-        Produce detailed topology: environments, regions, availability zones, service mesh configuration, load balancing, CDN.
-    - name: shared_services_design
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.3
-      max_tokens: 3000
-      prompt: |
-        Design or update shared platform services:
-        Request: {{input}}, Context: {{platform_context_analysis}}
-
-        For each shared service: {name, purpose, consumers, api_contract_outline, sla, owner}
-
-memory:
-  episodic:
-    enabled: true
-    retention_days: 1095
-    categories: [platform-decisions, topology-changes, shared-service-versions]
-  semantic:
-    enabled: true
-    categories: [platform-patterns, infrastructure-configs, shared-service-catalogue]
-  procedural:
-    enabled: true
-    categories: [platform-review-procedures, infrastructure-standards]
-
-tools: [topology_designer, shared_service_designer, platform_analyzer, infra_planner]
-
-capabilities:
+  tags:
+  - orchestrator
   - platform-architecture
-  - infrastructure-design
-  - shared-services-design
-  - deployment-topology
-  - cross-cutting-concerns
-
-routing:
-  input_types: [platform_architecture_request, infra_requirements, shared_service_needs]
-  output_types: [platform_design, infra_topology, shared_service_contracts, platform_adr]
-
-delegation:
-  can_delegate_to:
+  - infrastructure
+  - shared-services
+  - level1
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: platform_architecture_request
+    schema: dynamic
+  - name: infra_requirements
+    schema: dynamic
+  - name: shared_service_needs
+    schema: dynamic
+  outputs:
+  - name: platform_design
+    schema: dynamic
+  - name: infra_topology
+    schema: dynamic
+  - name: shared_service_contracts
+    schema: dynamic
+  - name: platform_adr
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    delegation:
     - observability-architecture-capability-agent
     - security-architecture-capability-agent
     - deployment-topology-task-agent
     - tenant-isolation-task-agent
+    escalation: architecture-orchestrator
+  mcp:
+    enabled: false
+    note: MCP proxy optional via InteroperabilityService
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - chain-of-thought
+  - plan-and-solve
+  defaultReasoner: plan-and-solve
+  maxChainDepth: 5
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories:
+    - platform-decisions
+    - topology-changes
+    - shared-service-versions
+  semantic:
+    enabled: true
+    categories:
+    - platform-patterns
+    - infrastructure-configs
+    - shared-service-catalogue
+  procedural:
+    enabled: true
+    categories:
+    - platform-review-procedures
+    - infrastructure-standards
+tools:
+- topology_designer
+- shared_service_designer
+- platform_analyzer
+- infra_planner
+capabilities:
+- platform-architecture
+- infrastructure-design
+- shared-services-design
+- deployment-topology
+- cross-cutting-concerns
+routing:
+  input_types:
+  - platform_architecture_request
+  - infra_requirements
+  - shared_service_needs
+  output_types:
+  - platform_design
+  - infra_topology
+  - shared_service_contracts
+  - platform_adr
+delegation:
+  can_delegate_to:
+  - observability-architecture-capability-agent
+  - security-architecture-capability-agent
+  - deployment-topology-task-agent
+  - tenant-isolation-task-agent
   escalates_to: architecture-orchestrator
-
 governance:
   requires_approval: true
   approval_chain:
-    - architecture-orchestrator
+  - architecture-orchestrator
   can_block: true
   audit_trail: comprehensive
-
 performance:
   expected_latency_ms: 15000
   max_latency_ms: 120000

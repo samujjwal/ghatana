@@ -1,62 +1,84 @@
 id: problem-statement-task-agent
 name: Problem Statement Task Agent
 version: 1.0.0
-description: "Craft precise problem statements using the format: [user] struggles to [goal] because [barrier], resulting in [impact]"
-
+namespace: yappc.task-agents.discovery
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: 'Craft precise problem statements using the format: [user] struggles to [goal] because [barrier],
+  resulting in [impact]'
+summary: 'Craft precise problem statements using the format: [user] struggles to [goal] because [barrier],
+  resulting in [impact]'
 metadata:
   level: 3
   domain: discovery
   type: worker
-  tags: [problem-statement-crafting, impact-quantification, evidence-linking, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Craft precise problem statements using the format: [user] struggles to [goal] because [barrier], resulting in [impact]
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - problem-statement-crafting
+  - impact-quantification
+  - evidence-linking
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: problem_statement_request
+    schema: dynamic
+  outputs:
+  - name: problem_statement
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: problem-discovery-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [problem_statement_template, evidence_linker]
-
+tools:
+- problem_statement_template
+- evidence_linker
 capabilities:
-  - problem-statement-crafting
-  - impact-quantification
-  - evidence-linking
-
+- problem-statement-crafting
+- impact-quantification
+- evidence-linking
 routing:
-  input_types: [problem_statement_request]
-  output_types: [problem_statement]
-
+  input_types:
+  - problem_statement_request
+  output_types:
+  - problem_statement
 delegation:
   can_delegate_to: []
   escalates_to: problem-discovery-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 2000
   max_latency_ms: 10000

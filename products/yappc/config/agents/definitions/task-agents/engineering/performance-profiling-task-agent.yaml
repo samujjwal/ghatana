@@ -1,62 +1,85 @@
 id: performance-profiling-task-agent
 name: Performance Profiling Task Agent
 version: 1.0.0
-description: "Profile service performance, identify hot paths, memory allocations, and I/O bottlenecks with prioritised improvement recommendations"
-
+namespace: yappc.task-agents.engineering
+status: active
+owners:
+- team: backend-core
+  contact: backend-core@ghatana.com
+description: Profile service performance, identify hot paths, memory allocations, and I/O bottlenecks
+  with prioritised improvement recommendations
+summary: Profile service performance, identify hot paths, memory allocations, and I/O bottlenecks with
+  prioritised improvement...
 metadata:
   level: 3
   domain: engineering
   type: worker
-  tags: [performance-profiling, hotpath-identification, bottleneck-analysis, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Profile service performance, identify hot paths, memory allocations, and I/O bottlenecks with prioritised improvement recommendations
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - performance-profiling
+  - hotpath-identification
+  - bottleneck-analysis
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: profiling_request
+    schema: dynamic
+  outputs:
+  - name: performance_profile_report
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: backend-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [profiler, hotpath_identifier, io_analyser]
-
+tools:
+- profiler
+- hotpath_identifier
+- io_analyser
 capabilities:
-  - performance-profiling
-  - hotpath-identification
-  - bottleneck-analysis
-
+- performance-profiling
+- hotpath-identification
+- bottleneck-analysis
 routing:
-  input_types: [profiling_request]
-  output_types: [performance_profile_report]
-
+  input_types:
+  - profiling_request
+  output_types:
+  - performance_profile_report
 delegation:
   can_delegate_to: []
   escalates_to: backend-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 4000
   max_latency_ms: 20000

@@ -37,7 +37,11 @@ import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.core.template.YamlTemplateEngine;
 import com.ghatana.aep.event.AepEventCloudFactory;
 import com.ghatana.aep.event.EventCloud;
+import com.ghatana.orchestrator.subsys.TriggerListener;
+import com.ghatana.orchestrator.queue.ExecutionQueue;
 import com.ghatana.yappc.agent.AepEventPublisher;
+import com.ghatana.yappc.agent.AgentHeartbeatService;
+import com.ghatana.yappc.agent.YAPPCAgentRegistry;
 import com.ghatana.yappc.agent.YappcAgentSystem;
 import com.ghatana.yappc.services.lifecycle.AepEventBridge;
 
@@ -954,6 +958,57 @@ public class LifecycleServiceModule extends AbstractModule {
     }
 
     /**
+     * Provides the AEP {@link TriggerListener} that subscribes to pattern match events
+     * from the orchestrator and enqueues pipeline execution jobs.
+     *
+     * @doc.type method
+     * @doc.purpose Provides AEP TriggerListener for triggering pipeline executions (YAPPC-Ph7)
+     * @doc.layer platform
+     * @doc.pattern Service
+     * @doc.gaa.lifecycle perceive
+     */
+    @Provides
+    TriggerListener triggerListener(
+            ExecutionQueue executionQueue,
+            io.micrometer.core.instrument.MeterRegistry meterRegistry) {
+        logger.info("Creating TriggerListener");
+        com.ghatana.platform.observability.Metrics metrics = 
+            new com.ghatana.platform.observability.Metrics() {
+                private final MeterRegistry registry = meterRegistry;
+                
+                @Override
+                public com.ghatana.platform.observability.Metrics.Counter counter(String name) {
+                    return count -> registry.counter(name).increment(count);
+                }
+            };
+        return new TriggerListener(executionQueue, metrics);
+    }
+
+    /**
+     * Provides the {@link TriggerListenerBootstrap} that subscribes the AEP TriggerListener
+     * to YAPPC phase.transition events from the event cloud (YAPPC-Ph7.2).
+     *
+     * <p>Routes matched events through the lifecycle AEP pipeline for processing.
+     * Handles errors by publishing failed events to the DLQ for later analysis.
+     *
+     * @doc.type method
+     * @doc.purpose Bootstraps AEP TriggerListener for phase transition events (YAPPC-Ph7.2)
+     * @doc.layer product
+     * @doc.pattern Bootstrapper, Service
+     * @doc.gaa.lifecycle perceive
+     */
+    @Provides
+    TriggerListenerBootstrap triggerListenerBootstrap(
+            TriggerListener triggerListener,
+            EventCloud eventCloud,
+            YappcAepPipelineBootstrapper pipelineBootstrapper,
+            DlqPublisher dlqPublisher,
+            ObjectMapper objectMapper) {
+        logger.info("Creating TriggerListenerBootstrap (YAPPC-Ph7.2) — subscribing to phase.transition events");
+        return new TriggerListenerBootstrap(triggerListener, eventCloud, pipelineBootstrapper, dlqPublisher, objectMapper);
+    }
+
+    /**
      * Provides the Micrometer {@link MeterRegistry} backed by Prometheus for YAPPC
      * lifecycle service observability.
      *
@@ -1121,5 +1176,28 @@ public class LifecycleServiceModule extends AbstractModule {
         watcher.start();
         logger.info("ConfigWatchService started — watching '{}'", configDir);
         return watcher;
+    }
+
+    // ========== Agent Health Monitoring (YAPPC-2.3) ==========
+
+    /**
+     * Provides the AgentHeartbeatService that monitors all registered YAPPC agents
+     * and updates their health status every 30 seconds.
+     *
+     * @param registry   the YAPPCAgentRegistry to monitor
+     * @param eventloop  the ActiveJ eventloop for scheduling heartbeat ticks
+     * @return AgentHeartbeatService singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides periodic health-monitoring service for YAPPC agents
+     * @doc.layer product
+     * @doc.pattern Service
+     */
+    @Provides
+    AgentHeartbeatService agentHeartbeatService(
+            YAPPCAgentRegistry registry,
+            Eventloop eventloop) {
+        logger.info("Creating AgentHeartbeatService (YAPPC-2.3) with 30s interval");
+        return new AgentHeartbeatService(registry, eventloop);
     }
 }

@@ -1,6 +1,10 @@
 id: metrics-collector-agent
 name: Metrics Collector Agent
-version: 1.0.0
+namespace: platform.monitoring
+version: 2.1.0
+status: active
+summary: >-
+  Scrapes and aggregates metrics from Prometheus, StatsD, OTLP endpoints and publishes to the observability pipeline.
 description: >
   Scrapes, aggregates, and forwards metrics from Prometheus-compatible endpoints,
   StatsD, OpenTelemetry OTLP, and custom instrumented services. Normalises
@@ -8,16 +12,26 @@ description: >
   observability pipeline. Supports push (StatsD/OTLP) and pull (Prometheus
   scrape) ingestion modes, metric relabelling, downsampling, and cardinality
   limiting.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 3
   domain: monitoring
   tags: [metrics, prometheus, opentelemetry, statsd, scraping, observability]
   maturity: production
-  author: platform-team@ghatana.ai
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: stream-processor              # ingests metric events into the observable stream
+  subtype: ingestion
+  roles: [metrics-scraper, event-source, metrics-normalizer]
+  criticality: high
+  autonomyLevel: autonomous
+  determinismGuarantee: config-scoped      # scrape/aggregate behavior is config-driven
+  stateMutability: local-state             # scrape state, relabel cache (checkpointed)
+  failureMode: retry
 
 # AEP Operator configuration
 aep:

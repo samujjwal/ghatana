@@ -1,62 +1,85 @@
 id: dependency-update-task-agent
 name: Dependency Update Task Agent
 version: 1.0.0
-description: "Assess library dependency updates for compatibility, security patches, and breaking changes then produce safe update plan"
-
+namespace: yappc.task-agents.engineering
+status: active
+owners:
+- team: backend-core
+  contact: backend-core@ghatana.com
+description: Assess library dependency updates for compatibility, security patches, and breaking changes
+  then produce safe update plan
+summary: Assess library dependency updates for compatibility, security patches, and breaking changes then
+  produce safe update...
 metadata:
   level: 3
   domain: engineering
   type: worker
-  tags: [dependency-assessment, compatibility-checking, security-patch-identification, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Assess library dependency updates for compatibility, security patches, and breaking changes then produce safe update plan
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - dependency-assessment
+  - compatibility-checking
+  - security-patch-identification
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: dependency_update_request
+    schema: dynamic
+  outputs:
+  - name: dependency_update_plan
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: code-quality-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [dependency_scanner, compatibility_checker, security_patch_reader]
-
+tools:
+- dependency_scanner
+- compatibility_checker
+- security_patch_reader
 capabilities:
-  - dependency-assessment
-  - compatibility-checking
-  - security-patch-identification
-
+- dependency-assessment
+- compatibility-checking
+- security-patch-identification
 routing:
-  input_types: [dependency_update_request]
-  output_types: [dependency_update_plan]
-
+  input_types:
+  - dependency_update_request
+  output_types:
+  - dependency_update_plan
 delegation:
   can_delegate_to: []
   escalates_to: code-quality-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

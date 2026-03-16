@@ -1,6 +1,7 @@
 package com.ghatana.agent.workflow;
 
-import com.ghatana.agent.Agent;
+import com.ghatana.agent.AgentResult;
+import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.ai.llm.LLMGateway;
@@ -144,12 +145,14 @@ public class DefaultWorkflowAgentService implements WorkflowAgentService {
                             false
                     ));
 
-                    Agent agent = optionalAgent.get();
+                    @SuppressWarnings("unchecked")
+                    TypedAgent<Map<String, Object>, Object> agent =
+                            (TypedAgent<Map<String, Object>, Object>) optionalAgent.get();
                     AgentContext agentContext = createAgentContext(request);
 
-                    // Execute the agent
-                    return agent.process(request.input(), agentContext)
-                            .map(result -> {
+                    // Execute the agent via TypedAgent.process()
+                    return agent.process(agentContext, request.input())
+                            .map(agentResult -> {
                                 long durationMs = System.currentTimeMillis() - startTime.toEpochMilli();
 
                                 // Record metrics
@@ -166,16 +169,11 @@ public class DefaultWorkflowAgentService implements WorkflowAgentService {
                                 );
 
                                 @SuppressWarnings("unchecked")
-                                Map<String, Object> output = result instanceof Map
-                                        ? (Map<String, Object>) result
-                                        : Map.of("result", result);
+                                Map<String, Object> output = agentResult.getOutput() instanceof Map<?,?> m
+                                        ? (Map<String, Object>) m
+                                        : Map.of("result", agentResult.getOutput());
 
-                                // Extract confidence from agent output, default to 0.5 (uncertain)
-                                double confidence = 0.5;
-                                Object rawConfidence = output.get("confidence");
-                                if (rawConfidence instanceof Number num) {
-                                    confidence = Math.max(0.0, Math.min(1.0, num.doubleValue()));
-                                }
+                                double confidence = agentResult.getConfidence();
 
                                 // Update status
                                 executionTrackers.put(request.id(), new ExecutionTracker(

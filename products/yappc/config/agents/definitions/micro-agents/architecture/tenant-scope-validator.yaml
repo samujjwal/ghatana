@@ -1,23 +1,53 @@
 id: tenant-scope-validator
 name: Tenant Scope Validator
 version: 1.0.0
-description: "Validate that a database query or API call includes tenant-scoping predicates to prevent cross-tenant data access"
-
+namespace: yappc.micro-agents.architecture
+status: active
+owners:
+- team: platform
+  contact: platform@ghatana.com
+description: Validate that a database query or API call includes tenant-scoping predicates to prevent
+  cross-tenant data access
+summary: Validate that a database query or API call includes tenant-scoping predicates to prevent cross-tenant
+  data access
 metadata:
   level: 3
   domain: architecture
   type: micro-agent
-  tags: [tenant-scope-validation, predicate-checking, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "tenant-scope-validation"
-        - "predicate-checking"
-
+  tags:
+  - tenant-scope-validation
+  - predicate-checking
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: scope_validate_request
+    schema: dynamic
+  outputs:
+  - name: scope_verdict
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: security-architecture-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +55,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [scope_validator]
-
+tools:
+- scope_validator
 capabilities:
-  - tenant-scope-validation
-  - predicate-checking
-
+- tenant-scope-validation
+- predicate-checking
 routing:
-  input_types: [scope_validate_request]
-  output_types: [scope_verdict]
-
+  input_types:
+  - scope_validate_request
+  output_types:
+  - scope_verdict
 delegation:
   can_delegate_to: []
   escalates_to: security-architecture-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 100
   max_latency_ms: 500

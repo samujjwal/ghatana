@@ -50,12 +50,27 @@ public class AutoScalingEngine {
                            ScalingExecutor scalingExecutor,
                            PredictiveScaler predictiveScaler,
                            CostOptimizer costOptimizer) {
+        this(metricsCollector, policyManager, scalingExecutor, predictiveScaler, costOptimizer,
+                Eventloop.create());
+    }
+
+    /**
+     * Package-private constructor for unit testing — accepts an injected eventloop so that
+     * {@code runPromise()} in {@link com.ghatana.platform.testing.activej.EventloopTestBase}
+     * can drive promise resolution.
+     */
+    AutoScalingEngine(MetricsCollector metricsCollector,
+                      ScalingPolicyManager policyManager,
+                      ScalingExecutor scalingExecutor,
+                      PredictiveScaler predictiveScaler,
+                      CostOptimizer costOptimizer,
+                      Eventloop eventloop) {
         this.metricsCollector = metricsCollector;
         this.policyManager = policyManager;
         this.scalingExecutor = scalingExecutor;
         this.predictiveScaler = predictiveScaler;
         this.costOptimizer = costOptimizer;
-        this.eventloop = Eventloop.create();
+        this.eventloop = eventloop;
         
         startAutoScaling();
         log.info("Auto-Scaling Engine initialized");

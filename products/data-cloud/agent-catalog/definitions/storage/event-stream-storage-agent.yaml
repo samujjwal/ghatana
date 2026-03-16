@@ -1,38 +1,62 @@
 id: event-stream-storage-agent
+namespace: data-cloud.storage
 name: Event Stream Storage Agent
 version: 1.0.0
-description: Manages append-only event streams with replay, subscription, and retention policies
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Append-only event stream storage with replay, subscriptions, and checkpoint-based recovery
+
+description: |
+  Append-only event stream storage with replay capabilities, real-time subscriptions,
+  and checkpoint-based recovery. Provides durable event log semantics for the data cloud.
 
 metadata:
   level: 3
-  domain: data-management
-  tags: [event, stream, storage, replay, subscription, append-only]
+  domain: storage
+  tags: [event-stream, append-only, replay, subscriptions, checkpoint, durable-log]
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: stream_processor
+  subtype: ingestion
+  determinismGuarantee: full
+  stateMutability: external-state
+  failureMode: dead-letter
+  criticality: high
+  autonomyLevel: autonomous
 
 capabilities:
   - entity-event-storage
-  - data-archival
+  - event-replay
+  - event-subscription
 
 tools:
-  - name: eventStore
+  - name: eventAppender
     type: SERVICE
-    endpoint: /datacloud/events
-  - name: streamSubscriber
+    endpoint: /data-cloud/events/append
+  - name: replayEngine
     type: SERVICE
-    endpoint: /datacloud/subscriptions
+    endpoint: /data-cloud/events/replay
+  - name: subscriptionManager
+    type: SERVICE
+    endpoint: /data-cloud/events/subscribe
+
+interfaces:
+  inputs:
+    - name: eventToStore
+      schema: object
+      required: true
+  outputs:
+    - name: storedEvent
+      schema: object
 
 memory:
   type: WORKING
-  scope: stream
+  scope: event_buffer
   retention: medium
 
-routing:
-  input: EventStreamRequest
-  output: EventStreamResult
-
 resources:
-  memory: "1GB"
-  cpu: "2"
-  timeout: "0"  # Long-running for streaming
+  memory: "4GB"
+  cpu: "4"
+  timeout: "0"

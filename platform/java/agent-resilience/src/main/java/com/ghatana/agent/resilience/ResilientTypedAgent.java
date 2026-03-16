@@ -158,11 +158,45 @@ public final class ResilientTypedAgent<I, O> implements TypedAgent<I, O> {
         return executeWithResilience(ctx, input);
     }
 
+    /**
+     * Processes a batch of inputs, applying the full resilience stack (bulkhead +
+     * circuit-breaker + retry) to each item individually.
+     *
+     * <p>Items are processed sequentially rather than in parallel to respect
+     * the bulkhead concurrency limit. A single item failure does not abort
+     * the batch — a failed {@link AgentResult} is placed at the corresponding
+     * position in the result list.
+     */
     @Override
     @NotNull
     public Promise<List<AgentResult<O>>> processBatch(@NotNull AgentContext ctx,
-                                                       @NotNull List<I> inputs) {
-        return delegate.processBatch(ctx, inputs);
+                                                      @NotNull List<I> inputs) {
+        Objects.requireNonNull(ctx, "ctx");
+        Objects.requireNonNull(inputs, "inputs");
+
+        if (inputs.isEmpty()) {
+            return Promise.of(List.of());
+        }
+
+        // Build a sequential chain: process(item[0]) → process(item[1]) → …
+        // This keeps bulkhead semantics intact and avoids saturating the eventloop.
+        List<AgentResult<O>> accumulated = new java.util.ArrayList<>(inputs.size());
+
+        Promise<Void> chain = Promise.complete();
+        for (I input : inputs) {
+            chain = chain.then(ignored ->
+                process(ctx, input)
+                    .then(result -> {
+                        accumulated.add(result);
+                        return Promise.<Void>complete();
+                    }, ex -> {
+                        String agentId = descriptor().getAgentId();
+                        accumulated.add(AgentResult.failure(ex, agentId, java.time.Duration.ZERO));
+                        return Promise.complete();
+                    })
+            );
+        }
+        return chain.map(ignored -> java.util.Collections.unmodifiableList(accumulated));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

@@ -1,63 +1,87 @@
 id: feedback-theme-clustering-task-agent
 name: Feedback Theme Clustering Task Agent
 version: 1.0.0
-description: "Cluster feedback items into named themes using NLP topic modelling with volume and sentiment scores per theme"
-
+namespace: yappc.task-agents.product-intelligence
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Cluster feedback items into named themes using NLP topic modelling with volume and sentiment
+  scores per theme
+summary: Cluster feedback items into named themes using NLP topic modelling with volume and sentiment
+  scores per theme
 metadata:
   level: 3
   domain: product-intelligence
   type: worker
-  tags: [theme-clustering, nlp-topic-modelling, volume-scoring, sentiment-scoring, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Cluster feedback items into named themes using NLP topic modelling with volume and sentiment scores per theme
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
-memory:
-  episodic:
-    enabled: true
-    retention_days: 90
-    categories: [task-executions]
-  semantic:
-    enabled: true
-    categories: [domain-knowledge]
-  procedural:
-    enabled: false
-
-tools: [topic_modeller, theme_clusterer, sentiment_scorer]
-
-capabilities:
+  tags:
   - theme-clustering
   - nlp-topic-modelling
   - volume-scoring
   - sentiment-scoring
-
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: theme_clustering_request
+    schema: dynamic
+  outputs:
+  - name: feedback_themes
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: feedback-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories:
+    - task-executions
+  semantic:
+    enabled: true
+    categories:
+    - domain-knowledge
+  procedural:
+    enabled: false
+tools:
+- topic_modeller
+- theme_clusterer
+- sentiment_scorer
+capabilities:
+- theme-clustering
+- nlp-topic-modelling
+- volume-scoring
+- sentiment-scoring
 routing:
-  input_types: [theme_clustering_request]
-  output_types: [feedback_themes]
-
+  input_types:
+  - theme_clustering_request
+  output_types:
+  - feedback_themes
 delegation:
   can_delegate_to: []
   escalates_to: feedback-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 4000
   max_latency_ms: 20000

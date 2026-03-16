@@ -1,63 +1,87 @@
 id: ticket-triage-task-agent
 name: Ticket Triage Task Agent
 version: 1.0.0
-description: "Triage incoming support tickets: classify severity, detect duplicates, route to correct team, and suggest immediate response"
-
+namespace: yappc.task-agents.operations
+status: active
+owners:
+- team: sre
+  contact: sre@ghatana.com
+description: 'Triage incoming support tickets: classify severity, detect duplicates, route to correct
+  team, and suggest immediate response'
+summary: 'Triage incoming support tickets: classify severity, detect duplicates, route to correct team,
+  and suggest immediate r...'
 metadata:
   level: 3
   domain: operations
   type: worker
-  tags: [ticket-classification, duplicate-detection, routing, response-drafting, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Triage incoming support tickets: classify severity, detect duplicates, route to correct team, and suggest immediate response
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
-memory:
-  episodic:
-    enabled: true
-    retention_days: 90
-    categories: [task-executions]
-  semantic:
-    enabled: true
-    categories: [domain-knowledge]
-  procedural:
-    enabled: false
-
-tools: [ticket_classifier, duplicate_detector, routing_engine]
-
-capabilities:
+  tags:
   - ticket-classification
   - duplicate-detection
   - routing
   - response-drafting
-
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: ticket_triage_request
+    schema: dynamic
+  outputs:
+  - name: triaged_ticket
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: support-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories:
+    - task-executions
+  semantic:
+    enabled: true
+    categories:
+    - domain-knowledge
+  procedural:
+    enabled: false
+tools:
+- ticket_classifier
+- duplicate_detector
+- routing_engine
+capabilities:
+- ticket-classification
+- duplicate-detection
+- routing
+- response-drafting
 routing:
-  input_types: [ticket_triage_request]
-  output_types: [triaged_ticket]
-
+  input_types:
+  - ticket_triage_request
+  output_types:
+  - triaged_ticket
 delegation:
   can_delegate_to: []
   escalates_to: support-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 2000
   max_latency_ms: 10000

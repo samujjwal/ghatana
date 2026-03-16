@@ -44,6 +44,11 @@ public class PipelineValidator {
     private final AgentRegistryClient agentRegistryClient;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
 
+    /** Creates a validator without agent-registry (agent references are skipped). */
+    public PipelineValidator() {
+        this.agentRegistryClient = null;
+    }
+
     /**
      * Validates a pipeline configuration.
      * 
@@ -484,23 +489,31 @@ public class PipelineValidator {
             return Promise.of(Collections.emptyList());
         }
 
+        if (agentRegistryClient == null) {
+            log.debug("Agent registry not configured; skipping agent reference validation");
+            return Promise.of(Collections.emptyList());
+        }
+
         List<String> errors = Collections.synchronizedList(new ArrayList<>());
 
-        List<Promise<Void>> checks = agentRefs.stream()
-            .map(agentRef -> agentRegistryClient.getAgent(agentRef)
-                .<Void>then(optAgent -> {
-                    if (optAgent.isEmpty()) {
-                        errors.add("Agent not found or inaccessible: '" + agentRef + "'");
+        List<Promise<Void>> checks = new ArrayList<>();
+        for (String agentRef : agentRefs) {
+            Promise<Void> check = agentRegistryClient.getAgent(agentRef)
+                .<Void>then(
+                    optAgent -> {
+                        if (optAgent.isEmpty()) {
+                            errors.add("Agent not found or inaccessible: '" + agentRef + "'");
+                        }
+                        return Promise.complete();
+                    },
+                    e -> {
+                        log.warn("Error querying agent registry for '{}': {}", agentRef, e.getMessage());
+                        errors.add("Error validating agent '" + agentRef + "': " + e.getMessage());
+                        return Promise.complete();
                     }
-                    return Promise.complete();
-                })
-                .mapException(e -> {
-                    log.warn("Error querying agent registry for '{}': {}", agentRef, e.getMessage());
-                    errors.add("Error validating agent '" + agentRef + "': " + e.getMessage());
-                    return (Void) null;
-                })
-            )
-            .collect(Collectors.toList());
+                );
+            checks.add(check);
+        }
 
         return Promises.all(checks).map($ -> new ArrayList<>(errors));
     }

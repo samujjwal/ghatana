@@ -1,98 +1,134 @@
 id: infra-provisioning-orchestrator
 name: Infrastructure Provisioning Orchestrator
 version: 1.0.0
-description: "Orchestrates IaC-driven resource provisioning, drift detection, cost-aware capacity planning, and infrastructure lifecycle management"
-
+namespace: yappc.orchestrators.operations
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-platform@ghatana.com
+description: Orchestrates IaC-driven resource provisioning, drift detection, cost-aware capacity planning,
+  and infrastructure lifecycle management
+summary: Orchestrates IaC-driven resource provisioning, drift detection, cost-aware capacity planning,
+  and infrastructure life...
 metadata:
   level: 1
   domain: operations
-  tags: [orchestrator, infrastructure, iac, provisioning, drift, level1]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: provisioning_request_analysis
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Analyse the infrastructure provisioning request:
-
-        Request: {{input}}
-        Existing infrastructure: {{context.infra_state}}
-        Budget envelope: {{context.budget_envelope}}
-        Compliance requirements: {{context.compliance_requirements}}
-
-        Determine: provisioning scope, IaC templates to apply, estimated cost, risk level (low/medium/high), approvals needed, and rollback strategy. Output JSON analysis.
-    - name: iac_plan_generation
-      type: SERVICE_CALL
-      service: iac-planner
-      endpoint: /plan
-      description: "Generate IaC plan (Terraform/Pulumi) for approval or execution"
-    - name: cost_and_compliance_check
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.0
-      max_tokens: 1500
-      prompt: |
-        Validate IaC plan against cost and compliance policies:
-
-        Plan: {{iac_plan_generation}}
-        Budget cap: {{context.budget_envelope}}
-        Compliance rules: {{context.compliance_requirements}}
-        Security baselines: {{context.security_baselines}}
-
-        Flag violations, estimate cost delta, confirm security group rules, check tag policy. Output pass/fail with details.
-    - name: provisioning_execution
-      type: SERVICE_CALL
-      service: agent-dispatcher
-      endpoint: /dispatch
-      description: "Dispatch to IaC execution agents once approvals are confirmed"
-
-memory:
-  episodic:
+  tags:
+  - orchestrator
+  - infrastructure
+  - iac
+  - provisioning
+  - drift
+  - level1
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: mission-critical
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: provisioning_request
+    schema: dynamic
+  - name: drift_alert
+    schema: dynamic
+  - name: capacity_plan_request
+    schema: dynamic
+  outputs:
+  - name: provisioning_plan
+    schema: dynamic
+  - name: drift_report
+    schema: dynamic
+  - name: cost_analysis
+    schema: dynamic
+  - name: iac_execution_result
+    schema: dynamic
+interoperability:
+  agentToAgent:
     enabled: true
-    retention_days: 730
-    categories: [provisioning-records, drift-detections, cost-events, iac-plans]
-  semantic:
-    enabled: true
-    categories: [iac-templates, resource-topologies, compliance-rules]
-  procedural:
-    enabled: true
-    categories: [provisioning-procedures, rollback-plans, approval-gates]
-
-tools: [iac_planner, cloud_cost_calculator, drift_detector, compliance_checker]
-
-capabilities:
-  - iac-orchestration
-  - resource-provisioning
-  - drift-detection
-  - cost-aware-planning
-  - compliance-validation
-
-routing:
-  input_types: [provisioning_request, drift_alert, capacity_plan_request]
-  output_types: [provisioning_plan, drift_report, cost_analysis, iac_execution_result]
-
-delegation:
-  can_delegate_to:
+    protocol: ghatana-a2a-v1
+    delegation:
     - infra-capability-agent
     - iac-provisioning-task-agent
     - drift-detection-task-agent
     - resource-lifecycle-task-agent
     - capacity-planning-task-agent
     - cost-optimisation-task-agent
+    escalation: operations-orchestrator
+  mcp:
+    enabled: false
+    note: MCP proxy optional via InteroperabilityService
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - chain-of-thought
+  - plan-and-solve
+  defaultReasoner: plan-and-solve
+  maxChainDepth: 5
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+    - provisioning-records
+    - drift-detections
+    - cost-events
+    - iac-plans
+  semantic:
+    enabled: true
+    categories:
+    - iac-templates
+    - resource-topologies
+    - compliance-rules
+  procedural:
+    enabled: true
+    categories:
+    - provisioning-procedures
+    - rollback-plans
+    - approval-gates
+tools:
+- iac_planner
+- cloud_cost_calculator
+- drift_detector
+- compliance_checker
+capabilities:
+- iac-orchestration
+- resource-provisioning
+- drift-detection
+- cost-aware-planning
+- compliance-validation
+routing:
+  input_types:
+  - provisioning_request
+  - drift_alert
+  - capacity_plan_request
+  output_types:
+  - provisioning_plan
+  - drift_report
+  - cost_analysis
+  - iac_execution_result
+delegation:
+  can_delegate_to:
+  - infra-capability-agent
+  - iac-provisioning-task-agent
+  - drift-detection-task-agent
+  - resource-lifecycle-task-agent
+  - capacity-planning-task-agent
+  - cost-optimisation-task-agent
   escalates_to: operations-orchestrator
-
 governance:
   requires_approval: true
-  approval_chain: [operations-lead, infra-security-reviewer]
+  approval_chain:
+  - operations-lead
+  - infra-security-reviewer
   can_block: true
   audit_trail: comprehensive
-
 performance:
   expected_latency_ms: 5000
   max_latency_ms: 60000

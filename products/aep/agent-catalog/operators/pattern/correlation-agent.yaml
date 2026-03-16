@@ -1,0 +1,112 @@
+id: correlation-agent
+namespace: aep.operators.pattern
+name: Event Correlation Agent
+version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Correlates related events across time windows using session keys and causal relationships
+
+description: |
+  Correlates related events across time windows using session keys, correlation IDs,
+  and causal relationships. Identifies event causality chains, groups scattered events
+  into coherent sessions, and publishes synthetic correlation events to downstream operators.
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [correlation, session-tracking, causality, event-linking, window, cep]
+
+identity:
+  agentType: stream_processor
+  subtype: cep
+  determinismGuarantee: config-scoped
+  stateMutability: local-state
+  failureMode: dead-letter
+  criticality: high
+  autonomyLevel: autonomous
+
+reasoningProfile:
+  primaryReasoner: session-correlation
+  reasonerPortfolio:
+    - type: service-call
+      role: session-key-extraction
+      description: Extract grouping keys - userId, requestId, traceId, deviceId
+    - type: service-call
+      role: window-assignment
+      description: Assign events to session and sliding windows
+    - type: llm
+      provider: ANTHROPIC
+      model: claude-3-5-haiku-20241022
+      temperature: 0.1
+      maxTokens: 512
+      role: causal-linking
+
+aep:
+  operatorType: PATTERN
+  inputEventTypes: ["*"]
+  outputEventTypes:
+    - "correlation.session.started"
+    - "correlation.session.closed"
+    - "correlation.chain.detected"
+  backpressure:
+    bufferSize: 20000
+    overflowStrategy: DROP_OLDEST
+  reliability:
+    checkpointInterval: "15s"
+    maxRetries: 5
+    deadLetterQueue: "correlation-dlq"
+  windows:
+    session:
+      gapTimeout: "30s"
+    sliding:
+      size: "5m"
+      step: "1m"
+
+capabilities:
+  - event-correlation
+  - session-tracking
+  - causal-chain-detection
+
+tools:
+  - name: correlationEngine
+    type: SERVICE
+    endpoint: /aep/correlation/compute
+  - name: sessionStore
+    type: SERVICE
+    endpoint: /aep/sessions/state
+  - name: causalGraph
+    type: SERVICE
+    endpoint: /aep/causality/graph
+
+interfaces:
+  inputs:
+    - name: eventStream
+      schema: "*"
+      required: true
+  outputs:
+    - name: correlationSession
+      schema: correlation.session.started
+    - name: correlationChain
+      schema: correlation.chain.detected
+
+memory:
+  type: EPISODIC
+  scope: session_history
+  retention: medium
+  ttl: "24h"
+  stateKeys:
+    - "openSessions"
+    - "recentCorrelations"
+    - "causalGraph"
+
+resources:
+  memory: "2GB"
+  cpu: "2"
+  timeout: "0"
+  scaling:
+    minReplicas: 1
+    maxReplicas: 8
+    metric: "events_in_flight"
+    threshold: 5000

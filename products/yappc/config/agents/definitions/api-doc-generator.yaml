@@ -1,66 +1,84 @@
-id: "api-doc-generator"
-name: "API Documentation Generator"
-version: "1.0.0"
-description: "Generates comprehensive API documentation from code (OpenAPI, GraphQL schemas, SDK docs)"
-
+id: api-doc-generator
+name: API Documentation Generator
+version: 1.0.0
+namespace: yappc.definitions.documentation
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
+description: Generates comprehensive API documentation from code (OpenAPI, GraphQL schemas, SDK docs)
+summary: Generates comprehensive API documentation from code (OpenAPI, GraphQL schemas, SDK docs)
 metadata:
-  level: 3  # Worker level
-  domain: "documentation"
-  tags: ["api-docs", "openapi", "graphql"]
-
-generator:
-  type: "pipeline"
-  steps:
-    - type: "rule-based"
-      rules:
-        - "Extract API endpoints from code"
-        - "Parse request/response schemas"
-        - "Extract parameter descriptions"
-    - type: "template"
-      engine: "liquid"
-      template_path: "templates/docs/api-doc.md.liquid"
-    - type: "llm"
-      provider: "openai"
-      model: "gpt-3.5-turbo"
-      temperature: 0.4
-      prompt: |
-        Enhance API documentation:
-        {{raw_api_doc}}
-        
-        Add:
-        1. Usage examples for each endpoint
-        2. Common error scenarios
-        3. Best practices
-        4. Rate limiting guidance
-
+  level: 3
+  domain: documentation
+  tags:
+  - api-docs
+  - openapi
+  - graphql
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: semi-autonomous
+interfaces:
+  inputs:
+  - name: APICode
+    schema: dynamic
+  - name: OpenAPISpec
+    schema: dynamic
+  - name: GraphQLSchema
+    schema: dynamic
+  outputs:
+  - name: APIDocumentation
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: documentation-orchestrator
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
 memory:
   episodic:
     enabled: true
     retention_days: 30
   semantic:
     enabled: true
-    categories: ["api-patterns", "documentation-examples"]
+    categories:
+    - api-patterns
+    - documentation-examples
   procedural:
     enabled: false
-
 tools:
-  - "file_read"
-  - "file_write"
-  - "ast_parse"
-
+- file_read
+- file_write
+- ast_parse
 capabilities:
-  - "openapi-generation"
-  - "graphql-doc-generation"
-  - "sdk-documentation"
-
+- openapi-generation
+- graphql-doc-generation
+- sdk-documentation
 routing:
-  input_types: ["APICode", "OpenAPISpec", "GraphQLSchema"]
-  output_types: ["APIDocumentation"]
-
+  input_types:
+  - APICode
+  - OpenAPISpec
+  - GraphQLSchema
+  output_types:
+  - APIDocumentation
 delegation:
   can_delegate_to: []
-  escalates_to: "documentation-orchestrator"
-
+  escalates_to: documentation-orchestrator
 performance:
   expected_latency_ms: 2000
   max_latency_ms: 5000

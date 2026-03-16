@@ -1,15 +1,29 @@
 id: schema-validation-agent
 name: Schema Validation Agent
-version: 1.0.0
-description: Validates JSON, XML, and Protobuf data against schemas with detailed error reporting
+namespace: platform.data-processing
+version: 2.0.0
+status: active
+summary: >-
+  Validates JSON, XML, and Protobuf data against schemas with detailed error reporting.
+owners:
+  - team: platform-team
+    role: technical-owner
+    contact: platform-team@ghatana.ai
 
 metadata:
   level: 3
   domain: data-processing
   tags: [validation, schema, json, xml, protobuf, data-quality]
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: deterministic
+  subtype: rule-based                        # schema validation is purely rule-driven
+  roles: [schema-validator, data-quality-gate]
+  criticality: high
+  autonomyLevel: autonomous
+  determinismGuarantee: fully-deterministic  # same schema + same data → same result
+  stateMutability: stateless
+  failureMode: fail-closed
 
 capabilities:
   - json-schema-validation

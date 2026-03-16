@@ -1,23 +1,53 @@
 id: p-value-interpreter
 name: P Value Interpreter
 version: 1.0.0
-description: "Interpret a p-value in context of significance threshold and return statistically significant/inconclusive verdict"
-
+namespace: yappc.micro-agents.product-intelligence
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Interpret a p-value in context of significance threshold and return statistically significant/inconclusive
+  verdict
+summary: Interpret a p-value in context of significance threshold and return statistically significant/inconclusive
+  verdict
 metadata:
   level: 3
   domain: product-intelligence
   type: micro-agent
-  tags: [p-value-interpretation, significance-assessment, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "p-value-interpretation"
-        - "significance-assessment"
-
+  tags:
+  - p-value-interpretation
+  - significance-assessment
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: p_value_request
+    schema: dynamic
+  outputs:
+  - name: significance_verdict
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: experimentation-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +55,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [significance_interpreter]
-
+tools:
+- significance_interpreter
 capabilities:
-  - p-value-interpretation
-  - significance-assessment
-
+- p-value-interpretation
+- significance-assessment
 routing:
-  input_types: [p_value_request]
-  output_types: [significance_verdict]
-
+  input_types:
+  - p_value_request
+  output_types:
+  - significance_verdict
 delegation:
   can_delegate_to: []
   escalates_to: experimentation-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 50
   max_latency_ms: 250

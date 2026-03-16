@@ -1,53 +1,73 @@
 id: data-quality-agent
+namespace: data-cloud.observability
 name: Data Quality Agent
 version: 1.0.0
-description: Automated data quality checks, anomaly detection, and quality scoring
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Assesses and monitors data quality with LLM-assisted rule generation and quality scoring
+
+description: Assesses and monitors data quality with LLM-assisted rule generation and quality scoring.
 
 metadata:
   level: 3
   domain: data-observability
-  tags: [quality, validation, anomaly-detection, scoring, profiling]
+  tags: [quality, validation, scoring, profiling, data-health]
 
-generator:
-  type: PIPELINE
-  steps:
-    - name: data_profiling
-      type: SERVICE_CALL
-      service: data-profiler
-      endpoint: /datacloud/quality/profile
-    - name: quality_analysis
-      type: LLM
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: config-scoped
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: semi-autonomous
+
+reasoningProfile:
+  primaryReasoner: service-call
+  reasonerPortfolio:
+    - type: service-call
+      role: quality-profiling
+      description: Profile dataset for completeness, uniqueness, validity
+    - type: llm
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
-      prompt: |
-        Analyze data quality:
-        Profile: {{profile}}
-        Rules: {{quality_rules}}
-        Detect anomalies, calculate quality score, identify issues
+      role: quality-assessment
+      description: Generate quality rules, interpret anomalies, recommend fixes
 
 capabilities:
   - data-quality-assurance
-  - data-lineage
+  - quality-profiling
+  - quality-scoring
 
 tools:
   - name: qualityProfiler
     type: SERVICE
-    endpoint: /datacloud/quality/profile
-  - name: anomalyDetector
+    endpoint: /data-cloud/quality/profile
+  - name: qualityRuleEngine
     type: SERVICE
-    endpoint: /datacloud/quality/anomalies
+    endpoint: /data-cloud/quality/rules
+  - name: qualityReporter
+    type: SERVICE
+    endpoint: /data-cloud/quality/report
+
+interfaces:
+  inputs:
+    - name: dataQualityRequest
+      schema: object
+      required: true
+  outputs:
+    - name: qualityReport
+      schema: object
 
 memory:
   type: EPISODIC
   scope: quality_history
   retention: medium
 
-routing:
-  input: QualityCheckRequest
-  output: QualityReport
-
 resources:
-  memory: "1GB"
+  memory: "2GB"
   cpu: "2"
-  timeout: "180s"
+  timeout: "1800s"

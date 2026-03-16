@@ -99,8 +99,10 @@ public final class LLMGatewayFactory {
         
         log.info("Available LLM providers: {}", availableProviders.keySet());
 
-        // Create an ActiveJ HTTP client bound to the eventloop
-        io.activej.http.HttpClient httpClient = io.activej.http.HttpClient.create(eventloop);
+        // Create an ActiveJ HTTP client bound to the eventloop with DNS resolution
+        io.activej.dns.IDnsClient dnsClient = io.activej.dns.DnsClient.builder(eventloop,
+                java.net.InetAddress.getLoopbackAddress()).build();
+        io.activej.http.HttpClient httpClient = io.activej.http.HttpClient.create(eventloop, dnsClient);
 
         String primaryProvider = System.getenv(ENV_PRIMARY_PROVIDER);
         if (primaryProvider == null || primaryProvider.isEmpty()) {

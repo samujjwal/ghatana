@@ -2,16 +2,108 @@
 #
 # Defines the standard schema for agent descriptor YAML files used across
 # all product catalogs. Every agent.yaml MUST conform to this schema.
+#
+# SCHEMA VERSION HISTORY
+#   2.0.0 (current) -- unified identity block, 9 canonical agentType values,
+#                      namespace/status/owners/summary required fields.
+#                      `generator:` block is DEPRECATED; use `identity.agentType`.
+#   1.0.0 (legacy)  -- `type` top-level field; `generator.type` block.
 
 schema:
-  version: "1.0.0"
+  version: "2.0.0"
 
   agent:
     required:
-      - id            # Unique agent identifier (catalog-scoped)
+      - id            # Unique agent identifier (catalog-scoped, kebab-case)
       - name          # Human-readable name
+      - namespace     # Dot-separated catalog namespace, e.g. platform.event-processing
       - version       # Semantic version (e.g. "1.0.0")
-      - type          # DETERMINISTIC | ADAPTIVE | COMPOSITE
+      - status        # active | deprecated | experimental
+      - owners        # At least one owner entry
+      - summary       # One-line description (≤ 120 chars)
+      - identity      # Unified type identity block (see identity schema below)
+
+    # --- identity block ---------------------------------------------------
+    identity:
+      agentType:
+        type: string
+        required: true
+        enum:
+          - deterministic     # Rule-based, threshold, FSM, policy — config-driven, reproducible
+          - probabilistic     # ML models, LLMs, classifiers — stochastic outputs
+          - stream-processor  # Stateful ordered-stream operators (AEP SOURCE/SINK/PROCESSOR)
+          - planning          # Goal-directed multi-step reasoning (HTN, ReAct, ToT, workflow)
+          - hybrid            # Mix of deterministic + probabilistic logic in one agent
+          - adaptive          # Self-improving via learning loop (RL, online-learning, bandits)
+          - composite         # Orchestrates other agents; no business logic of its own
+          - reactive          # Event-triggered, stateless, fire-and-forget
+          - custom            # Escape hatch — must include a customType discriminator
+
+      subtype:
+        type: string
+        required: false
+        description: >
+          Fine-grained subtype — see DeterministicSubtype, ProbabilisticSubtype,
+          StreamProcessorSubtype, PlanningSubtype in agent-framework Java enums.
+        examples:
+          deterministic: [rule-based, threshold, pattern, fsm, exact-match, policy, operator, template]
+          probabilistic: [ml-model, bayesian, statistical, llm, classifier]
+          stream-processor: [ingestion, routing, transformation, cep, enrichment, window-aggregation, filter]
+          planning: [htn, react, tot, workflow, objective-decomposition]
+
+      roles:
+        type: array
+        required: false
+        items: string
+        description: "Functional role labels (free-form, for catalog search)"
+
+      criticality:
+        type: string
+        required: true
+        enum: [critical, high, medium, low]
+
+      autonomyLevel:
+        type: string
+        required: true
+        enum: [autonomous, semi-autonomous, supervised]
+
+      determinismGuarantee:
+        type: string
+        required: true
+        enum: [fully-deterministic, config-scoped, non-deterministic]
+        description: >
+          fully-deterministic: same input → same output always.
+          config-scoped: same config + same input → same output.
+          non-deterministic: output may differ (ML, LLM, randomness).
+
+      stateMutability:
+        type: string
+        required: true
+        enum: [stateless, local-state, persistent]
+        description: >
+          stateless: no state retained between invocations.
+          local-state: state maintained during execution, checkpointed.
+          persistent: durable model/knowledge state updated over time.
+
+      failureMode:
+        type: string
+        required: true
+        enum: [fail-fast, fail-silent, fail-closed, dead-letter, retry, skip, degrade]
+        description: "How the agent behaves when it cannot produce a result."
+
+    # --- owners block -----------------------------------------------------
+    owners:
+      type: array
+      items:
+        team:
+          type: string
+          required: true
+        role:
+          type: string
+          enum: [technical-owner, product-owner, security-reviewer, compliance-approver]
+        contact:
+          type: string
+          format: email
 
     optional:
       description:    # Free-text description
@@ -107,8 +199,13 @@ schema:
           default: experimental
 
       # YAPPC-style extended fields (optional)
+      # DEPRECATED: generator.type — use identity.agentType instead (schema v2.0.0)
       generator:
         type: object
+        deprecated: true
+        deprecatedSince: "2.0.0"
+        replacedBy: "identity.agentType"
+        description: "DEPRECATED — kept for backward compatibility; will be removed in schema v3.0.0"
       memory:
         type: object
       tools:

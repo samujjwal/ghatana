@@ -42,13 +42,13 @@ class AgentDefinitionTest {
             AgentDefinition def = AgentDefinition.builder()
                     .id("test-agent")
                     .version("1.0.0")
-                    .type(AgentType.LLM)
+                    .type(AgentType.PROBABILISTIC)
                     .systemPrompt("You are a test agent.")
                     .build();
 
             assertThat(def.getId()).isEqualTo("test-agent");
             assertThat(def.getVersion()).isEqualTo("1.0.0");
-            assertThat(def.getType()).isEqualTo(AgentType.LLM);
+            assertThat(def.getType()).isEqualTo(AgentType.PROBABILISTIC);
             assertThat(def.getName()).isEqualTo("test-agent"); // defaults to id
             assertThat(def.getCanonicalId()).isEqualTo("test-agent:1.0.0");
         }
@@ -114,7 +114,7 @@ class AgentDefinitionTest {
         @DisplayName("should use equals/hashCode based on id+version")
         void shouldUseEqualsOnIdVersion() {
             AgentDefinition a = AgentDefinition.builder()
-                    .id("agent-a").version("1.0.0").type(AgentType.LLM)
+                    .id("agent-a").version("1.0.0").type(AgentType.PROBABILISTIC)
                     .systemPrompt("A").build();
             AgentDefinition b = AgentDefinition.builder()
                     .id("agent-a").version("1.0.0").type(AgentType.DETERMINISTIC)
@@ -137,7 +137,7 @@ class AgentDefinitionTest {
             return AgentDefinition.builder()
                     .id("test-agent")
                     .version("1.0.0")
-                    .type(AgentType.LLM)
+                    .type(AgentType.PROBABILISTIC)
                     .systemPrompt("You are a test agent.")
                     .timeout(Duration.ofSeconds(30))
                     .maxTokens(4096)
@@ -234,12 +234,13 @@ class AgentDefinitionTest {
     class ValidatorTests {
 
         @Test
-        @DisplayName("should pass for a well-formed LLM definition")
-        void shouldPassForValidLlmDefinition() {
+        @DisplayName("should pass for a well-formed PROBABILISTIC definition")
+        void shouldPassForValidProbabilisticDefinition() {
             AgentDefinition def = AgentDefinition.builder()
                     .id("test-agent")
                     .version("1.0.0")
-                    .type(AgentType.LLM)
+                    .type(AgentType.PROBABILISTIC)
+                    .subtype("llm")
                     .systemPrompt("You are helpful.")
                     .build();
 
@@ -248,12 +249,13 @@ class AgentDefinitionTest {
         }
 
         @Test
-        @DisplayName("should fail when LLM agent has no systemPrompt")
-        void shouldFailLlmWithoutSystemPrompt() {
+        @DisplayName("should fail when PROBABILISTIC agent has no systemPrompt")
+        void shouldFailProbabilisticWithoutSystemPrompt() {
             AgentDefinition def = AgentDefinition.builder()
                     .id("test-agent")
                     .version("1.0.0")
-                    .type(AgentType.LLM)
+                    .type(AgentType.PROBABILISTIC)
+                    .subtype("llm")
                     .build();
 
             ValidationResult result = AgentDefinitionValidator.validate(def);
@@ -282,7 +284,8 @@ class AgentDefinitionTest {
             AgentDefinition def = AgentDefinition.builder()
                     .id("expensive")
                     .version("1.0.0")
-                    .type(AgentType.LLM)
+                    .type(AgentType.PROBABILISTIC)
+                    .subtype("llm")
                     .systemPrompt("Costly agent")
                     .maxCostPerCall(50.0)
                     .build();
@@ -298,7 +301,8 @@ class AgentDefinitionTest {
             AgentDefinition def = AgentDefinition.builder()
                     .id("dangerous")
                     .version("1.0.0")
-                    .type(AgentType.LLM)
+                    .type(AgentType.PROBABILISTIC)
+                    .subtype("llm")
                     .systemPrompt("Code executor")
                     .addCapability("execute-code")
                     .build();
@@ -315,7 +319,8 @@ class AgentDefinitionTest {
             AgentDefinition def = AgentDefinition.builder()
                     .id("safe-executor")
                     .version("1.0.0")
-                    .type(AgentType.LLM)
+                    .type(AgentType.PROBABILISTIC)
+                    .subtype("llm")
                     .systemPrompt("Code executor")
                     .addCapability("execute-code")
                     .label("security.reviewed", "true")
@@ -331,7 +336,8 @@ class AgentDefinitionTest {
             AgentDefinition def = AgentDefinition.builder()
                     .id("test")
                     .version("1.0.0")
-                    .type(AgentType.LLM)
+                    .type(AgentType.PROBABILISTIC)
+                    .subtype("llm")
                     .systemPrompt("test")
                     .build();
 
@@ -354,7 +360,7 @@ class AgentDefinitionTest {
             AgentDefinition def = AgentDefinition.builder()
                     .id("bad")
                     .version("1.0.0")
-                    .type(AgentType.LLM)
+                    .type(AgentType.PROBABILISTIC)
                     .temperature(5.0) // out of range
                     .build();
 

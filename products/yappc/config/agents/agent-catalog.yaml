@@ -1,26 +1,15 @@
-# YAPPC Agent Catalog
-#
-# Root catalog for YAPPC (Yet Another Product/Project Companion).
-# Aggregates all lifecycle intelligence, agentic, and domain-specific agents.
-#
-# Discovery: CatalogLoader scans for agent-catalog.yaml files and creates
-# FileBasedCatalog instances from each.
-
 catalog:
-  id: "yappc"
-  name: "YAPPC Agent Catalog"
-  version: "3.0.0"
-
-  # Extends the platform base catalog
+  id: yappc
+  name: YAPPC Agent Catalog
+  version: 3.0.0
   extends:
-    - "platform"
-
-  # Agent definition files (glob patterns relative to this file)
+  - platform
   agents:
-    - "definitions/**/*.yaml"
-
+  - definitions/**/*.yaml
   metadata:
-    maintainer: "yappc-team@ghatana.ai"
-    scope: "yappc-product"
-    stability: "stable"
+    maintainer: yappc-team@ghatana.ai
+    scope: yappc-product
+    stability: stable
     priority: 200
+  schemaVersion: 3.0.0
+  status: active

@@ -1,62 +1,84 @@
 id: opportunity-scoping-task-agent
 name: Opportunity Scoping Task Agent
 version: 1.0.0
-description: "Scope product enhancement opportunities by defining problem boundaries, affected users, and success metrics before sizing"
-
+namespace: yappc.task-agents.product-intelligence
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Scope product enhancement opportunities by defining problem boundaries, affected users, and
+  success metrics before sizing
+summary: Scope product enhancement opportunities by defining problem boundaries, affected users, and success
+  metrics before si...
 metadata:
   level: 3
   domain: product-intelligence
   type: worker
-  tags: [opportunity-scoping, boundary-definition, success-metric-definition, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Scope product enhancement opportunities by defining problem boundaries, affected users, and success metrics before sizing
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - opportunity-scoping
+  - boundary-definition
+  - success-metric-definition
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: opportunity_scoping_request
+    schema: dynamic
+  outputs:
+  - name: scoped_opportunity
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: enhancement-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [opportunity_scoper, metric_definer]
-
+tools:
+- opportunity_scoper
+- metric_definer
 capabilities:
-  - opportunity-scoping
-  - boundary-definition
-  - success-metric-definition
-
+- opportunity-scoping
+- boundary-definition
+- success-metric-definition
 routing:
-  input_types: [opportunity_scoping_request]
-  output_types: [scoped_opportunity]
-
+  input_types:
+  - opportunity_scoping_request
+  output_types:
+  - scoped_opportunity
 delegation:
   can_delegate_to: []
   escalates_to: enhancement-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

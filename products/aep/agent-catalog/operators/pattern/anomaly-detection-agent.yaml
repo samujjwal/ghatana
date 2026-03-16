@@ -1,0 +1,124 @@
+id: anomaly-detection-agent
+namespace: aep.operators.pattern
+name: Anomaly Detection Agent
+version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Detects statistical and behavioral anomalies using multi-model scoring with LLM-assisted semantic reasoning
+
+description: |
+  Detects statistical and behavioral anomalies in event streams using multi-model
+  scoring: Z-score baselines, exponential moving averages (EMA), and LLM-assisted
+  semantic anomaly reasoning. Emits scored anomaly events with confidence bands
+  and recommended actions to downstream routing operators.
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [anomaly, detection, ml, statistical, zscore, ema, outlier, alerting]
+
+identity:
+  agentType: hybrid
+  subtype: rule+llm
+  determinismGuarantee: config-scoped
+  stateMutability: local-state
+  failureMode: dead-letter
+  criticality: high
+  autonomyLevel: semi-autonomous
+
+reasoningProfile:
+  primaryReasoner: statistical-scoring
+  reasonerPortfolio:
+    - type: service-call
+      role: feature-extraction
+      description: Extract numeric features - rate, latency, error_rate, payload_size
+    - type: service-call
+      role: statistical-scoring
+      description: Multi-model scoring via Z-score, EMA, IQR outlier detection
+    - type: llm
+      provider: ANTHROPIC
+      model: claude-3-5-haiku-20241022
+      temperature: 0.0
+      maxTokens: 256
+      role: semantic-severity-assessment
+      condition: "statisticalScore > 0.7"
+
+aep:
+  operatorType: PATTERN
+  inputEventTypes: ["*"]
+  outputEventTypes:
+    - "anomaly.detected"
+    - "anomaly.baseline.updated"
+    - "anomaly.alert.triggered"
+  backpressure:
+    bufferSize: 10000
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: "60s"
+    maxRetries: 3
+    deadLetterQueue: "anomaly-detection-dlq"
+  windows:
+    tumbling:
+      size: "1m"
+    sliding:
+      size: "10m"
+      step: "1m"
+
+capabilities:
+  - anomaly-detection
+  - statistical-baseline
+  - alert-generation
+
+tools:
+  - name: anomalyScorer
+    type: SERVICE
+    endpoint: /aep/anomaly/score
+  - name: baselineManager
+    type: SERVICE
+    endpoint: /aep/anomaly/baselines
+  - name: alertDispatcher
+    type: SERVICE
+    endpoint: /aep/alerts/dispatch
+
+interfaces:
+  inputs:
+    - name: eventStream
+      schema: "*"
+      required: true
+  outputs:
+    - name: anomalyEvent
+      schema: anomaly.detected
+    - name: anomalyAlert
+      schema: anomaly.alert.triggered
+
+memory:
+  type: EPISODIC
+  scope: anomaly_history
+  retention: long
+  ttl: "7d"
+  stateKeys:
+    - "rollingBaselines"
+    - "recentAnomalies"
+    - "suppressedAlerts"
+
+alerting:
+  minScoreToAlert: 0.8
+  deduplicationWindow: "5m"
+  maxAlertsPerMinute: 10
+  channels:
+    - type: "metric"
+      name: "anomaly.detected.count"
+    - type: "event"
+      eventType: "anomaly.alert.triggered"
+
+resources:
+  memory: "4GB"
+  cpu: "4"
+  timeout: "0"
+  scaling:
+    minReplicas: 1
+    maxReplicas: 4
+    metric: "scoring_queue_depth"
+    threshold: 1000

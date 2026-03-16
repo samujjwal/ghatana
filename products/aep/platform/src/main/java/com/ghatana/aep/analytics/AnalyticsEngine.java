@@ -700,6 +700,7 @@ public class AnalyticsEngine {
         }
 
         public String getMetricName() { return metricName; }
+        public List<DataPoint> getPoints() { return java.util.Collections.unmodifiableList(points); }
         public int size() { return points.size(); }
     }
 

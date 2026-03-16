@@ -1,62 +1,85 @@
 id: auto-scaling-task-agent
 name: Auto Scaling Task Agent
 version: 1.0.0
-description: "Configure auto-scaling policies for compute resources based on load patterns, latency targets, and cost constraints"
-
+namespace: yappc.task-agents.operations
+status: active
+owners:
+- team: sre
+  contact: sre@ghatana.com
+description: Configure auto-scaling policies for compute resources based on load patterns, latency targets,
+  and cost constraints
+summary: Configure auto-scaling policies for compute resources based on load patterns, latency targets,
+  and cost constraints
 metadata:
   level: 3
   domain: operations
   type: worker
-  tags: [auto-scaling-configuration, load-pattern-analysis, policy-generation, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Configure auto-scaling policies for compute resources based on load patterns, latency targets, and cost constraints
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - auto-scaling-configuration
+  - load-pattern-analysis
+  - policy-generation
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: auto_scaling_request
+    schema: dynamic
+  outputs:
+  - name: auto_scaling_policy
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: infra-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [scaling_policy_generator, load_analyser, cost_constraint_checker]
-
+tools:
+- scaling_policy_generator
+- load_analyser
+- cost_constraint_checker
 capabilities:
-  - auto-scaling-configuration
-  - load-pattern-analysis
-  - policy-generation
-
+- auto-scaling-configuration
+- load-pattern-analysis
+- policy-generation
 routing:
-  input_types: [auto_scaling_request]
-  output_types: [auto_scaling_policy]
-
+  input_types:
+  - auto_scaling_request
+  output_types:
+  - auto_scaling_policy
 delegation:
   can_delegate_to: []
   escalates_to: infra-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 2000
   max_latency_ms: 10000

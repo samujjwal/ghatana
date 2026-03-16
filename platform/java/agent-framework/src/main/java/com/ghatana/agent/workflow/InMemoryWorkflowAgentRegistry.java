@@ -1,6 +1,6 @@
 package com.ghatana.agent.workflow;
 
-import com.ghatana.agent.Agent;
+import com.ghatana.agent.TypedAgent;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,7 +32,7 @@ public class InMemoryWorkflowAgentRegistry implements WorkflowAgentRegistry {
      * Internal registry entry.
      */
     private record RegistryEntry(
-            Agent agent,
+            TypedAgent<?, ?> agent,
             AgentMetadata metadata
     ) {}
 
@@ -41,7 +41,7 @@ public class InMemoryWorkflowAgentRegistry implements WorkflowAgentRegistry {
     public Promise<Void> register(
             @NotNull String agentId,
             @NotNull WorkflowAgentRole role,
-            @NotNull Agent agent
+            @NotNull TypedAgent<?, ?> agent
     ) {
         Objects.requireNonNull(agentId, "agentId is required");
         Objects.requireNonNull(role, "role is required");
@@ -50,8 +50,8 @@ public class InMemoryWorkflowAgentRegistry implements WorkflowAgentRegistry {
         AgentMetadata metadata = new AgentMetadata(
                 agentId,
                 role,
-                agent.getCapabilities().name(),
-                agent.getCapabilities().description(),
+                agent.descriptor().getName(),
+                agent.descriptor().getDescription(),
                 true,
                 System.currentTimeMillis(),
                 Map.of()
@@ -86,7 +86,7 @@ public class InMemoryWorkflowAgentRegistry implements WorkflowAgentRegistry {
 
     @Override
     @NotNull
-    public Promise<Optional<Agent>> getAgent(@NotNull String agentId) {
+    public Promise<Optional<TypedAgent<?, ?>>> getAgent(@NotNull String agentId) {
         Objects.requireNonNull(agentId, "agentId is required");
 
         RegistryEntry entry = agents.get(agentId);

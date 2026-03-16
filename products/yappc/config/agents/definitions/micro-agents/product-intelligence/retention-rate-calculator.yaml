@@ -1,22 +1,50 @@
 id: retention-rate-calculator
 name: Retention Rate Calculator
 version: 1.0.0
-description: "Calculate day-N retention rate for a cohort given activation and return events"
-
+namespace: yappc.micro-agents.product-intelligence
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Calculate day-N retention rate for a cohort given activation and return events
+summary: Calculate day-N retention rate for a cohort given activation and return events
 metadata:
   level: 3
   domain: product-intelligence
   type: micro-agent
-  tags: [retention-rate-calculation, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "retention-rate-calculation"
-
+  tags:
+  - retention-rate-calculation
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: retention_calc_request
+    schema: dynamic
+  outputs:
+  - name: retention_rate
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: analytics-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -24,25 +52,22 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [retention_calculator]
-
+tools:
+- retention_calculator
 capabilities:
-  - retention-rate-calculation
-
+- retention-rate-calculation
 routing:
-  input_types: [retention_calc_request]
-  output_types: [retention_rate]
-
+  input_types:
+  - retention_calc_request
+  output_types:
+  - retention_rate
 delegation:
   can_delegate_to: []
   escalates_to: analytics-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 100
   max_latency_ms: 500

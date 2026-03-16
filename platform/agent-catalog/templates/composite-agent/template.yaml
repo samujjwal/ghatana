@@ -42,8 +42,15 @@ metadata:
   maturity: experimental
   author: "{{TEAM_EMAIL}}"
 
-generator:
-  type: COMPOSITE
+# REQUIRED — composite agents orchestrate; they do not contain business logic
+identity:
+  agentType: composite              # DO NOT CHANGE — this is the composite template
+  roles: ["{{ROLE_1}}"]             # e.g. [orchestrator, coordinator, pipeline-manager]
+  criticality: "{{CRITICALITY}}"    # critical | high | medium | low
+  autonomyLevel: autonomous         # composites execute deterministically once triggered
+  determinismGuarantee: config-scoped  # same config + same inputs → same stage sequence
+  stateMutability: local-state      # tracks stage progress during pipeline execution
+  failureMode: dead-letter          # always capture partial failures for analysis
 
 # AEP integration — the composite agent itself is an AEP COMPOSITE operator
 aep:

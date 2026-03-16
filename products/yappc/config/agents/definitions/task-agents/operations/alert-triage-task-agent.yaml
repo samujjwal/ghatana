@@ -1,63 +1,86 @@
 id: alert-triage-task-agent
 name: Alert Triage Task Agent
 version: 1.0.0
-description: "Triage and correlate incoming alerts to determine root cause, deduplicate noise, and assign severity"
-
+namespace: yappc.task-agents.operations
+status: active
+owners:
+- team: sre
+  contact: sre@ghatana.com
+description: Triage and correlate incoming alerts to determine root cause, deduplicate noise, and assign
+  severity
+summary: Triage and correlate incoming alerts to determine root cause, deduplicate noise, and assign severity
 metadata:
   level: 3
   domain: operations
   type: worker
-  tags: [alert-triage, correlation, deduplication, severity-assignment, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Triage and correlate incoming alerts to determine root cause, deduplicate noise, and assign severity
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
-memory:
-  episodic:
-    enabled: true
-    retention_days: 90
-    categories: [task-executions]
-  semantic:
-    enabled: true
-    categories: [domain-knowledge]
-  procedural:
-    enabled: false
-
-tools: [alert_correlator, deduplicator, severity_classifier]
-
-capabilities:
+  tags:
   - alert-triage
   - correlation
   - deduplication
   - severity-assignment
-
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: alert_triage_request
+    schema: dynamic
+  outputs:
+  - name: triaged_alert
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: on-call-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories:
+    - task-executions
+  semantic:
+    enabled: true
+    categories:
+    - domain-knowledge
+  procedural:
+    enabled: false
+tools:
+- alert_correlator
+- deduplicator
+- severity_classifier
+capabilities:
+- alert-triage
+- correlation
+- deduplication
+- severity-assignment
 routing:
-  input_types: [alert_triage_request]
-  output_types: [triaged_alert]
-
+  input_types:
+  - alert_triage_request
+  output_types:
+  - triaged_alert
 delegation:
   can_delegate_to: []
   escalates_to: on-call-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 500
   max_latency_ms: 2500

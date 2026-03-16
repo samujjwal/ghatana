@@ -1,62 +1,84 @@
 id: problem-solution-fit-task-agent
 name: Problem Solution Fit Task Agent
 version: 1.0.0
-description: "Assess problem-solution fit by evaluating how completely and uniquely the proposed solution addresses the defined problem"
-
+namespace: yappc.task-agents.ideation
+status: active
+owners:
+- team: product
+  contact: product@ghatana.com
+description: Assess problem-solution fit by evaluating how completely and uniquely the proposed solution
+  addresses the defined problem
+summary: Assess problem-solution fit by evaluating how completely and uniquely the proposed solution addresses
+  the defined pro...
 metadata:
   level: 3
   domain: ideation
   type: worker
-  tags: [fit-assessment, gap-identification, uniqueness-scoring, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Assess problem-solution fit by evaluating how completely and uniquely the proposed solution addresses the defined problem
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - fit-assessment
+  - gap-identification
+  - uniqueness-scoring
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: fit_assessment_request
+    schema: dynamic
+  outputs:
+  - name: problem_solution_fit_report
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: concept-validation-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [fit_evaluator, gap_analyser]
-
+tools:
+- fit_evaluator
+- gap_analyser
 capabilities:
-  - fit-assessment
-  - gap-identification
-  - uniqueness-scoring
-
+- fit-assessment
+- gap-identification
+- uniqueness-scoring
 routing:
-  input_types: [fit_assessment_request]
-  output_types: [problem_solution_fit_report]
-
+  input_types:
+  - fit_assessment_request
+  output_types:
+  - problem_solution_fit_report
 delegation:
   can_delegate_to: []
   escalates_to: concept-validation-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 15000

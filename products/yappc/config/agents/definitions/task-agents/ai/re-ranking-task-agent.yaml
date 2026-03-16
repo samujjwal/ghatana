@@ -1,62 +1,84 @@
 id: re-ranking-task-agent
 name: Re Ranking Task Agent
 version: 1.0.0
-description: "Re-rank search result sets using cross-encoder models or LLM-based relevance scoring for improved precision"
-
+namespace: yappc.task-agents.ai
+status: active
+owners:
+- team: ai-platform
+  contact: ai-platform@ghatana.com
+description: Re-rank search result sets using cross-encoder models or LLM-based relevance scoring for
+  improved precision
+summary: Re-rank search result sets using cross-encoder models or LLM-based relevance scoring for improved
+  precision
 metadata:
   level: 3
   domain: ai
   type: worker
-  tags: [re-ranking, cross-encoder-scoring, relevance-re-ordering, level3]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: execute
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Execute task: Re-rank search result sets using cross-encoder models or LLM-based relevance scoring for improved precision
-
-        Input: {{input}}
-        Context: {{context}}
-
-        Produce a structured, precise output meeting the task specification.
-
+  tags:
+  - re-ranking
+  - cross-encoder-scoring
+  - relevance-re-ordering
+  - level3
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: reranking_request
+    schema: dynamic
+  outputs:
+  - name: reranked_results
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: search-capability-agent
+learningModel:
+  learningLevel: L2
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - llm
+  defaultReasoner: llm
 memory:
   episodic:
     enabled: true
     retention_days: 90
-    categories: [task-executions]
+    categories:
+    - task-executions
   semantic:
     enabled: true
-    categories: [domain-knowledge]
+    categories:
+    - domain-knowledge
   procedural:
     enabled: false
-
-tools: [cross_encoder_model, llm_reranker]
-
+tools:
+- cross_encoder_model
+- llm_reranker
 capabilities:
-  - re-ranking
-  - cross-encoder-scoring
-  - relevance-re-ordering
-
+- re-ranking
+- cross-encoder-scoring
+- relevance-re-ordering
 routing:
-  input_types: [reranking_request]
-  output_types: [reranked_results]
-
+  input_types:
+  - reranking_request
+  output_types:
+  - reranked_results
 delegation:
   can_delegate_to: []
   escalates_to: search-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 600
   max_latency_ms: 3000

@@ -179,11 +179,6 @@ public class ToolAwareOpenAICompletionService implements ToolAwareCompletionServ
     private List<Map<String, Object>> buildMessages(CompletionRequest request) {
         List<Map<String, Object>> messages = new ArrayList<>();
 
-        // System prompt if present
-        if (request.getSystemPrompt() != null && !request.getSystemPrompt().isBlank()) {
-            messages.add(Map.of("role", "system", "content", request.getSystemPrompt()));
-        }
-
         // Conversation history
         if (request.getMessages() != null && !request.getMessages().isEmpty()) {
             for (ChatMessage msg : request.getMessages()) {
@@ -337,7 +332,8 @@ public class ToolAwareOpenAICompletionService implements ToolAwareCompletionServ
                 for (JsonNode tc : toolCallsNode) {
                     String id = tc.path("id").asText();
                     String name = tc.path("function").path("name").asText();
-                    String args = tc.path("function").path("arguments").asText("{}");
+                    JsonNode argsNode = tc.path("function").path("arguments");
+                    Map<String, Object> args = objectMapper.convertValue(argsNode, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
                     toolCalls.add(ToolCall.of(id, name, args));
                 }
             }

@@ -1,6 +1,6 @@
 package com.ghatana.agent.workflow;
 
-import com.ghatana.agent.Agent;
+import com.ghatana.agent.TypedAgent;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +29,7 @@ import java.util.Set;
  * List<String> reviewers = registry.getAgentsByRole(WorkflowAgentRole.CODE_REVIEWER).getResult();
  *
  * // Get specific agent
- * Optional<Agent> agent = registry.getAgent(agentId).getResult();
+ * Optional<TypedAgent<?,?>> agent = registry.getAgent(agentId).getResult();
  * }</pre>
  *
  * @doc.type interface
@@ -51,7 +51,7 @@ public interface WorkflowAgentRegistry {
     Promise<Void> register(
             @NotNull String agentId,
             @NotNull WorkflowAgentRole role,
-            @NotNull Agent agent
+            @NotNull TypedAgent<?, ?> agent
     );
 
     /**
@@ -70,7 +70,7 @@ public interface WorkflowAgentRegistry {
      * @return A Promise resolving to the agent if found
      */
     @NotNull
-    Promise<Optional<Agent>> getAgent(@NotNull String agentId);
+    Promise<Optional<TypedAgent<?, ?>>> getAgent(@NotNull String agentId);
 
     /**
      * Gets all agent IDs for a specific role.

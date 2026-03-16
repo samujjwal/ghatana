@@ -1,0 +1,306 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.com/schemas/yappc/memory-items-schema.json",
+  "title": "YAPPC Memory Items Schema",
+  "description": "Schema for YAPPC memory subsystem configuration (episodic, semantic, procedural, preference)",
+  "type": "object",
+  "required": ["memory"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "pattern": "^v\\d+\\.\\d+$",
+      "description": "API version of this schema (e.g., v1.0)"
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Memory configuration",
+      "properties": {
+        "episodic": {
+          "type": "object",
+          "description": "Episodic memory (experiences and events)",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether episodic memory is enabled"
+            },
+            "maxItems": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 100000,
+              "description": "Maximum number of episodic items to retain"
+            },
+            "retentionDays": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 365,
+              "description": "Episodic items older than this are archived"
+            },
+            "compressionStrategy": {
+              "type": "string",
+              "enum": ["NONE", "TEMPORAL_SUMMARY", "SEMANTIC_CLUSTER"],
+              "default": "TEMPORAL_SUMMARY",
+              "description": "Strategy for compressing old episodic memories"
+            },
+            "redaction": {
+              "type": "object",
+              "description": "Redaction rules for sensitive episodic data",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "patterns": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Regex patterns to redact"
+                }
+              }
+            }
+          }
+        },
+        "semantic": {
+          "type": "object",
+          "description": "Semantic memory (facts and knowledge)",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether semantic memory is enabled"
+            },
+            "maxItems": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 50000,
+              "description": "Maximum number of semantic facts to store"
+            },
+            "embeddingModel": {
+              "type": "string",
+              "description": "Model used for semantic embeddings (e.g., text-embedding-3-small)"
+            },
+            "similarityThreshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.8,
+              "description": "Threshold for semantic similarity matching (0-1)"
+            },
+            "indexing": {
+              "type": "object",
+              "properties": {
+                "vectorIndex": {
+                  "type": "string",
+                  "enum": ["HNSW", "FAISS", "ANNOY"],
+                  "default": "HNSW",
+                  "description": "Vector indexing algorithm"
+                },
+                "updateFrequencyMs": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "default": 5000,
+                  "description": "Frequency to update semantic indexes"
+                }
+              },
+              "description": "Semantic indexing configuration"
+            }
+          }
+        },
+        "procedural": {
+          "type": "object",
+          "description": "Procedural memory (learned policies and patterns)",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether procedural memory is enabled"
+            },
+            "maxPolicies": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10000,
+              "description": "Maximum number of learned policies to store"
+            },
+            "confidenceThreshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.7,
+              "description": "Minimum confidence for a policy to be active"
+            },
+            "learningRate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.1,
+              "description": "Learning rate for policy updates"
+            },
+            "decayFactor": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.99,
+              "description": "Decay factor for old policy confidence scores"
+            },
+            "refreshIntervalMs": {
+              "type": "integer",
+              "minimum": 1000,
+              "default": 60000,
+              "description": "How often to refresh procedural memory indexes"
+            }
+          }
+        },
+        "preference": {
+          "type": "object",
+          "description": "Preference memory (user and system preferences)",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether preference memory is enabled"
+            },
+            "categories": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Preference category name"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Category description"
+                  },
+                  "schema": {
+                    "type": "object",
+                    "description": "JSON Schema for preferences in this category"
+                  },
+                  "ttlDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Time-to-live for preferences in this category"
+                  }
+                }
+              },
+              "description": "Preference categories"
+            }
+          }
+        },
+        "storage": {
+          "type": "object",
+          "description": "Memory storage backend configuration",
+          "additionalProperties": false,
+          "properties": {
+            "backend": {
+              "type": "string",
+              "enum": ["POSTGRESQL", "ROCKSDB", "REDIS", "HYBRID"],
+              "default": "HYBRID",
+              "description": "Storage backend type"
+            },
+            "hybrid": {
+              "type": "object",
+              "description": "Hybrid storage configuration (local + central)",
+              "properties": {
+                "localStore": {
+                  "type": "string",
+                  "enum": ["ROCKSDB", "MEMORY"],
+                  "default": "ROCKSDB",
+                  "description": "Local cache store"
+                },
+                "centralStore": {
+                  "type": "string",
+                  "enum": ["POSTGRESQL", "REDIS"],
+                  "default": "POSTGRESQL",
+                  "description": "Central durable store"
+                },
+                "syncIntervalMs": {
+                  "type": "integer",
+                  "minimum": 1000,
+                  "default": 30000,
+                  "description": "Sync interval between local and central stores"
+                }
+              }
+            },
+            "encryption": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Whether to encrypt stored memories"
+                },
+                "algorithm": {
+                  "type": "string",
+                  "enum": ["AES_256_GCM", "CHACHA20_POLY1305"],
+                  "default": "AES_256_GCM",
+                  "description": "Encryption algorithm"
+                }
+              },
+              "description": "Storage encryption configuration"
+            }
+          }
+        },
+        "eventSourcing": {
+          "type": "object",
+          "description": "Event sourcing configuration for memory mutations",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether to event-source all memory operations"
+            },
+            "eventLogTable": {
+              "type": "string",
+              "default": "yappc.memory_event_log",
+              "description": "Table where memory events are appended"
+            },
+            "snapshotIntervalEvents": {
+              "type": "integer",
+              "minimum": 100,
+              "default": 1000,
+              "description": "Number of events before creating a snapshot"
+            },
+            "retentionDays": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 90,
+              "description": "Retain event log for this many days"
+            }
+          }
+        }
+      }
+    },
+    "governanceDefaults": {
+      "type": "object",
+      "description": "Default governance policies for memory",
+      "properties": {
+        "redactionEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Apply redaction by default"
+        },
+        "retentionDays": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 365,
+          "description": "Default retention period"
+        },
+        "auditMemoryAccess": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to audit all memory access"
+        }
+      }
+    }
+  }
+}

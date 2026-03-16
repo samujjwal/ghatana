@@ -1,15 +1,29 @@
 id: access-control-agent
 name: Access Control Agent
-version: 1.0.0
-description: Enforces access policies, authentication, and authorization checks
+namespace: platform.security
+version: 2.0.0
+status: active
+summary: >-
+  Enforces access policies, authentication, and authorization checks at platform boundaries.
+owners:
+  - team: platform-security
+    role: technical-owner
+    contact: security-team@ghatana.ai
 
 metadata:
   level: 3
   domain: security
   tags: [access-control, authentication, authorization, rbac, policy]
 
-generator:
-  type: DETERMINISTIC
+identity:
+  agentType: deterministic
+  subtype: policy                           # DeterministicSubtype.POLICY — rule-based RBAC enforcement
+  roles: [access-enforcer, policy-evaluator, auth-gate]
+  criticality: critical
+  autonomyLevel: autonomous
+  determinismGuarantee: fully-deterministic  # same policy + same request → same decision
+  stateMutability: stateless                 # evaluates each request independently
+  failureMode: fail-closed                   # deny on error (safe default for security)
 
 capabilities:
   - access-control

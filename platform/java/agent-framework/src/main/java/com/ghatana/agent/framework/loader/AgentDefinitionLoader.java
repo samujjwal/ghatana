@@ -13,6 +13,7 @@ import com.ghatana.agent.DeterminismGuarantee;
 import com.ghatana.agent.FailureMode;
 import com.ghatana.agent.StateMutability;
 import com.ghatana.agent.framework.config.AgentDefinition;
+import com.ghatana.agent.framework.spec.AgentSpecLoader;
 import com.ghatana.core.template.TemplateContext;
 import com.ghatana.core.template.YamlTemplateEngine;
 import org.jetbrains.annotations.NotNull;
@@ -127,6 +128,15 @@ public final class AgentDefinitionLoader {
 
         log.debug("Loading AgentDefinition from {}", yamlFile);
         String rendered = templateEngine.renderWithInheritance(yamlFile, context);
+
+        // Auto-detect new 18-section spec format (agentSpecVersion or metadata.id envelope).
+        // Delegate to AgentSpecLoader which knows how to parse and bridge to AgentDefinition.
+        if (isNewSpecFormat(rendered)) {
+            log.debug("Detected new agentSpecVersion format in {} — delegating to AgentSpecLoader", yamlFile);
+            AgentSpecLoader specLoader = new AgentSpecLoader(context);
+            return specLoader.extractDefinition(specLoader.loadFromString(rendered));
+        }
+
         AgentDefinitionDto dto = yamlMapper.readValue(rendered, AgentDefinitionDto.class);
         return materialize(dto, yamlFile.toString());
     }
@@ -148,6 +158,14 @@ public final class AgentDefinitionLoader {
         Objects.requireNonNull(rawYaml, "rawYaml must not be null");
 
         String rendered = templateEngine.render(rawYaml, context);
+
+        // Auto-detect new 18-section spec format and delegate if found.
+        if (isNewSpecFormat(rendered)) {
+            log.debug("Detected new agentSpecVersion format in string — delegating to AgentSpecLoader");
+            AgentSpecLoader specLoader = new AgentSpecLoader(context);
+            return specLoader.extractDefinition(specLoader.loadFromString(rendered));
+        }
+
         AgentDefinitionDto dto = yamlMapper.readValue(rendered, AgentDefinitionDto.class);
         return materialize(dto, "<string>");
     }
@@ -227,6 +245,21 @@ public final class AgentDefinitionLoader {
     }
 
     // ─── Materialisation ──────────────────────────────────────────────────────
+
+    /**
+     * Detects whether the rendered YAML string uses the new 18-section agent spec format
+     * (identified by the presence of an {@code agentSpecVersion:} key or a {@code metadata:}
+     * block that contains an {@code id:} field — as opposed to the legacy flat format where
+     * {@code id} appears at the document root).
+     *
+     * <p>This allows {@link #load(Path)} and {@link #loadFromString(String)} to transparently
+     * accept both old flat-format and new spec-format YAML files.
+     */
+    private boolean isNewSpecFormat(@NotNull String yaml) {
+        // Fast heuristic: look for the agentSpecVersion key at document root.
+        // A more thorough check also catches metadata-envelope format.
+        return yaml.contains("agentSpecVersion:") || yaml.matches("(?s).*\\nmetadata:\\s*\\n\\s+id:\\s+.*");
+    }
 
     /**
      * Converts a parsed DTO into an immutable {@link AgentDefinition}, applying

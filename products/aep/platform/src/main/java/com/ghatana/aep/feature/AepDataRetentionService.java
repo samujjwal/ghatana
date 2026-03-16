@@ -314,8 +314,10 @@ public final class AepDataRetentionService {
                 log.error("[Retention][GDPR] Erasure failed for tenant='{}'", tenantId, ex);
                 throw ex;
             } finally {
-                // Remove the one-shot erasure policy
-                deletePolicy(tenantId, AepTenantRetentionPolicy.DEFAULT_BUCKET);
+                // Remove the one-shot erasure policy synchronously — we are already
+                // on a blocking executor thread; calling the async deletePolicy() here
+                // would require the Eventloop and cause "No reactor in current thread".
+                deletePolicySync(tenantId, AepTenantRetentionPolicy.DEFAULT_BUCKET);
             }
             return null;
         });

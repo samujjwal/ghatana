@@ -1,96 +1,133 @@
 id: memory-orchestrator
 name: Memory Orchestrator
 version: 1.0.0
-description: "Manages episodic capture, semantic encoding and retrieval, procedural knowledge application, and preference management across agent memory tiers"
-
+namespace: yappc.orchestrators.ai
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-platform@ghatana.com
+description: Manages episodic capture, semantic encoding and retrieval, procedural knowledge application,
+  and preference management across agent memory tiers
+summary: Manages episodic capture, semantic encoding and retrieval, procedural knowledge application,
+  and preference managemen...
 metadata:
   level: 1
   domain: ai
-  tags: [orchestrator, memory, episodic, semantic, procedural, level1]
-
-generator:
-  type: PIPELINE
-  steps:
-    - name: memory_operation_routing
-      type: RULE_BASED
-      description: "Route memory operation: WRITE(episodic/semantic/procedural), READ(retrieval), UPDATE(preference), REFLECT(synthesis)"
-    - name: content_encoding
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.1
-      max_tokens: 2000
-      prompt: |
-        Encode content for memory storage:
-
-        Operation: {{memory_operation_routing.operation_type}}
-        Raw content: {{input.content}}
-        Memory tier: {{memory_operation_routing.tier}}
-        Tenant context: {{context.tenant_id}}
-        Retention policy: {{context.retention_policy}}
-
-        Produce structured memory record: entity extraction, embedding anchors, expiry, access controls, redaction flags. Output JSON.
-    - name: memory_persistence
-      type: SERVICE_CALL
-      service: memory-store
-      endpoint: /persist
-      description: "Persist encoded memory record to appropriate store (episodic: event log, semantic: vector DB, procedural: policy store)"
-    - name: retrieval_synthesis
-      type: LLM
-      provider: ANTHROPIC
-      model: claude-3-5-sonnet-20241022
-      temperature: 0.2
-      max_tokens: 2000
-      prompt: |
-        Synthesise retrieved memory fragments for agent context:
-
-        Query: {{input.query}}
-        Episodic hits: {{context.episodic_hits}}
-        Semantic hits: {{context.semantic_hits}}
-        Procedural policies: {{context.procedural_policies}}
-
-        Merge fragments, resolve conflicts, apply temporal decay, produce cohesive context summary.
-
-memory:
-  episodic:
+  tags:
+  - orchestrator
+  - memory
+  - episodic
+  - semantic
+  - procedural
+  - level1
+identity:
+  agentType: planning
+  subtype: workflow
+  determinismGuarantee: partial
+  stateMutability: mutable
+  failureMode: graceful-degrade
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: memory_write_request
+    schema: dynamic
+  - name: memory_read_request
+    schema: dynamic
+  - name: memory_reflect_request
+    schema: dynamic
+  - name: preference_update
+    schema: dynamic
+  outputs:
+  - name: memory_record
+    schema: dynamic
+  - name: retrieved_context
+    schema: dynamic
+  - name: reflection_summary
+    schema: dynamic
+  - name: preference_ack
+    schema: dynamic
+interoperability:
+  agentToAgent:
     enabled: true
-    retention_days: 730
-    categories: [memory-ops, retrieval-queries, synthesis-outputs]
-  semantic:
-    enabled: true
-    categories: [memory-schemas, entity-types, policy-patterns]
-  procedural:
-    enabled: true
-    categories: [retention-rules, retrieval-algorithms, synthesis-procedures]
-
-tools: [episodic_store, semantic_vector_db, procedural_policy_store, memory_reflector]
-
-capabilities:
-  - episodic-memory-capture
-  - semantic-memory-retrieval
-  - procedural-knowledge-management
-  - preference-management
-  - memory-reflection
-
-routing:
-  input_types: [memory_write_request, memory_read_request, memory_reflect_request, preference_update]
-  output_types: [memory_record, retrieved_context, reflection_summary, preference_ack]
-
-delegation:
-  can_delegate_to:
+    protocol: ghatana-a2a-v1
+    delegation:
     - memory-capability-agent
     - episodic-memory-task-agent
     - semantic-memory-task-agent
     - procedural-memory-task-agent
     - preference-task-agent
     - memory-reflection-task-agent
+    escalation: ai-orchestrator
+  mcp:
+    enabled: false
+    note: MCP proxy optional via InteroperabilityService
+learningModel:
+  learningLevel: L3
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: true
+reasoningProfile:
+  reasonerPortfolio:
+  - chain-of-thought
+  - plan-and-solve
+  defaultReasoner: plan-and-solve
+  maxChainDepth: 5
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+    - memory-ops
+    - retrieval-queries
+    - synthesis-outputs
+  semantic:
+    enabled: true
+    categories:
+    - memory-schemas
+    - entity-types
+    - policy-patterns
+  procedural:
+    enabled: true
+    categories:
+    - retention-rules
+    - retrieval-algorithms
+    - synthesis-procedures
+tools:
+- episodic_store
+- semantic_vector_db
+- procedural_policy_store
+- memory_reflector
+capabilities:
+- episodic-memory-capture
+- semantic-memory-retrieval
+- procedural-knowledge-management
+- preference-management
+- memory-reflection
+routing:
+  input_types:
+  - memory_write_request
+  - memory_read_request
+  - memory_reflect_request
+  - preference_update
+  output_types:
+  - memory_record
+  - retrieved_context
+  - reflection_summary
+  - preference_ack
+delegation:
+  can_delegate_to:
+  - memory-capability-agent
+  - episodic-memory-task-agent
+  - semantic-memory-task-agent
+  - procedural-memory-task-agent
+  - preference-task-agent
+  - memory-reflection-task-agent
   escalates_to: ai-orchestrator
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: comprehensive
-
 performance:
   expected_latency_ms: 300
   max_latency_ms: 5000

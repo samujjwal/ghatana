@@ -1,23 +1,53 @@
 id: change-window-validator
 name: Change Window Validator
 version: 1.0.0
-description: "Validate that a proposed change time falls within an approved change window and not in a freeze period"
-
+namespace: yappc.micro-agents.operations
+status: active
+owners:
+- team: sre
+  contact: sre@ghatana.com
+description: Validate that a proposed change time falls within an approved change window and not in a
+  freeze period
+summary: Validate that a proposed change time falls within an approved change window and not in a freeze
+  period
 metadata:
   level: 3
   domain: operations
   type: micro-agent
-  tags: [change-window-validation, freeze-detection, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "change-window-validation"
-        - "freeze-detection"
-
+  tags:
+  - change-window-validation
+  - freeze-detection
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: mission-critical
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: window_validate_request
+    schema: dynamic
+  outputs:
+  - name: window_verdict
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: change-management-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +55,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [window_validator]
-
+tools:
+- window_validator
 capabilities:
-  - change-window-validation
-  - freeze-detection
-
+- change-window-validation
+- freeze-detection
 routing:
-  input_types: [window_validate_request]
-  output_types: [window_verdict]
-
+  input_types:
+  - window_validate_request
+  output_types:
+  - window_verdict
 delegation:
   can_delegate_to: []
   escalates_to: change-management-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 100
   max_latency_ms: 500

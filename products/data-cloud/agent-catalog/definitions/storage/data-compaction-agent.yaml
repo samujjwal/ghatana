@@ -1,0 +1,65 @@
+id: data-compaction-agent
+namespace: data-cloud.storage
+name: Data Compaction Agent
+version: 1.0.0
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Deterministic RocksDB LSM and Parquet compaction with threshold-based scheduling and scale-to-zero support
+
+description: |
+  Deterministic RocksDB LSM and Parquet compaction with threshold-based scheduling.
+  Triggers during maintenance windows based on file count and size thresholds.
+  Supports scale-to-zero when no compaction is needed.
+
+metadata:
+  level: 3
+  domain: storage-management
+  tags: [compaction, rocksdb, lsm, parquet, maintenance, scale-to-zero]
+
+identity:
+  agentType: deterministic
+  subtype: threshold
+  determinismGuarantee: full
+  stateMutability: local-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+
+capabilities:
+  - storage-compaction
+  - lsm-management
+  - parquet-optimization
+
+tools:
+  - name: compactionEngine
+    type: SERVICE
+    endpoint: /data-cloud/storage/compact
+  - name: maintenanceScheduler
+    type: SERVICE
+    endpoint: /data-cloud/storage/maintenance
+
+interfaces:
+  inputs:
+    - name: compactionRequest
+      schema: object
+      required: true
+  outputs:
+    - name: compactionResult
+      schema: object
+
+memory:
+  type: WORKING
+  scope: compaction_state
+  retention: short
+
+resources:
+  memory: "8GB"
+  cpu: "4"
+  timeout: "3600s"
+  scaling:
+    minReplicas: 0
+    maxReplicas: 4
+    metric: "pending_compaction_bytes"
+    threshold: 1073741824

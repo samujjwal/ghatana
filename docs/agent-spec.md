@@ -94,24 +94,59 @@ agentType:
 type: enum
 required: true
 allowedValues:
-  - deterministic    # Pure functions, rules, FSMs — same input always produces same output
-  - rule-based       # Condition-action rules with configurable rule sets (Drools, OPA)
-  - policy           # Policy engines that evaluate governance/compliance constraints
-  - pattern          # Pattern matching, template retrieval, procedure reuse
-  - probabilistic    # ML models, Bayesian inference, statistical classifiers
-  - planning         # Goal-directed planners (STRIPS, HTN, tree-of-thought, ReAct)
-  - llm              # Large language model backed (prompt → completion)
-  - hybrid           # Multiple reasoning modes combined (fast-path + fallback)
-  - adaptive         # Self-tuning agents (bandits, RL, online learning)
-  - composite        # Ensemble/voting agents that aggregate sub-agent outputs
-  - reactive         # Event-triggered reflex agents (CEP, stream processing)
-  - custom           # Extensible type for user-defined agent categories
+  - deterministic     # Pure functions, rules, FSMs, policy, pattern — same input = same output.
+                      # Subtypes: rule-engine, fsm, pattern-matcher, policy-engine, threshold-evaluator, operator, template.
+  - probabilistic     # ML models, Bayesian inference, statistical classifiers, LLMs.
+                      # Subtypes: llm, ml-model, bayesian, statistical, classifier.
+  - stream-processor  # Stateful event stream processing: CEP, windowed aggregations, ingestion, transformation.
+                      # Primary type for all AEP operators.
+                      # Subtypes: ingestion, routing, transformation, cep, enrichment, window-aggregation, filter.
+  - planning          # Goal-directed multi-step: HTN, ReAct, Tree-of-Thought, workflow orchestration.
+                      # Subtypes: htn, react, tot, workflow, objective-decomposition.
+  - hybrid            # Single agent with multiple internal reasoners and intelligent routing.
+                      # Distinct from composite: no independent sub-agents, just internal routing.
+  - adaptive          # Self-tuning via bandits, RL, A/B testing; requires learningLevel >= L2.
+  - composite         # Ensemble/voting: fans work out to 2+ independent sub-agents, aggregates results.
+                      # Distinct from hybrid: parallel independent sub-agents, not internal reasoners.
+  - reactive          # Stateless event trigger → immediate action. No window state. Simple reflex only.
+                      # For stateful stream processing, use stream-processor instead.
+  - custom            # Extensible for domain-specific types registered via CustomTypeRegistry.
+#
+# DISAMBIGUATION RULES (pick ONE canonical type):
+#
+#   Rule-based logic           → deterministic (subtype: rule-engine)
+#   Policy/governance check    → deterministic (subtype: policy-engine)
+#   Template rendering         → deterministic (subtype: template)
+#   LLM/GPT/Claude agent       → probabilistic (subtype: llm)      ← NOT top-level "llm" (deprecated)
+#   ML model inference         → probabilistic (subtype: ml-model)
+#   AEP operator               → stream-processor
+#   Orchestrator/planner       → planning
+#   Expert-system + LLM        → hybrid
+#   Self-tuning parameters     → adaptive
+#   Multi-model consensus      → composite
+#   Alert/circuit-breaker      → reactive
+#
+# JAVA ALIGNMENT: com.ghatana.agent.AgentType (9 canonical values)
+#   deterministic  → AgentType.DETERMINISTIC
+#   probabilistic  → AgentType.PROBABILISTIC
+#   stream-processor → AgentType.STREAM_PROCESSOR
+#   planning       → AgentType.PLANNING
+#   hybrid         → AgentType.HYBRID
+#   adaptive       → AgentType.ADAPTIVE
+#   composite      → AgentType.COMPOSITE
+#   reactive       → AgentType.REACTIVE
+#   custom         → AgentType.CUSTOM
+#   (llm, rule-based, policy, pattern are YAML aliases → resolved via AgentType.resolve())
+#
 purpose: >
-Primary processing identity of the agent. This field communicates the dominant
-reasoning style, even when the agent internally uses multiple mechanisms.
-Aligns with the Java AgentType enum for type-safe runtime routing.
-useCases: - Runtime routing - Review criteria selection - Testing strategy definition - Safety expectation setting
-example: "hybrid"
+  Primary processing identity of the agent. This field communicates the dominant computational
+  model — even when the agent internally uses multiple mechanisms. Use exactly ONE canonical type.
+  Finer-grained classification is expressed via the companion "subtype" field in the identity section
+  and the corresponding Java enum (DeterministicSubtype, ProbabilisticSubtype, StreamProcessorSubtype,
+  PlanningSubtype). AgentType.resolve() handles deprecated aliases (llm, rule-based, policy, pattern)
+  for backward compatibility with pre-2.1 YAML files.
+useCases: - Runtime routing - Review criteria selection - Testing strategy definition - Safety expectation setting - Validator type-specific rules
+example: "stream-processor"
 
 roles:
 type: list

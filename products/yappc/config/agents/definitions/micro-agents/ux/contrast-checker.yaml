@@ -1,23 +1,51 @@
 id: contrast-checker
 name: Contrast Checker
 version: 1.0.0
-description: "Check foreground/background colour pairs against WCAG 2.2 AA contrast ratio requirements"
-
+namespace: yappc.micro-agents.ux
+status: active
+owners:
+- team: design
+  contact: design@ghatana.com
+description: Check foreground/background colour pairs against WCAG 2.2 AA contrast ratio requirements
+summary: Check foreground/background colour pairs against WCAG 2
 metadata:
   level: 3
   domain: ux
   type: micro-agent
-  tags: [contrast-checking, wcag-compliance, level3, micro]
-
-generator:
-  type: RULE_BASED
-  steps:
-    - name: execute
-      type: RULE_BASED
-      rules:
-        - "contrast-checking"
-        - "wcag-compliance"
-
+  tags:
+  - contrast-checking
+  - wcag-compliance
+  - level3
+  - micro
+identity:
+  agentType: deterministic
+  subtype: rule-engine
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: fail-fast
+  criticality: high
+  autonomyLevel: autonomous
+interfaces:
+  inputs:
+  - name: contrast_check_request
+    schema: dynamic
+  outputs:
+  - name: contrast_result
+    schema: dynamic
+interoperability:
+  agentToAgent:
+    enabled: true
+    protocol: ghatana-a2a-v1
+    escalation: accessibility-capability-agent
+learningModel:
+  learningLevel: L0
+  batchSize: 50
+  humanReviewThreshold: 0.75
+  reflectionEnabled: false
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  defaultReasoner: rule-engine
 memory:
   episodic:
     enabled: false
@@ -25,26 +53,23 @@ memory:
     enabled: false
   procedural:
     enabled: false
-
-tools: [contrast_calculator]
-
+tools:
+- contrast_calculator
 capabilities:
-  - contrast-checking
-  - wcag-compliance
-
+- contrast-checking
+- wcag-compliance
 routing:
-  input_types: [contrast_check_request]
-  output_types: [contrast_result]
-
+  input_types:
+  - contrast_check_request
+  output_types:
+  - contrast_result
 delegation:
   can_delegate_to: []
   escalates_to: accessibility-capability-agent
-
 governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
-
 performance:
   expected_latency_ms: 100
   max_latency_ms: 500

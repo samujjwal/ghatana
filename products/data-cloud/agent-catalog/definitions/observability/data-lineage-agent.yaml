@@ -1,38 +1,71 @@
 id: data-lineage-agent
+namespace: data-cloud.observability
 name: Data Lineage Agent
 version: 1.0.0
-description: Tracks data provenance, transformation history, and lineage graphs
+status: active
+owners:
+  - team: data-cloud-platform
+    contact: data-cloud-team@ghatana.com
+summary: Tracks and visualizes data lineage across the data cloud as a directed acyclic graph
+
+description: |
+  Tracks and visualizes data lineage across the data cloud as a directed acyclic graph.
+  Adaptively learns from query and transformation patterns to improve lineage completeness.
 
 metadata:
   level: 3
   domain: data-observability
-  tags: [lineage, provenance, tracking, governance, impact-analysis]
+  tags: [lineage, dag, provenance, data-graph, tracking, audit]
 
-generator:
-  type: ADAPTIVE
+identity:
+  agentType: adaptive
+  subtype: parameter-optimization
+  determinismGuarantee: config-scoped
+  stateMutability: external-state
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: autonomous
+
+learningModel:
+  learningLevel: L2
+  adaptationTargets:
+    - lineage-completeness
+    - graph-accuracy
+  learningSources:
+    - query-execution-events
+    - transformation-events
 
 capabilities:
   - data-lineage
-  - data-quality
+  - dag-tracking
+  - provenance-recording
 
 tools:
-  - name: lineageTracker
+  - name: lineageCollector
     type: SERVICE
-    endpoint: /datacloud/lineage/track
-  - name: impactAnalyzer
+    endpoint: /data-cloud/lineage/collect
+  - name: dagBuilder
     type: SERVICE
-    endpoint: /datacloud/lineage/impact
+    endpoint: /data-cloud/lineage/dag
+  - name: lineageAPI
+    type: SERVICE
+    endpoint: /data-cloud/lineage/query
+
+interfaces:
+  inputs:
+    - name: lineageEvent
+      schema: object
+      required: true
+  outputs:
+    - name: lineageGraph
+      schema: object
 
 memory:
   type: SEMANTIC
   scope: lineage_graph
   retention: long
 
-routing:
-  input: LineageQueryRequest
-  output: LineageGraphResult
-
 resources:
-  memory: "1GB"
-  cpu: "2"
-  timeout: "120s"
+  memory: "4GB"
+  cpu: "4"
+  timeout: "300s"
