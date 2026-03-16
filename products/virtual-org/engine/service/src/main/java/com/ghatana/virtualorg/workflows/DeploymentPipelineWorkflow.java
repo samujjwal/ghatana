@@ -1,7 +1,7 @@
 package com.ghatana.virtualorg.workflows;
 
 import com.ghatana.virtualorg.v1.AgentRoleProto;
-import com.ghatana.agent.Agent;
+import com.ghatana.virtualorg.agent.VirtualOrgAgent;
 import com.ghatana.virtualorg.model.Release;
 import io.activej.promise.Promise;
 
@@ -42,7 +42,7 @@ import java.util.*;
 public class DeploymentPipelineWorkflow {
     
     private final WorkflowEngine engine;
-    private final Map<AgentRoleProto, Agent> agents;
+    private final Map<AgentRoleProto, VirtualOrgAgent> agents;
     
     /**
      * Creates deployment pipeline workflow with required agents.
@@ -51,7 +51,7 @@ public class DeploymentPipelineWorkflow {
      * @param agents Map of agent roles (requires: AGENT_ROLE_ENGINEER, AGENT_ROLE_QA_ENGINEER, AGENT_ROLE_QA_LEAD,
      *               AGENT_ROLE_DEVOPS_ENGINEER, AGENT_ROLE_PRODUCT_MANAGER, AGENT_ROLE_DEVOPS_LEAD)
      */
-    public DeploymentPipelineWorkflow(WorkflowEngine engine, Map<AgentRoleProto, Agent> agents) {
+    public DeploymentPipelineWorkflow(WorkflowEngine engine, Map<AgentRoleProto, VirtualOrgAgent> agents) {
         this.engine = engine;
         this.agents = agents;
         validateRequiredAgents();

@@ -1,8 +1,7 @@
 package com.ghatana.products.yappc.service;
 
-import com.ghatana.agent.framework.api.AgentContext;
-import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.products.yappc.domain.agent.AIAgent;
+import com.ghatana.products.yappc.domain.agent.AIAgentContext;
 import com.ghatana.products.yappc.domain.task.TaskDefinition;
 import com.ghatana.products.yappc.domain.task.TaskExecutionContext;
 import io.activej.promise.Promise;
@@ -10,7 +9,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,50 +51,25 @@ public class TaskAgentAdapter {
         LOG.debug("Executing task {} using agent {}", task.id(), agentName);
 
         // Create agent context from task context
-        AgentContext agentContext = createAgentContext(context, task);
+        AIAgentContext agentContext = createAgentContext(context, task);
 
         // Execute agent with proper type handling
         @SuppressWarnings("unchecked")
         AIAgent<TInput, ?> typedAgent = (AIAgent<TInput, ?>) agent;
 
-        return typedAgent.process(input, agentContext)
+        return typedAgent.execute(input, agentContext)
                 .map(agentResult -> {
-                    // Extract the output from agent result
-                    if (agentResult instanceof Map) {
+                    if (agentResult.success()) {
                         @SuppressWarnings("unchecked")
-                        TOutput output = (TOutput) agentResult;
+                        TOutput output = (TOutput) agentResult.data();
                         return output;
+                    } else {
+                        throw new TaskExecutionException(
+                            "Agent execution failed: " + (agentResult.error() != null ? agentResult.error().message() : "unknown"),
+                            task.id(),
+                            agentName
+                        );
                     }
-
-                    // Handle AgentResult wrapper
-                    if (agentResult instanceof com.ghatana.products.yappc.domain.agent.AgentResult) {
-                        @SuppressWarnings("unchecked")
-                        com.ghatana.products.yappc.domain.agent.AgentResult<?> result =
-                            (com.ghatana.products.yappc.domain.agent.AgentResult<?>) agentResult;
-
-                        if (result.success()) {
-                            @SuppressWarnings("unchecked")
-                            TOutput output = (TOutput) result.data();
-                            return output;
-                        } else {
-                            throw new TaskExecutionException(
-                                "Agent execution failed: " + (result.error() != null ? result.error().message() : "unknown"),
-                                task.id(),
-                                agentName
-                            );
-                        }
-                    }
-
-                    // Fallback: wrap in map
-                    Map<String, Object> resultMap = new HashMap<>();
-                    resultMap.put("taskId", task.id());
-                    resultMap.put("agentName", agentName);
-                    resultMap.put("status", "completed");
-                    resultMap.put("result", agentResult);
-
-                    @SuppressWarnings("unchecked")
-                    TOutput output = (TOutput) resultMap;
-                    return output;
                 })
                 .mapException(error -> new TaskExecutionException(
                     "Agent execution failed: " + error.getMessage(),
@@ -110,14 +83,11 @@ public class TaskAgentAdapter {
      * Creates an agent context from task execution context.
      */
     @NotNull
-    private AgentContext createAgentContext(
+    private AIAgentContext createAgentContext(
             @NotNull TaskExecutionContext taskContext,
             @NotNull TaskDefinition task
     ) {
         Map<String, Object> metadata = new HashMap<>();
-        metadata.put("userId", taskContext.userId());
-        metadata.put("tenantId", taskContext.tenantId());
-        metadata.put("traceId", taskContext.traceId());
         metadata.put("taskId", task.id());
         metadata.put("taskDomain", task.domain());
         metadata.put("taskPhase", task.phase());
@@ -129,18 +99,12 @@ public class TaskAgentAdapter {
 
         String organizationId = taskContext.projectId() != null ? taskContext.projectId() : "default-org";
 
-        Map<String, Object> config = new HashMap<>();
-        config.put("taskId", task.id());
-        config.put("organizationId", organizationId);
-
-        return AgentContext.builder()
-                .turnId(taskContext.traceId() != null ? taskContext.traceId() : "turn-" + task.id())
-                .agentId(agent.getId())
-                .tenantId(taskContext.tenantId())
+        return AIAgentContext.builder()
                 .userId(taskContext.userId())
-                .startTime(Instant.now())
-                .memoryStore(MemoryStore.noOp())
-                .config(config)
+                .workspaceId(organizationId)
+                .requestId(taskContext.traceId() != null ? taskContext.traceId() : "req-" + task.id())
+                .tenantId(taskContext.tenantId())
+                .organizationId(organizationId)
                 .metadata(metadata)
                 .build();
     }

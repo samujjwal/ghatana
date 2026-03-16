@@ -143,7 +143,7 @@ public class VirtualOrgEventAdapter {
      */
     public VirtualOrgEventAdapter(VirtualOrgAgent delegate) {
         this.delegate = delegate;
-        log.info("Created EventCloud adapter for Virtual-Org agent: {}", delegate.getId());
+        log.info("Created EventCloud adapter for Virtual-Org agent: {}", delegate.getAgentId());
     }
     
     // =============================
@@ -151,7 +151,7 @@ public class VirtualOrgEventAdapter {
     // =============================
     
     public String getId() {
-        return delegate.getId();
+        return delegate.getAgentId();
     }
     
     public String getVersion() {
@@ -199,7 +199,7 @@ public class VirtualOrgEventAdapter {
             List<Event> failureEvents = new ArrayList<>();
             failureEvents.add(
                 VirtualOrgEventFactory.createAgentErrorEvent(
-                    delegate.getId(),
+                    delegate.getAgentId(),
                     e.getMessage()
                 )
             );
@@ -392,7 +392,7 @@ public class VirtualOrgEventAdapter {
         
         if (response.getSuccess()) {
             events.add(VirtualOrgEventFactory.createTaskCompletedEvent(
-                delegate.getId(),
+                delegate.getAgentId(),
                 response,
                 duration,
                 correlationId
@@ -401,7 +401,7 @@ public class VirtualOrgEventAdapter {
             // For failed tasks, use result field if available, otherwise use generic message
             String errorMsg = response.getResult().isEmpty() ? "Task execution failed" : response.getResult();
             events.add(VirtualOrgEventFactory.createTaskFailedEvent(
-                delegate.getId(),
+                delegate.getAgentId(),
                 response.getTaskId(),
                 errorMsg,
                 duration,
@@ -419,7 +419,7 @@ public class VirtualOrgEventAdapter {
         // Convert protobuf input to event
         String payload = input.hasPayload() ? input.getPayload() : "{}";
         return VirtualOrgEventFactory.createTaskStartedEvent(
-            delegate.getId(),
+            delegate.getAgentId(),
             TaskProto.newBuilder()
                 .setTaskId(UUID.randomUUID().toString())
                 .setTitle("Agent Task")

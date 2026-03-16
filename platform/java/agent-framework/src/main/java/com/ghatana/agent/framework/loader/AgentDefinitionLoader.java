@@ -347,9 +347,9 @@ public final class AgentDefinitionLoader {
 
         if (dto.capabilities != null) builder.capabilities(new java.util.LinkedHashSet<>(dto.capabilities));
         if (dto.inputContract != null) builder.inputContract(new AgentDefinition.IOContract(
-                dto.inputContract.typeName, dto.inputContract.format, dto.inputContract.schema));
+                dto.inputContract.typeName, dto.inputContract.format, dto.inputContract.schema, dto.inputContract.uiAst));
         if (dto.outputContract != null) builder.outputContract(new AgentDefinition.IOContract(
-                dto.outputContract.typeName, dto.outputContract.format, dto.outputContract.schema));
+                dto.outputContract.typeName, dto.outputContract.format, dto.outputContract.schema, dto.outputContract.uiAst));
 
         if (dto.tools != null) {
             for (ToolDto toolDto : dto.tools) {
@@ -415,6 +415,7 @@ public final class AgentDefinitionLoader {
         @JsonProperty("type")   @Nullable String typeName;
         @JsonProperty("format") @Nullable String format;
         @JsonProperty("schema") @Nullable String schema;
+        @JsonProperty("uiAst")  @Nullable Map<String, Object> uiAst;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

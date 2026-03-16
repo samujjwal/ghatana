@@ -228,9 +228,9 @@ include(":products:app-platform:service-template")
 // Shared Services — Cross-product microservices
 // =============================================================================
 
-include(":shared-services:ai-inference-service")
-include(":shared-services:ai-registry")
-include(":shared-services:auth-gateway")
-include(":shared-services:feature-store-ingest")
-include(":shared-services:auth-service")
-include(":shared-services:user-profile-service")
+// // include(":shared-services:ai-inference-service")
+// include(":shared-services:ai-registry")
+// include(":shared-services:auth-gateway")
+// include(":shared-services:feature-store-ingest")
+// include(":shared-services:auth-service")
+// include(":shared-services:user-profile-service")

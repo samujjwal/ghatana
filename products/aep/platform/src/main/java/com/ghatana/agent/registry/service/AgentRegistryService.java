@@ -3,7 +3,7 @@ package com.ghatana.agent.registry.service;
 import com.ghatana.aep.domain.agent.registry.AgentExecutionContext;
 import com.ghatana.platform.domain.agent.registry.AgentMetrics;
 import com.ghatana.platform.domain.auth.TenantId;
-import com.ghatana.agent.Agent;
+import com.ghatana.agent.TypedAgent;
 import com.ghatana.contracts.agent.v1.AgentManifestProto;
 import com.ghatana.contracts.agent.v1.AgentInputProto;
 import com.ghatana.contracts.agent.v1.AgentResultProto;
@@ -123,7 +123,7 @@ public interface AgentRegistryService {
      * @param tenantId tenant scope
      * @param agentId  agent identifier
      */
-    Promise<Agent> getAgentInstance(TenantId tenantId, String agentId);
+    Promise<TypedAgent<?, ?>> getAgentInstance(TenantId tenantId, String agentId);
 
     /**
      * Execute an agent with a single event input.

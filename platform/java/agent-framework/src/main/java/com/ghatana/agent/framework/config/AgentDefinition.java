@@ -193,11 +193,17 @@ public final class AgentDefinition {
     public record IOContract(
             @NotNull String typeName,
             @NotNull String format,
-            @Nullable String schema
+            @Nullable String schema,
+            @Nullable java.util.Map<String, Object> uiAst
     ) {
         public IOContract {
             Objects.requireNonNull(typeName, "typeName must not be null");
             Objects.requireNonNull(format, "format must not be null");
+        }
+        
+        /** Backward compatible constructor */
+        public IOContract(String typeName, String format, String schema) {
+            this(typeName, format, schema, null);
         }
     }
 

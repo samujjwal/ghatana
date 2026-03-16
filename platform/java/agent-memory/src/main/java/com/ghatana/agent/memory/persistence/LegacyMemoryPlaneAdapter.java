@@ -9,6 +9,7 @@ import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;
 import com.ghatana.agent.memory.model.working.BoundedWorkingMemory;
 import com.ghatana.agent.memory.model.working.WorkingMemory;
 import com.ghatana.agent.memory.model.working.WorkingMemoryConfig;
+import com.ghatana.agent.memory.store.MemoryPlane;
 import com.ghatana.agent.memory.store.*;
 import com.ghatana.agent.memory.store.taskstate.TaskStateStore;
 import io.activej.promise.Promise;

@@ -1,7 +1,5 @@
 package com.ghatana.products.yappc.domain.agent;
 
-import com.ghatana.agent.Agent;
-import com.ghatana.agent.AgentCapabilities;
 import com.ghatana.agent.framework.api.AgentContext;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -9,8 +7,17 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Base interface for YAPPC AI Agents.
  * <p>
- * Extends the core Agent interface with AI-specific capabilities such as
- * health checking, metrics collection, and structured input/output processing.
+ * Defines the contract for YAPPC's typed, domain-specific AI agents,
+ * including structured execution, health checking, and metadata.
+ *
+ * <p><b>Migration from {@code com.ghatana.agent.Agent}</b><br>
+ * As of v3.7.0 this interface no longer extends the deprecated platform
+ * {@code Agent} interface.  The YAPPC agent ecosystem uses its own typed
+ * {@link AgentResult}, {@link AIAgentContext}, and {@link AgentMetadata}
+ * models.  For platform integration (e.g. registering with the platform
+ * {@code AgentFrameworkRegistry}), use
+ * {@link com.ghatana.agent.migration.LegacyAgentAdapter} or create a
+ * {@code TypedAgent} wrapper.
  *
  * @param <TInput>  The input type for agent requests
  * @param <TOutput> The output type for agent responses
@@ -19,7 +26,13 @@ import org.jetbrains.annotations.NotNull;
  * @doc.layer product
  * @doc.pattern Template Method
  */
-public interface AIAgent<TInput, TOutput> extends Agent {
+public interface AIAgent<TInput, TOutput> {
+
+    /**
+     * Returns the unique identifier of this agent.
+     */
+    @NotNull
+    String getId();
 
     /**
      * Executes the agent with structured input and output.

@@ -255,9 +255,8 @@ class TaskOrchestratorTest extends EventloopTestBase {
         .latencySLA(5000)
         .build();
 
-    when(agent.getMetadata()).thenReturn(metadata);
-    when(agent.getId()).thenReturn(name.name().toLowerCase().replace("_", "-"));
-    doReturn(result).when(agent).process(any(), any());
+    lenient().when(agent.getMetadata()).thenReturn(metadata);
+    lenient().when(agent.getId()).thenReturn(name.name().toLowerCase().replace("_", "-"));
     lenient().when(agent.healthCheck()).thenReturn(Promise.of(AgentHealth.healthy(0L)));
     lenient().when(agent.execute(any(), any())).thenReturn(result);
 

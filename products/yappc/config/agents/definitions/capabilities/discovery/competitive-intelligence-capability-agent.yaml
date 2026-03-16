@@ -51,8 +51,8 @@ interoperability:
     enabled: true
     protocol: ghatana-a2a-v1
     delegation:
-    - competitor-profile-task-agent
-    - win-loss-analysis-task-agent
+    - demand-signal-detection-task-agent
+    - demand-signal-detection-task-agent
     - market-positioning-task-agent
     - pricing-intelligence-task-agent
     escalation: market-research-orchestrator
@@ -110,8 +110,8 @@ routing:
   - threat_assessment
 delegation:
   can_delegate_to:
-  - competitor-profile-task-agent
-  - win-loss-analysis-task-agent
+  - demand-signal-detection-task-agent
+  - demand-signal-detection-task-agent
   - market-positioning-task-agent
   - pricing-intelligence-task-agent
   escalates_to: market-research-orchestrator

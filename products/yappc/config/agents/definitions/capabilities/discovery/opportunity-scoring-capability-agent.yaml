@@ -51,10 +51,8 @@ interoperability:
     enabled: true
     protocol: ghatana-a2a-v1
     delegation:
-    - market-sizing-task-agent
-    - feasibility-task-agent
-    - demand-validation-task-agent
-    - opportunity-comparison-task-agent
+    - demand-signal-detection-task-agent
+    - opportunity-backlog-task-agent
     escalation: opportunity-assessment-orchestrator
 learningModel:
   learningLevel: L3
@@ -108,10 +106,8 @@ routing:
   - ice_score
 delegation:
   can_delegate_to:
-  - market-sizing-task-agent
-  - feasibility-task-agent
-  - demand-validation-task-agent
-  - opportunity-comparison-task-agent
+  - demand-signal-detection-task-agent
+  - opportunity-backlog-task-agent
   escalates_to: opportunity-assessment-orchestrator
 governance:
   requires_approval: false

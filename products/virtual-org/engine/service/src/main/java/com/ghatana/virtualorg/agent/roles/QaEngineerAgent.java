@@ -2,6 +2,7 @@ package com.ghatana.virtualorg.agent.roles;
 
 import com.ghatana.virtualorg.agent.AbstractVirtualOrgAgent;
 import com.ghatana.virtualorg.llm.LLMClient;
+import com.ghatana.virtualorg.llm.LLMResponse;
 import com.ghatana.virtualorg.memory.AgentMemory;
 import com.ghatana.virtualorg.tool.ToolExecutor;
 import com.ghatana.virtualorg.tool.ToolRegistry;

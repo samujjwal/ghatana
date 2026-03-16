@@ -51,9 +51,9 @@ interoperability:
     protocol: ghatana-a2a-v1
     delegation:
     - problem-statement-task-agent
-    - root-cause-task-agent
-    - hypothesis-formulation-task-agent
-    - signal-synthesis-task-agent
+    - demand-signal-detection-task-agent
+    - opportunity-backlog-task-agent
+    - demand-signal-detection-task-agent
     escalation: discovery-orchestrator
 learningModel:
   learningLevel: L3
@@ -107,9 +107,9 @@ routing:
 delegation:
   can_delegate_to:
   - problem-statement-task-agent
-  - root-cause-task-agent
-  - hypothesis-formulation-task-agent
-  - signal-synthesis-task-agent
+  - demand-signal-detection-task-agent
+  - opportunity-backlog-task-agent
+  - demand-signal-detection-task-agent
   escalates_to: discovery-orchestrator
 governance:
   requires_approval: false

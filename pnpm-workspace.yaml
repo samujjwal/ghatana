@@ -6,6 +6,7 @@ packages:
   # Product UIs
   - "products/data-cloud/ui"
   - "products/aep/ui"
+  - "products/aep/api"
 
   # YAPPC frontend (existing)
   - "products/yappc/frontend/libs/*"

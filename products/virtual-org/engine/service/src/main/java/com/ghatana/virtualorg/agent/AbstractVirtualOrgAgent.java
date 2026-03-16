@@ -6,8 +6,6 @@ import com.ghatana.platform.domain.agent.registry.HealthStatus;
 import com.ghatana.platform.domain.domain.event.Event;
 import com.ghatana.contracts.agent.v1.AgentInputProto;
 import com.ghatana.contracts.agent.v1.AgentResultProto;
-import com.ghatana.agent.AgentCapabilities;
-import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.virtualorg.llm.LLMClient;
 import com.ghatana.virtualorg.memory.AgentMemory;
 import com.ghatana.virtualorg.tool.ToolExecutor;
@@ -40,10 +38,12 @@ import java.util.concurrent.atomic.AtomicReference;
  * platform compatibility while adding LLM reasoning, autonomous tool execution, and
  * hierarchical decision-making with authority delegation.
  *
+ * <p><b>Migration Note:</b> Decoupled from deprecated platform {@code Agent} interface.
+ * For platform integration, use {@code LegacyAgentAdapter} or {@code TypedAgent}.
+ *
  * <p><b>Architecture Role</b><br>
  * Integration layer between platform and product:
  * <ul>
- *   <li>Implements core Agent interface (platform compatibility)</li>
  *   <li>Implements VirtualOrgAgent interface (product features)</li>
  *   <li>Registers with AgentRegistry for discovery</li>
  *   <li>Reports metrics via AgentMetrics interface</li>
@@ -52,10 +52,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * </ul>
  *
  * <p><b>Platform Integration</b><br>
- * Implements platform Agent interface methods:
+ * Provides platform-compatible methods:
  * <ul>
  *   <li>{@code execute(AgentInputProto)}: Maps platform task to virtual-org task</li>
- *   <li>{@code getCapabilities()}: Exposes agent capabilities for discovery</li>
  *   <li>{@code getMetrics()}: Reports performance metrics</li>
  *   <li>{@code getStatus()}: Current agent state (IDLE/PROCESSING/etc)</li>
  * </ul>
@@ -113,7 +112,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * All async operations execute on single-threaded ActiveJ Eventloop.
  *
  * @see VirtualOrgAgent
- * @see com.ghatana.platform.domain.agent.registry.Agent
  * @doc.type class
  * @doc.purpose Platform-integrated abstract agent with LLM reasoning and authority delegation
  * @doc.layer product
@@ -194,6 +192,11 @@ public abstract class AbstractVirtualOrgAgent implements VirtualOrgAgent {
     // =============================
 
     @Override
+    @NotNull
+    public String getAgentId() {
+        return agentId;
+    }
+
     @NotNull
     public String getId() {
         return agentId;
@@ -710,36 +713,4 @@ public abstract class AbstractVirtualOrgAgent implements VirtualOrgAgent {
             || state == AgentStateProto.AGENT_STATE_BUSY;
     }
 
-    // =============================
-    // New Agent Interface Implementation
-    // =============================
-
-    @Override
-    public @NotNull AgentCapabilities getCapabilities() {
-        return new AgentCapabilities(
-            getId(),
-            getRole().name(),
-            "Virtual Org Agent: " + getRole().name(),
-            getSupportedEventTypes(),
-            java.util.Collections.emptySet()
-        );
-    }
-
-    @Override
-    public @NotNull Promise<Void> initialize(@NotNull AgentContext context) {
-        return Promise.complete();
-    }
-
-    @Override
-    public <T, R> @NotNull Promise<R> process(@NotNull T task, @NotNull AgentContext context) {
-        if (task instanceof TaskRequestProto) {
-            return (Promise<R>) processTask((TaskRequestProto) task);
-        }
-        return Promise.ofException(new IllegalArgumentException("Unsupported task type: " + task.getClass()));
-    }
-
-    @Override
-    public @NotNull Promise<Void> shutdown() {
-        return stop();
-    }
 }

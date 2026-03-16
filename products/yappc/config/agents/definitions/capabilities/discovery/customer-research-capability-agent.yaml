@@ -52,10 +52,10 @@ interoperability:
     enabled: true
     protocol: ghatana-a2a-v1
     delegation:
-    - interview-analysis-task-agent
-    - jtbd-mapping-task-agent
-    - persona-synthesis-task-agent
-    - survey-analysis-task-agent
+    - demand-signal-detection-task-agent
+    - demand-signal-detection-task-agent
+    - demand-signal-detection-task-agent
+    - demand-signal-detection-task-agent
     escalation: customer-insight-orchestrator
 learningModel:
   learningLevel: L3
@@ -110,10 +110,10 @@ routing:
   - customer_narrative
 delegation:
   can_delegate_to:
-  - interview-analysis-task-agent
-  - jtbd-mapping-task-agent
-  - persona-synthesis-task-agent
-  - survey-analysis-task-agent
+  - demand-signal-detection-task-agent
+  - demand-signal-detection-task-agent
+  - demand-signal-detection-task-agent
+  - demand-signal-detection-task-agent
   escalates_to: customer-insight-orchestrator
 governance:
   requires_approval: false

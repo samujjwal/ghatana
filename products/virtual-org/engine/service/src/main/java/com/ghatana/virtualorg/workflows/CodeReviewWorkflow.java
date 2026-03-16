@@ -1,7 +1,7 @@
 package com.ghatana.virtualorg.workflows;
 
 import com.ghatana.virtualorg.v1.AgentRoleProto;
-import com.ghatana.agent.Agent;
+import com.ghatana.virtualorg.agent.VirtualOrgAgent;
 import com.ghatana.virtualorg.model.Decision;
 import com.ghatana.virtualorg.model.DecisionType;
 import com.ghatana.virtualorg.model.PullRequest;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class CodeReviewWorkflow {
     
     private final WorkflowEngine engine;
-    private final Map<AgentRoleProto, Agent> agents;
+    private final Map<AgentRoleProto, VirtualOrgAgent> agents;
     
     /**
      * Creates code review workflow with required agents.
@@ -52,7 +52,7 @@ public class CodeReviewWorkflow {
      * @param agents Map of agent roles to agent instances (requires: ENGINEER, SENIOR_ENGINEER,
      *               ARCHITECT_LEAD, QA_ENGINEER, TEAM_LEAD)
      */
-    public CodeReviewWorkflow(WorkflowEngine engine, Map<AgentRoleProto, Agent> agents) {
+    public CodeReviewWorkflow(WorkflowEngine engine, Map<AgentRoleProto, VirtualOrgAgent> agents) {
         this.engine = engine;
         this.agents = agents;
         validateRequiredAgents();

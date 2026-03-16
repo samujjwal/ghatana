@@ -1,8 +1,7 @@
 package com.ghatana.products.yappc.service;
 
-import com.ghatana.agent.framework.api.AgentContext;
-import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.products.yappc.domain.agent.AIAgent;
+import com.ghatana.products.yappc.domain.agent.AIAgentContext;
 import com.ghatana.products.yappc.domain.task.TaskDefinition;
 import com.ghatana.products.yappc.domain.task.TaskExecutionContext;
 import io.activej.promise.Promise;
@@ -53,15 +52,16 @@ public class TaskAgentAdapter {
         LOG.debug("Executing task {} using agent {}", task.id(), agentName);
 
         // Create agent context from task context
-        AgentContext agentContext = createAgentContext(context, task);
+        AIAgentContext agentContext = createAgentContext(context, task);
 
         // Execute agent with proper type handling
         @SuppressWarnings("unchecked")
         AIAgent<TInput, ?> typedAgent = (AIAgent<TInput, ?>) agent;
 
-        return typedAgent.process(input, agentContext)
+        return typedAgent.execute(input, agentContext)
                 .map(agentResult -> {
                     // Extract the output from agent result
+                    // Some legacy handlers might already unwrap the result and pass just a Map
                     if (agentResult instanceof Map) {
                         @SuppressWarnings("unchecked")
                         TOutput output = (TOutput) agentResult;
@@ -110,7 +110,7 @@ public class TaskAgentAdapter {
      * Creates an agent context from task execution context.
      */
     @NotNull
-    private AgentContext createAgentContext(
+    private AIAgentContext createAgentContext(
             @NotNull TaskExecutionContext taskContext,
             @NotNull TaskDefinition task
     ) {
@@ -129,18 +129,16 @@ public class TaskAgentAdapter {
 
         String organizationId = taskContext.projectId() != null ? taskContext.projectId() : "default-org";
 
-        Map<String, Object> config = new HashMap<>();
-        config.put("taskId", task.id());
-        config.put("organizationId", organizationId);
+        // Map<String, Object> config = new HashMap<>();
+        // config.put("taskId", task.id());
+        // config.put("organizationId", organizationId);
 
-        return AgentContext.builder()
-                .turnId(taskContext.traceId() != null ? taskContext.traceId() : "turn-" + task.id())
-                .agentId(agent.getId())
-                .tenantId(taskContext.tenantId())
+        return AIAgentContext.builder()
                 .userId(taskContext.userId())
-                .startTime(Instant.now())
-                .memoryStore(MemoryStore.noOp())
-                .config(config)
+                .workspaceId(taskContext.tenantId())
+                .requestId(taskContext.traceId() != null ? taskContext.traceId() : "req-" + task.id())
+                .tenantId(taskContext.tenantId())
+                .organizationId(organizationId)
                 .metadata(metadata)
                 .build();
     }

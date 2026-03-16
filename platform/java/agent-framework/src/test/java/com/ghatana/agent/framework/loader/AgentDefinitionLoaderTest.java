@@ -348,4 +348,31 @@ class AgentDefinitionLoaderTest {
         Files.writeString(file, content);
         return file;
     }
-}
+
+    @Test
+    @DisplayName("properly deserializes input and output contracts with AST definitions")
+    void deserializesIoContracts() throws IOException {
+            String yaml = """
+                    id: ast-agent
+                    name: AST Agent
+                    type: DETERMINISTIC
+                    inputContract:
+                      type: RequestEvent
+                      format: JSON
+                    outputContract:
+                      type: ResponseEvent
+                      format: JSON
+                      uiAst:
+                        component: Markdown
+                        style: prose
+                    """;
+            AgentDefinition def = new AgentDefinitionLoader().loadFromString(yaml);
+            
+            assertThat(def.getInputContract()).isNotNull();
+            assertThat(def.getInputContract().typeName()).isEqualTo("RequestEvent");
+            
+            assertThat(def.getOutputContract()).isNotNull();
+            assertThat(def.getOutputContract().uiAst()).isNotNull();
+            assertThat(def.getOutputContract().uiAst()).containsEntry("component", "Markdown");
+        }
+    }

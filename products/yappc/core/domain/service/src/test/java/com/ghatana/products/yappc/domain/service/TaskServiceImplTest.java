@@ -1,7 +1,5 @@
 package com.ghatana.products.yappc.domain.service;
 
-import com.ghatana.agent.AgentCapabilities;
-import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.platform.observability.NoopMetricsCollector;
 import com.ghatana.products.yappc.domain.agent.*;
 import com.ghatana.products.yappc.domain.task.*;
@@ -129,64 +127,11 @@ class TaskServiceImplTest extends EventloopTestBase {
 
         @Override
         @NotNull
-        public AgentCapabilities getCapabilities() {
-            // TaskOrchestrator uses AgentRegistry metadata capability matching, not this.
-            return new AgentCapabilities(
-                    metadata.name().getDisplayName(),
-                    "test",
-                    "test",
-                    Set.of(),
-                    Set.of()
-            );
-        }
-
-        @Override
-        @NotNull
-        public Promise<Void> initialize(@NotNull AgentContext context) {
-            return Promise.complete();
-        }
-
-        @Override
-        @NotNull
-        public Promise<Void> start() {
-            return Promise.complete();
-        }
-
-        @Override
-        @NotNull
-        public <T, R> Promise<R> process(@NotNull T task, @NotNull AgentContext context) {
-            String taskId = String.valueOf(context.getConfig("taskId"));
-            Map<String, Object> data = Map.of(
-                    "taskId", taskId,
-                    "input", task
-            );
-
-            AgentResult.AgentMetrics metrics = AgentResult.AgentMetrics.builder()
-                    .latencyMs(1)
-                    .modelVersion("test")
-                    .build();
-            AgentResult.AgentTrace trace = new AgentResult.AgentTrace(
-                    metadata.name().getDisplayName(),
-                    "req-1",
-                    Instant.now(),
-                    Map.of()
-            );
-
-            @SuppressWarnings("unchecked")
-            R out = (R) AgentResult.success(data, metrics, trace);
-            return Promise.of(out);
-        }
-
-        @Override
-        @NotNull
-        public Promise<Void> shutdown() {
-            return Promise.complete();
-        }
-
-        @Override
-        @NotNull
         public Promise<AgentResult<Object>> execute(@NotNull Object input, @NotNull AIAgentContext context) {
-            return Promise.ofException(new UnsupportedOperationException("Not used by TaskAgentAdapter"));
+            // Echo agent: return input wrapped in AgentResult
+            AgentResult.AgentMetrics metrics = new AgentResult.AgentMetrics(10L, 0, "test", 1.0, 0.0);
+            AgentResult.AgentTrace trace = AgentResult.AgentTrace.of("echo", "test");
+            return Promise.of(AgentResult.success(Map.of("input", input, "taskId", context.metadata().get("taskId")), metrics, trace));
         }
 
         @Override

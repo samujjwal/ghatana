@@ -1,7 +1,5 @@
 package com.ghatana.products.yappc.domain.agent;
 
-import com.ghatana.agent.AgentCapabilities;
-import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -11,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.UUID;
 
@@ -81,51 +78,6 @@ public abstract class AbstractAIAgent<TInput, TOutput> implements AIAgent<TInput
     @Override
     public @NotNull String getId() {
         return agentName.name();
-    }
-
-    @Override
-    public @NotNull AgentCapabilities getCapabilities() {
-        return new AgentCapabilities(
-                agentName.getDisplayName(),
-                "AI Agent",
-                metadata.description(),
-                Set.copyOf(metadata.capabilities()),
-                Set.of()
-        );
-    }
-
-    @Override
-    public @NotNull Promise<Void> initialize(@NotNull AgentContext context) {
-        LOG.info("Initializing agent: {}", agentName.getDisplayName());
-        return doInitialize(context);
-    }
-
-    @Override
-    public @NotNull Promise<Void> start() {
-        LOG.info("Starting agent: {}", agentName.getDisplayName());
-        return doStart();
-    }
-
-    @Override
-    public @NotNull Promise<Void> shutdown() {
-        LOG.info("Shutting down agent: {}", agentName.getDisplayName());
-        return doShutdown();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public @NotNull <T, R> Promise<R> process(@NotNull T task, @NotNull AgentContext context) {
-        // Build an AIAgentContext from the canonical AgentContext
-        AIAgentContext aiContext = AIAgentContext.builder()
-                .tenantId(context.getTenantId())
-                .organizationId(String.valueOf(context.getConfig("organizationId")))
-                .userId(context.getUserId() != null ? context.getUserId() : "system")
-                .workspaceId(String.valueOf(context.getConfig("workspaceId")))
-                .requestId(context.getTurnId())
-                .metadata(context.getMetadata())
-                .build();
-        return execute((TInput) task, aiContext)
-                .map(result -> (R) result);
     }
 
     @Override
@@ -249,27 +201,6 @@ public abstract class AbstractAIAgent<TInput, TOutput> implements AIAgent<TInput
             @NotNull TInput input,
             @NotNull AIAgentContext context
     );
-
-    /**
-     * Perform agent-specific initialization.
-     */
-    protected Promise<Void> doInitialize(@NotNull AgentContext context) {
-        return Promise.complete();
-    }
-
-    /**
-     * Perform agent-specific startup.
-     */
-    protected Promise<Void> doStart() {
-        return Promise.complete();
-    }
-
-    /**
-     * Perform agent-specific shutdown.
-     */
-    protected Promise<Void> doShutdown() {
-        return Promise.complete();
-    }
 
     /**
      * Perform agent-specific health check.

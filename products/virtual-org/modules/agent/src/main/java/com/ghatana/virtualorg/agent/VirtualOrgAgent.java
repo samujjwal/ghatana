@@ -1,8 +1,5 @@
 package com.ghatana.virtualorg.agent;
 
-import com.ghatana.agent.Agent;
-import com.ghatana.agent.AgentCapabilities;
-import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.virtualorg.v1.AgentMetricsProto;
 import com.ghatana.virtualorg.v1.AgentPerformanceProto;
 import com.ghatana.virtualorg.v1.AgentStateProto;
@@ -26,8 +23,11 @@ import java.util.Objects;
  * <p>The implementation is intentionally simplified – it focuses on exposing
  * the contract required by {@code AgentStreamOperatorAdapter} while keeping
  * behaviour deterministic for unit and integration tests.</p>
+ *
+ * <p><b>Migration Note:</b> Decoupled from platform {@code Agent} interface.
+ * For platform integration, use {@code LegacyAgentAdapter} or {@code TypedAgent}.</p>
  */
-public class VirtualOrgAgent implements Agent {
+public class VirtualOrgAgent {
     private static final Logger logger = LoggerFactory.getLogger(VirtualOrgAgent.class);
 
     /**
@@ -88,30 +88,12 @@ public class VirtualOrgAgent implements Agent {
                 .build();
     }
 
-    @Override
     public @NotNull String getId() {
         return agentId;
     }
 
     public @NotNull String getName() {
         return name;
-    }
-
-    @Override
-    public @NotNull AgentCapabilities getCapabilities() {
-        return new AgentCapabilities(
-            name,
-            role.name(),
-            description,
-            java.util.Set.copyOf(List.of(authority.name())),
-            java.util.Set.copyOf(tools.stream().map(ToolProto::getName).toList())
-        );
-    }
-
-    @Override
-    public @NotNull Promise<Void> initialize(@NotNull AgentContext context) {
-        // Context can be stored if needed
-        return Promise.complete();
     }
 
     public String getDescription() {
@@ -138,7 +120,6 @@ public class VirtualOrgAgent implements Agent {
         return performance;
     }
 
-    @Override
     public @NotNull Promise<Void> start() {
         logger.info("Starting agent: {}", name);
         state = AgentStateProto.newBuilder(state)
@@ -148,7 +129,6 @@ public class VirtualOrgAgent implements Agent {
         return Promise.complete();
     }
 
-    @Override
     public @NotNull Promise<Void> shutdown() {
         logger.info("Stopping agent: {}", name);
         state = AgentStateProto.newBuilder(state)
@@ -156,15 +136,6 @@ public class VirtualOrgAgent implements Agent {
                 .setStatusMessage("Stopped at " + Instant.now())
                 .build();
         return Promise.complete();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public @NotNull <T, R> Promise<R> process(@NotNull T task, @NotNull AgentContext context) {
-        if (task instanceof TaskRequestProto request) {
-            return (Promise<R>) processTask(request);
-        }
-        return Promise.ofException(new IllegalArgumentException("Expected TaskRequestProto, got " + task.getClass().getName()));
     }
 
     /**

@@ -4,8 +4,12 @@
  */
 package com.ghatana.yappc.api.service;
 
-import com.ghatana.agent.Agent;
-import com.ghatana.agent.AgentCapabilities;
+import com.ghatana.agent.AgentConfig;
+import com.ghatana.agent.AgentDescriptor;
+import com.ghatana.agent.AgentResult;
+import com.ghatana.agent.AgentType;
+import com.ghatana.agent.HealthStatus;
+import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.workflow.WorkflowAgentRegistry;
 import com.ghatana.agent.workflow.WorkflowAgentRole;
@@ -13,11 +17,11 @@ import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.core.activej.promise.PromiseUtils;
 import io.activej.promise.Promise;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,14 +121,14 @@ public class WorkflowAgentInitializer {
     private Promise<Void> registerAgent(String agentId, WorkflowAgentRole role) {
         logger.debug("Registering agent: {} with role: {}", agentId, role);
 
-        Agent agent = createLlmBackedAgent(agentId, role);
+        TypedAgent<Map<String, Object>, String> agent = createLlmBackedAgent(agentId, role);
         return registry.register(agentId, role, agent)
                 .whenComplete((result, error) -> {
                     if (error != null) {
                         logger.error("Failed to register agent: {}", agentId, error);
                     } else {
-                        logger.debug("Registered agent: {} ({}) with capabilities: {}",
-                                agentId, role, agent.getCapabilities());
+                        logger.debug("Registered agent: {} ({}) — {}",
+                                agentId, role, agent.descriptor().getName());
                     }
                 });
     }
@@ -134,74 +138,68 @@ public class WorkflowAgentInitializer {
      *
      * @param agentId The agent identifier
      * @param role The agent role
-     * @return Agent implementation using LLM completion
+     * @return TypedAgent implementation using LLM completion
      */
-    private Agent createLlmBackedAgent(String agentId, WorkflowAgentRole role) {
-        return new Agent() {
+    private TypedAgent<Map<String, Object>, String> createLlmBackedAgent(String agentId, WorkflowAgentRole role) {
+        return new TypedAgent<>() {
+
             @NotNull
             @Override
-            public String getId() {
-                return agentId;
+            public AgentDescriptor descriptor() {
+                return AgentDescriptor.builder()
+                        .agentId(agentId)
+                        .name(role.getDisplayName())
+                        .description(role.getDescription())
+                        .type(AgentType.PROBABILISTIC)
+                        .build();
             }
 
             @NotNull
             @Override
-            public AgentCapabilities getCapabilities() {
-                return new AgentCapabilities(
-                    role.getDisplayName(),
-                    role.getCode(),
-                    role.getDescription(),
-                    Set.of("workflow-automation", "devsecops", role.getCode()),
-                    Set.of()
-                );
-            }
-
-            @NotNull
-            @Override
-            public Promise<Void> initialize(@NotNull AgentContext context) {
+            public Promise<Void> initialize(@NotNull AgentConfig config) {
                 return Promise.complete();
-            }
-
-            @NotNull
-            @Override
-            public Promise<Void> start() {
-                return Promise.complete();
-            }
-
-            @NotNull
-            @Override
-            public <T, R> Promise<R> process(@NotNull T task, @NotNull AgentContext context) {
-                String input = String.valueOf(task);
-                String prompt =
-                    "You are the " + role.getDisplayName() + " agent (" + role.getCode() + ").\n"
-                        + "Role description: " + role.getDescription() + "\n"
-                        + "Tenant: " + context.getTenantId() + "\n"
-                        + "Timestamp: " + Instant.now() + "\n\n"
-                        + "Task input:\n" + input + "\n\n"
-                        + "Provide a concise, actionable response.";
-
-                CompletionRequest request =
-                    CompletionRequest.builder().prompt(prompt).maxTokens(1024).temperature(0.3).build();
-
-                logger.debug("Agent {} executing with input length: {}", agentId, input.length());
-                return llmGateway
-                    .complete(request)
-                    .map(result -> {
-                        String text = result != null && result.getText() != null
-                            ? result.getText().trim()
-                            : "";
-                        @SuppressWarnings("unchecked")
-                        R response = (R) (text.isEmpty()
-                            ? ("No response generated by " + agentId)
-                            : text);
-                        return response;
-                    });
             }
 
             @NotNull
             @Override
             public Promise<Void> shutdown() {
                 return Promise.complete();
+            }
+
+            @NotNull
+            @Override
+            public Promise<HealthStatus> healthCheck() {
+                return Promise.of(HealthStatus.HEALTHY);
+            }
+
+            @NotNull
+            @Override
+            public Promise<AgentResult<String>> process(@NotNull AgentContext context, @NotNull Map<String, Object> input) {
+                Instant start = Instant.now();
+                String inputText = String.valueOf(input);
+                String prompt =
+                    "You are the " + role.getDisplayName() + " agent (" + role.getCode() + ").\n"
+                        + "Role description: " + role.getDescription() + "\n"
+                        + "Tenant: " + context.getTenantId() + "\n"
+                        + "Timestamp: " + Instant.now() + "\n\n"
+                        + "Task input:\n" + inputText + "\n\n"
+                        + "Provide a concise, actionable response.";
+
+                CompletionRequest request =
+                    CompletionRequest.builder().prompt(prompt).maxTokens(1024).temperature(0.3).build();
+
+                logger.debug("Agent {} executing with input length: {}", agentId, inputText.length());
+                return llmGateway
+                    .complete(request)
+                    .map(result -> {
+                        String text = result != null && result.getText() != null
+                            ? result.getText().trim()
+                            : "";
+                        String output = text.isEmpty()
+                            ? ("No response generated by " + agentId)
+                            : text;
+                        return AgentResult.success(output, agentId, Duration.between(start, Instant.now()));
+                    });
             }
         };
     }

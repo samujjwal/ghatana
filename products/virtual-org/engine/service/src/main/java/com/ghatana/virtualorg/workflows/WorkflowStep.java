@@ -1,6 +1,6 @@
 package com.ghatana.virtualorg.workflows;
 
-import com.ghatana.agent.Agent;
+import com.ghatana.virtualorg.agent.VirtualOrgAgent;
 import java.util.List;
 import java.util.Objects;
 
@@ -18,7 +18,7 @@ import java.util.Objects;
 public class WorkflowStep {
     private final String stepId;
     private final String stepName;
-    private final Agent executor;
+    private final VirtualOrgAgent executor;
     private final String taskDescription;
     private final List<String> dependsOn;
 
@@ -36,14 +36,14 @@ public class WorkflowStep {
 
     public String getStepId() { return stepId; }
     public String getStepName() { return stepName; }
-    public Agent getExecutor() { return executor; }
+    public VirtualOrgAgent getExecutor() { return executor; }
     public String getTaskDescription() { return taskDescription; }
     public List<String> getDependsOn() { return dependsOn; }
 
     public static class Builder {
         private String stepId;
         private String stepName;
-        private Agent executor;
+        private VirtualOrgAgent executor;
         private String taskDescription;
         private List<String> dependsOn;
 
@@ -57,7 +57,7 @@ public class WorkflowStep {
             return this;
         }
 
-        public Builder executor(Agent executor) {
+        public Builder executor(VirtualOrgAgent executor) {
             this.executor = executor;
             return this;
         }

@@ -1,7 +1,5 @@
 package com.ghatana.virtualorg.agent;
 
-import com.ghatana.agent.Agent;
-import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.virtualorg.v1.*;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -17,12 +15,11 @@ import java.util.Map;
  * LLM reasoning, autonomous task execution, and decision-making with escalation.
  *
  * <p><b>Architecture Role</b><br>
- * Port interface extending core {@link Agent}. Adds virtual organization capabilities:
- * - LLM-powered reasoning (GPT-4, Claude)
- * - Tool execution (Git, file ops, HTTP)
- * - Decision-making with confidence scoring
- * - Escalation to senior roles
- * - Memory-based learning
+ * Product-scoped port interface for virtual-org agents. As of v3.7.0 this
+ * interface no longer extends the deprecated platform {@code Agent} interface.
+ * For platform integration, use
+ * {@link com.ghatana.agent.migration.LegacyAgentAdapter} or create a
+ * {@code TypedAgent} wrapper.
  *
  * <p><b>Agent Types</b><br>
  * - **SeniorEngineerAgent**: Complex tasks, code reviews, architecture
@@ -49,7 +46,6 @@ import java.util.Map;
  * DecisionProto decision = agent.makeDecision(task).getResult();
  * }</pre>
  *
- * @see Agent
  * @see AgentRoleProto
  * @see TaskProto
  * @see DecisionProto
@@ -58,7 +54,7 @@ import java.util.Map;
  * @doc.layer product
  * @doc.pattern Port
  */
-public interface VirtualOrgAgent extends Agent {
+public interface VirtualOrgAgent {
 
     /**
      * Gets the unique identifier of this agent.
@@ -66,9 +62,7 @@ public interface VirtualOrgAgent extends Agent {
      * @return the agent ID, never null
      */
     @NotNull
-    default String getAgentId() {
-        return getId();
-    }
+    String getAgentId();
 
     /**
      * Gets the role of this agent.

@@ -175,9 +175,11 @@ project.afterEvaluate {
         project.tasks.named('test', Test) { testTask ->
             useJUnitPlatform()
             
-            // Set JVM arguments for tests
+            // Set JVM arguments for tests with Generational ZGC alignment
             jvmArgs = [
                 '-Xmx1g',
+                '-XX:+UseZGC',
+                '-XX:+ZGenerational',
                 '--enable-preview',
                 '-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager'
             ]
