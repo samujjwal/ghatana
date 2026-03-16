@@ -1,6 +1,11 @@
 package com.ghatana.core.integration;
 
 import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.domain.event.EventId;
+import com.ghatana.platform.domain.domain.event.EventTime;
+import com.ghatana.platform.domain.domain.event.EventStats;
+import com.ghatana.platform.domain.domain.event.EventRelations;
+import com.ghatana.platform.domain.domain.event.GEvent;
 import com.ghatana.core.operator.AbstractOperator;
 import com.ghatana.core.operator.OperatorConfig;
 import com.ghatana.core.operator.OperatorId;
@@ -15,6 +20,7 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -133,7 +139,86 @@ public class WorkflowOperatorAdapter extends AbstractOperator {
 
     @Override
     public Event toEvent() {
-        throw new UnsupportedOperationException("Workflow operator serialization not yet implemented");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("operatorId", getId().toString());
+        payload.put("type", getType().name());
+        payload.put("name", getName());
+        payload.put("version", getVersion());
+        payload.put("capabilities", getCapabilities());
+        payload.put("taskOperatorCount", taskOperators.size());
+        payload.put("healthy", isHealthy());
+        return buildOperatorEvent(getId().toString(), "operator.registered", payload);
+    }
+
+    /**
+     * Build an Event from operator state using the GEvent domain model.
+     *
+     * @param operatorId   stable operator identifier
+     * @param eventType    logical event type
+     * @param payload      arbitrary key/value payload
+     * @return a fully populated {@link GEvent}
+     */
+    private static Event buildOperatorEvent(String operatorId, String eventType,
+                                            Map<String, Object> payload) {
+        EventId eventId = new SimpleEventId(
+            UUID.randomUUID().toString(),
+            eventType,
+            "1.0",
+            "default"
+        );
+        Instant now = Instant.now();
+        long nowMillis = now.toEpochMilli();
+        EventTime eventTime = EventTime.builder()
+            .detectionTimePoint(com.ghatana.platform.types.time.GTimestamp.ofEpochMilli(nowMillis))
+            .occurrenceTime(com.ghatana.platform.types.time.GTimeInterval.between(
+                com.ghatana.platform.types.time.GTimestamp.ofEpochMilli(nowMillis),
+                com.ghatana.platform.types.time.GTimestamp.ofEpochMilli(nowMillis)))
+            .validDuration(new com.ghatana.platform.types.time.GTimeValue(
+                -1, com.ghatana.platform.types.time.GTimeUnit.MILLISECONDS))
+            .boundingInterval(com.ghatana.platform.types.time.GTimeInterval.between(
+                com.ghatana.platform.types.time.GTimestamp.ofEpochMilli(nowMillis),
+                com.ghatana.platform.types.time.GTimestamp.ofEpochMilli(nowMillis)))
+            .build();
+        EventStats stats = EventStats.builder()
+            .withSizeInBytes(payload.toString().length())
+            .build();
+        EventRelations relations = EventRelations.builder().build();
+        Map<String, String> headers = new HashMap<>();
+        headers.put("operatorId", operatorId);
+        headers.put("timestamp", String.valueOf(nowMillis));
+        return GEvent.builder()
+            .id(eventId)
+            .time(eventTime)
+            .location(null)
+            .stats(stats)
+            .relations(relations)
+            .headers(headers)
+            .payload(payload)
+            .intervalBased(false)
+            .provenance(java.util.List.of())
+            .build();
+    }
+
+    /**
+     * Minimal EventId implementation for operator events.
+     */
+    private static class SimpleEventId implements EventId {
+        private final String id;
+        private final String eventType;
+        private final String version;
+        private final String tenantId;
+
+        SimpleEventId(String id, String eventType, String version, String tenantId) {
+            this.id = id;
+            this.eventType = eventType;
+            this.version = version;
+            this.tenantId = tenantId;
+        }
+
+        @Override public String getId()        { return id; }
+        @Override public String getEventType() { return eventType; }
+        @Override public String getVersion()   { return version; }
+        @Override public String getTenantId()  { return tenantId; }
     }
 
     /**
@@ -222,7 +307,19 @@ public class WorkflowOperatorAdapter extends AbstractOperator {
 
         @Override
         public Event toEvent() {
-            throw new UnsupportedOperationException("Workflow task operator serialization not yet implemented");
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("operatorId", getId().toString());
+            payload.put("type", getType().name());
+            payload.put("name", getName());
+            payload.put("version", getVersion());
+            payload.put("capabilities", getCapabilities());
+            payload.put("taskId", task.getTaskId());
+            payload.put("taskTitle", task.getTitle());
+            payload.put("taskState", task.getState() != null ? task.getState().name() : "UNKNOWN");
+            payload.put("assigneeId", task.getAssigneeId());
+            payload.put("running", running);
+            return WorkflowOperatorAdapter.buildOperatorEvent(
+                getId().toString(), "operator.registered", payload);
         }
 
         WorkflowTask getTask() {

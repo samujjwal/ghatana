@@ -12,9 +12,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } 
  */
 
 import * as deviceService from "../../services/device.service";
-import * as authService from "../../services/auth.service";
 import { query } from "../../db";
 import { randomEmail, randomString } from "../setup";
+import { createTestUser } from '../fixtures/user.fixtures';
 
 describe("DeviceService", () => {
   let testUserId: string;
@@ -22,10 +22,7 @@ describe("DeviceService", () => {
 
   beforeEach(async () => {
     // Create test user
-    const user = await authService.register({
-      email: randomEmail(),
-      password: "TestPassword123!",
-    });
+    const user = await createTestUser({ email: randomEmail() });
     testUserId = user.user.id;
 
     // Create test child
@@ -257,10 +254,7 @@ describe("DeviceService", () => {
       });
 
       // Create another user
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
 
       // WHEN: Different user tries to access device
       const device = await deviceService.getDeviceById(
@@ -491,10 +485,7 @@ describe("DeviceService", () => {
       });
 
       // Create another user and child
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
 
       const otherChild = await query(
         "INSERT INTO children (user_id, name) VALUES ($1, $2) RETURNING id",

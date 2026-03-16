@@ -320,15 +320,70 @@ public class DeterministicAgent
 
     private Promise<AgentResult<Map<String, Object>>> evaluatePattern(
             AgentContext ctx, Map<String, Object> input) {
-        // Pattern subtype delegates to the NFA pattern detection subsystem
-        // (implemented in Phase 1 — PatternDetectionAgent).
-        // For now, this is a placeholder that returns the input as-is.
-        log.warn("PATTERN subtype not yet wired to NFA subsystem; returning input as-is");
+
+        PatternMatchStrategy strategy = detConfig.getPatternMatchStrategy();
+        if (strategy == null) {
+            log.warn("PATTERN subtype configured but no PatternMatchStrategy supplied; skipping. " +
+                    "Wrap InMemoryPatternEngine with PatternMatchStrategy before building the config.");
+            return Promise.of(AgentResult.<Map<String, Object>>builder()
+                    .output(Map.of())
+                    .confidence(0.0)
+                    .status(AgentResultStatus.SKIPPED)
+                    .explanation("PATTERN subtype: no PatternMatchStrategy configured")
+                    .build());
+        }
+
+        // Extract situation text from input (field name is configurable)
+        Object situationRaw = input.get(detConfig.getPatternSituationField());
+        String situation = situationRaw != null ? situationRaw.toString() : "";
+
+        // Build context from all String-valued entries for label-based matching
+        Map<String, String> context = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : input.entrySet()) {
+            if (entry.getValue() instanceof String v) {
+                context.put(entry.getKey(), v);
+            }
+        }
+
+        Instant start = Instant.now();
+        Optional<PatternMatchStrategy.MatchResult> matchOpt = strategy.match(situation, context);
+        Duration elapsed = Duration.between(start, Instant.now());
+
+        ctx.recordMetric("agent.pattern.latencyMs", elapsed.toMillis());
+
+        if (matchOpt.isEmpty()) {
+            ctx.recordMetric("agent.pattern.miss", 1);
+            return Promise.of(AgentResult.<Map<String, Object>>builder()
+                    .output(Map.of())
+                    .confidence(0.0)
+                    .status(AgentResultStatus.SKIPPED)
+                    .explanation("PATTERN: no procedure matched situation '" + situation
+                            + "'; LLM fallback required")
+                    .build());
+        }
+
+        PatternMatchStrategy.MatchResult match = matchOpt.get();
+        ctx.recordMetric("agent.pattern.hit", 1);
+        ctx.recordMetric("agent.pattern.confidence", match.confidence());
+
+        Map<String, Object> output = new LinkedHashMap<>();
+        output.put("_pattern.action", match.action());
+        output.put("_pattern.procedureId", match.procedureId());
+        output.put("_pattern.confidence", match.confidence());
+        output.put("_pattern.matchedKeywords", match.matchedKeywords());
+        if (!match.steps().isEmpty()) {
+            output.put("_pattern.steps", match.steps());
+        }
+
+        String explanation = String.format(
+                "PATTERN: matched procedure '%s' (confidence=%.2f, keywords=%s) in %dms",
+                match.procedureId(), match.confidence(), match.matchedKeywords(), elapsed.toMillis());
+
         return Promise.of(AgentResult.<Map<String, Object>>builder()
-                .output(new LinkedHashMap<>(input))
-                .confidence(0.5)
-                .status(AgentResultStatus.DEGRADED)
-                .explanation("PATTERN subtype: NFA subsystem not yet wired")
+                .output(output)
+                .confidence(match.confidence())
+                .status(AgentResultStatus.SUCCESS)
+                .explanation(explanation)
                 .build());
     }
 

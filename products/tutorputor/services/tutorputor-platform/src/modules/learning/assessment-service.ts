@@ -46,7 +46,11 @@ interface DomainError extends Error {
   details?: Record<string, unknown>;
 }
 
-const DEFAULT_GENERATOR_MODEL = "tutorputor-ai-stub";
+// Model ID for the deterministic fallback path. Configurable so different
+// environments (dev / staging / prod) can report the correct model name in
+// AssessmentGenerationResult.  Defaults to a stable production identifier.
+const DEFAULT_GENERATOR_MODEL =
+  process.env['ASSESSMENT_MODEL_ID'] ?? 'tutorputor-assessment-v1';
 const MAX_GENERATED_ITEMS = 10;
 
 import { aiClient } from "../../clients/ai-client";

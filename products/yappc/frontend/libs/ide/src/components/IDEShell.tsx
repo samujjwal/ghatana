@@ -256,7 +256,25 @@ export const IDEShell: React.FC<IDEShellProps> = ({
                 <strong>Source Control</strong>
                 <button ref={sourceControlCloseRef} className="text-sm" onClick={() => setSourceControlVisible(false)} aria-label="Close source control">✕</button>
               </div>
-              <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">Source control panel (placeholder)</div>
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                <p className="mb-2 font-medium">Changes</p>
+                <ul className="space-y-1">
+                  <li className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                    <span className="text-yellow-500" title="Modified">M</span>
+                    <span className="truncate">src/index.ts</span>
+                  </li>
+                  <li className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                    <span className="text-green-500" title="Added">A</span>
+                    <span className="truncate">src/components/App.tsx</span>
+                  </li>
+                </ul>
+                <button
+                  className="mt-3 w-full px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                  onClick={() => console.log('commit')}
+                >
+                  Commit
+                </button>
+              </div>
             </div>
           )}
 
@@ -266,7 +284,26 @@ export const IDEShell: React.FC<IDEShellProps> = ({
                 <strong>Run & Debug</strong>
                 <button ref={runCloseRef} className="text-sm" onClick={() => setRunVisible(false)} aria-label="Close run debug">✕</button>
               </div>
-              <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">Run & Debug (placeholder)</div>
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                <div className="flex gap-2 mb-3">
+                  <button
+                    className="flex-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                    onClick={() => console.log('run')}
+                  >
+                    ▶ Run
+                  </button>
+                  <button
+                    className="flex-1 px-2 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                    onClick={() => console.log('debug')}
+                  >
+                    🐞 Debug
+                  </button>
+                </div>
+                <p className="text-xs font-medium mb-1">Breakpoints</p>
+                <p className="text-xs text-gray-400">No breakpoints set</p>
+                <p className="mt-2 text-xs font-medium">Call Stack</p>
+                <p className="text-xs text-gray-400">No active session</p>
+              </div>
             </div>
           )}
 
@@ -276,7 +313,36 @@ export const IDEShell: React.FC<IDEShellProps> = ({
                 <strong>Extensions</strong>
                 <button ref={extensionsCloseRef} className="text-sm" onClick={() => setExtensionsVisible(false)} aria-label="Close extensions">✕</button>
               </div>
-              <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">Extensions (placeholder)</div>
+              <div className="mt-2">
+                <input
+                  placeholder="Search extensions…"
+                  className="w-full px-2 py-1 text-xs border rounded bg-gray-50 dark:bg-gray-900 dark:border-gray-600 mb-2"
+                />
+                <ul className="space-y-2 text-sm">
+                  {[
+                    { name: 'Prettier', description: 'Code formatter', installed: true },
+                    { name: 'ESLint', description: 'Linting for JS/TS', installed: true },
+                    { name: 'GitLens', description: 'Git supercharged', installed: false },
+                  ].map((ext) => (
+                    <li key={ext.name} className="flex items-start gap-2">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-800 dark:text-gray-200">{ext.name}</p>
+                        <p className="text-xs text-gray-500">{ext.description}</p>
+                      </div>
+                      <button
+                        className={`shrink-0 px-2 py-0.5 text-xs rounded ${
+                          ext.installed
+                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
+                        onClick={() => console.log(ext.installed ? 'uninstall' : 'install', ext.name)}
+                      >
+                        {ext.installed ? 'Installed' : 'Install'}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
 

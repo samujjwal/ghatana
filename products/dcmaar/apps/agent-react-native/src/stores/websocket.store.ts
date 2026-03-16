@@ -21,6 +21,114 @@
 
 import { atom } from 'jotai';
 
+// ---------------------------------------------------------------------------
+// Module-level WebSocket singleton
+// ---------------------------------------------------------------------------
+let _ws: WebSocket | null = null;
+let _pingInterval: ReturnType<typeof setInterval> | null = null;
+let _reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const MAX_RECONNECT_ATTEMPTS = 5;
+const PING_INTERVAL_MS = 30_000;
+const RECONNECT_BASE_DELAY_MS = 1_000;
+
+/**
+ * Callbacks stored from atom write functions so WebSocket event handlers can
+ * update Jotai state outside of the React tree.
+ */
+let _callbacks: {
+  get: () => WebSocketState;
+  set: (s: WebSocketState) => void;
+} | null = null;
+
+/**
+ * Create (or re-create) a WebSocket connection.
+ * Can be called for initial connect and for automatic reconnection.
+ */
+function _createWsConnection(url: string, token?: string, attempt = 0): void {
+  // Tear down any existing socket first
+  if (_ws) {
+    _ws.onclose = null; // prevent the old handler from firing
+    _ws.close(1000, 'replacing connection');
+    _ws = null;
+  }
+  if (_pingInterval !== null) { clearInterval(_pingInterval); _pingInterval = null; }
+  if (_reconnectTimeout !== null) { clearTimeout(_reconnectTimeout); _reconnectTimeout = null; }
+
+  _ws = new WebSocket(url);
+
+  _ws.onopen = () => {
+    // Send auth token immediately after connecting
+    if (token && _ws?.readyState === WebSocket.OPEN) {
+      _ws.send(JSON.stringify({ type: 'auth', channel: 'system', payload: { token } }));
+    }
+
+    if (_callbacks) {
+      const cur = _callbacks.get();
+      _callbacks.set({ ...cur, status: 'connected', reconnectAttempts: 0, error: null });
+    }
+
+    // Start periodic heartbeat
+    _pingInterval = setInterval(() => {
+      if (_ws?.readyState === WebSocket.OPEN) {
+        _ws.send(JSON.stringify({ type: 'ping', channel: 'system', payload: {} }));
+      }
+    }, PING_INTERVAL_MS);
+  };
+
+  _ws.onmessage = (event: MessageEvent) => {
+    if (!_callbacks) return;
+    try {
+      const raw = JSON.parse(event.data as string) as Partial<WebSocketMessage>;
+      if (raw.type === 'ping') return; // discard pong responses
+      const msg: WebSocketMessage = {
+        id: raw.id ?? String(Date.now()),
+        type: raw.type ?? 'event',
+        channel: raw.channel ?? 'unknown',
+        payload: raw.payload ?? {},
+        receivedAt: new Date(),
+      };
+      const cur = _callbacks.get();
+      _callbacks.set({
+        ...cur,
+        messageQueue: [...cur.messageQueue.slice(-99), msg],
+        lastMessageAt: Date.now(),
+        error: null,
+      });
+    } catch {
+      // Ignore malformed messages
+    }
+  };
+
+  _ws.onerror = () => {
+    if (!_callbacks) return;
+    const cur = _callbacks.get();
+    _callbacks.set({ ...cur, status: 'error', error: 'WebSocket connection error' });
+  };
+
+  _ws.onclose = (ev: CloseEvent) => {
+    if (_pingInterval !== null) { clearInterval(_pingInterval); _pingInterval = null; }
+    if (!_callbacks) return;
+    const cur = _callbacks.get();
+
+    // Code 1000 = normal closure; 1001 = going away — do not reconnect
+    if (cur.status === 'disconnected' || ev.code === 1000 || ev.code === 1001) return;
+
+    if (attempt < MAX_RECONNECT_ATTEMPTS) {
+      const nextAttempt = attempt + 1;
+      const delay = RECONNECT_BASE_DELAY_MS * Math.pow(2, attempt); // exponential back-off
+      _callbacks.set({ ...cur, status: 'reconnecting', reconnectAttempts: nextAttempt });
+      _reconnectTimeout = setTimeout(() => _createWsConnection(url, token, nextAttempt), delay);
+    } else {
+      _callbacks.set({
+        ...cur,
+        status: 'error',
+        error: `Connection lost (code ${ev.code}). Max reconnect attempts reached.`,
+      });
+    }
+  };
+}
+
 /**
  * WebSocket message from server.
  *
@@ -186,7 +294,7 @@ export const connectAtom = atom<
   Promise<void>
 >(
   null,
-  async (get, set, _url: string, _token?: string) => {
+  async (get, set, url: string, token?: string) => {
     const state = get(websocketAtom);
 
     set(websocketAtom, {
@@ -195,33 +303,37 @@ export const connectAtom = atom<
       error: null,
     });
 
-    try {
-      // TODO: Establish WebSocket connection
-      // TODO: Send authentication token if provided
-      // TODO: Start heartbeat/ping mechanism
-      // TODO: Set up message listener
+    // Wire Jotai get/set into the module-level callbacks so WS event handlers
+    // can update atom state outside the React tree.
+    _callbacks = {
+      get: () => get(websocketAtom),
+      set: (s: WebSocketState) => set(websocketAtom, s),
+    };
 
-      // Mock implementation - simulate connection
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    return new Promise<void>((resolve, reject) => {
+      const prevOnOpen = () => resolve();
+      const prevOnError = () => reject(new Error('WebSocket connection failed'));
 
-      set(websocketAtom, {
-        ...state,
-        status: 'connected',
-        reconnectAttempts: 0,
-        error: null,
-      });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to connect';
+      // Temporarily hook resolve/reject onto the connection being created
+      const originalOnOpen = _ws?.onopen;
+      _createWsConnection(url, token);
 
-      set(websocketAtom, {
-        ...state,
-        status: 'error',
-        error: errorMessage,
-      });
-
-      throw error;
-    }
+      // Patch the newly-created socket to also resolve/reject the promise
+      if (_ws) {
+        const patchedOpen = _ws.onopen;
+        _ws.onopen = (ev) => {
+          if (patchedOpen) (patchedOpen as EventListener)(ev);
+          prevOnOpen();
+        };
+        const patchedError = _ws.onerror;
+        _ws.onerror = (ev) => {
+          if (patchedError) (patchedError as EventListener)(ev);
+          prevOnError();
+        };
+      } else {
+        reject(new Error('Failed to create WebSocket'));
+      }
+    });
   }
 );
 
@@ -244,9 +356,17 @@ export const disconnectAtom = atom<null, [], Promise<void>>(
     const state = get(websocketAtom);
 
     try {
-      // TODO: Close WebSocket connection
-      // TODO: Stop heartbeat
-      // TODO: Clean up listeners
+      // Signal intentional close so the onclose handler does not reconnect
+      set(websocketAtom, { ...state, status: 'disconnected', error: null });
+
+      if (_reconnectTimeout !== null) { clearTimeout(_reconnectTimeout); _reconnectTimeout = null; }
+      if (_pingInterval !== null) { clearInterval(_pingInterval); _pingInterval = null; }
+      if (_ws) {
+        _ws.onclose = null; // suppress further state updates
+        _ws.close(1000, 'user disconnected');
+        _ws = null;
+      }
+      _callbacks = null;
 
       set(websocketAtom, {
         ...state,
@@ -291,18 +411,24 @@ export const sendMessageAtom = atom<
   Promise<void>
 >(
   null,
-  async (get, set, _message) => {
+  async (get, set, message) => {
     const state = get(websocketAtom);
 
     if (state.status !== 'connected') {
       throw new Error('WebSocket not connected');
     }
 
-    try {
-      // TODO: Send message to server via WebSocket
+    if (!_ws || _ws.readyState !== WebSocket.OPEN) {
+      throw new Error('WebSocket not in OPEN state');
+    }
 
-      // Mock implementation
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    try {
+      const fullMessage = {
+        ...message,
+        id: String(Date.now()),
+        sentAt: Date.now(),
+      };
+      _ws.send(JSON.stringify(fullMessage));
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to send message';
@@ -339,8 +465,15 @@ export const subscribeAtom = atom<
     const state = get(websocketAtom);
 
     try {
-      // TODO: Send subscription request to server
-      // TODO: Wait for subscription confirmation
+      // Send subscription request to server
+      if (_ws?.readyState === WebSocket.OPEN) {
+        _ws.send(JSON.stringify({
+          id: String(Date.now()),
+          type: 'subscription',
+          channel,
+          payload: { type },
+        }));
+      }
 
       // Check if already subscribed
       const existing = state.subscriptions.find((s) => s.channel === channel);
@@ -398,7 +531,15 @@ export const unsubscribeAtom = atom<null, [channel: string], Promise<void>>(
     const state = get(websocketAtom);
 
     try {
-      // TODO: Send unsubscription request to server
+      // Send unsubscription request to server
+      if (_ws?.readyState === WebSocket.OPEN) {
+        _ws.send(JSON.stringify({
+          id: String(Date.now()),
+          type: 'unsubscription',
+          channel,
+          payload: {},
+        }));
+      }
 
       const subscriptions = state.subscriptions.map((s) =>
         s.channel === channel ? { ...s, isActive: false } : s

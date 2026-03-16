@@ -1,0 +1,164 @@
+groups:
+  - name: aep-availability
+    interval: 30s
+    rules:
+      - alert: AepServiceDown
+        expr: |
+          up{job="aep-service-manager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP service manager is unreachable"
+          description: "Prometheus cannot scrape the AEP service manager pod {{ $labels.instance }}. The service has been down for more than 1 minute."
+          runbook_url: "https://wiki.ghatana.io/runbooks/aep-service-down"
+
+      - alert: AepHighErrorRate
+        expr: |
+          (
+            rate(http_server_requests_seconds_count{job="aep-service-manager", status=~"5.."}[5m])
+            /
+            rate(http_server_requests_seconds_count{job="aep-service-manager"}[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP HTTP error rate > 5%"
+          description: "AEP {{ $labels.instance }} has a 5xx error rate of {{ $value | humanizePercentage }} over the last 5 minutes."
+          runbook_url: "https://wiki.ghatana.io/runbooks/aep-high-error-rate"
+
+      - alert: AepHighLatency
+        expr: |
+          histogram_quantile(0.99,
+            rate(http_server_requests_seconds_bucket{job="aep-service-manager"}[5m])
+          ) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP p99 latency > 2 seconds"
+          description: "AEP {{ $labels.instance }} p99 request latency is {{ $value | humanizeDuration }}. Investigate slow pattern engine evaluations or Data-Cloud query timeouts."
+
+  - name: aep-pipeline
+    interval: 30s
+    rules:
+      - alert: AepPipelineExecutionErrors
+        expr: |
+          rate(aep_pipeline_execution_errors_total{job="aep-service-manager"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP pipeline execution errors > 0.1/s"
+          description: "Pipeline {{ $labels.pipeline_id }} on {{ $labels.instance }} is producing {{ $value | humanize }} errors/second. Check dead-letter operator queue."
+
+      - alert: AepPatternMatchBacklogHigh
+        expr: |
+          aep_pattern_engine_pending_events{job="aep-service-manager"} > 50000
+        for: 3m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP pattern engine event backlog > 50k"
+          description: "Pattern engine on {{ $labels.instance }} has {{ $value | humanize }} pending events. HPA may need to scale up."
+
+      - alert: AepOrchestrationQueueFull
+        expr: |
+          aep_orchestrator_queue_size{job="aep-service-manager"}
+          / on(instance)
+          aep_orchestrator_queue_capacity{job="aep-service-manager"} > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP orchestration queue > 90% full"
+          description: "Orchestrator queue on {{ $labels.instance }} is at {{ $value | humanizePercentage }} capacity. New pipelines will be rejected."
+
+  - name: aep-kafka
+    interval: 30s
+    rules:
+      - alert: AepKafkaConsumerLagHigh
+        expr: |
+          kafka_consumergroup_lag{
+            consumergroup=~"aep-.*",
+            topic=~"datacloud\\..*"
+          } > 10000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP Kafka consumer lag > 10k messages on {{ $labels.topic }}"
+          description: "Consumer group {{ $labels.consumergroup }} is {{ $value | humanize }} messages behind on topic {{ $labels.topic }}. AEP event processing is falling behind."
+
+  - name: aep-jvm
+    interval: 30s
+    rules:
+      - alert: AepJvmHeapHigh
+        expr: |
+          (
+            jvm_memory_used_bytes{job="aep-service-manager", area="heap"}
+            /
+            jvm_memory_max_bytes{job="aep-service-manager", area="heap"}
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP JVM heap usage > 85%"
+          description: "AEP {{ $labels.instance }} heap is at {{ $value | humanizePercentage }}. ZGC should handle this but sustained high heap may cause GC pressure."
+
+      - alert: AepJvmCpuHigh
+        expr: |
+          process_cpu_usage{job="aep-service-manager"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP CPU usage > 85%"
+          description: "AEP {{ $labels.instance }} CPU is at {{ $value | humanizePercentage }}. Pattern engine evaluation may be CPU-bound; consider scaling out."
+
+  - name: aep-learning
+    interval: 60s
+    rules:
+      - alert: AepHitlQueueStale
+        expr: |
+          aep_hitl_queue_oldest_item_age_seconds{job="aep-service-manager"} > 86400
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP HITL review queue has items older than 24h"
+          description: "Human-in-the-loop review queue on {{ $labels.instance }} has an item that has been waiting {{ $value | humanizeDuration }}. Review and process pending items."
+
+      - alert: AepLearningConsolidationFailed
+        expr: |
+          increase(aep_learning_consolidation_failures_total{job="aep-service-manager"}[1h]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP learning consolidation failed"
+          description: "AEP {{ $labels.instance }} had {{ $value }} learning consolidation failure(s) in the last hour. Check pattern memory store connectivity."

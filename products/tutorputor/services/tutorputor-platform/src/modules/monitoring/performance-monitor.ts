@@ -6,6 +6,7 @@
  */
 
 import { EventEmitter } from 'events';
+import * as os from 'os';
 
 export interface PerformanceMetrics {
     timestamp: number;
@@ -82,6 +83,8 @@ export class PerformanceMonitor extends EventEmitter {
     private cpuHistory: number[] = [];
     private memoryHistory: number[] = [];
     private throughputHistory: number[] = [];
+    private errorHistory: number[] = [];
+    private prevCpuInfo: os.CpuInfo[] | null = null;
     private monitoringInterval: NodeJS.Timeout | null = null;
     private readonly HISTORY_SIZE = 1000;
     private readonly ALERT_RETENTION = 24 * 60 * 60 * 1000; // 24 hours
@@ -151,15 +154,17 @@ export class PerformanceMonitor extends EventEmitter {
      */
     recordRequest(success: boolean): void {
         const now = Date.now();
-        const recentRequests = this.throughputHistory.filter(
-            time => now - time < 60000 // Last minute
-        );
-
         this.throughputHistory.push(now);
+        if (!success) {
+            this.errorHistory.push(now);
+        }
 
-        // Keep only last minute of throughput data
+        // Trim to sliding window (last HISTORY_SIZE entries)
         if (this.throughputHistory.length > this.HISTORY_SIZE) {
             this.throughputHistory = this.throughputHistory.slice(-this.HISTORY_SIZE);
+        }
+        if (this.errorHistory.length > this.HISTORY_SIZE) {
+            this.errorHistory = this.errorHistory.slice(-this.HISTORY_SIZE);
         }
     }
 
@@ -342,7 +347,12 @@ export class PerformanceMonitor extends EventEmitter {
         const requestsPerSecond = recentRequests.length / 60;
 
         // Calculate error rate (would need error tracking implementation)
-        const errorRate = 0; // Placeholder - would be calculated from error logs
+        const windowMs = 60000; // 1-minute rolling window
+        const recentErrors = this.errorHistory.filter(t => now - t < windowMs);
+        // errorRate is expressed as a percentage of requests in the window
+        const errorRate = recentRequests.length > 0
+            ? (recentErrors.length / recentRequests.length) * 100
+            : 0;
 
         return {
             requestsPerSecond,
@@ -354,17 +364,41 @@ export class PerformanceMonitor extends EventEmitter {
      * Get CPU usage
      */
     private async getCpuUsage(): Promise<number> {
-        // In production, this would use system monitoring libraries
-        // For now, return a mock value
-        return Math.random() * 100;
+        const current = os.cpus();
+        const prev = this.prevCpuInfo;
+        this.prevCpuInfo = current;
+
+        if (!prev || prev.length !== current.length) {
+            // First sample — fall back to normalised 1-min load average
+            const load = os.loadavg()[0];
+            return Math.min(Math.round((load / Math.max(1, current.length)) * 100 * 10) / 10, 100);
+        }
+
+        // Compute aggregate idle/busy delta across all cores
+        let totalDelta = 0;
+        let idleDelta = 0;
+        for (let i = 0; i < current.length; i++) {
+            const c = current[i].times;
+            const p = prev[i].times;
+            const delta =
+                (c.user - p.user) + (c.nice - p.nice) +
+                (c.sys - p.sys)   + (c.irq - p.irq)   +
+                (c.idle - p.idle);
+            totalDelta += delta;
+            idleDelta  += c.idle - p.idle;
+        }
+
+        if (totalDelta === 0) return 0;
+        const usagePercent = ((totalDelta - idleDelta) / totalDelta) * 100;
+        return Math.round(usagePercent * 10) / 10;
     }
 
     /**
      * Get load average
      */
     private async getLoadAverage(): Promise<number[]> {
-        // In production, this would use OS-specific APIs
-        return [0.5, 0.3, 0.2]; // 1min, 5min, 15min averages
+        // os.loadavg() returns [1min, 5min, 15min] averages (Unix only; returns [0,0,0] on Windows)
+        return os.loadavg();
     }
 
     /**
@@ -542,6 +576,8 @@ export class PerformanceMonitor extends EventEmitter {
         this.cpuHistory = [];
         this.memoryHistory = [];
         this.throughputHistory = [];
+        this.errorHistory = [];
+        this.prevCpuInfo = null;
         this.removeAllListeners();
     }
 }

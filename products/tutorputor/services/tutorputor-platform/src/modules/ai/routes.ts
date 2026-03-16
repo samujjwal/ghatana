@@ -15,9 +15,12 @@ import {
   getUserId,
   requireRole,
 } from "../../utils/request-helpers.js";
+import type { AiRegistryClient } from "../../clients/ai-registry.client.js";
 
 interface AIRouteDeps {
   aiProxyService: AIProxyService & {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
     generateQuestionsFromContent?: (args: {
       tenantId: string;
       moduleId: string;
@@ -32,6 +35,8 @@ interface AIRouteDeps {
       }>
     >;
   };
+  /** Optional: Platform AI Registry client for model version discovery */
+  aiRegistryClient?: AiRegistryClient | null;
 }
 
 export async function registerAIRoutes(
@@ -54,6 +59,25 @@ export async function registerAIRoutes(
       return reply.status(400).send({ error: "Question is required" });
     }
 
+    // Resolve active model from platform AI Registry for observability & routing
+    let activeModelId: string | undefined;
+    if (deps.aiRegistryClient) {
+      try {
+        const model = await deps.aiRegistryClient.findActiveModel(
+          String(tenantId),
+          "tutoring-llm",
+        );
+        if (model) {
+          activeModelId = model.id;
+          app.log.debug(
+            `[AI] Active model resolved: ${model.id} (${model.name})`,
+          );
+        }
+      } catch {
+        app.log.warn("[AI] Could not resolve active model from registry");
+      }
+    }
+
     app.log.info(
       `[AI] Tutor query from user ${String(userId)}: ${question.substring(0, 50)}...`,
     );
@@ -66,6 +90,9 @@ export async function registerAIRoutes(
       locale,
     });
 
+    if (activeModelId) {
+      void reply.header("x-active-model-id", activeModelId);
+    }
     return reply.send({ response });
   });
 

@@ -95,6 +95,12 @@ dependencies {
     // AI/ML Libraries (for planner and analytics)
     implementation(libs.langchain4j.core)
     implementation(libs.langchain4j.open.ai)
+
+    // =========================================================================
+    // AI PLATFORM INTEGRATION (Feature Store + Model Registry)
+    // =========================================================================
+    implementation(project(":platform:java:ai-integration:feature-store"))  // FeatureStoreService
+    implementation(project(":platform:java:ai-integration:registry"))        // ModelRegistryService
     
     // Apache Commons (for analytics)
     implementation(libs.commons.math3)

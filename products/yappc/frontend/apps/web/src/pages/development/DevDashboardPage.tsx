@@ -165,6 +165,148 @@ const ActivityFeed: React.FC<{ items: ActivityItem[] }> = ({ items }) => {
 };
 
 // =============================================================================
+// Sprint Burndown Chart Component
+// =============================================================================
+
+interface BurndownPoint {
+  day: number;
+  ideal: number;
+  actual: number | null;
+}
+
+const SprintBurndownChart: React.FC<{
+  totalPoints: number;
+  donePoints: number;
+  totalDays: number;
+  daysElapsed: number;
+}> = ({ totalPoints, donePoints, totalDays, daysElapsed }) => {
+  const W = 100; // viewBox width (percentage)
+  const H = 56; // viewBox height (px)
+
+  // Generate x-axis day ticks (5 equally spaced labels)
+  const dayCount = Math.max(totalDays, 1);
+
+  // Build data points: day 0 → totalPoints, day N → 0
+  const points: BurndownPoint[] = Array.from({ length: dayCount + 1 }, (_, i) => {
+    const idealRemaining = totalPoints > 0 ? totalPoints * (1 - i / dayCount) : 0;
+    // actual available only up to daysElapsed
+    const actual =
+      i <= daysElapsed && totalPoints > 0
+        ? Math.max(0, totalPoints - (daysElapsed > 0 ? (i / daysElapsed) * donePoints : 0))
+        : null;
+    return { day: i, ideal: idealRemaining, actual };
+  });
+
+  if (totalPoints === 0 || dayCount === 0) {
+    return (
+      <div className="h-32 flex items-center justify-center text-xs text-zinc-600">
+        No sprint data available
+      </div>
+    );
+  }
+  const toX = (day: number) => (day / dayCount) * W;
+  const toY = (pts: number) => H - (pts / totalPoints) * H;
+
+  // Build SVG path strings
+  const idealPath = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(p.day).toFixed(1)},${toY(p.ideal).toFixed(1)}`)
+    .join(' ');
+
+  const actualPoints = points.filter((p) => p.actual !== null);
+  const actualPath = actualPoints
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(p.day).toFixed(1)},${toY(p.actual!).toFixed(1)}`)
+    .join(' ');
+
+  // X-axis tick labels (start, 25%, 50%, 75%, end)
+  const tickDays = [0, Math.floor(dayCount * 0.25), Math.floor(dayCount * 0.5), Math.floor(dayCount * 0.75), dayCount];
+
+  return (
+    <div className="w-full">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        className="w-full h-32"
+        aria-label="Sprint burndown chart"
+      >
+        {/* Grid lines */}
+        {[0, 25, 50, 75, 100].map((pct) => (
+          <line
+            key={pct}
+            x1={0}
+            y1={H * (pct / 100)}
+            x2={W}
+            y2={H * (pct / 100)}
+            stroke="#27272a"
+            strokeWidth="0.5"
+          />
+        ))}
+
+        {/* Ideal line */}
+        <path
+          d={idealPath}
+          fill="none"
+          stroke="#6b7280"
+          strokeWidth="0.8"
+          strokeDasharray="2,1.5"
+        />
+
+        {/* Actual area fill */}
+        {actualPoints.length > 1 && (
+          <path
+            d={`${actualPath} L ${toX(actualPoints[actualPoints.length - 1].day).toFixed(1)},${H} L ${toX(actualPoints[0].day).toFixed(1)},${H} Z`}
+            fill="url(#burnGradient)"
+            opacity="0.3"
+          />
+        )}
+
+        {/* Actual line */}
+        {actualPoints.length > 1 && (
+          <path
+            d={actualPath}
+            fill="none"
+            stroke="#8b5cf6"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+
+        {/* Gradient definition */}
+        <defs>
+          <linearGradient id="burnGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#8b5cf6" />
+            <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      {/* X-axis labels */}
+      <div className="flex justify-between text-[10px] text-zinc-600 mt-1 px-0.5">
+        {tickDays.map((d) => (
+          <span key={d}>Day {d}</span>
+        ))}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 mt-2 text-[10px] text-zinc-500">
+        <div className="flex items-center gap-1">
+          <svg width="16" height="4" viewBox="0 0 16 4" aria-hidden="true">
+            <line x1="0" y1="2" x2="16" y2="2" stroke="#6b7280" strokeWidth="1.5" strokeDasharray="3,2" />
+          </svg>
+          Ideal
+        </div>
+        <div className="flex items-center gap-1">
+          <svg width="16" height="4" viewBox="0 0 16 4" aria-hidden="true">
+            <line x1="0" y1="2" x2="16" y2="2" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          Actual
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
 // Dev Dashboard Page Component
 // =============================================================================
 
@@ -331,21 +473,34 @@ const DevDashboardPage: React.FC = () => {
                 View Details
               </NavLink>
             </div>
-            
-            {/* Mini burndown chart placeholder */}
-            <div className="h-32 bg-zinc-800/50 rounded-lg flex items-end justify-around p-4">
-              {[80, 70, 55, 45, 40, 35, 25, 18].map((height, i) => (
-                <div
-                  key={i}
-                  className="w-4 bg-gradient-to-t from-violet-500 to-violet-400 rounded-t"
-                  style={{ height: `${height}%` }}
+
+            {(() => {
+              const storyRecords = stories as Array<{ status?: string; storyPoints?: number; points?: number }>;
+              const totalPoints = storyRecords.reduce((sum, s) => sum + (s.storyPoints ?? s.points ?? 1), 0);
+              const donePoints = storyRecords
+                .filter((s) => s.status === 'done')
+                .reduce((sum, s) => sum + (s.storyPoints ?? s.points ?? 1), 0);
+
+              // Estimate sprint duration from start/end dates
+              const sprintStart = activeSprint?.startDate ? new Date(activeSprint.startDate) : null;
+              const sprintEnd = activeSprint?.endDate ? new Date(activeSprint.endDate) : null;
+              const totalDays =
+                sprintStart && sprintEnd
+                  ? Math.max(1, Math.ceil((sprintEnd.getTime() - sprintStart.getTime()) / 86_400_000))
+                  : 14;
+              const daysElapsed = activeSprint?.daysRemaining !== undefined
+                ? Math.max(0, totalDays - activeSprint.daysRemaining)
+                : Math.floor(totalDays / 2);
+
+              return (
+                <SprintBurndownChart
+                  totalPoints={totalPoints}
+                  donePoints={donePoints}
+                  totalDays={totalDays}
+                  daysElapsed={daysElapsed}
                 />
-              ))}
-            </div>
-            <div className="flex items-center justify-between mt-4 text-xs text-zinc-500">
-              <span>Day 1</span>
-              <span>Day 8</span>
-            </div>
+              );
+            })()}
           </div>
         </div>
 

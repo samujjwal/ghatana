@@ -11,8 +11,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
+import { useIsDarkMode } from '@ghatana/theme';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { logger } from '../../utils/Logger';
 import {
   Box,
   Typography,
@@ -45,10 +47,11 @@ interface Deployment {
 export default function MobileDeployRoute() {
     const { projectId } = useParams();
     const navigate = useNavigate();
-    const theme = useTheme();
+    const isDarkMode = useIsDarkMode();
     const [deployments, setDeployments] = useState<Deployment[]>([]);
     const [loading, setLoading] = useState(true);
     const [deploying, setDeploying] = useState(false);
+    const [deployStatus, setDeployStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [selectedEnv, setSelectedEnv] = useState<'dev' | 'staging' | 'production'>('dev');
 
     const isNative = Capacitor && typeof Capacitor.isNativePlatform === 'function'
@@ -62,28 +65,15 @@ export default function MobileDeployRoute() {
     const loadDeployments = async () => {
         setLoading(true);
         try {
-            // Simulate loading deployment data from API
-            await new Promise(resolve => setTimeout(resolve, 800));
-            setDeployments([
-                {
-                    id: '1',
-                    environment: 'production',
-                    status: 'success',
-                    version: 'v1.2.3',
-                    timestamp: new Date(Date.now() - 3600000),
-                    duration: 120,
-                },
-                {
-                    id: '2',
-                    environment: 'staging',
-                    status: 'success',
-                    version: 'v1.2.4-beta',
-                    timestamp: new Date(Date.now() - 7200000),
-                    duration: 95,
-                },
-            ]);
+            const res = await fetch(`/api/projects/${projectId}/deployments`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json() as Deployment[];
+            setDeployments(data.map(d => ({ ...d, timestamp: new Date(d.timestamp) })));
         } catch (error) {
-            console.error('Failed to load deployments:', error);
+            logger.error('Failed to load deployments', 'mobile-deploy', {
+                projectId,
+                error: error instanceof Error ? error.message : String(error),
+            });
         } finally {
             setLoading(false);
         }
@@ -100,15 +90,27 @@ export default function MobileDeployRoute() {
     };
 
     const handleDeploy = async () => {
-        handleHapticFeedback();
+        void handleHapticFeedback();
         setDeploying(true);
+        setDeployStatus('idle');
         try {
-            // Simulate deployment process
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            const res = await fetch(`/api/projects/${projectId}/deployments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ environment: selectedEnv }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             await loadDeployments();
-            alert(`Successfully deployed to ${selectedEnv}!`);
+            setDeployStatus('success');
+            setTimeout(() => setDeployStatus('idle'), 3000);
         } catch (error) {
-            alert('Deployment failed. Please try again.');
+            setDeployStatus('error');
+            logger.error('Deployment failed', 'mobile-deploy', {
+                projectId,
+                environment: selectedEnv,
+                error: error instanceof Error ? error.message : String(error),
+            });
+            setTimeout(() => setDeployStatus('idle'), 3000);
         } finally {
             setDeploying(false);
         }
@@ -187,6 +189,18 @@ export default function MobileDeployRoute() {
 
                     {deploying && (
                         <LinearProgress className="mt-4" />
+                    )}
+
+                    {/* Deploy status feedback */}
+                    {deployStatus === 'success' && (
+                        <Alert severity="success" className="mt-4">
+                            Successfully deployed to {selectedEnv}!
+                        </Alert>
+                    )}
+                    {deployStatus === 'error' && (
+                        <Alert severity="error" className="mt-4">
+                            Deployment failed. Please try again.
+                        </Alert>
                     )}
 
                     {/* Warning for production */}

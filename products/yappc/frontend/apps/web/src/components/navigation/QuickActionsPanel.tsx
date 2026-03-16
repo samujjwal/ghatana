@@ -159,8 +159,21 @@ export function QuickActionsPanel({
             label: 'Export Project',
             icon: <GetApp className="w-4 h-4" />,
             onClick: () => {
-                // NOTE: Implement export functionality
-                console.log('Export project:', projectId);
+                void (async () => {
+                    try {
+                        const res = await fetch(`/api/projects/${projectId}/export`);
+                        if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+                        const blob = await res.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `project-${projectId}.zip`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    } catch (err) {
+                        console.error('[QuickActionsPanel] Export failed:', err);
+                    }
+                })();
                 setIsOpen(false);
             },
         },

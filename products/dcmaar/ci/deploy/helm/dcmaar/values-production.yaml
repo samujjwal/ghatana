@@ -1,0 +1,68 @@
+# =============================================================================
+# DCMAAR — Production environment values
+# Usage: helm upgrade --install dcmaar ./helm/dcmaar -f values-production.yaml -n production
+# =============================================================================
+
+replicaCount: 5
+
+image:
+  # Always pin production to a specific digest-tagged image — never "latest"
+  tag: ""  # Set via CI: --set image.tag=sha-<commit>
+
+app:
+  nodeEnv: production
+  logLevel: warn
+  corsOrigin: "https://dcmaar.ghatana.com"
+
+existingSecret: dcmaar-prod-secrets
+
+platformServices:
+  authGatewayUrl: "http://auth-gateway.ghatana-platform.svc.cluster.local:8080"
+  aiRegistryUrl: "http://ai-registry.ghatana-platform.svc.cluster.local:8081"
+  featureStoreUrl: "http://feature-store.ghatana-platform.svc.cluster.local:8082"
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/rate-limit-connections: "100"
+    nginx.ingress.kubernetes.io/limit-rps: "50"
+  hosts:
+    - host: dcmaar.ghatana.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: dcmaar-prod-tls
+      hosts:
+        - dcmaar.ghatana.com
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - dcmaar
+          topologyKey: kubernetes.io/hostname

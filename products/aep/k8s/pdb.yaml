@@ -1,0 +1,17 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: aep-service-manager-pdb
+  namespace: aep
+  labels:
+    app: aep-service-manager
+    app.kubernetes.io/name: aep-service-manager
+    app.kubernetes.io/component: pdb
+    app.kubernetes.io/part-of: ghatana-aep
+spec:
+  # Ensure at least 1 pod is always available during voluntary disruptions
+  # (node drain, rolling updates, cluster upgrades)
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: aep-service-manager

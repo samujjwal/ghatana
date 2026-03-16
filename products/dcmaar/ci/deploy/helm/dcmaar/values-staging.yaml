@@ -1,0 +1,47 @@
+# =============================================================================
+# DCMAAR — Staging environment values
+# Usage: helm upgrade --install dcmaar ./helm/dcmaar -f values-staging.yaml -n staging
+# =============================================================================
+
+replicaCount: 2
+
+image:
+  tag: staging-latest
+
+app:
+  nodeEnv: staging
+  logLevel: debug
+  corsOrigin: "https://staging.dcmaar.ghatana.com"
+
+existingSecret: dcmaar-staging-secrets
+
+platformServices:
+  authGatewayUrl: "http://auth-gateway.ghatana-platform.svc.cluster.local:8080"
+  aiRegistryUrl: "http://ai-registry.ghatana-platform.svc.cluster.local:8081"
+  featureStoreUrl: ""
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+  hosts:
+    - host: staging.dcmaar.ghatana.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: dcmaar-staging-tls
+      hosts:
+        - staging.dcmaar.ghatana.com
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false

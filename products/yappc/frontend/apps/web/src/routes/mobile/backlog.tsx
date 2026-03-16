@@ -5,7 +5,9 @@
  * Task prioritization, filtering, and progress tracking.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useParams } from 'react-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { logger } from '../../utils/Logger';
 
 export interface BacklogItem {
@@ -45,8 +47,9 @@ export interface BacklogStats {
  * Mobile Backlog Component
  */
 export default function Component() {
-  const [backlogItems, setBacklogItems] = useState<BacklogItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { projectId } = useParams<{ projectId: string }>();
+  const queryClient = useQueryClient();
+
   const [filter, setFilter] = useState<BacklogFilter>({
     priority: 'all',
     status: 'all',
@@ -59,151 +62,101 @@ export default function Component() {
   const [sortBy, setSortBy] = useState<'priority' | 'dueDate' | 'title'>('priority');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Load backlog items
-  useEffect(() => {
-    loadBacklogItems();
-  }, []);
+  const BACKLOG_KEY = ['backlog', projectId, filter.priority, filter.status, sortBy, sortOrder] as const;
 
-  const loadBacklogItems = async () => {
-    try {
-      setIsLoading(true);
-
-      // In a real implementation, this would fetch from an API
-      const mockBacklogItems: BacklogItem[] = [
-        {
-          id: '1',
-          title: 'Implement user authentication',
-          description: 'Add secure login and registration functionality',
-          priority: 'high',
-          status: 'in-progress',
-          assignee: 'John Doe',
-          tags: ['security', 'frontend'],
-          estimatedHours: 16,
-          actualHours: 8,
-          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          projectId: 'project-1',
-          sprintId: 'sprint-1'
-        },
-        {
-          id: '2',
-          title: 'Design database schema',
-          description: 'Create normalized database structure for user data',
-          priority: 'critical',
-          status: 'review',
-          assignee: 'Jane Smith',
-          tags: ['database', 'backend'],
-          estimatedHours: 12,
-          actualHours: 10,
-          dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          projectId: 'project-1',
-          sprintId: 'sprint-1'
-        },
-        {
-          id: '3',
-          title: 'Write API documentation',
-          description: 'Document all REST API endpoints with examples',
-          priority: 'medium',
-          status: 'todo',
-          tags: ['documentation', 'api'],
-          estimatedHours: 8,
-          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          projectId: 'project-1'
-        },
-        {
-          id: '4',
-          title: 'Setup CI/CD pipeline',
-          description: 'Configure automated testing and deployment',
-          priority: 'high',
-          status: 'todo',
-          tags: ['devops', 'automation'],
-          estimatedHours: 20,
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          projectId: 'project-1',
-          sprintId: 'sprint-2'
-        }
-      ];
-
-      setBacklogItems(mockBacklogItems);
-      logger.info('Backlog items loaded', 'mobile-backlog', { count: mockBacklogItems.length });
-    } catch (error) {
-      logger.error('Failed to load backlog items', 'mobile-backlog', {
-        error: error instanceof Error ? error.message : String(error)
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Fetch backlog items from API
+  const { data: backlogItems = [], isLoading } = useQuery<BacklogItem[]>({
+    queryKey: BACKLOG_KEY,
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filter.priority !== 'all') params.set('priority', filter.priority);
+      if (filter.status !== 'all') params.set('status', filter.status);
+      params.set('sort', sortBy);
+      params.set('order', sortOrder);
+      const res = await fetch(`/api/projects/${projectId}/backlog?${params.toString()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json() as BacklogItem[];
+      logger.info('Backlog items loaded', 'mobile-backlog', { count: data.length });
+      return data;
+    },
+    enabled: !!projectId,
+  });
 
   // Update item status
-  const updateItemStatus = async (itemId: string, newStatus: BacklogItem['status']) => {
-    try {
-      setBacklogItems(prev =>
-        prev.map(item =>
-          item.id === itemId
-            ? { ...item, status: newStatus, updatedAt: new Date().toISOString() }
-            : item
-        )
-      );
-
-      // In a real implementation, this would call an API
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ itemId, newStatus }: { itemId: string; newStatus: BacklogItem['status'] }) => {
+      const res = await fetch(`/api/backlog/items/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json() as Promise<BacklogItem>;
+    },
+    onSuccess: (_data, { itemId, newStatus }) => {
       logger.info('Item status updated', 'mobile-backlog', { itemId, newStatus });
-    } catch (error) {
+      void queryClient.invalidateQueries({ queryKey: ['backlog', projectId] });
+    },
+    onError: (error, { itemId, newStatus }) => {
       logger.error('Failed to update item status', 'mobile-backlog', {
         itemId,
         newStatus,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
-    }
-  };
+    },
+  });
+  const updateItemStatus = (itemId: string, newStatus: BacklogItem['status']) =>
+    updateStatusMutation.mutate({ itemId, newStatus });
 
   // Update item priority
-  const updateItemPriority = async (itemId: string, newPriority: BacklogItem['priority']) => {
-    try {
-      setBacklogItems(prev =>
-        prev.map(item =>
-          item.id === itemId
-            ? { ...item, priority: newPriority, updatedAt: new Date().toISOString() }
-            : item
-        )
-      );
-
-      // In a real implementation, this would call an API
+  const updatePriorityMutation = useMutation({
+    mutationFn: async ({ itemId, newPriority }: { itemId: string; newPriority: BacklogItem['priority'] }) => {
+      const res = await fetch(`/api/backlog/items/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priority: newPriority }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json() as Promise<BacklogItem>;
+    },
+    onSuccess: (_data, { itemId, newPriority }) => {
       logger.info('Item priority updated', 'mobile-backlog', { itemId, newPriority });
-    } catch (error) {
+      void queryClient.invalidateQueries({ queryKey: ['backlog', projectId] });
+    },
+    onError: (error, { itemId, newPriority }) => {
       logger.error('Failed to update item priority', 'mobile-backlog', {
         itemId,
         newPriority,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
-    }
-  };
+    },
+  });
+  const updateItemPriority = (itemId: string, newPriority: BacklogItem['priority']) =>
+    updatePriorityMutation.mutate({ itemId, newPriority });
 
   // Delete item
-  const deleteItem = async (itemId: string) => {
-    try {
-      setBacklogItems(prev => prev.filter(item => item.id !== itemId));
-      setSelectedItems(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(itemId);
-        return newSet;
-      });
-
-      // In a real implementation, this would call an API
+  const deleteMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      const res = await fetch(`/api/backlog/items/${itemId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    },
+    onSuccess: (_data, itemId) => {
       logger.info('Item deleted', 'mobile-backlog', { itemId });
-    } catch (error) {
+      setSelectedItems(prev => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
+      void queryClient.invalidateQueries({ queryKey: ['backlog', projectId] });
+    },
+    onError: (error, itemId) => {
       logger.error('Failed to delete item', 'mobile-backlog', {
         itemId,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
-    }
-  };
+    },
+  });
+  const deleteItem = (itemId: string) => deleteMutation.mutate(itemId);
 
   // Toggle item selection
   const toggleItemSelection = (itemId: string) => {
@@ -229,29 +182,31 @@ export default function Component() {
   };
 
   // Bulk update selected items
-  const bulkUpdate = async (updates: Partial<BacklogItem>) => {
-    try {
-      setBacklogItems(prev =>
-        prev.map(item =>
-          selectedItems.has(item.id)
-            ? { ...item, ...updates, updatedAt: new Date().toISOString() }
-            : item
-        )
-      );
-
-      // In a real implementation, this would call an API
+  const bulkUpdateMutation = useMutation({
+    mutationFn: async (updates: Partial<BacklogItem>) => {
+      const res = await fetch('/api/backlog/items/bulk', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedItems), updates }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    },
+    onSuccess: (_data, updates) => {
       logger.info('Bulk update completed', 'mobile-backlog', {
         itemCount: selectedItems.size,
-        updates
+        updates,
       });
       clearSelection();
-    } catch (error) {
+      void queryClient.invalidateQueries({ queryKey: ['backlog', projectId] });
+    },
+    onError: (error) => {
       logger.error('Failed to bulk update items', 'mobile-backlog', {
         itemCount: selectedItems.size,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
-    }
-  };
+    },
+  });
+  const bulkUpdate = (updates: Partial<BacklogItem>) => bulkUpdateMutation.mutate(updates);
 
   // Filter and sort items
   const filteredItems = backlogItems

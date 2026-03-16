@@ -1,0 +1,376 @@
+openapi: 3.1.0
+info:
+  title: Ghatana Auth Service API
+  description: |
+    Centralised OIDC/OAuth2 authentication service for all Ghatana products.
+
+    Handles the complete SSO lifecycle:
+    - Initiating the OIDC login flow (redirect to IdP)
+    - Receiving the OIDC callback (code exchange, session creation, platform JWT issuance)
+    - Exposing the current authenticated user
+    - Token introspection
+    - Logout
+
+    After a successful OIDC callback the browser is redirected to the product's
+    post-login URL with a `?platform_token=<jwt>` query parameter. Products use
+    the `@ghatana/sso-client` library to consume this token.
+  version: 1.0.0
+  contact:
+    name: Ghatana Platform Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8084
+    description: Local development
+  - url: https://auth.ghatana.io
+    description: Production
+
+paths:
+
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Liveness probe
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /metrics:
+    get:
+      operationId: metrics
+      summary: Prometheus-compatible metrics
+      description: Returns active session count and other runtime metrics.
+      tags: [Observability]
+      responses:
+        '200':
+          description: Metrics in Prometheus text format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /auth/login:
+    post:
+      operationId: initiateOidcLogin
+      summary: Initiate OIDC login
+      description: |
+        Generates an OIDC authorization URL and returns it so the product can
+        redirect the browser (or return it as a login link).
+
+        **Flow**: Product calls this endpoint → receives `authorizationUrl`
+        → redirects browser → user logs in at IdP → IdP redirects to
+        `GET /auth/callback`.
+      tags: [Authentication]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInitRequest'
+      responses:
+        '200':
+          description: Authorization URL ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginInitResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/callback:
+    get:
+      operationId: oidcCallback
+      summary: OIDC redirect callback
+      description: |
+        Receives the authorisation code from the IdP after the user has
+        authenticated. This endpoint is called by the browser (redirect), not
+        by the product directly.
+
+        Steps performed:
+        1. Validates `state` to prevent CSRF.
+        2. Exchanges `code` for OIDC tokens via the IdP token endpoint.
+        3. Creates a server-side OIDC session (`ghatana_session` cookie).
+        4. Issues a 15-minute platform JWT (`tokenType = "PLATFORM"`).
+        5. Redirects browser to `POST_LOGIN_REDIRECT_URL?platform_token=<jwt>`.
+      tags: [Authentication]
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: OIDC authorisation code from the IdP.
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: OIDC state parameter (anti-CSRF).
+        - name: error
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Error code from IdP (present on failure).
+        - name: error_description
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Human-readable error description from IdP.
+      responses:
+        '302':
+          description: |
+            Redirects browser to `POST_LOGIN_REDIRECT_URL?platform_token=<jwt>`
+            on success, or to the product's error page on failure.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+            Set-Cookie:
+              description: |
+                `ghatana_session=<sessionId>; HttpOnly; SameSite=Lax; Max-Age=3600`
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      operationId: getMe
+      summary: Get current authenticated user
+      description: |
+        Returns the current user derived from the server-side OIDC session.
+
+        Accepts either:
+        - The `ghatana_session` HttpOnly cookie (browser clients), or
+        - A `Authorization: Bearer <platform_token>` header (API clients).
+      tags: [Authentication]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/token/introspect:
+    post:
+      operationId: introspectToken
+      summary: Introspect OIDC access token
+      description: |
+        Validates an OIDC access token against the IdP's introspection endpoint.
+        Returns active status and token claims.
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntrospectRequest'
+      responses:
+        '200':
+          description: Introspection result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntrospectResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Logout and invalidate session
+      description: |
+        Invalidates the OIDC session and clears the `ghatana_session` cookie.
+        Accepts the session ID from either the cookie or the request body.
+      tags: [Authentication]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+          headers:
+            Set-Cookie:
+              description: Clears the `ghatana_session` cookie (`Max-Age=0`).
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Platform JWT issued by `/auth/callback` or auth-gateway `/auth/exchange`.
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: ghatana_session
+      description: HttpOnly session cookie set by `/auth/callback`.
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN]
+          example: UP
+        service:
+          type: string
+          example: auth-service
+      required: [status]
+
+    LoginInitRequest:
+      type: object
+      description: Optional hints for the OIDC login flow.
+      properties:
+        redirect_uri:
+          type: string
+          format: uri
+          description: Post-login redirect URI (product landing page).
+          example: https://tutorputor.ghatana.io/
+        product_id:
+          type: string
+          description: Identifier of the calling product.
+          example: tutorputor
+        login_hint:
+          type: string
+          description: Optional email hint to pre-fill at the IdP.
+
+    LoginInitResponse:
+      type: object
+      properties:
+        authorizationUrl:
+          type: string
+          format: uri
+          description: OIDC authorization URL to redirect the browser to.
+        state:
+          type: string
+          description: OIDC state value (for CSRF validation on callback).
+        nonce:
+          type: string
+          description: OIDC nonce value.
+      required: [authorizationUrl, state]
+
+    MeResponse:
+      type: object
+      description: Current authenticated user.
+      properties:
+        userId:
+          type: string
+          example: user-abc-123
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        authenticated:
+          type: boolean
+          example: true
+        sessionId:
+          type: string
+          description: Server-side OIDC session identifier.
+      required: [userId, email, authenticated]
+
+    IntrospectRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: OIDC access token to introspect.
+      required: [token]
+
+    IntrospectResponse:
+      type: object
+      properties:
+        active:
+          type: boolean
+          description: Whether the token is currently active.
+        sub:
+          type: string
+          description: Subject (user ID) from the token.
+        email:
+          type: string
+          description: Email claim from the token.
+        exp:
+          type: integer
+          description: Expiry as Unix epoch seconds.
+        scope:
+          type: string
+          description: Granted OAuth2 scopes.
+      required: [active]
+
+    LogoutRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Platform JWT (used to extract session ID when cookie is absent).
+
+    LogoutResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Logged out successfully
+      required: [message]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.
+          example: Session not found or already expired
+      required: [error]

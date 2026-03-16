@@ -73,6 +73,41 @@ route:
       repeat_interval: 4h
       continue: false
 
+    # ------------------------------------------------------------------
+    # 4. AEP critical alerts — immediate page (< 1 min)
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "aep"
+        - severity = "critical"
+      receiver: aep-critical
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 30m
+      continue: false
+
+    # ------------------------------------------------------------------
+    # 5. AEP warning alerts — batched Slack notification
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "aep"
+        - severity = "warning"
+      receiver: aep-warning
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 2h
+      continue: false
+
+    # ------------------------------------------------------------------
+    # 6. AEP catch-all
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "aep"
+      receiver: aep-warning
+      group_wait: 2m
+      group_interval: 10m
+      repeat_interval: 4h
+      continue: false
+
 # ---------------------------------------------------------------------------
 # Inhibition rules — suppress lower-severity alerts when critical fires
 # ---------------------------------------------------------------------------
@@ -83,6 +118,14 @@ inhibit_rules:
     target_matchers:
       - severity = "warning"
       - product = "data-cloud"
+    equal: ["alertname", "product"]
+
+  - source_matchers:
+      - severity = "critical"
+      - product = "aep"
+    target_matchers:
+      - severity = "warning"
+      - product = "aep"
     equal: ["alertname", "product"]
 
 # ---------------------------------------------------------------------------
@@ -143,6 +186,51 @@ receivers:
         text: |
           {{ range .Alerts }}
           *Description:* {{ .Annotations.description }}
+          {{ end }}
+
+  # ---- AEP: critical (Slack oncall + PagerDuty) ----
+  - name: aep-critical
+    slack_configs:
+      - channel: "#aep-oncall"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}#cc0000{{ else }}#36a64f{{ end }}'
+        title: '🔴 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — aep'
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Product:* {{ .CommonLabels.product }}
+          {{ range .Alerts }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          *Started:* {{ .StartsAt | since }}
+          {{ end }}
+        actions:
+          - type: button
+            text: "View in Grafana"
+            url: "http://grafana.monitoring.svc.cluster.local:3000/d/aep-platform-001"
+    pagerduty_configs:
+      - routing_key_file: "/etc/alertmanager/pagerduty_integration_key"
+        description: '{{ .CommonLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        severity: critical
+        details:
+          product: '{{ .CommonLabels.product }}'
+          alert_name: '{{ .CommonLabels.alertname }}'
+          description: '{{ .CommonAnnotations.description }}'
+
+  # ---- AEP: warning (Slack alerts channel) ----
+  - name: aep-warning
+    slack_configs:
+      - channel: "#aep-alerts"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}#ff9900{{ else }}#36a64f{{ end }}'
+        title: '⚠️ [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — aep'
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Product:* {{ .CommonLabels.product }}
+          {{ range .Alerts }}
+          *Description:* {{ .Annotations.description }}
+          *Started:* {{ .StartsAt | since }}
           {{ end }}
 
 # ---------------------------------------------------------------------------

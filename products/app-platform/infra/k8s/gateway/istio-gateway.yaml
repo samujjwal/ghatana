@@ -1,0 +1,76 @@
+# AppPlatform Istio Ingress Gateway
+# Story: STORY-K11-001 — Envoy/Istio-based API Gateway with service registry
+# Source: stories/MILESTONE_1B_STORIES.md, epics/EPIC-K-11-API-Gateway.md
+#
+# Implements:
+#   - Istio Ingress Gateway as the API Gateway entry point
+#   - HTTP/HTTPS on ports 80/443
+#   - WebSocket protocol support (Upgrade: websocket)
+#   - Dynamic backend service registry via Kubernetes service discovery
+#   - TLS termination using K-14 managed certificates
+
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: appplatform-gateway
+  namespace: app-platform
+  labels:
+    app: appplatform-gateway
+    component: api-gateway
+    kernel-module: k-11
+spec:
+  selector:
+    # Routes to the Istio ingress-gateway pods (Envoy instances)
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        # Secret created by K-14 CertificateLifecycleService and distributed via K-14 CertificateDistributionService
+        credentialName: appplatform-tls-cert
+      hosts:
+        - "api.appplatform.ghatana.io"
+        - "*.api.appplatform.ghatana.io"
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      tls:
+        # Redirect all HTTP to HTTPS
+        httpsRedirect: true
+      hosts:
+        - "api.appplatform.ghatana.io"
+        - "*.api.appplatform.ghatana.io"
+    - port:
+        number: 443
+        name: https-websocket
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: appplatform-tls-cert
+      hosts:
+        - "ws.appplatform.ghatana.io"
+
+---
+# Prometheus scrape config for gateway metrics (Envoy Prometheus integration)
+# Grafana sources latency/error rate from: istio_requests_total, istio_request_duration_milliseconds
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: appplatform-gateway-monitor
+  namespace: app-platform
+  labels:
+    app: appplatform-gateway
+    kernel-module: k-11
+    grafana-dashboard: "true"
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  endpoints:
+    - port: http-envoy-prom
+      path: /stats/prometheus
+      interval: 15s

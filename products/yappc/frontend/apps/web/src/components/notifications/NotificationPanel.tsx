@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { Bell, X, AlertTriangle, Info, CheckCircle, Clock } from 'lucide-react';
@@ -112,10 +113,7 @@ export function NotificationPanel({ tenantId }: { tenantId: string }) {
               zIndex: 9999,
             }}
           >
-            {(() => {
-              console.log('NotificationPanel portal rendered with position:', panelPosition);
-              return null;
-            })()}
+
             {/* Header */}
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-900">
@@ -183,13 +181,14 @@ function NotificationItem({
 }) {
   const typeConfig = getNotificationTypeConfig(notification.type);
 
+  const navigate = useNavigate();
+
   const handleClick = () => {
     if (!notification.isRead) {
       onMarkAsRead();
     }
     if (notification.link) {
-      // NOTE: Navigate to link
-      console.log('Navigate to:', notification.link);
+      navigate(notification.link);
       onClose();
     }
   };
@@ -294,57 +293,22 @@ function formatTime(timestamp: string): string {
   });
 }
 
-/**
- * Mock API functions.
- */
 async function fetchNotifications(tenantId: string): Promise<Notification[]> {
-  // Mock data
-  return [
-    {
-      id: '1',
-      type: 'ERROR',
-      title: 'Critical Security Incident',
-      message: 'SQL injection attempt detected in API endpoint /api/v1/users',
-      link: '/incidents/INC-2024-001',
-      isRead: false,
-      createdAt: new Date(Date.now() - 300000).toISOString(),
-    },
-    {
-      id: '2',
-      type: 'WARNING',
-      title: 'High Severity Vulnerability',
-      message: 'CVE-2024-1234 found in openssl package version 1.1.1k',
-      link: '/vulnerabilities/CVE-2024-1234',
-      isRead: false,
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-    },
-    {
-      id: '3',
-      type: 'SUCCESS',
-      title: 'Pipeline Deployed Successfully',
-      message: 'Backend API - CI/CD deployed to production environment',
-      link: '/pipelines/1',
-      isRead: true,
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
-    },
-    {
-      id: '4',
-      type: 'INFO',
-      title: 'Compliance Assessment Completed',
-      message: 'SOC 2 Type II assessment completed with 88.5% score',
-      link: '/compliance/soc2',
-      isRead: true,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-  ];
+  const res = await fetch(`/api/notifications?tenantId=${encodeURIComponent(tenantId)}`);
+  if (!res.ok) throw new Error(`Failed to fetch notifications: ${res.status}`);
+  return res.json() as Promise<Notification[]>;
 }
 
 async function markNotificationAsRead(notificationId: string): Promise<void> {
-  console.log('Mark as read:', notificationId);
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  const res = await fetch(`/api/notifications/${encodeURIComponent(notificationId)}/read`, {
+    method: 'PATCH',
+  });
+  if (!res.ok) throw new Error(`Failed to mark notification as read: ${res.status}`);
 }
 
 async function clearAllNotifications(tenantId: string): Promise<void> {
-  console.log('Clear all notifications for:', tenantId);
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  const res = await fetch(`/api/notifications?tenantId=${encodeURIComponent(tenantId)}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error(`Failed to clear notifications: ${res.status}`);
 }

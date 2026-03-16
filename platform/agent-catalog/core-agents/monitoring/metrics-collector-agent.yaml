@@ -1,0 +1,138 @@
+id: metrics-collector-agent
+name: Metrics Collector Agent
+version: 1.0.0
+description: >
+  Scrapes, aggregates, and forwards metrics from Prometheus-compatible endpoints,
+  StatsD, OpenTelemetry OTLP, and custom instrumented services. Normalises
+  metrics into the platform canonical format and publishes them to the
+  observability pipeline. Supports push (StatsD/OTLP) and pull (Prometheus
+  scrape) ingestion modes, metric relabelling, downsampling, and cardinality
+  limiting.
+
+metadata:
+  level: 3
+  domain: monitoring
+  tags: [metrics, prometheus, opentelemetry, statsd, scraping, observability]
+  maturity: production
+  author: platform-team@ghatana.ai
+
+generator:
+  type: DETERMINISTIC
+
+# AEP Operator configuration
+aep:
+  operatorType: SOURCE
+  inputEventTypes:
+    - "metrics.push.statsd"
+    - "metrics.push.otlp"
+  outputEventTypes:
+    - "metrics.collected"
+    - "metrics.aggregated"
+    - "metrics.anomaly"
+  backpressure:
+    bufferSize: 50000
+    overflowStrategy: SAMPLE
+  reliability:
+    checkpointInterval: 15s
+    maxRetries: 2
+    deadLetterQueue: metrics-collector-dlq
+
+capabilities:
+  - prometheus-scrape
+  - statsd-ingestion
+  - otlp-ingestion
+  - metric-relabelling
+  - downsampling
+  - cardinality-limiting
+
+# Metrics collection configuration
+configuration:
+  scrapeTargets:
+    description: "Prometheus-compatible scrape targets"
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        scrapeIntervalSeconds:
+          type: integer
+          default: 15
+        timeoutSeconds:
+          type: integer
+          default: 10
+        honorLabels:
+          type: boolean
+          default: false
+        relabelings:
+          type: array
+  pushEndpoints:
+    description: "Push-based ingestion endpoints (StatsD/OTLP)"
+    type: object
+    properties:
+      statsd:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: false
+          port:
+            type: integer
+            default: 8125
+          protocol:
+            type: string
+            enum: [UDP, TCP]
+            default: UDP
+      otlp:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: false
+          port:
+            type: integer
+            default: 4317
+          protocol:
+            type: string
+            enum: [GRPC, HTTP]
+            default: GRPC
+  cardinalityLimit:
+    description: "Maximum number of unique time series per scrape target"
+    type: integer
+    default: 10000
+  retentionWindow:
+    description: "In-memory retention window for aggregations"
+    type: string
+    default: PT5M
+
+io:
+  inputs:
+    - name: pushMetrics
+      type: JSON
+      schema: "https://schema.ghatana.com/metrics/push/v1"
+      required: false
+  outputs:
+    - name: collectedMetrics
+      type: JSON
+      schema: "https://schema.ghatana.com/metrics/collected/v1"
+    - name: metricsAnomalyAlert
+      type: JSON
+      schema: "https://schema.ghatana.com/metrics/anomaly/v1"
+
+memory:
+  type: SEMANTIC
+  scope: metrics_window
+  retention: short
+  maxEntries: 500000
+
+resources:
+  memory: 1GB
+  cpu: "1"
+  timeout: 60s
+  maxConcurrency: 20
+
+routing:
+  input: ScrapeScheduleEvent
+  output: MetricsCollectedEvent

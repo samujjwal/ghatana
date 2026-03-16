@@ -12,8 +12,12 @@ spec:
   selector:
     app: aep-service-manager
   ports:
-    - name: http-health
+    - name: http
       port: 8090
-      targetPort: http-health
+      targetPort: http
+      protocol: TCP
+    - name: grpc
+      port: 9091
+      targetPort: grpc
       protocol: TCP
   type: ClusterIP

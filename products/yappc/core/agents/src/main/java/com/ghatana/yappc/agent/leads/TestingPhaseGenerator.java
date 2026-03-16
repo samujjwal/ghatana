@@ -64,10 +64,18 @@ public class TestingPhaseGenerator
     for (String step : executionOrder) {
       if (agentRegistry.hasAgent(step)) {
         log.info("Planning test suite: {}", step);
-        // Simulate test results
-        int tests = 10 + (int) (Math.random() * 20);
-        int passed = (int) (tests * (0.95 + Math.random() * 0.05));
+
+        // Deterministic test counts derived from stable hash of step + implementationId.
+        // String.hashCode() is JVM-stable for the same input within a session.
+        int h1 = Math.abs(Objects.hash(request.implementationId(), step, "count"));
+        int h2 = Math.abs(Objects.hash(request.implementationId(), step, "pass"));
+        int h3 = Math.abs(Objects.hash(request.implementationId(), step, "dur"));
+
+        int tests = 10 + (h1 % 20);                         // [10, 29]
+        int passed = (int) (tests * (0.95 + (h2 % 6) / 100.0)); // 95%-100% pass rate
+        passed = Math.min(passed, tests);
         int failed = tests - passed;
+        long durationMs = 100 + (h3 % 500);                 // [100, 599] ms
 
         totalTests += tests;
         passedTests += passed;
@@ -81,7 +89,7 @@ public class TestingPhaseGenerator
                 tests,
                 passed,
                 failed,
-                100 + (long) (Math.random() * 500)));
+                durationMs));
       } else {
         log.warn("Test suite {} not registered, skipping", step);
       }

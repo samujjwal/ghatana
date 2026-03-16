@@ -12,13 +12,14 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Box, Typography, Button, Stack } from '@ghatana/ui';
 import { useSetAtom } from 'jotai';
+import { useQuery } from '@tanstack/react-query';
 
 // Hooks
 import { useWorkspaceContext } from '../hooks/useWorkspaceData';
 import { useWorkflows } from '../hooks/useWorkflows';
 import { useLastOpenedProject } from '../hooks/useLastOpenedProject';
+import { useCurrentUser } from '../providers/AuthProvider';
 import { headerVisibleAtom } from '../state/atoms/layoutAtom';
 
 import { RouteErrorBoundary } from '../components/route/ErrorBoundary';
@@ -51,58 +52,29 @@ export default function Component() {
     const [selectedProject, setSelectedProject] = useState<{ id: string; name: string } | null>(null);
     const [projectWorkspaces, setProjectWorkspaces] = useState<Array<{ id: string; name: string; description?: string; isOwner?: boolean }>>([]);
 
-    // --- DEMO STATE MANAGEMENT ---
-    // In a real app, these states would be derived from `useWorkspaceContext` and `useAuth`.
-    // For development visualization, we use local state toggles.
-    const [demoState, setDemoState] = useState<'authenticated' | 'empty' | 'guest'>('authenticated');
+    // Derive guest/empty states from real auth and workspace data
+    const currentUser = useCurrentUser();
+    const isGuest = !currentUser.isAuthenticated;
+    const isEmpty = !isLoading && !isGuest && allProjects.length === 0 && workflows.length === 0;
 
-    // Derived states based on demo toggle OR real data
-    const isGuest = demoState === 'guest';
-    const isEmpty = demoState === 'empty' || (allProjects.length === 0 && workflows.length === 0);
-
-    // Effect to control header visibility based on state
+    // Control header visibility based on auth state
     useEffect(() => {
-        // Only show header in authenticated state
-        setHeaderVisible(demoState === 'authenticated');
-
-        // Cleanup: ensure header is visible when leaving this route
+        setHeaderVisible(!isGuest);
         return () => setHeaderVisible(true);
-    }, [demoState, setHeaderVisible]);
+    }, [isGuest, setHeaderVisible]);
 
-    // Mock Tasks Data (replacing with real API in future)
-    const priorityTasks: PriorityTask[] = [
-        {
-            id: '101',
-            title: 'Review Wireframes for Login Flow',
-            project: 'Project Alpha',
-            projectId: 'alpha',
-            type: 'Design',
-            priority: 'High',
-            persona: 'Product Manager',
-            dueDate: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+    // Fetch priority tasks from the API
+    const { data: priorityTasksData } = useQuery<PriorityTask[]>({
+        queryKey: ['priority-tasks'],
+        queryFn: async () => {
+            const res = await fetch('/api/tasks?priority=high&limit=5');
+            if (!res.ok) return [];
+            return res.json() as Promise<PriorityTask[]>;
         },
-        {
-            id: '102',
-            title: 'Fix Build Failure in CI Pipeline',
-            project: 'Backend Core',
-            projectId: 'backend',
-            type: 'Code',
-            priority: 'Urgent',
-            persona: 'Developer',
-            dueDate: new Date(Date.now() - 3600000).toISOString(), // Overdue
-            isBlocked: true
-        },
-        {
-            id: '103',
-            title: 'Approve Staging Release v2.1',
-            project: 'Mobile UI Kit',
-            projectId: 'mobile-kit',
-            type: 'Deploy',
-            priority: 'Medium',
-            persona: 'DevOps',
-            dueDate: new Date(Date.now() + 172800000).toISOString()
-        },
-    ];
+        enabled: !isGuest && !isLoading,
+        initialData: [],
+    });
+    const priorityTasks: PriorityTask[] = priorityTasksData ?? [];
 
     // --- HANDLERS ---
 
@@ -176,12 +148,7 @@ export default function Component() {
         navigate(`/workflows/${workflowId}`);
     };
 
-    const onDemoStateChange = (state: 'authenticated' | 'empty' | 'guest') => {
-        setDemoState(state);
-    };
-
     const handleSearchClick = () => {
-        // Trigger generic search command
         window.dispatchEvent(new KeyboardEvent('keydown', {
             key: 'k',
             metaKey: true,
@@ -191,46 +158,24 @@ export default function Component() {
 
     // --- RENDER ---
 
-    const DebugControls = () => (
-        <Box className="fixed p-2 rounded-lg bottom-[16px] right-[16px] z-[9999] bg-white dark:bg-gray-900 shadow-md opacity-[0.8]">
-            <Typography as="span" className="mb-2 block text-xs font-bold text-gray-500">
-                Page State Preview
-            </Typography>
-            <Stack spacing={1}>
-                <Button size="sm" variant={demoState === 'guest' ? 'contained' : 'outlined'} onClick={() => onDemoStateChange('guest')}>Guest</Button>
-                <Button size="sm" variant={demoState === 'empty' ? 'contained' : 'outlined'} onClick={() => onDemoStateChange('empty')}>Empty</Button>
-                <Button size="sm" variant={demoState === 'authenticated' ? 'contained' : 'outlined'} onClick={() => onDemoStateChange('authenticated')}>Full</Button>
-            </Stack>
-        </Box>
-    );
-
     if (isLoading) {
         return <DashboardSkeleton />;
     }
 
     if (isGuest) {
         return (
-            <>
-                <GuestLandingView
-                    onDemoLogin={() => setDemoState('authenticated')}
-                    onDemoEmpty={() => setDemoState('empty')}
-                />
-
-                {/* Normally debug controls aren't on landing page, but for testing: */}
-                {/* <DebugControls /> */}
-            </>
+            <GuestLandingView
+                onDemoLogin={() => navigate('/login')}
+            />
         );
     }
 
     if (isEmpty) {
         return (
-            <>
-                <EmptyStateView
-                    onCreateProject={() => navigate('/projects/new')}
-                    onSkip={() => setDemoState('authenticated')}
-                />
-                {import.meta.env.DEV && <DebugControls />}
-            </>
+            <EmptyStateView
+                onCreateProject={() => navigate('/projects/new')}
+                onSkip={() => navigate('/projects')}
+            />
         );
     }
 
@@ -267,7 +212,6 @@ export default function Component() {
                     setSelectedProject(null);
                 }}
             />
-            {import.meta.env.DEV && <DebugControls />}
         </div>
     );
 }

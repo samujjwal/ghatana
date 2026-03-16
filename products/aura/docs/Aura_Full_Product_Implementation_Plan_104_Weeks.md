@@ -133,7 +133,7 @@ Aura implementation should run across six coordinated workstreams:
 | 7 | Stand up ingestion foundations for top beauty categories and provenance storage | `platform/java/ingestion`, `products/aep/platform`, `products/data-cloud/spi`, connector patterns from DCMAAR | Source ingest writes canonical product shells plus provenance |
 | 8 | Add canonical product, brand, ingredient, and source entities | `products/data-cloud/platform`, `products/data-cloud/spi`, product schema patterns from Tutorputor | Product detail data can be queried consistently |
 | 9 | Build ingredient analyzer v1 and hard safety exclusions | shared governance and Java domain modules, no local rule engine fork | Allergen and key ingredient conflicts are enforced |
-| 10 | Build basic feed API and feed-card UI with reason and trust placeholders | `@ghatana/api`, `@ghatana/ui`, `@ghatana/tokens` | Feed works for cold-start and declared-profile users |
+| 10 | Build basic feed API and feed-card UI with real reason/trust contract rendering | `@ghatana/api`, `@ghatana/ui`, `@ghatana/tokens` | Feed works for cold-start and declared-profile users with reason and trust states visible |
 | 11 | Implement product detail, save/bookmark flows, and saved-items shelf | `@ghatana/ui`, `@ghatana/utils`, shared API wrapper | Save state persists across feed/detail surfaces |
 | 12 | Build shade ontology v1, nearest-match scoring, and confidence gating | `platform/java/ai-integration` patterns, no custom serving stack yet | Supported foundation shade matching works with abstention behavior |
 | 13 | Add compare, feedback capture, outcome event path, and internal alpha gate review | `products/aep/platform`, `products/data-cloud/platform`, `@ghatana/accessibility-audit` | Internal alpha launches with outcome instrumentation live |
@@ -152,7 +152,7 @@ Aura implementation should run across six coordinated workstreams:
 | 21 | Implement experiment assignment and exposure logging | `@ghatana/api`, `products/aep/platform`, platform observability, shared config patterns | Stable experiments run with auditable exposure data |
 | 22 | Build recommendation training snapshot pipeline, challenger evaluation loop, and selfie-inference pilot path | `platform/java/ai-integration`, `shared-services/ai-registry`, consented ML capture flow | Training snapshot flow runs end to end and the selfie pilot stays opt-in and confidence-gated |
 | 23 | Add affiliate instrumentation and outcome-aware funnel reporting | `@ghatana/api`, shared analytics patterns | Affiliate links are disclosed and tracked without rank bias |
-| 24 | Complete privacy and trust UX pass, accessibility pass, and invite-beta hardening | `@ghatana/accessibility-audit`, `@ghatana/ui` | Trust-critical surfaces pass review and audit |
+| 24 | Complete privacy and trust UX pass, accessibility pass, invite-beta hardening, and counsel/privacy sign-off | `@ghatana/accessibility-audit`, `@ghatana/ui`, governance review artifacts | Trust-critical surfaces pass review, audit, and consent-language sign-off |
 | 25 | Scale the invite beta: cohort expansion, support runbooks, rollback drills, and release checklist enforcement | shared observability and auth services | Invite beta runs with stable support and rollback readiness |
 | 26 | Measure invite-beta retention/trust/outcome baselines and close immediate regressions | existing dashboards and alerting stack | Beta is live with stable dashboards, support loop, and early baselines |
 
@@ -168,7 +168,7 @@ Aura implementation should run across six coordinated workstreams:
 | 32 | Implement verified-review architecture, reviewer flags, and audit support | shared auth/governance services | Verified review state is modeled and enforceable |
 | 33 | Build twin-user signal research pipeline and offline similarity evaluation | `platform/java/ai-integration`, shared registry/eval patterns | Twin-signal offline evaluation report exists |
 | 34 | Public-launch hardening: scale, failover, burst, rollback, and support drills | shared monitoring and testing modules | Public-launch hardening checklist passes |
-| 35 | Public launch of beauty-first product | existing launch stack | Public launch occurs without unresolved P0 trust or safety blockers |
+| 35 | Public launch of beauty-first product | existing launch stack | Public launch occurs without unresolved P0 trust, privacy, compliance, or safety blockers |
 | 36 | Run press/editorial support and creator-loop monitoring week | analytics and GTM tooling already in place | Traffic quality and trust metrics remain healthy |
 | 37 | Enable community review contributions in controlled beta | moderation and governance foundations | Community beta users can contribute safely |
 | 38 | Build model v2 feature set from real outcome and review data | `platform/java/ai-integration`, shared AI registry | Model v2 candidate reaches offline readiness |

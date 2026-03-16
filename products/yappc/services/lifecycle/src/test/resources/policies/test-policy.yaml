@@ -1,0 +1,32 @@
+# Test stub policy for PolicyConfigLoaderTest
+policies:
+
+  - id: test_stub_policy
+    version: "2.0"
+    description: "Test-only stub policy"
+    rules:
+
+      - id: test_rule_1
+        description: "Always-passing test rule"
+        condition:
+          type: METRIC_THRESHOLD
+          metric: stub_metric
+          operator: GTE
+          value: 0
+        applies_to:
+          from_phase: ALPHA
+          to_phase: BETA
+        action: ALLOW
+
+      - id: test_rule_2
+        description: "Disable-able test rule"
+        enabled: false
+        condition:
+          type: METRIC_THRESHOLD
+          metric: stub_metric
+          operator: GTE
+          value: 100
+        applies_to:
+          from_phase: ALPHA
+          to_phase: BETA
+        action: BLOCK

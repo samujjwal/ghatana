@@ -15,6 +15,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { getConfig } from '../config/config.js';
 import { secretManager } from '../config/secrets.js';
 import './types.js';
+import { authGatewayClient } from '../clients/auth-gateway.client.js';
 
 export interface User {
   id: string;
@@ -349,9 +350,36 @@ export class AuthMiddleware {
       request.authContext = authContext;
       
       return authContext;
-    } catch (error) {
+    } catch (localError) {
+      // Platform token fallback: accept tokens issued by the central auth-service
+      if (authGatewayClient) {
+        try {
+          const platformIdentity = await authGatewayClient.validate(token);
+          if (platformIdentity.valid && platformIdentity.userId) {
+            const platformUser: User = {
+              id: platformIdentity.userId,
+              email: platformIdentity.email ?? '',
+              tenantId: (request.headers['x-tenant-id'] as string) ?? 'default',
+              roles: [],
+              permissions: [],
+              isActive: true,
+            };
+            const authContext: AuthContext = {
+              user: platformUser,
+              token,
+              permissions: [],
+              tenantId: platformUser.tenantId,
+            };
+            request.authContext = authContext;
+            return authContext;
+          }
+        } catch {
+          // platform gateway also failed — fall through to original error
+        }
+      }
+
       reply.code(401).send({ error: 'Invalid or expired token' });
-      throw error;
+      throw localError;
     }
   }
 

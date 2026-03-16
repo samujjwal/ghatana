@@ -51,6 +51,10 @@ public class DataCloudDashboard {
     private final DataCloudMetrics metrics;
     private final Map<String, AlertThreshold> thresholds;
     private final List<Alert> activeAlerts;
+
+    // Rate estimation — tracks previous sample to compute ops/sec delta
+    private volatile long prevSampleOps  = 0L;
+    private volatile long prevSampleTime = System.nanoTime();
     
     private DataCloudDashboard(DataCloudMetrics metrics) {
         this.metrics = Objects.requireNonNull(metrics, "metrics is required");
@@ -290,8 +294,16 @@ public class DataCloudDashboard {
         long totalOps = counters != null ? counters.values().stream().mapToLong(Long::longValue).sum() : 0;
         throughput.put("total_operations", totalOps);
         
-        // Calculate ops/sec (would need time tracking in real implementation)
-        throughput.put("operations_per_second", 0.0); // Placeholder
+        // Calculate ops/sec: delta-count / delta-seconds since last sample
+        long nowNanos = System.nanoTime();
+        double elapsedSeconds = (nowNanos - prevSampleTime) / 1_000_000_000.0;
+        double opsPerSecond = 0.0;
+        if (elapsedSeconds > 0.001) { // Guard against divide-by-near-zero on first call
+            opsPerSecond = Math.max(0.0, (totalOps - prevSampleOps) / elapsedSeconds);
+        }
+        prevSampleOps  = totalOps;
+        prevSampleTime = nowNanos;
+        throughput.put("operations_per_second", Math.round(opsPerSecond * 100.0) / 100.0);
         
         return throughput;
     }

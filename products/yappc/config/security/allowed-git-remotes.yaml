@@ -1,0 +1,19 @@
+# Allowlist of permitted git remote URL prefixes for YAPPC release pushes.
+# ReleaseAutomationManager.GitOperations.validateRemote() reads this file
+# before executing 'git push'.
+#
+# Each entry is a URL prefix. The remote URL returned by
+#   git remote get-url origin
+# must start with one of these prefixes (case-insensitive).
+#
+# Wildcards are NOT supported — use prefix matching intentionally so that
+# subdirectory traversal and port manipulation cannot bypass the check.
+#
+# IMPORTANT: Keep this list as restrictive as possible. Only add entries
+# that your CI/CD pipeline and developers need to push to.
+
+allowedPrefixes:
+  - "git@github.com:ghatana-technologies/"
+  - "https://github.com/ghatana-technologies/"
+  - "git@gitlab.ghatana.internal:"
+  - "https://gitlab.ghatana.internal/"

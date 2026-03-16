@@ -1,14 +1,18 @@
 package com.ghatana.yappc.core.release;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -492,6 +496,10 @@ public class ReleaseAutomationManager {
 
         public void pushRelease(SemanticVersion version) throws IOException {
             try {
+                // Security: verify remote URL is in the allowlist before pushing
+                String remoteUrl = getRemoteUrl("origin");
+                validateRemote(remoteUrl);
+
                 // Push commits
                 ProcessBuilder pushPb = new ProcessBuilder("git", "push");
                 pushPb.directory(projectRoot.toFile());
@@ -502,9 +510,84 @@ public class ReleaseAutomationManager {
                 pushTagsPb.directory(projectRoot.toFile());
                 pushTagsPb.start().waitFor();
 
+            } catch (SecurityException se) {
+                throw new IOException("Remote URL validation failed: " + se.getMessage(), se);
             } catch (Exception e) {
                 throw new IOException("Failed to push release", e);
             }
+        }
+
+        /**
+         * Returns the URL for the named git remote.
+         *
+         * @param remoteName the remote name (e.g. {@code "origin"})
+         * @return the remote URL string, trimmed
+         * @throws IOException if git command fails
+         */
+        public String getRemoteUrl(String remoteName) throws IOException {
+            try {
+                ProcessBuilder pb = new ProcessBuilder("git", "remote", "get-url", remoteName);
+                pb.directory(projectRoot.toFile());
+                Process process = pb.start();
+                process.waitFor();
+                return new String(process.getInputStream().readAllBytes()).trim();
+            } catch (Exception e) {
+                throw new IOException("Could not determine remote URL for '" + remoteName + "'", e);
+            }
+        }
+
+        /**
+         * Validates that the given remote URL is permitted by the allowlist in
+         * {@code config/security/allowed-git-remotes.yaml} (resolved relative to the
+         * project root). Each entry in the {@code allowedPrefixes} list is treated as a
+         * case-insensitive URL prefix.
+         *
+         * <p>This prevents accidental or malicious pushes to unknown remotes.
+         *
+         * @param remoteUrl the URL to validate
+         * @throws SecurityException if the URL is not in the allowlist or the allowlist
+         *                           cannot be loaded
+         */
+        @SuppressWarnings("unchecked")
+        public void validateRemote(String remoteUrl) {
+            if (remoteUrl == null || remoteUrl.isBlank()) {
+                throw new SecurityException("Remote URL is null or blank — cannot validate");
+            }
+
+            Path allowlistFile = projectRoot.resolve("config/security/allowed-git-remotes.yaml");
+            List<String> allowedPrefixes;
+
+            try {
+                ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+                if (Files.exists(allowlistFile)) {
+                    try (InputStream is = Files.newInputStream(allowlistFile)) {
+                        Map<String, Object> config = mapper.readValue(is, Map.class);
+                        allowedPrefixes = (List<String>) config.getOrDefault("allowedPrefixes", List.of());
+                    }
+                } else {
+                    // Allowlist file missing in production is a security misconfiguration
+                    throw new SecurityException(
+                            "Git remote allowlist not found at " + allowlistFile
+                            + ". Configure config/security/allowed-git-remotes.yaml before releasing.");
+                }
+            } catch (SecurityException se) {
+                throw se;
+            } catch (Exception e) {
+                throw new SecurityException(
+                        "Failed to load git remote allowlist from " + allowlistFile + ": " + e.getMessage());
+            }
+
+            String lowerUrl = remoteUrl.toLowerCase();
+            for (String prefix : allowedPrefixes) {
+                if (lowerUrl.startsWith(prefix.toLowerCase())) {
+                    logger.debug("Remote URL '{}' matches allowlist prefix '{}'", remoteUrl, prefix);
+                    return;
+                }
+            }
+
+            throw new SecurityException(
+                    "Remote URL '" + remoteUrl + "' is not in the allowed-git-remotes allowlist. "
+                    + "Update config/security/allowed-git-remotes.yaml to add it.");
         }
     }
 

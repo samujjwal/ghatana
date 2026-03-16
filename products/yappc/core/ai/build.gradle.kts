@@ -67,6 +67,9 @@ dependencies {
     implementation(libs.log4j.core)
     runtimeOnly(libs.logback.classic)
 
+    // PDF Generation (project export)
+    implementation(libs.pdfbox)
+
     // Testing
     testImplementation(project(":platform:java:runtime"))
     testImplementation(project(":platform:java:testing"))

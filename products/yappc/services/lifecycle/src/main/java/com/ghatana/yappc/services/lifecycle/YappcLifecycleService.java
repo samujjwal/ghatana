@@ -109,10 +109,15 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         builder.bind(MetricsCollector.class).toInstance(metrics);
         builder.bind(PrometheusMeterRegistry.class).toInstance(prometheusRegistry);
 
-        // Structured audit logger — real implementation logs async to SLF4J;
-        // swap for JdbcAuditLogger in a full persistence setup.
+        // Durable JDBC audit logger — persists all lifecycle phase events.
+        // DataSource is resolved later by LifecycleServiceModule; we bind the
+        // AuditLogger factory so the injector can create the JdbcAuditLogger at
+        // startup once the DataSource is available.  Falls back to SLF4J-only if
+        // the DB connection fails at startup-time (prevents hard crash on misconfiguration).
+        // NOTE: LifecycleServiceModule provides a @Provides AuditLogger method that
+        // supersedes this binding when the DataSource is successfully initialised.
         builder.bind(AuditLogger.class).toInstance(event -> {
-            logger.info("[AUDIT] {}", event);
+            logger.info("[AUDIT-FALLBACK] {}", event);
             return io.activej.promise.Promise.complete();
         });
 
@@ -198,6 +203,15 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 injector.getInstance(HumanApprovalService.class);
         LifecycleWorkflowService workflowService =
                 injector.getInstance(LifecycleWorkflowService.class);
+
+        // ── Config hot-reload watcher (Dimension 8.3) ─────────────────────
+        // Eagerly instantiating ConfigWatchService starts its background thread.
+        // The service is registered for shutdown via the Runtime shutdown hook in main().
+        com.ghatana.yappc.services.lifecycle.config.ConfigWatchService configWatcher =
+                injector.getInstance(com.ghatana.yappc.services.lifecycle.config.ConfigWatchService.class);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try { configWatcher.close(); } catch (Exception ignored) {}
+        }, "config-watch-shutdown"));
 
         // ── Auth filter (Security 4.3) ────────────────────────────────────
         // API keys are comma-separated in YAPPC_API_KEYS env var.

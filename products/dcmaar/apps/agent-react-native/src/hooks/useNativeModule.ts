@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // Define the types inline since we're having module resolution issues
 interface AppInfo {
   packageName: string;
@@ -83,6 +84,7 @@ declare global {
     };
     isMonitoringActive: () => Promise<boolean>;
     getDeviceInfo: () => Promise<any>;
+    checkDeviceAdminStatus?: () => Promise<boolean>;
     UsageStatsCollector?: {
       getDailyUsage: (date: string) => Promise<any>;
     };
@@ -148,11 +150,12 @@ export function useDeviceStatus() {
       try {
         const isMonitoring = await Guardian?.isMonitoringActive?.() ?? false;
         const deviceInfo = await Guardian?.getDeviceInfo?.() ?? {};
+        const hasDeviceAdmin = await Guardian?.checkDeviceAdminStatus?.() ?? false;
         
         setStatus({
           isReady: true,
           isMonitoring,
-          hasDeviceAdmin: false, // TODO: check device admin status
+          hasDeviceAdmin,
           lastSync: deviceInfo.lastSyncTimestamp 
             ? new Date(deviceInfo.lastSyncTimestamp).toLocaleString()
             : null
@@ -180,8 +183,12 @@ export function usePolicies() {
   useEffect(() => {
     async function fetchPolicies() {
       try {
-        // TODO: Fetch from local storage or backend
-        setPolicies([]);
+        const stored = await AsyncStorage.getItem('@guardian/policies');
+        if (stored) {
+          setPolicies(JSON.parse(stored));
+        } else {
+          setPolicies([]);
+        }
         setLoading(false);
       } catch (err) {
         setError(err as Error);

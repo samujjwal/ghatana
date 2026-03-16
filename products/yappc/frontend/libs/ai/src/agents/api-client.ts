@@ -244,7 +244,7 @@ export class AIAgentAPIClient<TInput, TOutput> implements IAIAgent<TInput, TOutp
         }
 
         if (this.config.debug) {
-            console.log(`[AIAgentAPIClient] ${method} ${url}`, body);
+            console.debug(`[AIAgentAPIClient] ${method} ${url}`, { body });
         }
 
         const controller = new AbortController();
@@ -268,7 +268,7 @@ export class AIAgentAPIClient<TInput, TOutput> implements IAIAgent<TInput, TOutp
             const data = await response.json() as JavaAgentResponse<T>;
 
             if (this.config.debug) {
-                console.log(`[AIAgentAPIClient] Response:`, data);
+                console.debug('[AIAgentAPIClient] Response:', { status: response.status, data });
             }
 
             return data;

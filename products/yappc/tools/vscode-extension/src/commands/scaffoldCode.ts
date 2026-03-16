@@ -104,18 +104,23 @@ async function scaffoldAPI(node: any): Promise<void> {
     const fileName = `${node.label.toLowerCase().replace(/\s+/g, '-')}.ts`;
     const filePath = path.join(workspaceFolders[0].uri.fsPath, 'src', 'api', fileName);
 
-    const template = `import { Request, Response } from 'express';
+    const template = `import { Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
+
+const ${node.label.replace(/\s+/g, '')}Schema = z.object({
+    // Define request body schema
+});
 
 /**
  * ${node.label} API endpoint
  */
-export async function ${node.label.replace(/\s+/g, '')}(req: Request, res: Response): Promise<void> {
+export async function ${node.label.replace(/\s+/g, '')}(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        // TODO: Implement endpoint logic
-        res.json({ message: 'Not implemented' });
+        const params = ${node.label.replace(/\s+/g, '')}Schema.parse(req.body);
+        // TODO: implement business logic using params
+        res.status(200).json({ success: true, data: params });
     } catch (error) {
-        console.error('API error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        next(error);
     }
 }
 `;
@@ -141,15 +146,19 @@ async function scaffoldService(node: any): Promise<void> {
  * ${node.label} service
  */
 export class ${serviceName} {
-    constructor() {
-        // Initialize service
-    }
+    private readonly logger = console; // Replace with injected logger
+
+    constructor(
+        // Inject dependencies here
+    ) {}
 
     /**
-     * Service method
+     * Primary operation for ${node.label}.
      */
-    async execute(): Promise<void> {
-        // TODO: Implement service logic
+    async execute(input: unknown): Promise<void> {
+        this.logger.log('${serviceName}.execute called', { input });
+        // TODO: implement business logic
+        throw new Error('${serviceName}.execute is not yet implemented');
     }
 }
 `;

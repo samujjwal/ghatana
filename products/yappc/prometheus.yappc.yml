@@ -12,18 +12,18 @@ global:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: []
-          # - alertmanager:9093
+        - targets:
+            - alertmanager:9093
 
-# Rule files
+# Rule files — loaded from infrastructure/monitoring/alerts/
 rule_files:
-  # - "alerts/*.yml"
+  - "infrastructure/monitoring/alerts/*.yml"
 
 # Scrape configurations
 scrape_configs:
-  # YAPPC Backend Application
+  # YAPPC Backend Application (Spring Boot Actuator)
   - job_name: "yappc-backend"
-    metrics_path: "/metrics"
+    metrics_path: "/actuator/prometheus"
     static_configs:
       - targets: ["yappc-backend:8080"]
         labels:

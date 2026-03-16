@@ -106,7 +106,9 @@ export function Layout() {
     // Redirect to onboarding if not completed — controlled by feature flag
     const onboardingEnabled = import.meta.env.VITE_FEATURE_ONBOARDING !== 'false';
     if (onboardingEnabled && !isOnboarded && !isLoading) {
-      console.log('[Layout] Redirecting to onboarding (onboarding_complete is false)');
+      if (import.meta.env.DEV) {
+        console.log('[Layout] Redirecting to onboarding (onboarding_complete is false)');
+      }
       navigate('/onboarding', { replace: true });
     }
   }, [isLoading, navigate, workspaces.length]);
@@ -306,8 +308,20 @@ function ShellContent({
           showAgentActivity={showAgentActivity}
           darkMode={isDarkMode}
           onNew={() => navigate('/app/new')}
-          onSearch={() => console.log('Search')}
-          onNotifications={() => console.log('Notifications')}
+          onSearch={() => {
+            // Dispatch mod+k to open CommandPalette (which listens on window)
+            const isMac = navigator.platform.toUpperCase().includes('MAC');
+            window.dispatchEvent(
+              new KeyboardEvent('keydown', {
+                key: 'k',
+                metaKey: isMac,
+                ctrlKey: !isMac,
+                bubbles: true,
+                cancelable: true,
+              })
+            );
+          }}
+          onNotifications={() => navigate('/notifications')}
           onHelp={() => window.open('/docs', '_blank')}
           onKeyboardShortcuts={() => {
             /* Open shortcuts panel */

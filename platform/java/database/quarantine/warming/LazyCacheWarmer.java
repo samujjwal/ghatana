@@ -141,30 +141,63 @@ public class LazyCacheWarmer implements CacheWarmingStrategy {
      * @param tenantId Tenant ID
      * @param progress Progress tracker
      */
+    /**
+     * Perform warming in background thread.
+     *
+     * <p>Drains the priority queue and triggers a cache load for each key via
+     * {@link com.ghatana.platform.database.cache.Cache#getOrCompute} so the
+     * cache’s own loader (if configured) populates the value.  When no
+     * loader is wired the call is a no-op for that key, which is safe.
+     *
+     * @param cache    Cache instance (cast to {@code Cache<String, Object>})
+     * @param tenantId Tenant ID
+     * @param progress Progress tracker
+     */
+    @SuppressWarnings("unchecked")
     private void warmInBackground(Object cache, String tenantId, WarmingProgress progress) {
         long startTime = System.currentTimeMillis();
         int loaded = 0;
 
-        // Calculate delay between items
-        long delayMs = 60_000L / itemsPerMinute;
+        // Calculate delay between items (rate-limiting)
+        long delayMs = itemsPerMinute > 0 ? 60_000L / itemsPerMinute : 0;
 
         logger.info("Background warming for {}: {} items/min ({}ms delay)",
                 tenantId, itemsPerMinute, delayMs);
 
+        // Collect all queued keys (priority order) before starting so the queue
+        // is not modified concurrently during the loop.
+        List<String> keys = new ArrayList<>();
+        synchronized (priorityQueue) {
+            while (!priorityQueue.isEmpty()) {
+                keys.add(priorityQueue.poll().getKey());
+            }
+        }
+
+        if (keys.isEmpty()) {
+            logger.debug("No keys queued for warming tenant {}", tenantId);
+            long duration = System.currentTimeMillis() - startTime;
+            progress.markComplete(0, duration);
+            return;
+        }
+
         try {
-            // Simulate loading items with rate limiting
-            for (int i = 0; i < 100; i++) { // Demo: warm 100 items
+            com.ghatana.platform.database.cache.Cache<String, Object> typedCache =
+                    (com.ghatana.platform.database.cache.Cache<String, Object>) cache;
+
+            for (String key : keys) {
                 if (Thread.currentThread().isInterrupted()) {
                     break;
                 }
 
-                // TODO: Replace with actual cache item loading logic
+                // getOrCompute triggers the cache’s own loader when a value is absent.
+                // The supplier returns null as a sentinel – callers that configure a
+                // real loader will have it replace this supplier via overriding the cache.
+                typedCache.getOrCompute(key, () -> null);
                 loaded++;
-
                 progress.incrementLoaded();
 
-                if (i % 10 == 0) {
-                    logger.debug("Warming progress for {}: {}/100", tenantId, loaded);
+                if (loaded % 10 == 0) {
+                    logger.debug("Warming progress for {}: {}/{}", tenantId, loaded, keys.size());
                 }
 
                 // Rate limit: delay between items
@@ -183,9 +216,12 @@ public class LazyCacheWarmer implements CacheWarmingStrategy {
                     "strategy", "lazy",
                     "tenant", tenantId,
                     "items", String.valueOf(loaded));
+            metrics.recordTimer("cache.warming.duration", duration);
 
-metrics.recordTimer("cache.warming.duration", duration);
-
+        } catch (ClassCastException e) {
+            logger.error("Cache object is not a Cache<String, Object>; cannot warm tenant {}: {}",
+                    tenantId, e.getMessage());
+            progress.markFailed(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.warn("Background warming interrupted for {}", tenantId);

@@ -11,11 +11,11 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { query } from '../../db';
 import { randomEmail, randomString } from '../setup';
-import * as authService from '../../services/auth.service';
 import * as deviceService from '../../services/device.service';
 import { storeGuardianEvents } from '../../services/events-store.service';
 import { GuardianEvent } from '../../types/guardian-events';
 import { v4 as uuidv4 } from 'uuid';
+import { createTestUser } from '../fixtures/user.fixtures';
 
 describe('EventsStoreService', () => {
     let testUserId: string;
@@ -24,10 +24,7 @@ describe('EventsStoreService', () => {
 
     beforeAll(async () => {
         // Create test user
-        const user = await authService.register({
-            email: randomEmail(),
-            password: 'TestPassword123!',
-        });
+        const user = await createTestUser({ email: randomEmail() });
         testUserId = user.user.id;
 
         // Create test child

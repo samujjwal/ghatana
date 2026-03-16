@@ -82,6 +82,7 @@ include(":products:data-cloud:spi")
 include(":products:data-cloud:platform")
 include(":products:data-cloud:launcher")
 include(":products:data-cloud:sdk")
+include(":products:data-cloud:agent-registry")
 
 // =============================================================================
 // Product: YAPPC — Yet Another Platform Creator
@@ -232,3 +233,4 @@ include(":shared-services:ai-registry")
 include(":shared-services:auth-gateway")
 include(":shared-services:feature-store-ingest")
 include(":shared-services:auth-service")
+include(":shared-services:user-profile-service")

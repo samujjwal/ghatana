@@ -1,6 +1,7 @@
 import { Save, Plus as Add, Pencil as Edit, Trash2 as Delete, AlertTriangle as Warning, Eye as Visibility, EyeOff as VisibilityOff, Copy as ContentCopy, MoreVertical as MoreVert } from 'lucide-react';
 import React, { useState } from 'react';
 import { useParams } from 'react-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 
@@ -63,8 +64,24 @@ interface AuditLog {
 /**
  *
  */
+interface ProjectSettingsState {
+    name: string;
+    description: string;
+    language: string;
+    serviceKind: string;
+    target: string;
+    autoBackup: boolean;
+    enableNotifications: boolean;
+    publicAccess: boolean;
+}
+
+/**
+ *
+ */
 interface ProjectSettingsProps {
-    onSave: (settings: unknown) => void;
+    onSave: (settings: ProjectSettingsState) => void;
+    isSaving?: boolean;
+    initialValues?: Partial<ProjectSettingsState>;
 }
 
 const selectCls = 'w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand';
@@ -83,16 +100,16 @@ const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = (
     </button>
 );
 
-const ProjectSettings: React.FC<ProjectSettingsProps> = ({ onSave }) => {
-    const [settings, setSettings] = useState({
-        name: 'YAPPC Application Creator',
-        description: 'A comprehensive application creation and management platform',
-        language: 'typescript',
-        serviceKind: 'web-app',
-        target: 'production',
-        autoBackup: true,
-        enableNotifications: true,
-        publicAccess: false
+const ProjectSettings: React.FC<ProjectSettingsProps> = ({ onSave, isSaving, initialValues }) => {
+    const [settings, setSettings] = useState<ProjectSettingsState>({
+        name: initialValues?.name ?? '',
+        description: initialValues?.description ?? '',
+        language: initialValues?.language ?? 'typescript',
+        serviceKind: initialValues?.serviceKind ?? 'web-app',
+        target: initialValues?.target ?? 'production',
+        autoBackup: initialValues?.autoBackup ?? true,
+        enableNotifications: initialValues?.enableNotifications ?? true,
+        publicAccess: initialValues?.publicAccess ?? false,
     });
 
     const [showMigrationWarning, setShowMigrationWarning] = useState(false);
@@ -192,13 +209,23 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({ onSave }) => {
                 )}
 
                 <div className="flex justify-end gap-2">
-                    <button className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">Reset</button>
+                    <button className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800" onClick={() => setSettings({
+                        name: initialValues?.name ?? '',
+                        description: initialValues?.description ?? '',
+                        language: initialValues?.language ?? 'typescript',
+                        serviceKind: initialValues?.serviceKind ?? 'web-app',
+                        target: initialValues?.target ?? 'production',
+                        autoBackup: initialValues?.autoBackup ?? true,
+                        enableNotifications: initialValues?.enableNotifications ?? true,
+                        publicAccess: initialValues?.publicAccess ?? false,
+                    })}>Reset</button>
                     <button
-                        className="flex items-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
+                        className="flex items-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60"
                         onClick={() => onSave(settings)}
+                        disabled={isSaving}
                         data-testid="save-settings-button"
                     >
-                        <Save className="h-4 w-4" /> Save Changes
+                        <Save className="h-4 w-4" /> {isSaving ? 'Saving…' : 'Save Changes'}
                     </button>
                 </div>
             </div>
@@ -545,46 +572,124 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ logs }) => {
 
 // Main Settings Route Component
 /**
- *
+ * @doc.type route
+ * @doc.purpose Project configuration, RBAC, API tokens, and audit trail
+ * @doc.layer product
+ * @doc.pattern Route Module
  */
 export default function Component() {
     const { projectId } = useParams<{ projectId: string }>();
-    void projectId;
+    const queryClient = useQueryClient();
 
-    function generateToken(): string {
-        return `yappc_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+    // ── Fetch project ──────────────────────────────────────────────────────────
+    const { data: project, isLoading: projectLoading } = useQuery({
+        queryKey: ['project', projectId],
+        queryFn: async () => {
+            const res = await fetch(`/api/projects/${projectId}`);
+            if (!res.ok) throw new Error('Failed to load project');
+            return res.json() as Promise<{ id: string; name: string; description: string; language?: string; serviceKind?: string; target?: string; autoBackup?: boolean; enableNotifications?: boolean; publicAccess?: boolean }>;
+        },
+        enabled: !!projectId,
+    });
+
+    // ── Fetch team members ─────────────────────────────────────────────────────
+    const { data: users = [] } = useQuery<User[]>({
+        queryKey: ['project-members', projectId],
+        queryFn: async () => {
+            const res = await fetch(`/api/projects/${projectId}/members`);
+            if (!res.ok) return [];
+            return res.json() as Promise<User[]>;
+        },
+        enabled: !!projectId,
+    });
+
+    // ── Fetch API tokens ───────────────────────────────────────────────────────
+    const { data: tokens = [] } = useQuery<ApiToken[]>({
+        queryKey: ['project-tokens', projectId],
+        queryFn: async () => {
+            const res = await fetch(`/api/projects/${projectId}/tokens`);
+            if (!res.ok) return [];
+            return res.json() as Promise<ApiToken[]>;
+        },
+        enabled: !!projectId,
+    });
+
+    // ── Fetch audit logs ───────────────────────────────────────────────────────
+    const { data: auditLogs = [] } = useQuery<AuditLog[]>({
+        queryKey: ['project-audit', projectId],
+        queryFn: async () => {
+            const res = await fetch(`/api/projects/${projectId}/audit?limit=50`);
+            if (!res.ok) return [];
+            return res.json() as Promise<AuditLog[]>;
+        },
+        enabled: !!projectId,
+    });
+
+    // ── Save project settings ──────────────────────────────────────────────────
+    const saveSettingsMutation = useMutation({
+        mutationFn: async (settings: ProjectSettingsState) => {
+            const res = await fetch(`/api/projects/${projectId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings),
+            });
+            if (!res.ok) throw new Error('Failed to save settings');
+            return res.json();
+        },
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+        },
+    });
+
+    // ── Remove team member ─────────────────────────────────────────────────────
+    const removeUserMutation = useMutation({
+        mutationFn: async (userId: string) => {
+            const res = await fetch(`/api/projects/${projectId}/members/${userId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Failed to remove member');
+        },
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ['project-members', projectId] });
+        },
+    });
+
+    // ── Create API token ───────────────────────────────────────────────────────
+    const createTokenMutation = useMutation({
+        mutationFn: async (token: Partial<ApiToken>) => {
+            const res = await fetch(`/api/projects/${projectId}/tokens`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(token),
+            });
+            if (!res.ok) throw new Error('Failed to create token');
+            return res.json();
+        },
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ['project-tokens', projectId] });
+        },
+    });
+
+    // ── Revoke API token ───────────────────────────────────────────────────────
+    const revokeTokenMutation = useMutation({
+        mutationFn: async (tokenId: string) => {
+            const res = await fetch(`/api/projects/${projectId}/tokens/${tokenId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Failed to revoke token');
+        },
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ['project-tokens', projectId] });
+        },
+    });
+
+    if (projectLoading) {
+        return (
+            <div className="p-6">
+                <div className="animate-pulse space-y-4">
+                    <div className="h-8 w-48 rounded bg-zinc-800" />
+                    <div className="h-4 w-72 rounded bg-zinc-800" />
+                    <div className="h-48 rounded-lg bg-zinc-800" />
+                </div>
+            </div>
+        );
     }
-
-    const [users] = useState<User[]>([
-        { id: 'user_1', name: 'Alice Johnson', email: 'alice@yappc.com', role: 'owner', status: 'active', lastActive: new Date(Date.now() - 3600000), permissions: ['read', 'write', 'admin', 'deploy', 'delete', 'manage_users', 'manage_settings'] },
-        { id: 'user_2', name: 'Bob Smith', email: 'bob@yappc.com', role: 'admin', status: 'active', lastActive: new Date(Date.now() - 86400000), permissions: ['read', 'write', 'deploy', 'manage_users'] },
-        { id: 'user_3', name: 'Charlie Brown', email: 'charlie@yappc.com', role: 'developer', status: 'active', lastActive: new Date(Date.now() - 1800000), permissions: ['read', 'write', 'deploy'] },
-    ]);
-
-    const [tokens] = useState<ApiToken[]>([
-        { id: 'token_1', name: 'CI/CD Pipeline', token: generateToken(), permissions: ['read', 'deploy'], createdAt: new Date(Date.now() - 2592000000), lastUsed: new Date(Date.now() - 3600000) },
-        { id: 'token_2', name: 'Development Bot', token: generateToken(), permissions: ['read', 'write'], createdAt: new Date(Date.now() - 604800000), lastUsed: new Date(Date.now() - 86400000) },
-    ]);
-
-    const [auditLogs] = useState<AuditLog[]>([
-        { id: 'audit_1', action: 'User Added', user: 'Alice Johnson', target: 'Charlie Brown', timestamp: new Date(Date.now() - 3600000), details: 'Added new developer role', ipAddress: '192.168.1.100' },
-        { id: 'audit_2', action: 'Settings Updated', user: 'Bob Smith', target: 'Project Configuration', timestamp: new Date(Date.now() - 7200000), details: 'Changed primary language to TypeScript', ipAddress: '192.168.1.101' },
-        { id: 'audit_3', action: 'Token Created', user: 'Alice Johnson', target: 'API Token', timestamp: new Date(Date.now() - 86400000), details: 'Created CI/CD Pipeline token', ipAddress: '192.168.1.100' },
-    ]);
-
-    const handleSaveSettings = (settings: unknown) => {
-        console.log('Saving settings:', settings);
-        try {
-            // NOTE: Add settings save logic here
-            console.log('Settings saved successfully');
-        } catch (e) {
-            console.error('Error saving settings:', e);
-        }
-    };
-
-    const handleRemoveUser = (id: string) => { console.log('Removing user:', id); };
-    const handleCreateToken = (_token: Partial<ApiToken>) => { console.log('Creating token'); };
-    const handleRevokeToken = (id: string) => { console.log('Revoking token:', id); };
 
     return (
         <div className="p-6" data-testid="project-settings">
@@ -613,7 +718,20 @@ export default function Component() {
 
             <div className="space-y-6">
                 <div data-testid="project-config-tab">
-                    <ProjectSettings onSave={handleSaveSettings} />
+                    <ProjectSettings
+                        onSave={(settings) => saveSettingsMutation.mutate(settings)}
+                        isSaving={saveSettingsMutation.isPending}
+                        initialValues={{
+                            name: project?.name,
+                            description: project?.description,
+                            language: project?.language,
+                            serviceKind: project?.serviceKind,
+                            target: project?.target,
+                            autoBackup: project?.autoBackup,
+                            enableNotifications: project?.enableNotifications,
+                            publicAccess: project?.publicAccess,
+                        }}
+                    />
                 </div>
 
                 <div data-testid="team-management-tab">
@@ -621,14 +739,14 @@ export default function Component() {
                         users={users}
                         onAddUser={() => {}}
                         onUpdateUser={() => {}}
-                        onRemoveUser={handleRemoveUser}
+                        onRemoveUser={(id) => removeUserMutation.mutate(id)}
                     />
                 </div>
 
                 <TokenManager
                     tokens={tokens}
-                    onCreateToken={handleCreateToken}
-                    onRevokeToken={handleRevokeToken}
+                    onCreateToken={(token) => createTokenMutation.mutate(token)}
+                    onRevokeToken={(id) => revokeTokenMutation.mutate(id)}
                 />
 
                 <AuditTrail logs={auditLogs} />

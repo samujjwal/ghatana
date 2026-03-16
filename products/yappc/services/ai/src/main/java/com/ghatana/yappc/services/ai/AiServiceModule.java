@@ -12,7 +12,9 @@ import com.ghatana.ai.llm.ToolAwareAnthropicCompletionService;
 import com.ghatana.ai.llm.ToolAwareOpenAICompletionService;
 import com.ghatana.ai.prompts.PromptTemplateManager;
 import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.platform.observability.NoopMetricsCollector;
+import com.ghatana.platform.observability.SimpleMetricsCollector;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import com.ghatana.yappc.ai.canvas.CanvasService;
 import com.ghatana.yappc.ai.router.AIModelRouter;
 import com.ghatana.yappc.ai.router.AIRouterConfig;
@@ -54,14 +56,32 @@ public class AiServiceModule extends AbstractModule {
     // ========== Platform Dependencies ==========
 
     /**
-     * Provides MetricsCollector for AI service instrumentation.
+     * Provides Prometheus-backed {@link MetricsCollector} for AI service instrumentation.
      *
-     * <p>Uses no-op implementation by default; override for production telemetry.</p>
+     * <p>Uses {@link SimpleMetricsCollector} wrapping {@link PrometheusMeterRegistry}.
+     * Scrape the AI service metrics at {@code GET /metrics}.
+     *
+     * @param prometheusRegistry the shared Prometheus registry
+     * @return production-grade metrics collector
      */
     @Provides
-    MetricsCollector metricsCollector() {
-        logger.info("Creating NoopMetricsCollector for AI service");
-        return new NoopMetricsCollector();
+    MetricsCollector metricsCollector(PrometheusMeterRegistry prometheusRegistry) {
+        logger.info("Creating Prometheus-backed SimpleMetricsCollector for AI service");
+        return new SimpleMetricsCollector(prometheusRegistry);
+    }
+
+    /**
+     * Provides the shared {@link PrometheusMeterRegistry} for the AI service.
+     *
+     * <p>Backed by the default Prometheus configuration. The registry is shared
+     * between {@link MetricsCollector} and the {@code /metrics} scrape endpoint.
+     *
+     * @return Prometheus meter registry
+     */
+    @Provides
+    PrometheusMeterRegistry prometheusMeterRegistry() {
+        logger.info("Creating PrometheusMeterRegistry for AI service — scrape at GET /metrics");
+        return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
     }
 
     /**

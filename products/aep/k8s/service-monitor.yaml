@@ -7,13 +7,24 @@ metadata:
     app: aep-service-manager
     app.kubernetes.io/name: aep-service-manager
     app.kubernetes.io/part-of: ghatana-aep
-    release: prometheus
+    # Required for kube-prometheus-stack to discover this ServiceMonitor
+    release: kube-prometheus-stack
 spec:
   selector:
     matchLabels:
       app: aep-service-manager
+  namespaceSelector:
+    matchNames:
+      - aep
   endpoints:
-    - port: http-health
+    - port: http
       path: /metrics
       interval: 30s
       scrapeTimeout: 10s
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - targetLabel: product
+          replacement: aep

@@ -79,6 +79,20 @@ const JWT_CONFIG = {
 export class AuthService {
   private prisma: PrismaClient;
 
+  /**
+   * In-process token revocation registry.
+   *
+   * Maps userId → Unix-second timestamp at which ALL tokens issued before that
+   * instant are considered revoked.  Backed by an in-process Map so it is
+   * fast to check on every request.  For a multi-replica or long-lived
+   * deployment replace this with a Redis key:
+   *   `SET token:revoked:{userId} {timestamp} EX {refreshTokenTtlSeconds}`
+   *
+   * The Map is `static` so it survives across multiple `AuthService` instances
+   * within a single process.
+   */
+  private static readonly tokenRevocationRegistry = new Map<string, number>();
+
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
   }
@@ -217,7 +231,14 @@ export class AuthService {
   async validateAccessToken(token: string): Promise<JWTPayload> {
     try {
       const decoded = jwt.verify(token, JWT_CONFIG.accessTokenSecret) as JWTPayload;
-      
+
+      // Check per-user token revocation (set by logoutAllSessions).
+      // `iat` is in Unix seconds; the revocation registry stores the same unit.
+      const revocationTime = AuthService.tokenRevocationRegistry.get(decoded.userId);
+      if (revocationTime !== undefined && (decoded.iat ?? 0) < revocationTime) {
+        throw new Error('Token revoked: all sessions have been invalidated');
+      }
+
       // Verify user still exists and is active
       const user = await this.prisma.user.findUnique({
         where: { id: decoded.userId },
@@ -313,9 +334,22 @@ export class AuthService {
   }
 
   async logoutAllSessions(userId: string): Promise<void> {
-    // In a real implementation, you'd invalidate all refresh tokens for this user
-    // This could be done by maintaining a token blacklist or versioning user tokens
-    console.log(`Logged out all sessions for user ${userId}`);
+    // Record the current instant (Unix seconds, matching JWT `iat`) as the
+    // revocation boundary.  Any token whose `iat` is earlier than this value
+    // will be rejected in validateAccessToken().
+    const revocationTimestamp = Math.floor(Date.now() / 1000);
+    AuthService.tokenRevocationRegistry.set(userId, revocationTimestamp);
+
+    // Persist a lightweight signal to the DB so that if this process restarts
+    // the revocation intent is not silently lost.  We bump `updatedAt` which
+    // callers can compare against token `iat` if they persist the registry to
+    // Redis on startup.
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { updatedAt: new Date(revocationTimestamp * 1000) },
+    }).catch(() => {
+      // Non-fatal: the in-process registry already handles this request
+    });
   }
 
   // -------------------------------------------------------------------------

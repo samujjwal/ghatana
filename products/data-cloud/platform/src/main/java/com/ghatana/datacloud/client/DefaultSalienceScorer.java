@@ -360,9 +360,55 @@ public class DefaultSalienceScorer implements SalienceScorer {
     }
 
     private double computeDeviation(DataRecord record, BaselineStats baseline) {
-        // Simple deviation computation
-        // In production, this would use Z-score or IQR
-        return 0.3; // Placeholder
+        // Extract a representative scalar value from the record's data payload.
+        double value = extractScalarValue(record);
+
+        // Compute a normalised Z-score:  |value - μ| / σ
+        // stdDev floor of 0.01 prevents division-by-zero on brand-new baselines.
+        double stdDev = baseline.stdDev() > 0.01 ? baseline.stdDev() : 0.01;
+        double zScore = Math.abs(value - baseline.mean()) / stdDev;
+
+        // Map Z-score to [0, 1].  Z=0 → 0.0 (no deviation), Z=3 → 1.0 (extreme).
+        return Math.min(1.0, zScore / 3.0);
+    }
+
+    /**
+     * Extracts a representative scalar from a {@link DataRecord}'s data map.
+     *
+     * <p>Tries well-known numeric field names first (value, score, amount, …).
+     * Falls back to using the data-map's cardinality as a proxy for event
+     * complexity, normalised to [0, 1].
+     */
+    private double extractScalarValue(DataRecord record) {
+        Map<String, Object> data = record.getData();
+        if (data == null || data.isEmpty()) {
+            return 0.5; // Neutral baseline for records with no payload
+        }
+
+        // Probe well-known numeric feature fields in priority order
+        for (String field : List.of("value", "score", "amount", "count",
+                "magnitude", "severity", "priority", "weight", "confidence")) {
+            Object v = data.get(field);
+            if (v instanceof Number n) {
+                return n.doubleValue();
+            }
+        }
+
+        // Secondary probe: collect all numeric values and return their mean
+        double sum = 0.0;
+        int numericCount = 0;
+        for (Object v : data.values()) {
+            if (v instanceof Number n) {
+                sum += n.doubleValue();
+                numericCount++;
+            }
+        }
+        if (numericCount > 0) {
+            return sum / numericCount;
+        }
+
+        // Fallback: field cardinality as a lightweight complexity proxy
+        return Math.min(1.0, data.size() / 20.0);
     }
 
     private double computeConfidence(List<Double> results) {

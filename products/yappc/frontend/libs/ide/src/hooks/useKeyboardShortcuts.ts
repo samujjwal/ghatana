@@ -225,14 +225,19 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[] = []) {
 
 /**
  * Default IDE shortcuts
+ *
+ * File/View/Navigation shortcuts dispatch named `CustomEvent`s on `document`
+ * so that IDE container components can react to them via `addEventListener`.
+ * Edit shortcuts delegate to `document.execCommand` so they work against
+ * whichever contenteditable / input element currently has focus.
  */
 export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
-  // File operations
+  // ── File operations ────────────────────────────────────────────────────────
   {
     id: 'new-file',
     key: 'n',
     modifiers: ['ctrl'],
-    action: () => console.log('New file'),
+    action: () => document.dispatchEvent(new CustomEvent('ide:newFile')),
     description: 'New File',
     category: 'file',
   },
@@ -240,7 +245,23 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'open-file',
     key: 'o',
     modifiers: ['ctrl'],
-    action: () => console.log('Open file'),
+    action: () => {
+      // Trigger a hidden <input type="file"> so the browser shows its native picker
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '*/*';
+      input.multiple = false;
+      input.style.display = 'none';
+      input.onchange = () => {
+        const file = input.files?.[0];
+        if (file) {
+          document.dispatchEvent(new CustomEvent('ide:openFile', { detail: { file } }));
+        }
+        document.body.removeChild(input);
+      };
+      document.body.appendChild(input);
+      input.click();
+    },
     description: 'Open File',
     category: 'file',
   },
@@ -248,7 +269,7 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'save-file',
     key: 's',
     modifiers: ['ctrl'],
-    action: () => console.log('Save file'),
+    action: () => document.dispatchEvent(new CustomEvent('ide:saveFile')),
     description: 'Save File',
     category: 'file',
   },
@@ -256,7 +277,7 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'save-all',
     key: 's',
     modifiers: ['ctrl', 'shift'],
-    action: () => console.log('Save all'),
+    action: () => document.dispatchEvent(new CustomEvent('ide:saveAll')),
     description: 'Save All',
     category: 'file',
   },
@@ -264,17 +285,17 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'close-file',
     key: 'w',
     modifiers: ['ctrl'],
-    action: () => console.log('Close file'),
+    action: () => document.dispatchEvent(new CustomEvent('ide:closeFile')),
     description: 'Close File',
     category: 'file',
   },
 
-  // Edit operations
+  // ── Edit operations ────────────────────────────────────────────────────────
   {
     id: 'undo',
     key: 'z',
     modifiers: ['ctrl'],
-    action: () => console.log('Undo'),
+    action: () => document.execCommand('undo'),
     description: 'Undo',
     category: 'edit',
   },
@@ -282,7 +303,7 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'redo',
     key: 'y',
     modifiers: ['ctrl'],
-    action: () => console.log('Redo'),
+    action: () => document.execCommand('redo'),
     description: 'Redo',
     category: 'edit',
   },
@@ -290,7 +311,7 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'cut',
     key: 'x',
     modifiers: ['ctrl'],
-    action: () => console.log('Cut'),
+    action: () => document.execCommand('cut'),
     description: 'Cut',
     category: 'edit',
   },
@@ -298,7 +319,7 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'copy',
     key: 'c',
     modifiers: ['ctrl'],
-    action: () => console.log('Copy'),
+    action: () => document.execCommand('copy'),
     description: 'Copy',
     category: 'edit',
   },
@@ -306,7 +327,16 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'paste',
     key: 'v',
     modifiers: ['ctrl'],
-    action: () => console.log('Paste'),
+    action: () => {
+      // Prefer the async Clipboard API; fall back to execCommand for older envs
+      if (navigator.clipboard?.readText) {
+        navigator.clipboard.readText().then((text) => {
+          document.dispatchEvent(new CustomEvent('ide:paste', { detail: { text } }));
+        }).catch(() => document.execCommand('paste'));
+      } else {
+        document.execCommand('paste');
+      }
+    },
     description: 'Paste',
     category: 'edit',
   },
@@ -314,7 +344,7 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'select-all',
     key: 'a',
     modifiers: ['ctrl'],
-    action: () => console.log('Select all'),
+    action: () => document.execCommand('selectAll'),
     description: 'Select All',
     category: 'edit',
   },
@@ -322,7 +352,7 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'find',
     key: 'f',
     modifiers: ['ctrl'],
-    action: () => console.log('Find'),
+    action: () => document.dispatchEvent(new CustomEvent('ide:find')),
     description: 'Find',
     category: 'edit',
   },
@@ -330,17 +360,17 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'replace',
     key: 'h',
     modifiers: ['ctrl'],
-    action: () => console.log('Replace'),
+    action: () => document.dispatchEvent(new CustomEvent('ide:replace')),
     description: 'Replace',
     category: 'edit',
   },
 
-  // View operations
+  // ── View operations ────────────────────────────────────────────────────────
   {
     id: 'toggle-sidebar',
     key: 'b',
     modifiers: ['ctrl'],
-    action: () => console.log('Toggle sidebar'),
+    action: () => document.dispatchEvent(new CustomEvent('ide:toggleSidebar')),
     description: 'Toggle Sidebar',
     category: 'view',
   },
@@ -348,7 +378,7 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'toggle-terminal',
     key: '`',
     modifiers: ['ctrl'],
-    action: () => console.log('Toggle terminal'),
+    action: () => document.dispatchEvent(new CustomEvent('ide:toggleTerminal')),
     description: 'Toggle Terminal',
     category: 'view',
   },
@@ -356,17 +386,25 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'toggle-explorer',
     key: 'e',
     modifiers: ['ctrl', 'shift'],
-    action: () => console.log('Toggle explorer'),
+    action: () => document.dispatchEvent(new CustomEvent('ide:toggleExplorer')),
     description: 'Toggle Explorer',
     category: 'view',
   },
 
-  // Navigation
+  // ── Navigation ─────────────────────────────────────────────────────────────
   {
     id: 'goto-line',
     key: 'g',
     modifiers: ['ctrl'],
-    action: () => console.log('Go to line'),
+    action: () => {
+      const lineStr = window.prompt('Go to line:');
+      if (lineStr !== null) {
+        const line = parseInt(lineStr, 10);
+        if (!isNaN(line)) {
+          document.dispatchEvent(new CustomEvent('ide:gotoLine', { detail: { line } }));
+        }
+      }
+    },
     description: 'Go to Line',
     category: 'navigation',
   },
@@ -374,7 +412,7 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'goto-symbol',
     key: 't',
     modifiers: ['ctrl', 'shift'],
-    action: () => console.log('Go to symbol'),
+    action: () => document.dispatchEvent(new CustomEvent('ide:gotoSymbol')),
     description: 'Go to Symbol',
     category: 'navigation',
   },

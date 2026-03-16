@@ -1,0 +1,108 @@
+id: event-enricher-agent
+name: Event Enricher Agent
+version: 1.0.0
+description: >
+  Enriches events with additional context from external or internal data sources.
+  Supports lookup enrichment (key-value), join enrichment (query-based),
+  derivation enrichment (computed fields), and geo-IP enrichment. Uses a
+  configurable cache layer to minimise latency and protect downstream systems
+  from overload.
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [enrichment, context, lookup, join, geo-ip, aep]
+  maturity: production
+  author: platform-team@ghatana.ai
+
+generator:
+  type: DETERMINISTIC
+
+# AEP Operator configuration
+aep:
+  operatorType: ENRICHMENT
+  inputEventTypes:
+    - "*.transformed"
+    - "event.processed"
+    - "*.ingested"
+  outputEventTypes:
+    - "*.enriched"
+    - "event.enriched"
+  backpressure:
+    bufferSize: 2000
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: 60s
+    maxRetries: 3
+    deadLetterQueue: event-enricher-dlq
+
+capabilities:
+  - lookup-enrichment
+  - join-enrichment
+  - geo-ip-enrichment
+  - computed-field-enrichment
+  - context-injection
+
+# Enrichment source configuration
+configuration:
+  enrichmentSources:
+    description: "List of data sources to enrich from"
+    type: array
+    required: true
+    items:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [KV_STORE, DATABASE, HTTP_API, FEATURE_STORE]
+        keyField:
+          type: string
+        targetField:
+          type: string
+        cacheTtlSeconds:
+          type: integer
+          default: 60
+  cacheEnabled:
+    description: "Enable in-memory caching for enrichment lookups"
+    type: boolean
+    default: true
+  cacheMaxSize:
+    description: "Maximum number of cached enrichment entries"
+    type: integer
+    default: 10000
+  enrichmentTimeout:
+    description: "Timeout for enrichment lookups (ISO-8601 duration)"
+    type: string
+    default: PT5S
+
+io:
+  inputs:
+    - name: sourceEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/event/v1"
+      required: true
+  outputs:
+    - name: enrichedEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/event/enriched/v1"
+    - name: enrichmentMetadata
+      type: JSON
+      schema: "https://schema.ghatana.com/enrichment-metadata/v1"
+
+memory:
+  type: SEMANTIC
+  scope: enrichment_cache
+  retention: medium
+  maxEntries: 10000
+
+resources:
+  memory: 512MB
+  cpu: "1"
+  timeout: 30s
+  maxConcurrency: 30
+
+routing:
+  input: SourceEvent
+  output: EnrichedEvent

@@ -209,13 +209,20 @@ export function useFileTree(initialFiles: FileNode[]) {
   };
 
   const handleFileCreate = (parentPath: string, type: 'file' | 'directory') => {
-    // Implementation for creating new files/directories
-    console.log('Create', type, 'at', parentPath);
+    const name = type === 'directory' ? 'New Folder' : 'new-file.ts';
+    const newFile: FileNode = {
+      id: `${parentPath}/${name}-${Date.now()}`,
+      name,
+      type,
+      path: `${parentPath}/${name}`,
+      status: 'added',
+      ...(type === 'directory' ? { children: [] } : {}),
+    };
+    setFiles(prev => addNodeAtPath(prev, parentPath, newFile));
   };
 
   const handleFileDelete = (file: FileNode) => {
-    // Implementation for deleting files
-    console.log('Delete', file.path);
+    setFiles(prev => removeNodeById(prev, file.id));
   };
 
   return {
@@ -226,4 +233,25 @@ export function useFileTree(initialFiles: FileNode[]) {
     handleFileCreate,
     handleFileDelete,
   };
+}
+
+function addNodeAtPath(nodes: FileNode[], parentPath: string, newNode: FileNode): FileNode[] {
+  return nodes.map(node => {
+    if (node.path === parentPath && node.type === 'directory') {
+      return { ...node, children: [...(node.children ?? []), newNode] };
+    }
+    if (node.children) {
+      return { ...node, children: addNodeAtPath(node.children, parentPath, newNode) };
+    }
+    return node;
+  });
+}
+
+function removeNodeById(nodes: FileNode[], id: string): FileNode[] {
+  return nodes
+    .filter(node => node.id !== id)
+    .map(node => ({
+      ...node,
+      children: node.children ? removeNodeById(node.children, id) : undefined,
+    }));
 }

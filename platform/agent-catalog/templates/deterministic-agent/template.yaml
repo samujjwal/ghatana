@@ -1,0 +1,116 @@
+################################################################################
+# DETERMINISTIC AGENT TEMPLATE
+#
+# Use this template as the starting point for any new deterministic agent.
+# Deterministic agents produce consistent, repeatable outputs for the same
+# inputs and SHOULD NOT perform any probabilistic or learning-based operations.
+#
+# HOW TO USE:
+#   1. Copy this template to:
+#        platform/agent-catalog/core-agents/<domain>/<your-agent-id>.yaml
+#      or:
+#        platform/agent-catalog/domain-agents/<domain>/<your-agent-id>.yaml
+#   2. Replace every {{PLACEHOLDER}} with real values.
+#   3. Remove all comment lines beginning with # that are guidance notes.
+#   4. Validate against catalog-schema.yaml before submitting a PR.
+#
+# RULES FOR DETERMINISTIC AGENTS:
+#   - generator.type MUST be DETERMINISTIC
+#   - No ML models, probabilistic scoring or "learn" capabilities
+#   - memory.type SHOULD be WORKING (ephemeral, resets between runs)
+#   - All configuration values must have a deterministic effect
+#   - failureMode MUST be FAIL_FAST or FAIL_SILENT (never DEGRADE)
+################################################################################
+
+id: "{{AGENT_ID}}"            # kebab-case, e.g. "csv-parser-agent"
+name: "{{AGENT_NAME}}"        # Human-readable, e.g. "CSV Parser Agent"
+version: 1.0.0                # SemVer — start at 1.0.0 for production-ready agents
+description: >
+  {{ONE_PARAGRAPH_DESCRIPTION}}
+  # Describe: what the agent does, NOT how it works internally.
+  # Include: supported input formats, key transformations, output guarantees.
+
+metadata:
+  level: 2                    # 1=primitive, 2=utility, 3=domain, 4=composite, 5=orchestrator
+  domain: "{{DOMAIN}}"        # e.g. data-processing, security, governance, monitoring
+  tags: []                    # Free-form lowercase strings, e.g. [parsing, csv, tabular]
+  maturity: experimental      # experimental | alpha | beta | production
+  author: "{{TEAM_EMAIL}}"    # e.g. platform-team@ghatana.ai
+
+# REQUIRED — do not change type
+generator:
+  type: DETERMINISTIC
+
+# AEP integration — every agent MUST integrate with the Agentic Event Processor
+aep:
+  operatorType: PROCESSOR      # PROCESSOR | TRANSFORMER | FILTER | ROUTER | PIPELINE
+  inputEventTypes:
+    - "{{INPUT_EVENT_TYPE}}"   # e.g. "user.action.raw"
+  outputEventTypes:
+    - "{{OUTPUT_EVENT_TYPE}}"  # e.g. "user.action.processed"
+    - "{{ERROR_EVENT_TYPE}}"   # e.g. "user.action.error" — always add an error event type
+  backpressure:
+    bufferSize: 1000           # Tune based on expected throughput — typically 100–50000
+    overflowStrategy: DROP_OLDEST  # DROP_OLDEST | DROP_NEWEST | BLOCK | ERROR
+  reliability:
+    checkpointInterval: 60s    # How often AEP checkpoints state for resumption
+    maxRetries: 3
+    deadLetterQueue: "{{AGENT_ID}}-dlq"
+
+# Capabilities declared by this agent (must match taxonomy.yaml entries)
+capabilities:
+  - "{{CAPABILITY_1}}"         # e.g. event-parsing, data-validation, schema-mapping
+
+# Configuration schema — all fields the agent accepts
+configuration:
+  exampleStringField:
+    description: "What this field controls"
+    type: string
+    required: true
+    # No default means required. Provide a default for optional fields.
+  exampleIntField:
+    description: "Numeric tuning parameter"
+    type: integer
+    required: false
+    default: 100
+    minimum: 1
+    maximum: 10000
+  exampleEnumField:
+    description: "Strategy selection"
+    type: string
+    required: false
+    default: STRICT
+    enum: [STRICT, LENIENT, SKIP]
+  # ↑ Add as many fields as the agent needs. Keep each field minimal.
+
+# Input and output schemas
+io:
+  inputs:
+    - name: "{{INPUT_NAME}}"
+      type: JSON                # JSON | AVRO | PROTOBUF | TEXT | BINARY
+      schema: "https://schema.ghatana.com/{{domain}}/{{INPUT_NAME}}/v1"
+      required: true
+  outputs:
+    - name: "{{OUTPUT_NAME}}"
+      type: JSON
+      schema: "https://schema.ghatana.com/{{domain}}/{{OUTPUT_NAME}}/v1"
+    - name: "{{ERROR_OUTPUT_NAME}}"
+      type: JSON
+      schema: "https://schema.ghatana.com/common/error/v1"
+
+# WORKING memory only — deterministic agents do not retain state between runs
+memory:
+  type: WORKING
+  scope: request
+  retention: short             # short (< 1h) | medium (< 24h) | long (persistent)
+  maxEntries: 1000
+
+resources:
+  memory: 512MB                # Tune conservatively; AEP will reject under-provisioned pods
+  cpu: "1"
+  timeout: 30s                 # Max wall-clock time per event; keep low for deterministic agents
+  maxConcurrency: 10
+
+routing:
+  input: "{{InputEventClass}}"   # Java class name, e.g. UserActionRawEvent
+  output: "{{OutputEventClass}}" # Java class name, e.g. UserActionProcessedEvent

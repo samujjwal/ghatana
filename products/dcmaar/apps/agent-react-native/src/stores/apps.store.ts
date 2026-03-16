@@ -20,6 +20,8 @@
  */
 
 import { atom } from 'jotai';
+import { guardianApi } from '../services/guardianApi';
+import { authAtom } from './auth.store';
 
 /**
  * Application object representing a monitored application.
@@ -487,51 +489,31 @@ export const fetchAppsAtom = atom<null, [], Promise<App[]>>(
     });
 
     try {
-      // TODO: Replace with actual API call
-      // const apps = await guardianApi.getApps();
+      const { user } = get(authAtom);
+      const tenantId = user?.tenantId ?? user?.id ?? '';
 
-      // Mock implementation for testing
-      const mockApps: App[] = [
-        {
-          id: '1',
-          name: 'Chrome',
-          packageName: 'com.android.chrome',
-          isActive: true,
-          category: 'Browser',
-          usageTime: 120,
-          lastUsed: new Date().toISOString(),
-          permissionCount: 8,
-        },
-        {
-          id: '2',
-          name: 'Gmail',
-          packageName: 'com.google.android.gm',
-          isActive: true,
-          category: 'Communication',
-          usageTime: 45,
-          lastUsed: new Date().toISOString(),
-          permissionCount: 5,
-        },
-        {
-          id: '3',
-          name: 'Maps',
-          packageName: 'com.google.android.apps.maps',
-          isActive: false,
-          category: 'Navigation',
-          usageTime: 30,
-          lastUsed: new Date(Date.now() - 3600000).toISOString(),
-          permissionCount: 6,
-        },
-      ];
+      const { data: appDataList } = await guardianApi.getApps(tenantId);
+
+      // Map AppData → App
+      const apps: App[] = appDataList.map((a) => ({
+        id: a.id,
+        name: a.name,
+        packageName: a.packageName,
+        isActive: a.isMonitored,
+        category: a.category,
+        usageTime: Math.round(a.usageTime / 60000), // ms → minutes
+        lastUsed: a.lastSeen ? new Date(a.lastSeen).toISOString() : undefined,
+        permissionCount: a.permissions.length,
+      }));
 
       set(appsAtom, {
         ...state,
-        apps: mockApps,
+        apps,
         status: 'loaded',
         error: null,
       });
 
-      return mockApps;
+      return apps;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch apps';
       set(appsAtom, {

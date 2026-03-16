@@ -1,6 +1,12 @@
 package com.ghatana.aep.launcher.http;
 
 import com.ghatana.aep.AepEngine;
+import com.ghatana.aep.compliance.AepComplianceReport;
+import com.ghatana.aep.compliance.AepSoc2ControlFramework;
+import com.ghatana.aep.launcher.compliance.AepComplianceService;
+import com.ghatana.aep.launcher.store.DataCloudPipelineStore;
+import com.ghatana.aep.security.AepInputValidator;
+import com.ghatana.aep.security.AepSecurityFilter;
 import com.ghatana.agent.learning.review.HumanReviewQueue;
 import com.ghatana.agent.learning.review.ReviewDecision;
 import com.ghatana.agent.learning.review.ReviewFilter;
@@ -67,6 +73,17 @@ public class AepHttpServer {
     private HttpServer server;
     private Eventloop eventloop;
 
+    /** Compliance services — non-null when agentDataCloud is configured. */
+    @Nullable
+    private final AepComplianceService complianceService;
+    private final AepSoc2ControlFramework soc2Framework = new AepSoc2ControlFramework();
+
+    /**
+     * Whether pipelines are backed by Data-Cloud durable storage.
+     * {@code false} means the in-memory repository is used (standalone / no-DC mode).
+     */
+    private final boolean durablePipelines;
+
     /** In-memory circular buffer of recent pipeline runs (event-loop thread only). */
     private final java.util.Deque<Map<String, Object>> recentRuns = new java.util.ArrayDeque<>();
     private static final int MAX_RECENT_RUNS = 1_000;
@@ -114,12 +131,21 @@ public class AepHttpServer {
         this.port = port;
         this.humanReviewQueue = humanReviewQueue;
         this.agentDataCloud = agentDataCloud;
+        this.complianceService = agentDataCloud != null ? new AepComplianceService(agentDataCloud) : null;
         this.objectMapper = JsonUtils.getDefaultMapper();
         DeploymentOrchestrator orchestrator = new DeploymentOrchestrator(
             new EventCloudDeploymentEventPublisher(engine.eventCloud()),
             new NoopMetricsCollector());
         this.deploymentAdapter = new DeploymentHttpAdapter(orchestrator);
-        this.pipelineRepository = new InMemoryPipelineRepository();
+        if (agentDataCloud != null) {
+            this.pipelineRepository = new DataCloudPipelineStore(agentDataCloud);
+            this.durablePipelines = true;
+            log.info("[init] PipelineRepository backed by Data-Cloud (durable storage)");
+        } else {
+            this.pipelineRepository = new InMemoryPipelineRepository();
+            this.durablePipelines = false;
+            log.info("[init] PipelineRepository backed by in-memory store (set DC_SERVER_URL for durable pipelines)");
+        }
         this.pipelineValidator = new PipelineValidator();
         this.capabilitiesService = new CapabilitiesService();
     }
@@ -205,9 +231,20 @@ public class AepHttpServer {
             // Server-Sent Events endpoints for real-time UI updates (AEP-P7)
             .with(HttpMethod.GET, "/events/stream", this::handleSseStream)
 
+            // Compliance endpoints (GDPR/CCPA/SOC2)
+            .with(HttpMethod.POST, "/api/v1/compliance/gdpr/access", this::handleGdprAccess)
+            .with(HttpMethod.POST, "/api/v1/compliance/gdpr/erasure", this::handleGdprErasure)
+            .with(HttpMethod.POST, "/api/v1/compliance/gdpr/portability", this::handleGdprPortability)
+            .with(HttpMethod.POST, "/api/v1/compliance/ccpa/opt-out", this::handleCcpaOptOut)
+            .with(HttpMethod.GET,  "/api/v1/compliance/soc2/report", this::handleSoc2Report)
+
             .build();
 
-        server = HttpServer.builder(eventloop, router)
+        // Wrap the router with the OWASP security filter (headers, CORS, rate limiting, payload size)
+        String allowedOrigins = System.getenv().getOrDefault("AEP_CORS_ORIGINS", "*");
+        AepSecurityFilter securityFilter = new AepSecurityFilter(router, allowedOrigins);
+
+        server = HttpServer.builder(eventloop, securityFilter)
             .withListenPort(port)
             .build();
 
@@ -299,9 +336,14 @@ public class AepHttpServer {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> eventData = objectMapper.readValue(body, Map.class);
 
-                String tenantId = (String) eventData.getOrDefault("tenantId", "default");
-                String eventType = (String) eventData.getOrDefault("type", "unknown");
-                Map<String, Object> payload = (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
+                String tenantId = AepInputValidator.validateTenantId(
+                    (String) eventData.getOrDefault("tenantId", "default"));
+                String eventType = AepInputValidator.validateEventType(
+                    (String) eventData.getOrDefault("type", "unknown"));
+                @SuppressWarnings("unchecked")
+                Map<String, Object> rawPayload =
+                    (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
+                Map<String, Object> payload = AepInputValidator.validatePayload(rawPayload);
 
                 AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(), Instant.now());
                 Instant startedAt = Instant.now();
@@ -339,6 +381,7 @@ public class AepHttpServer {
                 List<Map<String, Object>> eventsData =
                     (List<Map<String, Object>>) batchData.getOrDefault("events", List.of());
 
+                AepInputValidator.validateBatchSize(eventsData.size());
                 if (eventsData.isEmpty()) {
                     return Promise.of(errorResponse(400, "Batch request must include non-empty events array"));
                 }
@@ -1289,7 +1332,7 @@ public class AepHttpServer {
                     })
                     .collect(java.util.stream.Collectors.toList());
                 return jsonResponse(Map.of(
-                    "items", summaries,
+                    "pending", summaries,
                     "count", summaries.size(),
                     "tenantId", tenantId,
                     "timestamp", Instant.now().toString()
@@ -1744,6 +1787,133 @@ public class AepHttpServer {
             });
     }
 
+    // ==================== Compliance Endpoints (GDPR/CCPA/SOC2) ====================
+
+    /**
+     * GDPR Right of Access (Art.15): returns all AEP data associated with a data subject.
+     * Request: {@code {"subjectId": "...", "tenantId": "..."}}
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleGdprAccess(HttpRequest request) {
+        if (complianceService == null) {
+            return Promise.of(errorResponse(503, "Compliance service not available — DataCloudClient not configured"));
+        }
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> body = objectMapper.readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
+                String tenantId = AepInputValidator.validateTenantId(
+                    resolveTenantId(request, body));
+                String subjectId = AepInputValidator.requireNonBlank(
+                    (String) body.get("subjectId"), "subjectId");
+                return complianceService.accessRequest(tenantId, subjectId)
+                    .map(report -> jsonResponse(objectMapper.convertValue(report,
+                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {})))
+                    .then(Promise::of, e -> Promise.of(errorResponse(500, "Access request failed: " + e.getMessage())));
+            } catch (AepInputValidator.ValidationException ve) {
+                return Promise.of(errorResponse(400, ve.getMessage()));
+            } catch (Exception e) {
+                return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        }, e -> Promise.of(errorResponse(400, "Failed to read request body")));
+    }
+
+    /**
+     * GDPR Right to Erasure (Art.17): erases all AEP data associated with a data subject.
+     * Request: {@code {"subjectId": "...", "tenantId": "..."}}
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleGdprErasure(HttpRequest request) {
+        if (complianceService == null) {
+            return Promise.of(errorResponse(503, "Compliance service not available — DataCloudClient not configured"));
+        }
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> body = objectMapper.readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
+                String tenantId = AepInputValidator.validateTenantId(
+                    resolveTenantId(request, body));
+                String subjectId = AepInputValidator.requireNonBlank(
+                    (String) body.get("subjectId"), "subjectId");
+                return complianceService.deletionRequest(tenantId, subjectId)
+                    .map(report -> jsonResponse(objectMapper.convertValue(report,
+                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {})))
+                    .then(Promise::of, e -> Promise.of(errorResponse(500, "Erasure request failed: " + e.getMessage())));
+            } catch (AepInputValidator.ValidationException ve) {
+                return Promise.of(errorResponse(400, ve.getMessage()));
+            } catch (Exception e) {
+                return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        }, e -> Promise.of(errorResponse(400, "Failed to read request body")));
+    }
+
+    /**
+     * GDPR Right to Data Portability (Art.20): exports all AEP data for a data subject.
+     * Request: {@code {"subjectId": "...", "tenantId": "..."}}
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleGdprPortability(HttpRequest request) {
+        if (complianceService == null) {
+            return Promise.of(errorResponse(503, "Compliance service not available — DataCloudClient not configured"));
+        }
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> body = objectMapper.readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
+                String tenantId = AepInputValidator.validateTenantId(
+                    resolveTenantId(request, body));
+                String subjectId = AepInputValidator.requireNonBlank(
+                    (String) body.get("subjectId"), "subjectId");
+                return complianceService.portabilityRequest(tenantId, subjectId)
+                    .map(export -> jsonResponse(export))
+                    .then(Promise::of, e -> Promise.of(errorResponse(500, "Portability request failed: " + e.getMessage())));
+            } catch (AepInputValidator.ValidationException ve) {
+                return Promise.of(errorResponse(400, ve.getMessage()));
+            } catch (Exception e) {
+                return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        }, e -> Promise.of(errorResponse(400, "Failed to read request body")));
+    }
+
+    /**
+     * CCPA Opt-Out (§1798.120): records a consumer opt-out from data sale/sharing.
+     * Request: {@code {"consumerId": "...", "tenantId": "..."}}
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleCcpaOptOut(HttpRequest request) {
+        if (complianceService == null) {
+            return Promise.of(errorResponse(503, "Compliance service not available — DataCloudClient not configured"));
+        }
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> body = objectMapper.readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
+                String tenantId = AepInputValidator.validateTenantId(
+                    resolveTenantId(request, body));
+                String consumerId = AepInputValidator.requireNonBlank(
+                    (String) body.get("consumerId"), "consumerId");
+                return complianceService.ccpaOptOut(tenantId, consumerId)
+                    .map(report -> jsonResponse(objectMapper.convertValue(report,
+                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {})))
+                    .then(Promise::of, e -> Promise.of(errorResponse(500, "CCPA opt-out failed: " + e.getMessage())));
+            } catch (AepInputValidator.ValidationException ve) {
+                return Promise.of(errorResponse(400, ve.getMessage()));
+            } catch (Exception e) {
+                return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        }, e -> Promise.of(errorResponse(400, "Failed to read request body")));
+    }
+
+    /**
+     * Returns the SOC 2 compliance report for AEP.
+     * Lists all controls with their implementation status and evidence artefacts.
+     */
+    private Promise<HttpResponse> handleSoc2Report(HttpRequest request) {
+        try {
+            AepSoc2ControlFramework.Soc2Report report = soc2Framework.generateReport();
+            return Promise.of(jsonResponse(objectMapper.convertValue(report,
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {})));
+        } catch (Exception e) {
+            return Promise.of(errorResponse(500, "Failed to generate SOC2 report: " + e.getMessage()));
+        }
+    }
+
     /**
      * Records a processing result into the bounded in-memory run buffer (event-loop thread only)
      * and publishes a {@code run.update} SSE event to all subscribers of that tenant.
@@ -1917,6 +2087,8 @@ public class AepHttpServer {
             String json = objectMapper.writeValueAsString(data);
             return HttpResponse.ok200()
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                // Security headers are applied globally by AepSecurityFilter; add Content-Type protection here too.
+                .withHeader(HttpHeaders.of("X-Content-Type-Options"), HttpHeaderValue.of("nosniff"))
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
@@ -1928,13 +2100,16 @@ public class AepHttpServer {
 
     private HttpResponse errorResponse(int code, String message) {
         try {
+            // Escape message to prevent JSON injection
+            String safeMessage = message != null ? message.replace("\\", "\\\\").replace("\"", "\\\"") : "error";
             String json = objectMapper.writeValueAsString(Map.of(
-                "error", message,
+                "error", safeMessage,
                 "code", code,
                 "timestamp", Instant.now().toString()
             ));
             return HttpResponse.ofCode(code)
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("X-Content-Type-Options"), HttpHeaderValue.of("nosniff"))
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {

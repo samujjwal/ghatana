@@ -1,0 +1,18 @@
+# Grafana dashboard provisioning configuration
+# Automatically loads dashboard JSON from the dashboards/ directory on Grafana startup.
+# Source: STORY-K05-032, epics/EPIC-K-06-Observability.md
+
+apiVersion: 1
+
+providers:
+  - name: AppPlatform Dashboards
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false
+    folder: AppPlatform
+    folderUid: appplatform-root

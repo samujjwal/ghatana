@@ -1,0 +1,69 @@
+# Production overrides for the AEP Helm chart.
+# Applied on top of values.yaml.
+
+replicaCount: 3
+
+image:
+  pullPolicy: Always   # always pull to catch latest-tagged updates in production
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "16m"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
+    nginx.ingress.kubernetes.io/limit-connections: "20"
+  hosts:
+    - host: api.aep.ghatana.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: aep-tls
+      hosts:
+        - api.aep.ghatana.io
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: "4"
+    memory: 4Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 65
+  targetMemoryUtilizationPercentage: 75
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+config:
+  logLevel: "WARN"
+  workerThreads: "8"
+  eventloopThreads: "4"
+
+patternEngine:
+  threads: "8"
+  maxBacklog: "500000"
+
+pipeline:
+  maxConcurrent: "200"
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    interval: 15s
+
+externalSecrets:
+  enabled: true
+  secretStore:
+    name: aep-vault-store
+    kind: ClusterSecretStore

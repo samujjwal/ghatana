@@ -24,6 +24,10 @@ public class KafkaConsumerConfig {
     private final int sessionTimeoutMs;
     private final int pollTimeoutMs;
     private final Map<String, Object> customProperties;
+    /** Maximum processing attempts before routing to the dead-letter topic (default: 3). */
+    private final int maxRetries;
+    /** Suffix appended to the source topic name to form the DLT topic (default: ".dlt"). */
+    private final String dltTopicSuffix;
     
     private KafkaConsumerConfig(Builder builder) {
         this.bootstrapServers = Objects.requireNonNull(builder.bootstrapServers, "bootstrapServers required");
@@ -36,6 +40,9 @@ public class KafkaConsumerConfig {
         this.sessionTimeoutMs = builder.sessionTimeoutMs > 0 ? builder.sessionTimeoutMs : 30000;
         this.pollTimeoutMs = builder.pollTimeoutMs > 0 ? builder.pollTimeoutMs : 100;
         this.customProperties = builder.customProperties;
+        // 0 is a valid value meaning "DLT disabled"; negative values fall back to the default.
+        this.maxRetries = builder.maxRetries >= 0 ? builder.maxRetries : 3;
+        this.dltTopicSuffix = builder.dltTopicSuffix != null ? builder.dltTopicSuffix : ".dlt";
     }
     
     public static Builder builder() {
@@ -53,6 +60,8 @@ public class KafkaConsumerConfig {
     public int getSessionTimeoutMs() { return sessionTimeoutMs; }
     public int getPollTimeoutMs() { return pollTimeoutMs; }
     public Map<String, Object> getCustomProperties() { return customProperties; }
+    public int getMaxRetries() { return maxRetries; }
+    public String getDltTopicSuffix() { return dltTopicSuffix; }
     
     public static class Builder {
         private String bootstrapServers;
@@ -65,6 +74,8 @@ public class KafkaConsumerConfig {
         private int sessionTimeoutMs = 30000;
         private int pollTimeoutMs = 100;
         private Map<String, Object> customProperties;
+        private int maxRetries = 3;
+        private String dltTopicSuffix = ".dlt";
         
         public Builder bootstrapServers(String bootstrapServers) {
             this.bootstrapServers = bootstrapServers;
@@ -113,6 +124,24 @@ public class KafkaConsumerConfig {
         
         public Builder customProperties(Map<String, Object> customProperties) {
             this.customProperties = customProperties;
+            return this;
+        }
+
+        /**
+         * Maximum processing attempts before routing to the dead-letter topic.
+         * Default: 3. Set to 0 to disable DLT routing.
+         */
+        public Builder maxRetries(int maxRetries) {
+            this.maxRetries = maxRetries;
+            return this;
+        }
+
+        /**
+         * Suffix appended to the source topic to derive the DLT topic name.
+         * Default: ".dlt". For example, topic "events" → DLT "events.dlt".
+         */
+        public Builder dltTopicSuffix(String dltTopicSuffix) {
+            this.dltTopicSuffix = dltTopicSuffix;
             return this;
         }
         

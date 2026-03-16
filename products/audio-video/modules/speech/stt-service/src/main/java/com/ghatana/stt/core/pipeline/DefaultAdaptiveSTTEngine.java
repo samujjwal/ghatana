@@ -7,6 +7,7 @@ import com.ghatana.stt.core.storage.ProfileEncryption;
 import com.ghatana.stt.core.storage.ProfileStorage;
 import com.ghatana.stt.core.metrics.MetricsCollector;
 import com.ghatana.stt.core.adaptation.AdaptationEngine;
+import com.ghatana.audio.video.common.platform.AiInferenceClient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,6 +121,21 @@ public class DefaultAdaptiveSTTEngine implements AdaptiveSTTEngine {
         long startTime = System.currentTimeMillis();
 
         try {
+            // Guard: WhisperCpp native adapter may be absent when running without
+            // native libraries.  Log a diagnostic hint about the LLM fallback path
+            // and propagate a clear error rather than an NPE.
+            if (whisperAdapter == null) {
+                boolean inferenceAvailable = AiInferenceClient.getInstance().isReachable();
+                LOG.error("WhisperCpp adapter is not available — cannot transcribe audio. "
+                        + "AI inference fallback reachable: {}. "
+                        + "Set AI_INFERENCE_URL to enable cloud LLM routing, "
+                        + "or ensure native Whisper libraries are present.",
+                        inferenceAvailable);
+                throw new UnsupportedOperationException(
+                        "STT engine has no native adapter. "
+                        + "Install Whisper.cpp native libs or configure AI_INFERENCE_URL.");
+            }
+
             // Convert API classes to model classes for Whisper.cpp
             com.ghatana.stt.core.model.AudioData modelAudio = convertToModelAudioData(audio);
             com.ghatana.stt.core.model.TranscriptionOptions modelOptions = convertToModelTranscriptionOptions(options);

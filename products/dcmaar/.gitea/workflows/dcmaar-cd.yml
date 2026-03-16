@@ -1,0 +1,258 @@
+name: DCMAAR CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "products/dcmaar/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options: [staging, production]
+        default: staging
+      image_tag:
+        description: "Docker image tag to deploy (defaults to branch SHA)"
+        required: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BASE: ghcr.io/ghatana/dcmaar
+  PNPM_VERSION: "9"
+  NODE_VERSION: "22"
+  GO_VERSION: "1.25"
+  RUST_TOOLCHAIN: "1.90.0"
+
+concurrency:
+  group: dcmaar-cd-${{ gitea.ref }}-${{ gitea.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Determine metadata: image tags, environment, target version
+  # ─────────────────────────────────────────────────────────────────────────────
+  metadata:
+    name: Release metadata
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+      environment: ${{ steps.meta.outputs.environment }}
+      is_production: ${{ steps.meta.outputs.is_production }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute metadata
+        id: meta
+        run: |
+          SHORT_SHA="${GITEA_SHA::8}"
+          ENV="${{ github.event.inputs.environment || 'staging' }}"
+          TAG="${{ github.event.inputs.image_tag || SHORT_SHA }}"
+          IS_PROD="false"
+          if [[ "$ENV" == "production" ]]; then IS_PROD="true"; fi
+          echo "image_tag=$TAG"        >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA"  >> "$GITHUB_OUTPUT"
+          echo "environment=$ENV"      >> "$GITHUB_OUTPUT"
+          echo "is_production=$IS_PROD" >> "$GITHUB_OUTPUT"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Build & push multi-arch Docker images for server + desktop agent
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-push:
+    name: Build & push Docker images
+    runs-on: ubuntu-latest
+    needs: metadata
+    permissions:
+      packages: write
+      contents: read
+    strategy:
+      matrix:
+        component:
+          - name: server
+            context: products/dcmaar
+            dockerfile: products/dcmaar/apps/server/Dockerfile
+            image: ${{ env.IMAGE_BASE }}-server
+          - name: desktop-agent
+            context: products/dcmaar
+            dockerfile: products/dcmaar/apps/desktop-agent/Dockerfile
+            image: ${{ env.IMAGE_BASE }}-desktop
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (multi-arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker labels & tags
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ matrix.component.image }}
+          tags: |
+            type=raw,value=${{ needs.metadata.outputs.image_tag }}
+            type=raw,value=latest,enable=${{ needs.metadata.outputs.environment == 'production' }}
+            type=sha,format=short
+
+      - name: Build and push ${{ matrix.component.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.component.context }}
+          file: ${{ matrix.component.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ needs.metadata.outputs.image_tag }}
+            GIT_COMMIT=${{ needs.metadata.outputs.short_sha }}
+            BUILD_DATE=${{ gitea.event.head_commit.timestamp }}
+          cache-from: type=registry,ref=${{ matrix.component.image }}:buildcache
+          cache-to: type=registry,ref=${{ matrix.component.image }}:buildcache,mode=max
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Deploy to STAGING — automatic on every main push
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy → staging
+    runs-on: ubuntu-latest
+    needs: [metadata, build-push]
+    environment:
+      name: staging
+      url: https://staging.dcmaar.ghatana.internal
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: latest
+
+      - name: Configure kubeconfig (staging)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: latest
+
+      - name: Helm upgrade (staging)
+        run: |
+          helm upgrade --install dcmaar products/dcmaar/ci/deploy/helm/dcmaar \
+            --namespace dcmaar-staging \
+            --create-namespace \
+            --set server.image.tag=${{ needs.metadata.outputs.image_tag }} \
+            --set desktopAgent.image.tag=${{ needs.metadata.outputs.image_tag }} \
+            --set global.environment=staging \
+            --set global.imageRegistry=${{ env.REGISTRY }} \
+            --atomic \
+            --timeout 5m \
+            --wait
+
+      - name: Verify staging health (/metrics endpoint)
+        run: |
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              https://staging.dcmaar.ghatana.internal:8080/metrics || echo "000")
+            if [[ "$STATUS" == "200" ]]; then
+              echo "Staging health OK (attempt $i)."
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS — retrying in 10s..."
+            sleep 10
+          done
+          echo "Staging health check failed after 12 attempts."
+          exit 1
+
+      - name: Run smoke tests against staging
+        run: |
+          curl -sf https://staging.dcmaar.ghatana.internal:8080/health | \
+            python3 -c "import sys, json; d=json.load(sys.stdin); assert d.get('status')=='ok', f'Unexpected status: {d}'"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Deploy to PRODUCTION — manual approval gate required
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-production:
+    name: Deploy → production (manual approval)
+    runs-on: ubuntu-latest
+    needs: [metadata, deploy-staging]
+    if: needs.metadata.outputs.environment == 'production' || gitea.event_name == 'workflow_dispatch'
+    environment:
+      name: production
+      url: https://dcmaar.ghatana.internal
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: latest
+
+      - name: Configure kubeconfig (production)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: latest
+
+      - name: Helm upgrade (production — rolling, zero-downtime)
+        run: |
+          helm upgrade --install dcmaar products/dcmaar/ci/deploy/helm/dcmaar \
+            --namespace dcmaar-production \
+            --create-namespace \
+            --set server.image.tag=${{ needs.metadata.outputs.image_tag }} \
+            --set desktopAgent.image.tag=${{ needs.metadata.outputs.image_tag }} \
+            --set global.environment=production \
+            --set global.imageRegistry=${{ env.REGISTRY }} \
+            --set server.replicaCount=3 \
+            --set desktopAgent.replicaCount=2 \
+            --set server.strategy.type=RollingUpdate \
+            --set server.strategy.rollingUpdate.maxUnavailable=0 \
+            --set server.strategy.rollingUpdate.maxSurge=1 \
+            --atomic \
+            --timeout 10m \
+            --wait
+
+      - name: Production health check (/metrics)
+        run: |
+          for i in $(seq 1 18); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              https://dcmaar.ghatana.internal:8080/metrics || echo "000")
+            if [[ "$STATUS" == "200" ]]; then
+              echo "Production health OK (attempt $i)."
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS — retrying in 10s..."
+            sleep 10
+          done
+          echo "Production health check failed."
+          exit 1
+
+      - name: Tag successful production release
+        run: |
+          git config user.name "DCMAAR CD Bot"
+          git config user.email "ci@ghatana.internal"
+          TAG="dcmaar/release-${{ needs.metadata.outputs.image_tag }}"
+          git tag -a "$TAG" -m "Production release ${{ needs.metadata.outputs.image_tag }}"
+          git push origin "$TAG"

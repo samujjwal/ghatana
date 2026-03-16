@@ -174,7 +174,8 @@ class JdbcPersistentAuditServiceTest extends EventloopTestBase {
         @DisplayName("multiple records are append-only")
         void multipleRecordsAppendOnly() {
             for (int i = 0; i < 5; i++) {
-                runPromise(() -> service.record(auditEvent("t1", "EVENT_" + i, "user", "RES", "r-" + i, true, Map.of("action", "CREATE"))));
+                final int idx = i;
+                runPromise(() -> service.record(auditEvent("t1", "EVENT_" + idx, "user", "RES", "r-" + idx, true, Map.of("action", "CREATE"))));
             }
             assertThat(runPromise(() -> service.countByTenantId("t1"))).isEqualTo(5L);
         }
@@ -517,7 +518,7 @@ class JdbcPersistentAuditServiceTest extends EventloopTestBase {
                 futures.add(executor.submit(() -> {
                     try {
                         service.record(auditEvent("t1", "CONCURRENT_" + idx, "thread-" + idx,
-runPromise(() -> "RES", "r-" + idx, true, Map.of("action", "CREATE"))));
+                                "RES", "r-" + idx, true, Map.of("action", "CREATE")));
                     } finally {
                         latch.countDown();
                     }
@@ -593,12 +594,11 @@ runPromise(() -> "RES", "r-" + idx, true, Map.of("action", "CREATE"))));
         }
 
         @Test
-        @DisplayName("findById with non-numeric ID returns empty or exception")
+        @DisplayName("findById with non-numeric ID returns empty")
         void findByIdNonNumeric() {
-            // Non-numeric IDs cause NumberFormatException → Promise.ofException → getResult() returns null
+            // Non-numeric IDs can never match a BIGINT primary key — service returns empty.
             Optional<AuditEvent> result = runPromise(() -> service.findById("t1", "not-a-number"));
-            // ActiveJ Promise.ofException().getResult() returns null
-            assertThat(result).isNull();
+            assertThat(result).isEmpty();
         }
     }
 
@@ -636,7 +636,7 @@ runPromise(() -> "RES", "r-" + idx, true, Map.of("action", "CREATE"))));
     private void seedEvents(String tenantId, int count) {
         for (int i = 0; i < count; i++) {
             service.record(auditEvent(tenantId, "TEST_EVENT", "user-" + i,
-runPromise(() -> "RESOURCE", "r-" + i, true, Map.of("action", "CREATE", "index", i))));
+                    "RESOURCE", "r-" + i, true, Map.of("action", "CREATE", "index", i)));
         }
     }
 

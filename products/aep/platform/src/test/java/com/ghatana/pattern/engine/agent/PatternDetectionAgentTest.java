@@ -568,8 +568,7 @@ class PatternDetectionAgentTest extends EventloopTestBase {
             filter.initialize(OperatorConfig.empty());
             filter.start();
 
-            OperatorResult with = filter.process(
-runPromise(() -> makeEvent("x", Map.of(), Map.of("traceId", "abc"))));
+            OperatorResult with = runPromise(() -> filter.process(makeEvent("x", Map.of(), Map.of("traceId", "abc"))));
             assertThat(with.getOutputEvents()).hasSize(1);
 
             OperatorResult without = runPromise(() -> filter.process(makeEvent("x")));
@@ -584,12 +583,10 @@ runPromise(() -> makeEvent("x", Map.of(), Map.of("traceId", "abc"))));
             filter.initialize(OperatorConfig.empty());
             filter.start();
 
-            OperatorResult match = filter.process(
-runPromise(() -> makeEvent("x", Map.of(), Map.of("env", "production"))));
+            OperatorResult match = runPromise(() -> filter.process(makeEvent("x", Map.of(), Map.of("env", "production"))));
             assertThat(match.getOutputEvents()).hasSize(1);
 
-            OperatorResult noMatch = filter.process(
-runPromise(() -> makeEvent("x", Map.of(), Map.of("env", "staging"))));
+            OperatorResult noMatch = runPromise(() -> filter.process(makeEvent("x", Map.of(), Map.of("env", "staging"))));
             assertThat(noMatch.getOutputEvents()).isEmpty();
         }
 
@@ -601,8 +598,7 @@ runPromise(() -> makeEvent("x", Map.of(), Map.of("env", "staging"))));
             filter.initialize(OperatorConfig.empty());
             filter.start();
 
-            OperatorResult with = filter.process(
-runPromise(() -> makeEvent("x", Map.of("userId", "u123"))));
+            OperatorResult with = runPromise(() -> filter.process(makeEvent("x", Map.of("userId", "u123"))));
             assertThat(with.getOutputEvents()).hasSize(1);
 
             OperatorResult without = runPromise(() -> filter.process(makeEvent("x")));
@@ -617,12 +613,10 @@ runPromise(() -> makeEvent("x", Map.of("userId", "u123"))));
             filter.initialize(OperatorConfig.empty());
             filter.start();
 
-            OperatorResult match = filter.process(
-runPromise(() -> makeEvent("x", Map.of("status", "active"))));
+            OperatorResult match = runPromise(() -> filter.process(makeEvent("x", Map.of("status", "active"))));
             assertThat(match.getOutputEvents()).hasSize(1);
 
-            OperatorResult noMatch = filter.process(
-runPromise(() -> makeEvent("x", Map.of("status", "inactive"))));
+            OperatorResult noMatch = runPromise(() -> filter.process(makeEvent("x", Map.of("status", "inactive"))));
             assertThat(noMatch.getOutputEvents()).isEmpty();
         }
 
@@ -743,8 +737,7 @@ runPromise(() -> makeEvent("x", Map.of("status", "inactive"))));
             mapper.initialize(OperatorConfig.empty());
             mapper.start();
 
-            OperatorResult r = mapper.process(
-runPromise(() -> makeEvent("x", Map.of("data", "original"))));
+            OperatorResult r = runPromise(() -> mapper.process(makeEvent("x", Map.of("data", "original"))));
 
             assertThat(r.isSuccess()).isTrue();
             assertThat(r.getOutputEvents()).hasSize(1);
@@ -795,8 +788,7 @@ runPromise(() -> makeEvent("x", Map.of("data", "original"))));
             transformer.initialize(OperatorConfig.empty());
             transformer.start();
 
-            OperatorResult r = transformer.process(
-runPromise(() -> makeEvent("x", Map.of("sensitive", "secret", "data", "keep"))));
+            OperatorResult r = runPromise(() -> transformer.process(makeEvent("x", Map.of("sensitive", "secret", "data", "keep"))));
 
             assertThat(r.getOutputEvents()).hasSize(1);
             Event output = r.getOutputEvents().getFirst();

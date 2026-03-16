@@ -1,0 +1,153 @@
+id: patient-data-agent
+name: Patient Data Processing Agent
+version: 1.0.0
+description: >
+  HIPAA-compliant agent for healthcare patient data processing, clinical event
+  analysis, and care pathway optimisation. Handles HL7 FHIR R4 resource
+  processing, ICD-10/SNOMED-CT clinical coding, medication reconciliation,
+  adverse-event detection, and personalised care pathway recommendations.
+  All PHI data is redacted before telemetry emission; the agent enforces
+  data minimisation and purpose-limitation principles (HIPAA 164.514).
+
+metadata:
+  level: 4
+  domain: healthcare
+  tags: [healthcare, hipaa, fhir, hl7, phi, clinical, care-pathway, ehr]
+  maturity: production
+  author: platform-team@ghatana.ai
+  regulatoryFrameworks:
+    - HIPAA
+    - HL7 FHIR R4
+    - GDPR (Art. 9 — special category data)
+
+generator:
+  type: DETERMINISTIC
+
+# AEP Operator configuration
+aep:
+  operatorType: ANALYSIS
+  inputEventTypes:
+    - "healthcare.fhir.resource"
+    - "healthcare.hl7.message"
+    - "healthcare.patient.admission"
+    - "healthcare.patient.discharge"
+    - "healthcare.clinical.observation"
+    - "healthcare.medication.event"
+  outputEventTypes:
+    - "healthcare.patient.analyzed"
+    - "healthcare.adverse-event.detected"
+    - "healthcare.care-pathway.recommendation"
+    - "healthcare.coding.result"
+  backpressure:
+    bufferSize: 5000
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: 15s
+    maxRetries: 3
+    deadLetterQueue: patient-data-agent-dlq
+
+capabilities:
+  - fhir-r4-processing
+  - hl7-v2-parsing
+  - icd10-coding
+  - snomed-ct-mapping
+  - medication-reconciliation
+  - adverse-event-detection
+  - care-pathway-optimization
+  - phi-redaction
+  - hipaa-compliance-enforcement
+
+# Patient data processing configuration
+configuration:
+  processingMode:
+    description: "Primary processing mode"
+    type: string
+    enum: [FHIR_RESOURCE, HL7_MESSAGE, CLINICAL_ANALYSIS, CARE_PATHWAY]
+    required: true
+  terminologySystems:
+    description: "Clinical terminology systems to use"
+    type: array
+    items:
+      type: string
+    default: [ICD_10, SNOMED_CT, LOINC, RxNORM]
+  phiRedactionRules:
+    description: "PHI redaction configuration (HIPAA 18 identifiers)"
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      redactionMode:
+        type: string
+        enum: [REDACT, PSEUDONYMIZE, TOKENIZE]
+        default: TOKENIZE
+      preservedFields:
+        type: array
+        items:
+          type: string
+        description: "Fields explicitly excluded from redaction"
+  adverseEventConfig:
+    description: "Adverse event detection parameters"
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      drugInteractionCheck:
+        type: boolean
+        default: true
+      allergyCheck:
+        type: boolean
+        default: true
+      dosageThresholds:
+        type: boolean
+        default: true
+  carePathwayConfig:
+    description: "Care pathway recommendation parameters"
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      clinicalGuidelineSources:
+        type: array
+        items:
+          type: string
+        default: [NICE, CDC, WHO, AHA]
+      patientConsentRequired:
+        type: boolean
+        default: true
+
+io:
+  inputs:
+    - name: clinicalEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/healthcare/clinical-event/v1"
+      required: true
+  outputs:
+    - name: processedPatientData
+      type: JSON
+      schema: "https://schema.ghatana.com/healthcare/patient-data/v1"
+      note: "PHI redacted"
+    - name: adverseEventAlert
+      type: JSON
+      schema: "https://schema.ghatana.com/healthcare/adverse-event/v1"
+    - name: carePathwayRecommendation
+      type: JSON
+      schema: "https://schema.ghatana.com/healthcare/care-pathway/v1"
+
+memory:
+  type: EPISODIC
+  scope: patient_history
+  retention: long
+  note: "Data stored in HIPAA-compliant encrypted storage only"
+
+resources:
+  memory: 1GB
+  cpu: "1"
+  timeout: 30s
+  maxConcurrency: 10
+
+routing:
+  input: ClinicalEvent
+  output: PatientDataProcessingResult

@@ -3,6 +3,9 @@ import { getConfigLoader } from './config-loader.service.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('ConfigSyncService');
 
 export class ConfigSyncService {
     private static instance: ConfigSyncService;
@@ -21,7 +24,7 @@ export class ConfigSyncService {
      * @param configPath Optional path to config directory. If not provided, uses default.
      */
     async syncFromConfig(configPath?: string): Promise<void> {
-        console.log(`[ConfigSync] Starting sync from ${configPath || 'default path'}...`);
+        logger.info('Starting config sync', { configPath: configPath ?? 'default path' });
 
         try {
             const configLoader = getConfigLoader(configPath);
@@ -32,7 +35,7 @@ export class ConfigSyncService {
             
             const orgConfig = await configLoader.loadOrgConfig();
 
-            console.log(`[ConfigSync] Loaded config for organization: ${orgConfig.name}`);
+            logger.debug('Loaded org config', { orgName: orgConfig.name });
 
             // 1. Ensure Organization exists
             const org = await prisma.organization.upsert({
@@ -51,7 +54,7 @@ export class ConfigSyncService {
                     settings: {},
                 },
             });
-            console.log(`[ConfigSync] Organization synced: ${org.name}`);
+            logger.info('Organization synced', { orgName: org.name });
 
             // 2. Sync Departments
             for (const deptConfig of orgConfig.departments) {
@@ -75,7 +78,7 @@ export class ConfigSyncService {
                         status: 'ACTIVE',
                     },
                 });
-                console.log(`[ConfigSync]   ├─ Department synced: ${dept.name}`);
+                logger.debug('Department synced', { deptName: dept.name });
 
                 // 3. Sync Agents
                 if (deptConfig.agents) {
@@ -117,14 +120,14 @@ export class ConfigSyncService {
                                 status: 'ONLINE'
                             }
                         });
-                        console.log(`[ConfigSync]   │  ├─ Agent synced: ${agentConfig.name}`);
+                        logger.debug('Agent synced', { agentName: agentConfig.name });
                     }
                 }
             }
 
-            console.log('[ConfigSync] Sync complete!');
+            logger.info('Config sync complete');
         } catch (error) {
-            console.error('[ConfigSync] Error syncing from config:', error);
+            logger.error('Error syncing from config', error);
             throw error;
         }
     }
@@ -134,7 +137,7 @@ export class ConfigSyncService {
      * @param outputDir Directory to write YAML files to.
      */
     async exportToConfig(outputDir: string): Promise<void> {
-        console.log(`[ConfigSync] Exporting config to ${outputDir}...`);
+        logger.info('Exporting config', { outputDir });
 
         if (!fs.existsSync(outputDir)) {
             fs.mkdirSync(outputDir, { recursive: true });
@@ -165,7 +168,7 @@ export class ConfigSyncService {
         };
 
         fs.writeFileSync(path.join(outputDir, 'organization.yaml'), yaml.dump(orgYaml));
-        console.log(`[ConfigSync] Exported organization.yaml`);
+        logger.debug('Exported organization.yaml');
 
         // 2. Export Departments
         const departmentsDir = path.join(outputDir, 'departments');
@@ -206,9 +209,9 @@ export class ConfigSyncService {
 
             const filename = `${dept.name.toLowerCase().replace(/\s+/g, '-')}.yaml`;
             fs.writeFileSync(path.join(departmentsDir, filename), yaml.dump(deptYaml));
-            console.log(`[ConfigSync] Exported departments/${filename}`);
+            logger.debug('Exported department config', { filename });
         }
 
-        console.log('[ConfigSync] Export complete!');
+        logger.info('Config export complete');
     }
 }

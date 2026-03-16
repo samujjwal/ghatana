@@ -40,6 +40,7 @@ import {
   breadcrumbsAtom,
   unreadNotificationsCountAtom,
 } from '../../state/atoms';
+import { AIChatInterface } from '../../components/placeholders';
 
 // =============================================================================
 // Types
@@ -376,10 +377,10 @@ const UnifiedProjectDashboard: React.FC = () => {
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="flex-1 rounded-lg border border-gray-200 p-4 dark:border-gray-800">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    AI Assistant panel - Coming soon in Phase 3
-                  </p>
+                <div className="flex-1 min-h-0">
+                  <AIChatInterface
+                    className="h-full"
+                  />
                 </div>
               </div>
             </motion.aside>

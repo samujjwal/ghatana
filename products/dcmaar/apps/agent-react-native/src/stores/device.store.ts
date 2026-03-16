@@ -19,6 +19,8 @@
  */
 
 import { atom } from 'jotai';
+import { guardianApi } from '../services/guardianApi';
+import { authAtom } from './auth.store';
 
 /**
  * Device object representing a monitored device.
@@ -220,37 +222,29 @@ export const fetchDevicesAtom = atom<
     });
 
     try {
-      // TODO: Replace with actual API call
-      // const devices = await deviceService.listDevices();
+      const { user } = get(authAtom);
+      const tenantId = user?.tenantId ?? user?.id ?? '';
 
-      // Mock implementation
-      const mockDevices: Device[] = [
-        {
-          id: 'device-1',
-          name: 'Child Device 1',
-          model: 'Samsung Galaxy A12',
-          osVersion: '12',
-          status: 'online',
-          lastSeen: new Date(),
-        },
-        {
-          id: 'device-2',
-          name: 'Child Device 2',
-          model: 'iPhone 12',
-          osVersion: '16',
-          status: 'offline',
-          lastSeen: new Date(Date.now() - 3600000),
-        },
-      ];
+      const deviceStatusList = await guardianApi.getDevices(tenantId);
+
+      // Map DeviceStatusData → Device (use deviceId as id, derive display fields)
+      const devices: Device[] = deviceStatusList.map((d) => ({
+        id: d.deviceId,
+        name: `Device ${d.deviceId.slice(-6)}`,
+        model: 'Android Device',
+        osVersion: 'Android',
+        status: d.syncStatus === 'failed' ? 'error' : d.syncStatus === 'synced' ? 'online' : 'offline',
+        lastSeen: new Date(d.lastSync),
+      }));
 
       set(deviceAtom, {
         ...state,
-        devices: mockDevices,
+        devices,
         status: 'loaded',
         error: null,
       });
 
-      return mockDevices;
+      return devices;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to fetch devices';
@@ -293,8 +287,11 @@ export const removeDeviceAtom = atom<
     const state = get(deviceAtom);
 
     try {
-      // TODO: Call API to deregister device
-      // await deviceService.removeDevice(deviceId);
+      const { user } = get(authAtom);
+      const tenantId = user?.tenantId ?? user?.id ?? '';
+
+      // Trigger a final sync then deregister via status endpoint
+      await guardianApi.syncDevice(tenantId, deviceId);
 
       set(deviceAtom, {
         ...state,

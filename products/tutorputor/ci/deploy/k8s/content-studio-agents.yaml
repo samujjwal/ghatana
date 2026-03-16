@@ -1,0 +1,251 @@
+---
+# =============================================================================
+# Content Studio Agents — Kubernetes Deployment Manifests
+#
+# Deploys the Tutorputor Content Studio gRPC server (ContentGenerationService).
+# Depends on: OpenAI API key or Ollama endpoint (via Secret).
+#
+# Usage:
+#   kubectl apply -f products/tutorputor/ci/deploy/k8s/content-studio-agents.yaml
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# ConfigMap
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: content-studio-agents-config
+  namespace: tutorputor
+  labels:
+    app: content-studio-agents
+    app.kubernetes.io/part-of: ghatana-tutorputor
+    app.kubernetes.io/component: grpc-server
+data:
+  GRPC_PORT: "50051"
+  HEALTH_PORT: "8096"
+  LLM_PRIMARY_PROVIDER: "openai"
+  OPENAI_MODEL: "gpt-4o"
+  # Ollama fallback — set to your Ollama service URL if running in cluster
+  OLLAMA_BASE_URL: ""
+  LOG_LEVEL: "INFO"
+
+---
+# ---------------------------------------------------------------------------
+# Secret (placeholder — populate via SealedSecret / external-secrets-operator)
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: content-studio-agents-secrets
+  namespace: tutorputor
+  labels:
+    app: content-studio-agents
+    app.kubernetes.io/part-of: ghatana-tutorputor
+type: Opaque
+stringData:
+  # Override with real key at deploy time:
+  #   kubectl create secret generic content-studio-agents-secrets \
+  #     --from-literal=OPENAI_API_KEY=sk-... -n tutorputor
+  OPENAI_API_KEY: ""
+
+---
+# ---------------------------------------------------------------------------
+# Deployment
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: content-studio-agents
+  namespace: tutorputor
+  labels:
+    app: content-studio-agents
+    app.kubernetes.io/name: content-studio-agents
+    app.kubernetes.io/part-of: ghatana-tutorputor
+    app.kubernetes.io/component: grpc-server
+    app.kubernetes.io/version: "1.0.0"
+  annotations:
+    deployment.kubernetes.io/change-cause: "Initial deployment"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: content-studio-agents
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: content-studio-agents
+        app.kubernetes.io/part-of: ghatana-tutorputor
+      annotations:
+        prometheus.io/scrape: "false"
+        # gRPC services expose metrics via the Prometheus Java agent if configured;
+        # enable scraping by adding the agent to JAVA_OPTS and setting port below.
+    spec:
+      serviceAccountName: tutorputor-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: content-studio-agents
+          image: ghcr.io/ghatana/content-studio-agents:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+            - name: health
+              containerPort: 8096
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: content-studio-agents-config
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: content-studio-agents-secrets
+                  key: OPENAI_API_KEY
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          # Startup probe — allow up to 120s for JVM + gRPC server init
+          startupProbe:
+            httpGet:
+              path: /health
+              port: health
+            failureThreshold: 12
+            periodSeconds: 10
+            timeoutSeconds: 5
+          # Liveness probe — restart if server hangs
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # Readiness probe — remove from Service endpoints if not ready
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: content-studio-agents
+
+---
+# ---------------------------------------------------------------------------
+# Service (ClusterIP — gRPC internal traffic only)
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: content-studio-agents
+  namespace: tutorputor
+  labels:
+    app: content-studio-agents
+    app.kubernetes.io/part-of: ghatana-tutorputor
+    app.kubernetes.io/component: grpc-server
+  annotations:
+    # Hint to AWS/GCP LBs that this is a gRPC service
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http2"
+spec:
+  type: ClusterIP
+  selector:
+    app: content-studio-agents
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: grpc
+      protocol: TCP
+    - name: health
+      port: 8096
+      targetPort: health
+      protocol: TCP
+
+---
+# ---------------------------------------------------------------------------
+# HorizontalPodAutoscaler
+# ---------------------------------------------------------------------------
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: content-studio-agents-hpa
+  namespace: tutorputor
+  labels:
+    app: content-studio-agents
+    app.kubernetes.io/part-of: ghatana-tutorputor
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: content-studio-agents
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+
+---
+# ---------------------------------------------------------------------------
+# PodDisruptionBudget (ensures ≥ 1 replica during node drain / rolling update)
+# ---------------------------------------------------------------------------
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: content-studio-agents-pdb
+  namespace: tutorputor
+  labels:
+    app: content-studio-agents
+    app.kubernetes.io/part-of: ghatana-tutorputor
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: content-studio-agents

@@ -439,6 +439,257 @@ tasks.register("validatePipelines") {
     }
 }
 
+// ============================================================================
+// Lifecycle Config Validation Task (Dimension 8.1.2)
+// Validates cross-references between stages.yaml and transitions.yaml:
+//   - Every stage ID in transitions.yaml must exist in stages.yaml
+//   - Every artifact referenced in transitions.yaml is non-empty
+// ============================================================================
+tasks.register("validateLifecycleConfig") {
+    description = "Validates lifecycle stages.yaml and transitions.yaml for structural integrity and cross-references"
+    group = "verification"
+
+    doLast {
+        val yaml = org.yaml.snakeyaml.Yaml()
+        val stagesFile     = file("config/lifecycle/stages.yaml")
+        val transitionsFile = file("config/lifecycle/transitions.yaml")
+
+        var errors = 0
+
+        // ---- Load stages ----
+        if (!stagesFile.exists()) {
+            throw GradleException("config/lifecycle/stages.yaml not found")
+        }
+        @Suppress("UNCHECKED_CAST")
+        val stagesDoc = yaml.load<Map<String, Any>>(stagesFile.readText())
+        @Suppress("UNCHECKED_CAST")
+        val stagesList = stagesDoc?.get("stages") as? List<Map<String, Any>> ?: emptyList()
+        val knownStageIds = mutableSetOf<String>()
+        stagesList.forEach { stage ->
+            val id = stage["id"]?.toString()?.trim()
+            if (id.isNullOrBlank()) {
+                println("ERROR: stages.yaml entry missing 'id' field")
+                errors++
+            } else {
+                if (!knownStageIds.add(id)) {
+                    println("ERROR: Duplicate stage id '$id' in stages.yaml")
+                    errors++
+                }
+            }
+        }
+        println("Loaded ${knownStageIds.size} stage IDs: $knownStageIds")
+
+        // ---- Load and validate transitions ----
+        if (!transitionsFile.exists()) {
+            throw GradleException("config/lifecycle/transitions.yaml not found")
+        }
+        @Suppress("UNCHECKED_CAST")
+        val transitionsDoc = yaml.load<Map<String, Any>>(transitionsFile.readText())
+        @Suppress("UNCHECKED_CAST")
+        val transitionsList = transitionsDoc?.get("transitions") as? List<Map<String, Any>> ?: emptyList()
+
+        transitionsList.forEachIndexed { idx, t ->
+            val from = t["from"]?.toString()?.trim()
+            val to   = t["to"]?.toString()?.trim()
+
+            if (from.isNullOrBlank()) {
+                println("ERROR: transitions.yaml entry #$idx missing 'from' field")
+                errors++
+            } else if (from !in knownStageIds) {
+                println("ERROR: transitions.yaml entry #$idx 'from: $from' is not a known stage ID")
+                errors++
+            }
+
+            if (to.isNullOrBlank()) {
+                println("ERROR: transitions.yaml entry #$idx missing 'to' field")
+                errors++
+            } else if (to !in knownStageIds) {
+                println("ERROR: transitions.yaml entry #$idx 'to: $to' is not a known stage ID")
+                errors++
+            }
+
+            // Validate required_artifacts entries are non-empty strings
+            @Suppress("UNCHECKED_CAST")
+            val artifacts = t["required_artifacts"] as? List<*> ?: emptyList<Any>()
+            artifacts.forEachIndexed { ai, artifact ->
+                if (artifact?.toString().isNullOrBlank()) {
+                    println("ERROR: transitions.yaml entry #$idx required_artifacts[$ai] is blank")
+                    errors++
+                }
+            }
+        }
+
+        if (errors > 0) {
+            throw GradleException("Lifecycle config validation failed with $errors error(s)")
+        }
+
+        println("Lifecycle config validation PASSED: ${knownStageIds.size} stages, ${transitionsList.size} transitions, 0 errors")
+    }
+}
+
+// ============================================================================
+// Workflow Config Validation Task (Dimension 8.1.3)
+// Validates canonical-workflows.yaml:
+//   - All stage references resolve to known stage IDs from stages.yaml
+//   - All required top-level fields present (id, name, stages/steps)
+// ============================================================================
+tasks.register("validateWorkflowConfig") {
+    description = "Validates canonical-workflows.yaml stage references resolve to known lifecycle stages"
+    group = "verification"
+
+    doLast {
+        val yaml = org.yaml.snakeyaml.Yaml()
+        val stagesFile   = file("config/lifecycle/stages.yaml")
+        val workflowFile = file("config/workflows/canonical-workflows.yaml")
+
+        var errors = 0
+
+        // ---- Load known stage IDs ----
+        if (!stagesFile.exists()) {
+            throw GradleException("config/lifecycle/stages.yaml not found — run validateLifecycleConfig first")
+        }
+        @Suppress("UNCHECKED_CAST")
+        val stagesDoc = yaml.load<Map<String, Any>>(stagesFile.readText())
+        @Suppress("UNCHECKED_CAST")
+        val stagesList = stagesDoc?.get("stages") as? List<Map<String, Any>> ?: emptyList()
+        val knownStageIds = stagesList.mapNotNull { it["id"]?.toString()?.trim() }.toSet()
+
+        // ---- Load and validate workflows ----
+        if (!workflowFile.exists()) {
+            throw GradleException("config/workflows/canonical-workflows.yaml not found")
+        }
+        @Suppress("UNCHECKED_CAST")
+        val workflowDoc = yaml.load<Map<String, Any>>(workflowFile.readText())
+
+        // Workflows may be structured as top-level map entries or a list
+        @Suppress("UNCHECKED_CAST")
+        val workflowsList = when (val wfl = workflowDoc?.get("workflows")) {
+            is List<*> -> wfl.filterIsInstance<Map<String, Any>>()
+            is Map<*, *> -> (wfl as Map<String, Map<String, Any>>).values.toList()
+            else -> {
+                // Try treating root keys as workflow definitions
+                workflowDoc?.entries
+                    ?.filter { it.value is Map<*, *> }
+                    ?.map { @Suppress("UNCHECKED_CAST") it.value as Map<String, Any> }
+                    ?: emptyList()
+            }
+        }
+
+        println("Validating ${workflowsList.size} canonical workflows...")
+
+        workflowsList.forEachIndexed { idx, wf ->
+            val wfId = wf["id"]?.toString() ?: wf["name"]?.toString() ?: "#$idx"
+
+            // Required fields
+            listOf("id", "name").forEach { field ->
+                if (!wf.containsKey(field)) {
+                    println("WARNING: workflow '$wfId' missing recommended field: $field")
+                }
+            }
+
+            // Validate stage/step references
+            @Suppress("UNCHECKED_CAST")
+            val steps = (wf["stages"] ?: wf["steps"] ?: wf["phases"]) as? List<*> ?: emptyList<Any>()
+            steps.forEachIndexed { si, step ->
+                val stageRef = when (step) {
+                    is Map<*, *> -> step["stage"]?.toString() ?: step["id"]?.toString()
+                    is String    -> step
+                    else         -> null
+                }
+                if (stageRef != null && stageRef !in knownStageIds) {
+                    println("ERROR: workflow '$wfId' step[$si] references unknown stage: $stageRef")
+                    errors++
+                }
+            }
+        }
+
+        if (errors > 0) {
+            throw GradleException("Workflow config validation failed with $errors error(s)")
+        }
+
+        println("Workflow config validation PASSED: ${workflowsList.size} workflows, 0 errors")
+    }
+}
+
+// ============================================================================
+// Policy Config Validation Task (Dimension 8.1.4 / 4.5)
+// Validates all YAML files in config/policies/:
+//   - Required fields present (id, version, rules)
+//   - Duplicate policy IDs detected
+// ============================================================================
+tasks.register("validatePolicyConfig") {
+    description = "Validates all policy YAML files in config/policies/ for structural correctness and ID uniqueness"
+    group = "verification"
+
+    doLast {
+        val yaml      = org.yaml.snakeyaml.Yaml()
+        val policyDir = file("config/policies")
+        var errors    = 0
+
+        if (!policyDir.exists()) {
+            throw GradleException("config/policies/ directory not found")
+        }
+
+        val policyFiles = policyDir.walkTopDown()
+            .filter { it.isFile && it.name.endsWith(".yaml") }
+            .toList()
+
+        if (policyFiles.isEmpty()) {
+            throw GradleException("No policy YAML files found in config/policies/")
+        }
+
+        println("Validating ${policyFiles.size} policy YAML file(s)...")
+
+        val seenPolicyIds = mutableSetOf<String>()
+
+        policyFiles.forEach { file ->
+            try {
+                @Suppress("UNCHECKED_CAST")
+                val doc = yaml.load<Map<String, Any>>(file.readText())
+                    ?: throw IllegalArgumentException("Empty YAML")
+
+                @Suppress("UNCHECKED_CAST")
+                val policies = doc["policies"] as? List<Map<String, Any>> ?: emptyList()
+
+                policies.forEachIndexed { idx, policy ->
+                    val id = policy["id"]?.toString()?.trim()
+                    if (id.isNullOrBlank()) {
+                        println("ERROR: ${file.name} policy[$idx] missing 'id' field")
+                        errors++
+                    } else if (!seenPolicyIds.add(id)) {
+                        println("ERROR: ${file.name} duplicate policy ID: $id")
+                        errors++
+                    }
+
+                    if (!policy.containsKey("version")) {
+                        println("WARNING: ${file.name} policy '${id ?: idx}' missing 'version' field")
+                    }
+
+                    @Suppress("UNCHECKED_CAST")
+                    val rules = policy["rules"] as? List<*> ?: emptyList<Any>()
+                    if (rules.isEmpty()) {
+                        println("ERROR: ${file.name} policy '${id ?: idx}' has no rules")
+                        errors++
+                    }
+                }
+
+            } catch (e: Exception) {
+                println("ERROR: Failed to parse ${file.name}: ${e.message}")
+                errors++
+            }
+        }
+
+        if (errors > 0) {
+            throw GradleException("Policy config validation failed with $errors error(s)")
+        }
+
+        println("Policy config validation PASSED: ${policyFiles.size} file(s), ${seenPolicyIds.size} policies, 0 errors")
+    }
+}
+
 tasks.findByName("check")?.dependsOn("validateAgentCatalog")
-tasks.findByName("check")?.dependsOn("validateEventSchemas") 
+tasks.findByName("check")?.dependsOn("validateEventSchemas")
 tasks.findByName("check")?.dependsOn("validatePipelines")
+tasks.findByName("check")?.dependsOn("validateLifecycleConfig")
+tasks.findByName("check")?.dependsOn("validateWorkflowConfig")
+tasks.findByName("check")?.dependsOn("validatePolicyConfig")

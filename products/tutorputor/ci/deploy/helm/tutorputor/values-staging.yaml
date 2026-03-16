@@ -1,0 +1,33 @@
+replicaCount: 2
+
+app:
+  logLevel: debug
+  nodeEnv: staging
+
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+  hosts:
+    - host: api.staging.tutorputor.ghatana.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: tutorputor-platform-tls-staging
+      hosts:
+        - api.staging.tutorputor.ghatana.com
+
+platformServices:
+  authGatewayUrl: "http://auth-gateway.platform-staging.svc.cluster.local:8080"
+  aiRegistryUrl: "http://ai-registry.platform-staging.svc.cluster.local:8080"
+  featureStoreUrl: "http://feature-store.platform-staging.svc.cluster.local:8080"
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"

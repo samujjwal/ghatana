@@ -12,6 +12,17 @@
  */
 
 /**
+ * Minimal logger interface for WebSocket client.
+ * Defaults to `console` if not provided in config.
+ */
+export interface ClientLogger {
+  info(msg: string, ...args: unknown[]): void;
+  warn(msg: string, ...args: unknown[]): void;
+  error(msg: string, ...args: unknown[]): void;
+  debug(msg: string, ...args: unknown[]): void;
+}
+
+/**
  * WebSocket configuration options
  */
 export interface WebSocketConfig {
@@ -21,6 +32,8 @@ export interface WebSocketConfig {
   reconnectDelay?: number;
   heartbeatInterval?: number;
   connectionTimeout?: number;
+  /** Optional logger — defaults to console */
+  logger?: ClientLogger;
 }
 
 /**
@@ -91,6 +104,7 @@ export type WebSocketEventHandler<T = unknown> = (
 export class WebSocketClient {
   private ws: WebSocket | null = null;
   private config: Required<WebSocketConfig>;
+  private readonly logger: ClientLogger;
   private eventHandlers: Map<string, Set<WebSocketEventHandler>> = new Map();
   private connectionState: WebSocketConnectionState = {
     status: 'disconnected',
@@ -129,8 +143,10 @@ export class WebSocketClient {
       heartbeatInterval: 30000,
       connectionTimeout: 10000,
       protocols: [],
+      logger: console,
       ...config,
     };
+    this.logger = this.config.logger;
   }
 
   /**
@@ -211,7 +227,7 @@ export class WebSocketClient {
       this.ws.send(JSON.stringify(messageWithTimestamp));
       return true;
     } catch (error) {
-      console.error('Failed to send WebSocket message:', error);
+      this.logger.error('Failed to send WebSocket message:', error);
       return false;
     }
   }
@@ -304,7 +320,7 @@ export class WebSocketClient {
     // Start heartbeat
     this.startHeartbeat();
 
-    console.log('WebSocket connected successfully');
+    this.logger.info('WebSocket connected successfully');
   }
 
   private handleMessage(event: MessageEvent): void {
@@ -323,7 +339,7 @@ export class WebSocketClient {
           try {
             handler(message);
           } catch (error) {
-            console.error(
+            this.logger.error(
               `Error in WebSocket message handler for type "${message.type}":`,
               error
             );
@@ -331,12 +347,12 @@ export class WebSocketClient {
         });
       }
     } catch (error) {
-      console.error('Failed to parse WebSocket message:', error);
+      this.logger.error('Failed to parse WebSocket message:', error);
     }
   }
 
   private handleClose(event: CloseEvent): void {
-    console.log(`WebSocket closed: ${event.code} - ${event.reason}`);
+    this.logger.info(`WebSocket closed: ${event.code} - ${event.reason}`);
 
     this.clearTimers();
 
@@ -360,7 +376,7 @@ export class WebSocketClient {
   private handleError(error: Event | Error): void {
     const errorMessage =
       error instanceof Error ? error.message : 'WebSocket error occurred';
-    console.error('WebSocket error:', errorMessage);
+    this.logger.error('WebSocket error:', errorMessage);
 
     this.updateConnectionState({
       status: 'failed',
@@ -369,7 +385,7 @@ export class WebSocketClient {
   }
 
   private handleConnectionTimeout(): void {
-    console.error('WebSocket connection timeout');
+    this.logger.warn('WebSocket connection timeout');
 
     if (this.ws) {
       this.ws.close();
@@ -398,13 +414,13 @@ export class WebSocketClient {
 
     const delay = this.config.reconnectDelay * Math.pow(2, attempt - 1); // Exponential backoff
 
-    console.log(
+    this.logger.info(
       `Attempting to reconnect (${attempt}/${this.config.maxReconnectAttempts}) in ${delay}ms...`
     );
 
     this.reconnectTimer = setTimeout(() => {
       this.connect().catch((error) => {
-        console.error('Reconnection failed:', error);
+        this.logger.error('Reconnection failed:', error);
       });
     }, delay);
   }
@@ -451,7 +467,7 @@ export class WebSocketClient {
       try {
         listener(this.connectionState);
       } catch (error) {
-        console.error('Error in WebSocket state change listener:', error);
+        this.logger.error('Error in WebSocket state change listener:', error);
       }
     });
   }

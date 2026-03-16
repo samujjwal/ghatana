@@ -2,6 +2,7 @@ package com.ghatana.stt.core.grpc;
 
 import com.ghatana.audio.video.common.GrpcInterceptorChain;
 import com.ghatana.audio.video.common.health.HealthMetricsServer;
+import com.ghatana.audio.video.common.platform.AiRegistryClient;
 import com.ghatana.stt.core.api.AdaptiveSTTEngine;
 import com.ghatana.stt.core.api.AdaptiveSTTEngineFactory;
 import com.ghatana.stt.core.config.EngineConfig;
@@ -10,6 +11,7 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Standalone gRPC server exposing the AdaptiveSTTEngine via {@link SttGrpcService}.
@@ -70,6 +72,15 @@ public final class SttGrpcServer implements AutoCloseable {
 
     public static void main(String[] args) throws Exception {
         int port = Integer.parseInt(System.getenv().getOrDefault("STT_GRPC_PORT", "50051"));
+
+        // Resolve the active model version from the platform AI Registry at startup.
+        // Override the tenant via AI_MODEL_TENANT env var (defaults to "default").
+        String modelTenant = System.getenv().getOrDefault("AI_MODEL_TENANT", "default");
+        Optional<String> activeModel = AiRegistryClient.getInstance().findActiveModel(modelTenant, "whisper-base");
+        activeModel.ifPresentOrElse(
+                model -> System.out.printf("[STT] Active model resolved from registry: %s%n", model),
+                () -> System.out.println("[STT] AI Registry not configured or no active model found — using default engine")
+        );
 
         EngineConfig config = EngineConfig.builder()
             .build();

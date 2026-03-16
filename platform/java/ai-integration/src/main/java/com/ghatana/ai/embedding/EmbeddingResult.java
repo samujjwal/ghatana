@@ -75,22 +75,40 @@ public final class EmbeddingResult {
     
     /**
      * Creates an EmbeddingResult from an OpenAI Embedding object using official SDK.
-     * 
-     * TODO: Implement when SDK 4.7.1 integration is completed with actual Embedding model class.
-     * Currently this method is removed as the com.openai.models.Embedding class is not available
-     * in OpenAI SDK 4.7.1. Use the constructor directly instead.
      *
-     * @param embedding The OpenAI Embedding object from official SDK (placeholder)
+     * <p>Uses reflection to extract the embedding vector from the SDK object, making it
+     * compatible with multiple SDK versions. The SDK object must expose an {@code embedding()}
+     * method returning {@code List<Double>} (OpenAI Java SDK convention).
+     *
+     * @param embedding The OpenAI Embedding object from official SDK
      * @param text The original text that was embedded
      * @param model The model used for embedding
      * @return A new EmbeddingResult instance
+     * @throws IllegalArgumentException if the embedding vector cannot be extracted
      */
+    @SuppressWarnings("unchecked")
     public static EmbeddingResult fromOpenAI(Object embedding, String text, String model) {
-        // Placeholder implementation - will be updated when SDK integration is finalized
-        throw new UnsupportedOperationException(
-            "fromOpenAI() is not yet implemented for SDK 4.7.1. Use constructor directly: " +
-            "new EmbeddingResult(text, vector, model)"
-        );
+        Objects.requireNonNull(embedding, "embedding cannot be null");
+        Objects.requireNonNull(text, "text cannot be null");
+        Objects.requireNonNull(model, "model cannot be null");
+        try {
+            // OpenAI Java SDK: Embedding.embedding() returns List<Double>
+            java.lang.reflect.Method embeddingMethod =
+                    embedding.getClass().getMethod("embedding");
+            java.util.List<Double> vector =
+                    (java.util.List<Double>) embeddingMethod.invoke(embedding);
+            float[] floatVector = new float[vector.size()];
+            for (int i = 0; i < vector.size(); i++) {
+                floatVector[i] = vector.get(i).floatValue();
+            }
+            return new EmbeddingResult(text, floatVector, model);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalArgumentException(
+                "Cannot extract embedding vector from " + embedding.getClass().getName() +
+                ". Expected a method embedding() returning List<Double>. " +
+                "Alternatively, use constructor directly: new EmbeddingResult(text, vector, model)",
+                e);
+        }
     }
 
     /**

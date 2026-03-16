@@ -1,0 +1,122 @@
+id: anomaly-detector-agent
+name: Anomaly Detector Agent
+version: 1.0.0
+description: >
+  Detects anomalies in metric streams, event sequences, and log patterns using
+  statistical and ML-based techniques. Supports Z-score, IQR, moving-average
+  deviation, seasonal decomposition, and isolation-forest detection strategies.
+  Emits structured anomaly events with severity scoring, root-cause hints, and
+  confidence values. Integrates with the AEP learning system to improve
+  detection accuracy over time via policy feedback.
+
+metadata:
+  level: 3
+  domain: monitoring
+  tags: [anomaly, detection, ml, statistics, observability, alerting]
+  maturity: production
+  author: platform-team@ghatana.ai
+
+generator:
+  type: ADAPTIVE
+
+# AEP Operator configuration
+aep:
+  operatorType: ANALYSIS
+  inputEventTypes:
+    - "metrics.collected"
+    - "metrics.aggregated"
+    - "log.structured"
+    - "event.*"
+  outputEventTypes:
+    - "anomaly.detected"
+    - "anomaly.resolved"
+    - "anomaly.score"
+  backpressure:
+    bufferSize: 20000
+    overflowStrategy: DROP_OLDEST
+  reliability:
+    checkpointInterval: 60s
+    maxRetries: 1
+    deadLetterQueue: anomaly-detector-dlq
+
+capabilities:
+  - z-score-detection
+  - iqr-detection
+  - moving-average-deviation
+  - seasonal-decomposition
+  - isolation-forest
+  - anomaly-scoring
+  - root-cause-hinting
+
+# Anomaly detection configuration
+configuration:
+  detectionStrategy:
+    description: "Primary anomaly detection algorithm"
+    type: string
+    enum: [Z_SCORE, IQR, MOVING_AVERAGE, SEASONAL_DECOMP, ISOLATION_FOREST, ENSEMBLE]
+    default: ENSEMBLE
+  windowSize:
+    description: "Lookback window for baseline calculation (ISO-8601 duration)"
+    type: string
+    default: PT1H
+  sensitivityLevel:
+    description: "Detection sensitivity: LOW/MEDIUM/HIGH"
+    type: string
+    enum: [LOW, MEDIUM, HIGH]
+    default: MEDIUM
+  metrics:
+    description: "Specific metric names to monitor (empty = all)"
+    type: array
+    items:
+      type: string
+    default: []
+  alertThresholds:
+    description: "Score thresholds for severity classification"
+    type: object
+    properties:
+      warning:
+        type: number
+        default: 0.6
+        description: "Score ≥ this triggers WARNING"
+      critical:
+        type: number
+        default: 0.85
+        description: "Score ≥ this triggers CRITICAL"
+  learningEnabled:
+    description: "Enable AEP learning system feedback loop"
+    type: boolean
+    default: true
+  seasonalityPeriod:
+    description: "Seasonality period for decomposition (ISO-8601 duration)"
+    type: string
+    default: P1D
+
+io:
+  inputs:
+    - name: metricsStream
+      type: JSON
+      schema: "https://schema.ghatana.com/metrics/collected/v1"
+      required: true
+  outputs:
+    - name: anomalyEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/anomaly/v1"
+    - name: anomalyScore
+      type: JSON
+      schema: "https://schema.ghatana.com/anomaly/score/v1"
+
+memory:
+  type: EPISODIC
+  scope: anomaly_baseline
+  retention: long
+  maxEntries: 1000000
+
+resources:
+  memory: 2GB
+  cpu: "2"
+  timeout: 60s
+  maxConcurrency: 10
+
+routing:
+  input: MetricsCollectedEvent
+  output: AnomalyEvent

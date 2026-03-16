@@ -125,12 +125,12 @@ public final class QualityGateStep implements WorkflowStep {
       Map<String, Object> coverageCheck = checkCoverage(coverage);
       gate.put("coverageCheck", coverageCheck);
 
-      // Static analysis check
-      Map<String, Object> staticAnalysis = runStaticAnalysis(name);
+      // Static analysis check (driven by buildRun metadata when available)
+      Map<String, Object> staticAnalysis = runStaticAnalysis(name, buildRun);
       gate.put("staticAnalysis", staticAnalysis);
 
-      // Security scan
-      Map<String, Object> securityScan = runSecurityScan(name);
+      // Security scan (driven by buildRun metadata when available)
+      Map<String, Object> securityScan = runSecurityScan(name, buildRun);
       gate.put("securityScan", securityScan);
 
       // Overall status
@@ -171,38 +171,49 @@ public final class QualityGateStep implements WorkflowStep {
   }
 
   private Map<String, Object> runStaticAnalysis(String name) {
-    // Simulated static analysis (linting, complexity, duplicates)
-    Map<String, Object> analysis = new LinkedHashMap<>();
-    int violations = (int) (Math.random() * 3); // 0-2 violations
-    int complexity = (int) (Math.random() * 8) + 3; // 3-10
+    String unitKey = name != null ? name : "";
+    return runStaticAnalysis(unitKey, Collections.emptyMap());
+  }
 
+  private Map<String, Object> runStaticAnalysis(String name, Map<String, Object> buildRun) {
+    // Use actual static-analysis results stored in the build run when available.
+    // The build step is expected to persist violation and complexity counts in the build record.
+    int violations = extractInt(buildRun, "staticViolations", 0);
+    int complexity = extractInt(buildRun, "cyclomaticComplexity", 0);
+
+    Map<String, Object> analysis = new LinkedHashMap<>();
     analysis.put("violations", violations);
     analysis.put("maxViolations", MAX_VIOLATIONS);
     analysis.put("complexity", complexity);
     analysis.put("maxComplexity", MAX_COMPLEXITY);
-    analysis.put("duplicates", 0);
+    analysis.put("duplicates", extractInt(buildRun, "duplicateBlocks", 0));
 
     boolean passed = violations <= MAX_VIOLATIONS && complexity <= MAX_COMPLEXITY;
     analysis.put("status", passed ? "PASS" : "WARN");
-
     if (!passed) {
       analysis.put("message", "Static analysis issues detected");
     }
-
     return analysis;
   }
 
   private Map<String, Object> runSecurityScan(String name) {
-    // Simulated security scan (dependency vulnerabilities)
-    Map<String, Object> scan = new LinkedHashMap<>();
-    int criticalVulns = 0;
-    int highVulns = (int) (Math.random() * 2); // 0-1
-    int mediumVulns = (int) (Math.random() * 3); // 0-2
+    String unitKey = name != null ? name : "";
+    return runSecurityScan(unitKey, Collections.emptyMap());
+  }
 
+  private Map<String, Object> runSecurityScan(String name, Map<String, Object> buildRun) {
+    // Use actual vulnerability counts stored in the build run when available.
+    // The CI pipeline is expected to run a dependency-check or SAST tool and persist
+    // the results (criticalVulns, highVulns, mediumVulns) in the build record.
+    int criticalVulns = extractInt(buildRun, "criticalVulns", 0);
+    int highVulns = extractInt(buildRun, "highVulns", 0);
+    int mediumVulns = extractInt(buildRun, "mediumVulns", 0);
+
+    Map<String, Object> scan = new LinkedHashMap<>();
     scan.put("critical", criticalVulns);
     scan.put("high", highVulns);
     scan.put("medium", mediumVulns);
-    scan.put("low", 0);
+    scan.put("low", extractInt(buildRun, "lowVulns", 0));
 
     String status;
     if (criticalVulns > 0) {
@@ -215,8 +226,16 @@ public final class QualityGateStep implements WorkflowStep {
       status = "PASS";
     }
     scan.put("status", status);
-
     return scan;
+  }
+
+  /** Safely extracts an integer value from a map, returning the default when absent or wrong type. */
+  private int extractInt(Map<String, Object> map, String key, int defaultValue) {
+    Object val = map.get(key);
+    if (val instanceof Number n) {
+      return n.intValue();
+    }
+    return defaultValue;
   }
 
   private String determineOverallStatus(

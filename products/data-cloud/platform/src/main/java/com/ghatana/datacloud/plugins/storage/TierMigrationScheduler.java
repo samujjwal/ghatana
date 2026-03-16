@@ -101,6 +101,17 @@ public class TierMigrationScheduler {
     private final AtomicLong totalEventsMigrated = new AtomicLong(0);
     private final AtomicLong totalBatchesProcessed = new AtomicLong(0);
 
+    /**
+     * Registry of tenant/stream pairs that this scheduler should migrate.
+     * <p>
+     * Callers use {@link #registerStream(String, String)} at startup (or when a
+     * new tenant/stream is created) so the periodic job knows which streams to
+     * process. This is intentionally lightweight — in a large multi-tenant
+     * deployment, replace with a query against the metadata catalog.
+     */
+    private final java.util.concurrent.CopyOnWriteArraySet<TenantStream> registeredStreams =
+            new java.util.concurrent.CopyOnWriteArraySet<>();
+
     private ScheduledExecutorService scheduler;
 
     // Metrics
@@ -192,6 +203,35 @@ public class TierMigrationScheduler {
     }
 
     // ==================== Migration Operations ====================
+
+    /**
+     * Registers a tenant/stream combination for periodic migration.
+     *
+     * <p>Call this once per stream at application startup or when a new stream
+     * is provisioned. The migration scheduler will process all registered streams
+     * during each scheduled run.
+     *
+     * @param tenantId   the tenant that owns the stream
+     * @param streamName the event stream name
+     */
+    public void registerStream(String tenantId, String streamName) {
+        TenantStream ts = new TenantStream(tenantId, streamName);
+        if (registeredStreams.add(ts)) {
+            log.info("Registered stream for migration: tenant={}, stream={}", tenantId, streamName);
+        }
+    }
+
+    /**
+     * Unregisters a tenant/stream so it is no longer included in migration runs.
+     *
+     * @param tenantId   the tenant that owns the stream
+     * @param streamName the event stream name
+     */
+    public void unregisterStream(String tenantId, String streamName) {
+        if (registeredStreams.remove(new TenantStream(tenantId, streamName))) {
+            log.info("Unregistered stream from migration: tenant={}, stream={}", tenantId, streamName);
+        }
+    }
 
     /**
      * Triggers a manual migration for a specific tenant and stream.
@@ -326,12 +366,18 @@ public class TierMigrationScheduler {
 
     /**
      * Discovers tenant/stream combinations to migrate.
-     * In production, this would query a metadata store.
+     *
+     * <p>Returns all streams previously registered via
+     * {@link #registerStream(String, String)}. In a full multi-tenant deployment
+     * this method can be overridden or replaced with a metadata-catalog query.
      */
     private List<TenantStream> discoverTenantStreams() {
-        // Placeholder - in production, query metadata catalog
-        // for all active tenant/stream combinations
-        return new ArrayList<>();
+        List<TenantStream> streams = new ArrayList<>(registeredStreams);
+        if (streams.isEmpty()) {
+            log.debug("No tenant/stream pairs registered for migration. "
+                    + "Call registerStream(tenantId, streamName) to enable periodic migration.");
+        }
+        return streams;
     }
 
     private void initializeMetrics() {

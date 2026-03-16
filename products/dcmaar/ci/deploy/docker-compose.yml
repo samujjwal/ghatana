@@ -162,6 +162,12 @@ services:
 networks:
   dcmaar-network:
     driver: bridge
+  # External Ghatana platform network — allows DCMAAR to reach auth-gateway,
+  # ai-registry, and feature-store when running alongside the platform stack.
+  # Create it once with: docker network create ghatana-network
+  ghatana-network:
+    external: true
+    name: ghatana-network
 
 volumes:
   postgres_data:

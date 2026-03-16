@@ -1,0 +1,117 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/ghatana/tutorputor/platform
+  pullPolicy: Always
+  tag: ""  # defaults to Chart.appVersion; override in CI via --set image.tag=sha-<commit>
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  automount: false
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+  readOnlyRootFilesystem: false
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+  metricsPort: 9090
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/limit-rps: "50"
+  hosts:
+    - host: api.tutorputor.ghatana.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: tutorputor-platform-tls
+      hosts:
+        - api.tutorputor.ghatana.com
+
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Application configuration
+app:
+  nodeEnv: production
+  port: "3000"
+  metricsPort: "9090"
+  logLevel: warn
+  defaultTenant: default
+  rateLimitWindow: "900000"
+  rateLimitMax: "100"
+  contentWorkerEnabled: "true"
+  aiProxyEnabled: "true"
+  simulationEnabled: "true"
+
+# Platform shared services (optional — set to "" to disable gracefully)
+platformServices:
+  authGatewayUrl: ""
+  aiRegistryUrl: ""
+  featureStoreUrl: ""
+
+# Kubernetes secret containing sensitive values:
+#   database-url, redis-url, jwt-secret, sentry-dsn (optional)
+existingSecret: tutorputor-secrets
+
+probes:
+  liveness:
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    failureThreshold: 3
+  readiness:
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 3
+  startup:
+    initialDelaySeconds: 15
+    periodSeconds: 5
+    failureThreshold: 12

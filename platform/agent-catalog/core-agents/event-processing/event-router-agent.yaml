@@ -1,0 +1,119 @@
+id: event-router-agent
+name: Event Router Agent
+version: 1.0.0
+description: >
+  Dynamically routes events to one or more downstream channels based on content-
+  based routing rules, load-balancing strategies, or topic affinity. Supports
+  fan-out (broadcast to multiple channels), content-based routing (field-value
+  predicate), round-robin and consistent-hash load balancing, and priority-based
+  routing. Acts as a pipeline multiplexer within AEP workflows.
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [routing, fan-out, load-balancing, cbr, multiplexer, aep]
+  maturity: production
+  author: platform-team@ghatana.ai
+
+generator:
+  type: DETERMINISTIC
+
+# AEP Operator configuration
+aep:
+  operatorType: ROUTER
+  inputEventTypes:
+    - "event.*"
+    - "*.processed"
+    - "*.enriched"
+  outputEventTypes:
+    - "route.*.accepted"
+    - "*.routed"
+  backpressure:
+    bufferSize: 5000
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: 30s
+    maxRetries: 3
+    deadLetterQueue: event-router-dlq
+
+capabilities:
+  - content-based-routing
+  - fan-out-broadcast
+  - round-robin-balancing
+  - consistent-hash-routing
+  - priority-routing
+  - conditional-routing
+
+# Routing rule configuration
+configuration:
+  routingStrategy:
+    description: "Primary routing strategy"
+    type: string
+    enum: [CONTENT_BASED, ROUND_ROBIN, CONSISTENT_HASH, FAN_OUT, PRIORITY]
+    required: true
+    default: CONTENT_BASED
+  routes:
+    description: "Ordered list of routing targets with optional predicates"
+    type: array
+    required: true
+    items:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Route identifier"
+        channel:
+          type: string
+          description: "Target channel or topic name"
+        predicate:
+          type: object
+          description: "Boolean predicate — null means match-all (default route)"
+        weight:
+          type: integer
+          default: 1
+          description: "Weight for weighted round-robin"
+        priority:
+          type: integer
+          default: 0
+          description: "Higher = evaluated first"
+  fanOutChannels:
+    description: "For FAN_OUT strategy: list of channels to broadcast to"
+    type: array
+    items:
+      type: string
+  hashKeyField:
+    description: "For CONSISTENT_HASH strategy: field path for key extraction"
+    type: string
+  defaultRoute:
+    description: "Fallback channel when no predicate matches"
+    type: string
+
+io:
+  inputs:
+    - name: incomingEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/event/v1"
+      required: true
+  outputs:
+    - name: routedEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/event/v1"
+    - name: routingDecision
+      type: JSON
+      schema: "https://schema.ghatana.com/routing-decision/v1"
+
+memory:
+  type: WORKING
+  scope: routing_state
+  retention: short
+  maxEntries: 500
+
+resources:
+  memory: 256MB
+  cpu: "0.5"
+  timeout: 10s
+  maxConcurrency: 100
+
+routing:
+  input: IncomingEvent
+  output: RoutingDecision

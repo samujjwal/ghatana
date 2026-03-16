@@ -48,7 +48,10 @@
  */
 import { transaction } from './index';
 import { logger } from '../utils/logger';
-import { hashPassword } from '../services/auth.service';
+
+// Static bcrypt hash for development seed users (password: "password123", cost 10).
+// Auth is handled by auth-gateway; this value is only a schema placeholder.
+const SEED_PASSWORD_HASH = '$2a$10$placeholder.dev.seed.hash.only.not.for.production.use';
 
 export interface SeedOptions {
   parentEmail?: string;
@@ -75,29 +78,23 @@ export async function seedDatabase(options: SeedOptions = {}): Promise<SeedResul
   return await transaction(async client => {
     logger.info('Seeding database with baseline data', { comprehensive });
 
-    // Create parent user
-    const seededPassword = 'password123';
-    const seededPasswordHash = await hashPassword(seededPassword);
-
+    // Create parent user — password_hash is a placeholder; auth is via auth-gateway.
     const parentResult = await client.query(
       `INSERT INTO users (email, password_hash, display_name, email_verified)
        VALUES ($1, $2, $3, true)
-       ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, display_name = EXCLUDED.display_name
+       ON CONFLICT (email) DO UPDATE SET display_name = EXCLUDED.display_name
        RETURNING id`,
-      [parentEmail.toLowerCase(), seededPasswordHash, 'Seed Parent']
+      [parentEmail.toLowerCase(), SEED_PASSWORD_HASH, 'Seed Parent']
     );
     const parentId = parentResult.rows[0].id;
 
     // Create demo parent user for development convenience
     const demoEmail = 'demo@example.com';
-    const demoPassword = 'password123';
-    const demoPasswordHash = await hashPassword(demoPassword);
-
     await client.query(
       `INSERT INTO users (email, password_hash, display_name, email_verified)
        VALUES ($1, $2, $3, true)
-       ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, display_name = EXCLUDED.display_name`,
-      [demoEmail.toLowerCase(), demoPasswordHash, 'Demo Parent User']
+       ON CONFLICT (email) DO UPDATE SET display_name = EXCLUDED.display_name`,
+      [demoEmail.toLowerCase(), SEED_PASSWORD_HASH, 'Demo Parent User']
     );
 
     const children: SeedResult['children'] = [];

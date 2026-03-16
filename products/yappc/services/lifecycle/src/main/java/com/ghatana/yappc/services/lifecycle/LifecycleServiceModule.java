@@ -6,6 +6,7 @@ package com.ghatana.yappc.services.lifecycle;
 
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
+import com.ghatana.datacloud.entity.EntityRepository;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.yappc.api.GenerationApiController;
@@ -28,6 +29,7 @@ import com.ghatana.yappc.services.shape.ShapeService;
 import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
+import com.ghatana.yappc.storage.DataCloudArtifactStore;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import com.ghatana.core.database.config.JpaConfig;
 import com.ghatana.core.operator.catalog.InMemoryOperatorCatalog;
@@ -57,6 +59,7 @@ import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 // ─── Workflow Engine (YAPPC-Ph9) ──────────────────────────────────────────
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
+import com.ghatana.yappc.services.lifecycle.workflow.LifecycleJdbcWorkflowStateStore;
 import com.ghatana.yappc.services.lifecycle.workflow.LifecycleWorkflowService;
 // ─── Agent Orchestration Bootstrapper (YAPPC-Ph6) ─────────────────────────
 import com.ghatana.yappc.services.lifecycle.YappcAgentOrchestrationBootstrapper;
@@ -68,7 +71,11 @@ import com.ghatana.agent.memory.persistence.JdbcTaskStateRepository;
 import com.ghatana.agent.memory.persistence.MemoryItemRepository;
 import com.ghatana.agent.memory.persistence.MemoryStoreAdapter;
 import com.ghatana.agent.memory.persistence.PersistentMemoryPlane;
+import com.ghatana.agent.memory.security.MemoryRedactionFilter;
+import com.ghatana.agent.memory.security.TenantIsolatingMemorySecurityManager;
+import com.ghatana.agent.memory.security.YamlRedactionPatternProvider;
 import com.ghatana.agent.memory.store.MemoryPlane;
+import com.ghatana.yappc.services.lifecycle.memory.GovernedMemoryPlane;
 import com.ghatana.agent.memory.store.procedural.InMemoryPatternEngine;
 import com.ghatana.agent.memory.store.procedural.ProceduralMemoryManager;
 import com.ghatana.agent.memory.store.procedural.ProcedureSelector;
@@ -82,9 +89,20 @@ import io.activej.inject.module.AbstractModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import com.ghatana.yappc.services.lifecycle.config.AgentDefinitionReloadListener;
+import com.ghatana.yappc.services.lifecycle.config.ConfigReloadListener;
+import com.ghatana.yappc.services.lifecycle.config.ConfigWatchService;
+import com.ghatana.yappc.services.lifecycle.config.PluginJarReloadListener;
+import com.ghatana.yappc.services.lifecycle.config.PolicyReloadListener;
+// ─── Plugin Architecture (YAPPC-Dim10) ────────────────────────────────────
+import com.ghatana.yappc.framework.core.plugin.PlatformVersion;
+import com.ghatana.yappc.framework.core.plugin.hotreload.HotReloadPluginRegistry;
+import com.ghatana.yappc.framework.core.plugin.sandbox.IsolatingPluginSandbox;
 
 /**
  * ActiveJ DI module for YAPPC Lifecycle services.
@@ -223,14 +241,36 @@ public class LifecycleServiceModule extends AbstractModule {
     // ========== HTTP API Controllers ==========
 
     /**
-     * Provides the shared artifact repository used by all API controllers.
-     * Using the no-arg constructor creates an in-memory store; callers should
-     * replace this binding with DataCloudArtifactStore for production.
+     * Provides the durable {@link YappcArtifactRepository} backed by DataCloud.
+     *
+     * <p>The {@link DataCloudArtifactStore} stores each artifact as a DataCloud entity
+     * in the {@code yappc-artifacts} collection, using {@link TenantContext} for
+     * multi-tenant isolation. Survives service restarts (replaces InMemoryArtifactStore).
+     *
+     * @param entityRepository DataCloud entity repository (from data-cloud:platform)
+     * @return production-grade durable artifact repository
      */
     @Provides
-    YappcArtifactRepository artifactRepository() {
-        logger.info("Creating YappcArtifactRepository");
-        return new YappcArtifactRepository();
+    YappcArtifactRepository artifactRepository(EntityRepository entityRepository) {
+        ObjectMapper mapper = new ObjectMapper();
+        logger.info("Creating YappcArtifactRepository backed by DataCloudArtifactStore");
+        return new YappcArtifactRepository(new DataCloudArtifactStore(entityRepository, mapper));
+    }
+
+    /**
+     * Provides the durable {@link AuditLogger} for lifecycle phase events.
+     *
+     * <p>Wraps {@link JdbcAuditLogger} so every intent-capture, phase-advance,
+     * and validation event is persisted to {@code lifecycle_audit_events} (V21 migration).
+     *
+     * @param dataSource YAPPC PostgreSQL data source
+     * @return JDBC-backed audit logger
+     */
+    @Provides
+    AuditLogger auditLogger(DataSource dataSource) {
+        ObjectMapper mapper = new ObjectMapper();
+        logger.info("Creating JdbcAuditLogger — lifecycle audit events persisted to PostgreSQL (lifecycle_audit_events)");
+        return new JdbcAuditLogger(dataSource, mapper);
     }
 
     /** Provides IntentApiController for Phase 1 (Intent) HTTP routes. */
@@ -582,19 +622,24 @@ public class LifecycleServiceModule extends AbstractModule {
 
     /**
      * Provides the production {@link MemoryPlane} backed by PostgreSQL via
-     * {@link JdbcMemoryItemRepository} and {@link JdbcTaskStateStore}.
+     * {@link JdbcMemoryItemRepository} and {@link JdbcTaskStateStore}, wrapped
+     * in a {@link GovernedMemoryPlane} for PII redaction and tenant isolation.
      *
-     * <p>This is the core GAA memory persistence layer for YAPPC lifecycle agents.
+     * <p>Write path: {@link MemoryRedactionFilter} scrubs PII/credentials from
+     * content fields before the item is handed to {@code PersistentMemoryPlane}.
+     *
+     * <p>Read path: {@link TenantIsolatingMemorySecurityManager} filters results
+     * to the current tenant, blocking cross-tenant data leakage.
      *
      * @param itemRepository  JDBC-backed memory item store
      * @param taskStateStore  JDBC-backed task state store
      * @param config          working memory bounds configuration
-     * @return PersistentMemoryPlane singleton
+     * @return GovernedMemoryPlane singleton (wraps PersistentMemoryPlane)
      *
      * @doc.type method
-     * @doc.purpose Provides PostgreSQL-backed MemoryPlane for durable GAA memory (YAPPC-Ph8)
+     * @doc.purpose Provides governed PostgreSQL-backed MemoryPlane for GAA (YAPPC-Ph8/Ph9)
      * @doc.layer product
-     * @doc.pattern Repository
+     * @doc.pattern Decorator
      * @doc.gaa.memory episodic
      */
     @Provides
@@ -602,8 +647,24 @@ public class LifecycleServiceModule extends AbstractModule {
             MemoryItemRepository itemRepository,
             TaskStateStore taskStateStore,
             WorkingMemoryConfig config) {
-        logger.info("Creating PersistentMemoryPlane (YAPPC-Ph8)");
-        return new PersistentMemoryPlane(itemRepository, taskStateStore, config);
+        logger.info("Creating GovernedMemoryPlane wrapping PersistentMemoryPlane (YAPPC-Ph9)");
+        PersistentMemoryPlane persistent = new PersistentMemoryPlane(itemRepository, taskStateStore, config);
+
+        // Load YAML-based redaction rules; fall back to built-in patterns if file is absent
+        String configDir = System.getProperty("yappc.config.dir", "config");
+        Path rulesPath = Path.of(configDir, "memory", "redaction-rules.yaml");
+        MemoryRedactionFilter redactionFilter;
+        try {
+            redactionFilter = new MemoryRedactionFilter(true, true,
+                    YamlRedactionPatternProvider.fromPath(rulesPath));
+            logger.info("Loaded redaction rules from {}", rulesPath);
+        } catch (Exception e) {
+            logger.warn("Could not load redaction-rules.yaml ({}), using built-in patterns", e.getMessage());
+            redactionFilter = new MemoryRedactionFilter(true, true);
+        }
+
+        TenantIsolatingMemorySecurityManager securityManager = new TenantIsolatingMemorySecurityManager();
+        return new GovernedMemoryPlane(persistent, redactionFilter, securityManager);
     }
 
     /**
@@ -937,26 +998,26 @@ public class LifecycleServiceModule extends AbstractModule {
      *   <li>Default per-step timeout: 5 minutes</li>
      *   <li>Default max retries per step: 2 (3 total attempts)</li>
      *   <li>Default retry backoff: 2 seconds (exponential)</li>
-     *   <li>State store: {@link DurableWorkflowEngine.InMemoryWorkflowStateStore}</li>
+     *   <li>State store: {@link LifecycleJdbcWorkflowStateStore} backed by PostgreSQL</li>
      * </ul>
      *
-     * <p>For production deployments that require persistent workflow state across restarts,
-     * override this binding (in {@code ProductionModule} or a deployment-specific module)
-     * with a {@code JdbcWorkflowStateStore}-backed engine.
+     * <p>Workflow state is persisted to {@code lifecycle_workflow_runs} (see
+     * {@code V22__lifecycle_workflow_runs.sql}) so runs survive service restarts.
      *
+     * @param dataSource pooled JDBC DataSource for state persistence
      * @return DurableWorkflowEngine singleton
      *
      * @doc.type method
-     * @doc.purpose Provides durable workflow engine for canonical YAPPC lifecycle workflows (YAPPC-Ph9)
+     * @doc.purpose Provides JDBC-backed durable workflow engine for YAPPC lifecycle workflows (YAPPC-Ph9)
      * @doc.layer product
      * @doc.pattern Service, Factory
      */
     @Provides
-    DurableWorkflowEngine durableWorkflowEngine() {
-        logger.info("Creating DurableWorkflowEngine (YAPPC-Ph9) — InMemoryWorkflowStateStore, "
+    DurableWorkflowEngine durableWorkflowEngine(DataSource dataSource) {
+        logger.info("Creating DurableWorkflowEngine (YAPPC-Ph9) — LifecycleJdbcWorkflowStateStore, "
                   + "5min timeout, 2 retries");
         return DurableWorkflowEngine.builder()
-                .stateStore(new DurableWorkflowEngine.InMemoryWorkflowStateStore())
+                .stateStore(new LifecycleJdbcWorkflowStateStore(dataSource, new ObjectMapper()))
                 .defaultTimeout(Duration.ofMinutes(5))
                 .defaultMaxRetries(2)
                 .defaultRetryBackoff(Duration.ofSeconds(2))
@@ -987,5 +1048,78 @@ public class LifecycleServiceModule extends AbstractModule {
         int loaded = service.initialize();
         logger.info("LifecycleWorkflowService initialised — {} workflow template(s) registered", loaded);
         return service;
+    }
+
+    // ========== Plugin Architecture (YAPPC-Dim10) ==========
+
+    /**
+     * Provides the {@link HotReloadPluginRegistry} that manages plugin instances
+     * with atomic hot-swap capability and ClassLoader isolation.
+     *
+     * <p>The sandbox validates SemVer compatibility against {@link PlatformVersion#CURRENT}
+     * before loading any plugin JAR, and enforces the plugin's declared
+     * {@link com.ghatana.yappc.framework.core.plugin.sandbox.PermissionSet} at call time
+     * via a dynamic proxy.
+     *
+     * @return singleton HotReloadPluginRegistry
+     *
+     * @doc.type method
+     * @doc.purpose Provides plugin registry with ClassLoader isolation and hot-reload
+     * @doc.layer product
+     * @doc.pattern Registry
+     */
+    @Provides
+    HotReloadPluginRegistry hotReloadPluginRegistry() {
+        logger.info("Creating HotReloadPluginRegistry (platform={})", PlatformVersion.CURRENT);
+        IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox(PlatformVersion.CURRENT);
+        return new HotReloadPluginRegistry(sandbox);
+    }
+
+    // ========== Config Hot Reload (YAPPC-Dim8.3) ==========
+
+    /**
+     * Provides the {@link ConfigWatchService} that monitors the YAPPC config directory tree
+     * at runtime and triggers hot reload for supported configuration families:
+     * <ul>
+     *   <li>{@code policies/**} — hot reload via {@link PolicyReloadListener}</li>
+     *   <li>{@code agents/**} and {@code workflows/**} — hot add/update via
+     *       {@link AgentDefinitionReloadListener}</li>
+     *   <li>{@code plugins/**} JAR files — hot reload via {@link PluginJarReloadListener}</li>
+     * </ul>
+     *
+     * <p>The service is started eagerly and runs as a daemon thread. Callers must call
+     * {@link ConfigWatchService#close()} on shutdown (handled by
+     * {@code YappcLifecycleService.onStop()}).
+     *
+     * @param policyEngine         the policy engine whose {@code reload()} will be invoked on change
+     * @param pluginRegistry       the plugin registry whose {@code reload(pluginId)} is invoked on JAR change
+     * @return started ConfigWatchService singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides hot-reload file watcher for YAPPC config directory
+     * @doc.layer product
+     * @doc.pattern Service, Observer
+     */
+    @Provides
+    ConfigWatchService configWatchService(YappcPolicyEngine policyEngine,
+                                          HotReloadPluginRegistry pluginRegistry) {
+        String configDirProp = System.getProperty("yappc.config.dir", "config");
+        Path configDir = Path.of(configDirProp).toAbsolutePath().normalize();
+
+        List<ConfigReloadListener> listeners = List.of(
+                // Hot-reload policy YAML; evaluation uses the new snapshot immediately
+                new PolicyReloadListener(event -> policyEngine.reload()),
+                // Hot-add / hot-update agent and workflow definitions
+                new AgentDefinitionReloadListener(event ->
+                        logger.info("AgentDefinition hot-reload triggered for: {}", event.relativePath())),
+                // Hot-reload plugin JARs via HotReloadPluginRegistry
+                new PluginJarReloadListener(pluginRegistry,
+                        event -> logger.warn("Plugin JAR change for unregistered plugin: {}", event.relativePath()))
+        );
+
+        ConfigWatchService watcher = new ConfigWatchService(configDir, listeners);
+        watcher.start();
+        logger.info("ConfigWatchService started — watching '{}'", configDir);
+        return watcher;
     }
 }

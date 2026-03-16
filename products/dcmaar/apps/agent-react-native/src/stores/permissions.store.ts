@@ -19,6 +19,8 @@
  */
 
 import { atom } from 'jotai';
+import { guardianApi } from '../services/guardianApi';
+import { authAtom } from './auth.store';
 
 /**
  * Android permission type constants.
@@ -442,9 +444,8 @@ export const grantPermissionAtom = atom<null, [string], void>(
       requestHistory: [...state.requestHistory, resolvedRequest],
     });
 
-    // Also update permission status
-    const updateStatusGetter = (get as any)(updatePermissionStatusAtom as any);
-    updateStatusGetter(get, set, request.appId, request.permissionId, 'granted');
+    // Also update the permission status for that app
+    set(updatePermissionStatusAtom, request.appId, request.permissionId, 'granted');
   }
 );
 
@@ -485,9 +486,8 @@ export const denyPermissionAtom = atom<null, [string, string?], void>(
       requestHistory: [...state.requestHistory, resolvedRequest],
     });
 
-    // Also update permission status
-    const updateStatusGetter = (get as any)(updatePermissionStatusAtom as any);
-    updateStatusGetter(get, set, request.appId, request.permissionId, 'denied');
+    // Also update the permission status for that app
+    set(updatePermissionStatusAtom, request.appId, request.permissionId, 'denied');
   }
 );
 
@@ -510,7 +510,7 @@ export const denyPermissionAtom = atom<null, [string, string?], void>(
 export const revokePermissionAtom = atom<null, [string, string], void>(
   null,
   (get, set, appId: string, permId: string) => {
-    set((get as any)(updatePermissionStatusAtom as any), [appId, permId, 'denied']);
+    set(updatePermissionStatusAtom, appId, permId, 'denied');
   }
 );
 
@@ -546,51 +546,47 @@ export const fetchPermissionsAtom = atom<null, [], Promise<PermissionsState>>(
     });
 
     try {
-      // TODO: Replace with actual API call
-      // const permissions = await guardianApi.getPermissions();
+      const { user } = get(authAtom);
+      const tenantId = user?.tenantId ?? user?.id ?? '';
 
-      // Mock implementation
-      const mockPermissionsByApp: Record<string, AppPermissionSet> = {
-        'app-1': {
-          appId: 'app-1',
-          appName: 'Chrome',
-          permissions: [
-            {
-              id: PERMISSION_TYPES.CAMERA,
-              name: 'Camera',
-              description: 'Access to device camera',
-              riskLevel: 'dangerous',
-              status: 'granted',
-              grantedAt: new Date(),
-            },
-            {
-              id: PERMISSION_TYPES.LOCATION,
-              name: 'Location',
-              description: 'Access to device location',
-              riskLevel: 'dangerous',
-              status: 'denied',
-              deniedAt: new Date(),
-              denialReason: 'Not needed for browsing',
-            },
-            {
-              id: PERMISSION_TYPES.INTERNET,
-              name: 'Internet',
-              description: 'Access to network',
-              riskLevel: 'normal',
-              status: 'granted',
-              grantedAt: new Date(),
-            },
-          ],
-          grantedCount: 2,
-          deniedCount: 1,
+      // Derive per-app permission sets from the app list (permissions field = string[])
+      const { data: appDataList } = await guardianApi.getApps(tenantId);
+
+      const permissionsByApp: Record<string, AppPermissionSet> = {};
+      for (const appData of appDataList) {
+        const permissions: Permission[] = appData.permissions.map((permId) => ({
+          id: permId,
+          name: permId.split('.').pop() ?? permId,
+          description: `Android permission: ${permId}`,
+          riskLevel: [
+            PERMISSION_TYPES.CAMERA,
+            PERMISSION_TYPES.MICROPHONE,
+            PERMISSION_TYPES.LOCATION,
+            PERMISSION_TYPES.CONTACTS,
+            PERMISSION_TYPES.CALL_LOG,
+            PERMISSION_TYPES.PHONE,
+            PERMISSION_TYPES.SMS,
+          ].includes(permId as never)
+            ? 'dangerous'
+            : 'normal',
+          status: 'granted', // Installed app already has these permissions granted
+          grantedAt: new Date(),
+        }));
+
+        permissionsByApp[appData.id] = {
+          appId: appData.id,
+          appName: appData.name,
+          permissions,
           lastChecked: new Date(),
-        },
-      };
+          grantedCount: permissions.length,
+          deniedCount: 0,
+        };
+      }
 
       const updatedState: PermissionsState = {
-        permissionsByApp: mockPermissionsByApp,
+        permissionsByApp,
         pendingRequests: [],
-        requestHistory: [],
+        requestHistory: state.requestHistory,
         status: 'loaded',
         error: null,
       };

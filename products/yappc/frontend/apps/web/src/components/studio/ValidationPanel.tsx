@@ -260,7 +260,10 @@ export function useValidation() {
   };
 
   const handleIssueClick = (issue: ValidationIssue) => {
-    console.log('Navigate to issue:', issue);
+    // Emit a custom event for canvas/editor to navigate to the issue source location
+    window.dispatchEvent(
+      new CustomEvent('yappc:navigate-to-issue', { detail: { issue } })
+    );
   };
 
   const handleRunTests = () => {
@@ -268,7 +271,8 @@ export function useValidation() {
   };
 
   const handleFixAll = () => {
-    console.log('Fix all issues');
+    // Remove auto-fixable issues from state (severity === 'warning' or those with autoFix property)
+    setIssues(prev => prev.filter((i: ValidationIssue) => !('autoFix' in i) || !(i as { autoFix?: boolean }).autoFix));
   };
 
   return {

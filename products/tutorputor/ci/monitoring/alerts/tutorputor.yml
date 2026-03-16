@@ -1,0 +1,306 @@
+groups:
+  # -------------------------------------------------------------------------
+  # 1. Tutorputor Application Availability
+  # -------------------------------------------------------------------------
+  - name: tutorputor.availability
+    rules:
+      - alert: TutorputorAppDown
+        expr: up{job="tutorputor-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          product: tutorputor
+          team: platform
+        annotations:
+          summary: "Tutorputor main application is down"
+          description: "The Tutorputor Node.js application ({{ $labels.instance }}) has been unreachable for more than 1 minute."
+          runbook: "https://wiki.ghatana.io/runbooks/tutorputor/app-down"
+
+      - alert: TutorputorHighErrorRate
+        expr: |
+          (
+            rate(http_requests_total{job="tutorputor-app", status=~"5.."}[5m])
+            /
+            rate(http_requests_total{job="tutorputor-app"}[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor HTTP error rate above 5%"
+          description: "{{ $labels.instance }} error rate is {{ $value | humanizePercentage }} over last 5 minutes."
+
+      - alert: TutorputorHighErrorRateCritical
+        expr: |
+          (
+            rate(http_requests_total{job="tutorputor-app", status=~"5.."}[5m])
+            /
+            rate(http_requests_total{job="tutorputor-app"}[5m])
+          ) > 0.15
+        for: 3m
+        labels:
+          severity: critical
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor HTTP error rate above 15% (critical)"
+          description: "{{ $labels.instance }} error rate is {{ $value | humanizePercentage }}. Immediate intervention required."
+
+      - alert: TutorputorHighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            rate(http_request_duration_seconds_bucket{job="tutorputor-app"}[5m])
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor p99 response latency above 3s"
+          description: "p99 latency on {{ $labels.instance }} is {{ $value | humanizeDuration }}."
+
+  # -------------------------------------------------------------------------
+  # 2. Content-Studio-Agents (gRPC Service)
+  # -------------------------------------------------------------------------
+  - name: tutorputor.content_studio
+    rules:
+      - alert: ContentStudioAgentsDown
+        expr: up{job="content-studio-agents"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          product: tutorputor
+          component: content-studio
+        annotations:
+          summary: "Content-Studio-Agents gRPC service is down"
+          description: "{{ $labels.instance }} has been unreachable for more than 1 minute."
+          runbook: "https://wiki.ghatana.io/runbooks/tutorputor/content-studio-down"
+
+      - alert: ContentStudioHighGrpcErrorRate
+        expr: |
+          (
+            rate(grpc_server_handled_total{job="content-studio-agents", grpc_code!="OK"}[5m])
+            /
+            rate(grpc_server_handled_total{job="content-studio-agents"}[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          product: tutorputor
+          component: content-studio
+        annotations:
+          summary: "Content-Studio-Agents gRPC error rate above 5%"
+          description: "gRPC error rate on {{ $labels.instance }} is {{ $value | humanizePercentage }}."
+
+      - alert: ContentStudioHighGrpcLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(grpc_server_handling_seconds_bucket{job="content-studio-agents"}[5m])
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          product: tutorputor
+          component: content-studio
+        annotations:
+          summary: "Content-Studio gRPC p95 latency above 10s"
+          description: "gRPC p95 latency is {{ $value | humanizeDuration }} on {{ $labels.instance }}. Content generation may be slow."
+
+  # -------------------------------------------------------------------------
+  # 3. AI Agents Service (JVM)
+  # -------------------------------------------------------------------------
+  - name: tutorputor.ai_agents
+    rules:
+      - alert: TutorputorAiAgentsDown
+        expr: up{job="tutorputor-ai-agents"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          product: tutorputor
+          component: ai-agents
+        annotations:
+          summary: "Tutorputor AI Agents service is down"
+          description: "{{ $labels.instance }} has been unreachable for 1 minute. AI tutoring sessions will be impacted."
+
+      - alert: TutorputorAiAgentSessionSpawnFailure
+        expr: |
+          rate(tutorputor_agent_session_spawn_errors_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          product: tutorputor
+          component: ai-agents
+        annotations:
+          summary: "Tutorputor AI agent session spawn failures detected"
+          description: "Agent session spawn error rate is {{ $value }} errors/s on {{ $labels.instance }}."
+
+      - alert: TutorputorLlmProviderLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            rate(tutorputor_llm_request_duration_seconds_bucket[5m])
+          ) > 15
+        for: 5m
+        labels:
+          severity: warning
+          product: tutorputor
+          component: ai-agents
+        annotations:
+          summary: "Tutorputor LLM provider p95 latency above 15s"
+          description: "LLM provider p95 response time is {{ $value | humanizeDuration }} on {{ $labels.instance }}."
+
+      - alert: TutorputorLlmProviderDown
+        expr: |
+          rate(tutorputor_llm_request_errors_total{error_type="connection"}[5m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+          product: tutorputor
+          component: ai-agents
+        annotations:
+          summary: "Tutorputor LLM provider is unreachable"
+          description: "Connection errors to LLM provider detected on {{ $labels.instance }}. AI tutoring sessions will fail."
+
+  # -------------------------------------------------------------------------
+  # 4. JVM Health (AI Agents + Content-Studio gRPC)
+  # -------------------------------------------------------------------------
+  - name: tutorputor.jvm
+    rules:
+      - alert: TutorputorHighHeapMemory
+        expr: |
+          (
+            jvm_memory_used_bytes{job=~"tutorputor-ai-agents|tutorputor-content-studio-grpc", area="heap"}
+            /
+            jvm_memory_max_bytes{job=~"tutorputor-ai-agents|tutorputor-content-studio-grpc", area="heap"}
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor JVM heap memory above 85%"
+          description: "{{ $labels.job }} heap usage on {{ $labels.instance }} is {{ $value | humanizePercentage }}."
+
+      - alert: TutorputorHighHeapMemoryCritical
+        expr: |
+          (
+            jvm_memory_used_bytes{job=~"tutorputor-ai-agents|tutorputor-content-studio-grpc", area="heap"}
+            /
+            jvm_memory_max_bytes{job=~"tutorputor-ai-agents|tutorputor-content-studio-grpc", area="heap"}
+          ) > 0.95
+        for: 3m
+        labels:
+          severity: critical
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor JVM heap critically full (>95%)"
+          description: "OOM imminent: {{ $labels.job }} on {{ $labels.instance }} at {{ $value | humanizePercentage }} heap."
+
+      - alert: TutorputorFrequentGcPauses
+        expr: |
+          rate(jvm_gc_pause_seconds_sum{job=~"tutorputor-ai-agents|tutorputor-content-studio-grpc"}[5m])
+          /
+          rate(jvm_gc_pause_seconds_count{job=~"tutorputor-ai-agents|tutorputor-content-studio-grpc"}[5m])
+          > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor JVM GC pauses averaging above 500ms"
+          description: "{{ $labels.job }} on {{ $labels.instance }} averaging {{ $value | humanizeDuration }} GC pause time."
+
+      - alert: TutorputorThreadPoolExhaustion
+        expr: |
+          jvm_threads_states_threads{job=~"tutorputor-ai-agents|tutorputor-content-studio-grpc", state="blocked"} > 30
+        for: 5m
+        labels:
+          severity: warning
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor JVM has >30 blocked threads"
+          description: "{{ $labels.job }} on {{ $labels.instance }} has {{ $value }} blocked threads. Possible deadlock."
+
+  # -------------------------------------------------------------------------
+  # 5. Database & Cache
+  # -------------------------------------------------------------------------
+  - name: tutorputor.database
+    rules:
+      - alert: TutorputorPostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor PostgreSQL is down"
+          description: "PostgreSQL exporter on {{ $labels.instance }} is unreachable."
+
+      - alert: TutorputorPostgresHighConnections
+        expr: |
+          pg_stat_database_numbackends / pg_settings_max_connections > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor PostgreSQL connection usage above 80%"
+          description: "{{ $value | humanizePercentage }} of max connections are in use. Risk of connection exhaustion."
+
+      - alert: TutorputorRedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor Redis is down"
+          description: "Redis exporter on {{ $labels.instance }} is unreachable. Session caching will fail."
+
+      - alert: TutorputorRedisHighMemory
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor Redis memory above 85%"
+          description: "Redis on {{ $labels.instance }} at {{ $value | humanizePercentage }} memory. Eviction may start soon."
+
+  # -------------------------------------------------------------------------
+  # 6. Infrastructure
+  # -------------------------------------------------------------------------
+  - name: tutorputor.infrastructure
+    rules:
+      - alert: TutorputorNodeHighCpu
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{job="node", mode="idle"}[5m])) * 100) > 85
+        for: 10m
+        labels:
+          severity: warning
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor node CPU above 85%"
+          description: "Node {{ $labels.instance }} sustained CPU at {{ $value | humanize }}% for 10 minutes."
+
+      - alert: TutorputorNodeDiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{job="node", mountpoint="/"} / node_filesystem_size_bytes{job="node", mountpoint="/"}) < 0.10
+        for: 5m
+        labels:
+          severity: warning
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor node disk space below 10%"
+          description: "{{ $labels.instance }} has {{ $value | humanizePercentage }} disk remaining on /."
+
+      - alert: TutorputorNodeHighMemory
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes{job="node"} / node_memory_MemTotal_bytes{job="node"})) > 0.90
+        for: 5m
+        labels:
+          severity: critical
+          product: tutorputor
+        annotations:
+          summary: "Tutorputor node memory above 90%"
+          description: "Node {{ $labels.instance }} at {{ $value | humanizePercentage }} memory usage."

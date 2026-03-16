@@ -1,0 +1,30 @@
+{
+  "name": "@ghatana/sso-client",
+  "version": "1.0.0",
+  "description": "Cross-product SSO client for the Ghatana platform — reads platform JWT from OIDC redirect, provides isAuthenticated(), getUser(), login() and logout() helpers.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types":  "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build":     "tsc",
+    "dev":       "tsc --watch",
+    "test":      "jest --passWithNoTests",
+    "lint":      "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["ghatana", "sso", "auth", "jwt", "oidc", "platform"],
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "typescript":          "^5.4.0",
+    "@types/jest":         "^29.5.0",
+    "jest":                "^29.5.0",
+    "ts-jest":             "^29.1.0"
+  }
+}

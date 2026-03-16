@@ -18,6 +18,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -686,22 +687,60 @@ public class CoolTierStoragePlugin implements StoragePlugin {
                 yield hadoopCatalog;
             }
             case GLUE -> {
-                // For AWS Glue, would use GlueCatalog
+                // GlueCatalog requires the 'iceberg-aws' dependency (org.apache.iceberg:iceberg-aws).
+                // It is available in libs.versions.toml as libs.iceberg.aws — add it to build.gradle.kts
+                // if AWS Glue support is needed in this deployment.
                 throw new UnsupportedOperationException(
-                        "GLUE catalog requires iceberg-aws-glue dependency");
+                        "GLUE catalog requires the 'iceberg-aws' dependency. "
+                        + "Add implementation(libs.iceberg.aws) to build.gradle.kts and "
+                        + "ensure AWS credentials are configured via environment variables "
+                        + "(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) or an instance profile."
+                );
             }
             case HIVE -> {
-                // For Hive, would use HiveCatalog
+                // HiveCatalog requires 'iceberg-hive-metastore' (not yet in the version catalog).
                 throw new UnsupportedOperationException(
-                        "HIVE catalog requires iceberg-hive-metastore dependency");
+                        "HIVE catalog requires the 'iceberg-hive-metastore' dependency which is "
+                        + "not yet added to libs.versions.toml. Set hiveMetastoreUri in "
+                        + "IcebergStorageConfig and add the dependency to enable Hive support."
+                );
             }
             case NESSIE -> {
-                throw new UnsupportedOperationException(
-                        "NESSIE catalog requires iceberg-nessie dependency");
+                // Nessie v0.50+ implements the Iceberg REST Catalog specification at
+                // {nessieCatalogUri}/iceberg — configure RESTCatalog to point there.
+                String nessieUri = config.getNessieCatalogUri();
+                RESTCatalog nessieCatalog = new RESTCatalog();
+                Map<String, String> nessieProps = new HashMap<>();
+                nessieProps.put("uri", nessieUri + "/iceberg");
+                nessieProps.put("warehouse", config.getWarehousePath());
+                nessieProps.put("prefix", config.getNessieBranch());
+                // Forward S3 credentials if warehouse is on S3
+                if (config.getWarehousePath().startsWith("s3://")) {
+                    nessieProps.put("s3.region", config.getAwsRegion());
+                    if (config.getS3Endpoint() != null) {
+                        nessieProps.put("s3.endpoint", config.getS3Endpoint());
+                    }
+                }
+                nessieCatalog.initialize(config.getCatalogName(), nessieProps);
+                yield nessieCatalog;
             }
             case REST -> {
-                throw new UnsupportedOperationException(
-                        "REST catalog requires additional configuration");
+                // Generic Iceberg REST Catalog (RFC-specified HTTP API).
+                RESTCatalog restCatalog = new RESTCatalog();
+                Map<String, String> restProps = new HashMap<>();
+                restProps.put("uri", config.getRestCatalogUri());
+                restProps.put("warehouse", config.getWarehousePath());
+                // Bearer token or OAuth credentials if configured
+                String restToken = System.getenv("ICEBERG_REST_TOKEN");
+                if (restToken != null && !restToken.isBlank()) {
+                    restProps.put("token", restToken);
+                }
+                String restCredential = System.getenv("ICEBERG_REST_CREDENTIAL");
+                if (restCredential != null && !restCredential.isBlank()) {
+                    restProps.put("credential", restCredential);
+                }
+                restCatalog.initialize(config.getCatalogName(), restProps);
+                yield restCatalog;
             }
         };
     }

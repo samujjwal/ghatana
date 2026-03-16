@@ -1,0 +1,271 @@
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tutorputor
+  labels:
+    app.kubernetes.io/part-of: ghatana-tutorputor
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tutorputor-sa
+  namespace: tutorputor
+  labels:
+    app.kubernetes.io/part-of: ghatana-tutorputor
+automountServiceAccountToken: false
+---
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tutorputor-platform-config
+  namespace: tutorputor
+  labels:
+    app: tutorputor-platform
+    app.kubernetes.io/part-of: ghatana-tutorputor
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  METRICS_PORT: "9090"
+  LOG_LEVEL: "warn"
+  DEFAULT_TENANT: "default"
+  RATE_LIMIT_WINDOW: "900000"
+  RATE_LIMIT_MAX: "100"
+  CONTENT_WORKER_ENABLED: "true"
+  AI_PROXY_ENABLED: "true"
+  SIMULATION_ENABLED: "true"
+  # Platform shared services — set to empty to disable gracefully
+  AUTH_GATEWAY_URL: ""
+  AI_REGISTRY_URL: ""
+  FEATURE_STORE_URL: ""
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tutorputor-platform
+  namespace: tutorputor
+  labels:
+    app: tutorputor-platform
+    app.kubernetes.io/part-of: ghatana-tutorputor
+    app.kubernetes.io/version: latest
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tutorputor-platform
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: tutorputor-platform
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: tutorputor-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: tutorputor-platform
+      containers:
+        - name: platform
+          image: ghcr.io/ghatana/tutorputor/platform:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: tutorputor-platform-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: tutorputor-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: tutorputor-secrets
+                  key: redis-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tutorputor-secrets
+                  key: jwt-secret
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: tutorputor-secrets
+                  key: sentry-dsn
+                  optional: true
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            failureThreshold: 12
+---
+# Service — Platform
+apiVersion: v1
+kind: Service
+metadata:
+  name: tutorputor-platform
+  namespace: tutorputor
+  labels:
+    app: tutorputor-platform
+    app.kubernetes.io/part-of: ghatana-tutorputor
+spec:
+  type: ClusterIP
+  selector:
+    app: tutorputor-platform
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+---
+# HPA — Platform
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tutorputor-platform-hpa
+  namespace: tutorputor
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tutorputor-platform
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+# PodDisruptionBudget — Platform
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tutorputor-platform-pdb
+  namespace: tutorputor
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: tutorputor-platform
+---
+# Ingress — Platform
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tutorputor-platform-ingress
+  namespace: tutorputor
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/limit-rps: "50"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.tutorputor.ghatana.com
+      secretName: tutorputor-platform-tls
+  rules:
+    - host: api.tutorputor.ghatana.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tutorputor-platform
+                port:
+                  number: 80
+---
+# NetworkPolicy — restrict ingress to ingress controller and platform services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tutorputor-platform-netpol
+  namespace: tutorputor
+spec:
+  podSelector:
+    matchLabels:
+      app: tutorputor-platform
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tutorputor
+      ports:
+        - port: 3000
+        - port: 9090
+  egress:
+    - {} # Allow all egress (for DB, Redis, platform services)
+---
+# kustomization.yaml
+# Save as a separate file — included here for documentation
+# apiVersion: kustomize.config.k8s.io/v1beta1
+# kind: Kustomization
+# resources:
+#   - manifests.yaml

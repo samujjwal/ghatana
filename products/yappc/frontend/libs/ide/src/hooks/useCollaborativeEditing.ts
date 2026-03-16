@@ -13,7 +13,7 @@
 import { useAtom } from 'jotai';
 import { useState, useCallback, useEffect, useRef } from 'react';
 
-import { useWebSocketService, useMockWebSocketService } from './useWebSocketService';
+import { useWebSocketService } from './useWebSocketService';
 import { ideCollaborationAtom, ideActiveFileIdAtom } from '../state/atoms';
 
 /**
@@ -77,14 +77,9 @@ export function useCollaborativeEditing(fileId?: string) {
   const [activeFileId] = useAtom(ideActiveFileIdAtom);
   const [, _setCollaborationState] = useAtom(ideCollaborationAtom);
 
-  // Try to use real WebSocket service, fallback to mock
-  let wsService;
-  try {
-    wsService = useWebSocketService();
-  } catch (error) {
-    console.warn('WebSocket service unavailable, using mock service:', error);
-    wsService = useMockWebSocketService();
-  }
+  // Use real WebSocket service — connection failures are handled internally
+  // with exponential-backoff reconnects and state tracked via connectionState.
+  const wsService = useWebSocketService();
 
   const { sendMessage, addEventListener, removeEventListener } = wsService;
 

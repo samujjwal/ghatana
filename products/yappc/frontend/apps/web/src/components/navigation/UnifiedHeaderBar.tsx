@@ -18,6 +18,7 @@
  * @doc.pattern Layout Component
  */
 
+import { useAtomValue } from 'jotai';
 import { Link } from 'react-router';
 import { Sparkles as AutoAwesome, Bell as Notifications } from 'lucide-react';
 
@@ -28,6 +29,8 @@ import { NewButton, QuickActionsPanel } from './QuickActionsPanel';
 import { AgentActivityBadge } from '../workspace/AgentActivityBadge';
 import { ThemeToggleButton } from '../../theme';
 import { useWorkspaceContext } from '../../hooks/useWorkspaceData';
+import { currentUserAtom } from '../../stores/user.store';
+import { unreadNotificationsCountAtom } from '../../state/atoms';
 
 interface UnifiedHeaderBarProps {
     /** Current project ID (for project-specific context) */
@@ -64,6 +67,19 @@ export function UnifiedHeaderBar({
         includedProjects,
         workspaces,
     } = useWorkspaceContext();
+
+    const currentUser = useAtomValue(currentUserAtom);
+    const unreadCount = useAtomValue(unreadNotificationsCountAtom);
+
+    // Compute initials from name or fall back to email first letter
+    const userInitials = currentUser
+        ? currentUser.name
+            .split(' ')
+            .map((n) => n[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase()
+        : '?';
 
     // Find current project details
     const allProjects = [...ownedProjects, ...includedProjects];
@@ -187,24 +203,30 @@ export function UnifiedHeaderBar({
                 {/* Notifications */}
                 <button
                     className="p-2 rounded-md text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 relative"
-                    aria-label="Notifications"
-                    title="Notifications"
+                    aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+                    title={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
                 >
                     <Notifications className="w-5 h-5" />
-                    {/* Notification badge (TODO: wire up to real notifications) */}
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-error-color rounded-full" />
+                    {unreadCount > 0 && (
+                        <span
+                            className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 bg-error-color rounded-full text-white text-[10px] font-bold flex items-center justify-center"
+                            aria-hidden="true"
+                        >
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                    )}
                 </button>
 
                 {/* Theme Toggle */}
                 <ThemeToggleButton variant="icon" />
 
-                {/* User Avatar (TODO: wire up to real user data) */}
+                {/* User Avatar */}
                 <button
                     className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-sm font-medium text-primary-700 dark:text-primary-300 hover:ring-2 hover:ring-primary-500 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    aria-label="User menu"
-                    title="User menu"
+                    aria-label={currentUser ? `User menu (${currentUser.name})` : 'User menu'}
+                    title={currentUser?.name ?? 'User menu'}
                 >
-                    U
+                    {userInitials}
                 </button>
             </div>
         </header>

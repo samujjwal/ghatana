@@ -1,10 +1,10 @@
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Box, Typography, Button, Grid, Card, CardContent, CardActions, Chip } from '@ghatana/ui';import { Plus as AddIcon } from 'lucide-react';const ProjectPage = () => {
   const { projectId } = useParams<{ projectId: string }>()
+  const navigate = useNavigate()
 
   const handleCreateRequirement = () => {
-    // NOTE: Navigate to create requirement
-    console.log('Create requirement in project', projectId)
+    navigate(`/projects/${projectId}/requirements/new`)
   }
 
   return (

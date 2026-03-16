@@ -66,6 +66,32 @@ interface EnvironmentConfig {
   LOG_LEVEL?: string;
   RATE_LIMIT_WINDOW_MS?: string;
   RATE_LIMIT_MAX_REQUESTS?: string;
+
+  // =========================================================================
+  // Ghatana Platform Shared Services (all optional — DCMAAR operates standalone
+  // when these are not configured).
+  // =========================================================================
+
+  /**
+   * Base URL of the Ghatana auth-gateway service.
+   * Used to validate platform-issued JWT tokens for cross-service calls.
+   * Example: http://auth-gateway:8080
+   */
+  AUTH_GATEWAY_URL?: string;
+
+  /**
+   * Base URL of the Ghatana AI Registry HTTP service.
+   * Used to query available AI model metadata for risk scoring and recommendations.
+   * Example: http://ai-registry:8081
+   */
+  AI_REGISTRY_URL?: string;
+
+  /**
+   * Base URL of the Ghatana Feature Store HTTP service.
+   * Used to emit device-usage and child-behaviour features for platform AI models.
+   * Example: http://feature-store:8082
+   */
+  FEATURE_STORE_URL?: string;
 }
 
 /**

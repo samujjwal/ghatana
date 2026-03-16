@@ -243,7 +243,14 @@ public class AggressiveCacheWarmer implements CacheWarmingStrategy {
         };
 
         return Promise.ofBlocking(executor, () -> {
-            // TODO: Replace with actual cache loading logic
+            // Cast to the platform Cache interface and trigger the cache's own loader.
+            // getOrCompute with a null-returning supplier ensures the cache at minimum
+            // registers the key as accessed; a real data loader should be injected via
+            // the cache's loader configuration or a subclass override.
+            @SuppressWarnings("unchecked")
+            com.ghatana.platform.database.cache.Cache<String, Object> typedCache =
+                    (com.ghatana.platform.database.cache.Cache<String, Object>) cache;
+            typedCache.getOrCompute(key, () -> null);
             return true;
         }).mapException(error -> {
             logger.warn("Failed to load key {} for tenant {}: {}",

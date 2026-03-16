@@ -1,5 +1,7 @@
 package com.ghatana.stt.core.grpc;
 
+import com.ghatana.audio.video.common.platform.FeatureStoreClient;
+import com.ghatana.audio.video.common.security.JwtServerInterceptor;
 import com.ghatana.stt.core.api.AdaptationResult;
 import com.ghatana.stt.core.api.AdaptiveSTTEngine;
 import com.ghatana.stt.core.api.AudioData;
@@ -62,6 +64,11 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
             com.ghatana.stt.core.api.TranscriptionOptions options =
                 fromProtoOptions(request.hasOptions() ? request.getOptions() : null, request.getLanguage(), request.getProfileId());
 
+            // Capture gRPC context values before crossing thread boundary
+            final String subject = JwtServerInterceptor.CTX_SUBJECT.get();
+            final String profileId = request.getProfileId();
+            final String language = request.getLanguage();
+
             CompletableFuture
                 .supplyAsync(() -> engine.transcribe(audio, options))
                 .whenComplete((result, error) -> {
@@ -72,6 +79,20 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
                     TranscribeResponse response = toProtoResponse(result);
                     responseObserver.onNext(response);
                     responseObserver.onCompleted();
+
+                    // Record inference features for ML pipeline (fire-and-forget)
+                    if (result != null && subject != null) {
+                        int bytesPerSample = audio.bitsPerSample() / 8;
+                        long audioLengthMs = audio.pcmData().length * 1000L
+                                / (audio.sampleRate() * audio.channels() * bytesPerSample);
+                        java.util.Map<String, Object> features = new java.util.HashMap<>();
+                        features.put("language", language != null ? language : "unknown");
+                        features.put("profileId", profileId != null ? profileId : "none");
+                        features.put("audioLengthMs", audioLengthMs);
+                        features.put("transcriptLength", result.text() != null ? result.text().length() : 0);
+                        features.put("timestampMs", System.currentTimeMillis());
+                        FeatureStoreClient.getInstance().ingestAsync("stt", subject, features);
+                    }
                 });
         } catch (Exception e) {
             responseObserver.onError(e);

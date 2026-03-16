@@ -1,0 +1,156 @@
+################################################################################
+# COMPOSITE AGENT TEMPLATE
+#
+# Use this template to build agents that orchestrate multiple sub-agents into
+# a coherent multi-stage workflow. Composite agents do NOT contain business
+# logic themselves — they route events between constituent agents, manage
+# stage sequencing, accumulate partial results, and handle stage-level errors.
+#
+# HOW TO USE:
+#   1. Copy this template to:
+#        platform/agent-catalog/composite-agents/<domain>/<your-agent-id>.yaml
+#   2. Replace every {{PLACEHOLDER}} with real values.
+#   3. Ensure every agentId referenced in composition.stages already exists in
+#      the catalog (composite agents cannot reference agents that don't exist).
+#   4. Remove all comment lines beginning with # that are guidance notes.
+#   5. Validate against catalog-schema.yaml before submitting a PR.
+#
+# RULES FOR COMPOSITE AGENTS:
+#   - generator.type MUST be COMPOSITE
+#   - composition.stages MUST list at least 2 sub-agents
+#   - All sub-agent agentIds MUST be registered in the platform catalog
+#   - Circular dependencies between stages are FORBIDDEN
+#   - Each stage MUST declare exactly one: after, parallel, or fanout relation
+#   - errorHandling.strategy MUST be declared
+#   - memory.type SHOULD be PROCEDURAL (track pipeline state)
+#   - timeout MUST be ≥ sum of all stage timeouts × maxRetries
+#   - Composite agents count toward platform resource quotas for ALL sub-agents
+################################################################################
+
+id: "{{AGENT_ID}}"            # kebab-case, e.g. "customer-onboarding-pipeline"
+name: "{{AGENT_NAME}}"        # Human-readable, e.g. "Customer Onboarding Pipeline"
+version: 1.0.0
+description: >
+  {{ONE_PARAGRAPH_DESCRIPTION}}
+  # Describe: what end-to-end workflow this agent orchestrates, which sub-agents
+  # are composed, what the trigger event is, and what success looks like.
+
+metadata:
+  level: 4                    # Composite agents are always level 4 or 5
+  domain: "{{DOMAIN}}"        # e.g. data-pipelines, customer-journey, compliance
+  tags: []
+  maturity: experimental
+  author: "{{TEAM_EMAIL}}"
+
+generator:
+  type: COMPOSITE
+
+# AEP integration — the composite agent itself is an AEP COMPOSITE operator
+aep:
+  operatorType: COMPOSITE
+  inputEventTypes:
+    - "{{TRIGGER_EVENT_TYPE}}"    # e.g. "customer.signup.requested"
+  outputEventTypes:
+    - "{{SUCCESS_EVENT_TYPE}}"    # e.g. "customer.onboarding.completed"
+    - "{{FAILURE_EVENT_TYPE}}"    # e.g. "customer.onboarding.failed"
+    - "{{PARTIAL_EVENT_TYPE}}"    # e.g. "customer.onboarding.partial"  (optional)
+  backpressure:
+    bufferSize: 2000              # Composite agents are slower; buffer carefully
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: 30s       # Checkpoint often — composite workflows are long
+    maxRetries: 3
+    deadLetterQueue: "{{AGENT_ID}}-dlq"
+
+# ─── COMPOSITION ─────────────────────────────────────────────────────────────
+# Declare the directed acyclic graph (DAG) of sub-agents.
+# Each stage has exactly one relationship type:
+#   - after: [stageId]     → runs after the listed stage(s) complete
+#   - parallel: true       → runs in parallel with its siblings (no "after" needed)
+#   - fanout: [eventField] → fans out over the array at eventField (runs N times)
+composition:
+  stages:
+    - id: stage1              # Unique within this composite, use a meaningful name
+      agentId: some-agent-v1  # Must exist in the platform catalog
+      # No "after" → this is the first stage (triggered by composite input)
+      config:
+        exampleParam: "{{some_value}}"
+
+    - id: stage2
+      agentId: another-agent-v1
+      after: [stage1]         # Runs after stage1 completes successfully
+      config:
+        exampleParam: "{{another_value}}"
+
+    # Parallel example (both run after stage1, concurrently):
+    # - id: stage3a
+    #   agentId: validate-agent-v1
+    #   after: [stage1]
+    # - id: stage3b
+    #   agentId: enrich-agent-v1
+    #   after: [stage1]
+
+    # Fan-out example (runs once per item in result.items):
+    # - id: process-item
+    #   agentId: item-processor-agent-v1
+    #   fanout: result.items
+    #   after: [stage2]
+
+    - id: finalStage
+      agentId: result-aggregator-agent-v1
+      after: [stage2]         # after all preceding stages
+
+  errorHandling:
+    strategy: RETRY_OR_DLQ   # FAIL_FAST | RETRY_OR_DLQ | SKIP_AND_CONTINUE | COMPENSATE
+    maxRetries: 3
+    # compensation:           # Only needed for COMPENSATE strategy
+    #   agentId: rollback-agent-v1
+    onExhausted: ROUTE_TO_DLQ
+
+# Capabilities exposed by this composite (union of meaningful sub-agent capabilities)
+capabilities:
+  - "{{CAPABILITY_1}}"
+  - composite-orchestration   # REQUIRED for all composite agents
+
+# Configuration surface (parameters forwarded to stages via {{template}} references)
+configuration:
+  exampleParam:
+    description: "Parameter forwarded to stage1 and stage2"
+    type: string
+    required: true
+  optionalParam:
+    description: "Optional tuning parameter"
+    type: integer
+    required: false
+    default: 100
+
+io:
+  inputs:
+    - name: "{{TRIGGER_INPUT_NAME}}"
+      type: JSON
+      schema: "https://schema.ghatana.com/{{domain}}/trigger/v1"
+      required: true
+  outputs:
+    - name: "{{SUCCESS_OUTPUT_NAME}}"
+      type: JSON
+      schema: "https://schema.ghatana.com/{{domain}}/result/v1"
+    - name: "{{ERROR_OUTPUT_NAME}}"
+      type: JSON
+      schema: "https://schema.ghatana.com/common/error/v1"
+
+# PROCEDURAL memory — composite agents track which stages have completed
+memory:
+  type: PROCEDURAL
+  scope: pipeline_state
+  retention: medium           # Keep for hours/days — sufficient to resume interrupted pipelines
+  maxEntries: 50000
+
+resources:
+  memory: 2GB                 # Base allocation; actual consumption is per sub-agent
+  cpu: "2"
+  timeout: 1800s              # MUST be ≥ sum of all stage timeouts × maxRetries
+  maxConcurrency: 2           # Limit parallelism of the composite itself
+
+routing:
+  input: "{{TriggerEventClass}}"
+  output: "{{ResultEventClass}}"

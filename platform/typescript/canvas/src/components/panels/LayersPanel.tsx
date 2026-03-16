@@ -78,18 +78,34 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ onClose }) => {
 
     const toggleVisibility = (id: string) => {
         const state = getLayerState(id);
+        const nextVisible = !state.visible;
         const newStates = new Map(layerStates);
-        newStates.set(id, { ...state, visible: !state.visible });
+        newStates.set(id, { ...state, visible: nextVisible });
         setLayerStates(newStates);
-        console.log(`👁️ Toggled visibility for layer: ${id}`);
+        // Propagate to canvas state so renderers can honour the visibility flag
+        const canvasState = getCanvasState();
+        const element = canvasState.getElement(id);
+        if (element) {
+            canvasState.updateElement(id, {
+                data: { ...element.data, visible: nextVisible },
+            });
+        }
     };
 
     const toggleLock = (id: string) => {
         const state = getLayerState(id);
+        const nextLocked = !state.locked;
         const newStates = new Map(layerStates);
-        newStates.set(id, { ...state, locked: !state.locked });
+        newStates.set(id, { ...state, locked: nextLocked });
         setLayerStates(newStates);
-        console.log(`🔒 Toggled lock for layer: ${id}`);
+        // Propagate to canvas state so interaction handlers can honour the lock flag
+        const canvasState = getCanvasState();
+        const element = canvasState.getElement(id);
+        if (element) {
+            canvasState.updateElement(id, {
+                data: { ...element.data, locked: nextLocked },
+            });
+        }
     };
 
     const toggleSelection = (id: string) => {

@@ -7,9 +7,9 @@
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { query } from '../../db';
-import * as authService from '../../services/auth.service';
 import * as deviceService from '../../services/device.service';
 import { enqueueDeviceCommand } from '../../services/command-queue.service';
+import { createTestUser } from '../fixtures/user.fixtures';
 import {
     validateAction,
     getActionKind,
@@ -33,10 +33,7 @@ describe('AgentSyncService', () => {
 
     beforeAll(async () => {
         // Create test user
-        const user = await authService.register({
-            email: randomEmail(),
-            password: 'TestPassword123!',
-        });
+        const user = await createTestUser({ email: randomEmail() });
         testUserId = user.user.id;
 
         // Create test child
@@ -174,10 +171,7 @@ describe('AgentSyncService', () => {
 
         it('should return null for wrong user', async () => {
             // Create another user
-            const otherUser = await authService.register({
-                email: randomEmail(),
-                password: 'TestPassword123!',
-            });
+            const otherUser = await createTestUser({ email: randomEmail() });
 
             const payload = await getAgentSyncPayload(otherUser.user.id, testDeviceId);
             expect(payload).toBeNull();

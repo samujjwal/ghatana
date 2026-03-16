@@ -15,6 +15,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { registerAIRoutes } from "./routes.js";
 import { OllamaAIProxyService } from "./OllamaAIProxyService.js";
+import { aiRegistryClient } from "../../clients/ai-registry.client.js";
 
 /**
  * AI module plugin - registers all AI-related routes
@@ -33,8 +34,14 @@ export const aiModule: FastifyPluginAsync = async (app) => {
 
   app.log.info(`AI Proxy configured with base URL: ${aiProxyBaseUrl}`);
 
-  // Register AI routes with the service
-  await registerAIRoutes(app, { aiProxyService });
+  if (!aiRegistryClient) {
+    app.log.warn(
+      "AI Registry client not configured (AI_REGISTRY_URL unset) — model discovery disabled",
+    );
+  }
+
+  // Register AI routes with the service and optional registry client
+  await registerAIRoutes(app, { aiProxyService, aiRegistryClient });
 
   app.log.info("✅ AI module routes registered");
 };

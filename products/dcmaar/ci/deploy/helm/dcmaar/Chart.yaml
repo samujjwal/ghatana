@@ -1,0 +1,23 @@
+apiVersion: v2
+name: dcmaar
+description: >
+  DCMAAR (Device-Child Mobile App Agentic Runtime) — Helm chart for the
+  Ghatana parental-control and digital-wellbeing platform.
+
+  Deploys the Node.js/Fastify backend API and exposes it via Kubernetes
+  Ingress. Supports environment-specific overlays (staging vs. production)
+  through separate values files.
+
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - ghatana
+  - dcmaar
+  - parental-control
+  - digital-wellbeing
+
+maintainers:
+  - name: Ghatana Platform Team
+    email: platform@ghatana.com

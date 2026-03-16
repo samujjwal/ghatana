@@ -1,0 +1,241 @@
+name: DCMAAR CI
+
+on:
+  push:
+    branches: [main, develop, "release/**", "feature/**"]
+    paths:
+      - "products/dcmaar/**"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "products/dcmaar/**"
+
+defaults:
+  run:
+    working-directory: products/dcmaar
+
+env:
+  PNPM_VERSION: "9"
+  NODE_VERSION: "22"
+  GO_VERSION: "1.25"
+  RUST_TOOLCHAIN: "1.90.0"
+  CARGO_TERM_COLOR: always
+
+concurrency:
+  group: dcmaar-ci-${{ gitea.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # TypeScript — lint, typecheck, unit test, build
+  # ─────────────────────────────────────────────────────────────────────────────
+  typescript:
+    name: TypeScript (lint · typecheck · test · build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-dcmaar-${{ runner.os }}-${{ hashFiles('products/dcmaar/pnpm-lock.yaml') }}
+          restore-keys: pnpm-dcmaar-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: products/dcmaar
+
+      - name: Lint (ESLint)
+        run: pnpm run lint
+        working-directory: products/dcmaar
+
+      - name: Type check (tsc --noEmit)
+        run: pnpm run typecheck
+        working-directory: products/dcmaar
+
+      - name: Unit tests (vitest)
+        run: pnpm run test:unit
+        working-directory: products/dcmaar
+
+      - name: Build TypeScript packages
+        run: pnpm run build
+        working-directory: products/dcmaar
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dcmaar-typescript-build
+          path: products/dcmaar/apps/extension/dist/
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Go server — vet, test, build
+  # ─────────────────────────────────────────────────────────────────────────────
+  go:
+    name: Go (vet · test · build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: products/dcmaar/go.mod
+
+      - name: go mod tidy & verify
+        run: |
+          go mod tidy
+          go mod verify
+        working-directory: products/dcmaar
+
+      - name: go vet
+        run: go vet ./...
+        working-directory: products/dcmaar
+
+      - name: go test (race detector)
+        run: go test -race -timeout 120s -coverprofile=coverage.out ./...
+        working-directory: products/dcmaar
+
+      - name: Upload Go coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: dcmaar-go-coverage
+          path: products/dcmaar/coverage.out
+          retention-days: 7
+
+      - name: go build
+        run: go build ./...
+        working-directory: products/dcmaar
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Rust — fmt, clippy, test, build
+  # ─────────────────────────────────────────────────────────────────────────────
+  rust:
+    name: Rust (fmt · clippy · test · build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain ${{ env.RUST_TOOLCHAIN }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: rustfmt, clippy
+
+      - name: Restore Rust/Cargo cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: products/dcmaar -> target
+
+      - name: cargo fmt --check
+        run: cargo fmt --all -- --check
+        working-directory: products/dcmaar
+
+      - name: cargo clippy (deny warnings)
+        run: cargo clippy --workspace --exclude dcmaar-proto -- -D warnings
+        working-directory: products/dcmaar
+
+      - name: cargo test (excludes proto)
+        run: cargo test --workspace --exclude dcmaar-proto
+        working-directory: products/dcmaar
+
+      - name: cargo build (release, fast path)
+        run: cargo build --workspace --exclude dcmaar-proto --release
+        working-directory: products/dcmaar
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Security: audit npm deps and Rust deps
+  # ─────────────────────────────────────────────────────────────────────────────
+  security:
+    name: Security audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: pnpm audit (production deps)
+        run: pnpm install --frozen-lockfile && pnpm audit --prod
+        working-directory: products/dcmaar
+        continue-on-error: true
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+        working-directory: products/dcmaar
+
+      - name: cargo audit
+        run: cargo audit
+        working-directory: products/dcmaar
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Docker: multi-arch image build (no push on PR)
+  # ─────────────────────────────────────────────────────────────────────────────
+  docker-build:
+    name: Docker build (verify)
+    runs-on: ubuntu-latest
+    needs: [typescript, go, rust]
+    if: gitea.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build (verify only, no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: products/dcmaar
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: ghatana/dcmaar-server:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Integration gate: all CI jobs must pass
+  # ─────────────────────────────────────────────────────────────────────────────
+  ci-gate:
+    name: CI Gate (all jobs passed)
+    runs-on: ubuntu-latest
+    needs: [typescript, go, rust, security]
+    if: always()
+    steps:
+      - name: Check all jobs succeeded
+        run: |
+          if [[ "${{ needs.typescript.result }}" != "success" ||
+                "${{ needs.go.result }}"         != "success" ||
+                "${{ needs.rust.result }}"        != "success" ]]; then
+            echo "One or more required CI jobs failed."
+            exit 1
+          fi
+          echo "All CI jobs passed."

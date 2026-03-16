@@ -110,6 +110,19 @@ listOf(
 }
 
 // ============================================================================
+// Include Product-Local Libraries
+// ============================================================================
+logger.lifecycle("Including product-local libraries...")
+
+listOf("content-studio-agents").forEach { name ->
+    val libDir = File(productDir, "libs/$name")
+    if (libDir.exists()) {
+        include("libs:$name")
+        project(":libs:$name").projectDir = libDir
+    }
+}
+
+// ============================================================================
 // Include Contracts
 // ============================================================================
 logger.lifecycle("Including contracts...")

@@ -379,9 +379,10 @@ public final class AIHttpAdapter {
     }
 
     /**
-     * Helper: Generates unique ID for embedding.
+     * Helper: Generates a globally unique ID for an embedding result.
+     * Uses UUID v4 to guarantee uniqueness without relying on random integer suffixes.
      */
     private String generateId() {
-        return "emb_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 10000);
+        return "emb_" + java.util.UUID.randomUUID().toString().replace("-", "");
     }
 }

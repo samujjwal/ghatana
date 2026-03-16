@@ -11,11 +11,19 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { brainService } from '../api/brain.service';
 import { costService } from '../api/cost.service';
 import { workflowsApi } from '../lib/api/workflows';
+import {
+  executeAnalyticsQuery,
+  useCollectionEntityCounts,
+  useAnalyticsQuery,
+  type CollectionStat,
+  type QueryResultData,
+} from '../api/analytics.service';
+import { dataCloudApi } from '../lib/api/data-cloud-api';
 import {
   Brain,
   BarChart3,
@@ -28,8 +36,13 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
+  Clock3,
   Plus,
   RefreshCw,
+  Play,
+  Database,
+  Table2,
+  Layers,
 } from 'lucide-react';
 import { cn } from '../lib/theme';
 import {
@@ -246,43 +259,208 @@ function BrainTab() {
 // ANALYTICS TAB
 // =============================================================================
 
-function AnalyticsTab() {
+/**
+ * Inline SQL console for quick interactive queries within the Insights page.
+ * Calls POST /api/v1/analytics/query and renders the result table.
+ */
+function QuickQueryConsole() {
+  const [sql, setSql] = useState('SELECT COUNT(*) as total FROM orders');
+  const { mutate: runQuery, data: result, isPending, error, reset } = useAnalyticsQuery();
+
+  const handleRun = useCallback(() => {
+    if (!sql.trim()) return;
+    runQuery({ sql: sql.trim() });
+  }, [sql, runQuery]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleRun();
+    },
+    [handleRun]
+  );
+
+  const columnKeys =
+    result && result.rows.length > 0 ? Object.keys(result.rows[0]) : [];
+
+  return (
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+        <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+          <Database className="h-4 w-4 text-blue-500" />
+          Quick Analytics Query
+        </span>
+        <span className="text-xs text-gray-400">Ctrl+Enter to run</span>
+      </div>
+
+      <div className="p-4 space-y-3">
+        <textarea
+          value={sql}
+          onChange={(e) => { setSql(e.target.value); reset(); }}
+          onKeyDown={handleKeyDown}
+          rows={4}
+          className="w-full font-mono text-sm p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white resize-y focus:outline-none focus:ring-2 focus:ring-primary-500"
+          placeholder="SELECT COUNT(*) as total FROM my_collection"
+        />
+
+        <button
+          onClick={handleRun}
+          disabled={isPending || !sql.trim()}
+          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+        >
+          <Play className="h-3.5 w-3.5" />
+          {isPending ? 'Running…' : 'Run Query'}
+        </button>
+
+        {error && (
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300">
+            {error instanceof Error ? error.message : 'Query failed'}
+          </div>
+        )}
+
+        {result && columnKeys.length > 0 && (
+          <div className="overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 max-h-64">
+            <div className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+              <span className="text-xs text-gray-500">
+                {result.rowCount} row{result.rowCount !== 1 ? 's' : ''} · {result.executionTimeMs}ms
+                {result.optimized && ' · cached'}
+              </span>
+            </div>
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-gray-900">
+                  {columnKeys.map((col) => (
+                    <th
+                      key={col}
+                      className="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap"
+                    >
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {result.rows.map((row, i) => (
+                  <tr
+                    key={i}
+                    className={cn(
+                      'border-t border-gray-100 dark:border-gray-700',
+                      i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-gray-900/30'
+                    )}
+                  >
+                    {columnKeys.map((col) => (
+                      <td
+                        key={col}
+                        className="px-3 py-2 text-gray-900 dark:text-white font-mono whitespace-nowrap"
+                      >
+                        {String(row[col] ?? '')}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {result && result.rows.length === 0 && (
+          <p className="text-sm text-gray-400 text-center py-4">No rows returned</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * AnalyticsTab — live data visualization connected to the analytics query engine.
+ *
+ * Fetches entity counts per collection via POST /api/v1/analytics/query and
+ * renders a distribution chart alongside summary metrics and an interactive
+ * SQL console. Replaces the previous static placeholder dashboard cards.
+ */
+function AnalyticsTab({ collections }: { collections: string[] }) {
+  const { data: stats, isLoading: statsLoading } = useCollectionEntityCounts(collections);
+
+  const totalEntities = stats?.reduce((sum, s) => sum + s.count, 0) ?? 0;
+  const maxCount = stats ? Math.max(...stats.map((s) => s.count), 1) : 1;
+
   return (
     <div className="space-y-6">
-      {/* Dashboard Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <DashboardCard
-          title="System Overview"
-          description="Key metrics and health indicators"
-          status="healthy"
+      {/* Live Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard
+          label="Total Collections"
+          value={collections.length || '–'}
+          icon={<Layers className="h-5 w-5" />}
+          color="blue"
         />
-        <DashboardCard
-          title="Data Quality"
-          description="Quality scores across datasets"
-          status="warning"
+        <StatCard
+          label="Total Entities"
+          value={statsLoading ? '…' : totalEntities.toLocaleString()}
+          icon={<Table2 className="h-5 w-5" />}
+          color="green"
         />
-        <DashboardCard
-          title="Pipeline Performance"
-          description="Execution times and throughput"
-          status="healthy"
+        <StatCard
+          label="Avg per Collection"
+          value={
+            statsLoading || collections.length === 0
+              ? '–'
+              : Math.round(totalEntities / Math.max(collections.length, 1)).toLocaleString()
+          }
+          icon={<BarChart3 className="h-5 w-5" />}
+          color="purple"
         />
       </div>
 
-      {/* Empty State for More */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 border-dashed rounded-xl p-8 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-gray-100 dark:bg-gray-700">
-          <Plus className="h-6 w-6 text-gray-400" />
+      {/* Entity Distribution */}
+      {!statsLoading && stats && stats.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-blue-500" />
+            Entity Distribution by Collection
+          </h3>
+          <div className="space-y-3">
+            {stats.map(({ collection, count }) => (
+              <div key={collection}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 font-mono truncate max-w-[60%]">
+                    {collection}
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {count.toLocaleString()}
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.round((count / maxCount) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
-          Create a Dashboard
-        </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Build custom dashboards with the metrics that matter to you
-        </p>
-        <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-          New Dashboard
-        </button>
-      </div>
+      )}
+
+      {statsLoading && collections.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center">
+          <div className="inline-flex items-center gap-2 text-sm text-gray-500">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Loading entity counts…
+          </div>
+        </div>
+      )}
+
+      {!statsLoading && collections.length === 0 && (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 border-dashed rounded-xl p-8 text-center">
+          <Database className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No collections found. Create a collection to see analytics.
+          </p>
+        </div>
+      )}
+
+      {/* Interactive SQL Console */}
+      <QuickQueryConsole />
     </div>
   );
 }
@@ -570,6 +748,16 @@ export function InsightsPage() {
     staleTime: 300_000,
   });
 
+  // Fetch collections for analytics tab
+  const { data: collectionsData } = useQuery({
+    queryKey: ['collections-for-analytics'],
+    queryFn: () => dataCloudApi.getCollections(),
+    staleTime: 300_000,
+  });
+  const collectionNames: string[] = (collectionsData as any[] | undefined)
+    ?.map((c: any) => c.name ?? c.id ?? '')
+    .filter(Boolean) ?? [];
+
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <Activity className="h-4 w-4" /> },
     { id: 'brain', label: 'AI Brain', icon: <Brain className="h-4 w-4" /> },
@@ -646,7 +834,7 @@ export function InsightsPage() {
           />
         )}
         {activeTab === 'brain' && <BrainTab />}
-        {activeTab === 'analytics' && <AnalyticsTab />}
+        {activeTab === 'analytics' && <AnalyticsTab collections={collectionNames} />}
         {activeTab === 'cost' && <CostTab />}
       </PageContent>
     </div>

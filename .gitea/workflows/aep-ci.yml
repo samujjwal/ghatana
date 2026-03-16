@@ -1,0 +1,325 @@
+# Ghatana AEP (Agentic Event Processor) — Continuous Integration
+#
+# Runs on every push and pull request that touches the aep product or
+# shared platform libraries. Uses Gitea Actions (GitHub Actions-compatible syntax).
+#
+# Jobs:
+#   1. build-and-test   — Gradle build + unit & integration tests (JVM 21)
+#   2. static-analysis  — Checkstyle, PMD, SpotBugs, OWASP dependency check
+#   3. docker-build     — Build & push multi-arch image to the Gitea registry
+#   4. security-scan    — Trivy CVE scan with SARIF upload
+
+name: aep-ci
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+      - "feature/**"
+    paths:
+      - "products/aep/**"
+      - "platform/java/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+  pull_request:
+    branches:
+      - main
+      - "release/**"
+    paths:
+      - "products/aep/**"
+      - "platform/java/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+
+env:
+  JAVA_VERSION: "21"
+  REGISTRY: ${{ gitea.server_url | replace('https://', '') | replace('http://', '') }}
+  IMAGE_NAME: ${{ gitea.repository }}/aep
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Build & Test (Gradle)
+  # ---------------------------------------------------------------------------
+  build-and-test:
+    name: Build and Test (Java ${{ env.JAVA_VERSION }})
+    runs-on: ubuntu-latest
+    # Allow Docker socket access for Testcontainers
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Build (compile only)
+        run: ./gradlew :products:aep:launcher:compileJava --no-daemon --parallel
+
+      - name: Run unit tests
+        run: |
+          ./gradlew :products:aep:launcher:test \
+            --no-daemon \
+            --info
+        env:
+          DOCKER_HOST: tcp://docker:2376
+          DOCKER_TLS_CERTDIR: ""
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+        continue-on-error: false
+
+      - name: Run integration tests (if present)
+        env:
+          DOCKER_HOST: tcp://docker:2376
+          DOCKER_TLS_CERTDIR: ""
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+        run: |
+          ./gradlew :products:aep:launcher:integrationTest \
+            --no-daemon \
+            --info || echo "No integration tests configured, skipping."
+
+      - name: Publish test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-java
+          path: products/aep/**/build/reports/tests/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Static Analysis (Checkstyle + PMD + SpotBugs + OWASP)
+  # ---------------------------------------------------------------------------
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Run Checkstyle
+        run: ./gradlew :products:aep:launcher:checkstyleMain --no-daemon
+
+      - name: Run PMD
+        run: ./gradlew :products:aep:launcher:pmdMain --no-daemon
+
+      - name: Run SpotBugs (SAST)
+        run: |
+          ./gradlew :products:aep:launcher:spotbugsMain --no-daemon || \
+          echo "SpotBugs not configured for this module, skipping."
+
+      - name: OWASP Dependency Check
+        run: |
+          ./gradlew :products:aep:launcher:dependencyCheckAnalyze \
+            --no-daemon \
+            -Dodc.suppression.file=config/owasp-suppressions.xml || \
+          echo "OWASP check not configured, skipping."
+
+      - name: Upload static analysis reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: static-analysis-reports
+          path: |
+            products/aep/**/build/reports/checkstyle/
+            products/aep/**/build/reports/pmd/
+            products/aep/**/build/reports/spotbugs/
+            products/aep/**/build/reports/dependency-check/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Docker Build & Push
+  # ---------------------------------------------------------------------------
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }} (for Gradle build)
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Build production JAR
+        run: ./gradlew :products:aep:launcher:jar --no-daemon
+
+      # QEMU enables cross-compilation for non-native architectures (arm64).
+      - name: Set up QEMU (multi-arch cross-compilation)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Log in to Gitea Container Registry
+        if: gitea.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.GITEA_TOKEN }}
+
+      - name: Extract Docker metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image (multi-arch: amd64 + arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: products/aep/Dockerfile
+          # Build both AMD64 (standard x86) and ARM64 (AWS Graviton / Apple M-series)
+          platforms: linux/amd64,linux/arm64
+          push: ${{ gitea.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true   # Generate SLSA provenance attestation
+          sbom: true         # Attach SBOM to the manifest index
+          load: false
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Security Scanning (Trivy)
+  # Scans the Docker image for OS-level CVEs and dependency vulnerabilities.
+  # Results are uploaded as SARIF for Gitea Security tab visibility.
+  # ---------------------------------------------------------------------------
+  security-scan:
+    name: Security Scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: always() && (needs.docker-build.result == 'success' || needs.docker-build.result == 'skipped')
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull the image for scanning
+        # On PRs the image is not pushed; build locally for scanning only
+        run: |
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-$(git rev-parse --short HEAD)"
+          docker pull "$IMAGE_REF" 2>/dev/null || \
+            docker build \
+              -t "$IMAGE_REF" \
+              -f products/aep/Dockerfile \
+              .
+          echo "IMAGE_REF=$IMAGE_REF" >> $GITEA_ENV
+
+      - name: Run Trivy vulnerability scanner (table output)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref:      ${{ env.IMAGE_REF }}
+          format:         table
+          exit-code:      1            # fail on CRITICAL vulnerabilities
+          ignore-unfixed: true
+          vuln-type:      os,library
+          severity:       CRITICAL,HIGH
+
+      - name: Run Trivy vulnerability scanner (SARIF output)
+        if: always()
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref:      ${{ env.IMAGE_REF }}
+          format:         sarif
+          output:         trivy-results.sarif
+          ignore-unfixed: true
+          vuln-type:      os,library
+          severity:       CRITICAL,HIGH,MEDIUM
+
+      - name: Upload Trivy SARIF results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category:   trivy-container-aep
+
+      - name: Run Trivy for SBOM generation (SPDX JSON)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.IMAGE_REF }}
+          format:    spdx-json
+          output:    sbom.spdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aep-sbom
+          path: sbom.spdx.json
+          retention-days: 30

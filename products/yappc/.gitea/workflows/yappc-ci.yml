@@ -1,0 +1,384 @@
+# YAPPC (Your Autonomous Programming Pair Companion) — Continuous Integration
+#
+# Runs on every push and pull request that touches the yappc product or
+# shared platform libraries. Uses Gitea Actions (GitHub Actions-compatible syntax).
+#
+# Jobs:
+#   1. build-and-test   — Gradle build + unit + integration tests (JVM 21)
+#   2. static-analysis  — Checkstyle, PMD, SpotBugs, OWASP dependency check
+#   3. docker-build     — Build & push multi-arch image to Gitea registry
+#   4. security-scan    — Trivy CVE scan
+#   5. frontend-ci      — pnpm install + lint + test + build (React/Vite)
+
+name: yappc-ci
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+      - "feature/**"
+    paths:
+      - "products/yappc/**"
+      - "platform/java/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+  pull_request:
+    branches:
+      - main
+      - "release/**"
+    paths:
+      - "products/yappc/**"
+      - "platform/java/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+
+env:
+  JAVA_VERSION: "21"
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+  REGISTRY: ${{ gitea.server_url | replace('https://', '') | replace('http://', '') }}
+  IMAGE_NAME: ${{ gitea.repository }}/yappc
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Build & Test (Gradle / Java 21)
+  # ---------------------------------------------------------------------------
+  build-and-test:
+    name: Build and Test (Java ${{ env.JAVA_VERSION }})
+    runs-on: ubuntu-latest
+    services:
+      # PostgreSQL for JPA integration tests
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: yappc_test
+          POSTGRES_USER: yappc
+          POSTGRES_PASSWORD: yappc_test_secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      # Redis for caching / session tests
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('products/yappc/**/*.gradle.kts', '**/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Compile all YAPPC modules
+        run: |
+          ./gradlew :products:yappc:backend:api:compileJava \
+            :products:yappc:services:domain:compileJava \
+            :products:yappc:services:ai:compileJava \
+            --no-daemon --parallel
+        working-directory: ${{ gitea.workspace }}
+
+      - name: Run unit tests
+        run: |
+          ./gradlew :products:yappc:backend:api:test \
+            :products:yappc:services:domain:test \
+            :products:yappc:services:ai:test \
+            :products:yappc:core:agents:test \
+            --no-daemon --info
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/yappc_test
+          SPRING_DATASOURCE_USERNAME: yappc
+          SPRING_DATASOURCE_PASSWORD: yappc_test_secret
+          SPRING_REDIS_HOST: localhost
+          SPRING_REDIS_PORT: "6379"
+          YAPPC_AI_LLM_PROVIDER: mock
+
+      - name: Publish test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-java
+          path: products/yappc/**/build/reports/tests/
+          retention-days: 7
+
+      - name: Publish code coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: products/yappc/**/build/reports/jacoco/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Static Analysis (Checkstyle + PMD + SpotBugs + OWASP)
+  # ---------------------------------------------------------------------------
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('products/yappc/**/*.gradle.kts', '**/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Checkstyle
+        run: ./gradlew :products:yappc:backend:api:checkstyleMain --no-daemon
+        continue-on-error: false
+
+      - name: PMD
+        run: ./gradlew :products:yappc:backend:api:pmdMain --no-daemon
+        continue-on-error: false
+
+      - name: SpotBugs
+        run: ./gradlew :products:yappc:backend:api:spotbugsMain --no-daemon
+        continue-on-error: false
+
+      - name: OWASP Dependency Check
+        run: |
+          ./gradlew :products:yappc:backend:api:dependencyCheckAnalyze \
+            --no-daemon -Powasp.failOnCvss=7
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        continue-on-error: true
+
+      - name: Upload static analysis reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: static-analysis-reports
+          path: |
+            products/yappc/**/build/reports/checkstyle/
+            products/yappc/**/build/reports/pmd/
+            products/yappc/**/build/reports/spotbugs/
+            products/yappc/**/build/reports/dependency-check/
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Frontend CI (React/Vite/TypeScript)
+  # ---------------------------------------------------------------------------
+  frontend-ci:
+    name: Frontend CI (Node ${{ env.NODE_VERSION }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Set up pnpm ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "store=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.store }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('products/yappc/frontend/**/pnpm-lock.yaml', 'pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install frontend dependencies
+        working-directory: products/yappc/frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (ESLint)
+        working-directory: products/yappc/frontend
+        run: pnpm run lint
+
+      - name: Type check (tsc --noEmit)
+        working-directory: products/yappc/frontend
+        run: pnpm run typecheck
+
+      - name: Run frontend tests
+        working-directory: products/yappc/frontend
+        run: pnpm run test -- --coverage --reporter=verbose
+        env:
+          CI: "true"
+
+      - name: Build production bundle
+        working-directory: products/yappc/frontend
+        run: pnpm run build
+        env:
+          VITE_API_BASE_URL: ""
+
+      - name: Upload frontend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: products/yappc/frontend/dist/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Docker Image Build & Push
+  # ---------------------------------------------------------------------------
+  docker-build:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: [build-and-test, static-analysis, frontend-ci]
+    if: |
+      gitea.ref == 'refs/heads/main' ||
+      startsWith(gitea.ref, 'refs/heads/release/')
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      short_sha: ${{ steps.sha.outputs.short }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get short SHA
+        id: sha
+        run: echo "short=$(echo ${{ gitea.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }} (for Gradle Docker build)
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build distribution JAR
+        run: |
+          ./gradlew :products:yappc:backend:api:bootJar \
+            --no-daemon --parallel -x test
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Gitea Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.GITEA_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: products/yappc
+          file: products/yappc/infrastructure/docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            JAR_FILE=backend/api/build/libs/*.jar
+            BUILD_VERSION=${{ steps.sha.outputs.short }}
+
+  # ---------------------------------------------------------------------------
+  # Job 5: Security Scan (Trivy)
+  # ---------------------------------------------------------------------------
+  security-scan:
+    name: Security Scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: |
+      gitea.ref == 'refs/heads/main' ||
+      startsWith(gitea.ref, 'refs/heads/release/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Gitea Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.GITEA_TOKEN }}
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ needs.docker-build.outputs.short_sha }}
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Upload Trivy SARIF report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-security-scan
+          path: trivy-results.sarif
+          retention-days: 30

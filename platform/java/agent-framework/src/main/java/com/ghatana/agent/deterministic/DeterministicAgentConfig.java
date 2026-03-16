@@ -71,4 +71,22 @@ public class DeterministicAgentConfig extends AgentConfig {
 
     /** Actions to use when no rule/threshold/FSM/exact-match fires. */
     @Singular("defaultAction") @NotNull Map<String, Object> defaultActions;
+
+    // ── Pattern (NFA) ────────────────────────────────────────────────────────
+
+    /**
+     * Strategy that wraps the NFA pattern-matching subsystem.
+     *
+     * <p>Must be provided when {@link #subtype} is {@link DeterministicSubtype#PATTERN}.
+     * Callers in {@code agent-memory} can adapt {@code InMemoryPatternEngine}
+     * via {@link PatternMatchStrategy}.
+     */
+    @Nullable PatternMatchStrategy patternMatchStrategy;
+
+    /**
+     * Input field that carries the free-text situation description used for
+     * NFA pattern matching. Defaults to {@code "situation"}.
+     */
+    @lombok.Builder.Default
+    @NotNull String patternSituationField = "situation";
 }

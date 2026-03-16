@@ -1,0 +1,102 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aep-network-policy
+  namespace: aep
+  labels:
+    app: aep-service-manager
+    app.kubernetes.io/name: aep-service-manager
+    app.kubernetes.io/component: network-policy
+    app.kubernetes.io/part-of: ghatana-aep
+spec:
+  podSelector:
+    matchLabels:
+      app: aep-service-manager
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    # Allow HTTP (8090) traffic from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8090
+
+    # Allow gRPC (9091) from internal platform services only
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              ghatana.io/platform: "true"
+      ports:
+        - protocol: TCP
+          port: 9091
+
+    # Allow Prometheus scrape from monitoring namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8090
+
+    # Allow inter-pod traffic within aep namespace (for distributed pattern engine)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: aep-service-manager
+
+  egress:
+    # Allow DNS resolution
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    # Allow connection to Data-Cloud HTTP (8082) and gRPC (9090)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: data-cloud
+      ports:
+        - protocol: TCP
+          port: 8082
+        - protocol: TCP
+          port: 9090
+
+    # Allow connection to Kafka (9092) in shared-services
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: shared-services
+      ports:
+        - protocol: TCP
+          port: 9092
+
+    # Allow connection to Redis (6379) in shared-services
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: shared-services
+      ports:
+        - protocol: TCP
+          port: 6379
+
+    # Allow connection to PostgreSQL (5432) in shared-services
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: shared-services
+      ports:
+        - protocol: TCP
+          port: 5432
+
+    # Allow HTTPS for external AI providers (LangChain4j / OpenAI)
+    - ports:
+        - protocol: TCP
+          port: 443

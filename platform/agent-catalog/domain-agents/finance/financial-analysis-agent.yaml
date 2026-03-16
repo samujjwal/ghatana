@@ -1,0 +1,139 @@
+id: financial-analysis-agent
+name: Financial Analysis Agent
+version: 1.0.0
+description: >
+  Domain-specific agent for financial data processing, risk assessment, and
+  regulatory compliance. Handles transaction analysis, fraud scoring, portfolio
+  risk evaluation, PnL computation, and Basel III/IFRS 9 compliant reporting.
+  All computations are deterministic and auditable; every calculation step is
+  logged to the event store for regulatory audit trail requirements.
+
+metadata:
+  level: 4
+  domain: finance
+  tags: [finance, risk, fraud, compliance, basel3, ifrs9, pnl, trading]
+  maturity: production
+  author: platform-team@ghatana.ai
+  regulatoryFrameworks:
+    - Basel III
+    - IFRS 9
+    - MiFID II
+    - GDPR
+
+generator:
+  type: DETERMINISTIC
+
+# AEP Operator configuration
+aep:
+  operatorType: ANALYSIS
+  inputEventTypes:
+    - "finance.transaction"
+    - "finance.position"
+    - "finance.market-data"
+    - "finance.portfolio-snapshot"
+  outputEventTypes:
+    - "finance.risk-score"
+    - "finance.fraud-alert"
+    - "finance.pnl-computed"
+    - "finance.regulatory-report"
+  backpressure:
+    bufferSize: 10000
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: 30s
+    maxRetries: 3
+    deadLetterQueue: financial-analysis-dlq
+
+capabilities:
+  - transaction-analysis
+  - fraud-scoring
+  - portfolio-risk-evaluation
+  - pnl-computation
+  - regulatory-compliance-check
+  - market-risk-calculation
+  - credit-risk-assessment
+  - audit-trail-generation
+
+# Financial analysis configuration
+configuration:
+  analysisMode:
+    description: "Primary analysis mode"
+    type: string
+    enum: [TRANSACTION, PORTFOLIO, REGULATORY, FRAUD, PNL]
+    required: true
+  riskParameters:
+    description: "Risk calculation parameters"
+    type: object
+    properties:
+      confidenceLevel:
+        type: number
+        default: 0.99
+        description: "VaR confidence level"
+      lookbackDays:
+        type: integer
+        default: 250
+        description: "Historical data window for VaR"
+      stressScenarios:
+        type: array
+        items:
+          type: string
+        default: [BASELINE, ADVERSE, SEVERELY_ADVERSE]
+  fraudThresholds:
+    description: "Fraud detection scoring thresholds"
+    type: object
+    properties:
+      flagScore:
+        type: number
+        default: 0.7
+      blockScore:
+        type: number
+        default: 0.9
+  regulatoryConfig:
+    description: "Regulatory framework settings"
+    type: object
+    properties:
+      frameworks:
+        type: array
+        items:
+          type: string
+        default: [BASEL_III, IFRS_9]
+      reportingCurrency:
+        type: string
+        default: USD
+      jurisdictions:
+        type: array
+        items:
+          type: string
+
+io:
+  inputs:
+    - name: financialEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/finance/event/v1"
+      required: true
+  outputs:
+    - name: analysisResult
+      type: JSON
+      schema: "https://schema.ghatana.com/finance/analysis-result/v1"
+    - name: fraudAlert
+      type: JSON
+      schema: "https://schema.ghatana.com/finance/fraud-alert/v1"
+    - name: regulatoryReport
+      type: JSON
+      schema: "https://schema.ghatana.com/finance/regulatory-report/v1"
+
+memory:
+  type: EPISODIC
+  scope: financial_history
+  retention: long
+  maxEntries: 10000000
+
+resources:
+  memory: 2GB
+  cpu: "2"
+  timeout: 30s
+  maxConcurrency: 20
+
+routing:
+  input: FinancialEvent
+  output: FinancialAnalysisResult

@@ -472,6 +472,9 @@ clear operational benefit.
 | Invite beta | Month 5 launch with Month 5-6 ramp | external invite-only cohort, up to ~500 users, trust and outcome measurement |
 | Public launch | Month 8 | broad beauty-first public availability after hardening and launch review |
 
+Invite beta requires privacy review completion and counsel-approved consent/notice language. Public
+launch is blocked on unresolved privacy, compliance, or consent-policy issues.
+
 ### Phase 1 Success Metrics
 
 - Median time-to-decision for supported beauty tasks ≤ 10 minutes

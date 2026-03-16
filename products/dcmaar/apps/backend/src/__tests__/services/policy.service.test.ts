@@ -13,10 +13,10 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } 
  */
 
 import * as policyService from "../../services/policy.service";
-import * as authService from "../../services/auth.service";
 import * as deviceService from "../../services/device.service";
 import { query } from "../../db";
 import { randomEmail, randomString } from "../setup";
+import { createTestUser } from '../fixtures/user.fixtures';
 
 describe("PolicyService", () => {
   let testUserId: string;
@@ -25,10 +25,7 @@ describe("PolicyService", () => {
 
   beforeEach(async () => {
     // Create test user
-    const user = await authService.register({
-      email: randomEmail(),
-      password: "TestPassword123!",
-    });
+    const user = await createTestUser({ email: randomEmail() });
     testUserId = user.user.id;
 
     // Create test child
@@ -360,10 +357,7 @@ describe("PolicyService", () => {
 
     it("should reject access to another user policy", async () => {
       // GIVEN: Policy created by testUser, different user attempts access
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
 
       // WHEN: Other user tries to retrieve testUser's policy
       const policy = await policyService.getPolicyById(
@@ -499,10 +493,7 @@ describe("PolicyService", () => {
 
     it("should reject access to another user policy", async () => {
       // GIVEN: Policy created by testUser, different user attempts update
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
 
       // WHEN: Other user tries to update testUser's policy
       const updated = await policyService.updatePolicy(
@@ -563,10 +554,7 @@ describe("PolicyService", () => {
 
     it("should reject access to another user policy", async () => {
       // GIVEN: Policy created by testUser, different user attempts deletion
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
 
       // WHEN: Other user tries to delete testUser's policy
       const deleted = await policyService.deletePolicy(
@@ -790,10 +778,7 @@ describe("PolicyService", () => {
 
     it("should not affect other user policies", async () => {
       // GIVEN: Other user's policies created
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
 
       // WHEN: Attempt to toggle testUser policies using otherUser ID
       const count = await policyService.togglePolicies(
@@ -883,10 +868,7 @@ describe("PolicyService", () => {
 
     it("should return zeros for user with no policies", async () => {
       // GIVEN: New user with no policies
-      const newUser = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-      });
+      const newUser = await createTestUser({ email: randomEmail() });
 
       // WHEN: Policy statistics are calculated for empty user
       const stats = await policyService.getPolicyStats(newUser.user.id);

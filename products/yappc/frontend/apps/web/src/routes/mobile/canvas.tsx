@@ -9,10 +9,11 @@
  * @doc.layer product
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { useIsDarkMode } from '@ghatana/theme';
 import {
   Box,
   Typography,
@@ -23,7 +24,8 @@ import {
   Skeleton,
   Alert,
 } from '@ghatana/ui';
-import { Plus as Add, Undo2 as Undo, Redo2 as Redo, Save, ZoomIn, ZoomOut, Layers, Settings, MoreVertical as MoreVert, Pointer as TouchApp } from 'lucide-react';
+import { Plus as Add, Undo2 as Undo, Redo2 as Redo, Save, ZoomIn, ZoomOut, Layers, Settings, MoreVertical as MoreVert, Pointer as TouchApp, CheckCircle } from 'lucide-react';
+import { logger } from '../../utils/Logger';
 
 interface CanvasNode {
     id: string;
@@ -39,13 +41,25 @@ interface CanvasNode {
 export default function MobileCanvasRoute() {
     const { projectId } = useParams();
     const navigate = useNavigate();
-    const theme = useTheme();
+    const isDarkMode = useIsDarkMode();
     const [nodes, setNodes] = useState<CanvasNode[]>([]);
     const [selectedNode, setSelectedNode] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [zoom, setZoom] = useState(1);
-    const [canUndo, setCanUndo] = useState(false);
-    const [canRedo, setCanRedo] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+    // Local undo/redo history stack
+    const historyRef = useRef<CanvasNode[][]>([]);
+    const historyIndexRef = useRef(-1);
+    const canUndo = historyIndexRef.current > 0;
+    const canRedo = historyIndexRef.current < historyRef.current.length - 1;
+
+    const pushHistory = useCallback((snapshot: CanvasNode[]) => {
+        // Truncate any forward history on new change
+        historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+        historyRef.current.push(snapshot);
+        historyIndexRef.current = historyRef.current.length - 1;
+    }, []);
 
     // Check if running in native mobile app
     const isNative = Capacitor && typeof Capacitor.isNativePlatform === 'function'
@@ -53,22 +67,25 @@ export default function MobileCanvasRoute() {
         : false;
 
     useEffect(() => {
-        // Load canvas data
         loadCanvasData();
     }, [projectId]);
 
     const loadCanvasData = async () => {
         setLoading(true);
         try {
-            // Load canvas data from backend
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setNodes([
-                { id: '1', type: 'component', label: 'Header', x: 100, y: 50 },
-                { id: '2', type: 'component', label: 'Content', x: 100, y: 150 },
-                { id: '3', type: 'component', label: 'Footer', x: 100, y: 250 },
-            ]);
+            const res = await fetch(`/api/canvas/${projectId}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data: { nodes: CanvasNode[] } = await res.json();
+            const loadedNodes = data.nodes ?? [];
+            setNodes(loadedNodes);
+            // Seed history with initial state
+            historyRef.current = [loadedNodes];
+            historyIndexRef.current = 0;
         } catch (error) {
-            console.error('Failed to load canvas:', error);
+            logger.error('Failed to load canvas', 'mobile-canvas', {
+                projectId,
+                error: error instanceof Error ? error.message : String(error),
+            });
         } finally {
             setLoading(false);
         }
@@ -85,7 +102,7 @@ export default function MobileCanvasRoute() {
     };
 
     const handleAddNode = () => {
-        handleHapticFeedback();
+        void handleHapticFeedback();
         const newNode: CanvasNode = {
             id: `node-${Date.now()}`,
             type: 'component',
@@ -93,38 +110,61 @@ export default function MobileCanvasRoute() {
             x: 150,
             y: nodes.length * 100 + 50,
         };
-        setNodes([...nodes, newNode]);
-        setCanUndo(true);
+        const updated = [...nodes, newNode];
+        setNodes(updated);
+        pushHistory(updated);
     };
 
     const handleUndo = () => {
-        handleHapticFeedback();
-        // Undo functionality not implemented yet
+        void handleHapticFeedback();
+        if (historyIndexRef.current > 0) {
+            historyIndexRef.current -= 1;
+            setNodes([...historyRef.current[historyIndexRef.current]]);
+        }
     };
 
     const handleRedo = () => {
-        handleHapticFeedback();
-        // Redo functionality not implemented yet
+        void handleHapticFeedback();
+        if (historyIndexRef.current < historyRef.current.length - 1) {
+            historyIndexRef.current += 1;
+            setNodes([...historyRef.current[historyIndexRef.current]]);
+        }
     };
 
     const handleSave = async () => {
-        handleHapticFeedback();
-        // Canvas save functionality not implemented yet
-        alert('Canvas saved!');
+        void handleHapticFeedback();
+        setSaveStatus('saving');
+        try {
+            const res = await fetch(`/api/canvas/${projectId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nodes }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            setSaveStatus('saved');
+            setTimeout(() => setSaveStatus('idle'), 2000);
+        } catch (error) {
+            setSaveStatus('error');
+            logger.error('Failed to save canvas', 'mobile-canvas', {
+                projectId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+            setTimeout(() => setSaveStatus('idle'), 3000);
+        }
     };
 
     const handleZoomIn = () => {
-        handleHapticFeedback();
+        void handleHapticFeedback();
         setZoom(prev => Math.min(prev + 0.1, 2));
     };
 
     const handleZoomOut = () => {
-        handleHapticFeedback();
+        void handleHapticFeedback();
         setZoom(prev => Math.max(prev - 0.1, 0.5));
     };
 
     const handleNodeSelect = (nodeId: string) => {
-        handleHapticFeedback();
+        void handleHapticFeedback();
         setSelectedNode(selectedNode === nodeId ? null : nodeId);
     };
 
@@ -142,8 +182,7 @@ export default function MobileCanvasRoute() {
             className="h-screen flex flex-col" >
             {/* Header Toolbar */}
             <Box
-                className="flex items-center gap-2 p-2"
-                style={{ backgroundColor: theme.palette.background.paper, borderBottom: `1px solid ${theme.palette.divider}` }}
+                className={`flex items-center gap-2 p-2 border-b ${isDarkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'}`}
             >
                 <Typography as="h6" className="flex-1 text-base">
                     Canvas
@@ -157,8 +196,8 @@ export default function MobileCanvasRoute() {
                     <Redo size={16} />
                 </IconButton>
 
-                <IconButton size="sm" onClick={handleSave}>
-                    <Save size={16} />
+                <IconButton size="sm" onClick={() => { void handleSave(); }} disabled={saveStatus === 'saving'}>
+                    {saveStatus === 'saved' ? <CheckCircle size={16} className="text-green-500" /> : <Save size={16} />}
                 </IconButton>
 
                 <IconButton size="sm">
@@ -173,8 +212,10 @@ export default function MobileCanvasRoute() {
                 <Box
                     className="absolute inset-0"
                     style={{
-                        backgroundImage: `linear-gradient(${theme.palette.divider} 1px, transparent 1px), linear-gradient(90deg, ${theme.palette.divider} 1px, transparent 1px)`,
-                        backgroundSize: '20px 20px'
+                        backgroundImage: isDarkMode
+                            ? 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)'
+                            : 'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
+                        backgroundSize: '20px 20px',
                     }}
                 />
 
@@ -186,8 +227,10 @@ export default function MobileCanvasRoute() {
                         <Card
                             key={node.id}
                             onClick={() => handleNodeSelect(node.id)}
-                            className="absolute w-[200px] cursor-pointer"
-                            style={{ left: node.x, top: node.y, border: selectedNode === node.id ? `2px solid ${theme.palette.primary.main}` : 'none' }}
+                            className={`absolute w-[200px] cursor-pointer transition-shadow ${
+                                selectedNode === node.id ? 'ring-2 ring-violet-500' : ''
+                            }`}
+                            style={{ left: node.x, top: node.y }}
                         >
                             <CardContent className="p-4 last:pb-4">
                                 <Typography as="p" className="text-sm font-medium" fontWeight={600}>
@@ -215,8 +258,7 @@ export default function MobileCanvasRoute() {
 
             {/* Bottom Action Bar */}
             <Box
-                className="flex items-center gap-2 p-3"
-                style={{ backgroundColor: theme.palette.background.paper, borderTop: `1px solid ${theme.palette.divider}` }}
+                className={`flex items-center gap-2 p-3 border-t ${isDarkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'}`}
             >
                 <IconButton size="sm" onClick={handleZoomOut}>
                     <ZoomOut size={16} />

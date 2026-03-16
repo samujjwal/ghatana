@@ -63,7 +63,7 @@ each task live in `Aura_Task_Execution_Matrix.md`.
 - `S08-T02` Implement search + guided recommendation prompts
 - `S08-T03` Refine explanations and confidence display
 - `S08-T04` Add user-facing outcome reporting in product detail and saved items
-- `S08-T05` Complete invite beta prep
+- `S08-T05` Complete invite beta prep, privacy/counsel review, and launch checklist
 
 ## Month 5
 ### Sprint 9
@@ -89,5 +89,5 @@ each task live in `Aura_Task_Execution_Matrix.md`.
 ### Sprint 12
 - `S12-T01` Production hardening
 - `S12-T02` QA sweep and regression automation
-- `S12-T03` Launch readiness review
+- `S12-T03` Launch readiness review and consent-policy sign-off
 - `S12-T04` Plan phase-2 features

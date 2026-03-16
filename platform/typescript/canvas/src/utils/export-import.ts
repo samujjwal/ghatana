@@ -1,4 +1,15 @@
 import { CanvasElement } from "../elements/base.js";
+import { ShapeElement } from "../elements/shape.js";
+import { TextElement } from "../elements/text.js";
+import { ConnectorElement } from "../elements/connector.js";
+import { BrushElement } from "../elements/brush.js";
+import { CodeElement } from "../elements/code.js";
+import { DiagramElement } from "../elements/diagram.js";
+import { GroupElement } from "../elements/group.js";
+import { FrameElement } from "../elements/frame.js";
+import { NoteElement } from "../elements/note.js";
+import { ImageElement } from "../elements/image.js";
+import { PipelineNodeElement } from "../elements/pipeline-node.js";
 import { themeManager } from "../theme/index.js";
 
 export interface ExportOptions {
@@ -321,9 +332,114 @@ export class CanvasExporter {
   }
 
   private static jsonToElement(data: Record<string, unknown>): CanvasElement | null {
-    // This would need to be implemented based on the actual element classes
-    // For now, return null as a placeholder
-    console.log("Element import not fully implemented:", data);
-    return null;
+    // Every element requires at minimum: id, xywh, type
+    if (!data.id || !data.xywh || !data.type) {
+      console.warn("jsonToElement: skipping element missing required fields (id, xywh, type)", data);
+      return null;
+    }
+
+    // Build the shared base props from the JSON record
+    const base = {
+      id: data.id as string,
+      xywh: data.xywh as string,
+      rotate: (data.rotate as number) ?? 0,
+      index: (data.index as string) ?? "0",
+    };
+
+    try {
+      switch (data.type as string) {
+        case "shape":
+          return new ShapeElement({
+            ...base,
+            shapeType: (data.shapeType as "rect" | "circle" | "diamond" | "triangle" | "ellipse" | "star") ?? "rect",
+            fillColor: (data.fillColor as string) ?? "#e5e7eb",
+            strokeColor: (data.strokeColor as string) ?? "#9ca3af",
+            strokeWidth: (data.strokeWidth as number) ?? 2,
+            filled: (data.filled as boolean) ?? true,
+            text: data.text as string | undefined,
+            color: data.color as string | undefined,
+          } as Parameters<typeof ShapeElement.prototype.constructor>[0]);
+
+        case "text":
+          return new TextElement({
+            ...base,
+            text: (data.text as string) ?? "",
+            fontSize: (data.fontSize as number) ?? 16,
+            fontFamily: (data.fontFamily as string) ?? "sans-serif",
+            color: (data.color as string) ?? "#1f2937",
+            textAlign: data.textAlign as "left" | "center" | "right" | undefined,
+          });
+
+        case "connector":
+          return new ConnectorElement({
+            ...base,
+            // ConnectorElement accepts just BaseElementProps; other fields are optional
+          } as Parameters<typeof ConnectorElement.prototype.constructor>[0]);
+
+        case "brush":
+          return new BrushElement({
+            ...base,
+            points: (data.points as number[][]) ?? [],
+            color: (data.color as string) ?? "#1f2937",
+            lineWidth: (data.lineWidth as number) ?? 2,
+          } as Parameters<typeof BrushElement.prototype.constructor>[0]);
+
+        case "code":
+          return new CodeElement({
+            ...base,
+            code: (data.code as string) ?? "",
+            language: (data.language as string) ?? "plaintext",
+          } as Parameters<typeof CodeElement.prototype.constructor>[0]);
+
+        case "diagram":
+          return new DiagramElement({
+            ...base,
+            diagramType: (data.diagramType as "flowchart" | "mindmap" | "sequence" | "class") ?? "flowchart",
+            source: (data.source as string) ?? "",
+          } as Parameters<typeof DiagramElement.prototype.constructor>[0]);
+
+        case "group":
+          return new GroupElement({
+            ...base,
+            childIds: (data.childIds as string[]) ?? [],
+          } as Parameters<typeof GroupElement.prototype.constructor>[0]);
+
+        case "frame":
+          return new FrameElement({
+            ...base,
+            title: (data.title as string) ?? "",
+            background: data.background as string | undefined,
+          } as Parameters<typeof FrameElement.prototype.constructor>[0]);
+
+        case "note":
+          return new NoteElement({
+            ...base,
+            content: (data.content as string) ?? "",
+            background: data.background as string | undefined,
+          } as Parameters<typeof NoteElement.prototype.constructor>[0]);
+
+        case "image":
+          return new ImageElement({
+            ...base,
+            sourceId: (data.sourceId as string) ?? "",
+            url: data.url as string | undefined,
+          } as Parameters<typeof ImageElement.prototype.constructor>[0]);
+
+        case "pipeline-node":
+          return new PipelineNodeElement({
+            ...base,
+            label: (data.label as string) ?? "",
+            nodeType: data.nodeType as string | undefined,
+          } as Parameters<typeof PipelineNodeElement.prototype.constructor>[0]);
+
+        default:
+          // Unknown element type — log and skip rather than hard-fail
+          console.warn(`jsonToElement: unsupported element type '${data.type}'; skipping`);
+          return null;
+      }
+    } catch (err) {
+      console.error(`jsonToElement: failed to construct element type '${data.type}':`, err);
+      return null;
+    }
   }
 }

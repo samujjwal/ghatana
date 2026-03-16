@@ -26,6 +26,7 @@ import { ExportButton } from '../shared/ExportButton';
 import type { ArtifactSuggestion, SuggestionContext } from '../../services/ai';
 import { exportLifecycleReport, type LifecycleExportData } from '../../services/export/LifecycleExportService';
 import { PHASE_LABELS, PHASE_DESCRIPTIONS, PHASE_COLORS } from '../../styles/design-tokens';
+import { useToast } from '@/components/common';
 
 interface LifecycleExplorerProps {
     projectId: string;
@@ -114,6 +115,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
     onPhaseSelect,
     onArtifactSelect,
 }) => {
+    const { addToast } = useToast();
     const [searchParams] = useSearchParams();
     const [expandedPhase, setExpandedPhase] = useState<LifecyclePhase | null>(null);
     const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null);
@@ -257,7 +259,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
             await createArtifact?.(suggestion.kind, userId);
         } catch (err) {
             console.error('Failed to create artifact from suggestion:', err);
-            alert('Failed to create artifact. Please try again.');
+            addToast({ message: 'Failed to create artifact. Please try again.', severity: 'error' });
         }
     };
 
@@ -285,7 +287,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
             await exportLifecycleReport(exportData, format);
         } catch (err) {
             console.error('Export failed:', err);
-            alert('Export failed. Please try again.');
+            addToast({ message: 'Export failed. Please try again.', severity: 'error' });
         }
     };
 

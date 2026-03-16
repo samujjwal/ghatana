@@ -9,9 +9,16 @@ import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Map;
 import java.util.Objects;
 
@@ -120,20 +127,79 @@ public final class ExportController {
     }
 
     /**
-     * Export project as PDF.
+     * Export project as PDF using Apache PDFBox.
      */
     private Promise<HttpResponse> exportAsPdf(String projectId, User principal) {
         logger.debug("Exporting project {} as PDF", projectId);
 
         return projectService.getProject(principal, projectId)
             .map(project -> {
-                // Placeholder - in production would generate actual PDF
-                String pdfPlaceholder = "PDF generation not yet implemented";
+                try (PDDocument document = new PDDocument();
+                     ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
-                return ResponseBuilder.ok()
-                    .header("Content-Disposition", "attachment; filename=\"" + project.getName() + ".pdf\"")
-                    .bytes(pdfPlaceholder.getBytes(), "application/pdf")
-                    .build();
+                    PDPage page = new PDPage(PDRectangle.A4);
+                    document.addPage(page);
+
+                    PDType1Font titleFont = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
+                    PDType1Font bodyFont  = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
+
+                    try (PDPageContentStream cs = new PDPageContentStream(document, page)) {
+                        float margin = 50;
+                        float yPos   = page.getMediaBox().getHeight() - margin;
+
+                        // Title
+                        cs.beginText();
+                        cs.setFont(titleFont, 20);
+                        cs.newLineAtOffset(margin, yPos);
+                        cs.showText(project.getName());
+                        cs.endText();
+                        yPos -= 35;
+
+                        // Description label
+                        cs.beginText();
+                        cs.setFont(titleFont, 13);
+                        cs.newLineAtOffset(margin, yPos);
+                        cs.showText("Description");
+                        cs.endText();
+                        yPos -= 18;
+
+                        // Description body
+                        cs.beginText();
+                        cs.setFont(bodyFont, 11);
+                        cs.newLineAtOffset(margin, yPos);
+                        String desc = project.getDescription();
+                        cs.showText(desc != null && !desc.isBlank() ? desc : "(no description)");
+                        cs.endText();
+                        yPos -= 30;
+
+                        // Status
+                        cs.beginText();
+                        cs.setFont(titleFont, 13);
+                        cs.newLineAtOffset(margin, yPos);
+                        cs.showText("Status");
+                        cs.endText();
+                        yPos -= 18;
+
+                        cs.beginText();
+                        cs.setFont(bodyFont, 11);
+                        cs.newLineAtOffset(margin, yPos);
+                        cs.showText(project.getStatus().name());
+                        cs.endText();
+                    }
+
+                    document.save(baos);
+                    byte[] pdfBytes = baos.toByteArray();
+
+                    return ResponseBuilder.ok()
+                        .header("Content-Disposition",
+                                "attachment; filename=\"" + project.getName() + ".pdf\"")
+                        .bytes(pdfBytes, "application/pdf")
+                        .build();
+
+                } catch (Exception e) {
+                    logger.error("PDF generation failed for project {}", projectId, e);
+                    throw new RuntimeException("PDF generation failed", e);
+                }
             });
     }
 

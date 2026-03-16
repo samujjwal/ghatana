@@ -110,6 +110,8 @@ public class ApiApplication extends HttpServerLauncher {
       com.ghatana.yappc.api.observability.HealthAggregationController healthAggregationController,
       com.ghatana.yappc.api.workflow.WorkflowExecutionController workflowExecutionController,
       com.ghatana.yappc.api.dlq.DlqController dlqController,
+      com.ghatana.yappc.api.history.AgentHistoryController agentHistoryController,
+      com.ghatana.yappc.api.policy.LearnedPolicyController learnedPolicyController,
       OutboxRelayService outboxRelayService) {
 
     // Build routing servlet
@@ -504,6 +506,32 @@ public class ApiApplication extends HttpServerLauncher {
                 request -> {
                   String entryId = request.getPathParameter("id");
                   return dlqController.retryEntry(request, entryId);
+                })
+
+            // ========== Agent History & Rationale (Observability 6.4) ==========
+            .with(
+                GET,
+                "/api/v1/agents/:agentId/history",
+                request -> {
+                  String aid = request.getPathParameter("agentId");
+                  return agentHistoryController.getHistory(request, aid);
+                })
+            .with(
+                GET,
+                "/api/v1/agents/:agentId/rationale/:turnId",
+                request -> {
+                  String aid    = request.getPathParameter("agentId");
+                  String turnId = request.getPathParameter("turnId");
+                  return agentHistoryController.getRationale(request, aid, turnId);
+                })
+
+            // ========== Learned Policies (Plan 9.5.4) ==========
+            .with(
+                GET,
+                "/api/v1/agents/:agentId/policies",
+                request -> {
+                  String aid = request.getPathParameter("agentId");
+                  return learnedPolicyController.getPolicies(request, aid);
                 })
 
             .build();

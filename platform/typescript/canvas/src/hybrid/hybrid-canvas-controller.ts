@@ -696,13 +696,61 @@ export class HybridCanvasController implements HybridCanvasAPI {
   }
 
   groupSelected(): void {
-    // TODO: Implement grouping
-    console.warn("groupSelected not yet implemented");
+    const selection = this.getSelection();
+    if (selection.elementIds.length < 2) return;
+
+    const elements = selection.elementIds
+      .map((id) => this.getElementById(id))
+      .filter((e): e is CanvasElement => e !== undefined && !e.locked);
+    if (elements.length < 2) return;
+
+    // Compute bounding box of all selected elements
+    const minX = Math.min(...elements.map((e) => e.position.x));
+    const minY = Math.min(...elements.map((e) => e.position.y));
+    const maxX = Math.max(...elements.map((e) => e.position.x + e.size.width));
+    const maxY = Math.max(
+      ...elements.map((e) => e.position.y + e.size.height),
+    );
+
+    // addElement already calls pushHistory internally; suppress double-entry by
+    // updating elements atomically before the group is added.
+    const childIds = elements.map((e) => e.id);
+    const group = this.addElement({
+      type: "group",
+      position: { x: minX, y: minY },
+      size: { width: maxX - minX, height: maxY - minY },
+      data: { childIds },
+    });
+
+    // Wire children to their new parent
+    for (const element of elements) {
+      this.updateElement(element.id, { parentId: group.id });
+    }
+
+    this.select({ elements: [group.id] });
   }
 
   ungroupSelected(): void {
-    // TODO: Implement ungrouping
-    console.warn("ungroupSelected not yet implemented");
+    const selection = this.getSelection();
+    const ungroupedIds: string[] = [];
+
+    for (const id of selection.elementIds) {
+      const element = this.getElementById(id);
+      if (!element || element.type !== "group") continue;
+
+      const childIds =
+        (element.data.childIds as string[] | undefined) ?? [];
+      for (const childId of childIds) {
+        this.updateElement(childId, { parentId: undefined });
+        ungroupedIds.push(childId);
+      }
+      this.deleteElement(id);
+    }
+
+    if (ungroupedIds.length > 0) {
+      this.select({ elements: ungroupedIds });
+      this.pushHistory(`Ungroup ${ungroupedIds.length} elements`);
+    }
   }
 
   // ===========================================================================

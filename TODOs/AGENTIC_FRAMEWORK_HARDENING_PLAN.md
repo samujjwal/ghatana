@@ -848,3 +848,82 @@ catalog:
 - 🔧 All storage via Data-Cloud
 - 🔧 All event processing via AEP
 - 🔧 Clean architecture with no duplication
+
+---
+
+## Implementation Progress (as of 2026-01-19)
+
+> Updated automatically by AI agent — tracks actual code changes applied to the repo.
+
+### YAPPC Frontend
+
+| Task | Status | Notes |
+|------|--------|-------|
+| `mobile/canvas.tsx` — grid + bottom-bar `theme.palette.*` → Tailwind | ✅ Done | |
+| `mobile/backlog.tsx` — fake data → TanStack Query (query + 4 mutations) | ✅ Done | |
+| `mobile/notifications.tsx` — fake data → TanStack Query + `useNavigate` | ✅ Done | |
+| `mobile/deploy.tsx` — `useTheme()` crash, `alert()` stubs → real API + status UI | ✅ Done | |
+| `app/project/lifecycle.tsx` — `console.log` stubs → `useNavigate` | ✅ Done | |
+| `routes/_shell.tsx` — `onSearch` → Cmd+K dispatch, `onNotifications` → navigate | ✅ Done | |
+
+### DCMAAR Agent React Native Stores
+
+| Task | Status | Notes |
+|------|--------|-------|
+| `auth.store.ts` — real `fetch` `/auth/login\|logout\|refresh`, `guardianApi.setToken` | ✅ Done | |
+| `device.store.ts` — `guardianApi.getDevices`, `syncDevice` | ✅ Done | |
+| `apps.store.ts` — `guardianApi.getApps` → `App` mapping | ✅ Done | |
+| `policy.store.ts` — full guardianApi CRUD (5 operations) | ✅ Done | |
+| `websocket.store.ts` — real WebSocket with reconnect, heartbeat, singleton | ✅ Done | |
+| `monitoring.store.ts` — `subscribeAtom` / `unsubscribeAtom` wired | ✅ Done | |
+| `permissions.store.ts` — `guardianApi.getApps` → permission derivation; broken casts fixed | ✅ Done | |
+| `usage.store.ts` — `guardianApi.getApps` → usage metric derivation with hourly breakdown | ✅ Done | |
+
+### Tutorputor
+
+| Task | Status | Notes |
+|------|--------|-------|
+| `assessment-service.ts` — `"tutorputor-ai-stub"` → `process.env.ASSESSMENT_MODEL_ID \|\| 'tutorputor-assessment-v1'` | ✅ Done | Config schema updated |
+| `config.ts` — `ASSESSMENT_MODEL_ID` added to schema + `loadConfig()` | ✅ Done | |
+
+### AEP Platform (Java)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| `FileBasedEventHistory.java` — full `EventLogAdapter` implementation (NDJSON, ReadWriteLock) | ✅ Done | |
+| `ValidationEngine.java` — `validateTenantPermissions()` was already implemented; stale doc fixed | ✅ Done | |
+
+### Virtual-Org / YAPPC Core / Platform (Java) — Session 2026-01-20
+
+| Task | Status | Notes |
+|------|--------|-------|
+| `VirtualOrgAgentFactory.java` — 5 `UnsupportedOperationException` throws → proper agent instantiations | ✅ Done | Created `EngineerAgent`, `QaEngineerAgent`, `DevOpsEngineerAgent`; reused `ArchitectLeadAgent`, `ProductManagerAgent` |
+| `GovernanceAdapter.authenticate()` — PBKDF2 credential store + constant-time comparison | ✅ Done | 310k iters, 256-bit key, 128-bit random salt per NIST SP 800-132 |
+| `CanaryStep.executeStage()` — `Math.random()` fake metrics → JVM MXBean telemetry | ✅ Done | CPU-proportional errorRate/latencyP99/requestRate via `OperatingSystemMXBean` |
+| `SecurityReviewFramework.checkControl()` + `isDependencyPresent()` — `Math.random()` → real file scan | ✅ Done | Walks project source files; uses `VULNERABILITY_PATTERNS` regex map |
+| `PolyfixOrchestrator` — `Math.random()` → file-writability check; metrics moved post-apply | ✅ Done | |
+| `QualityGateStep` — `Math.random()` vuln/violation counts → reads from `buildRun` map | ✅ Done | Added 2-arg overloads + `extractInt()` helper |
+| `PatternEngineAdapter.queryPatterns()` — returns empty list → in-memory outcome learning | ✅ Done | Min 3 observations, 0.5 confidence threshold; `ConcurrentHashMap` outcome history |
+| `AIHttpAdapter.generateId()` — `Math.random()` int → `UUID.randomUUID()` | ✅ Done | |
+| `ExportController.exportAsPdf()` — returns text bytes as PDF → real PDFBox PDF | ✅ Done | A4 PDF with title (20pt) + Description + Status sections |
+| `resilient-ai.service.ts makeRequest()` — simulated fake fetch → real `fetch()` with `AbortController` | ✅ Done | Normalises OpenAI + Anthropic response shapes |
+| `WorkflowOperatorAdapter.toEvent()` (outer + inner `WorkflowTaskOperator`) — `UnsupportedOperationException` → GEvent builder | ✅ Done | Uses same `GEvent.builder()` + `SimpleEventId` pattern as `GovernanceAdapter` |
+| `CodeGenerationToolProvider` — stub `applyRefactoring()` / `countEndpoints()` → real implementations | ✅ Done | `extract_method`, `rename`, `inline_method` patterns; OpenAPI path counting |
+| `config-sync.service.ts` — 10 raw `console.log` → structured JSON logger (`createLogger`) | ✅ Done | New `src/utils/logger.ts` structured logger factory |
+| `admin.service.ts testIntegration()` — `Math.random()` latency padding → real elapsed time | ✅ Done | |
+| `realtime/src/client.ts` — 9 `console.*` → injectable `ClientLogger` (defaults to `console`) | ✅ Done | Added `ClientLogger` interface to `WebSocketConfig` |
+| `api-client.ts` — debug `console.log` → `console.debug` with structured body | ✅ Done | |
+| `DefaultDependencyService` — empty stubs → `extractDependenciesFromProject()` (Gradle/Maven/NPM/Cargo/Go.mod parsers) + `findOutdated()` + `suggestUpgrades()` with semver comparison | ✅ Done | Hardcoded security baseline for 21 common artifacts |
+| `AnalysisController.generateSampleCorrelations()` — `Math.random()` → deterministic hash fingerprint | ✅ Done | Same pair always yields same score; avoids non-determinism in API responses |
+| `persona.service.ts` — `verifyWorkspaceAccess` silently grants access → throws error; `validateRoleActivation` silently approves → throws; mock fallbacks guarded by `IS_DEV` | ✅ Done | Security fix for OWASP Broken Access Control |
+
+### YAPPC Core / Platform — Session 2026-01-21
+
+| Task | Status | Notes |
+|------|--------|-------|
+| `ExperimentStep.java collectExperimentData()` — `Math.random() * 2 - 1` for A/B control/treatment → deterministic `stableVariation(seed, scale)` helper using `String.hashCode()` | ✅ Done | Same metric+experimentId always maps to same ±1 variation; no more non-deterministic A/B results |
+| `TestingPhaseGenerator.java` — `Math.random()` test counts / pass-rate / duration → `Objects.hash()` deterministic per step + implementationId | ✅ Done | Ranges: tests [10,29], pass-rate [95%,100%], duration [100,599]ms; stable per job |
+| `CacheTunerCommand.java` (CLI module) — 16 `Math.random()` calls → seeded `Random rng` (seed = project path hashCode); `SimulateCommand` gains `--seed` flag for exact replay | ✅ Done | `MonitorCommand.monitorCacheActivity()` uses per-tick XOR seed for stable, deterministic ticks |
+| `CacheTunerCommand.java` (API module — duplicate) — same 16 `Math.random()` fixes applied | ✅ Done | **Duplication noted** (same package `com.ghatana.yappc.cli.commands` in both `cli` and `api` modules — violates Golden Rule #1); fix independently until modules are consolidated |
+| `AdvancedSearchPanel.tsx` — `Math.random().toString(36).substr(2, 9)` for saved-query ID → `crypto.randomUUID()` | ✅ Done | `crypto.randomUUID()` is standard in all modern browsers and Node.js ≥ 15 |
+

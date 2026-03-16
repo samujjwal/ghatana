@@ -139,7 +139,9 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
         this.metrics = metrics;
         this.executorService = executorService;
         this.contextBridge = contextBridge;
-        this.eventLogStore = Objects.requireNonNull(eventLogStore, "eventLogStore required — use EventLogStore.noOp() for tests/dev");
+        // null = in-memory mode: event sourcing is disabled (valid for tests/dev).
+        // In production always supply a real EventLogStore.
+        this.eventLogStore = eventLogStore;
         this.systemTenant = TenantContext.of(systemTenantId != null ? systemTenantId : "aep-system");
     }
 
@@ -596,6 +598,9 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
      * @doc.gaa.lifecycle capture
      */
     private void appendStateEvent(String eventType, Map<String, Object> payload) {
+        if (eventLogStore == null) {
+            return; // Event sourcing disabled (in-memory / test mode)
+        }
         try {
             byte[] payloadBytes = MAPPER.writeValueAsBytes(payload);
             EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
@@ -629,6 +634,10 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
      * @doc.gaa.lifecycle perceive
      */
     public Promise<Void> rebuildFromEventLog() {
+        if (eventLogStore == null) {
+            log.info("[EventSource] No EventLogStore configured — skipping replay (in-memory mode)");
+            return Promise.complete();
+        }
         log.info("[EventSource] Rebuilding orchestration state from event log (tenant={})", systemTenant.tenantId());
         return rebuildFromEventLogBatch(0L, 0, 0L);
     }

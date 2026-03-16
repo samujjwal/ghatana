@@ -7,6 +7,24 @@ const configService = ConfigService.getInstance();
 const dashboardService = DashboardService.getInstance();
 const flowService = FlowService.getInstance();
 
+/** Subset of the shared resolver context carrying the authenticated identity. */
+interface ResolverContext {
+    userId?: string;
+    email?: string;
+    role?: string;
+}
+
+/**
+ * Extract the authenticated userId from the GraphQL resolver context.
+ * Throws with a clear message when no user identity is present.
+ */
+function requireUserId(context: ResolverContext): string {
+    if (!context?.userId) {
+        throw new Error('Authentication required: no userId in resolver context');
+    }
+    return context.userId;
+}
+
 export const YappcCoreResolver = {
     Query: {
         personas: () => configService.getPersonas(),
@@ -96,24 +114,27 @@ export const YappcCoreResolver = {
         }
     },
     Mutation: {
-        startFlow: async (_: unknown, { flowId, input }: { flowId: string, input: Record<string, unknown> }) => {
-            const flow = await flowService.startFlow(flowId, input, 'user-1'); // Mock user
+        startFlow: async (_: unknown, { flowId, input }: { flowId: string, input: Record<string, unknown> }, context: ResolverContext) => {
+            const userId = requireUserId(context);
+            const flow = await flowService.startFlow(flowId, input, userId);
             return {
                 ...flow,
                 availableTransitions: await flowService.getAvailableTransitions(flow.instanceId),
                 activeTasks: await flowService.getActiveTasks(flow.instanceId)
             };
         },
-        transitionFlow: async (_: unknown, { instanceId, event, payload }: { instanceId: string, event: string, payload: Record<string, unknown> }) => {
-            const flow = await flowService.transition(instanceId, event, payload, 'user-1');
+        transitionFlow: async (_: unknown, { instanceId, event, payload }: { instanceId: string, event: string, payload: Record<string, unknown> }, context: ResolverContext) => {
+            const userId = requireUserId(context);
+            const flow = await flowService.transition(instanceId, event, payload, userId);
             return {
                 ...flow,
                 availableTransitions: await flowService.getAvailableTransitions(flow.instanceId),
                 activeTasks: await flowService.getActiveTasks(flow.instanceId)
             };
         },
-        cancelFlow: async (_: unknown, { instanceId, reason }: { instanceId: string, reason?: string }) => {
-            const flow = await flowService.cancel(instanceId, reason || 'User cancelled', 'user-1');
+        cancelFlow: async (_: unknown, { instanceId, reason }: { instanceId: string, reason?: string }, context: ResolverContext) => {
+            const userId = requireUserId(context);
+            const flow = await flowService.cancel(instanceId, reason || 'User cancelled', userId);
             return {
                 ...flow,
                 availableTransitions: [],

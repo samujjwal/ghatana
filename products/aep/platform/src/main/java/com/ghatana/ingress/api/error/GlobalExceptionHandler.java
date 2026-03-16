@@ -38,7 +38,11 @@ public class GlobalExceptionHandler {
                 ObjectNode node = mapper.createObjectNode();
                 node.put("error", ErrorCodeMappers.fromIngress("INVALID_REQUEST").name());
                 node.put("message", ve.getMessage());
-                // node.set("details", mapper.valueToTree(ve.getDetails())); // TODO: getDetails() doesn't exist in core ValidationException
+                // Include field-level validation errors when present
+                var validationErrors = ve.getValidationErrors();
+                if (validationErrors != null && !validationErrors.isEmpty()) {
+                    node.set("details", mapper.valueToTree(validationErrors));
+                }
                 return ResponseBuilder.status(422)
                     .rawJson(mapper.writeValueAsString(node))
                     .build();

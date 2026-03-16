@@ -11,10 +11,10 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import * as heartbeatService from "../../services/heartbeat.service";
-import * as authService from "../../services/auth.service";
 import * as deviceService from "../../services/device.service";
 import { randomEmail } from "../setup";
 import { query } from "../../db";
+import { createTestUser } from '../fixtures/user.fixtures';
 
 describe("HeartbeatService", () => {
   let testUserId: string;
@@ -22,11 +22,7 @@ describe("HeartbeatService", () => {
 
   beforeEach(async () => {
     // Create test user
-    const user = await authService.register({
-      email: randomEmail(),
-      password: "TestPassword123!",
-      displayName: "Test User",
-    });
+    const user = await createTestUser({ email: randomEmail(), displayName: 'Test User' });
     testUserId = user.user.id;
 
     // Create test device
@@ -343,11 +339,7 @@ describe("HeartbeatService", () => {
     it("should return empty array for user with no devices", async () => {
       // GIVEN: User with no devices
       // Create another user with no devices
-      const user2 = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-        displayName: "User 2",
-      });
+      const user2 = await createTestUser({ email: randomEmail(), displayName: 'User 2' });
 
       // WHEN: Device statuses are retrieved for user
       const statuses = await heartbeatService.getAllDeviceStatuses(
@@ -361,11 +353,7 @@ describe("HeartbeatService", () => {
     it("should not include other users devices", async () => {
       // GIVEN: Two users with their own devices
       // Create another user and their device
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: "OtherPassword123!",
-        displayName: "Other User",
-      });
+      const otherUser = await createTestUser({ email: randomEmail(), displayName: 'Other User' });
 
       const otherDevice = await deviceService.registerDevice(
         otherUser.user.id,

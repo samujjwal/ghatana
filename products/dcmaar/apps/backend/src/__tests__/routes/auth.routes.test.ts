@@ -1,23 +1,29 @@
 /**
  * Auth Routes Tests
  *
- * Tests authentication API endpoints including:
- * - POST /api/auth/register
- * - POST /api/auth/login
- * - POST /api/auth/refresh
- * - POST /api/auth/logout
- * - GET /api/auth/me
- * - PUT /api/auth/profile
- * - POST /api/auth/password-reset/request
- * - POST /api/auth/password-reset/confirm
+ * Tests the profile endpoints exposed by DCMAAR backend after platform migration.
+ * All auth token issuance (register, login, refresh) now belongs to auth-gateway.
+ * Tests simulate requests using locally-signed JWT tokens (the backward-compatible
+ * fallback path in the auth middleware).
+ *
+ * Covered endpoints:
+ * - GET  /api/auth/me      — Return authenticated user profile
+ * - PUT  /api/auth/profile — Update authenticated user profile
  */
-
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import jwt from 'jsonwebtoken';
 import { FastifyInstance } from 'fastify';
 import { request } from '../helpers/request.helper';
 import { createTestApp } from '../helpers/app.helper';
 import { randomEmail } from '../setup';
-import * as authService from '../../services/auth.service';
+import { query } from '../../db';
+
+const JWT_SECRET = process.env.JWT_SECRET ?? 'development-secret-key';
+
+/** Create a locally-signed access token (mirrors the fallback path in auth.middleware.ts) */
+function makeAccessToken(userId: string): string {
+  return jwt.sign({ userId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+}
 
 let app: FastifyInstance;
 
@@ -30,458 +36,42 @@ describe('Auth Routes', () => {
     await app.close();
   });
 
-  describe('POST /api/auth/register', () => {
-    it('should register new user with valid data', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-        displayName: 'Test User',
-      };
-
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      expect(response.body.accessToken).toBeDefined();
-      expect(response.body.refreshToken).toBeDefined();
-      expect(response.body.user).toBeDefined();
-      expect(response.body.user.email).toBe(userData.email.toLowerCase());
-      expect(response.body.user.display_name).toBe(userData.displayName);
-    });
-
-    it('should set refresh token in HTTP-only cookie', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const cookies = response.headers['set-cookie'];
-      expect(cookies).toBeDefined();
-      // Fastify inject returns set-cookie as array or string
-      const cookieStr = Array.isArray(cookies) ? cookies[0] : cookies;
-      expect(cookieStr).toContain('refreshToken=');
-      expect(cookieStr).toContain('HttpOnly');
-    });
-
-    it('should reject duplicate email', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      // Register first time
-      await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      // Try to register again
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(400);
-
-      expect(response.body.error).toContain('already exists');
-    });
-
-    it('should reject weak password', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'weak',
-      };
-
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(400);
-
-      expect(response.body.error).toBeDefined();
-    });
-
-    it('should reject invalid email', async () => {
-      const userData = {
-        email: 'invalid-email',
-        password: 'ValidPassword123!',
-      };
-
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(400);
-
-      expect(response.body.error).toContain('email');
-    });
-
-    it('should reject password without uppercase', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'lowercase123!',
-      };
-
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(400);
-
-      expect(response.body.error).toContain('uppercase');
-    });
-
-    it('should reject password without number', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'NoNumbers!',
-      };
-
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(400);
-
-      expect(response.body.error).toContain('number');
-    });
-
-    it('should reject password without special character', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'NoSpecial123',
-      };
-
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(400);
-
-      expect(response.body.error).toContain('special');
-    });
-  });
-
-  describe('POST /api/auth/login', () => {
-    it('should login with valid credentials', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      // Register first
-      await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      // Then login
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send(userData)
-        .expect(200);
-
-      expect(response.body.accessToken).toBeDefined();
-      expect(response.body.refreshToken).toBeDefined();
-      expect(response.body.user).toBeDefined();
-      expect(response.body.user.email).toBe(userData.email.toLowerCase());
-    });
-
-    it('should set refresh token in cookie on login', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send(userData)
-        .expect(200);
-
-      const cookies = response.headers['set-cookie'];
-      expect(cookies).toBeDefined();
-      // Fastify inject returns set-cookie as array or string
-      const cookieStr = Array.isArray(cookies) ? cookies[0] : cookies;
-      expect(cookieStr).toContain('refreshToken=');
-    });
-
-    it('should reject wrong password', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: userData.email,
-          password: 'WrongPassword123!',
-        })
-        .expect(401);
-
-      expect(response.body.error).toContain('Invalid');
-    });
-
-    it('should reject non-existent email', async () => {
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'nonexistent@example.com',
-          password: 'Password123!',
-        })
-        .expect(401);
-
-      expect(response.body.error).toContain('Invalid');
-    });
-
-    it('should reject missing password', async () => {
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com',
-        })
-        .expect(400);
-
-      expect(response.body.error).toBeDefined();
-    });
-
-    it('should be case-insensitive for email', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: userData.email.toUpperCase(),
-          password: userData.password,
-        })
-        .expect(200);
-
-      expect(response.body.user.email).toBe(userData.email.toLowerCase());
-    });
-  });
-
-  describe('POST /api/auth/refresh', () => {
-    it('should refresh access token with valid refresh token', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      const registerResponse = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const refreshToken = registerResponse.body.refreshToken;
-
-      // Wait 1ms to ensure different timestamp for new token
-      await new Promise(resolve => setTimeout(resolve, 1));
-
-      const response = await request(app)
-        .post('/api/auth/refresh')
-        .send({ refreshToken })
-        .expect(200);
-
-      expect(response.body.accessToken).toBeDefined();
-      // Verify token is valid instead of just checking inequality
-      const decoded = authService.verifyAccessToken(response.body.accessToken);
-      expect(decoded?.userId).toBe(registerResponse.body.user.id);
-    });
-
-    it('should accept refresh token from cookie', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      const registerResponse = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const cookies = registerResponse.headers['set-cookie'];
-
-      const response = await request(app)
-        .post('/api/auth/refresh')
-        .set('Cookie', cookies)
-        .expect(200);
-
-      expect(response.body.accessToken).toBeDefined();
-    });
-
-    it('should reject invalid refresh token', async () => {
-      const response = await request(app)
-        .post('/api/auth/refresh')
-        .send({ refreshToken: 'invalid-token' })
-        .expect(401);
-
-      expect(response.body.error).toBeDefined();
-    });
-
-    it('should reject missing refresh token', async () => {
-      const response = await request(app)
-        .post('/api/auth/refresh')
-        .send({})
-        .expect(400);
-
-      expect(response.body.error).toContain('required');
-    });
-
-    it('should reject access token as refresh token', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      const registerResponse = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const accessToken = registerResponse.body.accessToken;
-
-      const response = await request(app)
-        .post('/api/auth/refresh')
-        .send({ refreshToken: accessToken })
-        .expect(401);
-
-      expect(response.body.error).toBeDefined();
-    });
-  });
-
-  describe('POST /api/auth/logout', () => {
-    it('should logout successfully', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      const registerResponse = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const refreshToken = registerResponse.body.refreshToken;
-
-      const response = await request(app)
-        .post('/api/auth/logout')
-        .send({ refreshToken })
-        .expect(200);
-
-      expect(response.body.message).toContain('success');
-    });
-
-    it('should clear refresh token cookie', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      const registerResponse = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const cookies = registerResponse.headers['set-cookie'];
-
-      const response = await request(app)
-        .post('/api/auth/logout')
-        .set('Cookie', cookies)
-        .expect(200);
-
-      const setCookies = response.headers['set-cookie'];
-      expect(setCookies).toBeDefined();
-    });
-
-    it('should succeed even with invalid token', async () => {
-      const response = await request(app)
-        .post('/api/auth/logout')
-        .send({ refreshToken: 'invalid-token' })
-        .expect(200);
-
-      expect(response.body.message).toBeDefined();
-    });
-
-    it('should invalidate refresh token', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      const registerResponse = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const refreshToken = registerResponse.body.refreshToken;
-
-      // Logout
-      await request(app)
-        .post('/api/auth/logout')
-        .send({ refreshToken })
-        .expect(200);
-
-      // Try to use refresh token after logout
-      const response = await request(app)
-        .post('/api/auth/refresh')
-        .send({ refreshToken })
-        .expect(401);
-
-      expect(response.body.error).toBeDefined();
-    });
-  });
-
   describe('GET /api/auth/me', () => {
-    it('should return current user with valid token', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-        displayName: 'Test User',
-      };
+    it('should return the current user profile with a valid token', async () => {
+      // GIVEN: A user in the database and a valid local access token
+      const email = randomEmail();
+      const result = await query<{ id: string }>(
+        'INSERT INTO users (email, password_hash, display_name) VALUES ($1, $2, $3) RETURNING id',
+        [email, 'placeholder_hash', 'Test User']
+      );
+      const userId = result[0].id;
+      const accessToken = makeAccessToken(userId);
 
-      const registerResponse = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
+      try {
+        // WHEN
+        const response = await request(app)
+          .get('/api/auth/me')
+          .set('Authorization', 'Bearer ' + accessToken)
+          .expect(200);
 
-      const accessToken = registerResponse.body.accessToken;
-
-      const response = await request(app)
-        .get('/api/auth/me')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(200);
-
-      expect(response.body.user).toBeDefined();
-      expect(response.body.user.email).toBe(userData.email.toLowerCase());
-      expect(response.body.user.display_name).toBe(userData.displayName);
+        // THEN
+        expect(response.body.user).toBeDefined();
+        expect(response.body.user.email).toBe(email);
+        expect(response.body.user.display_name).toBe('Test User');
+      } finally {
+        await query('DELETE FROM users WHERE id = $1', [userId]);
+      }
     });
 
-    it('should reject missing token', async () => {
+    it('should return 401 when no token is provided', async () => {
       const response = await request(app)
         .get('/api/auth/me')
         .expect(401);
 
-      expect(response.body.error).toContain('token');
+      expect(response.body.error).toBeDefined();
     });
 
-    it('should reject invalid token', async () => {
+    it('should return 401 for an invalid token', async () => {
       const response = await request(app)
         .get('/api/auth/me')
         .set('Authorization', 'Bearer invalid-token')
@@ -492,189 +82,59 @@ describe('Auth Routes', () => {
   });
 
   describe('PUT /api/auth/profile', () => {
-    it('should update display name', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
+    let userId: string;
+    let accessToken: string;
 
-      const registerResponse = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
+    beforeAll(async () => {
+      const result = await query<{ id: string }>(
+        'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id',
+        [randomEmail(), 'placeholder_hash']
+      );
+      userId = result[0].id;
+      accessToken = makeAccessToken(userId);
+    });
 
-      const accessToken = registerResponse.body.accessToken;
+    afterAll(async () => {
+      if (userId) {
+        await query('DELETE FROM users WHERE id = $1', [userId]);
+      }
+    });
 
+    it('should update the display name', async () => {
       const response = await request(app)
         .put('/api/auth/profile')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Authorization', 'Bearer ' + accessToken)
         .send({ displayName: 'Updated Name' })
         .expect(200);
 
       expect(response.body.user.display_name).toBe('Updated Name');
     });
 
-    it('should update photo URL', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      const registerResponse = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const accessToken = registerResponse.body.accessToken;
-
+    it('should update the photo URL', async () => {
       const response = await request(app)
         .put('/api/auth/profile')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Authorization', 'Bearer ' + accessToken)
         .send({ photoUrl: 'https://example.com/photo.jpg' })
         .expect(200);
 
       expect(response.body.user.photo_url).toBe('https://example.com/photo.jpg');
     });
 
-    it('should reject invalid photo URL', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      const registerResponse = await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const accessToken = registerResponse.body.accessToken;
-
+    it('should return 400 for an invalid photo URL', async () => {
       const response = await request(app)
         .put('/api/auth/profile')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Authorization', 'Bearer ' + accessToken)
         .send({ photoUrl: 'not-a-url' })
         .expect(400);
 
       expect(response.body.error).toContain('URL');
     });
 
-    it('should reject unauthenticated request', async () => {
+    it('should return 401 for an unauthenticated request', async () => {
       const response = await request(app)
         .put('/api/auth/profile')
         .send({ displayName: 'Test' })
         .expect(401);
-
-      expect(response.body.error).toBeDefined();
-    });
-  });
-
-  describe('POST /api/auth/password-reset/request', () => {
-    it('should accept password reset request', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'ValidPassword123!',
-      };
-
-      await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const response = await request(app)
-        .post('/api/auth/password-reset/request')
-        .send({ email: userData.email })
-        .expect(200);
-
-      expect(response.body.message).toBeDefined();
-    });
-
-    it('should not reveal if email exists', async () => {
-      const response = await request(app)
-        .post('/api/auth/password-reset/request')
-        .send({ email: 'nonexistent@example.com' })
-        .expect(200);
-
-      expect(response.body.message).toBeDefined();
-    });
-
-    it('should reject invalid email format', async () => {
-      const response = await request(app)
-        .post('/api/auth/password-reset/request')
-        .send({ email: 'invalid-email' })
-        .expect(400);
-
-      expect(response.body.error).toBeDefined();
-    });
-  });
-
-  describe('POST /api/auth/password-reset/confirm', () => {
-    it('should reset password with valid token', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'OldPassword123!',
-      };
-
-      await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const resetToken = await authService.requestPasswordReset(userData.email);
-
-      const response = await request(app)
-        .post('/api/auth/password-reset/confirm')
-        .send({
-          token: resetToken,
-          newPassword: 'NewPassword123!',
-        })
-        .expect(200);
-
-      expect(response.body.message).toContain('success');
-
-      // Verify can login with new password
-      const loginResponse = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: userData.email,
-          password: 'NewPassword123!',
-        })
-        .expect(200);
-
-      expect(loginResponse.body.accessToken).toBeDefined();
-    });
-
-    it('should reject invalid reset token', async () => {
-      const response = await request(app)
-        .post('/api/auth/password-reset/confirm')
-        .send({
-          token: 'invalid-token',
-          newPassword: 'NewPassword123!',
-        })
-        .expect(400);
-
-      expect(response.body.error).toBeDefined();
-    });
-
-    it('should reject weak new password', async () => {
-      const userData = {
-        email: randomEmail(),
-        password: 'OldPassword123!',
-      };
-
-      await request(app)
-        .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
-
-      const resetToken = await authService.requestPasswordReset(userData.email);
-
-      const response = await request(app)
-        .post('/api/auth/password-reset/confirm')
-        .send({
-          token: resetToken,
-          newPassword: 'weak',
-        })
-        .expect(400);
 
       expect(response.body.error).toBeDefined();
     });

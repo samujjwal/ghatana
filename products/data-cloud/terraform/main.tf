@@ -184,3 +184,85 @@ module "clickhouse" {
 
   depends_on = [module.vpc, module.s3]
 }
+
+# ---------------------------------------------------------------------------
+# Cross-Region Replication (primary → replica region)
+# Enabled when var.s3_enable_cross_region_replication = true.
+# Covers: RDS read replica, MSK Managed Replicator, OpenSearch snapshots,
+# and ClickHouse remote_servers config stored in SSM Parameter Store.
+# ---------------------------------------------------------------------------
+module "cross_region_replication" {
+  count  = var.s3_enable_cross_region_replication ? 1 : 0
+  source = "./modules/cross-region-replication"
+
+  primary_region   = var.aws_region
+  secondary_region = var.replica_region
+  name_prefix      = local.name_prefix
+
+  # RDS
+  primary_rds_arn            = module.rds.instance_arn
+  rds_replica_instance_class = var.postgres_instance_class
+
+  # MSK — the DR cluster ARN is known only after the DR env apply.
+  # Provide via TF_VAR_cross_region_secondary_msk_arn in CI/CD.
+  primary_msk_arn   = module.msk.cluster_arn
+  secondary_msk_arn = var.cross_region_secondary_msk_arn
+
+  msk_replication_topics          = var.cross_region_msk_topics
+  msk_replication_consumer_groups = var.cross_region_msk_consumer_groups
+
+  # MSK networking — primary is fully known, secondary is set in CI/CD
+  primary_msk_subnet_ids         = module.vpc.private_subnet_ids
+  primary_msk_security_group_ids = [module.eks.node_security_group_id]
+  secondary_msk_subnet_ids       = var.cross_region_secondary_msk_subnet_ids
+  secondary_msk_security_group_ids = var.cross_region_secondary_msk_security_group_ids
+
+  # OpenSearch
+  primary_opensearch_arn      = module.opensearch.domain_arn
+  primary_opensearch_endpoint = module.opensearch.endpoint
+
+  # ClickHouse
+  clickhouse_primary_hosts   = module.clickhouse.node_private_ips
+  clickhouse_secondary_hosts = var.cross_region_clickhouse_secondary_hosts
+
+  tags = local.common_tags
+
+  providers = {
+    aws.primary   = aws
+    aws.secondary = aws.replica
+  }
+
+  depends_on = [module.rds, module.msk, module.opensearch, module.clickhouse]
+}
+
+# ---------------------------------------------------------------------------
+# Global Load Balancer (Route53 health checks + failover + Global Accelerator)
+# Only provisioned when a DR environment is deployed and route53_zone_id is set.
+# ---------------------------------------------------------------------------
+module "global_lb" {
+  count  = var.route53_zone_id != "" ? 1 : 0
+  source = "./modules/global-load-balancer"
+
+  name_prefix      = local.name_prefix
+  primary_region   = var.aws_region
+  secondary_region = var.replica_region
+  topology         = var.load_balancer_topology
+
+  primary_alb_dns_name   = module.eks.ingress_alb_dns_name
+  primary_alb_zone_id    = module.eks.ingress_alb_zone_id
+  secondary_alb_dns_name = var.cross_region_secondary_alb_dns_name
+  secondary_alb_zone_id  = var.cross_region_secondary_alb_zone_id
+
+  route53_zone_id           = var.route53_zone_id
+  api_fqdn                  = var.api_fqdn
+  health_check_path         = "/health"
+  health_check_port         = 8082
+  enable_global_accelerator = var.enable_global_accelerator
+
+  tags = local.common_tags
+
+  providers = {
+    aws.primary   = aws
+    aws.secondary = aws.replica
+  }
+}

@@ -7,6 +7,7 @@ package com.ghatana.yappc.api.aep;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.platform.governance.security.TenantContext;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -266,6 +267,13 @@ public final class AepServiceClient implements AepClient {
     }
     if (tenantId instanceof String tenant && !tenant.isBlank()) {
       return tenant;
+    }
+    // Prefer thread-local TenantContext (set by auth filter) over the
+    // static DEFAULT_TENANT_ID constant, which would collapse all
+    // tenants together and violate multi-tenant isolation.
+    String contextTenantId = TenantContext.getCurrentTenantId();
+    if (!contextTenantId.isBlank() && !contextTenantId.equals("default-tenant")) {
+      return contextTenantId;
     }
     return DEFAULT_TENANT_ID;
   }

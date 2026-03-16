@@ -15,9 +15,17 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -254,41 +262,191 @@ public class PluginHealthCheckFactory {
     }
 
     private void registerDefaultImplementations() {
-        // PostgreSQL - check database connectivity
-        registerCheckImplementation("postgresql", plugin -> () -> Promise.of(
-                HealthCheckResult.healthy("PostgreSQL check placeholder",
-                        Map.of("connectionUrl", plugin.backend() != null ? plugin.backend().connectionUrl() : "unknown"),
-                        java.time.Duration.ZERO)
-        ));
+        // -----------------------------------------------------------------------
+        // PostgreSQL — TCP socket probe to the JDBC host:port
+        // -----------------------------------------------------------------------
+        registerCheckImplementation("postgresql", plugin -> () ->
+                checkTcpConnectivity("postgresql", plugin.backend().connectionUrl(), 5432,
+                        Duration.ofSeconds(3)));
 
-        // Redis - check cache connectivity
-        registerCheckImplementation("redis", plugin -> () -> Promise.of(
-                HealthCheckResult.healthy("Redis check placeholder",
-                        Map.of("connectionUrl", plugin.backend() != null ? plugin.backend().connectionUrl() : "unknown"),
-                        java.time.Duration.ZERO)
-        ));
+        // -----------------------------------------------------------------------
+        // Redis — TCP socket probe to host:port
+        // -----------------------------------------------------------------------
+        registerCheckImplementation("redis", plugin -> () ->
+                checkTcpConnectivity("redis", plugin.backend().connectionUrl(), 6379,
+                        Duration.ofSeconds(3)));
 
-        // Kafka - check broker connectivity
-        registerCheckImplementation("kafka", plugin -> () -> Promise.of(
-                HealthCheckResult.healthy("Kafka check placeholder",
-                        Map.of("bootstrap", plugin.backend() != null ? plugin.backend().connectionUrl() : "unknown"),
-                        java.time.Duration.ZERO)
-        ));
+        // -----------------------------------------------------------------------
+        // Kafka — TCP socket probe to bootstrap broker host:port
+        // -----------------------------------------------------------------------
+        registerCheckImplementation("kafka", plugin -> () ->
+                checkTcpConnectivity("kafka", plugin.backend().connectionUrl(), 9092,
+                        Duration.ofSeconds(3)));
 
-        // S3 - check bucket accessibility
-        registerCheckImplementation("s3", plugin -> () -> Promise.of(
-                HealthCheckResult.healthy("S3 check placeholder",
-                        Map.of("endpoint", plugin.backend() != null ? plugin.backend().connectionUrl() : "aws"),
-                        java.time.Duration.ZERO)
-        ));
+        // -----------------------------------------------------------------------
+        // S3 / MinIO — HTTP HEAD request to the endpoint
+        // -----------------------------------------------------------------------
+        registerCheckImplementation("s3", plugin -> () ->
+                checkHttpEndpoint("s3", plugin.backend().connectionUrl(), Duration.ofSeconds(5)));
 
-        // ClickHouse - check database connectivity
-        registerCheckImplementation("clickhouse", plugin -> () -> Promise.of(
-                HealthCheckResult.healthy("ClickHouse check placeholder",
-                        Map.of("connectionUrl", plugin.backend() != null ? plugin.backend().connectionUrl() : "unknown"),
-                        java.time.Duration.ZERO)
-        ));
+        // -----------------------------------------------------------------------
+        // ClickHouse — HTTP GET to the built-in health probe endpoint
+        // -----------------------------------------------------------------------
+        registerCheckImplementation("clickhouse", plugin -> () -> {
+            String rawUrl = plugin.backend().connectionUrl();
+            // ClickHouse HTTP health endpoint: <scheme>://<host>:<port>/ping
+            String pingUrl = buildClickHousePingUrl(rawUrl);
+            return checkHttpEndpoint("clickhouse", pingUrl, Duration.ofSeconds(5));
+        });
 
         LOG.info("Registered {} default health check implementations", checkImplementations.size());
     }
-}
+
+    // =========================================================================
+    // Internal probe helpers
+    // =========================================================================
+
+    /**
+     * Opens a TCP socket to {@code host:port} derived from {@code connectionUrl}
+     * and returns {@link HealthCheckResult#healthy} / {@link HealthCheckResult#unhealthy}
+     * accordingly.
+     */
+    private static Promise<HealthCheckResult> checkTcpConnectivity(
+            String backendType,
+            String connectionUrl,
+            int defaultPort,
+            Duration timeout) {
+
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+            long start = System.currentTimeMillis();
+            String host = "unknown";
+            int port = defaultPort;
+
+            try {
+                HostPort hp = parseHostPort(connectionUrl, defaultPort);
+                host = hp.host();
+                port = hp.port();
+
+                try (Socket socket = new Socket()) {
+                    socket.connect(new InetSocketAddress(host, port),
+                            (int) timeout.toMillis());
+                }
+
+                long elapsedMs = System.currentTimeMillis() - start;
+                return HealthCheckResult.healthy(
+                        backendType + " reachable",
+                        Map.of("host", host, "port", port, "responseTimeMs", elapsedMs),
+                        Duration.ofMillis(elapsedMs));
+
+            } catch (Exception e) {
+                long elapsedMs = System.currentTimeMillis() - start;
+                return HealthCheckResult.unhealthy(
+                        backendType + " unreachable: " + e.getMessage(),
+                        Map.of("host", host, "port", port,
+                                "error", e.getClass().getSimpleName(),
+                                "responseTimeMs", elapsedMs),
+                        Duration.ofMillis(elapsedMs));
+            }
+        });
+    }
+
+    /**
+     * Issues an HTTP HEAD (or GET) to {@code url} and treats any 2xx/3xx as
+     * healthy.
+     */
+    private static Promise<HealthCheckResult> checkHttpEndpoint(
+            String backendType,
+            String url,
+            Duration timeout) {
+
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+            long start = System.currentTimeMillis();
+            if (url == null || url.isBlank()) {
+                return HealthCheckResult.unhealthy(
+                        backendType + " endpoint URL not configured",
+                        Map.of(),
+                        Duration.ZERO);
+            }
+
+            try {
+                HttpClient client = HttpClient.newBuilder()
+                        .connectTimeout(timeout)
+                        .build();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
+                        .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                        .timeout(timeout)
+                        .build();
+
+                HttpResponse<Void> response = client.send(
+                        request, HttpResponse.BodyHandlers.discarding());
+
+                long elapsedMs = System.currentTimeMillis() - start;
+                int status = response.statusCode();
+                boolean ok = (status >= 200 && status < 400);
+
+                return ok
+                        ? HealthCheckResult.healthy(
+                                backendType + " responded HTTP " + status,
+                                Map.of("url", url, "statusCode", status, "responseTimeMs", elapsedMs),
+                                Duration.ofMillis(elapsedMs))
+                        : HealthCheckResult.unhealthy(
+                                backendType + " returned HTTP " + status,
+                                Map.of("url", url, "statusCode", status, "responseTimeMs", elapsedMs),
+                                Duration.ofMillis(elapsedMs));
+
+            } catch (Exception e) {
+                long elapsedMs = System.currentTimeMillis() - start;
+                return HealthCheckResult.unhealthy(
+                        backendType + " unreachable: " + e.getMessage(),
+                        Map.of("url", url, "error", e.getClass().getSimpleName(),
+                                "responseTimeMs", elapsedMs),
+                        Duration.ofMillis(elapsedMs));
+            }
+        });
+    }
+
+    /**
+     * Parses a connection URL (JDBC, Redis URL, or plain {@code host:port}) and
+     * returns the host/port tuple.
+     */
+    private static HostPort parseHostPort(String connectionUrl, int defaultPort) {
+        if (connectionUrl == null || connectionUrl.isBlank()) {
+            return new HostPort("localhost", defaultPort);
+        }
+        try {
+            // Strip JDBC prefix: jdbc:postgresql://host:port/db → //host:port/db
+            String normalized = connectionUrl;
+            if (normalized.startsWith("jdbc:")) {
+                normalized = normalized.substring(normalized.indexOf("//"));
+            }
+            URI uri = URI.create(normalized);
+            String host = uri.getHost() != null ? uri.getHost() : "localhost";
+            int port = uri.getPort() > 0 ? uri.getPort() : defaultPort;
+            return new HostPort(host, port);
+        } catch (Exception e) {
+            // Fallback: try to parse "host:port" or just "host"
+            String stripped = connectionUrl.replaceAll("^[a-zA-Z+.]+://", "").split("/")[0];
+            String[] parts = stripped.split(":");
+            String host = parts[0].isBlank() ? "localhost" : parts[0];
+            int port = parts.length > 1 ? Integer.parseInt(parts[1].split("\\?")[0]) : defaultPort;
+            return new HostPort(host, port);
+        }
+    }
+
+    /**
+     * Derives the ClickHouse HTTP /ping URL from a JDBC or HTTP connection URL.
+     */
+    private static String buildClickHousePingUrl(String connectionUrl) {
+        if (connectionUrl == null || connectionUrl.isBlank()) {
+            return "http://localhost:8123/ping";
+        }
+        try {
+            HostPort hp = parseHostPort(connectionUrl, 8123);
+            return "http://" + hp.host() + ":" + hp.port() + "/ping";
+        } catch (Exception e) {
+            return "http://localhost:8123/ping";
+        }
+    }
+
+    private record HostPort(String host, int port) {}

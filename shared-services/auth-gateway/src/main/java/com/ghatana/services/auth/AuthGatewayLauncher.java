@@ -116,6 +116,15 @@ public class AuthGatewayLauncher extends Launcher {
             MetricsCollector metrics,
             CredentialStore credentialStore) {
 
+        // Platform JWT for cross-product token exchange.
+        // Products forward their own JWT here; we validate it and return a
+        // short-lived platform-wide token accepted by all services.
+        final String platformSecret = System.getenv().getOrDefault(
+                "PLATFORM_JWT_SECRET", "dev-platform-jwt-secret-change-me-in-prod!");
+        final long platformTokenTtlMs = Long.parseLong(
+                System.getenv().getOrDefault("PLATFORM_TOKEN_TTL_MS", String.valueOf(15 * 60 * 1000L)));
+        final JwtTokenProvider platformTokenProvider = new JwtTokenProvider(platformSecret, platformTokenTtlMs);
+
         return RoutingServlet.builder(eventloop)
                 // Health check
                 .with(GET, "/health", request -> {
@@ -303,6 +312,70 @@ public class AuthGatewayLauncher extends Launcher {
                             .withJson(String.format("{\"tenantId\":\"%s\"}", tenantId))
                             .build()
                             .toPromise();
+                })
+                // Cross-product token exchange
+                //
+                // Any product holding a valid product-scoped JWT can POST it here
+                // to receive a short-lived (15 min) platform-wide token that all
+                // other products and shared services accept.
+                //
+                // Request:  POST /auth/exchange
+                //           Authorization: Bearer <product-jwt>
+                //
+                // Response: { "platformToken": "...", "expiresIn": 900 }
+                //
+                // The platform token carries the original subject, roles, email,
+                // tenantId, and a "tokenType":"PLATFORM" claim so services can
+                // distinguish it from product-scoped tokens.
+                .with(POST, "/auth/exchange", request -> {
+                    metrics.incrementCounter("auth.gateway.exchange.count");
+                    String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+                    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                        return Promise.of(HttpResponse.ofCode(401)
+                                .withJson("{\"error\":\"Missing or invalid Authorization header\"}")
+                                .build());
+                    }
+                    try {
+                        String productToken = authHeader.substring(7);
+                        // Validate the incoming product-scoped JWT
+                        if (!tokenProvider.validateToken(productToken)) {
+                            metrics.incrementCounter("auth.gateway.exchange.rejected");
+                            return Promise.of(HttpResponse.ofCode(401)
+                                    .withJson("{\"error\":\"Invalid or expired product token\"}")
+                                    .build());
+                        }
+                        String userId = tokenProvider.getUserIdFromToken(productToken).orElse("unknown");
+                        java.util.List<String> roles = tokenProvider.getRolesFromToken(productToken);
+                        java.util.Map<String, Object> srcClaims =
+                                tokenProvider.extractClaims(productToken).orElse(java.util.Map.of());
+                        String email    = String.valueOf(srcClaims.getOrDefault("email", ""));
+                        String tenantId = String.valueOf(srcClaims.getOrDefault("tenantId", "default"));
+
+                        // Issue platform-wide short-lived token
+                        String platformToken = platformTokenProvider.createToken(
+                                userId, roles,
+                                java.util.Map.of(
+                                        "email",      email,
+                                        "tenantId",   tenantId,
+                                        "tokenType",  "PLATFORM",
+                                        "issuer",     "ghatana-auth-gateway"
+                                )
+                        );
+                        long expiresIn = platformTokenTtlMs / 1000L;
+                        LOGGER.info("Issued platform token for userId={} tenantId={}", userId, tenantId);
+                        metrics.incrementCounter("auth.gateway.exchange.success");
+                        return Promise.of(HttpResponse.ok200()
+                                .withJson(String.format(
+                                    "{\"platformToken\":\"%s\",\"expiresIn\":%d}",
+                                    platformToken, expiresIn))
+                                .build());
+                    } catch (Exception ex) {
+                        LOGGER.error("Cross-product token exchange failed", ex);
+                        metrics.incrementCounter("auth.gateway.exchange.errors");
+                        return Promise.of(HttpResponse.ofCode(500)
+                                .withJson("{\"error\":\"Token exchange failed\"}")
+                                .build());
+                    }
                 })
                 .build();
     }

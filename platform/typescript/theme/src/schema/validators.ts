@@ -412,19 +412,68 @@ export function validateTokens(
  * Check if a color token has sufficient contrast
  * Useful for accessibility validation
  */
+function parseColorToRgb(color: string): [number, number, number] | null {
+  const hex = color.trim();
+
+  // #rgb or #rgba shorthand
+  if (/^#[0-9a-f]{3,4}$/i.test(hex)) {
+    const r = parseInt(hex[1] + hex[1], 16);
+    const g = parseInt(hex[2] + hex[2], 16);
+    const b = parseInt(hex[3] + hex[3], 16);
+    return [r, g, b];
+  }
+
+  // #rrggbb or #rrggbbaa
+  if (/^#[0-9a-f]{6,8}$/i.test(hex)) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return [r, g, b];
+  }
+
+  // rgb(r, g, b) or rgba(r, g, b, a)
+  const rgbMatch = hex.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (rgbMatch) {
+    return [parseInt(rgbMatch[1]), parseInt(rgbMatch[2]), parseInt(rgbMatch[3])];
+  }
+
+  return null;
+}
+
+function relativeLuminance(r: number, g: number, b: number): number {
+  // WCAG 2.1 relative luminance — IEC 61966-2-1 sRGB companding
+  const linearize = (channel: number): number => {
+    const c = channel / 255;
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+}
+
 export function validateColorContrast(
-  _foreground: string,
-  _background: string,
+  foreground: string,
+  background: string,
   level: 'AA' | 'AAA' = 'AA'
 ): { valid: boolean; ratio: number; required: number } {
-  // This is a placeholder - actual implementation would use a color contrast library
-  // TODO: Implement using a library like 'color' or 'wcag-contrast'
-
   const requiredRatio = level === 'AAA' ? 7 : 4.5;
 
+  const fg = parseColorToRgb(foreground);
+  const bg = parseColorToRgb(background);
+
+  if (!fg || !bg) {
+    return { valid: false, ratio: 0, required: requiredRatio };
+  }
+
+  const l1 = relativeLuminance(...fg);
+  const l2 = relativeLuminance(...bg);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+
+  // WCAG 2.1 §1.4.3 contrast ratio formula
+  const ratio = Math.round(((lighter + 0.05) / (darker + 0.05)) * 100) / 100;
+
   return {
-    valid: false,
-    ratio: 0,
+    valid: ratio >= requiredRatio,
+    ratio,
     required: requiredRatio,
   };
 }

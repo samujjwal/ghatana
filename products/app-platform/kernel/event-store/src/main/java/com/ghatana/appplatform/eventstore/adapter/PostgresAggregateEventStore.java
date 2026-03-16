@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.appplatform.eventstore.domain.AggregateEventRecord;
 import com.ghatana.appplatform.eventstore.domain.ConflictError;
 import com.ghatana.appplatform.eventstore.port.AggregateEventStore;
+import com.ghatana.appplatform.eventstore.port.CalendarDateEnricher;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,11 +72,33 @@ public final class PostgresAggregateEventStore implements AggregateEventStore {
     private final DataSource dataSource;
     private final Executor blockingExecutor;
     private final ObjectMapper mapper;
+    private final CalendarDateEnricher calendarDateEnricher;
 
+    /**
+     * Creates an event store with BS calendar enrichment wired.
+     *
+     * @param dataSource            JDBC data source
+     * @param blockingExecutor      off-eventloop executor for JDBC calls
+     * @param calendarDateEnricher  converts UTC instants to BS date strings (K-15 integration)
+     */
+    public PostgresAggregateEventStore(DataSource dataSource, Executor blockingExecutor,
+                                       CalendarDateEnricher calendarDateEnricher) {
+        this.dataSource            = dataSource;
+        this.blockingExecutor      = blockingExecutor;
+        this.mapper                = new ObjectMapper().registerModule(new JavaTimeModule());
+        this.calendarDateEnricher  = calendarDateEnricher != null
+                ? calendarDateEnricher : CalendarDateEnricher.DEGRADED;
+    }
+
+    /**
+     * Convenience constructor that uses degradation mode (no BS date enrichment).
+     * Prefer the three-argument constructor when the calendar-service is available.
+     *
+     * @param dataSource       JDBC data source
+     * @param blockingExecutor off-eventloop executor for JDBC calls
+     */
     public PostgresAggregateEventStore(DataSource dataSource, Executor blockingExecutor) {
-        this.dataSource       = dataSource;
-        this.blockingExecutor = blockingExecutor;
-        this.mapper           = new ObjectMapper().registerModule(new JavaTimeModule());
+        this(dataSource, blockingExecutor, CalendarDateEnricher.DEGRADED);
     }
 
     /**
@@ -203,8 +226,12 @@ public final class PostgresAggregateEventStore implements AggregateEventStore {
      * Returns null when the calendar service is unavailable (degradation mode).
      */
     private String resolveCalendarDate(Map<String, Object> metadata, Instant utc) {
-        // TODO(calendar-service): inject CalendarDateEnricher and call enricher.toBs(utc)
-        return null;
+        try {
+            return calendarDateEnricher.toBs(utc);
+        } catch (Exception e) {
+            log.warn("Calendar date enrichment failed for utc={}, degrading to null: {}", utc, e.getMessage());
+            return null;
+        }
     }
 
     private Map<String, Object> enrichMetadata(Map<String, Object> original, String createdAtBs) {

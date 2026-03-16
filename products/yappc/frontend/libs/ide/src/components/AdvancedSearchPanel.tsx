@@ -98,7 +98,7 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
     if (!name?.trim()) return;
 
     const newQuery: SavedQuery = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       name: name.trim(),
       query: { ...query },
       createdAt: Date.now(),

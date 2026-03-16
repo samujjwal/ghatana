@@ -279,19 +279,41 @@ public class YoloV8Detector {
         return normalized;
     }
 
+    /**
+     * Run YOLOv8 inference via ONNX Runtime.
+     *
+     * <p><strong>Integration status</strong>: The ONNX Runtime Java binding
+     * ({@code com.microsoft.onnxruntime:onnxruntime}) must be added to the module
+     * dependencies and a session must be initialised from {@link #modelPath} for real
+     * inference. Until that dependency is present, this method returns an all-zero
+     * output tensor whose shape matches the standard YOLOv8 export
+     * ({@code [1, 84, 8400]}), which causes {@link #postProcess} to produce zero
+     * detections — a correct, honest result rather than fabricated data.
+     *
+     * <p><strong>Intended implementation</strong> once ONNX Runtime is available:
+     * <pre>{@code
+     * try (OrtEnvironment env = OrtEnvironment.getEnvironment();
+     *      OrtSession session = env.createSession(modelPath.toString())) {
+     *     float[] flatInput = matToFloatArray(preprocessed);
+     *     long[] shape = {1, 3, INPUT_HEIGHT, INPUT_WIDTH};
+     *     OnnxTensor tensor = OnnxTensor.createTensor(env, FloatBuffer.wrap(flatInput), shape);
+     *     OrtSession.Result result = session.run(Map.of(session.getInputNames().iterator().next(), tensor));
+     *     float[][][] output = (float[][][]) result.get(0).getValue();
+     *     return output;
+     * }
+     * }</pre>
+     *
+     * @param preprocessed normalized 640×640 image Mat (float32, RGB, values in [0,1])
+     * @return YOLOv8 output tensor of shape [1, 84, 8400]; all zeros until ONNX Runtime is wired
+     */
     private float[][][] runInference(Mat preprocessed) {
-        // Placeholder for ONNX Runtime inference
-        // In production, this would:
-        // 1. Convert Mat to ONNX tensor
-        // 2. Run model.run() with ONNX Runtime
-        // 3. Extract output tensor
-        
-        // For now, return mock output matching YOLOv8 format
-        // YOLOv8 output: [batch, 84, 8400] where 84 = 4 bbox coords + 80 class scores
+        // ONNX Runtime not yet integrated — return zero tensor so postProcess yields
+        // no detections. This is an honest "no result" rather than fabricated data.
+        // Add com.microsoft.onnxruntime:onnxruntime to the module dependency block
+        // and implement the OrtSession call described in this method's Javadoc.
         int numDetections = 8400;
         float[][][] output = new float[1][84][numDetections];
-        
-        LOG.debug("Running inference (mock implementation)");
+        LOG.debug("ONNX Runtime not integrated — returning zero inference tensor (0 detections)");
         return output;
     }
 

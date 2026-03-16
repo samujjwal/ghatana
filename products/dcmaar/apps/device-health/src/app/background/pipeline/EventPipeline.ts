@@ -120,6 +120,16 @@ class ProcessorRegistry {
 }
 
 /**
+ * Metric event emitted by the pipeline for external observation.
+ */
+export interface MetricEvent {
+  type: 'increment' | 'gauge' | 'histogram';
+  metric: string;
+  value: number;
+  tags?: Record<string, string>;
+}
+
+/**
  * Pipeline configuration
  */
 export interface PipelineConfig {
@@ -134,6 +144,9 @@ export interface PipelineConfig {
 
   /** Maximum processing time in milliseconds */
   timeout?: number;
+
+  /** Optional callback for observing pipeline metrics */
+  onMetric?: (event: MetricEvent) => void;
 }
 
 /**
@@ -170,12 +183,14 @@ export interface PipelineStats {
 export class EventPipeline {
   private registry: ProcessorRegistry;
   private processors: Processor[] = [];
-  private config: Required<PipelineConfig>;
+  private config: Required<Omit<PipelineConfig, 'onMetric'>>;
+  private onMetric?: (event: MetricEvent) => void;
   private stats: PipelineStats;
   private initialized = false;
 
   constructor(config: PipelineConfig) {
     this.registry = new ProcessorRegistry();
+    this.onMetric = config.onMetric;
     this.config = {
       processors: config.processors || [],
       monitoring: config.monitoring !== false,
@@ -331,14 +346,14 @@ export class EventPipeline {
         error: (msg: string, meta?: any) => console.error(`[Pipeline][${connectorId}]`, msg, meta),
       },
       metrics: {
-        increment: (metric: string, value?: number, tags?: Record<string, string>) => {
-          // TODO: Integrate with metrics collector
+        increment: (metric: string, value = 1, tags?: Record<string, string>) => {
+          this.onMetric?.({ type: 'increment', metric, value, tags });
         },
         gauge: (metric: string, value: number, tags?: Record<string, string>) => {
-          // TODO: Integrate with metrics collector
+          this.onMetric?.({ type: 'gauge', metric, value, tags });
         },
         histogram: (metric: string, value: number, tags?: Record<string, string>) => {
-          // TODO: Integrate with metrics collector
+          this.onMetric?.({ type: 'histogram', metric, value, tags });
         },
       },
       ...override,

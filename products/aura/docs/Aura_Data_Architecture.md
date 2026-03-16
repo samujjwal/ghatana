@@ -16,7 +16,9 @@ Aura distinguishes between three classes of user-related data:
 | **Optional enrichment data** | Imported purchase history, email/receipt parsing, public profile/community sharing, partner-linked commerce data | Explicit scoped opt-in required |
 | **High-sensitivity enrichment** | Wearable/bio signals, cycle data, selfie-based shade analysis, any regulated or special-category signal | Separate explicit scoped opt-in required; never required for core value |
 
-Legal basis mapping and notice language must be finalized with counsel, but the product boundary is fixed: core service operation is not blocked on optional-integration consent.
+Counsel sign-off on legal basis mapping and notice language is required before invite beta, and any
+unresolved counsel issues block public launch. The product boundary itself is fixed: core service
+operation is not blocked on optional-integration consent.
 
 ---
 

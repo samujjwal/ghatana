@@ -17,10 +17,10 @@ import { FastifyInstance } from 'fastify';
 import { request } from '../helpers/request.helper';
 import { createTestApp } from '../helpers/app.helper';
 import { randomEmail, randomString } from '../setup';
-import * as authService from '../../services/auth.service';
 import * as policyService from '../../services/policy.service';
 import * as deviceService from '../../services/device.service';
 import { query } from '../../db';
+import { createTestUser } from '../fixtures/user.fixtures';
 
 let app: FastifyInstance;
 
@@ -40,10 +40,7 @@ describe('Policy Routes', () => {
 
   beforeEach(async () => {
     // Create test user
-    const user = await authService.register({
-      email: randomEmail(),
-      password: 'TestPassword123!',
-    });
+    const user = await createTestUser({ email: randomEmail() });
     testUserId = user.user.id;
     testAccessToken = user.accessToken;
 
@@ -311,10 +308,7 @@ describe('Policy Routes', () => {
     });
 
     it('should reject access to another user policy', async () => {
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: 'OtherPassword123!',
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
 
       const response = await request(app)
         .get(`/api/policies/${testPolicyId}`)
@@ -421,10 +415,7 @@ describe('Policy Routes', () => {
     });
 
     it('should reject access to another user policy', async () => {
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: 'OtherPassword123!',
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
 
       const response = await request(app)
         .put(`/api/policies/${testPolicyId}`)
@@ -463,10 +454,7 @@ describe('Policy Routes', () => {
     });
 
     it('should reject access to another user policy', async () => {
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: 'OtherPassword123!',
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
 
       const response = await request(app)
         .delete(`/api/policies/${testPolicyId}`)

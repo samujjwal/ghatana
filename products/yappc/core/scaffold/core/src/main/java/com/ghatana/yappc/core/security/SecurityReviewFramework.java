@@ -847,8 +847,24 @@ public class SecurityReviewFramework {
     }
 
     private boolean isDependencyPresent(String dependency) {
-        // Simplified check - would scan build files
-        return Math.random() > 0.7; // 30% chance for demo
+        // Check the project's build descriptor files for the dependency declaration.
+        // Searches build.gradle, build.gradle.kts, pom.xml, and package.json.
+        for (String buildFile : List.of(
+                "build.gradle", "build.gradle.kts", "pom.xml", "package.json", "requirements.txt")) {
+            try {
+                java.nio.file.Path buildPath = projectRoot.resolve(buildFile);
+                if (Files.exists(buildPath) && Files.isRegularFile(buildPath)) {
+                    String content = Files.readString(buildPath);
+                    if (content.contains(dependency)) {
+                        return true;
+                    }
+                }
+            } catch (IOException e) {
+                logger.debug("Could not read build file {} while checking dependency {}",
+                        buildFile, dependency);
+            }
+        }
+        return false;
     }
 
     private boolean isScenarioApplicable(ThreatScenario scenario) {
@@ -1020,7 +1036,73 @@ public class SecurityReviewFramework {
     private ControlResult checkControl(ComplianceControl control) {
         ControlResult result = new ControlResult();
         result.controlId = control.id;
-        result.compliant = Math.random() > 0.3;
+        // Evaluate compliance by scanning the project source for patterns associated with
+        // this control. A control is considered non-compliant when the scanner detects
+        // a vulnerability pattern that maps to the control category.
+        // TODO: Integrate with a dedicated compliance scanner (e.g., OWASP Dependency-Check,
+        //       Checkov, or a SIEM) for authoritative control attestation.
+        try {
+            boolean hasRelevantVulnerability = scanProjectForControlViolation(control.id);
+            result.compliant = !hasRelevantVulnerability;
+        } catch (IOException e) {
+            logger.warn("Could not scan project for control {}: {}", control.id, e.getMessage());
+            // Conservative default: mark as non-compliant to trigger manual review
+            result.compliant = false;
+        }
         return result;
+    }
+
+    /**
+     * Scans project source files to detect patterns that would violate the given compliance
+     * control. Returns {@code true} if a violation is found.
+     */
+    private boolean scanProjectForControlViolation(String controlId) throws IOException {
+        // Map control IDs to the vulnerability patterns they govern
+        Map<String, String> controlPatternMap = Map.of(
+                "SQL_INJECTION", "sql_injection",
+                "XSS", "xss_vulnerability",
+                "SECRETS", "hardcoded_password",
+                "API_KEY", "api_key_exposure",
+                "WEAK_CRYPTO", "weak_crypto",
+                "COMMAND_INJECTION", "command_injection",
+                "INSECURE_RANDOM", "insecure_random",
+                "PATH_TRAVERSAL", "path_traversal"
+        );
+
+        String patternKey = controlPatternMap.entrySet().stream()
+                .filter(e -> controlId != null && controlId.toUpperCase().contains(e.getKey()))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
+
+        if (patternKey == null || !VULNERABILITY_PATTERNS.containsKey(patternKey)) {
+            return false; // No matching pattern — treat as compliant
+        }
+
+        Pattern vulnerabilityPattern = VULNERABILITY_PATTERNS.get(patternKey);
+
+        if (!Files.exists(projectRoot)) {
+            return false;
+        }
+
+        // Walk source files and check each against the compiled pattern
+        try (var walk = Files.walk(projectRoot)) {
+            return walk
+                    .filter(Files::isRegularFile)
+                    .filter(p -> {
+                        String name = p.getFileName().toString();
+                        return name.endsWith(".java") || name.endsWith(".kt")
+                                || name.endsWith(".ts") || name.endsWith(".js")
+                                || name.endsWith(".py");
+                    })
+                    .anyMatch(file -> {
+                        try {
+                            String content = Files.readString(file);
+                            return vulnerabilityPattern.matcher(content).find();
+                        } catch (IOException e) {
+                            return false;
+                        }
+                    });
+        }
     }
 }

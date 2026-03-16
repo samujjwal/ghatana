@@ -92,7 +92,48 @@ public class PipelineRecord {
     //                             proto.getUpdatedAt().getNanos()))
     //             .createdBy(proto.getCreatedBy())
     //             .updatedBy(proto.getUpdatedBy())
-    //             .tags(String.join(\",\", proto.getTagsList()))
+    //             .tags(String.join(",", proto.getTagsList()))
     //             .build();
     // }
+
+    /**
+     * Serializes this record to a JSON byte array for transport.
+     *
+     * <p>Replace with protobuf serialization once {@code pipeline.registry.v1.Pipeline}
+     * proto is generated from the contract definitions.
+     *
+     * @return UTF-8 JSON bytes
+     */
+    public byte[] toWireBytes() {
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper =
+                    new com.fasterxml.jackson.databind.ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            return mapper.writeValueAsBytes(this);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize PipelineRecord to wire bytes", e);
+        }
+    }
+
+    /**
+     * Deserializes a PipelineRecord from JSON bytes.
+     *
+     * <p>Replace with protobuf deserialization once {@code pipeline.registry.v1.Pipeline}
+     * proto is generated from the contract definitions.
+     *
+     * @param wireBytes UTF-8 JSON bytes from {@link #toWireBytes()}
+     * @return deserialized PipelineRecord
+     */
+    public static PipelineRecord fromWireBytes(byte[] wireBytes) {
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper =
+                    new com.fasterxml.jackson.databind.ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            return mapper.readValue(wireBytes, PipelineRecord.class);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to deserialize PipelineRecord from wire bytes", e);
+        }
+    }
 }

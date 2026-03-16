@@ -142,7 +142,29 @@ export const useCanvasScene = ({
     },
     copySelection: () => { /* clipboard handled by browser */ },
     pasteSelection: () => { /* clipboard handled by browser */ },
-    duplicateSelection: () => { /* TODO: wire to command system */ },
+    duplicateSelection: () => {
+      const ids = canvasState.selectedElements || [];
+      if (ids.length === 0) return;
+      const OFFSET = 20;
+      const duplicates = (canvasState.elements || [])
+        .filter((e: unknown) => ids.includes((e as { id: string }).id))
+        .map((e: unknown) => {
+          const el = e as { id: string; position?: { x: number; y: number } };
+          return {
+            ...el,
+            id: `${el.id}-copy-${Date.now()}`,
+            position: { x: (el.position?.x ?? 0) + OFFSET, y: (el.position?.y ?? 0) + OFFSET },
+          };
+        });
+      setCanvasState((prev: unknown) => {
+        const p = prev as { elements?: unknown[]; connections?: unknown[]; selectedElements?: string[] };
+        return {
+          ...p,
+          elements: [...(p.elements || []), ...duplicates],
+          selectedElements: duplicates.map((d) => d.id),
+        };
+      });
+    },
     handleSelectionChange: (params: unknown) => {
       const selectedIds = params?.nodes?.map?.((n: unknown) => n.id) || [];
       setCanvasState((prev: unknown) => ({ ...prev, selectedElements: selectedIds }));
@@ -241,9 +263,11 @@ export const useCanvasScene = ({
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const loadCanvas = async () => {
-      console.log(
-        `[useCanvasScene] Loading canvas for project=${projectId}, canvas=${canvasId}`
-      );
+      if (import.meta.env.DEV) {
+        console.log(
+          `[useCanvasScene] Loading canvas for project=${projectId}, canvas=${canvasId}`
+        );
+      }
       setIsLoading(true);
       // Reset state immediately to avoid showing stale data from previous project
       setCanvasState({
@@ -253,22 +277,30 @@ export const useCanvasScene = ({
         lifecyclePhase: LifecyclePhase.DESIGN,
       });
 
-      console.log('[useCanvasScene] Calling persistence.loadCanvas()...');
+      if (import.meta.env.DEV) {
+        console.log('[useCanvasScene] Calling persistence.loadCanvas()...');
+      }
       let loadedState = await persistence.loadCanvas();
       let loadedFromLegacy = false;
 
-      console.log(
-        '[useCanvasScene] persistence.loadCanvas() returned:',
-        loadedState ? `${loadedState.elements?.length || 0} elements` : 'null'
-      );
+      if (import.meta.env.DEV) {
+        console.log(
+          '[useCanvasScene] persistence.loadCanvas() returned:',
+          loadedState ? `${loadedState.elements?.length || 0} elements` : 'null'
+        );
+      }
 
       if (!loadedState) {
-        console.log(
-          '[useCanvasScene] No state found, trying legacy migration...'
-        );
+        if (import.meta.env.DEV) {
+          console.log(
+            '[useCanvasScene] No state found, trying legacy migration...'
+          );
+        }
         const migratedState = await persistence.migrateLegacyState();
         if (migratedState) {
-          console.log('[useCanvasScene] Legacy state migrated:', migratedState);
+          if (import.meta.env.DEV) {
+            console.log('[useCanvasScene] Legacy state migrated:', migratedState);
+          }
           loadedState = migratedState;
           loadedFromLegacy = true;
           try {

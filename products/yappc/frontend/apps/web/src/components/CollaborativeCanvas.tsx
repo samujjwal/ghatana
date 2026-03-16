@@ -16,6 +16,9 @@ import {
   RemoteCursor,
 } from '@ghatana/yappc-canvas';
 import { useAuth } from '../hooks/useAuth';
+import { LifecyclePhase } from '../types/lifecycle';
+import { FOWStage } from '../types/fow-stages';
+import { SimplifiedCanvasWorkspace } from './canvas/SimplifiedCanvasWorkspace';
 
 /**
  * Collaborative Canvas Props
@@ -41,6 +44,12 @@ export interface CollaborativeCanvasProps {
   
   /** Enable debug logging */
   debug?: boolean;
+
+  /** Current lifecycle phase for the canvas workspace */
+  currentPhase?: LifecyclePhase;
+
+  /** Current FOW stage for gate status queries */
+  fowStage?: FOWStage;
 }
 
 /**
@@ -51,6 +60,8 @@ const CollaborativeCanvasInner: React.FC<Omit<CollaborativeCanvasProps, 'canvasI
   readOnly,
   onNodeSelect,
   onArchitectureChange,
+  currentPhase = LifecyclePhase.SHAPE,
+  fowStage = FOWStage.FOUNDATION,
 }) => {
   const {
     backend,
@@ -104,13 +115,12 @@ const CollaborativeCanvasInner: React.FC<Omit<CollaborativeCanvasProps, 'canvasI
         />
       </div>
 
-      {/* Project Canvas - TODO: Replace with actual canvas component */}
-      <div className="w-full h-full flex items-center justify-center bg-zinc-900">
-        <div className="text-zinc-400">
-          Canvas workspace for project: {projectId}
-          {readOnly && ' (Read-only)'}
-        </div>
-      </div>
+      {/* Canvas Workspace */}
+      <SimplifiedCanvasWorkspace
+        projectId={projectId || 'default'}
+        currentPhase={currentPhase}
+        fowStage={fowStage}
+      />
 
       {/* Remote Cursors */}
       {remoteUsers.map((user) => (
@@ -149,6 +159,8 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
   onArchitectureChange,
   wsEndpoint = process.env.REACT_APP_WS_ENDPOINT || 'ws://localhost:8080/ws',
   debug = false,
+  currentPhase = LifecyclePhase.SHAPE,
+  fowStage = FOWStage.FOUNDATION,
 }) => {
   const { isAuthenticated, currentUser, getToken } = useAuth();
   
@@ -182,6 +194,8 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
           readOnly={readOnly}
           onNodeSelect={onNodeSelect}
           onArchitectureChange={onArchitectureChange}
+          currentPhase={currentPhase}
+          fowStage={fowStage}
         />
       </CanvasCollaborationProvider>
     </ReactFlowProvider>

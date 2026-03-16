@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router';
 import { cn } from '@/lib/utils';
 import { Search, X } from 'lucide-react';
 
@@ -19,6 +20,7 @@ import { Search, X } from 'lucide-react';
  * ```
  */
 export function SearchBar({ tenantId }: { tenantId: string }) {
+  const navigate = useNavigate();
   const [query, setQuery] = React.useState('');
   const [isOpen, setIsOpen] = React.useState(false);
   const [results, setResults] = React.useState<SearchResult[]>([]);
@@ -50,7 +52,7 @@ export function SearchBar({ tenantId }: { tenantId: string }) {
       setSelectedIndex((prev) => Math.max(prev - 1, 0));
     } else if (e.key === 'Enter' && results[selectedIndex]) {
       e.preventDefault();
-      navigateToResult(results[selectedIndex]);
+      navigate(results[selectedIndex].link);
       setQuery('');
       setIsOpen(false);
     } else if (e.key === 'Escape') {
@@ -103,7 +105,7 @@ export function SearchBar({ tenantId }: { tenantId: string }) {
                 result={result}
                 isSelected={index === selectedIndex}
                 onClick={() => {
-                  navigateToResult(result);
+                  navigate(result.link);
                   setQuery('');
                   setIsOpen(false);
                 }}
@@ -234,66 +236,18 @@ function getEntityTypeConfig(type: string) {
 }
 
 /**
- * Navigate to search result.
- */
-function navigateToResult(result: SearchResult) {
-  // NOTE: Integrate with router
-  console.log('Navigate to:', result.link);
-  window.location.href = result.link;
-}
-
-/**
- * Mock search function.
+ * Search API call.
  */
 async function performSearch(
   tenantId: string,
   query: string
 ): Promise<SearchResult[]> {
-  // Mock data - replace with actual GraphQL query
-  await new Promise((resolve) => setTimeout(resolve, 200));
-
-  const mockResults: SearchResult[] = [
-    {
-      id: '1',
-      type: 'DASHBOARD',
-      title: 'Security Operations Dashboard',
-      description: 'Real-time security monitoring and incident tracking',
-      link: '/dashboards/security-ops',
-    },
-    {
-      id: '2',
-      type: 'INCIDENT',
-      title: 'INC-2024-001: SQL Injection Attempt',
-      description: 'Critical security incident detected in API endpoint',
-      link: '/incidents/INC-2024-001',
-    },
-    {
-      id: '3',
-      type: 'VULNERABILITY',
-      title: 'CVE-2024-1234: OpenSSL RCE',
-      description: 'Critical vulnerability in OpenSSL package',
-      link: '/vulnerabilities/CVE-2024-1234',
-    },
-    {
-      id: '4',
-      type: 'PIPELINE',
-      title: 'Backend API - CI/CD',
-      description: 'Production deployment pipeline',
-      link: '/pipelines/backend-api',
-    },
-    {
-      id: '5',
-      type: 'RESOURCE',
-      title: 'api-server-prod-01',
-      description: 'AWS EC2 instance in us-east-1',
-      link: '/resources/i-0123456789abcdef0',
-    },
-  ];
-
-  // Filter by query
-  return mockResults.filter(
-    (result) =>
-      result.title.toLowerCase().includes(query.toLowerCase()) ||
-      result.description.toLowerCase().includes(query.toLowerCase())
-  );
+  const params = new URLSearchParams({
+    q: query,
+    tenantId,
+    limit: '10',
+  });
+  const res = await fetch(`/api/search?${params.toString()}`);
+  if (!res.ok) throw new Error(`Search failed: ${res.status}`);
+  return res.json() as Promise<SearchResult[]>;
 }

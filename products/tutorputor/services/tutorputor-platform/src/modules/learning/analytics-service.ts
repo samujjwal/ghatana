@@ -11,6 +11,7 @@
  */
 
 import type { AnalyticsService } from "@ghatana/tutorputor-contracts/v1/services";
+import { featureStoreClient } from "../../clients/feature-store.client.js";
 import type {
   AnalyticsSummary,
   AdvancedAnalyticsSummary,
@@ -86,6 +87,16 @@ export function createAnalyticsService(
         } catch (err) {
           console.warn("Failed to publish learning event to Redis:", err);
         }
+      }
+
+      // 3. Platform Feature Store (fire-and-forget) — enriches ML feature vectors
+      if (featureStoreClient) {
+        featureStoreClient.ingestAsync(tenantId, event.userId, {
+          eventType: event.type,
+          moduleId: event.moduleId ?? "none",
+          timestamp: event.timestamp ?? Date.now(),
+          payloadSize: JSON.stringify(event.payload ?? {}).length,
+        });
       }
     },
 

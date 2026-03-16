@@ -1,0 +1,132 @@
+id: inventory-optimization-agent
+name: Inventory Optimization Agent
+version: 1.0.0
+description: >
+  Optimises retail inventory levels using demand forecasting, safety-stock
+  calculation, and replenishment signal generation. Handles multi-echelon
+  inventory models (store, distribution-centre, supplier), seasonal demand
+  patterns, promotional lift modelling, and stockout risk scoring. Emits
+  replenishment orders, overstock alerts, and markdown recommendations as
+  downstream events.
+
+metadata:
+  level: 4
+  domain: retail
+  tags: [retail, inventory, forecasting, replenishment, demand, supply-chain]
+  maturity: production
+  author: platform-team@ghatana.ai
+
+generator:
+  type: ADAPTIVE
+
+# AEP Operator configuration
+aep:
+  operatorType: ANALYSIS
+  inputEventTypes:
+    - "retail.inventory.snapshot"
+    - "retail.sales.transaction"
+    - "retail.product.event"
+    - "retail.purchase-order.confirmed"
+    - "retail.demand.forecast"
+  outputEventTypes:
+    - "retail.replenishment.signal"
+    - "retail.overstock.alert"
+    - "retail.markdown.recommendation"
+    - "retail.stockout.risk"
+  backpressure:
+    bufferSize: 20000
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: 60s
+    maxRetries: 3
+    deadLetterQueue: inventory-optimization-dlq
+
+capabilities:
+  - demand-forecasting
+  - safety-stock-calculation
+  - replenishment-signal-generation
+  - overstock-detection
+  - markdown-recommendation
+  - seasonal-adjustment
+  - promotion-lift-modelling
+  - multi-echelon-optimization
+
+# Inventory optimization configuration
+configuration:
+  forecastHorizonDays:
+    description: "Planning horizon for demand forecast"
+    type: integer
+    default: 30
+  forecastAlgorithm:
+    description: "Demand forecasting algorithm"
+    type: string
+    enum: [ETS, ARIMA, PROPHET, GRADIENT_BOOST, ENSEMBLE]
+    default: ENSEMBLE
+  safetyStockMethod:
+    description: "Safety stock calculation method"
+    type: string
+    enum: [FIXED_DAYS, STATISTICAL, DYNAMIC]
+    default: STATISTICAL
+  serviceLevel:
+    description: "Target in-stock service level (0-1)"
+    type: number
+    default: 0.95
+  leadTimeDefinitions:
+    description: "Lead time by supplier tier (days)"
+    type: object
+    default:
+      tier1: 2
+      tier2: 7
+      tier3: 14
+  seasonalityConfig:
+    description: "Seasonality and promotion modelling"
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      seasonalPeriods:
+        type: array
+        items:
+          type: string
+        default: [WEEKLY, MONTHLY, YEARLY]
+      promotionLiftFactor:
+        type: number
+        default: 1.3
+  overstockThresholdDays:
+    description: "Days of supply above which overstock alert is raised"
+    type: integer
+    default: 90
+
+io:
+  inputs:
+    - name: inventoryEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/retail/inventory-event/v1"
+      required: true
+  outputs:
+    - name: replenishmentSignal
+      type: JSON
+      schema: "https://schema.ghatana.com/retail/replenishment-signal/v1"
+    - name: overstockAlert
+      type: JSON
+      schema: "https://schema.ghatana.com/retail/overstock-alert/v1"
+    - name: markdownRecommendation
+      type: JSON
+      schema: "https://schema.ghatana.com/retail/markdown-recommendation/v1"
+
+memory:
+  type: SEMANTIC
+  scope: demand_model
+  retention: long
+  maxEntries: 1000000
+
+resources:
+  memory: 2GB
+  cpu: "2"
+  timeout: 120s
+  maxConcurrency: 5
+
+routing:
+  input: InventoryEvent
+  output: InventoryOptimizationResult

@@ -15,6 +15,13 @@
  */
 
 import { softwareOrgApi, isConnectionError, extractData } from './ghatana-client';
+
+// Allow mock fallbacks ONLY in local development (Vite sets import.meta.env.DEV).
+// In production builds this is false and all fallbacks are disabled.
+const IS_DEV: boolean =
+    typeof import.meta !== 'undefined' && (import.meta as Record<string, unknown>).env !== undefined
+        ? ((import.meta as { env: Record<string, boolean> }).env['DEV'] ?? false)
+        : false;
 import type {
     RoleDefinition,
     PersonaPreference,
@@ -90,8 +97,8 @@ export async function getAllRoles(): Promise<RoleDefinition[]> {
         const response = await softwareOrgApi.get<RoleDefinition[]>('/personas/roles');
         return extractData(response);
     } catch (error) {
-        if (isConnectionError(error)) {
-            console.warn('[PersonaService] Backend unavailable, using mock roles');
+        if (IS_DEV && isConnectionError(error)) {
+            console.debug('[PersonaService] Dev mode: backend unavailable, using mock roles');
             return MOCK_ROLES;
         }
         throw error;
@@ -106,8 +113,8 @@ export async function getRoleDefinition(roleId: string): Promise<RoleDefinition>
         const response = await softwareOrgApi.get<RoleDefinition>(`/personas/roles/${roleId}`);
         return extractData(response);
     } catch (error) {
-        if (isConnectionError(error)) {
-            console.warn('[PersonaService] Backend unavailable, using mock role');
+        if (IS_DEV && isConnectionError(error)) {
+            console.debug('[PersonaService] Dev mode: backend unavailable, using mock role');
             const role = MOCK_ROLES.find(r => r.roleId === roleId);
             if (role) return role;
             throw new Error(`Role not found: ${roleId}`);
@@ -128,8 +135,8 @@ export async function getPersonaPreference(
         );
         return extractData(response);
     } catch (error) {
-        if (isConnectionError(error)) {
-            console.warn('[PersonaService] Backend unavailable, using mock preference');
+        if (IS_DEV && isConnectionError(error)) {
+            console.debug('[PersonaService] Dev mode: backend unavailable, using mock preference');
             return { ...MOCK_PREFERENCE, workspaceId };
         }
         if (error instanceof Error && 'status' in error && (error as any).status === 404) {
@@ -153,8 +160,8 @@ export async function upsertPersonaPreference(
         );
         return extractData(response);
     } catch (error) {
-        if (isConnectionError(error)) {
-            console.warn('[PersonaService] Backend unavailable, returning mock response');
+        if (IS_DEV && isConnectionError(error)) {
+            console.debug('[PersonaService] Dev mode: backend unavailable, returning mock preference response');
             return {
                 ...MOCK_PREFERENCE,
                 workspaceId,
@@ -175,10 +182,7 @@ export async function deletePersonaPreference(workspaceId: string): Promise<void
         await softwareOrgApi.delete<void>(`/personas/preferences/${workspaceId}`);
         return;
     } catch (error) {
-        if (isConnectionError(error)) {
-            console.warn('[PersonaService] Backend unavailable, simulating delete');
-            return;
-        }
+        // Propagate all errors — silent success on delete would leave the UI in a stale state.
         throw error;
     }
 }
@@ -195,10 +199,8 @@ export async function validateRoleActivation(
         });
         return extractData(response);
     } catch (error) {
-        if (isConnectionError(error)) {
-            console.warn('[PersonaService] Backend unavailable, returning valid');
-            return { isValid: true };
-        }
+        // Never bypass role validation: an unavailable backend is a hard failure.
+        // Silently approving invalid role combinations is a broken-access-control risk.
         throw error;
     }
 }
@@ -216,8 +218,8 @@ export async function resolveEffectivePermissions(
         );
         return extractData(response);
     } catch (error) {
-        if (isConnectionError(error)) {
-            console.warn('[PersonaService] Backend unavailable, computing mock permissions');
+        if (IS_DEV && isConnectionError(error)) {
+            console.debug('[PersonaService] Dev mode: backend unavailable, computing mock permissions');
             const permissions: Record<string, boolean> = {};
             const capabilities: Record<string, boolean> = {};
 
@@ -248,8 +250,12 @@ export async function verifyWorkspaceAccess(
         return extractData(response);
     } catch (error) {
         if (isConnectionError(error)) {
-            console.warn('[PersonaService] Backend unavailable, granting mock access');
-            return { hasAccess: true, role: 'owner' };
+            // Never default to granting access when auth is unavailable.
+            // An offline auth backend must block access, not allow it.
+            throw new Error(
+                'Access verification failed: authentication backend is unreachable. ' +
+                'Please ensure the management-api is running.'
+            );
         }
         throw error;
     }

@@ -1,0 +1,49 @@
+# Staging overrides for the AEP Helm chart.
+# Applied on top of values.yaml.
+
+replicaCount: 1
+
+image:
+  tag: "latest"
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: api.aep.staging.ghatana.internal
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: aep-staging-tls
+      hosts:
+        - api.aep.staging.ghatana.internal
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+autoscaling:
+  enabled: false   # fixed replica count in staging
+
+config:
+  logLevel: "DEBUG"
+  workerThreads: "2"
+  eventloopThreads: "1"
+
+otel:
+  serviceName: "aep-service-manager-staging"
+
+metrics:
+  serviceMonitor:
+    enabled: true
+
+externalSecrets:
+  enabled: false   # use plain Secret in staging for simplicity

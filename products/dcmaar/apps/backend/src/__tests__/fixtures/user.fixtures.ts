@@ -29,6 +29,38 @@
  */
 
 import { randomEmail, randomString } from "../setup";
+import jwt from "jsonwebtoken";
+import { query } from "../../db";
+
+const JWT_SECRET = process.env.JWT_SECRET ?? "development-secret-key";
+
+/**
+ * Create a test user by inserting directly into the database and issuing a
+ * local JWT access token. Replaces the removed authService.register() in tests.
+ *
+ * @param opts Optional overrides for email and displayName
+ * @returns { id, email, accessToken } — mirrors the previous authService.register() surface
+ */
+export async function createTestUser(
+  opts: { email?: string; displayName?: string } = {}
+): Promise<{ id: string; email: string; display_name: string | null; accessToken: string }> {
+  const email = opts.email ?? randomEmail();
+  const displayName = opts.displayName ?? null;
+
+  const result = await query<{ id: string; email: string; display_name: string | null }>(
+    `INSERT INTO users (email, password_hash, display_name) VALUES ($1, $2, $3)
+     RETURNING id, email, display_name`,
+    [email, "$2a$12$placeholder_hash_for_testing_only", displayName]
+  );
+
+  const row = result[0];
+  const accessToken = jwt.sign({ userId: row.id, type: "access" }, JWT_SECRET, {
+    expiresIn: "1h",
+  });
+
+  return { ...row, accessToken };
+}
+
 
 export interface UserFixture {
   id?: string;

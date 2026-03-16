@@ -1,0 +1,548 @@
+# VirtualServices — AppPlatform Istio API Gateway routing rules
+# Story: STORY-K11-001 — Envoy/Istio-based API Gateway with service registry
+# Source: stories/MILESTONE_1B_STORIES.md, epics/EPIC-K-11-API-Gateway.md
+#
+# Routing scheme:
+#   /api/v1/{service}/{path}  → upstream Kubernetes service
+#   /api/v2/{service}/{path}  → current major-version upstreams (see K11-002)
+#   /api/ws/{service}/{path}  → WebSocket-enabled services
+#
+# Service registry: each VirtualService + DestinationRule pair represents one upstream.
+# Kubernetes service discovery keeps endpoint sets current without manual intervention.
+# Health-check-based routing: DestinationRules (destination-rules.yaml) remove unhealthy
+# endpoints via outlier detection, so no additional config is needed here.
+#
+# Kernel services:
+#   iam               → kernel/iam                   port 8080
+#   config-engine     → kernel/config-engine          port 8080
+#   audit-trail       → kernel/audit-trail            port 8080
+#   event-store       → kernel/event-store            port 8080
+#   api-gateway       → kernel/api-gateway            port 8080
+#   observability-sdk → kernel/observability-sdk      port 8080 (internal)
+#   ledger-framework  → kernel/ledger-framework       port 8080
+#   secrets-mgmt      → kernel/secrets-management     port 8080 (internal)
+#   rules-engine      → kernel/rules-engine           port 8080 (internal)
+#   plugin-runtime    → kernel/plugin-runtime         port 8080 (internal)
+#
+# Domain packs:
+#   oms, ems, compliance, risk-engine, market-data, reference-data,
+#   post-trade, reconciliation, pricing, pms, surveillance,
+#   regulatory-reporting, corporate-actions, sanctions
+
+# ── KERNEL SERVICES ────────────────────────────────────────────────────────────
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-iam
+  namespace: app-platform
+  labels:
+    kernel-module: k-01
+    component: iam
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/auth/"
+      route:
+        - destination:
+            host: iam-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 10s
+      retries:
+        attempts: 2
+        perTryTimeout: 4s
+        retryOn: "connect-failure,reset,5xx"
+    - match:
+        - uri:
+            prefix: "/api/v1/auth/"
+      headers:
+        response:
+          set:
+            Deprecation: "true"
+            Sunset: "Sat, 31 Dec 2026 23:59:59 GMT"
+      route:
+        - destination:
+            host: iam-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 10s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-jwks
+  namespace: app-platform
+  labels:
+    kernel-module: k-01
+    component: iam
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            exact: "/.well-known/jwks.json"
+      route:
+        - destination:
+            host: iam-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 5s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-config-engine
+  namespace: app-platform
+  labels:
+    kernel-module: k-02
+    component: config-engine
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/config/"
+      route:
+        - destination:
+            host: config-engine-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 5s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-audit-trail
+  namespace: app-platform
+  labels:
+    kernel-module: k-07
+    component: audit-trail
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/audit/"
+      route:
+        - destination:
+            host: audit-trail-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 30s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-ledger
+  namespace: app-platform
+  labels:
+    kernel-module: k-16
+    component: ledger-framework
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/ledger/"
+      route:
+        - destination:
+            host: ledger-framework-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 15s
+      retries:
+        attempts: 2
+        perTryTimeout: 6s
+        retryOn: "connect-failure,reset"
+
+# ── DOMAIN PACK SERVICES ───────────────────────────────────────────────────────
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-oms
+  namespace: app-platform
+  labels:
+    domain-pack: d-01
+    component: oms
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/orders/"
+      route:
+        - destination:
+            host: oms-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 10s
+      retries:
+        attempts: 2
+        perTryTimeout: 4s
+        retryOn: "connect-failure,reset"
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-ems
+  namespace: app-platform
+  labels:
+    domain-pack: d-02
+    component: ems
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/executions/"
+      route:
+        - destination:
+            host: ems-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 10s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-pms
+  namespace: app-platform
+  labels:
+    domain-pack: d-03
+    component: pms
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/portfolios/"
+      route:
+        - destination:
+            host: pms-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 15s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-market-data
+  namespace: app-platform
+  labels:
+    domain-pack: d-04
+    component: market-data
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+    - "ws.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/market-data/"
+      route:
+        - destination:
+            host: market-data-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 5s
+    # WebSocket endpoint for live market data streaming
+    - match:
+        - uri:
+            prefix: "/api/ws/market-data/"
+        - headers:
+            upgrade:
+              exact: "websocket"
+      route:
+        - destination:
+            host: market-data-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 0s  # no timeout for streaming WebSocket connections
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-pricing
+  namespace: app-platform
+  labels:
+    domain-pack: d-05
+    component: pricing
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/pricing/"
+      route:
+        - destination:
+            host: pricing-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 10s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-risk-engine
+  namespace: app-platform
+  labels:
+    domain-pack: d-06
+    component: risk-engine
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/risk/"
+      route:
+        - destination:
+            host: risk-engine-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 10s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-compliance
+  namespace: app-platform
+  labels:
+    domain-pack: d-07
+    component: compliance
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/compliance/"
+      route:
+        - destination:
+            host: compliance-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 15s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-surveillance
+  namespace: app-platform
+  labels:
+    domain-pack: d-08
+    component: surveillance
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/surveillance/"
+      route:
+        - destination:
+            host: surveillance-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 15s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-post-trade
+  namespace: app-platform
+  labels:
+    domain-pack: d-09
+    component: post-trade
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/settlement/"
+      route:
+        - destination:
+            host: post-trade-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 20s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-regulatory-reporting
+  namespace: app-platform
+  labels:
+    domain-pack: d-10
+    component: regulatory-reporting
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/reports/"
+      route:
+        - destination:
+            host: regulatory-reporting-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 60s  # report generation can take longer
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-reference-data
+  namespace: app-platform
+  labels:
+    domain-pack: d-11
+    component: reference-data
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/reference/"
+      route:
+        - destination:
+            host: reference-data-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 10s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-corporate-actions
+  namespace: app-platform
+  labels:
+    domain-pack: d-12
+    component: corporate-actions
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/corporate-actions/"
+      route:
+        - destination:
+            host: corporate-actions-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 15s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-reconciliation
+  namespace: app-platform
+  labels:
+    domain-pack: d-13
+    component: reconciliation
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/reconciliation/"
+      route:
+        - destination:
+            host: reconciliation-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 30s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-sanctions
+  namespace: app-platform
+  labels:
+    domain-pack: d-14
+    component: sanctions
+spec:
+  hosts:
+    - "api.appplatform.ghatana.io"
+  gateways:
+    - appplatform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v2/sanctions/"
+      route:
+        - destination:
+            host: sanctions-service.app-platform.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 10s

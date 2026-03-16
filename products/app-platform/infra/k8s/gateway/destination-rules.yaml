@@ -1,0 +1,569 @@
+# DestinationRules — AppPlatform Istio API Gateway
+# Story: STORY-K11-001 — Envoy/Istio-based API Gateway with service registry
+# Source: stories/MILESTONE_1B_STORIES.md, epics/EPIC-K-11-API-Gateway.md
+#
+# Each DestinationRule configures:
+#   - Health-check-based outlier detection (removes unhealthy upstream endpoints)
+#   - Connection pool sizing (per-service)
+#   - Load balancing strategy (LEAST_REQUEST for stateless, RANDOM for others)
+#
+# Outlier detection removes a host from the load balancing pool after:
+#   - consecutiveGatewayErrors: 3 consecutive 5xx responses
+#   - interval: 10s (check interval)
+#   - baseEjectionTime: 30s (ejection duration, increases on repeated failures)
+#   - maxEjectionPercent: 50% (never eject more than half the pool)
+#
+# This satisfies: "Health-check-based routing: remove unhealthy upstreams"
+
+# ── KERNEL SERVICES ────────────────────────────────────────────────────────────
+
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-iam
+  namespace: app-platform
+  labels:
+    kernel-module: k-01
+    component: iam
+spec:
+  host: iam-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 200
+      http:
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 100
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL  # mTLS via Istio service mesh (K-14 cert management)
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-config-engine
+  namespace: app-platform
+  labels:
+    kernel-module: k-02
+    component: config-engine
+spec:
+  host: config-engine-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http2MaxRequests: 500
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-audit-trail
+  namespace: app-platform
+  labels:
+    kernel-module: k-07
+    component: audit-trail
+spec:
+  host: audit-trail-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    connectionPool:
+      tcp:
+        maxConnections: 150
+      http:
+        http2MaxRequests: 800
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 15s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 33
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-ledger
+  namespace: app-platform
+  labels:
+    kernel-module: k-16
+    component: ledger-framework
+spec:
+  host: ledger-framework-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http2MaxRequests: 500
+        maxRequestsPerConnection: 50
+    # Strict outlier detection — financial ledger must not route to degraded pods
+    outlierDetection:
+      consecutiveGatewayErrors: 2
+      interval: 10s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 33
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+# ── DOMAIN PACK SERVICES ───────────────────────────────────────────────────────
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-oms
+  namespace: app-platform
+  labels:
+    domain-pack: d-01
+    component: oms
+spec:
+  host: oms-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 300
+      http:
+        http2MaxRequests: 2000
+        maxRequestsPerConnection: 200
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-ems
+  namespace: app-platform
+  labels:
+    domain-pack: d-02
+    component: ems
+spec:
+  host: ems-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 200
+      http:
+        http2MaxRequests: 1000
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-market-data
+  namespace: app-platform
+  labels:
+    domain-pack: d-04
+    component: market-data
+spec:
+  host: market-data-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: RANDOM  # Market data is read-heavy; random is sufficient
+    connectionPool:
+      tcp:
+        maxConnections: 500
+      http:
+        http2MaxRequests: 5000  # High throughput — 100K events/s target
+        maxRequestsPerConnection: 500
+    outlierDetection:
+      consecutiveGatewayErrors: 5
+      interval: 15s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-compliance
+  namespace: app-platform
+  labels:
+    domain-pack: d-07
+    component: compliance
+spec:
+  host: compliance-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 150
+      http:
+        http2MaxRequests: 500
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-post-trade
+  namespace: app-platform
+  labels:
+    domain-pack: d-09
+    component: post-trade
+spec:
+  host: post-trade-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http2MaxRequests: 500
+    outlierDetection:
+      consecutiveGatewayErrors: 2
+      interval: 10s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 33
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+# Shared DestinationRule template for remaining domain packs
+# (pms, pricing, risk-engine, surveillance, regulatory-reporting,
+#  reference-data, corporate-actions, reconciliation, sanctions)
+# These use standard defaults: LEAST_REQUEST, 200 connections, 3-error outlier.
+
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-pms
+  namespace: app-platform
+  labels:
+    domain-pack: d-03
+    component: pms
+spec:
+  host: pms-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 200
+      http:
+        http2MaxRequests: 800
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-pricing
+  namespace: app-platform
+  labels:
+    domain-pack: d-05
+    component: pricing
+spec:
+  host: pricing-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 150
+      http:
+        http2MaxRequests: 600
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-risk-engine
+  namespace: app-platform
+  labels:
+    domain-pack: d-06
+    component: risk-engine
+spec:
+  host: risk-engine-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 150
+      http:
+        http2MaxRequests: 600
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-surveillance
+  namespace: app-platform
+  labels:
+    domain-pack: d-08
+    component: surveillance
+spec:
+  host: surveillance-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http2MaxRequests: 400
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 15s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-regulatory-reporting
+  namespace: app-platform
+  labels:
+    domain-pack: d-10
+    component: regulatory-reporting
+spec:
+  host: regulatory-reporting-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http2MaxRequests: 400
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 15s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-reference-data
+  namespace: app-platform
+  labels:
+    domain-pack: d-11
+    component: reference-data
+spec:
+  host: reference-data-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: RANDOM
+    connectionPool:
+      tcp:
+        maxConnections: 200
+      http:
+        http2MaxRequests: 1000
+    outlierDetection:
+      consecutiveGatewayErrors: 5
+      interval: 15s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-corporate-actions
+  namespace: app-platform
+  labels:
+    domain-pack: d-12
+    component: corporate-actions
+spec:
+  host: corporate-actions-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http2MaxRequests: 400
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-reconciliation
+  namespace: app-platform
+  labels:
+    domain-pack: d-13
+    component: reconciliation
+spec:
+  host: reconciliation-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http2MaxRequests: 400
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 15s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: dr-sanctions
+  namespace: app-platform
+  labels:
+    domain-pack: d-14
+    component: sanctions
+spec:
+  host: sanctions-service.app-platform.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 150
+      http:
+        http2MaxRequests: 600
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: ISTIO_MUTUAL

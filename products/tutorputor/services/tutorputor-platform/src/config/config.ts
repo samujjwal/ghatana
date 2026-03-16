@@ -61,6 +61,20 @@ const ConfigSchema = z.object({
   CONTENT_WORKER_ENABLED: z.coerce.boolean().default(true),
   AI_PROXY_ENABLED: z.coerce.boolean().default(true),
   SIMULATION_ENABLED: z.coerce.boolean().default(true),
+
+  // Platform Shared Services (optional — graceful degradation when absent)
+  /** Base URL of the Ghatana auth-gateway service (e.g. http://auth-gateway:8080) */
+  AUTH_GATEWAY_URL: z.string().url().optional(),
+  /** Base URL of the Ghatana AI Registry HTTP service */
+  AI_REGISTRY_URL: z.string().url().optional(),
+  /** Base URL of the Ghatana Feature Store HTTP service */
+  FEATURE_STORE_URL: z.string().url().optional(),
+  /**
+   * Model identifier reported in AssessmentGenerationResult when the primary
+   * AI service is unavailable and the deterministic fallback is used.
+   * Defaults to 'tutorputor-assessment-v1'.
+   */
+  ASSESSMENT_MODEL_ID: z.string().min(1).default('tutorputor-assessment-v1'),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -111,6 +125,12 @@ export function loadConfig(): Config {
     CONTENT_WORKER_ENABLED: process.env.CONTENT_WORKER_ENABLED,
     AI_PROXY_ENABLED: process.env.AI_PROXY_ENABLED,
     SIMULATION_ENABLED: process.env.SIMULATION_ENABLED,
+
+    // Platform Shared Services
+    AUTH_GATEWAY_URL: process.env.AUTH_GATEWAY_URL,
+    AI_REGISTRY_URL: process.env.AI_REGISTRY_URL,
+    FEATURE_STORE_URL: process.env.FEATURE_STORE_URL,
+    ASSESSMENT_MODEL_ID: process.env.ASSESSMENT_MODEL_ID,
   };
 
   const config = ConfigSchema.parse(rawConfig);

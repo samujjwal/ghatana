@@ -3,8 +3,9 @@ info:
   title: Ghatana Auth Gateway API
   description: |
     Authentication and authorization gateway for the Ghatana platform.
-    Provides JWT-based authentication, token validation, refresh, and tenant context extraction.
-  version: 1.0.0
+    Provides JWT-based authentication, token validation, refresh, tenant context
+    extraction, and cross-product platform token exchange.
+  version: 2.0.0
   contact:
     name: Ghatana Platform Team
   license:
@@ -110,6 +111,56 @@ paths:
                 $ref: '#/components/schemas/RefreshResponse'
         '401':
           description: Missing or invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/exchange:
+    post:
+      operationId: exchangeToken
+      summary: Exchange product JWT for a platform token
+      description: |
+        Validates an incoming product-scoped JWT and issues a short-lived (15-minute)
+        platform-wide JWT that can be used to call any Ghatana product's API on behalf
+        of the same user.
+
+        The platform token carries `tokenType: "PLATFORM"` in its claims, which
+        distinguishes it from product-scoped tokens. Products MUST check this claim
+        before accepting a token.
+
+        **Rate-limited**: Excessive exchange calls are rejected with `429 Too Many Requests`.
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Exchange successful — platform token returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeResponse'
+        '400':
+          description: Missing or malformed Authorization header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Product JWT is invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error during token issuance
           content:
             application/json:
               schema:
@@ -259,3 +310,20 @@ components:
           example: Invalid credentials
       required:
         - error
+
+    ExchangeResponse:
+      type: object
+      description: Response from the cross-product token exchange endpoint.
+      properties:
+        platformToken:
+          type: string
+          description: Short-lived (15-minute) platform-wide JWT with `tokenType = "PLATFORM"`.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        expiresIn:
+          type: integer
+          description: Token lifetime in seconds.
+          example: 900
+      required:
+        - platformToken
+        - expiresIn
+

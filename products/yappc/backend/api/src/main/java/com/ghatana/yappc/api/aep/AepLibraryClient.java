@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.platform.governance.security.TenantContext;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -191,6 +192,13 @@ public final class AepLibraryClient implements AepClient {
     }
     if (tenantId instanceof String tenant && !tenant.isBlank()) {
       return tenant;
+    }
+    // Prefer thread-local TenantContext (set by auth filter) over the
+    // static DEFAULT_TENANT_ID constant, which would collapse all
+    // tenants together and violate multi-tenant isolation.
+    String contextTenantId = TenantContext.getCurrentTenantId();
+    if (!contextTenantId.isBlank() && !contextTenantId.equals("default-tenant")) {
+      return contextTenantId;
     }
     return DEFAULT_TENANT_ID;
   }

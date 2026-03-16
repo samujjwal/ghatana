@@ -19,9 +19,9 @@ import { FastifyInstance } from 'fastify';
 import { request } from '../helpers/request.helper';
 import { createTestApp } from '../helpers/app.helper';
 import { randomEmail, randomString } from '../setup';
-import * as authService from '../../services/auth.service';
 import * as deviceService from '../../services/device.service';
 import { query } from '../../db';
+import { createTestUser } from '../fixtures/user.fixtures';
 
 let app: FastifyInstance;
 
@@ -40,11 +40,7 @@ describe('Device Routes', () => {
 
   beforeEach(async () => {
     // Create test user
-    const user = await authService.register({
-      email: randomEmail(),
-      password: 'TestPassword123!',
-      displayName: 'Test User',
-    });
+    const user = await createTestUser({ email: randomEmail(), displayName: 'Test User' });
     testUserId = user.user.id;
     testAccessToken = user.accessToken;
 
@@ -246,10 +242,7 @@ describe('Device Routes', () => {
 
     it('should reject access to another user device', async () => {
       // Create another user and their device
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: 'OtherPassword123!',
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
       const otherDevice = await deviceService.registerDevice(otherUser.user.id, {
         device_type: 'mobile',
         device_name: 'Other Device',
@@ -347,10 +340,7 @@ describe('Device Routes', () => {
     });
 
     it('should reject access to another user device', async () => {
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: 'OtherPassword123!',
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
       const otherDevice = await deviceService.registerDevice(otherUser.user.id, {
         device_type: 'mobile',
         device_name: 'Other Device',
@@ -394,10 +384,7 @@ describe('Device Routes', () => {
     });
 
     it('should reject access to another user device', async () => {
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: 'OtherPassword123!',
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
       const otherDevice = await deviceService.registerDevice(otherUser.user.id, {
         device_type: 'mobile',
         device_name: 'Other Device',
@@ -468,10 +455,7 @@ describe('Device Routes', () => {
 
     it('should reject pairing another user child', async () => {
       // Create another user and their child
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: 'OtherPassword123!',
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
       const otherChild = await query(
         `INSERT INTO children (user_id, name, age) VALUES ($1, $2, $3) RETURNING *`,
         [otherUser.user.id, 'Other Child', 8]

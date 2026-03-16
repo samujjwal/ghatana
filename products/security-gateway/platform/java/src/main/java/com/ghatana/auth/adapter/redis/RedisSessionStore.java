@@ -2,6 +2,7 @@ package com.ghatana.auth.adapter.redis;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
@@ -206,8 +207,42 @@ public class RedisSessionStore implements SessionStore {
 
     @Override
     public Promise<Optional<Session>> findByUserId(TenantId tenantId, UserId userId) {
-        // Implementation stub for now - full multi-tenant session retrieval not implemented
-        return Promise.of(Optional.empty());
+        if (tenantId == null || tenantId.value().isBlank()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId must not be null"));
+        }
+        if (userId == null) {
+            return Promise.ofException(new IllegalArgumentException("userId must not be null"));
+        }
+
+        return Promise.ofBlocking(REDIS_POOL, () -> {
+            // Scan all session keys for this tenant and find the first one belonging to this user.
+            // Key pattern: {tenantId}:session:*
+            String pattern = tenantId.value() + ":session:*";
+            try (Jedis jedis = jedisPool.getResource()) {
+                String cursor = "0";
+                do {
+                    var scanResult = jedis.scan(cursor,
+                            new redis.clients.jedis.params.ScanParams()
+                                    .match(pattern)
+                                    .count(100));
+                    cursor = scanResult.getCursor();
+
+                    for (String key : scanResult.getResult()) {
+                        String value = jedis.get(key);
+                        if (value == null) continue;
+                        try {
+                            Session session = objectMapper.readValue(value, Session.class);
+                            if (userId.equals(session.getUserId())) {
+                                return Optional.of(session);
+                            }
+                        } catch (Exception e) {
+                            // Corrupted session entry — skip
+                        }
+                    }
+                } while (!"0".equals(cursor));
+            }
+            return Optional.empty();
+        });
     }
 
     @Override
@@ -218,8 +253,49 @@ public class RedisSessionStore implements SessionStore {
 
     @Override
     public Promise<Integer> invalidateAllForUser(TenantId tenantId, UserId userId) {
-        // Implementation stub for now - full session revocation not implemented
-        return Promise.of(0);
+        if (tenantId == null || tenantId.value().isBlank()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId must not be null"));
+        }
+        if (userId == null) {
+            return Promise.ofException(new IllegalArgumentException("userId must not be null"));
+        }
+
+        return Promise.ofBlocking(REDIS_POOL, () -> {
+            // Scan for all session keys belonging to this tenant, then delete those
+            // where the session's userId matches the requested user.
+            String pattern = tenantId.value() + ":session:*";
+            List<String> keysToDelete = new ArrayList<>();
+
+            try (Jedis jedis = jedisPool.getResource()) {
+                String cursor = "0";
+                do {
+                    var scanResult = jedis.scan(cursor,
+                            new redis.clients.jedis.params.ScanParams()
+                                    .match(pattern)
+                                    .count(100));
+                    cursor = scanResult.getCursor();
+
+                    for (String key : scanResult.getResult()) {
+                        String value = jedis.get(key);
+                        if (value == null) continue;
+                        try {
+                            Session session = objectMapper.readValue(value, Session.class);
+                            if (userId.equals(session.getUserId())) {
+                                keysToDelete.add(key);
+                            }
+                        } catch (Exception e) {
+                            // Corrupted session entry — skip
+                        }
+                    }
+                } while (!"0".equals(cursor));
+
+                if (!keysToDelete.isEmpty()) {
+                    jedis.del(keysToDelete.toArray(new String[0]));
+                }
+            }
+
+            return keysToDelete.size();
+        });
     }
 
     public Promise<Integer> cleanupExpired(TenantId tenantId) {

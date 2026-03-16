@@ -1,0 +1,101 @@
+name: TutorPutor CD
+
+on:
+  workflow_run:
+    workflows: [TutorPutor CI]
+    types: [completed]
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PLATFORM: ghcr.io/ghatana/tutorputor/platform
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # 1. Deploy to Staging (automatic on green CI)
+  # ─────────────────────────────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy → Staging
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment:
+      name: staging
+      url: https://api.staging.tutorputor.ghatana.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Configure kubectl (staging)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy to staging
+        run: |
+          IMAGE_TAG="sha-${{ github.event.workflow_run.head_sha }}"
+          helm upgrade --install tutorputor \
+            products/tutorputor/ci/deploy/helm/tutorputor \
+            --namespace tutorputor \
+            --create-namespace \
+            --values products/tutorputor/ci/deploy/helm/tutorputor/values-staging.yaml \
+            --set image.tag="${IMAGE_TAG}" \
+            --set existingSecret=tutorputor-secrets \
+            --atomic \
+            --timeout 5m \
+            --wait
+
+      - name: Smoke test staging
+        run: |
+          sleep 10
+          curl -sf https://api.staging.tutorputor.ghatana.com/health | \
+            grep -q '"status":"ok"' || (echo "Health check failed" && exit 1)
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 2. Deploy to Production (manual approval gate)
+  # ─────────────────────────────────────────────────────────────────────────
+  deploy-production:
+    name: Deploy → Production
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    environment:
+      name: production
+      url: https://api.tutorputor.ghatana.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Configure kubectl (production)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy to production
+        run: |
+          IMAGE_TAG="sha-${{ github.event.workflow_run.head_sha }}"
+          helm upgrade --install tutorputor \
+            products/tutorputor/ci/deploy/helm/tutorputor \
+            --namespace tutorputor \
+            --create-namespace \
+            --values products/tutorputor/ci/deploy/helm/tutorputor/values-production.yaml \
+            --set image.tag="${IMAGE_TAG}" \
+            --set existingSecret=tutorputor-secrets \
+            --atomic \
+            --timeout 10m \
+            --wait
+
+      - name: Verify production deployment
+        run: |
+          sleep 15
+          curl -sf https://api.tutorputor.ghatana.com/health | \
+            grep -q '"status":"ok"' || (echo "Health check failed" && exit 1)
+          echo "Production deployment successful for tag sha-${{ github.event.workflow_run.head_sha }}"

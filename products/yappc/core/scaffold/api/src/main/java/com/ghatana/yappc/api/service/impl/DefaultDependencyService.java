@@ -23,9 +23,13 @@ import com.ghatana.yappc.api.service.PackService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Default implementation of DependencyService.
@@ -164,16 +168,92 @@ public class DefaultDependencyService implements DependencyService {
         return getPackDependencies(packName);
     }
 
+    // Minimum recommended versions by artifactId (security/stability baseline)
+    private static final Map<String, String> MIN_RECOMMENDED = Map.ofEntries(
+        Map.entry("slf4j-api",           "2.0.0"),
+        Map.entry("logback-classic",     "1.4.0"),
+        Map.entry("log4j-core",          "2.17.1"),
+        Map.entry("log4j-api",           "2.17.1"),
+        Map.entry("jackson-databind",    "2.14.0"),
+        Map.entry("spring-boot",         "3.0.0"),
+        Map.entry("spring-core",         "6.0.0"),
+        Map.entry("junit-jupiter",       "5.9.0"),
+        Map.entry("junit-jupiter-api",   "5.9.0"),
+        Map.entry("mockito-core",        "5.0.0"),
+        Map.entry("guava",               "32.0.0-jre"),
+        Map.entry("commons-text",        "1.10.0"),
+        Map.entry("snakeyaml",           "2.0"),
+        Map.entry("netty-all",           "4.1.94.Final"),
+        Map.entry("typescript",          "5.0.0"),
+        Map.entry("react",               "18.0.0"),
+        Map.entry("react-dom",           "18.0.0"),
+        Map.entry("vite",                "4.0.0"),
+        Map.entry("axios",               "1.4.0"),
+        Map.entry("express",             "4.18.0"),
+        Map.entry("fastify",             "4.0.0")
+    );
+
     @Override
     public List<DependencyInfo> findOutdated(Path projectPath) {
-        // Placeholder - would check against a dependency version database
-        return List.of();
+        List<DependencyInfo> deps = extractDependenciesFromProject(projectPath);
+        return deps.stream()
+            .filter(dep -> isOutdated(dep.artifactId(), dep.version()))
+            .collect(Collectors.toList());
     }
 
     @Override
     public List<DependencyUpgrade> suggestUpgrades(Path projectPath) {
-        // Placeholder - would analyze and suggest upgrades
-        return List.of();
+        return findOutdated(projectPath).stream()
+            .map(dep -> {
+                String recommended = MIN_RECOMMENDED.get(dep.artifactId());
+                return new DependencyUpgrade(
+                    dep.getCoordinates(),
+                    dep.version(),
+                    recommended,
+                    "Minimum recommended version for stability and security",
+                    isMajorBump(dep.version(), recommended)
+                );
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Compare semver strings; returns true when {@code current} is strictly below
+     * the {@code minimum} version known for this artifact.
+     */
+    private boolean isOutdated(String artifactId, String current) {
+        String minimum = MIN_RECOMMENDED.get(artifactId);
+        if (minimum == null || current == null || current.isBlank()) return false;
+        return compareSemver(current, minimum) < 0;
+    }
+
+    /**
+     * Coarse semver comparison: splits on {@code [-+]} then compares numeric
+     * dot-segments lexicographically by integer value.
+     * Returns negative if {@code a < b}, zero if equal, positive if {@code a > b}.
+     */
+    private int compareSemver(String a, String b) {
+        String[] partsA = a.split("[-+]")[0].split("\\.");
+        String[] partsB = b.split("[-+]")[0].split("\\.");
+        int len = Math.max(partsA.length, partsB.length);
+        for (int i = 0; i < len; i++) {
+            int va = i < partsA.length ? parseSegment(partsA[i]) : 0;
+            int vb = i < partsB.length ? parseSegment(partsB[i]) : 0;
+            if (va != vb) return Integer.compare(va, vb);
+        }
+        return 0;
+    }
+
+    private int parseSegment(String s) {
+        try { return Integer.parseInt(s.replaceAll("[^0-9]", "")); }
+        catch (NumberFormatException e) { return 0; }
+    }
+
+    private boolean isMajorBump(String current, String target) {
+        if (current == null || target == null) return false;
+        int curMajor = parseSegment(current.split("[.\\-+]")[0]);
+        int tgtMajor = parseSegment(target.split("[.\\-+]")[0]);
+        return tgtMajor > curMajor;
     }
 
     private List<DependencyInfo> extractDependenciesFromPack(PackInfo pack) {
@@ -226,8 +306,100 @@ public class DefaultDependencyService implements DependencyService {
     }
 
     private List<DependencyInfo> extractDependenciesFromProject(Path projectPath) {
-        // Would parse build files (build.gradle, pom.xml, package.json, Cargo.toml, go.mod)
-        return List.of();
+        List<DependencyInfo> deps = new ArrayList<>();
+        if (projectPath == null || !Files.exists(projectPath)) return deps;
+        try (Stream<Path> walk = Files.walk(projectPath, 4)) {
+            walk.filter(Files::isRegularFile).forEach(file -> {
+                String name = file.getFileName().toString();
+                try {
+                    String content = Files.readString(file);
+                    if (name.equals("build.gradle") || name.equals("build.gradle.kts")) {
+                        deps.addAll(parseGradle(content));
+                    } else if (name.equals("pom.xml")) {
+                        deps.addAll(parseMaven(content));
+                    } else if (name.equals("package.json")) {
+                        deps.addAll(parseNpm(content));
+                    } else if (name.equals("Cargo.toml")) {
+                        deps.addAll(parseCargo(content));
+                    } else if (name.equals("go.mod")) {
+                        deps.addAll(parseGoMod(content));
+                    }
+                } catch (Exception ignored) {
+                    LOG.debug("Could not parse dependency file: {}", file);
+                }
+            });
+        } catch (Exception e) {
+            LOG.warn("Could not walk project path: {}", projectPath, e);
+        }
+        return deps;
+    }
+
+    // ── Build-file parsers ─────────────────────────────────────────────────────
+
+    /** Extracts Gradle dependency declarations: implementation("g:a:v") or 'g:a:v' */
+    private List<DependencyInfo> parseGradle(String content) {
+        List<DependencyInfo> result = new ArrayList<>();
+        Pattern p = Pattern.compile(
+            "(?:implementation|api|compile|testImplementation|runtimeOnly)\\s*[\\(\"']([\\w.\\-]+):([\\w.\\-]+):([\\w.\\-]+)");
+        Matcher m = p.matcher(content);
+        while (m.find()) {
+            result.add(DependencyInfo.gradle(m.group(1), m.group(2), m.group(3)));
+        }
+        return result;
+    }
+
+    /** Extracts Maven <dependency> blocks. */
+    private List<DependencyInfo> parseMaven(String content) {
+        List<DependencyInfo> result = new ArrayList<>();
+        Pattern block = Pattern.compile("<dependency>([\\s\\S]*?)</dependency>");
+        Pattern gId  = Pattern.compile("<groupId>([^<]+)</groupId>");
+        Pattern aId  = Pattern.compile("<artifactId>([^<]+)</artifactId>");
+        Pattern ver  = Pattern.compile("<version>([^<]+)</version>");
+        Matcher bm = block.matcher(content);
+        while (bm.find()) {
+            String blk = bm.group(1);
+            Matcher gm = gId.matcher(blk), am = aId.matcher(blk), vm = ver.matcher(blk);
+            if (gm.find() && am.find() && vm.find()) {
+                result.add(DependencyInfo.maven(gm.group(1).trim(), am.group(1).trim(), vm.group(1).trim()));
+            }
+        }
+        return result;
+    }
+
+    /** Extracts NPM dependencies from package.json JSON text. */
+    private List<DependencyInfo> parseNpm(String content) {
+        List<DependencyInfo> result = new ArrayList<>();
+        Pattern p = Pattern.compile("\"([\\w@/][\\w./\\-@]*)\"\\s*:\\s*\"[~^]?([\\d][\\w.\\-]*)\"");
+        Matcher m = p.matcher(content);
+        while (m.find()) {
+            String pkg = m.group(1);
+            // Skip keys that are not package names (e.g. "version", "name", "description")
+            if (!pkg.startsWith("@") && pkg.chars().noneMatch(c -> c == '.') && pkg.length() < 4) continue;
+            result.add(DependencyInfo.npm(pkg, m.group(2)));
+        }
+        return result;
+    }
+
+    /** Extracts Cargo.toml [dependencies] crate versions. */
+    private List<DependencyInfo> parseCargo(String content) {
+        List<DependencyInfo> result = new ArrayList<>();
+        Pattern p = Pattern.compile("^([\\w\\-]+)\\s*=\\s*\"([\\d][\\w.\\-]*)\"\s*$", Pattern.MULTILINE);
+        Matcher m = p.matcher(content);
+        while (m.find()) {
+            result.add(DependencyInfo.cargo(m.group(1), m.group(2)));
+        }
+        return result;
+    }
+
+    /** Extracts go.mod require directives. */
+    private List<DependencyInfo> parseGoMod(String content) {
+        List<DependencyInfo> result = new ArrayList<>();
+        Pattern p = Pattern.compile("require\\s+([\\S]+)\\s+(v[\\d][\\w.\\-]*)");
+        Matcher m = p.matcher(content);
+        while (m.find()) {
+            result.add(DependencyInfo.goMod(m.group(1), m.group(2)));
+        }
+        return result;
     }
 
     private record DependencyVersion(String source, String version) {}

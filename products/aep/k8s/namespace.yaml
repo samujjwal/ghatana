@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aep
+  labels:
+    kubernetes.io/metadata.name: aep
+    ghatana.io/platform: "true"
+    istio-injection: enabled

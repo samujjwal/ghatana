@@ -187,6 +187,7 @@ public class ProductionModule extends SharedBaseModule {
     logger.info("Configuring YAPPC API with production services");
     install(new DataSourceModule());
     install(new DataCloudModule());
+    install(new YappcAiPlatformModule());
     bind(com.ghatana.yappc.api.controller.GraphQLController.class);
     // Inherit shared components from SharedBaseModule
     super.configure();
@@ -1574,6 +1575,63 @@ public class ProductionModule extends SharedBaseModule {
   com.ghatana.agent.memory.security.MemorySecurityManager memorySecurityManager() {
     logger.info("Creating TenantIsolatedMemorySecurityManager");
     return new com.ghatana.yappc.api.memory.TenantIsolatedMemorySecurityManager();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 6.4 — Agent History & Rationale API
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Provides the {@link com.ghatana.yappc.api.history.AgentHistoryController} that
+   * exposes agent execution history and turn-level rationale via REST endpoints.
+   *
+   * @param persistentMemoryPlane the shared memory plane (provides both task state
+   *                              and episodic memory access)
+   * @doc.layer api
+   * @doc.pattern Controller
+   * @doc.gaa.lifecycle capture
+   */
+  @Provides
+  com.ghatana.yappc.api.history.AgentHistoryController agentHistoryController(
+      com.ghatana.agent.memory.persistence.PersistentMemoryPlane persistentMemoryPlane) {
+    logger.info("Creating AgentHistoryController");
+    return new com.ghatana.yappc.api.history.AgentHistoryController(persistentMemoryPlane);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Provides the JDBC-backed {@link com.ghatana.yappc.api.repository.LearnedPolicyRepository}
+   * backing the {@code yappc.learned_policies} table.
+   *
+   * @param dataSource shared application datasource
+   * @doc.layer infrastructure
+   * @doc.pattern Repository
+   * @doc.gaa.memory procedural
+   */
+  @Provides
+  com.ghatana.yappc.api.repository.LearnedPolicyRepository learnedPolicyRepository(
+      javax.sql.DataSource dataSource) {
+    return new com.ghatana.yappc.api.repository.jdbc.JdbcLearnedPolicyRepository(dataSource);
+  }
+
+  /**
+   * Provides the {@link com.ghatana.yappc.api.policy.LearnedPolicyController} that
+   * exposes the {@code GET /api/v1/agents/{id}/policies} endpoint (plan 9.5.4).
+   *
+   * @param learnedPolicyRepository backing store for learned policies
+   * @param tenantContextExtractor  auth context extractor
+   * @doc.layer api
+   * @doc.pattern Controller
+   * @doc.gaa.lifecycle reflect
+   */
+  @Provides
+  com.ghatana.yappc.api.policy.LearnedPolicyController learnedPolicyController(
+      com.ghatana.yappc.api.repository.LearnedPolicyRepository learnedPolicyRepository,
+      com.ghatana.yappc.api.common.TenantContextExtractor tenantContextExtractor) {
+    logger.info("Creating LearnedPolicyController");
+    return new com.ghatana.yappc.api.policy.LearnedPolicyController(
+        learnedPolicyRepository, tenantContextExtractor);
   }
 }
 

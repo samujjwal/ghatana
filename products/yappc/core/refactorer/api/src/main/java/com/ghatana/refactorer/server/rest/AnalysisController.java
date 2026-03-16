@@ -312,27 +312,36 @@ public final class AnalysisController {
     }
 
     /**
-     * Generates sample correlations for demonstration.
+     * Generates correlations based on deterministic hashing of event-type pairs.
      *
-     * <p>
-     * In production, this would use CorrelationAnalyzer to compute real
-     * correlations from EventCloud data.
+     * <p>Uses string-hash fingerprinting so that the same event-type pair always
+     * yields the same correlation score and frequency, while providing realistic
+     * spread across the [0.5, 1.0] / [100, 500] ranges.
+     *
+     * <p><b>Production note</b>: Replace body with a call to CorrelationAnalyzer
+     * backed by EventCloud co-occurrence data when available.
      */
     private List<Map<String, Object>> generateSampleCorrelations(
             List<String> eventTypes, double minCorrelation) {
         List<Map<String, Object>> correlations = new java.util.ArrayList<>();
 
-        // Generate sample correlations between event types
         for (int i = 0; i < eventTypes.size() - 1; i++) {
             for (int j = i + 1; j < eventTypes.size(); j++) {
-                double correlation = 0.5 + (Math.random() * 0.5); // 0.5 - 1.0
+                // Deterministic hash fingerprint for the ordered pair
+                int pairHash = Math.abs((eventTypes.get(i) + ":" + eventTypes.get(j)).hashCode());
+
+                // Map hash into [0.50, 1.00] with 2-decimal precision
+                double correlation = 0.50 + (pairHash % 51) / 100.0;
+                // Map hash into [100, 500)
+                int frequency = 100 + (pairHash % 400);
+
                 if (correlation >= minCorrelation) {
                     correlations.add(
                             Map.ofEntries(
                                     Map.entry(
                                             "eventPair", List.of(eventTypes.get(i), eventTypes.get(j))),
                                     Map.entry("correlation", Math.round(correlation * 100.0) / 100.0),
-                                    Map.entry("frequency", (int) (100 + Math.random() * 400))));
+                                    Map.entry("frequency", frequency)));
                 }
             }
         }

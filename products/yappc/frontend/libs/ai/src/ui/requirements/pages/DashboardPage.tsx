@@ -12,8 +12,7 @@ import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@
   }, [navigate])
 
   const handleCreateWorkspace = () => {
-    // NOTE: Navigate to create workspace
-    console.log('Create workspace')
+    navigate('/workspaces/new')
   }
 
   return (

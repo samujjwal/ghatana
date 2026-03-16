@@ -12,6 +12,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Capacitor } from '@capacitor/core';
+import { useIsDarkMode } from '@ghatana/theme';
 import {
   Box,
   Typography,
@@ -33,11 +34,11 @@ import { User as Person, Bell as Notifications, Palette, Globe as Language, Shie
  */
 export default function MobileSettingsRoute() {
     const navigate = useNavigate();
-    const theme = useTheme();
+    const isDarkMode = useIsDarkMode();
     const [settings, setSettings] = useState({
         notifications: true,
         haptics: true,
-        darkMode: theme.palette.mode === 'dark',
+        darkMode: isDarkMode,
         offlineMode: false,
         autoSync: true,
     });

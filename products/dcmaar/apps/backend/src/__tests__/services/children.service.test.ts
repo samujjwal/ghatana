@@ -18,19 +18,16 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as childrenService from "../../services/children.service";
-import * as authService from "../../services/auth.service";
 import { query } from "../../db";
 import { randomEmail, randomString } from "../setup";
+import { createTestUser } from '../fixtures/user.fixtures';
 
 describe("ChildrenService", () => {
   let userId: string;
 
   beforeEach(async () => {
     // GIVEN: A clean authenticated user
-    const user = await authService.register({
-      email: randomEmail(),
-      password: "TestPassword123!",
-    });
+    const user = await createTestUser({ email: randomEmail() });
     userId = user.user.id;
   });
 
@@ -132,10 +129,7 @@ describe("ChildrenService", () => {
 
     it("should not return children of other users", async () => {
       // GIVEN: Two users, each with children
-      const user2 = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-      });
+      const user2 = await createTestUser({ email: randomEmail() });
       const user2Id = user2.user.id;
       await childrenService.createChild(userId, {
         name: "User1 Child",
@@ -196,10 +190,7 @@ describe("ChildrenService", () => {
         name: "User1 Child",
         birth_date: "2015-01-01",
       });
-      const user2 = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-      });
+      const user2 = await createTestUser({ email: randomEmail() });
       const user2Id = user2.user.id;
 
       // WHEN: User2 attempts to retrieve user1's child
@@ -355,10 +346,7 @@ describe("ChildrenService", () => {
         name: "User1 Child",
         birth_date: "2015-01-01",
       });
-      const user2 = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-      });
+      const user2 = await createTestUser({ email: randomEmail() });
       const user2Id = user2.user.id;
 
       // WHEN: User2 attempts to update user1's child
@@ -450,10 +438,7 @@ describe("ChildrenService", () => {
         name: "User1 Child",
         birth_date: "2015-01-01",
       });
-      const user2 = await authService.register({
-        email: randomEmail(),
-        password: "TestPassword123!",
-      });
+      const user2 = await createTestUser({ email: randomEmail() });
       const user2Id = user2.user.id;
 
       // WHEN: User2 attempts to delete user1's child

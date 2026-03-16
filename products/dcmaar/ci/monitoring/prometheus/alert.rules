@@ -1,0 +1,174 @@
+groups:
+  # ===========================================================================
+  # DCMAAR Server — Availability & Performance
+  # ===========================================================================
+  - name: dcmaar.server.availability
+    interval: 30s
+    rules:
+      - alert: DcmaarServerDown
+        expr: up{job="dcmaar-server"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: dcmaar
+          service: server
+        annotations:
+          summary: "DCMAAR server instance is down"
+          description: "The DCMAAR backend server ({{ $labels.instance }}) has been unreachable for more than 1 minute."
+          runbook: "https://wiki.ghatana.internal/runbooks/dcmaar/server-down"
+
+      - alert: DcmaarServerHighErrorRate
+        expr: |
+          rate(http_server_requests_seconds_count{job="dcmaar-server", status=~"5.."}[5m])
+          /
+          rate(http_server_requests_seconds_count{job="dcmaar-server"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: dcmaar
+          service: server
+        annotations:
+          summary: "DCMAAR server high HTTP 5xx error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+          runbook: "https://wiki.ghatana.internal/runbooks/dcmaar/high-error-rate"
+
+      - alert: DcmaarServerHighLatency
+        expr: |
+          histogram_quantile(0.99,
+            rate(http_server_requests_seconds_bucket{job="dcmaar-server"}[5m])
+          ) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          team: dcmaar
+          service: server
+        annotations:
+          summary: "DCMAAR server p99 latency exceeds 2 seconds"
+          description: "p99 latency is {{ $value | humanizeDuration }} on {{ $labels.instance }}."
+
+      - alert: DcmaarServerHighMemory
+        expr: |
+          jvm_memory_used_bytes{job="dcmaar-server", area="heap"}
+          /
+          jvm_memory_max_bytes{job="dcmaar-server", area="heap"} > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          team: dcmaar
+          service: server
+        annotations:
+          summary: "DCMAAR server JVM heap usage above 85%"
+          description: "Heap usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+
+  # ===========================================================================
+  # DCMAAR Desktop Agent — Availability
+  # ===========================================================================
+  - name: dcmaar.desktop.availability
+    interval: 60s
+    rules:
+      - alert: DcmaarDesktopAgentDown
+        expr: up{job="dcmaar-desktop"} == 0
+        for: 3m
+        labels:
+          severity: warning
+          team: dcmaar
+          service: desktop-agent
+        annotations:
+          summary: "DCMAAR desktop agent is not reporting metrics"
+          description: "Desktop agent ({{ $labels.instance }}) has been unreachable for 3 minutes. May indicate user machine is offline."
+
+      - alert: DcmaarDesktopHighCpuUsage
+        expr: |
+          process_cpu_usage{job="dcmaar-desktop"} > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          team: dcmaar
+          service: desktop-agent
+        annotations:
+          summary: "DCMAAR desktop agent high CPU usage"
+          description: "CPU usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+
+  # ===========================================================================
+  # DCMAAR Business — Parental Control & Child Safety KPIs
+  # ===========================================================================
+  - name: dcmaar.business
+    interval: 60s
+    rules:
+      - alert: DcmaarThreatDetectionAnomalySpike
+        expr: |
+          rate(dcmaar_threat_detections_total[15m]) > 5 * avg_over_time(rate(dcmaar_threat_detections_total[15m])[1h:15m])
+        for: 15m
+        labels:
+          severity: critical
+          team: dcmaar
+          service: threat-service
+        annotations:
+          summary: "DCMAAR threat detection rate anomaly — possible security incident"
+          description: "Threat detection rate ({{ $value | humanize }}/min) is 5x above 1-hour baseline. Investigate immediately."
+          runbook: "https://wiki.ghatana.internal/runbooks/dcmaar/threat-spike"
+
+      - alert: DcmaarPolicyEnforcementFailureHigh
+        expr: |
+          rate(dcmaar_policy_enforcement_failed_total[10m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          team: dcmaar
+          service: server
+        annotations:
+          summary: "DCMAAR policy enforcement failure rate elevated"
+          description: "Policy enforcement failures at {{ $value | humanize }}/sec — parental controls may not be applied."
+
+      - alert: DcmaarAiPlatformAdapterLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            rate(dcmaar_ai_adapter_request_duration_seconds_bucket[5m])
+          ) > 5.0
+        for: 5m
+        labels:
+          severity: warning
+          team: dcmaar
+          service: ai-platform-adapters
+        annotations:
+          summary: "DCMAAR AI platform adapter p95 latency above 5s"
+          description: "AI requests are taking {{ $value | humanizeDuration }} at p95."
+
+  # ===========================================================================
+  # Infrastructure — Node & Containers
+  # ===========================================================================
+  - name: dcmaar.infrastructure
+    interval: 60s
+    rules:
+      - alert: NodeHighCpuUsage
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 10m
+        labels:
+          severity: warning
+          team: dcmaar
+        annotations:
+          summary: "Host CPU usage above 90% on {{ $labels.instance }}"
+          description: "CPU utilisation is {{ $value }}% — consider scaling."
+
+      - alert: NodeDiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"}) < 0.15
+        for: 10m
+        labels:
+          severity: warning
+          team: dcmaar
+        annotations:
+          summary: "Disk space below 15% on {{ $labels.instance }} ({{ $labels.mountpoint }})"
+          description: "Available: {{ $value | humanizePercentage }}."
+
+      - alert: NodeHighMemoryUsage
+        expr: |
+          (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.90
+        for: 5m
+        labels:
+          severity: critical
+          team: dcmaar
+        annotations:
+          summary: "Host memory usage above 90% on {{ $labels.instance }}"
+          description: "Memory utilisation is {{ $value | humanizePercentage }}."

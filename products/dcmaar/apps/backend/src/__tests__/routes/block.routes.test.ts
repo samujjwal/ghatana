@@ -13,11 +13,11 @@ import { FastifyInstance } from 'fastify';
 import { request } from '../helpers/request.helper';
 import { createTestApp } from '../helpers/app.helper';
 import { randomEmail, randomString } from '../setup';
-import * as authService from '../../services/auth.service';
 import * as deviceService from '../../services/device.service';
 import * as blockService from '../../services/block.service';
 import * as policyService from '../../services/policy.service';
 import { query } from '../../db';
+import { createTestUser } from '../fixtures/user.fixtures';
 
 let app: FastifyInstance;
 
@@ -37,10 +37,7 @@ describe('Block Routes', () => {
   });
 
   beforeEach(async () => {
-    const user = await authService.register({
-      email: randomEmail(),
-      password: 'TestPassword123!',
-    });
+    const user = await createTestUser({ email: randomEmail() });
     testUserId = user.user.id;
     testAccessToken = user.accessToken;
 
@@ -131,10 +128,7 @@ describe('Block Routes', () => {
     });
 
     it('rejects when device belongs to another user', async () => {
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: 'AnotherPass!123',
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
       const otherDevice = await deviceService.registerDevice(otherUser.user.id, {
         device_type: 'mobile',
         device_name: 'Other Device',
@@ -176,10 +170,7 @@ describe('Block Routes', () => {
     });
 
     it('rejects requests for devices owned by another user', async () => {
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: 'AnotherPass!123',
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
       const otherDevice = await deviceService.registerDevice(otherUser.user.id, {
         device_type: 'mobile',
         device_name: 'Other Device',
@@ -242,10 +233,7 @@ describe('Block Routes', () => {
     });
 
     it('rejects access when child belongs to another user', async () => {
-      const otherUser = await authService.register({
-        email: randomEmail(),
-        password: 'AnotherPass!123',
-      });
+      const otherUser = await createTestUser({ email: randomEmail() });
       const otherChild = await query(
         'INSERT INTO children (user_id, name, age) VALUES ($1, $2, $3) RETURNING *',
         [otherUser.user.id, 'Other Child', 9]

@@ -3,8 +3,11 @@ package com.ghatana.pipeline.registry.validation;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.ghatana.orchestrator.client.AgentRegistryClient;
 import com.ghatana.pipeline.registry.model.Pipeline;
 import com.ghatana.platform.domain.auth.TenantId;
+import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Comprehensive pipeline configuration validator.
@@ -37,6 +41,7 @@ public class PipelineValidator {
     private static final int MAX_DESCRIPTION_LENGTH = 1000;
     private static final int MAX_CONFIG_SIZE = 1_000_000; // 1MB
     
+    private final AgentRegistryClient agentRegistryClient;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
 
     /**
@@ -457,34 +462,47 @@ public class PipelineValidator {
     
     /**
      * Validates that all referenced agents exist and are accessible to the tenant.
-     * 
-     * @param config The pipeline configuration
-     * @param tenantId The tenant ID
-     * @return List of validation errors, empty if all agents are valid
+     *
+     * <p>Queries the Agent Registry for each agent reference found in the pipeline
+     * configuration. Any agent that cannot be found is reported as a validation error.
+     * All lookups run concurrently via ActiveJ {@link Promises#all}.
+     *
+     * @param config   The pipeline configuration (YAML/JSON string)
+     * @param tenantId The tenant performing the validation
+     * @return {@link Promise} of a list of validation errors; empty if all agents are valid
      */
-    public List<String> validateReferencedAgents(String config, TenantId tenantId) {
-        List<String> errors = new ArrayList<>();
-        
+    public Promise<List<String>> validateReferencedAgents(String config, TenantId tenantId) {
+        Set<String> agentRefs;
         try {
-            // Extract agent references from the config
-            Set<String> agentRefs = extractAgentReferences(config);
-            
-            // TODO: Validate that each agent exists and is accessible to the tenant
-            // This would typically involve calling the Agent Registry service
-            
-            // Placeholder implementation
-            for (String agentRef : agentRefs) {
-                if (agentRef.contains("invalid")) {
-                    errors.add("Invalid agent reference: " + agentRef);
-                }
-            }
-            
+            agentRefs = extractAgentReferences(config);
         } catch (Exception e) {
-            log.error("Error validating referenced agents", e);
-            errors.add("Error validating agent references: " + e.getMessage());
+            log.error("Error extracting agent references from config", e);
+            return Promise.of(List.of("Error parsing agent references: " + e.getMessage()));
         }
-        
-        return errors;
+
+        if (agentRefs.isEmpty()) {
+            return Promise.of(Collections.emptyList());
+        }
+
+        List<String> errors = Collections.synchronizedList(new ArrayList<>());
+
+        List<Promise<Void>> checks = agentRefs.stream()
+            .map(agentRef -> agentRegistryClient.getAgent(agentRef)
+                .<Void>then(optAgent -> {
+                    if (optAgent.isEmpty()) {
+                        errors.add("Agent not found or inaccessible: '" + agentRef + "'");
+                    }
+                    return Promise.complete();
+                })
+                .mapException(e -> {
+                    log.warn("Error querying agent registry for '{}': {}", agentRef, e.getMessage());
+                    errors.add("Error validating agent '" + agentRef + "': " + e.getMessage());
+                    return (Void) null;
+                })
+            )
+            .collect(Collectors.toList());
+
+        return Promises.all(checks).map($ -> new ArrayList<>(errors));
     }
     
     /**

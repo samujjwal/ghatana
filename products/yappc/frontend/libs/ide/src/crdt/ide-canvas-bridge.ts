@@ -385,28 +385,71 @@ export class IDECanvasBridge {
   }
 
   /**
-   * Find existing IDE canvas nodes
+   * Find existing canvas nodes whose type is 'ide' (IDE embedded panels).
+   * Traverses whichever node storage the canvas CRDT exposes:
+   * - `canvasState.nodes` (array)
+   * - `canvasState.nodeMap` (Map<string, CanvasNodeLite>)
    */
   private findIDECanvasNodes(): CanvasNodeLite[] {
-    // Implementation depends on canvas CRDT structure
-    // This is a placeholder for finding IDE nodes
-    return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const canvasAny = this.canvasState as any;
+    const nodeSource = canvasAny?.nodes ?? canvasAny?.nodeMap;
+    if (!nodeSource) return [];
+
+    const nodeList: CanvasNodeLite[] = Array.isArray(nodeSource)
+      ? nodeSource
+      : [...(nodeSource.values?.() ?? [])];
+
+    return nodeList.filter((n) => (n as CanvasNodeLite).type === 'ide') as CanvasNodeLite[];
   }
 
   /**
-   * Update canvas node
+   * Persist a canvas node update through whichever mutation API the canvas CRDT exposes.
+   * Tries the following strategies in order:
+   * 1. `canvasState.updateNode(node)` — dedicated mutation method
+   * 2. `canvasState.emit('nodeUpdate', node)` — event-based mutation
+   * 3. Direct mutation of `canvasState.nodeMap` (Y.js Map)
+   * 4. Direct splice into `canvasState.nodes` (plain array)
    */
-  private updateCanvasNode(_node: CanvasNodeLite): void {
-    // Implementation depends on canvas CRDT structure
-    // This is a placeholder for updating canvas nodes
+  private updateCanvasNode(node: CanvasNodeLite): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const canvasAny = this.canvasState as any;
+
+    if (typeof canvasAny?.updateNode === 'function') {
+      canvasAny.updateNode(node);
+    } else if (typeof canvasAny?.emit === 'function') {
+      canvasAny.emit('nodeUpdate', node);
+    } else if (canvasAny?.nodeMap instanceof Map) {
+      canvasAny.nodeMap.set(node.id, node);
+    } else if (Array.isArray(canvasAny?.nodes)) {
+      const idx = (canvasAny.nodes as CanvasNodeLite[]).findIndex((n) => n.id === node.id);
+      if (idx >= 0) {
+        canvasAny.nodes[idx] = node;
+      } else {
+        canvasAny.nodes.push(node);
+      }
+    }
   }
 
   /**
-   * Set up canvas listener
+   * Subscribe to canvas CRDT change events and route them to {@link handleCanvasStateChange}.
+   * Supports the following canvas event APIs:
+   * - `observe(callback)` — Y.js / CRDT core style
+   * - `on('change', callback)` — Node.js EventEmitter style
    */
   private setupCanvasListener(): void {
-    // Implementation depends on canvas CRDT structure
-    // This is a placeholder for setting up canvas listeners
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const canvasAny = this.canvasState as any;
+
+    if (typeof canvasAny?.observe === 'function') {
+      canvasAny.observe((event: unknown) => {
+        this.handleCanvasStateChange(event as CRDTOperation);
+      });
+    } else if (typeof canvasAny?.on === 'function') {
+      canvasAny.on('change', (op: CRDTOperation) => {
+        this.handleCanvasStateChange(op);
+      });
+    }
   }
 
   /**
@@ -415,10 +458,69 @@ export class IDECanvasBridge {
    * @doc.param canvasNode - Canvas node to generate code from
    * @doc.returns Generated code
    */
-  generateCodeFromCanvas(_canvasNode: CanvasNodeLite): string {
-    // Implementation depends on canvas node structure
-    // This is a placeholder for code generation
-    return '';
+  generateCodeFromCanvas(canvasNode: CanvasNodeLite): string {
+    // Highest priority: node already carries a code snippet
+    if (canvasNode.code) return canvasNode.code;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = canvasNode.data as any;
+
+    // File nodes: return raw content
+    if (canvasNode.type === 'file' && data?.content != null) {
+      return typeof data.content === 'string'
+        ? data.content
+        : String(data.content);
+    }
+
+    // Structural nodes: generate a minimal code scaffold from metadata
+    const name = (data?.label ?? data?.name ?? data?.fileName ?? canvasNode.id) as string;
+    const sanitized = name.replace(/[^a-zA-Z0-9_$]/g, '_');
+
+    switch (canvasNode.type) {
+      case 'component':
+        return [
+          `import React from 'react';`,
+          ``,
+          `export const ${sanitized}: React.FC = () => {`,
+          `  return <div>{/* ${sanitized} */}</div>;`,
+          `};`,
+          ``,
+        ].join('\n');
+
+      case 'service':
+        return [
+          `export class ${sanitized} {`,
+          `  constructor() {`,
+          `    // Initialise dependencies`,
+          `  }`,
+          ``,
+          `  async execute(): Promise<void> {`,
+          `    // TODO: implement`,
+          `  }`,
+          `}`,
+          ``,
+        ].join('\n');
+
+      case 'api':
+        return [
+          `import type { Request, Response } from 'express';`,
+          ``,
+          `export async function ${sanitized}(req: Request, res: Response): Promise<void> {`,
+          `  try {`,
+          `    res.json({ message: 'ok' });`,
+          `  } catch (err) {`,
+          `    res.status(500).json({ error: 'Internal server error' });`,
+          `  }`,
+          `}`,
+          ``,
+        ].join('\n');
+
+      case 'folder':
+        return `// ${sanitized}\n`;
+
+      default:
+        return `// ${sanitized}\n`;
+    }
   }
 
   /**
@@ -438,20 +540,46 @@ export class IDECanvasBridge {
   }
 
   /**
-   * Find canvas nodes that reference a file
+   * Locate canvas nodes that are linked to a specific IDE file.
+   * Matches on `data.fileId`, `data.filePath`, or the node id convention `file-{fileId}`.
    */
-  private findCanvasNodesForFile(_fileId: string): CanvasNodeLite[] {
-    // Implementation depends on canvas CRDT structure
-    // This is a placeholder for finding related nodes
-    return [];
+  private findCanvasNodesForFile(fileId: string): CanvasNodeLite[] {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const canvasAny = this.canvasState as any;
+    const nodeSource = canvasAny?.nodes ?? canvasAny?.nodeMap;
+    if (!nodeSource) return [];
+
+    const nodeList: CanvasNodeLite[] = Array.isArray(nodeSource)
+      ? nodeSource
+      : [...(nodeSource.values?.() ?? [])];
+
+    return nodeList.filter((n) => {
+      const node = n as CanvasNodeLite;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = node.data as any;
+      return (
+        data?.fileId === fileId ||
+        data?.filePath?.includes(fileId) ||
+        node.id === `file-${fileId}`
+      );
+    }) as CanvasNodeLite[];
   }
 
   /**
-   * Update canvas node code
+   * Write a new code snapshot to a canvas node and push the mutation into the canvas CRDT.
+   * Updates both the top-level {@code code} field and {@code data.content} for consumer compatibility.
    */
-  private updateCanvasNodeCode(_node: CanvasNodeLite, _code: string): void {
-    // Implementation depends on canvas node structure
-    // This is a placeholder for updating node code
+  private updateCanvasNodeCode(node: CanvasNodeLite, code: string): void {
+    const updatedNode: CanvasNodeLite = {
+      ...node,
+      code,
+      data: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...(node.data as any),
+        content: code,
+      },
+    };
+    this.updateCanvasNode(updatedNode);
   }
 
   /**

@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aep.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aep.labels" . | nindent 4 }}
+data:
+  AEP_HTTP_PORT: {{ .Values.config.httpPort | quote }}
+  AEP_GRPC_PORT: {{ .Values.config.grpcPort | quote }}
+  AEP_WORKER_THREADS: {{ .Values.config.workerThreads | quote }}
+  AEP_EVENTLOOP_THREADS: {{ .Values.config.eventloopThreads | quote }}
+  AEP_LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  # Data-Cloud
+  DATACLOUD_URL: {{ .Values.datacloud.url | quote }}
+  DATACLOUD_GRPC_HOST: {{ .Values.datacloud.grpcHost | quote }}
+  DATACLOUD_GRPC_PORT: {{ .Values.datacloud.grpcPort | quote }}
+  # Kafka
+  KAFKA_BOOTSTRAP_SERVERS: {{ .Values.kafka.bootstrapServers | quote }}
+  KAFKA_CONSUMER_GROUP: {{ .Values.kafka.consumerGroup | quote }}
+  KAFKA_EVENTS_TOPIC: {{ .Values.kafka.eventsTopic | quote }}
+  KAFKA_HITL_TOPIC: {{ .Values.kafka.hitlTopic | quote }}
+  KAFKA_PATTERNS_TOPIC: {{ .Values.kafka.patternsTopic | quote }}
+  # Redis
+  REDIS_HOST: {{ .Values.redis.host | quote }}
+  REDIS_PORT: {{ .Values.redis.port | quote }}
+  REDIS_DB: {{ .Values.redis.db | quote }}
+  # OpenTelemetry
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.otel.endpoint | quote }}
+  OTEL_SERVICE_NAME: {{ .Values.otel.serviceName | quote }}
+  # Pattern Engine
+  PATTERN_ENGINE_THREADS: {{ .Values.patternEngine.threads | quote }}
+  PATTERN_ENGINE_MAX_BACKLOG: {{ .Values.patternEngine.maxBacklog | quote }}
+  PATTERN_ENGINE_TIMEOUT_MS: {{ .Values.patternEngine.timeoutMs | quote }}
+  # Pipeline Engine
+  PIPELINE_MAX_CONCURRENT: {{ .Values.pipeline.maxConcurrent | quote }}
+  PIPELINE_TIMEOUT_MS: {{ .Values.pipeline.timeoutMs | quote }}
+  # HITL
+  HITL_DECISION_TIMEOUT_MS: {{ .Values.hitl.decisionTimeoutMs | quote }}
+  # Reflection / Learning
+  REFLECTION_BATCH_SIZE: {{ .Values.reflection.batchSize | quote }}
+  REFLECTION_SCHEDULE_CRON: {{ .Values.reflection.scheduleCron | quote }}

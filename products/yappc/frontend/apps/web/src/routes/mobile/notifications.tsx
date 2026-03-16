@@ -5,7 +5,9 @@
  * Real-time notifications with filtering and management capabilities.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { logger } from '../../utils/Logger';
 
 export interface Notification {
@@ -33,135 +35,111 @@ export interface NotificationFilter {
  * Mobile Notifications Component
  */
 export default function Component() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const [filter, setFilter] = useState<NotificationFilter>({
     type: 'all',
     readStatus: 'all'
   });
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load notifications
-  useEffect(() => {
-    loadNotifications();
-  }, []);
+  const NOTIFS_KEY = ['notifications', filter.type, filter.readStatus] as const;
 
-  const loadNotifications = async () => {
-    try {
-      setIsLoading(true);
+  // Fetch notifications from API
+  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
+    queryKey: NOTIFS_KEY,
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filter.type !== 'all') params.set('type', filter.type);
+      if (filter.readStatus !== 'all') params.set('read', filter.readStatus === 'read' ? 'true' : 'false');
+      const res = await fetch(`/api/notifications?${params.toString()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json() as Notification[];
+      logger.info('Notifications loaded', 'mobile-notifications', { count: data.length });
+      return data;
+    },
+  });
 
-      // In a real implementation, this would fetch from an API
-      const mockNotifications: Notification[] = [
-        {
-          id: '1',
-          title: 'Canvas Update',
-          message: 'Your canvas has been automatically saved',
-          type: 'success',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-          read: false,
-        },
-        {
-          id: '2',
-          title: 'New Comment',
-          message: 'John Doe commented on your design',
-          type: 'info',
-          timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-          read: false,
-          actionUrl: '/canvas/123',
-          actionText: 'View Comment'
-        },
-        {
-          id: '3',
-          title: 'System Maintenance',
-          message: 'Scheduled maintenance in 2 hours',
-          type: 'warning',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          read: true,
-        },
-      ];
-
-      setNotifications(mockNotifications);
-      logger.info('Notifications loaded', 'mobile-notifications', { count: mockNotifications.length });
-    } catch (error) {
-      logger.error('Failed to load notifications', 'mobile-notifications', {
-        error: error instanceof Error ? error.message : String(error)
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Mark notification as read
-  const markAsRead = async (notificationId: string) => {
-    try {
-      setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      );
-
-      // In a real implementation, this would call an API
+  // Mark as read
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const res = await fetch(`/api/notifications/${notificationId}/read`, { method: 'PATCH' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    },
+    onSuccess: (_data, notificationId) => {
       logger.info('Notification marked as read', 'mobile-notifications', { notificationId });
-    } catch (error) {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    onError: (error, notificationId) => {
       logger.error('Failed to mark notification as read', 'mobile-notifications', {
         notificationId,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
-    }
-  };
+    },
+  });
+  const markAsRead = (notificationId: string) => markAsReadMutation.mutate(notificationId);
 
   // Delete notification
-  const deleteNotification = async (notificationId: string) => {
-    try {
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-
-      // In a real implementation, this would call an API
+  const deleteMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const res = await fetch(`/api/notifications/${notificationId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    },
+    onSuccess: (_data, notificationId) => {
       logger.info('Notification deleted', 'mobile-notifications', { notificationId });
-    } catch (error) {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    onError: (error, notificationId) => {
       logger.error('Failed to delete notification', 'mobile-notifications', {
         notificationId,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
-    }
-  };
+    },
+  });
+  const deleteNotification = (notificationId: string) => deleteMutation.mutate(notificationId);
 
   // Mark all as read
-  const markAllAsRead = async () => {
-    try {
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-
-      // In a real implementation, this would call an API
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/notifications/read-all', { method: 'PATCH' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    },
+    onSuccess: () => {
       logger.info('All notifications marked as read', 'mobile-notifications');
-    } catch (error) {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    onError: (error) => {
       logger.error('Failed to mark all notifications as read', 'mobile-notifications', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
-    }
-  };
+    },
+  });
+  const markAllAsRead = () => markAllAsReadMutation.mutate();
 
   // Clear all notifications
-  const clearAllNotifications = async () => {
-    try {
-      setNotifications([]);
-
-      // In a real implementation, this would call an API
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/notifications/clear-all', { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    },
+    onSuccess: () => {
       logger.info('All notifications cleared', 'mobile-notifications');
-    } catch (error) {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    onError: (error) => {
       logger.error('Failed to clear all notifications', 'mobile-notifications', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
-    }
-  };
+    },
+  });
+  const clearAllNotifications = () => clearAllMutation.mutate();
 
-  // Filter notifications
+  // Filter notifications — server already filters by type/readStatus; apply client-side search as no API param
   const filteredNotifications = notifications.filter(notification => {
-    if (filter.type !== 'all' && notification.type !== filter.type) {
-      return false;
-    }
-    if (filter.readStatus === 'read' && !notification.read) {
-      return false;
-    }
-    if (filter.readStatus === 'unread' && notification.read) {
-      return false;
-    }
+    if (filter.type !== 'all' && notification.type !== filter.type) return false;
+    if (filter.readStatus === 'read' && !notification.read) return false;
+    if (filter.readStatus === 'unread' && notification.read) return false;
     return true;
   });
 
@@ -348,11 +326,8 @@ export default function Component() {
                     {notification.actionUrl && (
                       <button
                         onClick={() => {
-                          // In a real app, this would navigate to the action URL
-                          logger.info('Notification action clicked', 'mobile-notifications', {
-                            notificationId: notification.id,
-                            actionUrl: notification.actionUrl
-                          });
+                          void markAsRead(notification.id);
+                          navigate(notification.actionUrl!);
                         }}
                         className="mt-3 text-sm text-primary-600 hover:text-primary-700 transition-colors"
                       >

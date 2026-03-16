@@ -1,5 +1,6 @@
 package com.ghatana.audio.video.common.security;
 
+import com.ghatana.audio.video.common.platform.AuthGatewayClient;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
@@ -118,6 +119,19 @@ public class JwtServerInterceptor implements ServerInterceptor {
             return Contexts.interceptCall(ctx, call, headers, next);
 
         } catch (Exception e) {
+            // Local JWT validation failed — attempt platform auth-gateway fallback
+            // for cross-service tokens issued by the central auth-service.
+            AuthGatewayClient gwClient = AuthGatewayClient.getInstance();
+            if (gwClient.isEnabled()) {
+                AuthGatewayClient.ValidationResult gwResult = gwClient.validate(token);
+                if (gwResult.valid()) {
+                    String subject = gwResult.userId() != null ? gwResult.userId() : "platform";
+                    LOG.debug("Platform auth-gateway accepted token, subject='{}'", subject);
+                    Context ctx = Context.current().withValue(CTX_SUBJECT, subject);
+                    return Contexts.interceptCall(ctx, call, headers, next);
+                }
+            }
+
             LOG.warn("JWT validation failed on {}: {}", fullMethod, e.getMessage());
             call.close(Status.UNAUTHENTICATED.withDescription("Invalid token: " + e.getMessage()),
                     new Metadata());

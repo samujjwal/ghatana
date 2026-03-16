@@ -2,6 +2,7 @@ package com.ghatana.tts.core.grpc;
 
 import com.ghatana.audio.video.common.GrpcInterceptorChain;
 import com.ghatana.audio.video.common.health.HealthMetricsServer;
+import com.ghatana.audio.video.common.platform.AiRegistryClient;
 import com.ghatana.tts.core.api.TtsEngine;
 import com.ghatana.platform.governance.security.TenantGrpcInterceptor;
 import io.grpc.Server;
@@ -60,6 +61,14 @@ public class TtsGrpcServer implements AutoCloseable {
         server.start();
         healthServer.start();
         LOG.info("TTS gRPC server started on port {}", server.getPort());
+
+        // Resolve active model from platform AI Registry at startup
+        String modelTenant = System.getenv().getOrDefault("AI_MODEL_TENANT", "default");
+        AiRegistryClient.getInstance().findActiveModel(modelTenant, "piper-en")
+                .ifPresentOrElse(
+                        model -> LOG.info("[TTS] Active model resolved from registry: {}", model),
+                        () -> LOG.info("[TTS] AI Registry not configured or no active model — using default engine")
+                );
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LOG.info("Shutting down TTS gRPC server...");

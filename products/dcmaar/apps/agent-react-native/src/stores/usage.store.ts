@@ -19,6 +19,8 @@
  */
 
 import { atom } from 'jotai';
+import { guardianApi } from '../services/guardianApi';
+import { authAtom } from './auth.store';
 
 /**
  * Hourly usage data point.
@@ -406,63 +408,67 @@ export const fetchUsageAtom = atom<null, [], Promise<UsageState>>(
     });
 
     try {
-      // TODO: Replace with actual API call
-      // const usage = await guardianApi.getUsageMetrics();
+      const { user } = get(authAtom);
+      const tenantId = user?.tenantId ?? user?.id ?? '';
 
-      // Mock implementation for testing
-      const mockHourly: HourlyUsage[] = Array.from({ length: 24 }, (_, i) => ({
-        hour: i,
-        minutes: Math.random() * 60,
-        appCount: Math.floor(Math.random() * 5),
-      }));
+      // Derive usage metrics from the app list (usageTime in ms, lastSeen as timestamp)
+      const { data: appDataList } = await guardianApi.getApps(tenantId);
 
-      const mockDailyUsage: DailyUsageSummary = {
+      const appUsageMap: Record<string, AppUsageMetrics> = {};
+      let totalMinutes = 0;
+      const uniqueAppsUsedToday = new Set<string>();
+      const today = new Date().toDateString();
+
+      for (const app of appDataList) {
+        const totalMins = Math.round(app.usageTime / 60_000);
+        const lastUsed = app.lastSeen ? new Date(app.lastSeen) : new Date(0);
+        const usedToday = lastUsed.toDateString() === today;
+
+        if (usedToday) {
+          totalMinutes += totalMins;
+          uniqueAppsUsedToday.add(app.id);
+        }
+
+        appUsageMap[app.id] = {
+          appId: app.id,
+          appName: app.name,
+          totalMinutes: totalMins,
+          dailyAverageMinutes: Math.round(totalMins / 7), // rough approximation
+          lastUsedDate: lastUsed,
+          usageCount: 1, // backend doesn't expose session count
+          trendPercentage: 0, // trend requires historical data
+        };
+      }
+
+      // Build a sparse 24-hour breakdown from app lastSeen timestamps
+      const hourlyMap: Record<number, HourlyUsage> = {};
+      for (let h = 0; h < 24; h++) {
+        hourlyMap[h] = { hour: h, minutes: 0, appCount: 0 };
+      }
+      for (const app of appDataList) {
+        if (!app.lastSeen) continue;
+        const lastUsed = new Date(app.lastSeen);
+        if (lastUsed.toDateString() === today) {
+          const h = lastUsed.getHours();
+          hourlyMap[h].minutes += Math.round(app.usageTime / 60_000);
+          hourlyMap[h].appCount += 1;
+        }
+      }
+      const hourlyUsage = Object.values(hourlyMap);
+
+      const dailyUsage: DailyUsageSummary = {
         date: new Date(),
-        totalMinutes: Math.round(
-          mockHourly.reduce((sum, h) => sum + h.minutes, 0)
-        ),
-        appCount: 5,
-        hourlyBreakdown: mockHourly,
-        trendPercentage: Math.random() * 50 - 25,
+        totalMinutes,
+        appCount: uniqueAppsUsedToday.size,
+        hourlyBreakdown: hourlyUsage,
+        trendPercentage: 0,
       };
-
-      const mockAppUsageMap: Record<string, AppUsageMetrics> = {
-        'app-1': {
-          appId: 'app-1',
-          appName: 'Chrome',
-          totalMinutes: 120,
-          dailyAverageMinutes: 35,
-          lastUsedDate: new Date(),
-          usageCount: 15,
-          trendPercentage: 12,
-        },
-        'app-2': {
-          appId: 'app-2',
-          appName: 'Gmail',
-          totalMinutes: 45,
-          dailyAverageMinutes: 20,
-          lastUsedDate: new Date(),
-          usageCount: 8,
-          trendPercentage: -5,
-        },
-      };
-
-      const mockWeeklyTrend: DailyUsageSummary[] = Array.from(
-        { length: 7 },
-        (_, i) => ({
-          date: new Date(Date.now() - i * 86400000),
-          totalMinutes: Math.round(Math.random() * 300 + 100),
-          appCount: 4,
-          hourlyBreakdown: [],
-          trendPercentage: 0,
-        })
-      );
 
       const updatedState: UsageState = {
-        dailyUsage: mockDailyUsage,
-        hourlyUsage: mockHourly,
-        appUsageMap: mockAppUsageMap,
-        weeklyTrend: mockWeeklyTrend,
+        dailyUsage,
+        hourlyUsage,
+        appUsageMap,
+        weeklyTrend: state.weeklyTrend, // preserved; updated separately
         status: 'loaded',
         error: null,
       };

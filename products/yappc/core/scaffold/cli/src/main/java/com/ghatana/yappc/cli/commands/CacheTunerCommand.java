@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.*;
 import org.slf4j.Logger;
@@ -102,9 +103,19 @@ public class CacheTunerCommand implements Callable<Integer> {
         private int minExecutions;
 
         private final AICachePolicyTuner tuner;
+        /** Seeded RNG: reproducible per project path so reports are stable across re-runs. */
+        private Random rng;
 
         public AnalyzeCommand() {
             this.tuner = new AICachePolicyTuner();
+        }
+
+        /** Lazily initialise rng after picocli injects {@code projectDir}. */
+        private Random rng() {
+            if (rng == null) {
+                rng = new Random((long) projectDir.getAbsolutePath().hashCode());
+            }
+            return rng;
         }
 
         @Override
@@ -174,25 +185,25 @@ public class CacheTunerCommand implements Callable<Integer> {
                 for (String project : projects) {
                     for (String taskType : taskTypes) {
                         // Simulate multiple executions per day
-                        int executions = (int) (Math.random() * 5) + 1;
+                        int executions = (int) (rng().nextDouble() * 5) + 1;
 
                         for (int i = 0; i < executions; i++) {
-                            boolean cacheHit = Math.random() > 0.4; // 60% hit rate
+                            boolean cacheHit = rng().nextDouble() > 0.4; // 60% hit rate
                             Duration duration
                                     = cacheHit
                                             ? Duration.ofMillis(
-                                                    (long) (Math.random() * 5000 + 1000))
+                                                    (long) (rng().nextDouble() * 5000 + 1000))
                                             : // 1-6s cached
                                             Duration.ofMillis(
-                                                    (long) (Math.random() * 30000
+                                                    (long) (rng().nextDouble() * 30000
                                                     + 10000)); // 10-40s uncached
 
                             long artifactSize
-                                    = (long) (Math.random() * 100 * 1024 * 1024); // 0-100MB
+                                    = (long) (rng().nextDouble() * 100 * 1024 * 1024); // 0-100MB
 
                             Instant timestamp
                                     = baseTime.plus(Duration.ofDays(day))
-                                            .plus(Duration.ofHours((long) (Math.random() * 24)));
+                                            .plus(Duration.ofHours((long) (rng().nextDouble() * 24)));
 
                             tuner.recordTaskTiming(
                                     new TaskExecution(
@@ -239,7 +250,7 @@ public class CacheTunerCommand implements Callable<Integer> {
                                 "integration-test",
                                 "e2e",
                                 Duration.ofMinutes(5)
-                                        .plus(Duration.ofSeconds((long) (Math.random() * 120))),
+                                        .plus(Duration.ofSeconds((long) (rng().nextDouble() * 120))),
                                 false, // Never cached
                                 50 * 1024 * 1024, // 50MB
                                 now.minus(Duration.ofHours(i))));
@@ -524,6 +535,22 @@ public class CacheTunerCommand implements Callable<Integer> {
                 defaultValue = "100")
         private int scenarios;
 
+        @Option(
+                names = {"--seed"},
+                description = "RNG seed for reproducible simulations (default: derived from project path)")
+        private Long seed;
+
+        /** Seeded RNG — reproducible per project; override with --seed for exact replay. */
+        private Random rng;
+
+        private Random rng() {
+            if (rng == null) {
+                long s = seed != null ? seed : (long) projectDir.getAbsolutePath().hashCode();
+                rng = new Random(s);
+            }
+            return rng;
+        }
+
         @Override
         public Integer call() throws Exception {
             log.info("🧪 Cache Policy Simulation");
@@ -577,12 +604,13 @@ public class CacheTunerCommand implements Callable<Integer> {
         }
 
         private CacheSimulationResult simulateScenario() {
-            // Simulate a build scenario with current and optimized cache settings
-            double currentBuildTime = 60 + Math.random() * 120; // 1-3 minutes
+            // Simulate a build scenario with current and optimized cache settings.
+            // rng is seeded from project path so results are reproducible per project.
+            double currentBuildTime = 60 + rng.nextDouble() * 120; // 1-3 minutes
 
             // Calculate optimized performance
-            double optimizedHitRate = Math.min(targetHitRate + (Math.random() * 0.1 - 0.05), 1.0);
-            double cacheSpeedup = 5 + Math.random() * 5; // 5-10x speedup for cached operations
+            double optimizedHitRate = Math.min(targetHitRate + (rng.nextDouble() * 0.1 - 0.05), 1.0);
+            double cacheSpeedup = 5 + rng.nextDouble() * 5; // 5-10x speedup for cached operations
 
             double optimizedBuildTime
                     = currentBuildTime * ((1 - optimizedHitRate) + optimizedHitRate / cacheSpeedup);
@@ -662,16 +690,20 @@ public class CacheTunerCommand implements Callable<Integer> {
         private void monitorCacheActivity(AICachePolicyTuner tuner) {
             Instant now = Instant.now();
 
-            // Simulate current cache activity
-            if (Math.random() > 0.3) { // 70% chance of activity
-                String[] taskTypes = {"compile", "test", "package"};
-                String taskType = taskTypes[(int) (Math.random() * taskTypes.length)];
+            // Simulate current cache activity using a time-bucketed seed so each
+            // monitoring tick is deterministic within its minute window.
+            Random tickRng = new Random((long) projectDir.getAbsolutePath().hashCode()
+                    ^ (now.getEpochSecond() / intervalSeconds));
 
-                boolean cacheHit = Math.random() > 0.4; // 60% hit rate
+            if (tickRng.nextDouble() > 0.3) { // 70% chance of activity
+                String[] taskTypes = {"compile", "test", "package"};
+                String taskType = taskTypes[(int) (tickRng.nextDouble() * taskTypes.length)];
+
+                boolean cacheHit = tickRng.nextDouble() > 0.4; // 60% hit rate
                 Duration duration
                         = cacheHit
-                                ? Duration.ofSeconds((long) (Math.random() * 10 + 2))
-                                : Duration.ofSeconds((long) (Math.random() * 60 + 20));
+                                ? Duration.ofSeconds((long) (tickRng.nextDouble() * 10 + 2))
+                                : Duration.ofSeconds((long) (tickRng.nextDouble() * 60 + 20));
 
                 tuner.recordTaskTiming(
                         new TaskExecution(
@@ -679,7 +711,7 @@ public class CacheTunerCommand implements Callable<Integer> {
                                 projectDir.getName(),
                                 duration,
                                 cacheHit,
-                                (long) (Math.random() * 50 * 1024 * 1024),
+                                (long) (tickRng.nextDouble() * 50 * 1024 * 1024),
                                 now));
 
                 String hitStatus = cacheHit ? "🟢 HIT " : "🔴 MISS";

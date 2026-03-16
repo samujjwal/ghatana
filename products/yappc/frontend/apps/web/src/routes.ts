@@ -34,6 +34,10 @@ export default [
       route('workspaces', 'routes/app/workspaces.tsx'),
       route('projects', 'routes/app/projects.tsx'),
 
+      // User profile and workspace settings
+      route('profile', 'routes/profile.tsx'),
+      route('settings', 'routes/settings.tsx'),
+
       // Project-specific route: /p/:projectId
       route('p/:projectId', 'routes/app/project/_shell.tsx', [
         // Project tabs

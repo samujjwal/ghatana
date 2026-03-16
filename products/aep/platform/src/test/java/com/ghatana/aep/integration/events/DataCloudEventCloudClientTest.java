@@ -831,9 +831,9 @@ class DataCloudEventCloudClientTest extends EventloopTestBase {
             void incrementsAppendMetrics() {
                 EventRecord record = makeEventRecord("test", "evt-m1");
                 runPromise(() -> client.append(new AppendRequest(record, AppendOptions.defaults())));
-                client.append(new AppendRequest(
+                runPromise(() -> client.append(new AppendRequest(
                     makeEventRecord("test2", "evt-m2"),
-runPromise(() -> AppendOptions.defaults())));
+                    AppendOptions.defaults())));
 
                 Map<String, Object> metrics = client.getMetrics();
                 assertThat(metrics).containsEntry("append_count", 2L);
@@ -1029,13 +1029,13 @@ runPromise(() -> AppendOptions.defaults())));
                 Instant from = Instant.now().minusSeconds(3600);
                 Instant to = Instant.now().plusSeconds(3600);
 
-                Page page = client.query(new HistoryQuery(
+                Page page = runPromise(() -> client.query(new HistoryQuery(
                     TEST_TENANT,
                     List.of(),
                     new TimeRange(from, to),
                     EventCloud.TRUE,
                     Paging.first(10)
-runPromise(() -> )));
+)));
 
                 assertThat(page).isNotNull();
                 assertThat(page.items()).hasSize(5);
@@ -1047,13 +1047,13 @@ runPromise(() -> )));
                 seedEvents("order.created", 3);
                 seedEvents("payment.received", 2);
 
-                Page page = client.query(new HistoryQuery(
+                Page page = runPromise(() -> client.query(new HistoryQuery(
                     TEST_TENANT,
                     List.of("order.created"),
                     WIDE_TIME_RANGE,
                     EventCloud.TRUE,
                     Paging.first(10)
-runPromise(() -> )));
+)));
 
                 assertThat(page.items()).hasSize(3);
                 assertThat(page.items())
@@ -1069,13 +1069,13 @@ runPromise(() -> )));
                 seedEvents("evt.b", 3);
                 seedEvents("evt.c", 1);
 
-                Page page = client.query(new HistoryQuery(
+                Page page = runPromise(() -> client.query(new HistoryQuery(
                     TEST_TENANT,
                     List.of("evt.a", "evt.b"),
                     WIDE_TIME_RANGE,
                     EventCloud.TRUE,
                     Paging.first(10)
-runPromise(() -> )));
+)));
 
                 assertThat(page.items()).hasSize(5);
             }
@@ -1085,13 +1085,13 @@ runPromise(() -> )));
             void queriesWithPagination() {
                 seedEvents("test.event", 10);
 
-                Page page = client.query(new HistoryQuery(
+                Page page = runPromise(() -> client.query(new HistoryQuery(
                     TEST_TENANT,
                     List.of(),
                     WIDE_TIME_RANGE,
                     EventCloud.TRUE,
                     Paging.first(3)
-runPromise(() -> )));
+)));
 
                 assertThat(page.items()).hasSize(3);
                 assertThat(page.hasMore()).isTrue();
@@ -1101,13 +1101,13 @@ runPromise(() -> )));
             @Test
             @DisplayName("returns empty page for no matches")
             void returnsEmptyPage() {
-                Page page = client.query(new HistoryQuery(
+                Page page = runPromise(() -> client.query(new HistoryQuery(
                     TEST_TENANT,
                     List.of("nonexistent.type"),
                     WIDE_TIME_RANGE,
                     EventCloud.TRUE,
                     Paging.first(10)
-runPromise(() -> )));
+)));
 
                 assertThat(page.items()).isEmpty();
                 assertThat(page.hasMore()).isFalse();
@@ -1118,13 +1118,13 @@ runPromise(() -> )));
             void queryWithoutFilters() {
                 seedEvents("test.event", 5);
 
-                Page page = client.query(new HistoryQuery(
+                Page page = runPromise(() -> client.query(new HistoryQuery(
                     TEST_TENANT,
                     List.of(),
                     WIDE_TIME_RANGE,
                     EventCloud.TRUE,
                     Paging.first(100)
-runPromise(() -> )));
+)));
 
                 assertThat(page.items()).hasSize(5);
             }
@@ -1138,13 +1138,13 @@ runPromise(() -> )));
                 Instant from = Instant.now().minusSeconds(3600);
                 Instant to = Instant.now().plusSeconds(3600);
 
-                Page page = client.query(new HistoryQuery(
+                Page page = runPromise(() -> client.query(new HistoryQuery(
                     TEST_TENANT,
                     List.of("order.created"),
                     new TimeRange(from, to),
                     EventCloud.TRUE,
                     Paging.first(10)
-runPromise(() -> )));
+)));
 
                 assertThat(page.items()).hasSize(3);
             }
@@ -1152,10 +1152,10 @@ runPromise(() -> )));
             @Test
             @DisplayName("increments query metrics")
             void incrementsQueryMetrics() {
-                client.query(new HistoryQuery(
+                runPromise(() -> client.query(new HistoryQuery(
                     TEST_TENANT, List.of(), WIDE_TIME_RANGE,
                     EventCloud.TRUE, Paging.first(10)
-runPromise(() -> )));
+)));
 
                 assertThat(client.getMetrics()).containsEntry("query_count", 1L);
             }
@@ -1191,11 +1191,11 @@ runPromise(() -> )));
                 // Seed data
                 TenantContext tc = DataCloudEventMapper.toTenantContext(TEST_TENANT);
                 for (int i = 0; i < 5; i++) {
-                    store.append(tc, EventEntry.builder()
+                    runPromise(() -> store.append(tc, EventEntry.builder()
                         .eventType("scan.event")
                         .timestamp(Instant.now())
                         .payload("{}")
-runPromise(() -> .build()));
+                        .build()));
                 }
 
                 List<List<EventEnvelope>> batches = new CopyOnWriteArrayList<>();

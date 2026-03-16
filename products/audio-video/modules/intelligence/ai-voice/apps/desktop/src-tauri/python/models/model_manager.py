@@ -116,11 +116,38 @@ MODEL_REGISTRY: Dict[str, ModelInfo] = {
     'whisper-base': ModelInfo(
         name='whisper-base',
         version='v3',
-        url='https://openaipublic.azureedge.net/main/whisper/models/base.pt',
-        size_mb=140.0,
+        url='https://openaipublic.azureedge.net/main/whisper/models/ed3a0b6b1c0edf879ad9b11b1af5a0e6ab5db9205f891f668f8b0e6c6326e34e.pt',
+        size_mb=139.0,
         md5='placeholder',
-        description='Whisper base model for ASR',
-        dependencies=['torch', 'whisper']
+        description='Whisper base model for ASR (~139 MB, fastest)',
+        dependencies=['torch', 'openai-whisper']
+    ),
+    'whisper-small': ModelInfo(
+        name='whisper-small',
+        version='v3',
+        url='https://openaipublic.azureedge.net/main/whisper/models/9ecf779972d90ba49c06d968637d720dd632c55bbf19d441fb42bf17a411e794.pt',
+        size_mb=461.0,
+        md5='placeholder',
+        description='Whisper small model for ASR (~461 MB, good accuracy/speed balance)',
+        dependencies=['torch', 'openai-whisper']
+    ),
+    'whisper-medium': ModelInfo(
+        name='whisper-medium',
+        version='v3',
+        url='https://openaipublic.azureedge.net/main/whisper/models/345ae4da62f9b3d59415adc60127b97c714f32e89e936602e85993674d08dcb1.pt',
+        size_mb=1457.0,
+        md5='placeholder',
+        description='Whisper medium model for ASR (~1.4 GB, high accuracy)',
+        dependencies=['torch', 'openai-whisper']
+    ),
+    'whisper-large-v3': ModelInfo(
+        name='whisper-large-v3',
+        version='v3',
+        url='https://openaipublic.azureedge.net/main/whisper/models/e5b1a55b89c1367dacf97e3e19bfd829a01529dbfdeefa8caeb559b47a7f4e7e.pt',
+        size_mb=2884.0,
+        md5='placeholder',
+        description='Whisper large-v3 model for ASR (~2.9 GB, state-of-the-art accuracy, multilingual)',
+        dependencies=['torch', 'openai-whisper']
     ),
     'ecapa-tdnn': ModelInfo(
         name='ecapa-tdnn',
@@ -430,7 +457,9 @@ class ModelManager:
             elif 'mosnet' in model_id:
                 return self._load_mosnet(model_path, device)
             elif 'whisper' in model_id:
-                return self._load_whisper(model_path, device)
+                # Strip registry prefix to get the raw Whisper model name (e.g. 'large-v3')
+                whisper_name = model_id.removeprefix('whisper-') if model_id.startswith('whisper-') else model_id
+                return self._load_whisper(model_path, device, model_name=whisper_name)
             elif 'ecapa' in model_id:
                 return self._load_ecapa(model_path, device)
             else:
@@ -475,15 +504,44 @@ class ModelManager:
         model.eval()
         return model
 
-    def _load_whisper(self, model_path: Path, device: str):
-        """Load Whisper model."""
+    def _load_whisper(self, model_path: Path, device: str, model_name: Optional[str] = None):
+        """Load Whisper model.
+
+        Resolves the Whisper model name from (in priority order):
+        1. ``model_name`` argument supplied by the caller
+        2. ``WHISPER_MODEL`` environment variable
+        3. The stem of the cached ``model_path`` (e.g. ``whisper-large-v3-v3``)
+        4. Fallback: ``"base"`` for lightweight deployments
+
+        Args:
+            model_path: Path to the cached model file (used as a hint).
+            device: PyTorch device string ('cpu', 'cuda', 'mps', …).
+            model_name: Optional explicit Whisper model name to load.
+        """
         try:
-            import whisper
-            model = whisper.load_model("base", device=device)
-            return model
+            import whisper as openai_whisper
         except ImportError:
             logger.error("Whisper not installed: pip install openai-whisper")
             raise
+
+        # Resolve model name
+        resolved: str
+        if model_name:
+            resolved = model_name
+        elif os.environ.get("WHISPER_MODEL"):
+            resolved = os.environ["WHISPER_MODEL"]
+        else:
+            # Derive from path stem: e.g. 'whisper-large-v3-v3' -> 'large-v3'
+            stem = model_path.stem  # e.g. 'whisper-large-v3-v3'
+            # Strip leading 'whisper-' prefix and trailing version suffix '-v\d+'
+            import re
+            stem = re.sub(r'^whisper-', '', stem)
+            stem = re.sub(r'-v\d+$', '', stem)
+            resolved = stem if stem else "base"
+
+        logger.info(f"Loading Whisper model '{resolved}' on {device} from {model_path}")
+        model = openai_whisper.load_model(resolved, device=device, download_root=str(model_path.parent))
+        return model
 
     def _load_ecapa(self, model_path: Path, device: str):
         """Load ECAPA-TDNN model."""

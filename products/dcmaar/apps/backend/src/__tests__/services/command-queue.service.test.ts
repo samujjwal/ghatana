@@ -11,8 +11,8 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { query } from '../../db';
 import { randomEmail, randomString } from '../setup';
-import * as authService from '../../services/auth.service';
 import * as deviceService from '../../services/device.service';
+import { createTestUser } from '../fixtures/user.fixtures';
 import {
     enqueueDeviceCommand,
     getPendingCommandsForDevice,
@@ -26,10 +26,7 @@ describe('CommandQueueService', () => {
 
     beforeAll(async () => {
         // Create test user
-        const user = await authService.register({
-            email: randomEmail(),
-            password: 'TestPassword123!',
-        });
+        const user = await createTestUser({ email: randomEmail() });
         testUserId = user.user.id;
 
         // Create test child

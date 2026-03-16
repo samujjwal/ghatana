@@ -8,6 +8,8 @@ import com.ghatana.orchestrator.queue.ExecutionJob;
 import com.ghatana.orchestrator.queue.ExecutionQueue;
 import com.ghatana.orchestrator.store.CheckpointStore;
 import io.activej.promise.Promise;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,9 +33,14 @@ public class CheckpointAwareExecutionQueue implements ExecutionQueue {
     private final ConcurrentHashMap<String, ExecutionJob> idempotencyKeys = new ConcurrentHashMap<>();
     private final AtomicInteger size = new AtomicInteger(0);
     private final CheckpointStore checkpointStore;
+    private final Counter idempotencyViolationCounter;
 
     public CheckpointAwareExecutionQueue(CheckpointStore checkpointStore) {
         this.checkpointStore = checkpointStore;
+        this.idempotencyViolationCounter = Metrics.counter(
+                "orchestrator.execution_queue.idempotency_violations_total",
+                "queue", "checkpoint-aware"
+        );
     }
 
     @Override
@@ -164,7 +171,7 @@ public class CheckpointAwareExecutionQueue implements ExecutionQueue {
      * Record idempotency violation for monitoring.
      */
     private void recordIdempotencyViolation(String pipelineId, String idempotencyKey) {
-        // TODO: Emit metrics for idempotency violations
+        idempotencyViolationCounter.increment();
         logger.debug("Recorded idempotency violation: pipelineId={}, idempotencyKey={}", pipelineId, idempotencyKey);
     }
 

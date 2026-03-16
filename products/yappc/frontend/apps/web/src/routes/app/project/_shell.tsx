@@ -139,7 +139,7 @@ export function Layout() {
       id: 'share',
       label: 'Share',
       icon: Share,
-      onClick: () => console.log('Share project'),
+      onClick: () => navigate(`${basePath}/share`),
       tooltip: 'Share project with team',
     },
     {
@@ -153,7 +153,23 @@ export function Layout() {
       id: 'export',
       label: 'Export',
       icon: FileDownload,
-      onClick: () => console.log('Export project'),
+      onClick: () => {
+        void (async () => {
+          try {
+            const res = await fetch(`/api/projects/${projectId}/export`);
+            if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `project-${projectId}.zip`;
+            a.click();
+            URL.revokeObjectURL(url);
+          } catch (err) {
+            console.error('[ProjectShell] Export failed:', err);
+          }
+        })();
+      },
       tooltip: 'Export project',
       divider: true,
     },

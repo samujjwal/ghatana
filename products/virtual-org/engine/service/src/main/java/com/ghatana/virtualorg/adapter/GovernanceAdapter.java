@@ -12,6 +12,10 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import java.security.SecureRandom;
+import java.security.spec.KeySpec;
 import java.time.Instant;
 import java.security.Principal;
 import java.util.*;
@@ -140,10 +144,20 @@ public class GovernanceAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(GovernanceAdapter.class);
 
+    /** PBKDF2 iteration count — matches NIST SP 800-132 minimum recommendation for SHA-256. */
+    private static final int PBKDF2_ITERATIONS = 310_000;
+    private static final int PBKDF2_KEY_LENGTH = 256; // bits
+    private static final int SALT_LENGTH_BYTES = 16;
+
     private final String agentId;
     private final Eventloop eventloop;
     private final EventEmitter eventEmitter;
     private final Map<String, SecurityPolicy> policyCache;
+    /**
+     * In-memory credential store: username → hex(salt) + ":" + hex(pbkdf2Hash).
+     * Production deployments must replace this with a persistent, audited credential store.
+     */
+    private final ConcurrentHashMap<String, String> credentialStore = new ConcurrentHashMap<>();
     private volatile boolean initialized = false;
 
     /**
@@ -243,26 +257,39 @@ public class GovernanceAdapter {
             // 3. Creating authenticated principal
             // 4. Emitting authentication event
 
-            // Placeholder - return empty until governance integration complete
-            Optional<Principal> result = Optional.empty();
-
-            if (result.isEmpty()) {
-                emitSecurityEvent(
-                    "authentication.failed",
-                    username,
-                    "FAILED",
-                    Map.of("username", username)
-                );
-            } else {
-                emitSecurityEvent(
-                    "authentication.successful",
-                    username,
-                    "SUCCESS",
-                    Map.of("username", username)
-                );
+            String storedCredential = credentialStore.get(username);
+            if (storedCredential == null) {
+                log.warn("Authentication failed — unknown principal: username={}", username);
+                emitSecurityEvent("authentication.failed", username, "FAILED",
+                        Map.of("reason", "unknown_principal"));
+                return Optional.empty();
             }
 
-            return result;
+            String[] parts = storedCredential.split(":", 2);
+            if (parts.length != 2) {
+                log.error("Corrupted credential record for username={}", username);
+                emitSecurityEvent("authentication.failed", username, "ERROR",
+                        Map.of("reason", "corrupted_credential"));
+                return Optional.empty();
+            }
+
+            byte[] salt = hexToBytes(parts[0]);
+            byte[] expectedHash = hexToBytes(parts[1]);
+            byte[] actualHash = pbkdf2Hash(password, salt);
+
+            if (!constantTimeEqual(expectedHash, actualHash)) {
+                log.warn("Authentication failed — invalid credentials: username={}", username);
+                emitSecurityEvent("authentication.failed", username, "FAILED",
+                        Map.of("reason", "invalid_credentials"));
+                return Optional.empty();
+            }
+
+            String principalName = username;
+            Principal authenticatedPrincipal = () -> principalName;
+            emitSecurityEvent("authentication.successful", username, "SUCCESS",
+                    Map.of("username", username));
+            log.info("Authentication successful: username={}", username);
+            return Optional.of(authenticatedPrincipal);
         });
     }
 
@@ -775,5 +802,79 @@ public class GovernanceAdapter {
         public String getTenantId() {
             return tenantId;
         }
+    }
+
+    // =============================
+    // Credential management (PBKDF2-based)
+    // =============================
+
+    /**
+     * Register a principal's credentials for password-based authentication.
+     *
+     * <p>Passwords are hashed with PBKDF2-HMAC-SHA256 using a random 128-bit salt
+     * and {@value #PBKDF2_ITERATIONS} iterations per NIST SP 800-132.
+     * The stored format is {@code hex(salt):hex(hash)}.
+     *
+     * <p><b>Production note</b>: In production, delegate to the platform's
+     * identity provider (OAuth 2.0 / OIDC) rather than managing raw credentials here.
+     *
+     * @param username the principal username (must not be null or blank)
+     * @param password the plaintext password to hash and store (cleared after hashing)
+     */
+    public void registerCredential(@NotNull String username, @NotNull String password) {
+        if (username.isBlank()) {
+            throw new IllegalArgumentException("Username must not be blank");
+        }
+        if (password.isEmpty()) {
+            throw new IllegalArgumentException("Password must not be empty");
+        }
+        try {
+            byte[] salt = new byte[SALT_LENGTH_BYTES];
+            new SecureRandom().nextBytes(salt);
+            byte[] hash = pbkdf2Hash(password, salt);
+            credentialStore.put(username, bytesToHex(salt) + ":" + bytesToHex(hash));
+            log.info("Registered credentials for principal: username={}", username);
+        } catch (Exception e) {
+            throw new IllegalStateException("Credential registration failed for username=" + username, e);
+        }
+    }
+
+    private byte[] pbkdf2Hash(String password, byte[] salt) {
+        try {
+            KeySpec spec = new PBEKeySpec(
+                    password.toCharArray(), salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            return factory.generateSecret(spec).getEncoded();
+        } catch (Exception e) {
+            throw new IllegalStateException("PBKDF2 hashing failed", e);
+        }
+    }
+
+    /** Constant-time byte-array comparison to prevent timing-based attacks. */
+    private boolean constantTimeEqual(byte[] a, byte[] b) {
+        if (a.length != b.length) return false;
+        int diff = 0;
+        for (int i = 0; i < a.length; i++) {
+            diff |= a[i] ^ b[i];
+        }
+        return diff == 0;
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
+    private static byte[] hexToBytes(String hex) {
+        int len = hex.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
+                    + Character.digit(hex.charAt(i + 1), 16));
+        }
+        return data;
     }
 }

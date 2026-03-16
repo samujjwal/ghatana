@@ -430,13 +430,21 @@ public class PipelineExecutionEngine {
      * For multiple events, processes sequentially and merges via {@link OperatorResult.Builder#mergeWith}.
      */
     private Promise<OperatorResult> processInputEvents(UnifiedOperator operator, List<Event> inputs) {
-        if (inputs.size() == 1) {
-            return operator.process(inputs.get(0));
-        }
+        // Guard against synchronous throws from operators — they must be converted to
+        // a failed Promise so the engine's mapException/then-error-handler can catch them.
+        try {
+            if (inputs.size() == 1) {
+                return operator.process(inputs.get(0));
+            }
 
-        // Multiple inputs: process sequentially, merge results via Builder
-        return processSequential(operator, inputs, 0,
-                OperatorResult.builder().success());
+            // Multiple inputs: process sequentially, merge results via Builder
+            return processSequential(operator, inputs, 0,
+                    OperatorResult.builder().success());
+        } catch (Exception e) {
+            logger.warn("Operator '{}' threw synchronously during process(): {}",
+                    operator.getId(), e.getMessage(), e);
+            return Promise.ofException(e);
+        }
     }
 
     /**

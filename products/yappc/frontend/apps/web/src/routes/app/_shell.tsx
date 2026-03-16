@@ -33,14 +33,6 @@ export function Layout() {
         return () => { };
     }, [setHeaderActionContext]);
 
-    // Mock user data - TODO: Replace with actual auth context
-    const user = {
-        id: 'user-1',
-        name: 'John Doe',
-        email: 'john@example.com',
-        initials: 'JD',
-    };
-
     const workspaces = ownedWorkspaces.map(ws => ({
         id: ws.id,
         name: ws.name,

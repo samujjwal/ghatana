@@ -1,0 +1,111 @@
+id: event-filter-agent
+name: Event Filter Agent
+version: 1.0.0
+description: >
+  Filters events based on configurable predicate rules. Supports simple field
+  comparisons, complex boolean expressions (AND/OR/NOT), regex matching, set
+  membership, range comparisons, and JSONPath predicates. Events that do not
+  match are silently dropped or routed to an alternative output channel.
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [filter, predicate, routing, gating, aep, deduplication]
+  maturity: production
+  author: platform-team@ghatana.ai
+
+generator:
+  type: DETERMINISTIC
+
+# AEP Operator configuration
+aep:
+  operatorType: FILTER
+  inputEventTypes:
+    - "*.raw"
+    - "*.ingested"
+    - "*.enriched"
+    - "event.*"
+  outputEventTypes:
+    - "*.filtered"
+    - "*.accepted"
+    - "*.rejected"
+  backpressure:
+    bufferSize: 10000
+    overflowStrategy: DROP_OLDEST
+  reliability:
+    checkpointInterval: 60s
+    maxRetries: 0
+    deadLetterQueue: null   # Filters are fire-and-forget; no DLQ needed
+
+capabilities:
+  - predicate-filtering
+  - regex-matching
+  - range-evaluation
+  - set-membership-check
+  - boolean-expression
+  - deduplication-filtering
+
+# Filter rule configuration
+configuration:
+  filterRules:
+    description: "Boolean expression tree of filter predicates"
+    type: object
+    required: true
+    example:
+      operator: AND
+      conditions:
+        - field: "$.payload.status"
+          op: IN
+          values: [ACTIVE, PENDING]
+        - field: "$.payload.amount"
+          op: GREATER_THAN
+          value: 0
+  rejectAction:
+    description: "What to do with rejected events"
+    type: string
+    enum: [DROP, ROUTE_TO_REJECTED_CHANNEL, LOG_AND_DROP]
+    default: DROP
+  deduplication:
+    description: "Optional deduplication window configuration"
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: false
+      keyFields:
+        type: array
+        items:
+          type: string
+      windowSeconds:
+        type: integer
+        default: 300
+
+io:
+  inputs:
+    - name: incomingEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/event/v1"
+      required: true
+  outputs:
+    - name: acceptedEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/event/v1"
+    - name: rejectedEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/event/v1"
+
+memory:
+  type: WORKING
+  scope: dedup_window
+  retention: short
+  maxEntries: 100000
+
+resources:
+  memory: 256MB
+  cpu: "0.5"
+  timeout: 5s
+  maxConcurrency: 100
+
+routing:
+  input: IncomingEvent
+  output: FilterDecision

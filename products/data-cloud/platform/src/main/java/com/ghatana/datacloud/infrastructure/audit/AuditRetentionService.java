@@ -79,6 +79,10 @@ public final class AuditRetentionService {
     private final ScheduledExecutorService cleanupScheduler;
     private final AtomicLong totalCleanupRuns;
     private final AtomicLong totalEventsDeleted;
+    // Tracks the cutoff timestamp used in each tenant's last cleanup — used to
+    // estimate the age of the oldest surviving event without an extra DB query.
+    private final ConcurrentHashMap<String, Long> lastCleanupCutoffEpochMs;
+    private final AtomicLong totalEventsDeleted;
 
     /**
      * Retention mode for audit events.
@@ -191,6 +195,7 @@ public final class AuditRetentionService {
         this.tenantStats = new ConcurrentHashMap<>();
         this.totalCleanupRuns = new AtomicLong(0);
         this.totalEventsDeleted = new AtomicLong(0);
+        this.lastCleanupCutoffEpochMs = new ConcurrentHashMap<>();
 
         // Initialize scheduled cleanup
         this.cleanupScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -287,6 +292,8 @@ public final class AuditRetentionService {
         Duration retentionPeriod = getTenantRetentionPeriod(tenantId);
         Instant cutoffTime = Instant.now().minus(retentionPeriod);
 
+        // Store cutoff so calculateOldestEventAge can use it without re-querying
+        lastCleanupCutoffEpochMs.put(tenantId, cutoffTime.toEpochMilli());
         return queryExpiredEvents(tenantId, cutoffTime)
             .then(expiredEvents -> {
                 long deletedCount = 0;
@@ -474,9 +481,17 @@ public final class AuditRetentionService {
     }
 
     private Duration calculateOldestEventAge(String tenantId) {
-        // In a real implementation, query the oldest event for this tenant
-        // For now, return a placeholder
-        return Duration.ofDays(30);
+        // After each cleanup, all events OLDER than cutoffTime have been deleted.
+        // The oldest surviving event is therefore at most as old as the last cutoff,
+        // i.e. age ≈ now − cutoffTime = retentionPeriod at the moment of cleanup.
+        Long cutoffEpochMs = lastCleanupCutoffEpochMs.get(tenantId);
+        if (cutoffEpochMs == null) {
+            // No cleanup has run yet for this tenant; return the configured retention period
+            // as a conservative upper bound.
+            return getTenantRetentionPeriod(tenantId);
+        }
+        // The oldest surviving event is at the cutoff boundary. Age grows as time passes.
+        return Duration.between(Instant.ofEpochMilli(cutoffEpochMs), Instant.now());
     }
 
     private void emitMetrics(RetentionReport report, DeletionMode mode) {

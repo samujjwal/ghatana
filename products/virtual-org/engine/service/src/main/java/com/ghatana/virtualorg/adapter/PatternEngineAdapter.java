@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.stream.Collectors;
 /**
  * Pattern engine adapter enabling agents to leverage EventCloud pattern matching for decisions.
  *
@@ -157,6 +157,11 @@ public class PatternEngineAdapter {
     private final Eventloop eventloop;
     private final Map<String, PatternSubscription> subscriptions;
     private final EventEmitter eventEmitter;
+    /**
+     * Outcome history used for in-process pattern learning.
+     * Key: compoundKey of (decisionType, selectedOption); Value: list of SUCCESS/FAILURE outcomes.
+     */
+    private final ConcurrentHashMap<String, List<String>> outcomeHistory = new ConcurrentHashMap<>();
     private volatile boolean initialized = false;
 
     /**
@@ -241,18 +246,46 @@ public class PatternEngineAdapter {
 
             log.debug("Querying patterns for decision: type={}, agentId={}", decisionType, agentId);
 
-            // TODO: Query the pattern engine with decision context
-            // This would involve:
-            // 1. Building a pattern query from the decision type and context
-            // 2. Sending it to the pattern engine
-            // 3. Receiving and ranking recommendations by confidence
-            // 4. Filtering for the agent's role and permissions
-            
-            List<PatternRecommendation> recommendations = new ArrayList<>();
-            
-            // Placeholder: return empty list until pattern engine integration is complete
-            log.debug("Pattern query completed: {} recommendations found", recommendations.size());
-            
+            // Derive pattern recommendations from the local outcome history.
+            // Each entry in outcomeHistory records past decisions and their results:
+            // key = "<decisionType>:<optionId>", values = ["SUCCESS","SUCCESS","FAILURE",...].
+            // Confidence = successCount / totalCount (minimum 3 observations required).
+            //
+            // TODO: Replace the local outcome store with a query to the EventCloud pattern
+            //       engine once that integration is in place.
+            String prefix = decisionType.name() + ":";
+            List<PatternRecommendation> recommendations = outcomeHistory.entrySet().stream()
+                    .filter(e -> e.getKey().startsWith(prefix))
+                    .map(e -> {
+                        String optionId = e.getKey().substring(prefix.length());
+                        List<String> outcomes = e.getValue();
+                        long successes = outcomes.stream().filter("SUCCESS"::equals).count();
+                        int total = outcomes.size();
+                        // Require a minimum evidence threshold before making recommendations.
+                        if (total < 3) {
+                            return null;
+                        }
+                        double confidence = (double) successes / total;
+                        return new PatternRecommendation(
+                                e.getKey(),
+                                decisionType.name(),
+                                confidence,
+                                optionId,
+                                Map.of(
+                                        "observations", String.valueOf(total),
+                                        "successes", String.valueOf(successes),
+                                        "agentId", agentId
+                                )
+                        );
+                    })
+                    .filter(Objects::nonNull)
+                    // Only surface recommendations with meaningful positive signal (≥50% success)
+                    .filter(r -> r.confidence() >= 0.5)
+                    .sorted(Comparator.comparingDouble(PatternRecommendation::confidence).reversed())
+                    .collect(Collectors.toList());
+
+            log.debug("Pattern query completed: {} recommendations found for type={}",
+                    recommendations.size(), decisionType);
             return recommendations;
         });
     }
@@ -361,16 +394,19 @@ public class PatternEngineAdapter {
         return Promise.ofBlocking(eventloop, () -> {
             log.info("Recording decision outcome: type={}, option={}, agentId={}",
                     decisionType, selectedOption, agentId);
-            
-            // TODO: Send outcome to pattern engine for learning
-            // This would involve:
-            // 1. Creating an outcome event with decision context
-            // 2. Sending it to the pattern engine
-            // 3. Allowing the engine to update its patterns based on results
-            
-            // Emit outcome recording event
+
+            // Persist outcome in local history for pattern learning.
+            String key = decisionType.name() + ":" + selectedOption;
+            String outcomeLabel = outcome.getOutcome().name();
+            outcomeHistory.computeIfAbsent(key, k -> Collections.synchronizedList(new ArrayList<>()))
+                    .add(outcomeLabel);
+
+            log.debug("Outcome recorded: key={}, outcome={}, historySize={}",
+                    key, outcomeLabel, outcomeHistory.get(key).size());
+
+            // Emit outcome recording event for downstream consumers / pattern engine integration
             emitDecisionOutcomeEvent(decisionType, selectedOption, outcome);
-            
+
             return null;
         });
     }

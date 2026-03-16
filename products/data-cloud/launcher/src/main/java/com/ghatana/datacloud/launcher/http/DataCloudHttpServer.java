@@ -137,6 +137,13 @@ public class DataCloudHttpServer {
             new CopyOnWriteArrayList<>();
 
     /**
+     * Active WebSocket connections for real-time push notifications.
+     * All mutations happen on the eventloop thread; {@link CopyOnWriteArrayList}
+     * provides safe iteration even when a write removes a dead connection.
+     */
+    private final CopyOnWriteArrayList<IWebSocket> wsConnections = new CopyOnWriteArrayList<>();
+
+    /**
      * Optional schema validator for entity data.
      * When set, {@code handleSaveEntity} and {@code handleBatchSaveEntities} will
      * validate entity data against registered schemas before persisting.
@@ -480,6 +487,9 @@ public class DataCloudHttpServer {
             .with(HttpMethod.GET, "/api/v1/agents/events/stream", this::handleAgentsEventStream)
             .with(HttpMethod.GET, "/api/v1/learning/stream",      this::handleLearningStream)
 
+            // WebSocket endpoint for real-time collection change notifications (DC-12)
+            .withWebSocket("/ws", this::handleWebSocketConnection)
+
             .build();
 
         server = HttpServer.builder(eventloop,
@@ -507,6 +517,14 @@ public class DataCloudHttpServer {
             log.info("Cancelling {} active SSE subscriptions", sseSubscriptions.size());
             sseSubscriptions.forEach(EventLogStore.Subscription::cancel);
             sseSubscriptions.clear();
+        }
+        // Close all active WebSocket connections before stopping
+        if (!wsConnections.isEmpty()) {
+            log.info("Closing {} active WebSocket connections", wsConnections.size());
+            for (IWebSocket ws : new ArrayList<>(wsConnections)) {
+                try { ws.close(); } catch (Exception ignored) { /* best-effort */ }
+            }
+            wsConnections.clear();
         }
         if (eventloop != null) {
             // server.close() must be called from the reactor thread;
@@ -610,7 +628,14 @@ public class DataCloudHttpServer {
                         "operation", "upsert"
                     ));
                     return client.appendEvent(resolvedTenantId, cdcEvent)
-                        .map(ignored -> entity);
+                        .map(ignored -> {
+                            broadcastWsEvent("collection.saved", Map.of(
+                                "entityId",  entity.id(),
+                                "collection", entity.collection(),
+                                "tenantId",  resolvedTenantId
+                            ));
+                            return entity;
+                        });
                 })
                 .map(entity -> jsonResponse(Map.of(
                     "id", entity.id(),
@@ -711,7 +736,14 @@ public class DataCloudHttpServer {
                     "operation", "delete"
                 ));
                 return client.appendEvent(resolvedTenantId, cdcEvent)
-                    .map(ignored -> v);
+                    .map(ignored -> {
+                        broadcastWsEvent("collection.deleted", Map.of(
+                            "entityId",  id,
+                            "collection", collection,
+                            "tenantId",  resolvedTenantId
+                        ));
+                        return v;
+                    });
             })
             .map(v -> jsonResponse(Map.of(
                 "deleted", true,
@@ -792,13 +824,20 @@ public class DataCloudHttpServer {
                         "operation", "batch-upsert"
                     ));
                     return client.appendEvent(resolvedTenant, cdcEvent)
-                        .map(ignored -> jsonResponse(Map.of(
-                            "saved", savedEntities.size(),
-                            "collection", collection,
-                            "ids", ids,
-                            "errors", List.of(),
-                            "timestamp", Instant.now().toString()
-                        )));
+                        .map(ignored -> {
+                            broadcastWsEvent("collection.batch-saved", Map.of(
+                                "collection", collection,
+                                "count",      savedEntities.size(),
+                                "tenantId",   resolvedTenant
+                            ));
+                            return jsonResponse(Map.of(
+                                "saved", savedEntities.size(),
+                                "collection", collection,
+                                "ids", ids,
+                                "errors", List.of(),
+                                "timestamp", Instant.now().toString()
+                            ));
+                        });
                 })
                 .then(Promise::of, e -> {
                     log.error("Batch save failed for collection {}", collection, e);
@@ -858,12 +897,19 @@ public class DataCloudHttpServer {
                         "operation", "batch-delete"
                     ));
                     return client.appendEvent(resolvedTenant, cdcEvent)
-                        .map(ignored -> jsonResponse(Map.of(
-                            "deleted", ids.size(),
-                            "collection", collection,
-                            "ids", ids,
-                            "timestamp", Instant.now().toString()
-                        )));
+                        .map(ignored -> {
+                            broadcastWsEvent("collection.batch-deleted", Map.of(
+                                "collection", collection,
+                                "count",      ids.size(),
+                                "tenantId",   resolvedTenant
+                            ));
+                            return jsonResponse(Map.of(
+                                "deleted", ids.size(),
+                                "collection", collection,
+                                "ids", ids,
+                                "timestamp", Instant.now().toString()
+                            ));
+                        });
                 })
                 .then(Promise::of, e -> {
                     log.error("Batch delete failed for collection {}", collection, e);
@@ -3719,6 +3765,137 @@ public class DataCloudHttpServer {
             log.warn("[SSE-WS] frame build error: {}", e.getMessage());
             return "event: spotlight\ndata: {\"error\":\"serialization failure\"}\n\n"
                 .getBytes(StandardCharsets.UTF_8);
+        }
+    }
+
+    // ==================== WebSocket Endpoint (DC-12) ====================
+
+    /**
+     * Handles a new WebSocket connection on {@code /ws}.
+     *
+     * <p>Registers the connection, sends a {@code system.notification} welcome frame,
+     * then starts a read-loop so that closed or errored connections are evicted promptly.
+     * The endpoint is push-only: the server broadcasts collection-change events to all
+     * connected clients; client frames are received but intentionally ignored.
+     *
+     * <p>Broadcasted event types:
+     * <ul>
+     *   <li>{@code collection.saved}        — single entity upserted</li>
+     *   <li>{@code collection.deleted}      — single entity deleted</li>
+     *   <li>{@code collection.batch-saved}  — bulk upsert completed</li>
+     *   <li>{@code collection.batch-deleted} — bulk delete completed</li>
+     * </ul>
+     *
+     * @param ws the newly established WebSocket connection
+     *
+     * @doc.type method
+     * @doc.purpose Register WebSocket client and begin push-only event stream
+     * @doc.layer product
+     * @doc.pattern EventBroadcast
+     */
+    private void handleWebSocketConnection(IWebSocket ws) {
+        wsConnections.add(ws);
+        log.debug("WebSocket client connected; total active={}", wsConnections.size());
+
+        // Send connection acknowledgement
+        sendWsFrame(ws, "system.notification", Map.of(
+            "message",    "Connected to Data-Cloud real-time stream",
+            "serverTime", Instant.now().toString()
+        ));
+
+        // Start recursive read-loop to detect disconnects without polling
+        readWsLoop(ws);
+    }
+
+    /**
+     * Recursive Promise-based read-loop that keeps the connection registered
+     * until the client closes it or a network error occurs.
+     *
+     * <p>The loop calls {@link IWebSocket#readMessage()} which returns a
+     * {@code Promise<@Nullable Message>}. A {@code null} message signals a clean
+     * close; an exception signals an error close. In either case the connection
+     * is removed from {@link #wsConnections}.
+     *
+     * @param ws the WebSocket connection to monitor
+     *
+     * @doc.type method
+     * @doc.purpose Drive connection eviction without blocking the eventloop
+     * @doc.layer product
+     * @doc.pattern EventDriven
+     */
+    private void readWsLoop(IWebSocket ws) {
+        ws.readMessage()
+            .whenComplete((msg, e) -> {
+                if (e != null || msg == null) {
+                    // Connection closed (null) or errored
+                    wsConnections.remove(ws);
+                    log.debug("WebSocket client disconnected; total active={}", wsConnections.size());
+                } else {
+                    // Client frames are accepted but ignored (push-only protocol); continue loop
+                    readWsLoop(ws);
+                }
+            });
+    }
+
+    /**
+     * Broadcasts a typed event payload to all connected WebSocket clients.
+     *
+     * <p>Dead connections are silently removed on write failure. The snapshot
+     * iteration prevents {@link java.util.ConcurrentModificationException} when
+     * a removal occurs mid-broadcast. This method is safe to call from the
+     * eventloop thread; all writes are non-blocking ActiveJ Promises.
+     *
+     * @param type the event type string (e.g., {@code "collection.saved"})
+     * @param data arbitrary payload serialised as the {@code "data"} field
+     *
+     * @doc.type method
+     * @doc.purpose Push typed event to all connected WebSocket clients
+     * @doc.layer product
+     * @doc.pattern EventBroadcast
+     */
+    private void broadcastWsEvent(String type, Map<String, Object> data) {
+        if (wsConnections.isEmpty()) return;
+        String json = buildWsFrame(type, data);
+        IWebSocket.Message msg = IWebSocket.Message.text(json);
+        for (IWebSocket ws : new ArrayList<>(wsConnections)) {
+            ws.writeMessage(msg).whenException(e -> wsConnections.remove(ws));
+        }
+    }
+
+    /**
+     * Sends a single typed WebSocket frame to one connection.
+     * Used for per-connection messages such as the connection acknowledgement.
+     *
+     * @param ws   the target WebSocket connection
+     * @param type the event type string
+     * @param data arbitrary payload
+     */
+    private void sendWsFrame(IWebSocket ws, String type, Map<String, Object> data) {
+        String json = buildWsFrame(type, data);
+        ws.writeMessage(IWebSocket.Message.text(json))
+            .whenException(e -> wsConnections.remove(ws));
+    }
+
+    /**
+     * Serialises a typed event into the WebSocket frame JSON string.
+     *
+     * <p>Frame format:
+     * <pre>{@code {"type": "<type>", "data": {...}, "timestamp": "<iso8601>"}}</pre>
+     *
+     * @param type the event type string
+     * @param data payload map
+     * @return the serialised JSON string; falls back to a minimal error frame on failure
+     */
+    private String buildWsFrame(String type, Map<String, Object> data) {
+        try {
+            Map<String, Object> frame = new LinkedHashMap<>();
+            frame.put("type", type);
+            frame.put("data", data);
+            frame.put("timestamp", Instant.now().toString());
+            return objectMapper.writeValueAsString(frame);
+        } catch (Exception e) {
+            log.warn("Failed to serialize WebSocket frame for type={}", type, e);
+            return "{\"type\":\"error\",\"data\":{\"message\":\"serialization error\"}}";
         }
     }
 

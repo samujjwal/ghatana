@@ -1,0 +1,331 @@
+# YAPPC Prometheus Alert Rules
+# Covers: API availability, error rates, latency SLOs, agent lifecycle,
+#         JVM health, database, Redis, and infrastructure thresholds.
+#
+# Integration:
+#   - Used by prometheus.yappc.yml via rule_files
+#   - Routes are handled by Alertmanager → Slack / PagerDuty
+#
+# Severity levels:
+#   critical  — page-worthy, immediate action required (SLO breach)
+#   warning   — investigate within hours
+#   info      — informational, no action required
+
+groups:
+  # ===========================================================================
+  # YAPPC API / Backend Availability
+  # ===========================================================================
+  - name: yappc.api.availability
+    interval: 30s
+    rules:
+      - alert: YappcApiDown
+        expr: up{job="yappc-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC backend API is unreachable"
+          description: "Prometheus cannot scrape the YAPPC backend at {{ $labels.instance }}. The service has been down for more than 1 minute."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/api-down"
+
+      - alert: YappcApiHighErrorRate
+        expr: |
+          rate(http_server_requests_seconds_count{job="yappc-backend", status=~"5.."}[5m])
+          /
+          rate(http_server_requests_seconds_count{job="yappc-backend"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC API 5xx error rate exceeds 5%"
+          description: "Current 5xx error rate is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/high-error-rate"
+
+      - alert: YappcApiHighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            rate(http_server_requests_seconds_bucket{job="yappc-backend"}[5m])
+          ) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC API p99 latency exceeds 2 s"
+          description: "99th percentile response time is {{ $value | humanizeDuration }} on {{ $labels.instance }}."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/high-latency"
+
+      - alert: YappcApiHighLatencyP99Critical
+        expr: |
+          histogram_quantile(0.99,
+            rate(http_server_requests_seconds_bucket{job="yappc-backend"}[5m])
+          ) > 5.0
+        for: 2m
+        labels:
+          severity: critical
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC API p99 latency critically high (> 5 s)"
+          description: "SLO breach imminent. p99 = {{ $value | humanizeDuration }} on {{ $labels.instance }}."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/high-latency"
+
+  # ===========================================================================
+  # YAPPC Agent Lifecycle
+  # ===========================================================================
+  - name: yappc.agent.lifecycle
+    interval: 30s
+    rules:
+      - alert: YappcAgentSpawnFailureRateHigh
+        expr: |
+          rate(yappc_agent_spawn_failures_total[5m])
+          /
+          (rate(yappc_agent_spawn_total[5m]) + 1) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC agent spawn failure rate exceeds 10%"
+          description: "{{ $value | humanizePercentage }} of agent spawn requests are failing in the last 5 minutes."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/agent-spawn-failures"
+
+      - alert: YappcAgentSessionLeakDetected
+        expr: yappc_active_agent_sessions > 500
+        for: 10m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "Unusually high number of active YAPPC agent sessions"
+          description: "{{ $value }} active sessions detected, which may indicate a session leak."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/session-leak"
+
+      - alert: YappcLlmProviderLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            rate(yappc_llm_request_duration_seconds_bucket[5m])
+          ) > 10.0
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC LLM provider p95 latency exceeds 10 s"
+          description: "LLM backend p95 = {{ $value | humanizeDuration }}. Users will experience slow completions."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/llm-latency"
+
+      - alert: YappcLlmProviderDown
+        expr: yappc_llm_provider_up == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC LLM provider is unreachable"
+          description: "The configured LLM provider has been unreachable for 2+ minutes. AI features are non-functional."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/llm-provider-down"
+
+  # ===========================================================================
+  # YAPPC JVM / Runtime
+  # ===========================================================================
+  - name: yappc.jvm
+    interval: 60s
+    rules:
+      - alert: YappcHighHeapMemoryUsage
+        expr: |
+          jvm_memory_used_bytes{job="yappc-backend", area="heap"}
+          /
+          jvm_memory_max_bytes{job="yappc-backend", area="heap"} > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC JVM heap usage exceeds 85%"
+          description: "Heap is {{ $value | humanizePercentage }} full on {{ $labels.instance }}. Risk of OOM."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/jvm-heap"
+
+      - alert: YappcHighHeapMemoryUsageCritical
+        expr: |
+          jvm_memory_used_bytes{job="yappc-backend", area="heap"}
+          /
+          jvm_memory_max_bytes{job="yappc-backend", area="heap"} > 0.95
+        for: 3m
+        labels:
+          severity: critical
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC JVM heap critically high (> 95%)"
+          description: "OOM imminent. Heap is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/jvm-heap"
+
+      - alert: YappcFrequentGcPauses
+        expr: |
+          rate(jvm_gc_pause_seconds_sum{job="yappc-backend"}[5m])
+          /
+          rate(jvm_gc_pause_seconds_count{job="yappc-backend"}[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC JVM experiencing long GC pauses (> 500 ms avg)"
+          description: "Average GC pause time is {{ $value | humanizeDuration }} over the last 5 minutes."
+
+      - alert: YappcThreadPoolExhaustion
+        expr: |
+          jvm_threads_states_threads{job="yappc-backend", state="blocked"} > 50
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC has many blocked threads (> 50)"
+          description: "{{ $value }} threads are in BLOCKED state, which may indicate a deadlock or slow DB."
+
+  # ===========================================================================
+  # Database (PostgreSQL)
+  # ===========================================================================
+  - name: yappc.database
+    interval: 60s
+    rules:
+      - alert: YappcPostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "PostgreSQL exporter unreachable (YAPPC)"
+          description: "postgres-exporter at {{ $labels.instance }} is not responding. Database may be down."
+
+      - alert: YappcPostgresHighConnectionUsage
+        expr: |
+          pg_stat_database_numbackends{job="postgres", datname="yappc"}
+          /
+          pg_settings_max_connections{job="postgres"} > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "PostgreSQL connection pool usage > 80% (YAPPC)"
+          description: "{{ $value | humanizePercentage }} of max_connections in use. Risk of connection exhaustion."
+
+      - alert: YappcPostgresSlowQueryRate
+        expr: |
+          rate(pg_stat_activity_seconds_total{job="postgres", state="active"}[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "High rate of active slow PostgreSQL queries"
+          description: "Detected {{ $value }} long-running queries per second. Check pg_stat_activity."
+
+  # ===========================================================================
+  # Redis (Session Cache)
+  # ===========================================================================
+  - name: yappc.redis
+    interval: 30s
+    rules:
+      - alert: YappcRedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "Redis is unreachable (YAPPC)"
+          description: "Redis exporter at {{ $labels.instance }} is down. Session caching is unavailable."
+
+      - alert: YappcRedisHighMemoryUsage
+        expr: |
+          redis_memory_used_bytes{job="redis"}
+          /
+          redis_memory_max_bytes{job="redis"} > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "Redis memory usage exceeds 85% (YAPPC)"
+          description: "Redis is using {{ $value | humanizePercentage }} of its configured maxmemory limit."
+
+      - alert: YappcRedisEvictionRateHigh
+        expr: rate(redis_evicted_keys_total{job="redis"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "Redis is evicting keys at high rate (YAPPC)"
+          description: "{{ $value | humanize }} keys/sec evicted. Sessions may be lost prematurely."
+
+  # ===========================================================================
+  # Infrastructure (Node / Host)
+  # ===========================================================================
+  - name: yappc.infrastructure
+    interval: 60s
+    rules:
+      - alert: YappcNodeHighCpuUsage
+        expr: |
+          1 - avg by(instance) (rate(node_cpu_seconds_total{job="node", mode="idle"}[5m])) > 0.85
+        for: 15m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "High CPU usage on YAPPC host ({{ $labels.instance }})"
+          description: "CPU usage is {{ $value | humanizePercentage }} on {{ $labels.instance }} for 15+ minutes."
+
+      - alert: YappcNodeDiskSpaceLow
+        expr: |
+          node_filesystem_avail_bytes{job="node", mountpoint="/", fstype!~"tmpfs|overlay"}
+          /
+          node_filesystem_size_bytes{job="node", mountpoint="/", fstype!~"tmpfs|overlay"} < 0.10
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "Disk space critically low on YAPPC host ({{ $labels.instance }})"
+          description: "Only {{ $value | humanizePercentage }} disk space remaining on /. Logs or DB files may fill disk."
+
+      - alert: YappcNodeHighMemoryUsage
+        expr: |
+          1 - (
+            node_memory_MemAvailable_bytes{job="node"}
+            /
+            node_memory_MemTotal_bytes{job="node"}
+          ) > 0.90
+        for: 10m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "High memory usage on YAPPC host ({{ $labels.instance }})"
+          description: "Memory usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}."

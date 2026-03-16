@@ -19,6 +19,7 @@
  */
 
 import { atom } from 'jotai';
+import { guardianApi } from '../services/guardianApi';
 
 /**
  * User object representing authenticated user.
@@ -35,6 +36,7 @@ export interface User {
   email: string;
   name: string;
   roles: string[];
+  tenantId: string;
   lastLogin?: Date;
 }
 
@@ -198,28 +200,31 @@ export const loginAtom = atom<
     });
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await authService.login(credentials);
-      
-      // Mock implementation for testing
-      const mockUser: User = {
-        id: '123',
-        email: credentials.email,
-        name: 'Test User',
-        roles: ['parent'],
-        lastLogin: new Date(),
-      };
-      const mockToken = 'mock-jwt-token-' + Date.now();
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({})) as { message?: string };
+        throw new Error(errBody.message ?? `HTTP ${res.status}`);
+      }
+
+      const { user, token } = await res.json() as { user: User; token: string };
+
+      // Authenticate the shared API client for subsequent calls
+      guardianApi.setToken(token);
 
       // Update state on success
       set(authAtom, {
-        user: mockUser,
-        token: mockToken,
+        user,
+        token,
         status: 'authenticated',
         error: null,
       });
 
-      return mockUser;
+      return user;
     } catch (error) {
       // Update state on error
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
@@ -245,11 +250,20 @@ export const loginAtom = atom<
  * `const [, logout] = useAtom(logoutAtom);` then call logout()
  * User is immediately logged out
  */
-export const logoutAtom = atom<null, [], void>(null, (get, set) => {
-  // TODO: Call API to invalidate token if needed
-  // await authService.logout();
+export const logoutAtom = atom<null, [], void>(null, async (get, set) => {
+  const { token } = get(authAtom);
+  if (token) {
+    try {
+      await fetch('/auth/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch {
+      // Best-effort: clear local state regardless of API response
+    }
+  }
 
-  // Clear state
+  guardianApi.setToken(null);
   set(authAtom, initialAuthState);
 });
 
@@ -273,11 +287,17 @@ export const refreshTokenAtom = atom<null, [], Promise<string>>(
   null,
   async (get, set) => {
     try {
-      // TODO: Replace with actual API call
-      // const newToken = await authService.refreshToken();
+      const { token: currentToken } = get(authAtom);
+      const res = await fetch('/auth/refresh', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${currentToken ?? ''}` },
+      });
 
-      // Mock implementation
-      const newToken = 'refreshed-jwt-token-' + Date.now();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const { token: newToken } = await res.json() as { token: string };
+
+      guardianApi.setToken(newToken);
 
       const currentAuth = get(authAtom);
       set(authAtom, {

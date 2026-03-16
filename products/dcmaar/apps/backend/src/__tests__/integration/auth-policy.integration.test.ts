@@ -1,32 +1,28 @@
 /**
  * Auth → Policy Creation Integration Tests
  *
- * Validates the complete authentication and policy management flow.
- * Scenarios:
- * - User registers successfully
- * - User logs in with valid credentials
- * - User creates policies while authenticated
+ * Validates policy management flows for authenticated users.
+ * Auth (register/login) is now delegated to auth-gateway; these tests use
+ * createTestUser() to set up users with local JWTs and focus on:
  * - Policy creation requires valid authentication
  * - Policies are properly associated with the user
+ * - Policy isolation between users is enforced
  *
  * @doc.type test-suite
- * @doc.purpose Integration tests for auth and policy creation flow
+ * @doc.purpose Integration tests for policy creation/management with auth
  * @doc.layer integration-testing
  * @doc.pattern Integration Test
  */
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { request } from '../helpers/request.helper';
 import { createTestApp } from '../helpers/app.helper';
-import { randomEmail, randomString } from '../setup';
-import * as authService from '../../services/auth.service';
-import { query } from '../../db';
+import { createTestUser } from '../fixtures/user.fixtures';
 
 let app: FastifyInstance;
 
 describe('Auth → Policy Creation Integration', () => {
-  let testUser: { email: string; password: string };
   let testUserId: string;
   let testAccessToken: string;
   let testChildId: string;
@@ -39,87 +35,17 @@ describe('Auth → Policy Creation Integration', () => {
     await app.close();
   });
 
-  beforeEach(async () => {
-    // Prepare test data
-    testUser = {
-      email: randomEmail(),
-      password: 'StrongPassword123!',
-    };
-  });
-
-  /**
-   * Test 1: User Registration
-   *
-   * GIVEN: Valid user registration data
-   * WHEN: POST /api/auth/register is called
-   * THEN: User should be created with ID, email, access token, and refresh token
-   */
-  it('should register a new user successfully', async () => {
-    const response = await request(app)
-      .post('/api/auth/register')
-      .send(testUser)
-      .expect(201);
-
-    expect(response.body.user).toBeDefined();
-    expect(response.body.user.email).toBe(testUser.email);
-    expect(response.body.accessToken).toBeDefined();
-    expect(response.body.refreshToken).toBeDefined();
-  });
-
-  /**
-   * Verifies user can login after registration.
-   *
-   * GIVEN: Registered user
-   * WHEN: Login with valid credentials
-   * THEN: Authentication successful, tokens returned
-   */
-  it('should login with valid credentials', async () => {
-    // First register
-    await request(app)
-      .post('/api/auth/register')
-      .send({
-        email: testUser.email,
-        password: testUser.password,
-        display_name: 'Test User',
-      })
-      .expect(201);
-
-    // Then login
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: testUser.email,
-        password: testUser.password,
-      })
-      .expect(200);
-
-    expect(response.body.accessToken).toBeDefined();
-    expect(response.body.refreshToken).toBeDefined();
-    expect(response.body.user.email).toBe(testUser.email);
-
-    testAccessToken = response.body.accessToken;
-  });
-
   /**
    * Verifies authenticated user can create a child profile and policy.
    *
-   * GIVEN: Authenticated user
+   * GIVEN: Authenticated user (via createTestUser JWT)
    * WHEN: User creates child profile and then creates policy
    * THEN: Child and policy are created and associated with user
    */
   it('should create policy after authentication', async () => {
-    // Register and login
-    const authResponse = await request(app)
-      .post('/api/auth/register')
-      .send({
-        email: testUser.email,
-        password: testUser.password,
-        display_name: 'Test Parent',
-      })
-      .expect(201);
-
-    testUserId = authResponse.body.user.id;
-    testAccessToken = authResponse.body.accessToken;
+    const user = await createTestUser({ displayName: 'Test Parent' });
+    testUserId = user.id;
+    testAccessToken = user.accessToken;
 
     // Create child profile first
     const childResponse = await request(app)
@@ -193,18 +119,9 @@ describe('Auth → Policy Creation Integration', () => {
    * THEN: All user policies returned, other users' policies excluded
    */
   it('should retrieve user policies after creation', async () => {
-    // Register and setup
-    const authResponse = await request(app)
-      .post('/api/auth/register')
-      .send({
-        email: testUser.email,
-        password: testUser.password,
-        display_name: 'Test Parent',
-      })
-      .expect(201);
-
-    testUserId = authResponse.body.user.id;
-    testAccessToken = authResponse.body.accessToken;
+    const user = await createTestUser({ displayName: 'Test Parent' });
+    testUserId = user.id;
+    testAccessToken = user.accessToken;
 
     // Create child
     const childResponse = await request(app)
@@ -270,18 +187,8 @@ describe('Auth → Policy Creation Integration', () => {
    * THEN: Access denied or policies not visible
    */
   it('should enforce policy isolation between users', async () => {
-    // Register first user
-    const user1Response = await request(app)
-      .post('/api/auth/register')
-      .send({
-        email: randomEmail(),
-        password: 'Password123!',
-        display_name: 'User 1',
-      })
-      .expect(201);
-
-    const user1Token = user1Response.body.accessToken;
-    const user1Id = user1Response.body.user.id;
+    const user1 = await createTestUser({ displayName: 'User 1' });
+    const user1Token = user1.accessToken;
 
     // Create child for user 1
     const child1Response = await request(app)
@@ -312,17 +219,8 @@ describe('Auth → Policy Creation Integration', () => {
 
     const policy1Id = policy1Response.body.data.id;
 
-    // Register second user
-    const user2Response = await request(app)
-      .post('/api/auth/register')
-      .send({
-        email: randomEmail(),
-        password: 'Password123!',
-        display_name: 'User 2',
-      })
-      .expect(201);
-
-    const user2Token = user2Response.body.accessToken;
+    const user2 = await createTestUser({ displayName: 'User 2' });
+    const user2Token = user2.accessToken;
 
     // User 2 retrieves their policies - should not see User 1's policies
     const user2PoliciesResponse = await request(app)

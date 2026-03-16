@@ -3,6 +3,7 @@ package com.ghatana.audio.video.vision.yolo;
 import com.ghatana.audio.video.vision.model.*;
 import org.opencv.core.*;
 import org.opencv.dnn.Dnn;
+import org.opencv.dnn.Net;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.scijava.nativelib.NativeLoader;
@@ -17,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * YOLOv8 integration for cost-optimized object detection.
@@ -47,6 +49,9 @@ public class YoloV8Adapter {
     private final Map<String, Integer> classMapping;
     private final double confidenceThreshold;
     private final double nmsThreshold;
+
+    /** OpenCV DNN network loaded from the ONNX model file. Null until {@link #initialize} is called. */
+    private Net net;
     
     // YOLOv8 model parameters
     private static final int INPUT_SIZE = 640;
@@ -221,9 +226,15 @@ public class YoloV8Adapter {
     }
     
     private void initializeYoloModel(String modelPath) {
-        // This would initialize the actual YOLOv8 model
-        // For now, we'll simulate initialization
-        LOG.info("Initializing YOLOv8 model from: {}", modelPath);
+        LOG.info("Loading YOLOv8 ONNX model from: {}", modelPath);
+        net = Dnn.readNetFromOnnx(modelPath);
+        if (net.empty()) {
+            throw new RuntimeException("OpenCV DNN failed to load ONNX model: " + modelPath);
+        }
+        // Prefer GPU backend when available; fall back to CPU transparently.
+        net.setPreferableBackend(Dnn.DNN_BACKEND_DEFAULT);
+        net.setPreferableTarget(Dnn.DNN_TARGET_CPU);
+        LOG.info("YOLOv8 ONNX model loaded — output layers: {}", getOutputLayerNames());
     }
     
     private Mat bytesToMat(byte[] imageData) {
@@ -286,16 +297,94 @@ public class YoloV8Adapter {
         return processed;
     }
     
+    /**
+     * Run YOLOv8 ONNX inference using OpenCV DNN.
+     *
+     * <p>{@code processedImage} must be a 4-D blob produced by {@link Dnn#blobFromImage}
+     * (shape: {@code [1, 3, 640, 640]}) so it can be passed directly to {@link Net#setInput}.
+     *
+     * @param processedImage preprocessed blob ready for the ONNX model
+     * @return raw detection candidates (before NMS and confidence filtering)
+     */
     private List<YoloDetection> runInference(Mat processedImage) {
-        // This would run actual YOLOv8 inference
-        // For now, we'll simulate with mock detections
-        List<YoloDetection> detections = new ArrayList<>();
-        
-        // Mock detection for demonstration
-        detections.add(new YoloDetection(0, 0.8, 100, 100, 200, 200)); // person
-        detections.add(new YoloDetection(2, 0.7, 300, 150, 400, 300)); // car
-        
+        if (net == null || net.empty()) {
+            LOG.warn("YOLOv8 net not initialised — returning empty detections");
+            return Collections.emptyList();
+        }
+
+        // Feed the preprocessed blob directly into the network.
+        net.setInput(processedImage);
+
+        // Forward pass through all output layers.
+        List<Mat> outputs = new ArrayList<>();
+        net.forward(outputs, getOutputLayerNames());
+
+        List<YoloDetection> detections = parseYoloOutput(outputs);
+        LOG.debug("YOLOv8 raw predictions before NMS: {}", detections.size());
         return detections;
+    }
+
+    /**
+     * Resolve output layer names from the loaded DNN network.
+     * Typically returns {@code ["output0"]} for YOLOv8 ONNX exports.
+     */
+    private List<String> getOutputLayerNames() {
+        MatOfInt outLayerIds = net.getUnconnectedOutLayers();
+        List<String> allNames = net.getLayerNames();
+        List<String> outputNames = new ArrayList<>();
+        for (int id : outLayerIds.toArray()) {
+            outputNames.add(allNames.get(id - 1)); // layer IDs are 1-based
+        }
+        return outputNames;
+    }
+
+    /**
+     * Parse YOLOv8 ONNX output tensors into {@link YoloDetection} candidates.
+     *
+     * <p>YOLOv8 ONNX export produces a single output of shape {@code [1, 84, 8400]} where:
+     * <ul>
+     *   <li>Rows 0–3: centre-x, centre-y, width, height (in model input pixels)</li>
+     *   <li>Rows 4–83: class probability scores for the 80 COCO classes</li>
+     *   <li>8400 columns: anchor-free prediction candidates</li>
+     * </ul>
+     */
+    private List<YoloDetection> parseYoloOutput(List<Mat> outputs) {
+        if (outputs.isEmpty()) return Collections.emptyList();
+
+        // Reshape from [1, 84, 8400] to [84, 8400] for indexed access.
+        Mat raw = outputs.get(0);
+        Mat result = raw.reshape(1, raw.size(1));
+
+        int numBoxes   = result.cols();          // 8400
+        int numClasses = result.rows() - 4;     // 80
+
+        List<YoloDetection> candidates = new ArrayList<>();
+        for (int i = 0; i < numBoxes; i++) {
+            // Find highest-scoring class.
+            double maxScore  = 0.0;
+            int    bestClass = 0;
+            for (int c = 0; c < numClasses; c++) {
+                double score = result.get(4 + c, i)[0];
+                if (score > maxScore) {
+                    maxScore  = score;
+                    bestClass = c;
+                }
+            }
+            if (maxScore < confidenceThreshold) continue;
+
+            // YOLOv8 bounding-box format: cx, cy, w, h (in 640×640 model coords).
+            double cx = result.get(0, i)[0];
+            double cy = result.get(1, i)[0];
+            double bw = result.get(2, i)[0];
+            double bh = result.get(3, i)[0];
+
+            // Convert to top-left origin.
+            double x = cx - bw / 2.0;
+            double y = cy - bh / 2.0;
+
+            candidates.add(new YoloDetection(bestClass, maxScore, x, y, bw, bh));
+        }
+        return candidates;
     }
     
     private List<DetectedObject> postProcessDetections(List<YoloDetection> rawDetections, Size originalSize) {

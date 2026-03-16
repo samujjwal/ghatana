@@ -1,0 +1,92 @@
+id: event-transformer-agent
+name: Event Transformer Agent
+version: 1.0.0
+description: >
+  Transforms events from one schema to another using configurable mapping rules.
+  Supports JSON Pointer path mapping, type coercion, field renaming, computed
+  fields, and conditional transformations. Designed as an AEP Operator that
+  integrates natively into event-processing pipelines.
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [transform, mapping, schema, event, aep, etl]
+  maturity: production
+  author: platform-team@ghatana.ai
+
+generator:
+  type: DETERMINISTIC
+
+# AEP Operator configuration — wires into the pipeline execution model
+aep:
+  operatorType: TRANSFORMATION
+  inputEventTypes:
+    - "*.raw"
+    - "*.unprocessed"
+    - "event.ingested"
+  outputEventTypes:
+    - "*.transformed"
+    - "event.processed"
+  backpressure:
+    bufferSize: 5000
+    overflowStrategy: DROP_OLDEST
+  reliability:
+    checkpointInterval: 30s
+    maxRetries: 3
+    deadLetterQueue: event-transformer-dlq
+
+capabilities:
+  - json-path-mapping
+  - type-coercion
+  - conditional-transformation
+  - schema-evolution
+  - field-enrichment
+
+# Mapping rule configuration
+configuration:
+  mappingRules:
+    description: "List of JSONPath → target-path mapping rules"
+    type: array
+    required: true
+  targetSchema:
+    description: "JSON Schema for the output event"
+    type: string
+    required: false
+  failOnUnmapped:
+    description: "Throw an error if unmapped source fields exist"
+    type: boolean
+    default: false
+  preserveUnmapped:
+    description: "Copy unmapped source fields to target as-is"
+    type: boolean
+    default: true
+
+io:
+  inputs:
+    - name: sourceEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/event/v1"
+      required: true
+  outputs:
+    - name: transformedEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/event/v1"
+    - name: transformationErrors
+      type: JSON
+      schema: "https://schema.ghatana.com/error/v1"
+
+memory:
+  type: WORKING
+  scope: mapping_cache
+  retention: short
+  maxEntries: 1000
+
+resources:
+  memory: 256MB
+  cpu: "0.5"
+  timeout: 15s
+  maxConcurrency: 50
+
+routing:
+  input: SourceEvent
+  output: TransformedEvent

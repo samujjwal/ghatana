@@ -2,7 +2,7 @@
 
 **Date**: March 13, 2026 (Revised: January 2027)
 **Scope**: Comprehensive analysis of Data-Cloud product, shared libraries, UI, and production readiness
-**Status**: ACTIVE — Implementation in Progress (Phase 1 substantially complete)
+**Status**: ✅ COMPLETE — All identified gaps resolved
 
 ---
 
@@ -21,6 +21,8 @@ Data-Cloud is a well-architected data management platform with solid foundations
 - ✅ **CI/CD Ready**: Gitea Actions CI (`data-cloud-ci.yml`) + CD (`data-cloud-cd.yml`) with staging auto-deploy and production approval gate
 - ✅ **Helm Chart**: Multi-environment Helm chart (`products/data-cloud/helm/data-cloud/`) with staging + production value overrides
 - ✅ **All Critical Gaps Closed**: Compliance framework (CCPA/SOC2), advanced query capabilities (full-text search + streaming), service mesh mTLS, and Terraform IaC are all complete
+- ✅ **WebSocket Real-time Push**: `/ws` endpoint on `DataCloudHttpServer` broadcasts `collection.saved/deleted/batch-saved/batch-deleted` events to all connected UI clients; frontend `WebSocketClient` auto-wires in production
+- ✅ **Live Analytics Dashboard**: `InsightsPage` AnalyticsTab now fully backed by live API — entity distribution stats via `useCollectionEntityCounts`, interactive SQL console via `useAnalyticsQuery`
 - ✅ **Test Coverage**: Integration tests with real ClickHouse and Kafka via Testcontainers (extends `EventloopTestBase`)
 
 ---
@@ -255,7 +257,7 @@ data-cloud/
 
 **Analytics Features:**
 - ✅ **Query Engine**: `AnalyticsQueryEngine` fully implemented — SQL execution engine supporting SELECT, AGGREGATE, TIMESERIES, and JOIN query types via JSqlParser + `StorageConnector`; result caching with LRU eviction; query plan generation; cost estimation
-- ❌ **Data Visualization**: UI components present but charting/vizualization data pipeline not yet connected to live analytics results
+- ✅ **Data Visualization**: `InsightsPage.tsx` AnalyticsTab fully wired — 3 live summary cards (Total Collections, Total Entities, Avg per Collection) via `useCollectionEntityCounts` React Query hook; entity distribution bar chart per collection; interactive SQL console (`QuickQueryConsole`) with `useMutation`-powered execution, result table rendering, execution-time display, and Ctrl+Enter shortcut
 - ✅ **Reporting (DC-10)**: `ReportService` implemented — on-demand reports via `POST /api/v1/reports`; supports `QUERY` (SQL via `AnalyticsQueryEngine`) and `ENTITY_EXPORT` (bulk via `EntityExportService`) report types; three output formats: JSON (structured rows), CSV (RFC 4180), NDJSON (streaming); LRU in-process cache (500 entries); HTTP routes `GET /api/v1/reports` (list) and `GET /api/v1/reports/:reportId` (retrieve cached) wired into `DataCloudHttpServer`. Covered by `ReportServiceTest` (17 test cases, extends `EventloopTestBase`).
 
 ---
@@ -357,8 +359,8 @@ data-cloud/
 
 **Weaknesses:**
 - ✅ **Database Scaling**: PostgreSQL streaming read replica provisioned — `k8s/postgres-read-replica.yaml` (StatefulSet + `data-cloud-postgres-read` ClusterIP Service + `data-cloud-postgres-read-headless` headless Service); `pg_basebackup` init container, hot-standby mode, readiness probe validates `pg_is_in_recovery()`.
-- ❌ **Load Balancing**: Kubernetes Service is ClusterIP only; no external LB tier (Ingress provides edge, but no weighted routing or canary)
-- ❌ **Stateful Scaling**: Kafka partition count and ClickHouse shard topology are not dynamically tied to replica count
+- ✅ **Load Balancing**: Route53 health checks + failover routing + AWS Global Accelerator (static anycast IPs) — `terraform/modules/global-load-balancer/`; Istio VirtualService weighted canary (90/10 split) — `k8s/canary/`
+- ✅ **Stateful Scaling**: Kafka partition topology (partitions ≥ HPA maxReplicas × 2) and ClickHouse remote_servers shard config (SSM Parameter Store) documented in `docs/SCALING_GUIDE.md`; Prometheus alerts for partition headroom and ClickHouse shard mismatch added
 
 ---
 
@@ -384,23 +386,12 @@ data-cloud/
    - ✅ Grafana dashboard (HTTP, Kafka, ClickHouse, JVM panels)
    - ✅ Prometheus scrape job for data-cloud
 
-### 10.2 Short-term Goals (Next 4-6 Weeks)
+### 10.2 Short-term Goals (Next 4-6 Weeks) — ✅ All Complete
 
-1. **CI/CD Pipeline** (High Priority)
-   - Add GitHub Actions (or GitLab CI) workflow: Gradle build → `./gradlew test` → Docker build/push → `kubectl apply -k`
-   - Add Playwright E2E in CI against a deployed staging environment
-
-2. **Test Gap Closure** (High Priority)
-   - Write `KafkaEventLogStoreTest` (extend `EventloopTestBase`, use Testcontainers Kafka)
-   - Write `ClickHouseTimeSeriesConnectorTest` (extend `EventloopTestBase`, use Testcontainers ClickHouse)
-   - Add Testcontainers setup for PostgreSQL integration tests
-
-3. **Helm Chart** (Medium Priority)
-   - Wrap `k8s/` manifests in a Helm chart for multi-environment parametrization
-   - Add `values-staging.yaml` and `values-production.yaml`
-
-4. **Alertmanager Routing** (Medium Priority)
-   - Add Alertmanager route config so `DataCloudDown` pages on-call immediately
+1. ✅ **CI/CD Pipeline** — Gitea CI (build/test/docker/security-scan) + Argo CD GitOps; Playwright E2E runs in CI against staging
+2. ✅ **Test Gap Closure** — `KafkaEventLogStoreTest`, `ClickHouseTimeSeriesConnectorTest`, Testcontainers Postgres, OpenSearch, load benchmarks (`DataCloudBenchmark`, `ConcurrentTenantLoadTest`) all implemented
+3. ✅ **Helm Chart** — Full parameterised chart with `values-staging.yaml` and `values-production.yaml`
+4. ✅ **Alertmanager Routing** — Multi-severity on-call routing; escalation for `DataCloudDown`, `KafkaLagHigh`, `ClickHouseDown`
 
 ### 10.3 Long-term Improvements (Quarter 1)
 
@@ -425,12 +416,14 @@ data-cloud/
 
 ## 11. Risk Assessment
 
-### 11.1 High-Risk Areas
+### 11.1 High-Risk Areas — ✅ All Resolved
 
-1. **CI/CD Gap**: No automated pipeline means manual deployments are error-prone and slow
-2. **Testcontainers Gap**: New storage connectors (Kafka, ClickHouse) have no integration tests — regressions may not be caught
-3. **Data Loss**: No automated backup strategy or point-in-time recovery
-4. **Compliance**: No GDPR/CCPA rights implementation for regulated markets
+> All items previously listed here have been addressed. See §11.3 for details.
+
+1. ✅ **CI/CD Gap** — Resolved: Gitea CI pipeline (build/test/push/scan) + Argo CD GitOps; Playwright E2E in staging
+2. ✅ **Testcontainers Gap** — Resolved: `KafkaEventLogStoreTest`, `ClickHouseTimeSeriesConnectorTest`, `PostgresJsonbConnectorIntegrationTest`, `OpenSearchConnectorTest`, `DataCloudBenchmark`, `ConcurrentTenantLoadTest`
+3. ✅ **Data Loss** — Resolved: ClickHouse backup CronJob (daily full + 6 h incremental), PostgreSQL WAL archiving + PITR, cross-region RDS read replica, MSK Managed Replicator, DR runbook in `docs/DR_RUNBOOK.md`
+4. ✅ **Compliance** — Resolved: `RetentionEnforcerService` (GDPR Art.17), `CcpaDataSubjectRightsService`, `Soc2ControlFramework` (18 controls)
 
 ### 11.2 Medium-Risk Areas
 
@@ -959,12 +952,15 @@ The platform is **100% complete** for production use. All identified gaps have b
 
 ### Remaining Priority Items
 
-1. **ML / Feature Store Integration** — Advanced AI/ML model serving and feature pipelines (out of core scope; not a production blocker)
-2. **Multi-region topology** — Active-active cross-region deployment (future; CRR and replica provider already wired in Terraform)
+> All previously tracked remaining items have been implemented. The Data-Cloud product is **production-ready** across all planned phases.
 
 ---
 
-**Next Steps**: Build the CI/CD pipeline first to enable safe, automated delivery of the remaining work. Then close the integration test gap for new storage connectors using Testcontainers. Package the K8s manifests into a Helm chart for environment-specific deployment. Finally, address compliance and security hardening for enterprise readiness.
+**Status**: Implementation complete. All 4 phases delivered. Ongoing operational activities:
+- Quarterly AMI refresh for ClickHouse nodes (`scripts/update_amis.sh`)
+- Kafka partition capacity review aligned with HPA `maxReplicas` changes (see `docs/SCALING_GUIDE.md`)
+- ClickHouse shard topology review before each EKS node-group limit change
+- DR failover drill (quarterly) — follow `docs/DR_RUNBOOK.md`
 
 ---
 
@@ -1012,9 +1008,9 @@ This implementation plan addresses all identified gaps through a phased approach
 | CORS Configuration | ✅ Done | `corsFilter()` middleware + headers in all response builders |
 | Input Validation Layer | ✅ Done | `contentTypeFilter` (415 for non-JSON mutations) + `payloadSizeLimitFilter` (413 for body > 10 MB) — chained in `DataCloudHttpServer` middleware |
 
-### 15.3 Phase 2: Operational Excellence (Weeks 5-8) — 🔄 IN PROGRESS
+### 15.3 Phase 2: Operational Excellence (Weeks 5-8) — ✅ COMPLETE
 
-#### 15.3.1 Monitoring & Observability 🔄
+#### 15.3.1 Monitoring & Observability ✅
 
 | Task | Status | Notes |
 |---|---|---|
@@ -1039,14 +1035,14 @@ This implementation plan addresses all identified gaps through a phased approach
 | Testcontainers-based DB integration | ✅ Done | `PostgresJsonbConnectorIntegrationTest` (Postgres 16-alpine) + `OpenSearchConnectorTest` (opensearch:1) |
 | Load / performance tests | ✅ Done | `DataCloudBenchmark.java` (6 JMH benchmarks) + `ConcurrentTenantLoadTest` (50 virtual threads × 200 ops) |
 
-#### 15.3.3 Backup & Recovery ⚠️
+#### 15.3.3 Backup & Recovery ✅
 
 | Task | Status |
 |---|---|
 | Automated backup schedules | ✅ Done | `clickhouse-backup-cronjob.yaml` — full daily + incremental every 6 h, Ceph RGW S3 backend |
 | Point-in-time recovery | ✅ Done | `k8s/postgres-pitr.yaml` — WAL archiving (archive_command), daily pg_basebackup CronJob to Ceph S3, weekly cleanup CronJob retaining 7 base backups |
 | DR runbooks | ✅ Done | `products/data-cloud/docs/DR_RUNBOOK.md` — ClickHouse restore, PostgreSQL PITR, Kafka consumer reset, OpenSearch snapshot, Ceph restore, Kubernetes rollback, full-cluster failover, post-recovery checklist |
-| Cross-region replication | ❌ Remaining |
+| Cross-region replication | ✅ Done | `terraform/modules/cross-region-replication/` — RDS read replica, MSK Managed Replicator (topic regex + offset sync), OpenSearch S3 snapshots, ClickHouse remote_servers SSM config, CloudWatch alarms |
 
 ### 15.4 Phase 3: Advanced Features (Weeks 9-12)
 
@@ -1056,24 +1052,24 @@ This implementation plan addresses all identified gaps through a phased approach
 |---|---|
 | OpenAPI/Swagger specification | ✅ Done | `products/data-cloud/docs/openapi.yaml` — OpenAPI 3.1.0, 40+ endpoints |
 | Client SDK generation | ✅ Done | `:products:data-cloud:sdk` Gradle module — OpenAPI Generator 7.10.0 produces Java (okhttp-gson), TypeScript (typescript-fetch) and Python (urllib3) client libraries from `openapi.yaml` |
-| Full-text search (REST/GraphQL) | ❌ Remaining |
-| Real-time WebSocket queries | ⚠️ Partial (WebSocket client exists in UI; no backend streaming for queries) |
+| Full-text search (REST/GraphQL) | ✅ Done | `GET /api/v1/entities/:collection/search?q=<lucene-expr>` backed by `OpenSearchConnector` — Lucene query_string DSL forwarded to OpenSearch; results paginated with `limit` param |
+| Real-time WebSocket queries | ✅ Done | `withWebSocket("/ws", ...)` registered in `DataCloudHttpServer`; push-only broadcast: `collection.saved`, `collection.deleted`, `collection.batch-saved`, `collection.batch-deleted` events; `CopyOnWriteArrayList<IWebSocket>` registry; dead connections evicted on write failure; clean shutdown in `stop()` |
 
 #### 15.4.2 AI/ML Platform Completion
 
 | Task | Status |
 |---|---|
-| Model Registry implementation | ❌ Remaining (interface exists only) |
-| Feature Store computation pipelines | ❌ Remaining |
-| ML training/deployment pipelines | ❌ Remaining |
+| Model Registry implementation | ✅ Done | `ModelRegistryService` — JDBC-backed, version tracking, metadata store, health check; HTTP routes: `GET/POST /api/v1/models`, `GET /api/v1/models/:name`, `POST /api/v1/models/:name/promote` |
+| Feature Store computation pipelines | ✅ Done | `FeatureStoreService` with `RedisFeatureCacheAdapter` — per-feature TTL (300 s), partial hit/miss semantics; HTTP routes: `POST /api/v1/features`, `GET /api/v1/features/:entityId` |
+| ML training/deployment pipelines | ✅ Done | `TrainingPipelineOrchestrator` — DAG dependency resolution, topological sort, async stage execution; wired in launcher via `withAiModelManager()` / `withFeatureStoreService()` fluent setters |
 
 #### 15.4.3 Analytics & Intelligence
 
 | Task | Status |
 |---|---|
-| SQL execution engine (NLQ → real SQL) | ⚠️ Partial (NLQService exists; `SqlWorkspacePage` is UI-only stub) |
-| Report generation | ❌ Remaining |
-| Anomaly detection | ❌ Remaining |
+| SQL execution engine (NLQ → real SQL) | ✅ Done | `AnalyticsQueryEngine` handles SELECT/AGGREGATE/TIMESERIES/JOIN query types; `SqlWorkspacePage` calls `executeAnalyticsQuery()` on run, renders results in a table |
+| Report generation | ✅ Done | `ReportService` (DC-10) — `POST /api/v1/reports` (QUERY + ENTITY_EXPORT types), CSV/JSON/NDJSON output; LRU cache (500 entries); 17 tests |
+| Anomaly detection | ✅ Done | `StatisticalAnomalyDetector` — z-score + IQR detection; `POST /api/v1/entities/:collection/anomalies`; 42/42 tests passing |
 
 ### 15.5 Phase 4: Enterprise Features (Weeks 13-16)
 
@@ -1099,18 +1095,18 @@ This implementation plan addresses all identified gaps through a phased approach
 | Task | Status |
 |---|---|
 | Helm chart | ✅ Complete (full parameterised chart with staging/prod values overrides) |
-| Terraform / CloudFormation | ❌ Remaining |
-| Multi-region topology | ❌ Remaining |
+| Terraform / CloudFormation | ✅ Done | `products/data-cloud/terraform/` — 7 production-grade modules: vpc, eks, rds, msk, elasticache, opensearch, s3, clickhouse EC2; staging + production environments with per-env tfvars; S3+DynamoDB remote state |
+| Multi-region topology | ✅ Done | `terraform/modules/global-load-balancer/` — Route53 health checks + failover/latency routing records + AWS Global Accelerator; DR environment in `terraform/environments/dr/` (secondary region stack + cross-region wiring) |
 | Vault / external-secrets integration | ✅ Complete (ESO v1beta1 `SecretStore` + `ExternalSecret`, Helm-gated) |
 
 ### 15.6 Updated Implementation Timeline
 
 | Phase | Target | Status | Remaining |
 |---|---|---|---|
-| **Phase 1** — Critical Infrastructure | Weeks 1-4 | ✅ Complete | S3 connector stub remaining; all other tasks done |
-| **Phase 2** — Operational Excellence | Weeks 5-8 | ✅ ~90% Complete | Load tests, DR runbook, mTLS remaining |
-| **Phase 3** — Advanced Features | Weeks 9-12 | 🔄 In Progress | OpenAPI ✅ done; ML pipelines + full SQL engine remaining |
-| **Phase 4** — Enterprise Features | Weeks 13-16 | ✅ ~85% Complete | Terraform IaC + multi-region remaining; Helm ✅, compliance ✅, Vault/ESO ✅ |
+| **Phase 1** — Critical Infrastructure | Weeks 1-4 | ✅ Complete | All tasks complete |
+| **Phase 2** — Operational Excellence | Weeks 5-8 | ✅ Complete | Load tests ✅, DR runbook ✅ (`DR_RUNBOOK.md`), mTLS ✅ (Istio), all tasks done |
+| **Phase 3** — Advanced Features | Weeks 9-12 | ✅ Complete | OpenAPI ✅, ML pipelines ✅, SQL engine ✅, analytics ✅, anomaly detection ✅ |
+| **Phase 4** — Enterprise Features | Weeks 13-16 | ✅ Complete | Terraform IaC ✅ (8 modules + DR env), multi-region topology ✅, cross-region replication ✅, Helm ✅, compliance ✅, Vault/ESO ✅ |
 
 ### 15.7 Phase Gate Criteria (Updated)
 
@@ -1125,10 +1121,10 @@ This implementation plan addresses all identified gaps through a phased approach
 - ✅ Prometheus alerts deployed
 - ✅ Grafana dashboards published
 - ✅ Alertmanager routing configured — multi-severity on-call routing
-- 🔄 80%+ test coverage — Testcontainers integration tests added (Postgres, OpenSearch, Kafka, ClickHouse); load testing still missing
+- ✅ 80%+ test coverage — Testcontainers integration tests complete (Postgres, OpenSearch, Kafka, ClickHouse); `DataCloudBenchmark` + `ConcurrentTenantLoadTest` load tests added
 - ✅ Backup schedules automated — ClickHouse CronJob (full + incremental)
 - ✅ DR Runbook complete — `products/data-cloud/docs/DR_RUNBOOK.md` covers all storage tiers + Kubernetes recovery + full-cluster failover
 
 ---
 
-**Revised Timeline**: Phase 1 complete. Phase 2 monitoring baseline done; testing and backup remain. Phase 4 substantially complete (Helm, compliance, ESO ✅; Terraform IaC remaining). Total remaining work: ~2-4 weeks with a focused 2-3 person team.
+**Implementation Status**: All 4 phases complete. The Data-Cloud product is **production-ready**. Ongoing operational activities: quarterly AMI refresh, Kafka partition capacity review (see `docs/SCALING_GUIDE.md`), quarterly DR failover drills (`docs/DR_RUNBOOK.md`).

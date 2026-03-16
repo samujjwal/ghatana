@@ -213,16 +213,23 @@ public class JdbcPersistentAuditService implements AuditService, AuditQueryServi
 
     @Override
     public Promise<Optional<AuditEvent>> findById(String tenantId, String eventId) {
+        // Fast-path: non-numeric IDs can never match a BIGINT primary key.
+        long idLong;
+        try {
+            idLong = Long.parseLong(eventId);
+        } catch (NumberFormatException e) {
+            return Promise.of(Optional.empty());
+        }
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(SELECT_BY_ID)) {
             ps.setString(1, tenantId);
-            ps.setLong(2, Long.parseLong(eventId));
+            ps.setLong(2, idLong);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return Promise.of(Optional.of(mapRow(rs)));
             }
             return Promise.of(Optional.empty());
-        } catch (SQLException | NumberFormatException e) {
+        } catch (SQLException e) {
             log.error("findById failed: {}", e.getMessage(), e);
             return Promise.ofException(new SQLException("findById failed", e));
         }

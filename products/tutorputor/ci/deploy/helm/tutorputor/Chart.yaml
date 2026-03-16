@@ -1,0 +1,12 @@
+apiVersion: v2
+name: tutorputor
+description: TutorPutor e-learning platform Helm chart
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - tutorputor
+  - edtech
+  - ghatana
+maintainers:
+  - name: Ghatana Platform Team

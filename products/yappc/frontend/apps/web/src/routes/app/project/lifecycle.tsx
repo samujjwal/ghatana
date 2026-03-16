@@ -10,7 +10,7 @@
  * @doc.pattern Route Component
  */
 
-import { useParams } from 'react-router';
+import { useParams, useNavigate } from 'react-router';
 import { LifecycleExplorer } from '../../../components/lifecycle';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 import type { LifecyclePhase } from '@/shared/types/lifecycle';
@@ -21,6 +21,7 @@ import type { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
  */
 export default function Component() {
     const { projectId } = useParams();
+    const navigate = useNavigate();
 
     if (!projectId) {
         return (
@@ -38,10 +39,10 @@ export default function Component() {
             <LifecycleExplorer
                 projectId={projectId}
                 onPhaseSelect={(phase: LifecyclePhase) => {
-                    console.log('Selected phase:', phase);
+                    void navigate(`/p/${projectId}/lifecycle/${phase.id}`);
                 }}
                 onArtifactSelect={(kind: LifecycleArtifactKind) => {
-                    console.log('Selected artifact:', kind);
+                    void navigate(`/p/${projectId}/lifecycle/artifacts/${kind}`);
                 }}
             />
         </div>

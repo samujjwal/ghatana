@@ -9,7 +9,8 @@ metadata:
     app.kubernetes.io/component: service-manager
     app.kubernetes.io/part-of: ghatana-aep
 spec:
-  replicas: 1
+  # HPA controls replica count — initial value used before HPA syncs
+  replicas: 2
   selector:
     matchLabels:
       app: aep-service-manager
@@ -24,30 +25,57 @@ spec:
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: aep-service-manager
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 60
+      # Prefer spreading pods across nodes for resilience
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: aep-service-manager
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: service-manager
           image: ghcr.io/ghatana/aep-service-manager:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - name: http-health
+            - name: http
               containerPort: 8090
               protocol: TCP
+            - name: grpc
+              containerPort: 9091
+              protocol: TCP
+          # Environment sourced from ConfigMap; secrets injected separately
+          envFrom:
+            - configMapRef:
+                name: aep-config
           env:
-            - name: AEP_HEALTH_PORT
-              value: "8090"
+            # Override CPU-derived worker thread count from resource limits
             - name: AEP_WORKER_THREADS
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
                   divisor: "1"
-            - name: AEP_DEV_MODE
-              value: "false"
+            # Sensitive values from Secret
             - name: AEP_CONNECTOR_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: aep-connector-secrets
                   key: connector-token
+                  optional: true
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: aep-db-credentials
+                  key: username
+                  optional: true
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aep-db-credentials
+                  key: password
                   optional: true
           resources:
             requests:
@@ -56,20 +84,30 @@ spec:
             limits:
               cpu: "2"
               memory: "2Gi"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            failureThreshold: 12   # 60 s window for JVM warmup
           livenessProbe:
             httpGet:
               path: /health
-              port: http-health
-            initialDelaySeconds: 30
+              port: http
+            initialDelaySeconds: 0
             periodSeconds: 15
             failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /ready
-              port: http-health
-            initialDelaySeconds: 10
+              port: http
+            initialDelaySeconds: 0
             periodSeconds: 10
             failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
@@ -78,5 +116,8 @@ spec:
             capabilities:
               drop:
                 - ALL
+      volumes:
+        - name: tmp
+          emptyDir: {}
       securityContext:
         fsGroup: 1000

@@ -90,6 +90,26 @@ public class IcebergStorageConfig {
     private final String hiveMetastoreUri;
 
     /**
+     * REST catalog base URI (for REST catalog type).
+     * Example: {@code http://catalog-service:8181}
+     */
+    private final String restCatalogUri;
+
+    /**
+     * Nessie server URI (for NESSIE catalog type).
+     * Nessie exposes an Iceberg REST catalog endpoint at {@code {uri}/iceberg}.
+     * Example: {@code http://nessie:19120}
+     */
+    private final String nessieCatalogUri;
+
+    /**
+     * Nessie branch to use for all table operations (for NESSIE catalog type).
+     * Defaults to {@code main}.
+     */
+    @Builder.Default
+    private final String nessieBranch = "main";
+
+    /**
      * AWS Region (for GLUE catalog and S3).
      */
     @Builder.Default
@@ -381,6 +401,42 @@ public class IcebergStorageConfig {
                 .build();
     }
 
+    /**
+     * Creates a configuration for the Iceberg REST Catalog specification.
+     * Cloud-agnostic; works with any server implementing the Iceberg REST API.
+     *
+     * @param restCatalogUri REST catalog base URI (e.g. {@code http://catalog:8181})
+     * @param warehousePath  Warehouse path understood by the REST catalog server
+     * @return REST catalog configuration
+     */
+    public static IcebergStorageConfig forRest(String restCatalogUri, String warehousePath) {
+        return IcebergStorageConfig.builder()
+                .catalogType(CatalogType.REST)
+                .restCatalogUri(Objects.requireNonNull(restCatalogUri))
+                .warehousePath(Objects.requireNonNull(warehousePath))
+                .build();
+    }
+
+    /**
+     * Creates a configuration for Project Nessie.
+     * Nessie v0.50+ exposes a standard Iceberg REST catalog endpoint at
+     * {@code {nessieCatalogUri}/iceberg}.
+     *
+     * @param nessieCatalogUri Nessie server URI (e.g. {@code http://nessie:19120})
+     * @param warehousePath    S3/HDFS warehouse path registered in Nessie
+     * @param branch           Branch to target (e.g. {@code main})
+     * @return Nessie catalog configuration
+     */
+    public static IcebergStorageConfig forNessie(
+            String nessieCatalogUri, String warehousePath, String branch) {
+        return IcebergStorageConfig.builder()
+                .catalogType(CatalogType.NESSIE)
+                .nessieCatalogUri(Objects.requireNonNull(nessieCatalogUri))
+                .nessieBranch(branch != null ? branch : "main")
+                .warehousePath(Objects.requireNonNull(warehousePath))
+                .build();
+    }
+
     // ==================== Validation ====================
 
     /**
@@ -399,6 +455,14 @@ public class IcebergStorageConfig {
 
         if (catalogType == CatalogType.GLUE && (awsRegion == null || awsRegion.isBlank())) {
             throw new IllegalStateException("awsRegion is required for GLUE catalog");
+        }
+
+        if (catalogType == CatalogType.REST && (restCatalogUri == null || restCatalogUri.isBlank())) {
+            throw new IllegalStateException("restCatalogUri is required for REST catalog");
+        }
+
+        if (catalogType == CatalogType.NESSIE && (nessieCatalogUri == null || nessieCatalogUri.isBlank())) {
+            throw new IllegalStateException("nessieCatalogUri is required for NESSIE catalog");
         }
 
         if (targetFileSizeBytes <= 0) {

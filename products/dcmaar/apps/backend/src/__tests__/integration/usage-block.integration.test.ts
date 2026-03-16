@@ -13,9 +13,9 @@ import { FastifyInstance } from 'fastify';
 import { request } from '../helpers/request.helper';
 import { createTestApp } from '../helpers/app.helper';
 import { randomEmail, randomString } from '../setup';
-import * as authService from '../../services/auth.service';
 import * as deviceService from '../../services/device.service';
 import { query } from '../../db';
+import { createTestUser } from '../fixtures/user.fixtures';
 
 let app: FastifyInstance;
 
@@ -36,10 +36,7 @@ describe('Usage & Block Reports Integration', () => {
   });
 
   beforeEach(async () => {
-    const user = await authService.register({
-      email: randomEmail(),
-      password: 'TestPassword123!',
-    });
+    const user = await createTestUser({ email: randomEmail() });
     testUserId = user.user.id;
     testAccessToken = user.accessToken;
 

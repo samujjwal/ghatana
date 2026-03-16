@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * YAML-backed implementation of {@link PolicyEngine} for YAPPC lifecycle governance.
@@ -57,8 +58,12 @@ public class YappcPolicyEngine implements PolicyEngine {
     /** Blocking executor for YAML I/O and condition evaluation. */
     private final Executor executor;
 
-    /** Immutable map: policyId → Policy, loaded at startup. */
-    private final Map<String, PolicyConfig.Policy> policies;
+    /**
+     * Live policy snapshot. Replaced atomically on hot reload so in-flight evaluations
+     * complete against the previous snapshot without any lock contention.
+     */
+    private final AtomicReference<Map<String, PolicyConfig.Policy>> policies
+            = new AtomicReference<>(Collections.emptyMap());
 
     /**
      * Constructs a {@code YappcPolicyEngine} and eagerly loads all policy definitions.
@@ -66,7 +71,25 @@ public class YappcPolicyEngine implements PolicyEngine {
      */
     public YappcPolicyEngine() {
         this.executor = Executors.newVirtualThreadPerTaskExecutor();
-        this.policies = loadPolicies();
+        this.policies.set(loadPolicies());
+    }
+
+    /**
+     * Hot-reloads all policy definitions from disk, replacing the current snapshot
+     * atomically. In-flight evaluations that already hold a reference to the old
+     * snapshot are not affected.
+     *
+     * <p>Safe to call from any thread (e.g., the ConfigWatchService watch thread).
+     */
+    public void reload() {
+        log.info("YappcPolicyEngine: hot-reloading policy definitions");
+        try {
+            Map<String, PolicyConfig.Policy> updated = loadPolicies();
+            policies.set(updated);
+            log.info("YappcPolicyEngine: hot-reload complete — {} policies active", updated.size());
+        } catch (Exception e) {
+            log.error("YappcPolicyEngine: hot-reload failed; keeping previous snapshot", e);
+        }
     }
 
     // =========================================================================
@@ -80,7 +103,7 @@ public class YappcPolicyEngine implements PolicyEngine {
 
     @Override
     public Promise<Boolean> policyExists(String policyName) {
-        return Promise.of(policies.containsKey(policyName));
+        return Promise.of(policies.get().containsKey(policyName));
     }
 
     // =========================================================================
@@ -88,7 +111,7 @@ public class YappcPolicyEngine implements PolicyEngine {
     // =========================================================================
 
     private boolean evaluateSync(String policyName, Map<String, Object> context) {
-        PolicyConfig.Policy policy = policies.get(policyName);
+        PolicyConfig.Policy policy = policies.get().get(policyName);
         if (policy == null) {
             log.debug("No policy found for '{}'; applying default-permit", policyName);
             return true;

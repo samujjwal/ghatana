@@ -1,0 +1,15 @@
+Audio-Video Platform successfully deployed!
+
+Services enabled:
+{{- if .Values.stt.enabled }}  ✅ STT Service  — grpc://{{ .Release.Name }}-stt:{{ .Values.stt.ports.grpc }}{{- end }}
+{{- if .Values.tts.enabled }}  ✅ TTS Service  — grpc://{{ .Release.Name }}-tts:{{ .Values.tts.ports.grpc }}{{- end }}
+{{- if .Values.vision.enabled }}  ✅ Vision Service — grpc://{{ .Release.Name }}-vision:{{ .Values.vision.ports.grpc }}{{- end }}
+{{- if .Values.multimodal.enabled }}  ✅ Multimodal  — grpc://{{ .Release.Name }}-multimodal:{{ .Values.multimodal.ports.grpc }}{{- end }}
+{{- if .Values.aiVoice.enabled }}  ✅ AI Voice    — grpc://{{ .Release.Name }}-ai-voice:{{ .Values.aiVoice.ports.grpc }}{{- end }}
+
+Platform Shared Services:
+{{- if .Values.platformServices.aiRegistryUrl }}  ✅ AI Registry: {{ .Values.platformServices.aiRegistryUrl }}{{- else }}  ⚠️  AI Registry: DISABLED (set platformServices.aiRegistryUrl){{- end }}
+{{- if .Values.platformServices.featureStoreUrl }}  ✅ Feature Store: {{ .Values.platformServices.featureStoreUrl }}{{- else }}  ⚠️  Feature Store: DISABLED (set platformServices.featureStoreUrl){{- end }}
+
+Check pod status:
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/part-of=ghatana-audio-video

@@ -480,7 +480,7 @@ export async function testIntegration(integrationId: string): Promise<Integratio
     // Simulate connection test based on provider type
     // In production, this would make actual API calls
     const success = integration.status === 'connected';
-    const latencyMs = Date.now() - startTime + Math.floor(Math.random() * 100);
+    const latencyMs = Date.now() - startTime;
 
     // Update health details
     await prisma.integration.update({

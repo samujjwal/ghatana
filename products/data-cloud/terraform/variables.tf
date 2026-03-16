@@ -378,3 +378,90 @@ variable "vault_kv_path" {
   type        = string
   default     = "data-cloud"
 }
+
+# ---------------------------------------------------------------------------
+# Cross-Region Replication (secondary region resources — supplied by CI/CD
+# after the DR environment is applied; safe defaults keep primary-only apply
+# from failing when DR has not yet been provisioned)
+# ---------------------------------------------------------------------------
+
+variable "cross_region_secondary_msk_arn" {
+  description = "ARN of the MSK cluster in the replica region (DR environment)."
+  type        = string
+  default     = ""
+}
+
+variable "cross_region_msk_topics" {
+  description = "List of Kafka topic regex patterns to replicate to DR."
+  type        = list(string)
+  default     = ["datacloud\\..*"]
+}
+
+variable "cross_region_msk_consumer_groups" {
+  description = "List of consumer group ID regex patterns to sync offsets for."
+  type        = list(string)
+  default     = ["data-cloud-.*"]
+}
+
+variable "cross_region_secondary_msk_subnet_ids" {
+  description = "List of subnet IDs in the replica region for MSK replicator networking."
+  type        = list(string)
+  default     = []
+}
+
+variable "cross_region_secondary_msk_security_group_ids" {
+  description = "Security group IDs in the replica region used by the MSK replicator."
+  type        = list(string)
+  default     = []
+}
+
+variable "cross_region_clickhouse_secondary_hosts" {
+  description = "Private IP addresses of ClickHouse nodes in the DR region."
+  type        = list(string)
+  default     = []
+}
+
+variable "cross_region_secondary_alb_dns_name" {
+  description = "DNS name of the DR region Application Load Balancer."
+  type        = string
+  default     = ""
+}
+
+variable "cross_region_secondary_alb_zone_id" {
+  description = "Hosted zone ID of the DR region Application Load Balancer."
+  type        = string
+  default     = ""
+}
+
+# ---------------------------------------------------------------------------
+# Global Load Balancer / Route53
+# ---------------------------------------------------------------------------
+
+variable "route53_zone_id" {
+  description = "Route53 hosted zone ID. When empty the global-lb module is skipped."
+  type        = string
+  default     = ""
+}
+
+variable "api_fqdn" {
+  description = "Fully-qualified API domain name (e.g. api.data-cloud.ghatana.io)."
+  type        = string
+  default     = "api.data-cloud.ghatana.io"
+}
+
+variable "load_balancer_topology" {
+  description = "Multi-region routing topology: 'active-passive' (failover) or 'active-active' (latency-based)."
+  type        = string
+  default     = "active-passive"
+
+  validation {
+    condition     = contains(["active-passive", "active-active"], var.load_balancer_topology)
+    error_message = "load_balancer_topology must be 'active-passive' or 'active-active'."
+  }
+}
+
+variable "enable_global_accelerator" {
+  description = "Deploy AWS Global Accelerator for static anycast IP routing."
+  type        = bool
+  default     = false
+}

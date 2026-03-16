@@ -1,0 +1,301 @@
+openapi: 3.1.0
+info:
+  title: Ghatana User Profile Service API
+  description: |
+    Centralised user profile and preferences management service.
+
+    All endpoints are multi-tenant: every request must include the `X-Tenant-Id`
+    header. Users may only read or modify their own profile; service-to-service
+    calls may use the `X-Internal-Key` header to bypass per-user scoping.
+  version: 1.0.0
+  contact:
+    name: Ghatana Platform Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8085
+    description: Local development
+  - url: https://profiles.ghatana.io
+    description: Production
+
+paths:
+
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Liveness probe
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /metrics:
+    get:
+      operationId: metrics
+      summary: Prometheus-compatible metrics
+      tags: [Observability]
+      responses:
+        '200':
+          description: Metrics in Prometheus text format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /profiles/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+      - $ref: '#/components/parameters/TenantId'
+
+    get:
+      operationId: getProfile
+      summary: Get a user's profile
+      description: |
+        Retrieves the profile for the given user within the specified tenant.
+        Accepts a platform JWT (`Authorization: Bearer`) or an internal service key
+        (`X-Internal-Key`).
+      tags: [Profiles]
+      security:
+        - bearerAuth: []
+        - internalKey: []
+      responses:
+        '200':
+          description: Profile found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      operationId: upsertProfile
+      summary: Create or update a user's profile
+      description: |
+        Creates a new profile or fully replaces an existing one.
+        Users may only update their own profile.
+        Service accounts with `X-Internal-Key` may update any profile in the tenant.
+      tags: [Profiles]
+      security:
+        - bearerAuth: []
+        - internalKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertProfileRequest'
+      responses:
+        '200':
+          description: Profile created or updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    delete:
+      operationId: deleteProfile
+      summary: Delete a user's profile
+      description: |
+        Permanently deletes the profile. No-op if the profile does not exist.
+        Users may only delete their own profile.
+      tags: [Profiles]
+      security:
+        - bearerAuth: []
+        - internalKey: []
+      responses:
+        '204':
+          description: Profile deleted (or did not exist)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Platform JWT issued by auth-service or auth-gateway.
+    internalKey:
+      type: apiKey
+      in: header
+      name: X-Internal-Key
+      description: Service-to-service API key for trusted callers.
+
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique user identifier (JWT `sub` claim).
+      example: user-abc-123
+
+    TenantId:
+      name: X-Tenant-Id
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Tenant scope for the request.
+      example: tenant-xyz
+
+  responses:
+    BadRequest:
+      description: Bad request — missing or invalid fields.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Profile not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN]
+        service:
+          type: string
+          example: user-profile-service
+      required: [status]
+
+    UserProfile:
+      type: object
+      description: A user's profile and preferences.
+      properties:
+        userId:
+          type: string
+          description: Unique user identifier.
+          example: user-abc-123
+        tenantId:
+          type: string
+          description: Tenant this profile belongs to.
+          example: tenant-xyz
+        email:
+          type: string
+          format: email
+          description: Primary email (read-only).
+          example: alice@example.com
+        displayName:
+          type: string
+          description: User-chosen display name.
+          example: Alice Wonderland
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to the user's avatar image.
+        preferredLanguage:
+          type: string
+          description: BCP-47 language tag.
+          example: en-US
+        timezone:
+          type: string
+          description: IANA timezone ID.
+          example: America/New_York
+        theme:
+          type: string
+          enum: [light, dark, system]
+          description: UI theme preference.
+          example: dark
+        notificationsEnabled:
+          type: boolean
+          description: Whether push/email notifications are enabled.
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Profile creation timestamp (ISO-8601).
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last modification timestamp (ISO-8601).
+      required:
+        - userId
+        - tenantId
+        - email
+        - displayName
+        - preferredLanguage
+        - timezone
+        - theme
+        - notificationsEnabled
+        - createdAt
+        - updatedAt
+
+    UpsertProfileRequest:
+      type: object
+      description: Fields to create or replace a user profile.
+      properties:
+        email:
+          type: string
+          format: email
+          description: Primary email address (required).
+        displayName:
+          type: string
+          description: Display name (defaults to email prefix if omitted).
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+        preferredLanguage:
+          type: string
+          description: BCP-47 language tag (default `en-US`).
+        timezone:
+          type: string
+          description: IANA timezone ID (default `UTC`).
+        theme:
+          type: string
+          enum: [light, dark, system]
+          description: UI theme (default `system`).
+        notificationsEnabled:
+          type: boolean
+          description: Notifications preference (default `true`).
+      required:
+        - email
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.
+      required: [error]

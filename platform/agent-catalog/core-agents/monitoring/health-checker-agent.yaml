@@ -1,0 +1,122 @@
+id: health-checker-agent
+name: Health Checker Agent
+version: 1.0.0
+description: >
+  Continuously probes service and infrastructure endpoints to assess health
+  status. Supports HTTP/HTTPS health probes, TCP port probes, gRPC health
+  protocol probes, database connection probes, and custom scripted probes.
+  Emits structured health events with severity classification and supports
+  configurable alerting thresholds. Designed for integration with Micrometer
+  and OpenTelemetry exporters.
+
+metadata:
+  level: 3
+  domain: monitoring
+  tags: [health, probe, http, grpc, tcp, liveness, readiness, observability]
+  maturity: production
+  author: platform-team@ghatana.ai
+
+generator:
+  type: DETERMINISTIC
+
+# AEP Operator configuration
+aep:
+  operatorType: SOURCE
+  inputEventTypes: []   # Source operator — no input events
+  outputEventTypes:
+    - "health.status"
+    - "health.alert"
+    - "health.probe.result"
+  backpressure:
+    bufferSize: 1000
+    overflowStrategy: DROP_OLDEST
+  reliability:
+    checkpointInterval: 60s
+    maxRetries: 0
+
+capabilities:
+  - http-health-probe
+  - tcp-health-probe
+  - grpc-health-probe
+  - database-probe
+  - threshold-alerting
+  - health-aggregation
+
+# Health probe configuration
+configuration:
+  probes:
+    description: "List of health probes to run"
+    type: array
+    required: true
+    items:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [HTTP, HTTPS, TCP, GRPC, JDBC, CUSTOM]
+        target:
+          type: string
+          description: "URL, host:port, or JDBC URL"
+        intervalSeconds:
+          type: integer
+          default: 30
+        timeoutSeconds:
+          type: integer
+          default: 5
+        healthyThreshold:
+          type: integer
+          default: 1
+          description: "Consecutive successes before marking healthy"
+        unhealthyThreshold:
+          type: integer
+          default: 3
+          description: "Consecutive failures before marking unhealthy"
+        expectedStatus:
+          type: integer
+          default: 200
+          description: "Expected HTTP status code"
+  alerting:
+    description: "Alert configuration for degraded/unhealthy states"
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      degradedThresholdPct:
+        type: number
+        default: 80
+        description: "% probes healthy before entering degraded state"
+      criticalThresholdPct:
+        type: number
+        default: 50
+        description: "% probes healthy before entering critical state"
+
+io:
+  inputs: []
+  outputs:
+    - name: healthStatus
+      type: JSON
+      schema: "https://schema.ghatana.com/health/status/v1"
+    - name: healthAlert
+      type: JSON
+      schema: "https://schema.ghatana.com/health/alert/v1"
+
+memory:
+  type: WORKING
+  scope: probe_history
+  retention: short
+  maxEntries: 10000
+
+resources:
+  memory: 256MB
+  cpu: "0.25"
+  timeout: 30s
+  maxConcurrency: 50
+
+routing:
+  input: ProbeScheduleEvent
+  output: HealthStatusEvent

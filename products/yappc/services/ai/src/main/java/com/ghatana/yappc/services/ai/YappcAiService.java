@@ -5,9 +5,11 @@ import com.ghatana.yappc.ai.router.AIModelRouter;
 import com.ghatana.yappc.ai.service.YAPPCAIService;
 import com.ghatana.yappc.ai.canvas.CanvasService;
 import com.ghatana.yappc.ai.canvas.CanvasGenerationService;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpServer;
 import io.activej.inject.Injector;
 import io.activej.inject.module.ModuleBuilder;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,12 +69,20 @@ public class YappcAiService extends UnifiedApplicationLauncher {
 
         YAPPCAIService aiService = injector.getInstance(YAPPCAIService.class);
         CanvasGenerationService canvasGenService = injector.getInstance(CanvasGenerationService.class);
+        PrometheusMeterRegistry prometheusRegistry = injector.getInstance(PrometheusMeterRegistry.class);
 
         io.activej.eventloop.Eventloop eventloop = injector.getInstance(io.activej.eventloop.Eventloop.class);
 
         var router = io.activej.http.RoutingServlet.builder(eventloop)
                 .with(GET, "/health", request ->
                         io.activej.http.HttpResponse.ok200().withPlainText("OK").toPromise())
+                .with(GET, "/metrics", request -> {
+                    String metricsOutput = prometheusRegistry.scrape();
+                    return io.activej.http.HttpResponse.ok200()
+                            .withBody(metricsOutput.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                            .withHeader(HttpHeaders.CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")
+                            .toPromise();
+                })
                 .with(GET, "/api/v1/ai/info", request ->
                         io.activej.http.HttpResponse.ok200()
                                 .withPlainText("{\"service\":\"yappc-ai\",\"version\":\"2.0.0\"}")

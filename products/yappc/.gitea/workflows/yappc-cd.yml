@@ -1,0 +1,317 @@
+# YAPPC (Your Autonomous Programming Pair Companion) — Continuous Deployment
+#
+# Deploys YAPPC to Kubernetes after a successful CI run on main/release branches.
+#
+# Environments:
+#   staging     — auto-deployed on every push to main after CI success
+#   production  — requires manual approval gate before deploy
+#
+# Prerequisites (configured in Gitea → Settings → Secrets):
+#   KUBECONFIG_STAGING    — base64-encoded kubeconfig for the staging cluster
+#   KUBECONFIG_PRODUCTION — base64-encoded kubeconfig for the production cluster
+#   GITEA_TOKEN           — registry pull secret token
+#   SLACK_WEBHOOK_URL     — optional Slack notification endpoint
+
+name: yappc-cd
+
+on:
+  workflow_run:
+    workflows: ["yappc-ci"]
+    types:
+      - completed
+    branches:
+      - main
+      - "release/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: "Image tag to deploy (default: latest SHA)"
+        required: false
+        default: ""
+
+env:
+  REGISTRY: ${{ gitea.server_url | replace('https://', '') | replace('http://', '') }}
+  IMAGE_NAME: ${{ gitea.repository }}/yappc
+  HELM_CHART_PATH: products/yappc/infrastructure/helm/yappc/yappc
+  K8S_NAMESPACE: yappc
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Guard: only proceed when CI passed
+  # ---------------------------------------------------------------------------
+  gate:
+    name: CI Gate Check
+    runs-on: ubuntu-latest
+    if: >
+      gitea.event_name == 'workflow_dispatch' ||
+      gitea.event.workflow_run.conclusion == 'success'
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+      image_tag: ${{ steps.resolve_tag.outputs.tag }}
+
+    steps:
+      - name: Gate check
+        id: check
+        run: echo "proceed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve image tag
+        id: resolve_tag
+        run: |
+          if [[ -n "${{ inputs.image_tag }}" ]]; then
+            echo "tag=${{ inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            SHA=$(echo "${{ gitea.sha }}" | cut -c1-7)
+            echo "tag=sha-${SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Deploy to Staging (automatic on main branch)
+  # ---------------------------------------------------------------------------
+  deploy-staging:
+    name: Deploy → Staging
+    runs-on: ubuntu-latest
+    needs: gate
+    if: |
+      needs.gate.outputs.proceed == 'true' &&
+      (gitea.event_name == 'workflow_run' ||
+       (gitea.event_name == 'workflow_dispatch' && inputs.environment == 'staging'))
+    environment:
+      name: staging
+      url: https://api.yappc.staging.ghatana.internal
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl (staging)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Verify cluster connection
+        run: kubectl cluster-info --context=staging
+
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace "${{ env.K8S_NAMESPACE }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.15.0"
+
+      - name: Log in to Gitea Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.GITEA_TOKEN }}
+
+      - name: Create/update image pull secret
+        run: |
+          kubectl create secret docker-registry yappc-registry \
+            --namespace="${{ env.K8S_NAMESPACE }}" \
+            --docker-server="${{ env.REGISTRY }}" \
+            --docker-username="${{ gitea.actor }}" \
+            --docker-password="${{ secrets.GITEA_TOKEN }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Helm upgrade (staging)
+        run: |
+          helm upgrade --install yappc "${{ env.HELM_CHART_PATH }}" \
+            --namespace "${{ env.K8S_NAMESPACE }}" \
+            --create-namespace \
+            --atomic \
+            --timeout 5m \
+            --wait \
+            --set image.repository="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" \
+            --set image.tag="${{ needs.gate.outputs.image_tag }}" \
+            --set image.pullPolicy=Always \
+            --set replicaCount=2 \
+            --set ingress.enabled=true \
+            --set ingress.hosts[0].host=api.yappc.staging.ghatana.internal \
+            --set ingress.hosts[0].paths[0].path=/ \
+            --set resources.requests.memory=512Mi \
+            --set resources.requests.cpu=250m \
+            --set resources.limits.memory=1Gi \
+            --set resources.limits.cpu=1000m \
+            --set env.YAPPC_ENV=staging \
+            --set env.LOG_LEVEL=DEBUG
+
+      - name: Verify rollout
+        run: |
+          kubectl rollout status deployment/yappc \
+            --namespace="${{ env.K8S_NAMESPACE }}" \
+            --timeout=5m
+
+      - name: Run smoke tests against staging
+        run: |
+          STAGING_URL="https://api.yappc.staging.ghatana.internal"
+          echo "Running smoke tests against ${STAGING_URL}"
+          curl --fail --retry 5 --retry-delay 5 \
+            "${STAGING_URL}/actuator/health" | jq '.status'
+
+      - name: Notify Slack (staging success)
+        if: success() && env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "✅ *YAPPC* deployed to *staging* (`${{ needs.gate.outputs.image_tag }}`)"
+            }
+
+      - name: Notify Slack (staging failure)
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "❌ *YAPPC* staging deployment FAILED — image `${{ needs.gate.outputs.image_tag }}`"
+            }
+
+  # ---------------------------------------------------------------------------
+  # Deploy to Production (manual approval required)
+  # ---------------------------------------------------------------------------
+  deploy-production:
+    name: Deploy → Production
+    runs-on: ubuntu-latest
+    needs: [gate, deploy-staging]
+    if: |
+      needs.gate.outputs.proceed == 'true' &&
+      gitea.event_name == 'workflow_dispatch' &&
+      inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://api.yappc.ghatana.ai
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl (production)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_PRODUCTION }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Verify cluster connection
+        run: kubectl cluster-info --context=production
+
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace "${{ env.K8S_NAMESPACE }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.15.0"
+
+      - name: Log in to Gitea Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.GITEA_TOKEN }}
+
+      - name: Create/update image pull secret
+        run: |
+          kubectl create secret docker-registry yappc-registry \
+            --namespace="${{ env.K8S_NAMESPACE }}" \
+            --docker-server="${{ env.REGISTRY }}" \
+            --docker-username="${{ gitea.actor }}" \
+            --docker-password="${{ secrets.GITEA_TOKEN }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Snapshot current Helm release (rollback safety)
+        run: |
+          helm get values yappc \
+            --namespace "${{ env.K8S_NAMESPACE }}" \
+            --output yaml > /tmp/yappc-values-before.yaml || true
+          helm history yappc \
+            --namespace "${{ env.K8S_NAMESPACE }}" \
+            --max 5 || true
+
+      - name: Helm upgrade (production)
+        run: |
+          helm upgrade --install yappc "${{ env.HELM_CHART_PATH }}" \
+            --namespace "${{ env.K8S_NAMESPACE }}" \
+            --create-namespace \
+            --atomic \
+            --timeout 10m \
+            --wait \
+            --set image.repository="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" \
+            --set image.tag="${{ needs.gate.outputs.image_tag }}" \
+            --set image.pullPolicy=IfNotPresent \
+            --set replicaCount=3 \
+            --set ingress.enabled=true \
+            --set ingress.hosts[0].host=api.yappc.ghatana.ai \
+            --set ingress.hosts[0].paths[0].path=/ \
+            --set resources.requests.memory=1Gi \
+            --set resources.requests.cpu=500m \
+            --set resources.limits.memory=2Gi \
+            --set resources.limits.cpu=2000m \
+            --set env.YAPPC_ENV=production \
+            --set env.LOG_LEVEL=INFO
+
+      - name: Verify rollout (production)
+        run: |
+          kubectl rollout status deployment/yappc \
+            --namespace="${{ env.K8S_NAMESPACE }}" \
+            --timeout=10m
+
+      - name: Run production smoke tests
+        run: |
+          PROD_URL="https://api.yappc.ghatana.ai"
+          echo "Running smoke tests against ${PROD_URL}"
+          curl --fail --retry 3 --retry-delay 10 \
+            "${PROD_URL}/actuator/health" | jq '.status'
+
+      - name: Create Gitea deployment release
+        run: |
+          curl -s -X POST \
+            "${{ gitea.server_url }}/api/v1/repos/${{ gitea.repository }}/releases" \
+            -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"tag_name\": \"yappc-${{ needs.gate.outputs.image_tag }}\",
+              \"name\": \"YAPPC Production Release — ${{ needs.gate.outputs.image_tag }}\",
+              \"body\": \"Deployed by ${{ gitea.actor }} at $(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+              \"prerelease\": false
+            }" || echo "Release creation skipped (already exists)"
+
+      - name: Notify Slack (production success)
+        if: success() && env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "🚀 *YAPPC* deployed to *production* (`${{ needs.gate.outputs.image_tag }}`) by @${{ gitea.actor }}"
+            }
+
+      - name: Notify Slack (production failure / auto-rollback)
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "🔴 *YAPPC* production deploy FAILED — Helm `--atomic` triggered auto-rollback. Image: `${{ needs.gate.outputs.image_tag }}`"
+            }

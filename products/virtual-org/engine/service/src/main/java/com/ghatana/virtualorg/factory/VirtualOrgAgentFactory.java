@@ -1,6 +1,11 @@
 package com.ghatana.virtualorg.factory;
 
 import com.ghatana.virtualorg.agent.VirtualOrgAgent;
+import com.ghatana.virtualorg.agent.roles.ArchitectLeadAgent;
+import com.ghatana.virtualorg.agent.roles.DevOpsEngineerAgent;
+import com.ghatana.virtualorg.agent.roles.EngineerAgent;
+import com.ghatana.virtualorg.agent.roles.ProductManagerAgent;
+import com.ghatana.virtualorg.agent.roles.QaEngineerAgent;
 import com.ghatana.virtualorg.agent.roles.SeniorEngineerAgent;
 import com.ghatana.virtualorg.llm.LLMClient;
 import com.ghatana.virtualorg.memory.AgentMemory;
@@ -141,17 +146,75 @@ public class VirtualOrgAgentFactory {
                     memoryConfig
             );
 
-            // Roles pending implementation — follow SeniorEngineerAgent pattern
-            case AGENT_ROLE_ARCHITECT -> throw new UnsupportedOperationException(
-                    "Architect agent not yet implemented — create ArchitectAgent extending AbstractAgent with architecture-review capabilities");
-            case AGENT_ROLE_ENGINEER -> throw new UnsupportedOperationException(
-                    "Engineer agent not yet implemented — create EngineerAgent extending AbstractAgent with code-generation capabilities");
-            case AGENT_ROLE_QA_ENGINEER -> throw new UnsupportedOperationException(
-                    "QA agent not yet implemented — create QaEngineerAgent extending AbstractAgent with test-generation capabilities");
-            case AGENT_ROLE_DEVOPS_ENGINEER -> throw new UnsupportedOperationException(
-                    "DevOps agent not yet implemented — create DevOpsAgent extending AbstractAgent with deployment capabilities");
-            case AGENT_ROLE_PRODUCT_MANAGER -> throw new UnsupportedOperationException(
-                    "PM agent not yet implemented — create ProductManagerAgent extending AbstractAgent with requirement capabilities");
+            case AGENT_ROLE_ARCHITECT -> new ArchitectLeadAgent(
+                    agentId,
+                    authority,
+                    eventloop,
+                    llmClient,
+                    memory,
+                    toolRegistry,
+                    toolExecutor,
+                    meterRegistry,
+                    tracer,
+                    llmConfig,
+                    memoryConfig
+            );
+
+            case AGENT_ROLE_ENGINEER -> new EngineerAgent(
+                    agentId,
+                    authority,
+                    eventloop,
+                    llmClient,
+                    memory,
+                    toolRegistry,
+                    toolExecutor,
+                    meterRegistry,
+                    tracer,
+                    llmConfig,
+                    memoryConfig
+            );
+
+            case AGENT_ROLE_QA_ENGINEER -> new QaEngineerAgent(
+                    agentId,
+                    authority,
+                    eventloop,
+                    llmClient,
+                    memory,
+                    toolRegistry,
+                    toolExecutor,
+                    meterRegistry,
+                    tracer,
+                    llmConfig,
+                    memoryConfig
+            );
+
+            case AGENT_ROLE_DEVOPS_ENGINEER -> new DevOpsEngineerAgent(
+                    agentId,
+                    authority,
+                    eventloop,
+                    llmClient,
+                    memory,
+                    toolRegistry,
+                    toolExecutor,
+                    meterRegistry,
+                    tracer,
+                    llmConfig,
+                    memoryConfig
+            );
+
+            case AGENT_ROLE_PRODUCT_MANAGER -> new ProductManagerAgent(
+                    agentId,
+                    authority,
+                    eventloop,
+                    llmClient,
+                    memory,
+                    toolRegistry,
+                    toolExecutor,
+                    meterRegistry,
+                    tracer,
+                    llmConfig,
+                    memoryConfig
+            );
 
             default -> throw new IllegalArgumentException("Unsupported agent role: " + role);
         };

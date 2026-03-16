@@ -1,6 +1,7 @@
 plugins {
     id("java-library")
     id("com.google.protobuf") version "0.9.4"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "com.ghatana.tutorputor"
@@ -92,4 +93,24 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// ---------------------------------------------------------------------------
+// Shadow (fat) JAR — runnable image for the content-studio-agents gRPC server
+// ---------------------------------------------------------------------------
+tasks.shadowJar {
+    archiveBaseName.set("content-studio-agents")
+    archiveClassifier.set("all")
+    manifest {
+        attributes(
+            "Main-Class" to "com.ghatana.tutorputor.contentstudio.config.ContentGenerationServerConfig",
+            "Implementation-Title" to "Tutorputor Content Studio Agents gRPC Server",
+            "Implementation-Version" to project.version
+        )
+    }
+    // Merge service loader descriptors from gRPC and protobuf dependencies
+    mergeServiceFiles()
+    // Exclude redundant module-info files from multi-release JARs
+    exclude("META-INF/versions/*/module-info.class")
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
 }

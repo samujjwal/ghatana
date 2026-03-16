@@ -112,8 +112,9 @@ import java.util.Set;
  *                   <li><strong>No cycle detection:</strong> Operator tree assumed to be acyclic from AST structure</li>
  *                   <li><strong>Format-only event validation:</strong> Event type catalog lookup deferred to
  *                       PrimaryEventOperator; ValidationEngine only checks format</li>
- *                   <li><strong>Tenant permissions placeholder:</strong> Permission checks not yet implemented
- *                       (validateTenantPermissions() is TODO)</li>
+ *                   <li><strong>Tenant permissions placeholder:</strong> Permission checking is enforced
+ *                       when a {@link TenantPermissionChecker} is provided at construction time; the
+ *                       no-arg constructor skips permission checks for backward compatibility.</li>
  *                   <li><strong>No semantic analysis:</strong> Validates syntax only; semantic correctness
  *                       (e.g., operator parameter compatibility) checked by OperatorRegistry</li>
  *                 </ul>

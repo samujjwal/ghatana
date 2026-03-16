@@ -20,6 +20,7 @@
  */
 
 import { atom } from 'jotai';
+import { subscribeAtom, unsubscribeAtom } from './websocket.store';
 
 /**
  * Individual monitoring event representing app or system activity.
@@ -422,8 +423,10 @@ export const startMonitoringAtom = atom<null, [], Promise<void>>(
     const state = get(monitoringAtom);
 
     try {
-      // TODO: Connect to WebSocket for real-time events
-      // TODO: Start listening for native module broadcasts
+      // Subscribe to the 'monitoring' WebSocket channel to receive live events.
+      // Components should watch lastMessageAtom and dispatch recordEventAtom
+      // for messages with channel === 'monitoring'.
+      await set(subscribeAtom, 'monitoring', 'monitoring');
 
       set(monitoringAtom, {
         ...state,
@@ -465,8 +468,8 @@ export const pauseMonitoringAtom = atom<null, [], Promise<void>>(
     const state = get(monitoringAtom);
 
     try {
-      // TODO: Disconnect from WebSocket
-      // TODO: Stop listening to native broadcasts
+      // Unsubscribe from the 'monitoring' WebSocket channel
+      await set(unsubscribeAtom, 'monitoring');
 
       set(monitoringAtom, {
         ...state,

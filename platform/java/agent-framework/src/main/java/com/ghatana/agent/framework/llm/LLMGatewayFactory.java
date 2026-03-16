@@ -98,13 +98,41 @@ public final class LLMGatewayFactory {
         }
         
         log.info("Available LLM providers: {}", availableProviders.keySet());
-        
-        throw new UnsupportedOperationException(
-            "LLMGatewayFactory.createDefault() requires provider-specific service implementations. " +
-            "Build a DefaultLLMGateway with OpenAICompletionService / AnthropicCompletionService " +
-            "and use LLMGatewayFactory.create(LLMGateway) to adapt it for agent-framework. " +
-            "Detected available providers (API keys present): " + availableProviders.keySet()
-        );
+
+        // Create an ActiveJ HTTP client bound to the eventloop
+        io.activej.http.HttpClient httpClient = io.activej.http.HttpClient.create(eventloop);
+
+        String primaryProvider = System.getenv(ENV_PRIMARY_PROVIDER);
+        if (primaryProvider == null || primaryProvider.isEmpty()) {
+            primaryProvider = availableProviders.containsKey("openai")
+                    ? "openai" : availableProviders.keySet().iterator().next();
+        }
+
+        String defaultModel = System.getenv(ENV_DEFAULT_MODEL);
+        if (defaultModel == null || defaultModel.isEmpty()) {
+            defaultModel = DEFAULT_MODEL;
+        }
+
+        ProductionLLMGatewayBuilder builder = ProductionLLMGatewayBuilder.create(eventloop, metrics);
+
+        if (availableProviders.containsKey("openai")) {
+            String model = primaryProvider.equals("openai") ? defaultModel : DEFAULT_MODEL;
+            builder.addOpenAI(httpClient, availableProviders.get("openai"), model);
+            log.info("Wired OpenAI provider with model: {}", model);
+        }
+
+        if (availableProviders.containsKey("anthropic")) {
+            String claudeModel = "claude-3-haiku-20240307"; // default Claude model
+            builder.addAnthropic(httpClient, availableProviders.get("anthropic"), claudeModel);
+            log.info("Wired Anthropic provider with model: {}", claudeModel);
+        }
+
+        String fallbackEnv = System.getenv(ENV_FALLBACK_PROVIDERS);
+        if (fallbackEnv != null && !fallbackEnv.isEmpty()) {
+            builder.fallbackOrder(List.of(fallbackEnv.split(",")));
+        }
+
+        return builder.primaryProvider(primaryProvider).build();
     }
     
     /**

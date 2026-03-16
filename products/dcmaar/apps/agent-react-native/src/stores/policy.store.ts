@@ -19,6 +19,8 @@
  */
 
 import { atom } from 'jotai';
+import { guardianApi } from '../services/guardianApi';
+import { authAtom } from './auth.store';
 
 /**
  * Policy constraints.
@@ -201,26 +203,37 @@ export const createPolicyAtom = atom<
     });
 
     try {
-      // TODO: Replace with actual API call
-      // const newPolicy = await policyService.create(policyData);
+      const { user } = get(authAtom);
+      const tenantId = user?.tenantId ?? user?.id ?? '';
 
-      // Mock implementation
-      const mockPolicy: Policy = {
-        id: 'policy-' + Date.now(),
-        ...policyData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      const apiPolicy = await guardianApi.createPolicy(tenantId, {
+        name: policyData.name,
+        description: policyData.description,
+        type: policyData.status === 'active' ? 'RESTRICTIVE' : 'RECOMMENDATION',
+        rules: policyData.constraints as unknown as Record<string, unknown>,
+        enabled: policyData.status === 'active',
+        appliesTo: policyData.constraints.restrictedApps,
+      });
+
+      const newPolicy: Policy = {
+        id: apiPolicy.id,
+        name: apiPolicy.name,
+        description: apiPolicy.description,
+        constraints: policyData.constraints,
+        status: apiPolicy.enabled ? 'active' : 'inactive',
+        createdAt: new Date(apiPolicy.createdAt),
+        updatedAt: new Date(apiPolicy.updatedAt),
         version: '1.0.0',
       };
 
       set(policyAtom, {
         ...state,
-        policies: [...state.policies, mockPolicy],
+        policies: [...state.policies, newPolicy],
         status: 'loaded',
         error: null,
       });
 
-      return mockPolicy;
+      return newPolicy;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to create policy';
@@ -273,10 +286,17 @@ export const updatePolicyAtom = atom<
     });
 
     try {
-      // TODO: Replace with actual API call
-      // const updated = await policyService.update(policyId, updates);
+      const { user } = get(authAtom);
+      const tenantId = user?.tenantId ?? user?.id ?? '';
 
-      // Mock implementation
+      const apiUpdates: Record<string, unknown> = {};
+      if (updates.name !== undefined) apiUpdates.name = updates.name;
+      if (updates.description !== undefined) apiUpdates.description = updates.description;
+      if (updates.status !== undefined) apiUpdates.enabled = updates.status === 'active';
+      if (updates.constraints !== undefined) apiUpdates.rules = updates.constraints;
+
+      await guardianApi.updatePolicy(tenantId, policyId, apiUpdates);
+
       const updated: Policy = {
         ...policy,
         ...updates,
@@ -329,8 +349,10 @@ export const deletePolicyAtom = atom<
     const state = get(policyAtom);
 
     try {
-      // TODO: Call API to delete policy
-      // await policyService.delete(policyId);
+      const { user } = get(authAtom);
+      const tenantId = user?.tenantId ?? user?.id ?? '';
+
+      await guardianApi.deletePolicy(tenantId, policyId);
 
       set(policyAtom, {
         ...state,
@@ -387,8 +409,11 @@ export const applyPolicyAtom = atom<null, [policyId: string], Promise<void>>(
     });
 
     try {
-      // TODO: Call API to apply policy
-      // await policyService.apply(policyId);
+      const { user } = get(authAtom);
+      const tenantId = user?.tenantId ?? user?.id ?? '';
+
+      // Mark policy as active/enabled on the backend
+      await guardianApi.updatePolicy(tenantId, policyId, { enabled: true });
 
       set(policyAtom, {
         ...state,
@@ -458,38 +483,38 @@ export const fetchPoliciesAtom = atom<null, [], Promise<Policy[]>>(
     });
 
     try {
-      // TODO: Replace with actual API call
-      // const policies = await policyService.listPolicies();
+      const { user } = get(authAtom);
+      const tenantId = user?.tenantId ?? user?.id ?? '';
 
-      // Mock implementation
-      const mockPolicies: Policy[] = [
-        {
-          id: 'policy-1',
-          name: 'School Hours',
-          description: 'Restrictions during school hours',
-          constraints: {
-            restrictedApps: ['com.tiktok.android', 'com.instagram.android'],
-            allowedCategories: ['education', 'productivity'],
-            maxScreenTime: 120,
-            bedtimeStart: '22:00',
-            bedtimeEnd: '08:00',
-            allowContentRating: false,
-          },
-          status: 'active',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          version: '1.0.0',
+      const { data: apiPolicies } = await guardianApi.getPolicies(tenantId);
+
+      // Map PolicyData → Policy
+      const policies: Policy[] = apiPolicies.map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        constraints: (p.rules as unknown as Policy['constraints']) ?? {
+          restrictedApps: p.appliesTo,
+          allowedCategories: [],
+          maxScreenTime: 0,
+          bedtimeStart: '22:00',
+          bedtimeEnd: '07:00',
+          allowContentRating: false,
         },
-      ];
+        status: p.enabled ? 'active' : 'inactive',
+        createdAt: new Date(p.createdAt),
+        updatedAt: new Date(p.updatedAt),
+        version: '1.0.0',
+      }));
 
       set(policyAtom, {
         ...state,
-        policies: mockPolicies,
+        policies,
         status: 'loaded',
         error: null,
       });
 
-      return mockPolicies;
+      return policies;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to fetch policies';

@@ -1,10 +1,10 @@
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@ghatana/ui';import { Plus as AddIcon } from 'lucide-react';const WorkspacePage = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>()
+  const navigate = useNavigate()
 
   const handleCreateProject = () => {
-    // NOTE: Navigate to create project
-    console.log('Create project in workspace', workspaceId)
+    navigate(`/workspaces/${workspaceId}/projects/new`)
   }
 
   return (

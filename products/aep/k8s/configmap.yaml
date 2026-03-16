@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aep-config
+  namespace: aep
+  labels:
+    app: aep-service-manager
+    app.kubernetes.io/name: aep-service-manager
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: ghatana-aep
+data:
+  # HTTP / gRPC
+  AEP_HTTP_PORT: "8090"
+  AEP_GRPC_PORT: "9091"
+  AEP_WORKER_THREADS: "4"
+  AEP_DEV_MODE: "false"
+
+  # Logging
+  LOG_LEVEL: "INFO"
+
+  # Data-Cloud integration
+  DATACLOUD_URL: "http://data-cloud.data-cloud.svc.cluster.local:8082"
+  DATACLOUD_GRPC_URL: "data-cloud.data-cloud.svc.cluster.local:9090"
+  AEP_DATACLOUD_ENABLED: "true"
+
+  # Kafka (MSK or shared-services Kafka)
+  KAFKA_BOOTSTRAP_SERVERS: "kafka.shared-services.svc.cluster.local:9092"
+  KAFKA_CONSUMER_GROUP_ID: "aep-service-manager"
+  KAFKA_AUTO_OFFSET_RESET: "latest"
+
+  # Pattern engine
+  AEP_PATTERN_ENGINE_ENABLED: "true"
+  AEP_PATTERN_BACKTRACK_LIMIT: "1000"
+  AEP_PATTERN_WINDOW_MAX_SECONDS: "3600"
+
+  # Orchestrator
+  AEP_ORCHESTRATOR_ENABLED: "true"
+  AEP_ORCHESTRATOR_QUEUE_CAPACITY: "10000"
+  AEP_ORCHESTRATOR_MAX_CONCURRENT_PIPELINES: "100"
+
+  # Learning loop
+  AEP_LEARNING_ENABLED: "true"
+  AEP_LEARNING_CONSOLIDATION_INTERVAL_SECONDS: "3600"
+
+  # State store
+  AEP_STATE_STORE_TYPE: "hybrid"
+  REDIS_HOST: "redis.shared-services.svc.cluster.local"
+  REDIS_PORT: "6379"
+
+  # Tracing / observability
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4317"
+  OTEL_SERVICE_NAME: "aep-service-manager"
+  OTEL_TRACES_SAMPLER: "parentbased_traceidratio"
+  OTEL_TRACES_SAMPLER_ARG: "0.1"

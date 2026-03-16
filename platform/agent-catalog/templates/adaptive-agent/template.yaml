@@ -1,0 +1,161 @@
+################################################################################
+# ADAPTIVE AGENT TEMPLATE
+#
+# Use this template as the starting point for learning/ML-based agents.
+# Adaptive agents improve their behaviour over time by learning from episodic
+# memory, updating confidence-scored procedural policies, and optionally
+# incorporating human-in-the-loop feedback.
+#
+# HOW TO USE:
+#   1. Copy this template to:
+#        platform/agent-catalog/core-agents/<domain>/<your-agent-id>.yaml
+#      or:
+#        platform/agent-catalog/domain-agents/<domain>/<your-agent-id>.yaml
+#   2. Replace every {{PLACEHOLDER}} with real values.
+#   3. Remove all comment lines beginning with # that are guidance notes.
+#   4. Validate against catalog-schema.yaml before submitting a PR.
+#
+# RULES FOR ADAPTIVE AGENTS:
+#   - generator.type MUST be ADAPTIVE
+#   - memory.type MUST be EPISODIC or SEMANTIC (never just WORKING)
+#   - MUST declare a learning section in configuration
+#   - MUST output a "learning.feedback" event type so AEP can close the loop
+#   - Policies with confidence < 0.7 MUST be flagged for human review
+#   - Reflection MUST be asynchronous and fire-and-forget (never block user response)
+#   - All stored episodes MUST pass governance.redact rules before persisting
+################################################################################
+
+id: "{{AGENT_ID}}"            # kebab-case, e.g. "demand-forecaster-agent"
+name: "{{AGENT_NAME}}"        # Human-readable, e.g. "Demand Forecaster Agent"
+version: 1.0.0
+description: >
+  {{ONE_PARAGRAPH_DESCRIPTION}}
+  # Describe: what the agent predicts/classifies/learns, confidence model used,
+  # when it falls back to a deterministic baseline, and the learning loop cadence.
+
+metadata:
+  level: 3                    # 1=primitive, 2=utility, 3=domain, 4=composite, 5=orchestrator
+  domain: "{{DOMAIN}}"
+  tags: []                    # e.g. [forecasting, ml, adaptive, online-learning]
+  maturity: experimental      # experimental | alpha | beta | production
+  author: "{{TEAM_EMAIL}}"
+
+generator:
+  type: ADAPTIVE
+
+# AEP integration
+aep:
+  operatorType: PROCESSOR
+  inputEventTypes:
+    - "{{INPUT_EVENT_TYPE}}"
+  outputEventTypes:
+    - "{{OUTPUT_EVENT_TYPE}}"
+    - "{{ERROR_EVENT_TYPE}}"
+    - "learning.feedback"     # REQUIRED — AEP feedback event for learning loop closure
+  backpressure:
+    bufferSize: 5000          # Adaptive agents are slower; buffer more
+    overflowStrategy: DROP_OLDEST
+  reliability:
+    checkpointInterval: 30s
+    maxRetries: 2
+    deadLetterQueue: "{{AGENT_ID}}-dlq"
+
+capabilities:
+  - "{{PRIMARY_CAPABILITY}}"  # e.g. demand-forecasting, anomaly-detection, classification
+  - adaptive-learning         # REQUIRED for all adaptive agents
+  - confidence-scoring        # REQUIRED — every output must carry a confidence score
+
+# Configuration schema for the agent
+configuration:
+  # ── Model selection ──────────────────────────────────────────────────────────
+  algorithm:
+    description: "ML algorithm or ensemble strategy"
+    type: string
+    required: false
+    default: ENSEMBLE         # ENSEMBLE uses all listed below
+    enum: [LINEAR, DECISION_TREE, GRADIENT_BOOST, NEURAL_NET, ENSEMBLE]
+  # ── Learning system (REQUIRED for adaptive agents) ─────────────────────────
+  learning:
+    description: "Learning system configuration"
+    type: object
+    required: true
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      batchSize:
+        type: integer
+        default: 100
+        description: "Episodes to accumulate before running reflection"
+      reflectionCadence:
+        type: string
+        default: PT1H          # ISO-8601 duration — run reflection every hour
+      confidenceThreshold:
+        type: number
+        default: 0.7
+        description: "Policies below this confidence are flagged for human review"
+      humanReviewEnabled:
+        type: boolean
+        default: true
+  # ── Fallback to deterministic baseline ──────────────────────────────────────
+  fallback:
+    description: "Deterministic fallback when confidence is too low"
+    type: object
+    required: false
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      minConfidenceToSkipFallback:
+        type: number
+        default: 0.65
+  # ── Governance / data retention ─────────────────────────────────────────────
+  governance:
+    description: "Episode retention and redaction rules"
+    type: object
+    properties:
+      retentionDays:
+        type: integer
+        default: 90
+      redactFields:
+        type: array
+        items:
+          type: string
+        description: "Field paths to redact before persisting episodes (e.g. pii.email)"
+  # Add domain-specific fields below
+  exampleDomainField:
+    description: "Domain-specific tuning parameter"
+    type: string
+    required: false
+
+io:
+  inputs:
+    - name: "{{INPUT_NAME}}"
+      type: JSON
+      schema: "https://schema.ghatana.com/{{domain}}/{{INPUT_NAME}}/v1"
+      required: true
+  outputs:
+    - name: "{{OUTPUT_NAME}}"
+      type: JSON
+      schema: "https://schema.ghatana.com/{{domain}}/{{OUTPUT_NAME}}/v1"
+      # NOTE: output schema MUST include: prediction, confidence, modelVersion fields
+    - name: learningFeedback
+      type: JSON
+      schema: "https://schema.ghatana.com/learning/feedback/v1"
+
+# EPISODIC memory — adaptive agents retain experience across runs
+memory:
+  type: EPISODIC              # EPISODIC | SEMANTIC (choose the best fit)
+  scope: tenant               # Per-tenant learning isolation (multi-tenancy requirement)
+  retention: long             # long (persistent) — episodes feed the learning loop
+  maxEntries: 100000
+
+resources:
+  memory: 2GB                 # Adaptive agents need more memory for models/episodes
+  cpu: "2"
+  timeout: 120s               # Allow extra time for inference + confidence scoring
+  maxConcurrency: 5
+
+routing:
+  input: "{{InputEventClass}}"
+  output: "{{OutputEventClass}}"

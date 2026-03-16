@@ -80,7 +80,7 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
 
             PipelineCheckpoint final_ = store.findByInstanceId("inst-1").orElseThrow();
             assertThat(final_.getStatus()).isEqualTo(PipelineCheckpointStatus.COMPLETED);
-            assertThat(runPromise(() -> final_)).containsEntry("totalRows", 950);
+            assertThat(final_.getResult()).containsEntry("totalRows", 950);
             assertThat(final_.isActive()).isFalse();
         }
 

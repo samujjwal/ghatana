@@ -461,7 +461,7 @@ export class ComprehensiveMonitor extends EventEmitter {
     }
 
     return {
-      cpu: 0, // TODO: Implement CPU tracking
+      cpu: await this.getCpuUsage(),
       memory,
       eventRate: this.calculateEventRate(),
       latency: {
@@ -471,6 +471,37 @@ export class ComprehensiveMonitor extends EventEmitter {
       },
       throughput: this.totalEvents / ((Date.now() - this.startTime) / 1000),
     };
+  }
+
+  /**
+   * Measure CPU utilization using the Chrome Extension system.cpu API.
+   * Returns a value between 0 (idle) and 1 (fully loaded).
+   * Falls back to 0 in non-Chrome environments.
+   */
+  private getCpuUsage(): Promise<number> {
+    return new Promise((resolve) => {
+      if (
+        typeof chrome !== 'undefined' &&
+        chrome.system?.cpu
+      ) {
+        chrome.system.cpu.getInfo((info) => {
+          const processors = info.processors;
+          if (!processors || processors.length === 0) {
+            resolve(0);
+            return;
+          }
+          const totalRatio = processors.reduce((sum, p) => {
+            const usage = p.usage;
+            const total = (usage.user || 0) + (usage.kernel || 0) + (usage.idle || 0);
+            const active = (usage.user || 0) + (usage.kernel || 0);
+            return sum + (total > 0 ? active / total : 0);
+          }, 0);
+          resolve(totalRatio / processors.length);
+        });
+      } else {
+        resolve(0);
+      }
+    });
   }
 
   /**

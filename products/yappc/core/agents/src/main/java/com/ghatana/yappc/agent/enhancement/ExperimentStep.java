@@ -292,9 +292,24 @@ public final class ExperimentStep implements WorkflowStep {
     experiment.put("status", "COMPLETED");
   }
 
-  /** Collect experiment data (simulated) */
+  /**
+   * Produce a deterministic perturbation in [-scale, +scale] for a given seed string.
+   *
+   * <p>Uses Java's stable {@code String.hashCode()} so the same metric name always produces the
+   * same perturbation within a single JVM lifetime. Two independent seeds are combined with XOR to
+   * ensure control and treatment values differ from each other.
+   */
+  private static double stableVariation(String seed, double scale) {
+    int hash = seed.hashCode();
+    // Map signed int to [0, 1) then shift to [-1, +1)
+    double unit = (hash & 0x7FFFFFFF) / (double) Integer.MAX_VALUE;
+    return (unit * 2.0 - 1.0) * scale;
+  }
+
+  /** Collect experiment data (deterministic per metric + experiment id) */
   private Map<String, Object> collectExperimentData(Map<String, Object> experiment) {
     List<Map<String, Object>> metrics = (List<Map<String, Object>>) experiment.get("metrics");
+    String experimentId = (String) experiment.getOrDefault("id", "unknown");
 
     Map<String, Map<String, Double>> results = new HashMap<>();
 
@@ -303,9 +318,9 @@ public final class ExperimentStep implements WorkflowStep {
       double baseline = ((Number) metric.get("baseline")).doubleValue();
       double target = ((Number) metric.get("target")).doubleValue();
 
-      // Simulate results with some variation
-      double controlValue = baseline + (Math.random() * 2 - 1); // ±1 variation
-      double treatmentValue = target + (Math.random() * 2 - 1); // ±1 variation
+      // Deterministic ±1 variation keyed to metric name + experiment id
+      double controlValue = baseline + stableVariation(experimentId + ":control:" + metricName, 1.0);
+      double treatmentValue = target + stableVariation(experimentId + ":treatment:" + metricName, 1.0);
 
       results.put(
           metricName,

@@ -115,7 +115,7 @@ class AepHttpServerHitlTest {
             server.start();
             waitForServerReady(port);
 
-            HttpResponse<String> resp = get("/api/v1/hitl/pending");
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-a");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
@@ -163,7 +163,7 @@ class AepHttpServerHitlTest {
             server.start();
             waitForServerReady(port);
 
-            HttpResponse<String> resp = get("/api/v1/hitl/pending");
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=t1");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);

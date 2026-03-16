@@ -445,33 +445,80 @@ export class FallbackProvider {
 
   private async makeRequest(provider: AIProvider, request: AIRequest): Promise<AIResponse> {
     const startTime = Date.now();
-    
-    // Simulate API call (replace with actual implementation)
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-    
-    const latency = Date.now() - startTime;
-    
-    // Simulate potential failures
-    if (Math.random() < 0.1) { // 10% failure rate
-      throw new Error(`Provider ${provider.name} API error`);
-    }
 
-    return {
-      id: crypto.randomUUID(),
-      requestId: request.id,
-      provider: provider.name,
-      content: `Response from ${provider.name} for: ${request.prompt}`,
-      usage: {
-        promptTokens: request.prompt.length / 4,
-        completionTokens: 100,
-        totalTokens: (request.prompt.length / 4) + 100,
-      },
-      model: provider.name === 'openai' ? 'gpt-4' : 'claude-3',
-      timestamp: Date.now(),
-      latency,
-      fromCache: false,
-      fromFallback: false,
-    };
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), provider.timeout);
+
+    try {
+      // Build request body in OpenAI chat-completion format.
+      // Anthropic and other providers are normalised to this schema at the gateway layer.
+      const model = request.options?.model
+          ?? (provider.name === 'anthropic' ? 'claude-3-opus-20240229' : 'gpt-4');
+
+      const body = {
+        model,
+        messages: [{ role: 'user' as const, content: request.prompt }],
+        temperature: request.options?.temperature ?? 0.7,
+        max_tokens: request.options?.maxTokens ?? 1024,
+      };
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${provider.apiKey}`,
+      };
+      if (provider.name === 'anthropic') {
+        headers['anthropic-version'] = '2023-06-01';
+      }
+
+      const response = await fetch(provider.endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => '');
+        throw new Error(
+            `Provider ${provider.name} returned HTTP ${response.status}: ${errorBody}`
+        );
+      }
+
+      const data = await response.json() as Record<string, unknown>;
+      const latency = Date.now() - startTime;
+
+      // Normalise OpenAI and Anthropic response shapes
+      const choices = data['choices'] as Array<Record<string, unknown>> | undefined;
+      const anthropicContent = data['content'] as Array<Record<string, unknown>> | undefined;
+      const content: string =
+          (choices?.[0]?.['message'] as Record<string, string> | undefined)?.['content']
+          ?? (anthropicContent?.[0]?.['text'] as string | undefined)
+          ?? '';
+
+      const usage = data['usage'] as Record<string, number> | undefined;
+
+      return {
+        id: crypto.randomUUID(),
+        requestId: request.id,
+        provider: provider.name,
+        content,
+        usage: {
+          promptTokens:      usage?.['prompt_tokens'] ?? usage?.['input_tokens']  ?? 0,
+          completionTokens:  usage?.['completion_tokens'] ?? usage?.['output_tokens'] ?? 0,
+          totalTokens:       usage?.['total_tokens'] ?? 0,
+        },
+        model: (data['model'] as string | undefined) ?? model,
+        finishReason:
+            (choices?.[0]?.['finish_reason'] as string | undefined)
+            ?? (data['stop_reason'] as string | undefined),
+        timestamp: Date.now(),
+        latency,
+        fromCache: false,
+        fromFallback: false,
+      };
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   private createSafeFallbackResponse(request: AIRequest, error?: Error | null): AIResponse {
@@ -569,8 +616,10 @@ export class StreamingAIService extends EventEmitter {
           throw new Error('Stream aborted');
         }
 
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 200 + 50));
+        // Small fixed inter-chunk delay to prevent event-loop starvation.
+        // TODO: Replace this simulated word-by-word stream with a real SSE/streaming
+        //       connection to the provider once streaming endpoints are integrated.
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         const delta = word + ' ';
         content += delta;

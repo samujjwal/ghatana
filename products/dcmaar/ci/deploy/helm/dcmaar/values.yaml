@@ -1,0 +1,176 @@
+# =============================================================================
+# DCMAAR Helm Chart — Default Values
+# =============================================================================
+# Override per-environment with:
+#   helm upgrade dcmaar ./helm/dcmaar -f values-staging.yaml
+#   helm upgrade dcmaar ./helm/dcmaar -f values-production.yaml
+
+# ---------------------------------------------------------------------------
+# Image
+# ---------------------------------------------------------------------------
+image:
+  repository: ghcr.io/ghatana/dcmaar
+  # Overridden by CI/CD with the exact image digest or tag
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# ---------------------------------------------------------------------------
+# Deployment
+# ---------------------------------------------------------------------------
+replicaCount: 1
+
+revisionHistoryLimit: 3
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+# ---------------------------------------------------------------------------
+# Application configuration
+# ---------------------------------------------------------------------------
+app:
+  # Node.js environment
+  nodeEnv: production
+  # Server port (container-internal)
+  port: 3000
+  # Log level: error | warn | info | debug
+  logLevel: info
+  # CORS allowed origins (comma-separated or "*" for dev)
+  corsOrigin: ""
+
+# ---------------------------------------------------------------------------
+# Kubernetes Secret name that must exist before deploying.
+# The chart reads standard keys from this secret.
+# Create with:
+#   kubectl create secret generic dcmaar-secrets \
+#     --from-literal=db-host=... \
+#     --from-literal=db-password=... \
+#     --from-literal=jwt-secret=... \
+#     --from-literal=jwt-refresh-secret=...
+# ---------------------------------------------------------------------------
+existingSecret: dcmaar-secrets
+
+# ---------------------------------------------------------------------------
+# Ghatana Platform Shared Services (all optional)
+# When a URL is empty the corresponding client silently no-ops.
+# ---------------------------------------------------------------------------
+platformServices:
+  # Base URL of the Ghatana auth-gateway (e.g. http://auth-gateway.ghatana.svc.cluster.local:8080)
+  authGatewayUrl: ""
+  # Base URL of the Ghatana AI Registry service
+  aiRegistryUrl: ""
+  # Base URL of the Ghatana Feature Store HTTP service
+  featureStoreUrl: ""
+
+# ---------------------------------------------------------------------------
+# Service
+# ---------------------------------------------------------------------------
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+  annotations: {}
+
+# ---------------------------------------------------------------------------
+# Ingress
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    # nginx.ingress.kubernetes.io/proxy-body-size: 10m
+  hosts:
+    - host: dcmaar.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: dcmaar-tls
+    #   hosts:
+    #     - dcmaar.example.com
+
+# ---------------------------------------------------------------------------
+# Resources
+# ---------------------------------------------------------------------------
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# ---------------------------------------------------------------------------
+# Probes
+# ---------------------------------------------------------------------------
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+startupProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  failureThreshold: 12
+
+# ---------------------------------------------------------------------------
+# Autoscaling
+# ---------------------------------------------------------------------------
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# ---------------------------------------------------------------------------
+# Pod configuration
+# ---------------------------------------------------------------------------
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3000"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+serviceAccount:
+  create: false
+  name: ""
+  annotations: {}

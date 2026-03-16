@@ -1,0 +1,178 @@
+id: etl-pipeline-agent
+name: ETL Pipeline Composite Agent
+version: 1.0.0
+description: >
+  Composite agent that orchestrates a full Extract-Transform-Load pipeline by
+  composing the schema-validation, event-enricher, event-transformer, and
+  event-filter core agents into a configurable multi-stage pipeline. Supports
+  parallel extraction from multiple sources, staged transformation with rollback
+  on failure, incremental and full-load modes, checkpointed resumption on
+  partial failure, and lineage tracking via Data-Cloud event sourcing.
+
+metadata:
+  level: 4
+  domain: data-pipelines
+  tags: [etl, pipeline, extract, transform, load, orchestration, composite, lineage]
+  maturity: production
+  author: platform-team@ghatana.ai
+
+generator:
+  type: COMPOSITE
+
+# AEP Operator configuration
+aep:
+  operatorType: COMPOSITE
+  inputEventTypes:
+    - "pipeline.extract.trigger"
+    - "pipeline.incremental.trigger"
+    - "schedule.cron"
+  outputEventTypes:
+    - "pipeline.completed"
+    - "pipeline.failed"
+    - "pipeline.partial"
+    - "lineage.event"
+  backpressure:
+    bufferSize: 10000
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: 30s
+    maxRetries: 3
+    deadLetterQueue: etl-pipeline-dlq
+
+# Sub-agents composed in this pipeline
+composition:
+  stages:
+    - id: extract
+      agentId: event-transformer-agent    # Used for source normalisation
+      config:
+        mappingRules: "{{extractMappings}}"
+    - id: validate
+      agentId: schema-validation-agent
+      after: extract
+      config:
+        failOnError: "{{strictValidation}}"
+    - id: enrich
+      agentId: event-enricher-agent
+      after: validate
+      config:
+        enrichmentSources: "{{enrichmentSources}}"
+    - id: filter
+      agentId: event-filter-agent
+      after: enrich
+      config:
+        filterRules: "{{filterRules}}"
+    - id: load
+      agentId: event-transformer-agent    # Final schema mapping for target
+      after: filter
+      config:
+        mappingRules: "{{loadMappings}}"
+  errorHandling:
+    strategy: RETRY_OR_DLQ
+    maxRetries: 3
+    onExhausted: ROUTE_TO_DLQ
+
+capabilities:
+  - multi-source-extraction
+  - staged-transformation
+  - parallel-loading
+  - incremental-load
+  - full-load
+  - checkpointed-resumption
+  - lineage-tracking
+  - error-recovery
+
+# Pipeline configuration
+configuration:
+  sources:
+    description: "Data sources to extract from"
+    type: array
+    required: true
+    items:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [JDBC, REST_API, KAFKA, S3, GCS, SFTP, DATA_CLOUD]
+        connectionConfig:
+          type: object
+        extractMode:
+          type: string
+          enum: [FULL, INCREMENTAL, CHANGE_DATA_CAPTURE]
+          default: INCREMENTAL
+        incrementalField:
+          type: string
+          description: "Timestamp or ID field for incremental extraction"
+  target:
+    description: "Load target configuration"
+    type: object
+    required: true
+    properties:
+      type:
+        type: string
+        enum: [KAFKA, DATA_CLOUD, JDBC, S3, GCS]
+      connectionConfig:
+        type: object
+      writeMode:
+        type: string
+        enum: [APPEND, UPSERT, OVERWRITE]
+        default: UPSERT
+      upsertKeyFields:
+        type: array
+        items:
+          type: string
+  extractMappings:
+    description: "Source → canonical field mappings"
+    type: array
+  loadMappings:
+    description: "Canonical → target field mappings"
+    type: array
+  enrichmentSources:
+    description: "Enrichment data sources (passed to event-enricher-agent)"
+    type: array
+  filterRules:
+    description: "Filter predicates (passed to event-filter-agent)"
+    type: object
+  strictValidation:
+    description: "Fail pipeline on any validation error"
+    type: boolean
+    default: false
+  lineageEnabled:
+    description: "Track data lineage via Data-Cloud event sourcing"
+    type: boolean
+    default: true
+  parallelExtraction:
+    description: "Extract from all sources in parallel"
+    type: boolean
+    default: true
+
+io:
+  inputs:
+    - name: pipelineTrigger
+      type: JSON
+      schema: "https://schema.ghatana.com/pipeline/trigger/v1"
+      required: true
+  outputs:
+    - name: pipelineResult
+      type: JSON
+      schema: "https://schema.ghatana.com/pipeline/result/v1"
+    - name: lineageEvent
+      type: JSON
+      schema: "https://schema.ghatana.com/lineage/event/v1"
+
+memory:
+  type: PROCEDURAL
+  scope: pipeline_state
+  retention: medium
+  maxEntries: 10000
+
+resources:
+  memory: 4GB
+  cpu: "4"
+  timeout: 3600s   # 1-hour max for large full-load pipelines
+  maxConcurrency: 3
+
+routing:
+  input: PipelineTriggerEvent
+  output: PipelineResultEvent

@@ -157,7 +157,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .onError("source", "error-handler")
                 .build();
 
-        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("mixed.test"), ctx());
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("mixed.test"), ctx()));
 
         assertThat(result.isSuccess()).isTrue();
         // filter got source's output via primary edge
@@ -187,7 +187,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .build();
 
         PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("mixed.fail"),
-                ctxContinueOnError());
+                ctxContinueOnError()));
 
         // error-handler was triggered
         assertThat(errorHandler.getInvocationCount()).isEqualTo(1);
@@ -215,7 +215,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .onError("b", "c")
                 .build();
 
-        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("cascade"), ctxContinueOnError());
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("cascade"), ctxContinueOnError()));
 
         // C should be invoked as the final error handler in the chain
         assertThat(c.getInvocationCount()).isEqualTo(1);
@@ -241,7 +241,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .onFallback("b", "c")
                 .build();
 
-        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("fallback.cascade"), ctx());
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("fallback.cascade"), ctx()));
 
         // C should catch the end of the fallback chain
         assertThat(c.getInvocationCount()).isEqualTo(1);
@@ -267,7 +267,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .onFallback("err-handler", "fallback-sink")
                 .build();
 
-        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("err.fb"), ctxContinueOnError());
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("err.fb"), ctxContinueOnError()));
 
         // fallback-sink should be activated when err-handler produces empty
         assertThat(fallbackSink.getInvocationCount()).isEqualTo(1);
@@ -296,7 +296,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
         }
         Pipeline pipeline = builder.build();
 
-        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("deep.in"), ctx());
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("deep.in"), ctx()));
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.stagesExecuted()).isEqualTo(5);
@@ -325,7 +325,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .edge("add-b", "add-c")
                 .build();
 
-        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("enrich"), ctx());
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("enrich"), ctx()));
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.outputEvents()).isNotEmpty();
@@ -354,7 +354,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .build();
 
         PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("async.throw"),
-                ctxContinueOnError());
+                ctxContinueOnError()));
 
         // Error handler should be invoked when operator returns failed promise
         assertThat(errHandler.getInvocationCount()).isEqualTo(1);
@@ -373,7 +373,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .edge("async-fail", "next")
                 .build();
 
-        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("async.abort"), ctx());
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("async.abort"), ctx()));
 
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.errorMessage()).contains("kaboom");
@@ -390,10 +390,11 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .stage("thrower", opId("thrower"))
                 .build();
 
-        // Synchronous exceptions from process() propagate out of the Promise chain
-        assertThatThrownBy(() -> runPromise(() -> engine.execute(pipeline, event("sync.throw"), ctx()))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("sync-boom");
+        // Synchronous exceptions from operator.process() are caught by the engine
+        // and surfaced as a stage-level failure in the PipelineExecutionResult.
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("sync.throw"), ctx()));
+        assertThat(result.isSuccess()).isFalse();
+        assertThat(result.errorMessage()).contains("sync-boom");
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -414,7 +415,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .stage("s1", opId("stopped"))
                 .build();
 
-        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("stopped"), ctx());
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("stopped"), ctx()));
 
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.errorMessage()).containsIgnoringCase("non-processable state");
@@ -482,7 +483,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .onFallback("producer", "fb-captor")
                 .build();
 
-        runPromise(() -> engine.execute(pipeline, event("fb.verify"), ctx());
+        runPromise(() -> engine.execute(pipeline, event("fb.verify"), ctx()));
 
         assertThat(captor.getInvocationCount()).isEqualTo(1);
         assertThat(captor.getCapturedPayloads()).isNotEmpty();
@@ -513,7 +514,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .edge("splitter", "t2", PipelineEdge.LABEL_BROADCAST)
                 .build();
 
-        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("bcast"), ctx());
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("bcast"), ctx()));
 
         assertThat(result.isSuccess()).isTrue();
         // Each broadcast target receives all 3 outputs from splitter
@@ -543,7 +544,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
         assertThat(pipeline.getMetadata()).containsEntry("env", "production");
 
         // Execute
-        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("meta"), ctx());
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("meta"), ctx()));
         assertThat(result.isSuccess()).isTrue();
 
         // Metadata still intact after execution (pipeline is immutable)
@@ -598,7 +599,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
         // Need continueOnError — but DefaultPipeline.execute() creates its own context internally
         // So we test via engine directly with the pipeline shape
         PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("integrated.err"),
-                ctxContinueOnError());
+                ctxContinueOnError()));
 
         assertThat(errOp.getInvocationCount()).isEqualTo(1);
     }
@@ -627,7 +628,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
                 .edge("branchB", "merge")
                 .build();
 
-        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("fanout"), ctx());
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, event("fanout"), ctx()));
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.stagesExecuted()).isEqualTo(4);

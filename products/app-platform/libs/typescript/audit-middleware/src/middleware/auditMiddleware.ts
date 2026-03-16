@@ -17,6 +17,14 @@ export interface AuditMiddlewareOptions {
   /** Client that forwards audit payloads to the K-07 Java service. */
   auditClient: AuditStoreClient;
   /**
+   * Base URL of the K-15 calendar-service.
+   * When provided, each audit entry will carry a populated `timestampBs` field
+   * derived by calling `GET <calendarServiceBaseUrl>/calendar/convert?from=greg&date=<YYYY-MM-DD>`.
+   * Failures are non-fatal: the field falls back to an empty string.
+   * Example: "http://calendar-service:8080"
+   */
+  calendarServiceBaseUrl?: string;
+  /**
    * Extract the actor from the request. Implement to pull from JWT / session.
    * Falls back to anonymous if not provided.
    */
@@ -69,11 +77,44 @@ function mapStatusToOutcome(statusCode: number): AuditOutcome {
   return "PARTIAL";
 }
 
+/**
+ * Resolves the Bikram Sambat date string for the given ISO date by calling
+ * the K-15 calendar-service REST API.
+ *
+ * Returns an empty string gracefully on any network or parse error — the audit
+ * record is still written, just without the BS timestamp (degraded mode).
+ *
+ * @param isoDate            "YYYY-MM-DD" Gregorian date
+ * @param calendarServiceUrl base URL of the calendar-service (e.g. "http://calendar-service:8080")
+ */
+async function fetchBsDate(
+  isoDate: string,
+  calendarServiceUrl: string,
+): Promise<string> {
+  try {
+    const url = `${calendarServiceUrl}/calendar/convert?from=greg&date=${encodeURIComponent(isoDate)}`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(1500), // 1.5 s hard timeout — audit must never block request
+    });
+    if (!res.ok) return "";
+    const body = (await res.json()) as { bs?: { year?: number; month?: number; dayOfMonth?: number } };
+    const bs = body?.bs;
+    if (bs?.year == null || bs?.month == null || bs?.dayOfMonth == null) return "";
+    return `${bs.year}-${String(bs.month).padStart(2, "0")}-${String(bs.dayOfMonth).padStart(2, "0")}`;
+  } catch {
+    // Non-fatal: calendar-service may be unavailable during degraded mode
+    return "";
+  }
+}
+
 const auditMiddlewarePlugin: FastifyPluginAsync<
   AuditMiddlewareOptions
 > = async (fastify, options) => {
   const {
     auditClient,
+    calendarServiceBaseUrl,
     resolveActor = defaultResolveActor,
     resolveTenantId = defaultResolveTenantId,
     resolveResource = defaultResolveResource,
@@ -86,6 +127,14 @@ const auditMiddlewarePlugin: FastifyPluginAsync<
     async (req: FastifyRequest, reply: FastifyReply) => {
       if (!AUDITED_METHODS.has(req.method)) return;
 
+      const now = new Date();
+      const gregorianIso = now.toISOString();
+      const gregorianDate = gregorianIso.slice(0, 10); // "YYYY-MM-DD"
+
+      const timestampBs = calendarServiceBaseUrl
+        ? await fetchBsDate(gregorianDate, calendarServiceBaseUrl)
+        : "";
+
       const payload: AuditPayload = {
         action: resolveAction(req),
         actor: resolveActor(req),
@@ -93,8 +142,8 @@ const auditMiddlewarePlugin: FastifyPluginAsync<
         outcome: mapStatusToOutcome(reply.statusCode),
         tenantId: resolveTenantId(req),
         traceId: req.id,
-        timestampGregorian: new Date().toISOString(),
-        timestampBs: "", // K-15 not yet wired in Sprint 1 — will be enriched in Sprint 2
+        timestampGregorian: gregorianIso,
+        timestampBs,
       };
 
       if (fireAndForget) {

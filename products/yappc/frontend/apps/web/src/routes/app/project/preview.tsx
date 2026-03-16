@@ -25,7 +25,8 @@ export default function PreviewPage() {
     const [device, setDevice] = useState<DeviceMode>('desktop');
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const previewUrl = `http://localhost:3001/preview/${projectId}`;
+    const previewBaseUrl = import.meta.env.VITE_PREVIEW_BASE_URL ?? import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001';
+    const previewUrl = `${previewBaseUrl}/preview/${projectId}`;
 
     const handleRefresh = () => {
         setRefreshKey(prev => prev + 1);

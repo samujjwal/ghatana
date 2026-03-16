@@ -264,13 +264,72 @@ public class CodeGenerationToolProvider implements ToolProvider {
   }
 
   private String applyRefactoring(String code, String pattern) {
-    // Placeholder - would apply actual refactoring
-    return code + "\n// Refactored with pattern: " + pattern;
+    if (code == null || code.isBlank()) {
+      return code;
+    }
+    return switch (pattern) {
+      case "extract_method" -> {
+        // Identify long methods and annotate extraction points
+        String[] lines = code.split("\n");
+        StringBuilder sb = new StringBuilder();
+        int methodDepth = 0;
+        int lineCount = 0;
+        int methodStart = -1;
+        for (int i = 0; i < lines.length; i++) {
+          String line = lines[i];
+          if (line.contains("{")) methodDepth += (int) line.chars().filter(c -> c == '{').count();
+          if (line.contains("}")) methodDepth -= (int) line.chars().filter(c -> c == '}').count();
+          if (methodDepth == 1 && line.matches(".*\\b(public|private|protected)\\b.*\\(.*\\).*\\{.*")) {
+            methodStart = i;
+            lineCount = 0;
+          }
+          if (methodDepth == 1 && methodStart >= 0) lineCount++;
+          if (methodDepth == 0 && methodStart >= 0 && lineCount > 20) {
+            sb.insert(methodStart, "// TODO: consider extracting sub-methods from this long method\n");
+            methodStart = -1;
+          }
+          sb.append(line).append("\n");
+        }
+        yield sb.toString();
+      }
+      case "rename" -> {
+        // Placeholder: emit original code with renaming instructions as a header comment
+        String instructions = "// REFACTOR(rename): Review identifiers below and apply consistent naming.\n";
+        yield instructions + code;
+      }
+      case "inline_method" -> {
+        // Emit code unchanged; mark trivial single-line private methods for inlining
+        String[] lines = code.split("\n");
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+          sb.append(line);
+          if (line.matches("\\s*private\\s+\\w[\\w<>\\[\\]]*\\s+\\w+\\([^)]*\\)\\s*\\{.*\\}\\s*")) {
+            sb.append(" // REFACTOR(inline): candidate for inlining");
+          }
+          sb.append("\n");
+        }
+        yield sb.toString();
+      }
+      default -> "// REFACTOR(" + pattern + "):\n" + code;
+    };
   }
 
   private int countEndpoints(String spec) {
-    // Simple count - would parse OpenAPI spec in production
-    return 1;
+    if (spec == null || spec.isBlank()) {
+      return 0;
+    }
+    // Count OpenAPI path entries: lines starting with '  /' (YAML) or '"/' (JSON)
+    int yamlPaths = 0;
+    int jsonPaths = 0;
+    for (String line : spec.split("\n")) {
+      String trimmed = line.stripLeading();
+      // YAML: path key under 'paths:' block, e.g. "  /users:" or "  /items/{id}:"
+      if (trimmed.startsWith("/") && trimmed.endsWith(":")) yamlPaths++;
+      // JSON: "  \"/path\":" pattern
+      if (trimmed.startsWith("\"/") && trimmed.contains("\":")) jsonPaths++;
+    }
+    int detected = yamlPaths + jsonPaths;
+    return detected > 0 ? detected : 1; // assume at least 1 if spec is non-empty
   }
 
   private int countChangedLines(String original, String modified) {
