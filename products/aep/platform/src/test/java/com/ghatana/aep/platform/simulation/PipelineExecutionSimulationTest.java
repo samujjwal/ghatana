@@ -10,6 +10,8 @@ import com.ghatana.core.pipeline.PipelineExecutionContext;
 import com.ghatana.core.pipeline.PipelineExecutionEngine;
 import com.ghatana.core.pipeline.PipelineExecutionResult;
 import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.core.operator.OperatorConfig;
+import com.ghatana.core.operator.OperatorState;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -121,12 +123,58 @@ class PipelineExecutionSimulationTest extends EventloopTestBase {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                return OperatorResult.success(Event.builder()
+                return OperatorResult.builder().success().addEvent(Event.builder()
                             .id(event.getId())
                             .type(event.getType() + ".processed")
-                            .payload(event.getPayload())
-                            .build());
+                            .payload(Map.of("status", "processed"))
+                            .build()).build();
             });
+        }
+
+        @Override
+        public OperatorConfig getConfig() {
+            return OperatorConfig.empty();
+        }
+
+        @Override
+        public Map<String, Object> getInternalState() {
+            return Map.of();
+        }
+
+        @Override
+        public Map<String, Object> getMetrics() {
+            return Map.of();
+        }
+
+        @Override
+        public Event toEvent() {
+            return Event.builder().type("operator.dummy").build();
+        }
+
+        @Override
+        public OperatorState getState() {
+            return OperatorState.CREATED;
+        }
+
+        @Override
+        public String getName() { return "dummy"; }
+        @Override
+        public com.ghatana.core.operator.OperatorType getType() { return com.ghatana.core.operator.OperatorType.STREAM; }
+        @Override
+        public String getVersion() { return "1.0"; }
+        @Override
+        public String getDescription() { return "dummy"; }
+        @Override
+        public List<String> getCapabilities() { return List.of(); }
+        @Override
+        public Promise<Void> initialize(OperatorConfig config) { return Promise.complete(); }
+        @Override
+        public Promise<Void> start() { return Promise.complete(); }
+        @Override
+        public Promise<Void> stop() { return Promise.complete(); }
+
+        public boolean isHealthy() {
+            return true;
         }
     }
 }
