@@ -63,6 +63,16 @@ dependencies {
     testRuntimeOnly(libs.log4j.core)
 }
 
+tasks.processResources {
+    filesMatching("META-INF/platform.properties") {
+        expand(
+            "platformVersion" to rootProject.version,
+            "sdkVersion" to rootProject.version,
+            "instrumentationVersion" to rootProject.version
+        )
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
 }

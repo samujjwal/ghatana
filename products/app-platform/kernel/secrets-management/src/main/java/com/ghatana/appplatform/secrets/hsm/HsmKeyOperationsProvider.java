@@ -40,13 +40,45 @@ public final class HsmKeyOperationsProvider {
     private final boolean useHsm;
 
     /**
+     * @param executor    thread pool for blocking HSM operations
+     * @param useHsm      when {@code true} delegates to PKCS#11 provider; when {@code false} uses in-process dev stub
+     * @param environment deployment environment name (e.g. {@code "dev"}, {@code "staging"}, {@code "production"})
+     */
+    public HsmKeyOperationsProvider(Executor executor, boolean useHsm, String environment) {
+        this.executor = Objects.requireNonNull(executor, "executor");
+        this.useHsm   = useHsm;
+
+        // Fail fast: production and staging MUST use real HSM
+        if (!useHsm && isProtectedEnvironment(environment)) {
+            throw new IllegalStateException(
+                "HsmKeyOperationsProvider: useHsm=false is forbidden in environment '%s'. "
+                    .formatted(environment) +
+                "Configure PKCS#11 or set useHsm=true for non-dev environments.");
+        }
+
+        if (!useHsm) {
+            log.warn("HsmKeyOperationsProvider running in DEV-STUB mode — key material is in JVM heap. "
+                    + "This is NOT safe for production use.");
+        }
+
+        log.info("HsmKeyOperationsProvider initialised: mode={}, environment={}",
+                useHsm ? "HSM/PKCS11" : "DEV-STUB", environment);
+    }
+
+    /**
+     * Backward-compatible constructor for dev/test usage.
+     *
      * @param executor  thread pool for blocking HSM operations
      * @param useHsm    when {@code true} delegates to PKCS#11 provider; when {@code false} uses in-process dev stub
      */
     public HsmKeyOperationsProvider(Executor executor, boolean useHsm) {
-        this.executor = Objects.requireNonNull(executor, "executor");
-        this.useHsm   = useHsm;
-        log.info("HsmKeyOperationsProvider initialised: mode={}", useHsm ? "HSM/PKCS11" : "DEV-STUB");
+        this(executor, useHsm, "dev");
+    }
+
+    private static boolean isProtectedEnvironment(String environment) {
+        if (environment == null) return false;
+        String env = environment.toLowerCase();
+        return env.contains("prod") || env.contains("staging") || env.contains("live");
     }
 
     /**

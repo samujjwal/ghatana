@@ -4,6 +4,7 @@
  */
 package com.ghatana.appplatform.observability;
 
+import com.ghatana.platform.core.util.PlatformVersion;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -46,7 +47,8 @@ public final class KernelTracingInstrumentation {
 
     public KernelTracingInstrumentation() {
         // Tracer obtained from the global OTel instance configured by the agent or SDK init
-        this.tracer = GlobalOpenTelemetry.getTracer(INSTRUMENTATION_SCOPE, "1.0.0");
+        this.tracer = GlobalOpenTelemetry.getTracer(INSTRUMENTATION_SCOPE,
+                PlatformVersion.get().instrumentationVersion());
     }
 
     /** Package-visible constructor for injecting a custom Tracer in tests. */

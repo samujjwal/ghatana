@@ -2,6 +2,8 @@ package com.ghatana.platform.workflow.engine;
 
 import com.ghatana.platform.workflow.Workflow;
 import com.ghatana.platform.workflow.WorkflowContext;
+import com.ghatana.platform.workflow.WorkflowLifecycleEvent;
+import com.ghatana.platform.workflow.WorkflowLifecycleListener;
 import com.ghatana.platform.workflow.WorkflowStep;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -56,6 +58,7 @@ public final class DurableWorkflowEngine {
     private final int defaultMaxRetries;
     private final Duration defaultRetryBackoff;
     private final ExecutorService executor;
+    private final List<WorkflowLifecycleListener> listeners;
 
     private DurableWorkflowEngine(Builder builder) {
         this.stateStore = builder.stateStore;
@@ -65,6 +68,18 @@ public final class DurableWorkflowEngine {
         this.executor = builder.executor != null
             ? builder.executor
             : Executors.newVirtualThreadPerTaskExecutor();
+        this.listeners = List.copyOf(builder.listeners);
+    }
+
+    private void emitEvent(WorkflowLifecycleEvent event) {
+        for (WorkflowLifecycleListener listener : listeners) {
+            try {
+                listener.onEvent(event);
+            } catch (Exception e) {
+                log.warn("Lifecycle listener failed for event [{}]: {}",
+                    event.phase(), e.getMessage(), e);
+            }
+        }
     }
 
     /**
@@ -84,6 +99,10 @@ public final class DurableWorkflowEngine {
         stateStore.save(run);
 
         Promise<WorkflowContext> resultPromise = Promise.ofBlocking(executor, () -> {
+            emitEvent(WorkflowLifecycleEvent.of(
+                workflowId, workflowId,
+                WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED));
+
             WorkflowContext current = context;
             List<StepDefinition> completedSteps = new ArrayList<>();
 
@@ -92,30 +111,53 @@ public final class DurableWorkflowEngine {
                 run.updateStepStatus(i, StepStatus.RUNNING);
                 stateStore.save(run);
 
+                emitEvent(WorkflowLifecycleEvent.forStep(
+                    workflowId, workflowId,
+                    WorkflowLifecycleEvent.Phase.STEP_STARTED, stepDef.name()));
+
                 try {
                     current = executeStepWithRetry(stepDef, current, i);
                     completedSteps.add(stepDef);
                     run.updateStepStatus(i, StepStatus.COMPLETED);
                     stateStore.save(run);
+
+                    emitEvent(WorkflowLifecycleEvent.forStep(
+                        workflowId, workflowId,
+                        WorkflowLifecycleEvent.Phase.STEP_COMPLETED, stepDef.name()));
                 } catch (Exception e) {
                     run.updateStepStatus(i, StepStatus.FAILED);
                     run.setFailureReason(e.getMessage());
                     stateStore.save(run);
 
+                    emitEvent(WorkflowLifecycleEvent.forStep(
+                        workflowId, workflowId,
+                        WorkflowLifecycleEvent.Phase.STEP_FAILED, stepDef.name()));
+
                     log.error("Workflow [{}] step {} ({}) failed: {}",
                         workflowId, i, stepDef.name(), e.getMessage());
 
                     // Compensate in reverse order
+                    emitEvent(WorkflowLifecycleEvent.of(
+                        workflowId, workflowId,
+                        WorkflowLifecycleEvent.Phase.WORKFLOW_COMPENSATING));
                     compensate(workflowId, completedSteps, current);
 
                     run.setStatus(RunStatus.COMPENSATED);
                     stateStore.save(run);
+
+                    emitEvent(WorkflowLifecycleEvent.of(
+                        workflowId, workflowId,
+                        WorkflowLifecycleEvent.Phase.WORKFLOW_COMPENSATED));
                     throw e;
                 }
             }
 
             run.setStatus(RunStatus.COMPLETED);
             stateStore.save(run);
+
+            emitEvent(WorkflowLifecycleEvent.of(
+                workflowId, workflowId,
+                WorkflowLifecycleEvent.Phase.WORKFLOW_COMPLETED));
             return current;
         });
 
@@ -139,6 +181,9 @@ public final class DurableWorkflowEngine {
                     long sleepMs = backoff.toMillis() * (1L << (attempt - 1)); // exponential
                     log.info("Retrying step {} (attempt {}/{}), backoff {}ms",
                         stepDef.name(), attempt + 1, maxRetries + 1, sleepMs);
+                    emitEvent(WorkflowLifecycleEvent.forStep(
+                        "run", stepDef.name(),
+                        WorkflowLifecycleEvent.Phase.STEP_RETRYING, stepDef.name()));
                     Thread.sleep(sleepMs);
                 }
 
@@ -317,12 +362,14 @@ public final class DurableWorkflowEngine {
         private int defaultMaxRetries = 3;
         private Duration defaultRetryBackoff = Duration.ofSeconds(1);
         private ExecutorService executor;
+        private final List<WorkflowLifecycleListener> listeners = new ArrayList<>();
 
         public Builder stateStore(WorkflowStateStore store) { this.stateStore = store; return this; }
         public Builder defaultTimeout(Duration d) { this.defaultTimeout = d; return this; }
         public Builder defaultMaxRetries(int n) { this.defaultMaxRetries = n; return this; }
         public Builder defaultRetryBackoff(Duration d) { this.defaultRetryBackoff = d; return this; }
         public Builder executor(ExecutorService e) { this.executor = e; return this; }
+        public Builder addListener(WorkflowLifecycleListener l) { this.listeners.add(l); return this; }
 
         public DurableWorkflowEngine build() { return new DurableWorkflowEngine(this); }
     }

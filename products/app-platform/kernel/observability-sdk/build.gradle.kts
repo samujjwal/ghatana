@@ -29,6 +29,7 @@ java {
 dependencies {
     // ─── Platform observability (100% reuse — wrap, don't reimplement) ─────
     api(project(":platform:java:observability"))
+    api(project(":platform:java:core"))
 
     // ─── Micrometer (transitive via platform:java:observability, explicit for IDE) ─
     api(libs.micrometer.core)

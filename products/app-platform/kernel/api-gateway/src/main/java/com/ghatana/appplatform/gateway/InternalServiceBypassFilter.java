@@ -40,6 +40,10 @@ public final class InternalServiceBypassFilter implements com.ghatana.platform.h
     /** Header set by this filter to signal downstream components that the request is internal. */
     public static final String INTERNAL_REQUEST_HEADER = "X-Internal-Service";
 
+    /** Request attribute key for the internal service bypass flag. */
+    private static final io.activej.http.HttpHeader INTERNAL_ATTR_KEY =
+            io.activej.http.HttpHeaders.of("X-Ghatana-Internal");
+
     /** JWT role claim value that identifies an internal service account. */
     private static final String INTERNAL_SERVICE_ROLE = "INTERNAL_SERVICE";
 
@@ -48,6 +52,16 @@ public final class InternalServiceBypassFilter implements com.ghatana.platform.h
 
     public InternalServiceBypassFilter(Set<String> allowedServiceAccounts) {
         this.allowedServiceAccounts = Set.copyOf(allowedServiceAccounts);
+    }
+
+    /**
+     * Checks whether a request has been marked as an internal service request.
+     *
+     * @param request the HTTP request to check
+     * @return {@code true} if the request originates from a trusted internal service
+     */
+    public static boolean isInternalRequest(HttpRequest request) {
+        return Boolean.TRUE.equals(request.getAttribute(INTERNAL_ATTR_KEY));
     }
 
     @Override
@@ -63,12 +77,12 @@ public final class InternalServiceBypassFilter implements com.ghatana.platform.h
                 String sub  = jwt.getJWTClaimsSet().getSubject();
 
                 if (INTERNAL_SERVICE_ROLE.equals(role) && allowedServiceAccounts.contains(sub)) {
-                    // Mutate request by adding an internal marker header via a wrapped request
                     log.debug("Internal service bypass granted: sub={}", sub);
-                    // ActiveJ does not support mutable request headers directly;
-                    // store signal in a thread-local or attach as request attribute.
-                    // We add a custom header on the response path for downstream awareness.
-                    return next.serve(request);
+                    // ActiveJ HttpRequest is immutable — propagate the bypass flag via
+                    // a request attribute. Downstream filters (rate-limiter, tenant session)
+                    // check this attribute via isInternalRequest(request).
+                    HttpRequest markedRequest = request.withAttribute(INTERNAL_ATTR_KEY, Boolean.TRUE);
+                    return next.serve(markedRequest);
                 }
             } catch (Exception e) {
                 // Malformed JWT — let JwtValidationFilter handle the error; continue chain.

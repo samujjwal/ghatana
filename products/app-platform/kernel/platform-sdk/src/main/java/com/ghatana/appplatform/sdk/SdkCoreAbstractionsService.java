@@ -1,5 +1,6 @@
 package com.ghatana.appplatform.sdk;
 
+import com.ghatana.platform.core.util.PlatformVersion;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -152,8 +153,8 @@ public class SdkCoreAbstractionsService {
     private final Counter sdkClientCreatedTotal;
     private final Counter sdkEndpointRefreshTotal;
 
-    private static final String PLATFORM_VERSION = "1.0.0";
-    private static final String SDK_VERSION      = "1.0.0";
+    private static final String PLATFORM_VERSION = PlatformVersion.get().platformVersion();
+    private static final String SDK_VERSION      = PlatformVersion.get().sdkVersion();
 
     // -----------------------------------------------------------------------
     // Constructor

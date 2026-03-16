@@ -5,15 +5,19 @@ import com.ghatana.platform.http.server.filter.FilterChain;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * {@link FilterChain.Filter} that validates RS256-signed JWTs on every request.
@@ -23,7 +27,10 @@ import java.util.Date;
  *   <li>Extract {@code Authorization: Bearer <token>} header.</li>
  *   <li>Parse the compact JWT string.</li>
  *   <li>Verify the RS256 signature with the active public key from {@link SigningKeyProvider}.</li>
- *   <li>Check token expiry.</li>
+ *   <li>Check token expiry ({@code exp}).</li>
+ *   <li>Check not-before ({@code nbf}) — reject tokens not yet valid.</li>
+ *   <li>Check issuer ({@code iss}) — reject tokens from untrusted issuers.</li>
+ *   <li>Check audience ({@code aud}) — reject tokens not intended for this service.</li>
  *   <li>Forward to the next filter/servlet on success; return 401 on failure.</li>
  * </ol>
  *
@@ -43,12 +50,21 @@ public final class JwtValidationFilter implements FilterChain.Filter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final SigningKeyProvider signingKeyProvider;
+    private final String requiredIssuer;
+    private final String requiredAudience;
 
     /**
      * @param signingKeyProvider source of the active RSA public key for verification
+     * @param requiredIssuer     expected {@code iss} claim value (e.g. the platform IAM URL)
+     * @param requiredAudience   expected {@code aud} claim value (e.g. {@code "api-gateway"})
      */
-    public JwtValidationFilter(SigningKeyProvider signingKeyProvider) {
-        this.signingKeyProvider = signingKeyProvider;
+    public JwtValidationFilter(
+            @NotNull SigningKeyProvider signingKeyProvider,
+            @NotNull String requiredIssuer,
+            @NotNull String requiredAudience) {
+        this.signingKeyProvider = Objects.requireNonNull(signingKeyProvider, "signingKeyProvider");
+        this.requiredIssuer     = Objects.requireNonNull(requiredIssuer, "requiredIssuer");
+        this.requiredAudience   = Objects.requireNonNull(requiredAudience, "requiredAudience");
     }
 
     @Override
@@ -78,9 +94,34 @@ public final class JwtValidationFilter implements FilterChain.Filter {
                 return Promise.of(HttpResponse.ofCode(401));
             }
 
-            Date expiry = jwt.getJWTClaimsSet().getExpirationTime();
-            if (expiry == null || expiry.before(new Date())) {
+            JWTClaimsSet claims = jwt.getJWTClaimsSet();
+            Date now = new Date();
+
+            // Validate expiry (exp)
+            Date expiry = claims.getExpirationTime();
+            if (expiry == null || expiry.before(now)) {
                 log.debug("JWT is expired or missing expiry claim");
+                return Promise.of(HttpResponse.ofCode(401));
+            }
+
+            // Validate not-before (nbf) — reject tokens not yet valid
+            Date notBefore = claims.getNotBeforeTime();
+            if (notBefore != null && notBefore.after(now)) {
+                log.debug("JWT not yet valid: nbf={}", notBefore);
+                return Promise.of(HttpResponse.ofCode(401));
+            }
+
+            // Validate issuer (iss) — reject tokens from untrusted issuers
+            String issuer = claims.getIssuer();
+            if (issuer == null || !requiredIssuer.equals(issuer)) {
+                log.warn("JWT issuer mismatch: expected={}, actual={}", requiredIssuer, issuer);
+                return Promise.of(HttpResponse.ofCode(401));
+            }
+
+            // Validate audience (aud) — reject tokens not intended for this service
+            List<String> audience = claims.getAudience();
+            if (audience == null || !audience.contains(requiredAudience)) {
+                log.warn("JWT audience mismatch: expected={}, actual={}", requiredAudience, audience);
                 return Promise.of(HttpResponse.ofCode(401));
             }
 
