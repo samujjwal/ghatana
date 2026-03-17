@@ -86,35 +86,16 @@ subprojects {
         // Parallel test execution
         maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
 
-        // ── Testcontainers Docker socket configuration ────────────────────────
-        // On macOS Docker Desktop 29+ the CLI proxy socket (/var/run/docker.sock)
-        // returns HTTP 400 for docker-java requests using API v1.32.
-        // Docker 29 requires API >= 1.44. docker-java 3.3.x defaults to 1.32.
-        // Fix: propagate the raw Docker daemon socket (from ~/.testcontainers.properties
-        // or $DOCKER_HOST) and set DOCKER_API_VERSION=1.44 for the test JVM.
-        // On Linux CI without any explicit config, TC auto-detects /var/run/docker.sock
-        // which works because Linux Docker typically accepts older API versions.
-        val resolvedDockerHost: String? = System.getenv("DOCKER_HOST") ?: run {
-            val tcPropsFile = File(System.getProperty("user.home"), ".testcontainers.properties")
-            if (tcPropsFile.exists()) {
-                val props = java.util.Properties()
-                tcPropsFile.inputStream().use { props.load(it) }
-                props.getProperty("docker.host")
-            } else null
-        }
-        if (resolvedDockerHost != null) {
-            environment("DOCKER_HOST", resolvedDockerHost)
-        }
-        // Docker Desktop 29+ requires Docker API >= 1.44. docker-java 3.3.x defaults to 1.32.
-        // Setting DOCKER_API_VERSION in both env and system property so docker-java picks it up
-        // regardless of how it reads configuration. This fixes the "client version 1.32 too old"
-        // BadRequestException from TC when validating Docker connectivity.
-        // Works cross-platform: Linux Docker accepts any API version; macOS Docker Desktop 29
-        // only accepts >= 1.44.
-        if (System.getenv("DOCKER_API_VERSION") == null) {
-            environment("DOCKER_API_VERSION", "1.44")
-        }
-        // ── End Docker socket configuration ───────────────────────────────────
+        // ── Testcontainers / Docker Desktop 29+ compatibility ────────────────
+        // Docker Desktop 29+ (docker-java API min 1.44) rejects requests using
+        // API v1.24 (the docker-java default). TC's shaded docker-java reads the
+        // API version only via the "api.version" Java system property — there is
+        // no DOCKER_API_VERSION env var mapping. Setting -Dapi.version=1.44 here
+        // ensures TC uses an API version that Docker Desktop 29 accepts.
+        // Works cross-platform: Linux Docker accepts any API version, so this has
+        // no adverse effect in CI.
+        jvmArgs("-Dapi.version=1.44")
+        // ── End Testcontainers / Docker Desktop compatibility ─────────────────
     }
     
     // Apply platform boundary guardrails to platform modules

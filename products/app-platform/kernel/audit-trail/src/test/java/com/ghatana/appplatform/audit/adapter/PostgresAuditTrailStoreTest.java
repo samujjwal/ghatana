@@ -73,9 +73,11 @@ class PostgresAuditTrailStoreTest extends EventloopTestBase {
 
     @BeforeEach
     void cleanTable() {
+        // TRUNCATE ... CASCADE bypasses row-level DELETE triggers (immutability
+        // enforcement) and also clears dependent tables (audit_approval_links).
         try (var conn = dataSource.getConnection();
              var stmt = conn.createStatement()) {
-            stmt.execute("DELETE FROM audit_logs");
+            stmt.execute("TRUNCATE TABLE audit_logs CASCADE");
         } catch (Exception e) {
             throw new RuntimeException("Failed to clean audit_logs before test", e);
         }

@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 
 /**
@@ -48,9 +49,9 @@ public final class PostgresAuditTrailStore implements AuditTrailStore {
 
     private static final String SQL_INSERT =
         "INSERT INTO audit_logs "
-        + "(audit_id, action, actor, resource, details, outcome, tenant_id, trace_id, "
+        + "(audit_id, sequence_number, action, actor, resource, details, outcome, tenant_id, trace_id, "
         + " previous_hash, current_hash, timestamp_bs, timestamp_gregorian) "
-        + "VALUES (?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?, ?, ?)";
+        + "VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?, ?, ?)";
 
     private static final String SQL_VERIFY_RANGE =
         "SELECT audit_id, sequence_number, action, actor, resource, details, outcome, "
@@ -102,24 +103,25 @@ public final class PostgresAuditTrailStore implements AuditTrailStore {
 
                     try (PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
                         ps.setString(1, entry.id());
-                        ps.setString(2, entry.action());
-                        ps.setString(3, toJson(Map.of(
+                        ps.setLong(2, nextSeq);
+                        ps.setString(3, entry.action());
+                        ps.setString(4, toJson(Map.of(
                             "user_id",    entry.actor().userId(),
                             "role",       entry.actor().role(),
-                            "ip_address", entry.actor().ipAddress(),
-                            "session_id", entry.actor().sessionId())));
-                        ps.setString(4, toJson(Map.of(
+                            "ip_address", Objects.toString(entry.actor().ipAddress(), ""),
+                            "session_id", Objects.toString(entry.actor().sessionId(), ""))));
+                        ps.setString(5, toJson(Map.of(
                             "type",      entry.resource().type(),
                             "id",        entry.resource().id(),
-                            "parent_id", entry.resource().parentId())));
-                        ps.setString(5, toJson(entry.details()));
-                        ps.setString(6, entry.outcome().name());
-                        ps.setString(7, entry.tenantId());
-                        ps.setString(8, entry.traceId());
-                        ps.setString(9, previousHash);
-                        ps.setString(10, currentHash);
-                        ps.setString(11, entry.timestampBs());
-                        ps.setTimestamp(12, Timestamp.from(now));
+                            "parent_id", Objects.toString(entry.resource().parentId(), ""))));
+                        ps.setString(6, toJson(entry.details()));
+                        ps.setString(7, entry.outcome().name());
+                        ps.setString(8, entry.tenantId());
+                        ps.setString(9, entry.traceId());
+                        ps.setString(10, previousHash);
+                        ps.setString(11, currentHash);
+                        ps.setString(12, entry.timestampBs());
+                        ps.setTimestamp(13, Timestamp.from(now));
                         ps.executeUpdate();
                     }
 

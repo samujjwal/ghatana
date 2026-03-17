@@ -1,5 +1,7 @@
 package com.ghatana.statestore.checkpoint;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -128,7 +130,12 @@ public final class CheckpointMetadata {
         private final long stateSize;
         private final String snapshotPath;
         
-        public OperatorCheckpointInfo(String operatorId, Instant ackTime, long stateSize, String snapshotPath) {
+        @JsonCreator
+        public OperatorCheckpointInfo(
+                @JsonProperty("operatorId")   String operatorId,
+                @JsonProperty("ackTime")      Instant ackTime,
+                @JsonProperty("stateSize")    long stateSize,
+                @JsonProperty("snapshotPath") String snapshotPath) {
             this.operatorId = operatorId;
             this.ackTime = ackTime;
             this.stateSize = stateSize;
