@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Card, Button, Loading } from '@ghatana/audio-video-ui';
+import { Card, Button, Loading } from '@ghatana/audio-video-product-ui';
 
 const VisionPanel: React.FC = () => {
   const [selectedImage, setSelectedImage] = React.useState<string | null>(null);

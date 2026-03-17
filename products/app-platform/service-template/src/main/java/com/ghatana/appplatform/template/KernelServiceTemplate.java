@@ -91,10 +91,10 @@ public final class KernelServiceTemplate {
             }
             if ("/ready".equals(path)) {
                 return readinessCheck.get().map(ready ->
-                        ready ? healthResponse() : HttpResponse.ofCode(503).withPlainText("not ready"));
+                        ready ? healthResponse() : HttpResponse.ofCode(503).withPlainText("not ready").build());
             }
 
-            return Promise.of(HttpResponse.ofCode(404).withPlainText("not found"));
+            return Promise.of(HttpResponse.ofCode(404).withPlainText("not found").build());
         };
     }
 
@@ -129,12 +129,16 @@ public final class KernelServiceTemplate {
         started.set(false);
     }
 
-    /** Returns the configured port (useful in tests when port = 0). */
+    /** Returns the actual bound port (resolves the OS-assigned port when configured with port 0). */
     public int getPort() {
-        return server != null ? server.getListenAddresses()
-                .stream().findFirst()
-                .map(addr -> ((java.net.InetSocketAddress) addr).getPort())
-                .orElse(port) : port;
+        if (server == null) return port;
+        // getBoundAddresses() returns the actual OS-assigned addresses after listen()
+        // whereas getListenAddresses() returns the configured (pre-bind) addresses.
+        java.util.List<java.net.InetSocketAddress> bound = server.getBoundAddresses();
+        if (!bound.isEmpty()) {
+            return bound.get(0).getPort();
+        }
+        return port;
     }
 
     // ─── Private helpers ─────────────────────────────────────────────────────
@@ -144,6 +148,7 @@ public final class KernelServiceTemplate {
                 {"status":"UP","service":"%s","version":"%s"}""".formatted(serviceName, VERSION);
         return HttpResponse.ok200()
                 .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
-                .withBody(body.getBytes());
+                .withBody(body.getBytes())
+                .build();
     }
 }

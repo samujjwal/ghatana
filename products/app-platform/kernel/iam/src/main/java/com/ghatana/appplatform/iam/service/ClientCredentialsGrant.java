@@ -73,16 +73,18 @@ public final class ClientCredentialsGrant {
     public Promise<TokenResponse> exchange(String clientIdStr, String rawSecret) {
         return store.getByClientIdStr(clientIdStr)
                 .then(optCred -> {
-                    ClientCredentials cred = optCred.orElseThrow(
-                            () -> new InvalidClientException("Unknown client: " + clientIdStr));
+                    if (optCred.isEmpty()) {
+                        return Promise.ofException(new InvalidClientException("Unknown client: " + clientIdStr));
+                    }
+                    ClientCredentials cred = optCred.get();
 
                     if (!passwordHasher.verify(rawSecret, cred.clientSecretHash())) {
-                        throw new InvalidClientException("Invalid client credentials");
+                        return Promise.ofException(new InvalidClientException("Invalid client credentials"));
                     }
 
                     if (!cred.isActive()) {
-                        throw new AccessDeniedException(
-                                "Client is " + cred.status().name().toLowerCase() + ": " + clientIdStr);
+                        return Promise.ofException(new AccessDeniedException(
+                                "Client is " + cred.status().name().toLowerCase() + ": " + clientIdStr));
                     }
 
                     return store.loadPermissionsForRoles(cred.grantedScopes(), cred.tenantId())

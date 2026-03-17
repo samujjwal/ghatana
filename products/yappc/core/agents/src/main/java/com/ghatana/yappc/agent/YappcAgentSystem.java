@@ -1,7 +1,7 @@
 package com.ghatana.yappc.agent;
 
 import com.ghatana.agent.framework.memory.MemoryStore;
-import com.ghatana.agent.framework.planner.AgentRegistry;
+import com.ghatana.agent.framework.planner.PlannerRegistry;
 import com.ghatana.agent.framework.planner.PlannerAgentFactory;
 import com.ghatana.agent.framework.runtime.BaseAgent;
 import com.ghatana.agent.framework.runtime.generators.LLMGenerator;
@@ -67,7 +67,7 @@ public class YappcAgentSystem {
     // --- Planner subsystem fields ---
     private final Eventloop eventloop;
     private final PlannerAgentFactory agentFactory;
-    private final AgentRegistry plannerRegistry;
+    private final PlannerRegistry plannerRegistry;
     private final Map<String, BaseAgent<?, ?>> plannerAgentInstances;
     private final String configBasePath;
 
@@ -103,7 +103,7 @@ public class YappcAgentSystem {
         this.eventloop = eventloop;
         this.configBasePath = configBasePath;
         this.agentFactory = new PlannerAgentFactory();
-        this.plannerRegistry = new AgentRegistry(agentFactory);
+        this.plannerRegistry = new PlannerRegistry(agentFactory);
         this.plannerAgentInstances = new HashMap<>();
         this.agentDefinitions = new HashMap<>();
         this.catalogEntries = new HashMap<>();
@@ -628,7 +628,7 @@ public class YappcAgentSystem {
      * @return the planner agent registry
      * @throws IllegalStateException if not initialized
      */
-    public AgentRegistry getPlannerRegistry() {
+    public PlannerRegistry getPlannerRegistry() {
         requireInitialized();
         return plannerRegistry;
     }

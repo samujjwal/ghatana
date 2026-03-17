@@ -49,7 +49,7 @@ class PipelineExecutionSimulationTest extends EventloopTestBase {
         catalog = new DefaultOperatorCatalog();
         
         OperatorId id = OperatorId.of("test", "simulation", "load-op", "1.0");
-        catalog.register(new DummyOperator(id));
+        catalog.register(new DummyOperator(id, executor));
     }
 
     @Test
@@ -79,14 +79,14 @@ class PipelineExecutionSimulationTest extends EventloopTestBase {
                         .build())
                 .collect(Collectors.toList());
 
-        // WHEN
-        Promise<List<PipelineExecutionResult>> aggregateResults = Promises.toList(
-                events.stream()
-                      .map(event -> engine.execute(pipeline, event, context))
-                      .collect(Collectors.toList())
+        // WHEN — all executions run inside runPromise so they are on the eventloop thread
+        List<PipelineExecutionResult> results = runPromise(() ->
+                Promises.toList(
+                        events.stream()
+                              .map(event -> engine.execute(pipeline, event, context))
+                              .collect(Collectors.toList())
+                )
         );
-
-        List<PipelineExecutionResult> results = runPromise(() -> aggregateResults);
 
         // THEN
         assertThat(results).hasSize(simulatedLoad);
@@ -99,9 +99,11 @@ class PipelineExecutionSimulationTest extends EventloopTestBase {
     // Using a minimal operator to test the engine routing without Mockito overhead
     private static class DummyOperator implements UnifiedOperator {
         private final OperatorId id;
+        private final ExecutorService sharedExecutor;
         
-        DummyOperator(OperatorId id) {
+        DummyOperator(OperatorId id, ExecutorService executor) {
             this.id = id;
+            this.sharedExecutor = executor;
         }
 
         @Override
@@ -117,18 +119,11 @@ class PipelineExecutionSimulationTest extends EventloopTestBase {
         @Override
         public Promise<OperatorResult> process(Event event) {
             // Emulate async IO boundary without blocking activej thread
-            return Promise.ofBlocking(Executors.newSingleThreadExecutor(), () -> {
-                try {
-                    Thread.sleep(1); // minimal delay simulating IO
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                return OperatorResult.builder().success().addEvent(Event.builder()
-                            .id(event.getId())
-                            .type(event.getType() + ".processed")
-                            .payload(Map.of("status", "processed"))
-                            .build()).build();
-            });
+            return Promise.ofBlocking(sharedExecutor, () -> OperatorResult.builder().success().addEvent(Event.builder()
+                        .id(event.getId())
+                        .type(event.getType() + ".processed")
+                        .payload(Map.of("status", "processed"))
+                        .build()).build());
         }
 
         @Override
@@ -153,7 +148,7 @@ class PipelineExecutionSimulationTest extends EventloopTestBase {
 
         @Override
         public OperatorState getState() {
-            return OperatorState.CREATED;
+            return OperatorState.RUNNING;
         }
 
         @Override

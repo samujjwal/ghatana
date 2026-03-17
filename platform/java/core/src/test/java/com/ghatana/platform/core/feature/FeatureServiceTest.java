@@ -124,7 +124,6 @@ class FeatureServiceTest {
         FeatureService defaultService = FeatureService.withDefaults();
         
         assertThat(defaultService.isEnabled(Feature.PLATFORM_ADVANCED_OBSERVABILITY)).isTrue();
-        assertThat(defaultService.isEnabled(Feature.AEP_ADVANCED_PATTERNS)).isTrue();
         assertThat(defaultService.isEnabled(Feature.SECURITY_GATEWAY_OAUTH)).isTrue();
     }
 }

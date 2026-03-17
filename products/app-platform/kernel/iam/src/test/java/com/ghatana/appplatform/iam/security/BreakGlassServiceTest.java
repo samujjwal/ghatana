@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,10 +45,10 @@ class BreakGlassServiceTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        when(jedisPool.getResource()).thenReturn(jedis);
-        when(audit.onBreakGlassActivated(any(), any(), any(), any(), any()))
+        lenient().when(jedisPool.getResource()).thenReturn(jedis);
+        lenient().when(audit.onBreakGlassActivated(any(), any(), any(), any(), any()))
                 .thenReturn(Promise.of(null));
-        when(audit.onBreakGlassRevoked(any(), any(), any()))
+        lenient().when(audit.onBreakGlassRevoked(any(), any(), any()))
                 .thenReturn(Promise.of(null));
         service = new BreakGlassService(jedisPool, Executors.newSingleThreadExecutor(), audit);
     }
@@ -75,8 +76,8 @@ class BreakGlassServiceTest extends EventloopTestBase {
                 runPromise(() -> service.activate("admin-1", "tenant-X", "Incident",
                         "super-admin-2", false)));
 
-        assertThat(thrown).hasCauseInstanceOf(IllegalArgumentException.class);
-        assertThat(thrown.getCause().getMessage()).contains("MFA");
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
+        assertThat(thrown.getMessage()).contains("MFA");
     }
 
     @Test
@@ -86,8 +87,8 @@ class BreakGlassServiceTest extends EventloopTestBase {
                 runPromise(() -> service.activate("admin-1", "tenant-X", "   ",
                         "super-admin-2", true)));
 
-        assertThat(thrown).hasCauseInstanceOf(IllegalArgumentException.class);
-        assertThat(thrown.getCause().getMessage()).contains("reason");
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
+        assertThat(thrown.getMessage()).contains("reason");
     }
 
     @Test
@@ -97,7 +98,7 @@ class BreakGlassServiceTest extends EventloopTestBase {
                 runPromise(() -> service.activate("admin-1", "tenant-X", null,
                         "super-admin-2", true)));
 
-        assertThat(thrown).hasCauseInstanceOf(IllegalArgumentException.class);
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

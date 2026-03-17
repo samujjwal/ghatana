@@ -66,7 +66,7 @@ class LocalFileSecretProviderTest extends EventloopTestBase {
     @DisplayName("getSecret on unknown path throws SecretNotFoundException")
     void get_unknownPath_throws() {
         assertThatThrownBy(() -> runPromise(() -> provider.getSecret("/unknown/path")))
-                .hasCauseInstanceOf(SecretProvider.SecretNotFoundException.class);
+                .isInstanceOf(SecretProvider.SecretNotFoundException.class);
     }
 
     @Test
@@ -76,7 +76,7 @@ class LocalFileSecretProviderTest extends EventloopTestBase {
         runPromise(() -> provider.deleteSecret("/temp/key"));
 
         assertThatThrownBy(() -> runPromise(() -> provider.getSecret("/temp/key")))
-                .hasCauseInstanceOf(SecretProvider.SecretNotFoundException.class);
+                .isInstanceOf(SecretProvider.SecretNotFoundException.class);
     }
 
     @Test

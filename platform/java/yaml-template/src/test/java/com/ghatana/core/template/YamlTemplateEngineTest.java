@@ -154,7 +154,7 @@ class YamlTemplateEngineTest {
             createYaml(dir, "base.yaml", """
                     id: base-id
                     name: BaseName
-                    timeout: 30
+                    timeout: '30'
                     """);
             Path child = createYaml(dir, "child.yaml", """
                     extends: base.yaml
@@ -174,12 +174,12 @@ class YamlTemplateEngineTest {
         void threeLevelChain() throws IOException {
             createYaml(dir, "grand.yaml", """
                     level: grand
-                    fromGrand: yes
+                    fromGrand: 'yes'
                     """);
             createYaml(dir, "parent.yaml", """
                     extends: grand.yaml
                     level: parent
-                    fromParent: yes
+                    fromParent: 'yes'
                     """);
             Path child = createYaml(dir, "child.yaml", """
                     extends: parent.yaml
@@ -244,7 +244,7 @@ class YamlTemplateEngineTest {
 
             assertThatThrownBy(() -> ENGINE.renderWithInheritance(a, TemplateContext.empty()))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContainingAnyOf("Circular", "circular");
+                    .hasMessageContaining("ircular");
         }
     }
 

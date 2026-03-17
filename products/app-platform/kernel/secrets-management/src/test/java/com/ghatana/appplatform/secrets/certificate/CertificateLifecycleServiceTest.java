@@ -48,7 +48,7 @@ class CertificateLifecycleServiceTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        doNothing().when(audit).emit(any());
+        lenient().doNothing().when(audit).emit(any());
         service = new CertificateLifecycleService(
                 CertificateLifecycleService.DEFAULT_RENEWAL_THRESHOLD,
                 Executors.newSingleThreadExecutor(),
@@ -112,7 +112,7 @@ class CertificateLifecycleServiceTest extends EventloopTestBase {
     @DisplayName("renew — unknown name throws IllegalArgumentException")
     void renew_unknownName_throws() {
         assertThatThrownBy(() -> runPromise(() -> service.renew("ghost-cert")))
-                .hasCauseInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("ghost-cert");
     }
 

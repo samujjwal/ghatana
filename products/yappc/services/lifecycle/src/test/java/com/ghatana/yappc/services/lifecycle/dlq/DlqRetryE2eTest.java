@@ -7,6 +7,7 @@ package com.ghatana.yappc.services.lifecycle.dlq;
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.orchestrator.subsys.TriggerListener;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import java.time.Instant;
 import com.ghatana.yappc.services.lifecycle.TriggerListenerBootstrap;
 import com.ghatana.yappc.services.lifecycle.YappcAepPipelineBootstrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,7 +20,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -171,15 +171,16 @@ class DlqRetryE2eTest extends EventloopTestBase {
         void shouldPublishMultipleFailures() {
             // WHEN — publish 3 independent failures
             for (int i = 1; i <= 3; i++) {
+                final int idx = i;
                 runPromise(() ->
                         inMemoryDlqPublisher.publish(
                                 "tenant-001",
                                 "pipeline-1",
-                                "node-" + i,
-                                "event.type." + i,
-                                Map.of("index", i),
-                                "ERROR_" + i,
-                                "corr-" + i
+                                "node-" + idx,
+                                "event.type." + idx,
+                                Map.of("index", idx),
+                                "ERROR_" + idx,
+                                "corr-" + idx
                         )
                 );
             }
@@ -432,18 +433,19 @@ class DlqRetryE2eTest extends EventloopTestBase {
             // GIVEN — publish 3 failures
             List<UUID> entryIds = new ArrayList<>();
             for (int i = 1; i <= 3; i++) {
+                final int idx = i;
                 runPromise(() ->
                         inMemoryDlqPublisher.publish(
                                 "tenant-001",
                                 "pipeline-1",
-                                "node-" + i,
+                                "node-" + idx,
                                 "event.type",
-                                Map.of("index", i),
-                                "ERROR_" + i,
-                                "corr-" + i
+                                Map.of("index", idx),
+                                "ERROR_" + idx,
+                                "corr-" + idx
                         )
                 );
-                entryIds.add(inMemoryDlqPublisher.getAllEntries().get(i - 1).id());
+                entryIds.add(inMemoryDlqPublisher.getAllEntries().get(idx - 1).id());
             }
 
             // WHEN — transition to different states
@@ -465,15 +467,16 @@ class DlqRetryE2eTest extends EventloopTestBase {
         void shouldQueryDlqByStatus() {
             // GIVEN — mixed status entries
             for (int i = 1; i <= 3; i++) {
+                final int idx = i;
                 runPromise(() ->
                         inMemoryDlqPublisher.publish(
                                 "tenant-001",
                                 "pipeline-1",
-                                "node-" + i,
+                                "node-" + idx,
                                 "event.type",
                                 Map.of(),
                                 "ERROR",
-                                "corr-" + i
+                                "corr-" + idx
                         )
                 );
             }
@@ -581,7 +584,7 @@ class DlqRetryE2eTest extends EventloopTestBase {
      * <p>Simulates a persistent DLQ store with state management.
      */
     private static class InMemoryDlqPublisher implements DlqPublisher {
-        private final Map<UUID, DlqEntryMutable> store = new ConcurrentHashMap<>();
+        private final Map<UUID, DlqEntryMutable> store = Collections.synchronizedMap(new LinkedHashMap<>());
 
         @Override
         public Promise<Void> publish(
@@ -593,51 +596,45 @@ class DlqRetryE2eTest extends EventloopTestBase {
                 String failureReason,
                 String correlationId) {
 
-            return Promise.ofBlocking(() -> {
-                UUID id = UUID.randomUUID();
-                DlqEntryMutable entry = new DlqEntryMutable(
-                        id,
-                        tenantId,
-                        pipelineId,
-                        nodeId,
-                        eventType,
-                        eventPayload != null ? new HashMap<>(eventPayload) : new HashMap<>(),
-                        failureReason,
-                        0,  // retryCount
-                        "PENDING",
-                        correlationId,
-                        System.currentTimeMillis(),
-                        System.currentTimeMillis(),
-                        null  // resolvedAt
-                );
-                store.put(id, entry);
-                return null;
-            });
+            UUID id = UUID.randomUUID();
+            DlqEntryMutable entry = new DlqEntryMutable(
+                    id,
+                    tenantId,
+                    pipelineId,
+                    nodeId,
+                    eventType,
+                    eventPayload != null ? new HashMap<>(eventPayload) : new HashMap<>(),
+                    failureReason,
+                    0,  // retryCount
+                    "PENDING",
+                    correlationId,
+                    System.currentTimeMillis(),
+                    System.currentTimeMillis(),
+                    null  // resolvedAt
+            );
+            store.put(id, entry);
+            return Promise.complete();
         }
 
         public Promise<Void> updateStatus(UUID id, String newStatus) {
-            return Promise.ofBlocking(() -> {
-                DlqEntryMutable entry = store.get(id);
-                if (entry != null) {
-                    entry.status = newStatus;
-                    entry.updatedAt = System.currentTimeMillis();
-                    if ("RESOLVED".equals(newStatus)) {
-                        entry.resolvedAt = System.currentTimeMillis();
-                    }
+            DlqEntryMutable entry = store.get(id);
+            if (entry != null) {
+                entry.status = newStatus;
+                entry.updatedAt = System.currentTimeMillis();
+                if ("RESOLVED".equals(newStatus)) {
+                    entry.resolvedAt = System.currentTimeMillis();
                 }
-                return null;
-            });
+            }
+            return Promise.complete();
         }
 
         public Promise<Void> incrementRetryCount(UUID id) {
-            return Promise.ofBlocking(() -> {
-                DlqEntryMutable entry = store.get(id);
-                if (entry != null) {
-                    entry.retryCount++;
-                    entry.updatedAt = System.currentTimeMillis();
-                }
-                return null;
-            });
+            DlqEntryMutable entry = store.get(id);
+            if (entry != null) {
+                entry.retryCount++;
+                entry.updatedAt = System.currentTimeMillis();
+            }
+            return Promise.complete();
         }
 
         public Optional<DlqEntry> getEntryById(UUID id) {
@@ -658,6 +655,22 @@ class DlqRetryE2eTest extends EventloopTestBase {
                     .toList();
         }
     }
+
+    /** Local mirror of {@code com.ghatana.yappc.api.dlq.DlqEntry} (avoids circular module dependency). */
+    private record DlqEntry(
+            UUID id,
+            String tenantId,
+            String pipelineId,
+            String nodeId,
+            String eventType,
+            Map<String, Object> eventPayload,
+            String failureReason,
+            int retryCount,
+            String status,
+            String correlationId,
+            Instant createdAt,
+            Instant updatedAt,
+            Instant resolvedAt) {}
 
     /**
      * Mutable companion for {@link DlqEntry} to support test state mutations.

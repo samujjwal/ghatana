@@ -42,7 +42,7 @@ class BsCalendarEdgeCaseTest {
         assertThat(result).isNotNull();
 
         // Cross-check: convert back — should round-trip to exactly BS 2072/02/32
-        BsDateComponents roundTrip = BsCalendarConversion.gregorianToBs(result);
+        BsCalendarConversion.BsDateComponents roundTrip = BsCalendarConversion.gregorianToBs(result);
         assertThat(roundTrip.year()).isEqualTo(2072);
         assertThat(roundTrip.month()).isEqualTo(2);
         assertThat(roundTrip.day()).isEqualTo(32);
@@ -54,7 +54,7 @@ class BsCalendarEdgeCaseTest {
         LocalDate lastOfMonth2 = BsCalendarConversion.bsToGregorian(2072, 2, 32);
         LocalDate firstOfMonth3 = lastOfMonth2.plusDays(1);
 
-        BsDateComponents nextDay = BsCalendarConversion.gregorianToBs(firstOfMonth3);
+        BsCalendarConversion.BsDateComponents nextDay = BsCalendarConversion.gregorianToBs(firstOfMonth3);
         assertThat(nextDay.year()).isEqualTo(2072);
         assertThat(nextDay.month()).isEqualTo(3);
         assertThat(nextDay.day()).isEqualTo(1);
@@ -71,7 +71,7 @@ class BsCalendarEdgeCaseTest {
         LocalDate lastDayChaitraGreg = BsCalendarConversion.bsToGregorian(2081, 12, 30);
         LocalDate newYearGreg        = lastDayChaitraGreg.plusDays(1);
 
-        BsDateComponents newYear = BsCalendarConversion.gregorianToBs(newYearGreg);
+        BsCalendarConversion.BsDateComponents newYear = BsCalendarConversion.gregorianToBs(newYearGreg);
         assertThat(newYear.year()).isEqualTo(2082);
         assertThat(newYear.month()).isEqualTo(1);
         assertThat(newYear.day()).isEqualTo(1);
@@ -83,7 +83,7 @@ class BsCalendarEdgeCaseTest {
         LocalDate baisakh1 = BsCalendarConversion.bsToGregorian(2082, 1, 1);
         LocalDate chaitraLast = baisakh1.minusDays(1);
 
-        BsDateComponents prev = BsCalendarConversion.gregorianToBs(chaitraLast);
+        BsCalendarConversion.BsDateComponents prev = BsCalendarConversion.gregorianToBs(chaitraLast);
         assertThat(prev.year()).isEqualTo(2081);
         assertThat(prev.month()).isEqualTo(12);
     }
@@ -98,7 +98,7 @@ class BsCalendarEdgeCaseTest {
         LocalDate greg = BsCalendarConversion.bsToGregorian(2070, 1, 1);
         assertThat(greg).isNotNull();
 
-        BsDateComponents back = BsCalendarConversion.gregorianToBs(greg);
+        BsCalendarConversion.BsDateComponents back = BsCalendarConversion.gregorianToBs(greg);
         assertThat(back.year()).isEqualTo(2070);
         assertThat(back.month()).isEqualTo(1);
         assertThat(back.day()).isEqualTo(1);

@@ -77,7 +77,7 @@ javax-inject = "1"
 nimbus-jose-jwt = "9.37.3"
 nimbus-oauth2-sdk = "11.10.1"
 bouncycastle = "1.78"
-jjwt = "0.12.3"
+# jjwt removed — canonical JWT library is Nimbus JOSE+JWT (zero callers of jjwt remain)
 
 # Logging
 slf4j = "2.0.13"

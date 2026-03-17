@@ -39,9 +39,15 @@ import java.util.stream.Collectors;
  * }</pre>
  *
  * @doc.type class
- * @doc.purpose Registry for managing AgentFactories and creating agents
- * @doc.layer platform
+ * @doc.purpose Factory registry for creating VirtualOrg agents via SPI-discovered AgentFactories
+ * @doc.layer product
  * @doc.pattern Registry, SPI
+ *
+ * @apiNote This class is distinct from {@code com.ghatana.agent.registry.AgentRegistry}
+ *     (platform:java:agent-registry). The platform registry is a persistent,
+ *     cross-product registry for TypedAgent metadata. This class is a factory
+ *     registry scoped to VirtualOrg agent creation only. Do not depend on
+ *     this class from other products — use the platform SPI instead.
  */
 public class AgentRegistry {
 

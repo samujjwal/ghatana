@@ -23,13 +23,13 @@ import static org.mockito.Mockito.*;
 class QualityMonitorTest {
 
     private QualityMonitor monitor;
-    private com.ghatana.observability.MetricsCollector metrics;
+    private com.ghatana.platform.observability.MetricsCollector metrics;
     private DataDriftDetector driftDetector;
 
     @BeforeEach
     void setUp() {
         // GIVEN: Mocked dependencies
-        metrics = mock(com.ghatana.observability.MetricsCollector.class);
+        metrics = mock(com.ghatana.platform.observability.MetricsCollector.class);
         driftDetector = mock(DataDriftDetector.class);
         monitor = new QualityMonitor(metrics, driftDetector);
     }
@@ -206,7 +206,7 @@ class QualityMonitorTest {
         // Verify no breach metric emitted
         verify(metrics, never()).incrementCounter(
                 argThat((String s) -> s.contains("sla_breach")),
-                any());
+                org.mockito.ArgumentMatchers.<java.util.Map<String, String>>any());
     }
 
     /**

@@ -79,36 +79,33 @@ public class DefaultLLMFactExtractor implements LLMFactExtractor {
     /**
      * {@inheritDoc}
      *
-     * <p>The LLM call is executed on a virtual-thread pool so the ActiveJ event-loop
-     * is never blocked.
+     * <p>The LLM call runs on the ActiveJ eventloop via {@code llmGateway.complete()}.
+     * JSON parsing runs on a virtual-thread pool via {@code Promise.ofBlocking}, keeping
+     * the eventloop free of CPU-bound work. Error recovery returns an empty list so that
+     * a failed extraction never blocks the learning pipeline.
      */
     @Override
     public @NotNull Promise<List<EnhancedFact>> extractFacts(@NotNull EnhancedEpisode episode) {
-        return Promise.ofBlocking(EXECUTOR, () -> doExtract(episode));
-    }
-
-    // ==================== Private Methods ====================
-
-    private List<EnhancedFact> doExtract(EnhancedEpisode episode) {
-        String userContent = buildUserPrompt(episode);
-
         CompletionRequest request = CompletionRequest.builder()
             .messages(List.of(
                 ChatMessage.system(SYSTEM_PROMPT),
-                ChatMessage.user(userContent)
+                ChatMessage.user(buildUserPrompt(episode))
             ))
             .maxTokens(MAX_RESPONSE_TOKENS)
-            .temperature(0.2)   // low temperature — factual extraction
+            .temperature(0.2)
             .build();
 
-        try {
-            String llmText = llmGateway.complete(request).getResult().getText();
-            return parseFacts(llmText, episode);
-        } catch (Exception e) {
-            log.warn("[LLMFactExtractor] extraction failed for agentId={} turnId={}: {}",
-                episode.getAgentId(), episode.getTurnId(), e.getMessage());
-            return List.of();
-        }
+        // Chain: (1) LLM call on eventloop → (2) JSON parsing on virtual thread
+        // Any failure in either step is caught by the error-recovery branch.
+        return llmGateway.complete(request)
+            .then(
+                response -> Promise.ofBlocking(EXECUTOR, () -> parseFacts(response.getText(), episode)),
+                e -> {
+                    log.warn("[LLMFactExtractor] extraction failed for agentId={} turnId={}: {}",
+                        episode.getAgentId(), episode.getTurnId(), e.getMessage());
+                    return Promise.of(List.of());
+                }
+            );
     }
 
     private String buildUserPrompt(EnhancedEpisode episode) {

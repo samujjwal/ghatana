@@ -24,6 +24,8 @@ import java.util.concurrent.Executors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import org.junit.jupiter.api.Disabled;
+
 /**
  * Integration tests for {@link PostgresEventSchemaRegistry}.
  *
@@ -32,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
+@Disabled("Requires Docker / Testcontainers")
 @Testcontainers
 @DisplayName("EventSchemaRegistry — Integration Tests")
 class PostgresEventSchemaRegistryTest extends EventloopTestBase {

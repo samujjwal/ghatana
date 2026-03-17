@@ -127,9 +127,9 @@ class PolicyLearningServiceTest {
                     .confidence(0.94)
                     .version(1)
                     .steps(List.of(
-                            ProcedureStep.builder().action("Parse user story text").build(),
-                            ProcedureStep.builder().action("Identify actors").build(),
-                            ProcedureStep.builder().action("List acceptance criteria").build()
+                            ProcedureStep.builder().description("Parse user story text").build(),
+                            ProcedureStep.builder().description("Identify actors").build(),
+                            ProcedureStep.builder().description("List acceptance criteria").build()
                     ))
                     .provenance(Provenance.builder().source("agent_reflection").build())
                     .validity(Validity.builder().confidence(0.94).build())
@@ -210,7 +210,7 @@ class PolicyLearningServiceTest {
     private static EnhancedProcedure buildProcedure(String id, double confidence,
                                                       List<String> stepActions) {
         List<ProcedureStep> steps = stepActions.stream()
-                .map(a -> ProcedureStep.builder().action(a).build())
+                .map(a -> ProcedureStep.builder().description(a).build())
                 .collect(Collectors.toList());
         return EnhancedProcedure.builder()
                 .id(id)

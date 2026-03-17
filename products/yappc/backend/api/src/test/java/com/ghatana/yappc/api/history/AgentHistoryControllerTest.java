@@ -213,7 +213,7 @@ class AgentHistoryControllerTest extends EventloopTestBase {
         void unauthenticatedReturns401() {
             HttpResponse response = runPromise(() ->
                     controller.getHistory(
-                            HttpRequest.builder(HttpMethod.GET, "/api/v1/agents/" + AGENT_ID + "/history")
+                            HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/agents/" + AGENT_ID + "/history")
                                     .build(),
                             AGENT_ID));
 
@@ -283,7 +283,7 @@ class AgentHistoryControllerTest extends EventloopTestBase {
             HttpResponse response = runPromise(() ->
                     controller.getRationale(
                             HttpRequest.builder(HttpMethod.GET,
-                                    "/api/v1/agents/" + AGENT_ID + "/rationale/turn-x").build(),
+                                    "http://localhost/api/v1/agents/" + AGENT_ID + "/rationale/turn-x").build(),
                             AGENT_ID, "turn-x"));
 
             assertThat(response.getCode()).isEqualTo(401);
@@ -324,7 +324,8 @@ class AgentHistoryControllerTest extends EventloopTestBase {
 
     /** Creates an HttpRequest with dev-mode X-Tenant-Id header (simulates authentication). */
     private HttpRequest devRequest(String url) {
-        return HttpRequest.builder(HttpMethod.GET, url)
+        String fullUrl = url.startsWith("http") ? url : "http://localhost" + url;
+        return HttpRequest.builder(HttpMethod.GET, fullUrl)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), TENANT_ID)
                 .build();
     }

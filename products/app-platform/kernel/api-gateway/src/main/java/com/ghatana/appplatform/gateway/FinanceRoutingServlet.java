@@ -1,9 +1,13 @@
 package com.ghatana.appplatform.gateway;
 
 import com.ghatana.platform.http.server.servlet.RoutingServlet;
+import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
+import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
+
+import java.util.function.Function;
 
 /**
  * Route declarations for all finance kernel APIs with URL-based versioning (K-11, K11-002).
@@ -55,43 +59,50 @@ public final class FinanceRoutingServlet {
      * @return fully configured versioned routing servlet
      */
     public static RoutingServlet build(
-            io.activej.http.AsyncServlet iamHandler,
-            io.activej.http.AsyncServlet ledgerHandler,
-            io.activej.http.AsyncServlet calendarHandler) {
+            AsyncServlet iamHandler,
+            AsyncServlet ledgerHandler,
+            AsyncServlet calendarHandler) {
 
         RoutingServlet router = new RoutingServlet();
 
+        // Wrap AsyncServlet handlers: AsyncServlet.serve() declares throws Exception, but
+        // addAsyncRoute() requires Function<HttpRequest, Promise<HttpResponse>> (no checked throws).
+        // wrap() catches any exception and surfaces it as a failed Promise.
+        Function<HttpRequest, Promise<HttpResponse>> wrappedIam      = wrap(iamHandler);
+        Function<HttpRequest, Promise<HttpResponse>> wrappedLedger   = wrap(ledgerHandler);
+        Function<HttpRequest, Promise<HttpResponse>> wrappedCalendar = wrap(calendarHandler);
+
         // ─── V2 (current) ────────────────────────────────────────────────────────
-        router.addAsyncRoute(HttpMethod.POST, "/api/v2/iam/token",              iamHandler::serve);
-        router.addAsyncRoute(HttpMethod.GET,  "/api/v2/ledger/accounts/:id",    ledgerHandler::serve);
-        router.addAsyncRoute(HttpMethod.POST, "/api/v2/ledger/journals",        ledgerHandler::serve);
-        router.addAsyncRoute(HttpMethod.GET,  "/api/v2/ledger/balance/:id",     ledgerHandler::serve);
-        router.addAsyncRoute(HttpMethod.GET,  "/api/v2/calendar/business-days", calendarHandler::serve);
+        router.addAsyncRoute(HttpMethod.POST, "/api/v2/iam/token",              wrappedIam);
+        router.addAsyncRoute(HttpMethod.GET,  "/api/v2/ledger/accounts/:id",    wrappedLedger);
+        router.addAsyncRoute(HttpMethod.POST, "/api/v2/ledger/journals",        wrappedLedger);
+        router.addAsyncRoute(HttpMethod.GET,  "/api/v2/ledger/balance/:id",     wrappedLedger);
+        router.addAsyncRoute(HttpMethod.GET,  "/api/v2/calendar/business-days", wrappedCalendar);
 
         // ─── V1 (deprecated) — adds Deprecation + Sunset headers, then delegates ─
         router.addAsyncRoute(HttpMethod.POST, "/api/v1/iam/token",
-            req -> iamHandler.serve(req).map(resp -> withDeprecationHeaders(resp, "/api/v2/iam/token")));
+            req -> wrappedIam.apply(req).map(resp -> withDeprecationHeaders(resp, "/api/v2/iam/token")));
 
         router.addAsyncRoute(HttpMethod.GET, "/api/v1/ledger/accounts/:id",
-            req -> ledgerHandler.serve(req).map(r -> withDeprecationHeaders(r, "/api/v2/ledger/accounts/:id")));
+            req -> wrappedLedger.apply(req).map(r -> withDeprecationHeaders(r, "/api/v2/ledger/accounts/:id")));
 
         router.addAsyncRoute(HttpMethod.POST, "/api/v1/ledger/journals",
-            req -> ledgerHandler.serve(req).map(r -> withDeprecationHeaders(r, "/api/v2/ledger/journals")));
+            req -> wrappedLedger.apply(req).map(r -> withDeprecationHeaders(r, "/api/v2/ledger/journals")));
 
         router.addAsyncRoute(HttpMethod.GET, "/api/v1/ledger/balance/:id",
-            req -> ledgerHandler.serve(req).map(r -> withDeprecationHeaders(r, "/api/v2/ledger/balance/:id")));
+            req -> wrappedLedger.apply(req).map(r -> withDeprecationHeaders(r, "/api/v2/ledger/balance/:id")));
 
         // ─── Unversioned legacy paths (redirect to v2) ──────────────────────────
         router.addAsyncRoute(HttpMethod.POST, "/api/iam/token",
             req -> Promise.of(
-                HttpResponse.redirect301("/api/v2/iam/token")));
+                HttpResponse.redirect301("/api/v2/iam/token").build()));
 
-        router.addRoute(HttpMethod.GET, "/api/ledger/*",
-            req -> HttpResponse.redirect301("/api/v2" + req.getPath()));
+        router.addAsyncRoute(HttpMethod.GET, "/api/ledger/*",
+            req -> Promise.of(HttpResponse.redirect301("/api/v2" + req.getPath()).build()));
 
         // Catch-all 404
-        router.addRoute(HttpMethod.GET, "/*", request ->
-            HttpResponse.ofCode(404));
+        router.addAsyncRoute(HttpMethod.GET, "/*", request ->
+            Promise.of(HttpResponse.ofCode(404).build()));
 
         return router;
     }
@@ -101,14 +112,31 @@ public final class FinanceRoutingServlet {
     // ──────────────────────────────────────────────────────────────────────
 
     /**
+     * Adapts an {@link AsyncServlet} to the {@link Function}{@code <HttpRequest, Promise<HttpResponse>>}
+     * required by {@link RoutingServlet#addAsyncRoute}. {@code AsyncServlet.serve()} declares
+     * {@code throws Exception}; this wrapper catches any exception and surfaces it as a failed
+     * Promise so the event loop can handle it gracefully.
+     */
+    private static Function<HttpRequest, Promise<HttpResponse>> wrap(AsyncServlet servlet) {
+        return req -> {
+            try {
+                return servlet.serve(req);
+            } catch (Exception e) {
+                return Promise.ofException(e);
+            }
+        };
+    }
+
+    /**
      * Appends RFC 8594 deprecation headers to an existing response.
      * The response object is returned as-is with added headers.
      */
     private static HttpResponse withDeprecationHeaders(HttpResponse response, String successorPath) {
-        return response
+        return HttpResponse.ofCode(response.getCode())
             .withHeader(io.activej.http.HttpHeaders.of("Deprecation"),        V1_DEPRECATION_DATE)
             .withHeader(io.activej.http.HttpHeaders.of("Sunset"),             V1_SUNSET_DATE)
             .withHeader(io.activej.http.HttpHeaders.of("Link"),
-                "<" + successorPath + ">; rel=\"successor-version\"");
+                "<" + successorPath + ">; rel=\"successor-version\"")
+            .build();
     }
 }

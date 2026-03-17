@@ -38,8 +38,7 @@
  * @doc.pattern Observer/Coordinator
  */
 
-import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { atom, createStore } from 'jotai';
 
 /**
  * Sync operation data to send to backend.
@@ -64,21 +63,35 @@ interface EventSyncState {
 }
 
 /**
- * Singleton Event Sync Service using Zustand for state management.
+ * Singleton Event Sync Service state managed via Jotai atoms.
  */
-export const EventSyncService = create<EventSyncState>()(
-  subscribeWithSelector(() => {
-    const initialState: EventSyncState = {
-      isStarted: false,
-      isPaused: false,
-      queuedOperations: [],
-      lastSyncTime: null,
-      syncAttempts: 0,
-      maxRetries: 3,
-    };
-    return initialState;
-  })
-);
+const eventSyncStore = createStore();
+const isStartedAtom = atom(false);
+const isPausedAtom = atom(false);
+const queuedOperationsAtom = atom<SyncPayload[]>([]);
+const lastSyncTimeAtom = atom<number | null>(null);
+const syncAttemptsAtom = atom(0);
+const maxRetriesAtom = atom(3);
+
+/** Convenience accessor — mirrors the old Zustand .getState() API. */
+export const EventSyncService = {
+  getState: (): EventSyncState => ({
+    isStarted: eventSyncStore.get(isStartedAtom),
+    isPaused: eventSyncStore.get(isPausedAtom),
+    queuedOperations: eventSyncStore.get(queuedOperationsAtom),
+    lastSyncTime: eventSyncStore.get(lastSyncTimeAtom),
+    syncAttempts: eventSyncStore.get(syncAttemptsAtom),
+    maxRetries: eventSyncStore.get(maxRetriesAtom),
+  }),
+  setState: (partial: Partial<EventSyncState>) => {
+    if (partial.isStarted !== undefined) eventSyncStore.set(isStartedAtom, partial.isStarted);
+    if (partial.isPaused !== undefined) eventSyncStore.set(isPausedAtom, partial.isPaused);
+    if (partial.queuedOperations !== undefined) eventSyncStore.set(queuedOperationsAtom, partial.queuedOperations);
+    if (partial.lastSyncTime !== undefined) eventSyncStore.set(lastSyncTimeAtom, partial.lastSyncTime);
+    if (partial.syncAttempts !== undefined) eventSyncStore.set(syncAttemptsAtom, partial.syncAttempts);
+    if (partial.maxRetries !== undefined) eventSyncStore.set(maxRetriesAtom, partial.maxRetries);
+  },
+};
 
 /**
  * Private state for managing sync intervals and callbacks.

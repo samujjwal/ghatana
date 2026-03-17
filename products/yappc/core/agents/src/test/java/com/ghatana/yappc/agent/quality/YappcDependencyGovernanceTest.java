@@ -134,6 +134,10 @@ class YappcDependencyGovernanceTest {
                 .that().resideInAnyPackage(
                     "com.ghatana.yappc.agent..",
                     "com.ghatana.yappc.plugin..")
+                // agent.learning is a known approved exception: PolicyLearningService uses
+                // LearnedPolicy + LearnedPolicyRepository from api until they are moved to
+                // a shared SPI module (tracked in AGENTIC_FRAMEWORK_HARDENING_PLAN.md)
+                .and().resideOutsideOfPackage("com.ghatana.yappc.agent.learning..")
                 .should().dependOnClassesThat()
                 .resideInAPackage("com.ghatana.yappc.api..")
                 .because("Core/SPI modules must not depend on the API layer")

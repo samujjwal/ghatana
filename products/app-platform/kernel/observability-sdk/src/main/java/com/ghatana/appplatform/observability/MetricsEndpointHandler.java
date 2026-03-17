@@ -8,7 +8,7 @@ import io.activej.http.AsyncServlet;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
-import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,10 +72,11 @@ public final class MetricsEndpointHandler implements AsyncServlet {
                 HttpResponse.ok200()
                     .withHeader(io.activej.http.HttpHeaders.of("Content-Type"), CONTENT_TYPE_PROMETHEUS)
                     .withBody(exposition.getBytes(StandardCharsets.UTF_8))
+                    .build()
             );
         } catch (Exception e) {
             log.error("[/metrics] Scrape failed: {}", e.getMessage(), e);
-            return Promise.of(HttpResponse.ofCode(500).withPlainText("Metrics collection failed"));
+            return Promise.of(HttpResponse.ofCode(500).withPlainText("Metrics collection failed").build());
         }
     }
 }

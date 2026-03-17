@@ -1,10 +1,7 @@
 package com.ghatana.appplatform.template;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.eventloop.Eventloop;
-import io.activej.http.HttpClient;
-import io.activej.http.HttpRequest;
-import io.activej.http.HttpResponse;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,15 +35,24 @@ class KernelServiceTemplateTest extends EventloopTestBase {
     private KernelServiceTemplate service;
 
     @BeforeEach
-    void setUp() throws Exception {
-        // Port 0 — OS assigns a free ephemeral port
-        service = new KernelServiceTemplate(getEventloop(), "test-service", 0);
-        service.start();
+    void setUp() {
+        // server.listen() requires the reactor thread — run via runPromise()
+        runPromise(() -> {
+            service = new KernelServiceTemplate(eventloop(), "test-service", 0);
+            service.start();
+            return Promise.of((Void) null);
+        });
     }
 
     @AfterEach
     void tearDown() {
-        service.stop();
+        if (service != null) {
+            runPromise(() -> {
+                service.stop();
+                service = null;
+                return Promise.of((Void) null);
+            });
+        }
     }
 
     @Test
@@ -58,43 +64,45 @@ class KernelServiceTemplateTest extends EventloopTestBase {
     @Test
     @DisplayName("TC-P0-012: GET /health returns 200 OK")
     void healthReturns200() {
-        int status = runPromise(() -> httpGet("/health").map(HttpResponse::getCode));
+        int status = runPromise(() -> httpGet("/health").map(java.net.http.HttpResponse::statusCode));
         assertThat(status).isEqualTo(200);
     }
 
     @Test
     @DisplayName("TC-P0-013: GET /ready returns 200 when readiness check passes")
     void readyReturns200WhenReady() {
-        int status = runPromise(() -> httpGet("/ready").map(HttpResponse::getCode));
+        int status = runPromise(() -> httpGet("/ready").map(java.net.http.HttpResponse::statusCode));
         assertThat(status).isEqualTo(200);
     }
 
     @Test
     @DisplayName("TC-P0-014: GET /ready returns 503 when readiness check fails")
-    void readyReturns503WhenUnhealthy() throws Exception {
-        service.stop();
-        // Re-create with a failing readiness check
-        service = new KernelServiceTemplate(
-                getEventloop(), "failing-service", 0,
-                () -> io.activej.promise.Promise.of(false));
-        service.start();
+    void readyReturns503WhenUnhealthy() {
+        runPromise(() -> {
+            service.stop();
+            // Re-create with a failing readiness check
+            service = new KernelServiceTemplate(
+                    eventloop(), "failing-service", 0,
+                    () -> Promise.of(false));
+            service.start();
+            return Promise.of((Void) null);
+        });
 
-        int status = runPromise(() -> httpGet("/ready").map(HttpResponse::getCode));
+        int status = runPromise(() -> httpGet("/ready").map(java.net.http.HttpResponse::statusCode));
         assertThat(status).isEqualTo(503);
     }
 
     @Test
     @DisplayName("TC-P0-015: Unknown route returns 404")
     void unknownRouteReturns404() {
-        int status = runPromise(() -> httpGet("/unknown").map(HttpResponse::getCode));
+        int status = runPromise(() -> httpGet("/unknown").map(java.net.http.HttpResponse::statusCode));
         assertThat(status).isEqualTo(404);
     }
 
     @Test
     @DisplayName("TC-P0-016: Health response contains status:UP JSON")
     void healthResponseContainsStatusUp() {
-        String body = runPromise(() ->
-                httpGet("/health").map(r -> new String(r.getBody())));
+        String body = runPromise(() -> httpGet("/health").map(java.net.http.HttpResponse::body));
         assertThat(body).contains("\"status\":\"UP\"");
         assertThat(body).contains("\"service\":\"test-service\"");
     }
@@ -102,26 +110,38 @@ class KernelServiceTemplateTest extends EventloopTestBase {
     @Test
     @DisplayName("TC-P0-017: Service stops cleanly without error")
     void serviceStopsCleanly() {
-        service.stop(); // should not throw
+        runPromise(() -> {
+            service.stop();
+            service = null;
+            return Promise.of((Void) null);
+        });
         assertThat(true).isTrue(); // stop completed without exception
     }
 
     @Test
     @DisplayName("TC-P0-018: Re-start after stop works")
-    void restartAfterStopWorks() throws Exception {
-        service.stop();
-        service = new KernelServiceTemplate(getEventloop(), "restarted-service", 0);
-        service.start();
+    void restartAfterStopWorks() {
+        runPromise(() -> {
+            service.stop();
+            service = new KernelServiceTemplate(eventloop(), "restarted-service", 0);
+            service.start();
+            return Promise.of((Void) null);
+        });
 
-        int status = runPromise(() -> httpGet("/health").map(HttpResponse::getCode));
+        int status = runPromise(() -> httpGet("/health").map(java.net.http.HttpResponse::statusCode));
         assertThat(status).isEqualTo(200);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
-    private io.activej.promise.Promise<HttpResponse> httpGet(String path) {
-        HttpClient client = HttpClient.create(getEventloop());
-        String url = "http://localhost:" + service.getPort() + path;
-        return client.request(HttpRequest.get(url).build());
+    private Promise<java.net.http.HttpResponse<String>> httpGet(String path) {
+        return Promise.ofBlocking(java.util.concurrent.Executors.newSingleThreadExecutor(), () -> {
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create("http://localhost:" + service.getPort() + path))
+                .GET()
+                .build();
+            return client.send(req, java.net.http.HttpResponse.BodyHandlers.ofString());
+        });
     }
 }

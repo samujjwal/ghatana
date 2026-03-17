@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/audio-video-types",
+  "name": "@ghatana/audio-video-product-types",
   "version": "1.0.0",
   "description": "Shared TypeScript types for audio-video application",
   "main": "dist/index.js",

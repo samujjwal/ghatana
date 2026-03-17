@@ -66,12 +66,14 @@ class GovernedMemoryPlaneTest extends EventloopTestBase {
         TenantIsolatingMemorySecurityManager security = new TenantIsolatingMemorySecurityManager();
         plane = new GovernedMemoryPlane(delegate, filter, security);
 
-        // Set the caller's tenant context for all tests
+        // Set the caller's tenant context on the eventloop thread (TenantContext is ThreadLocal)
         TenantContext.setCurrentTenantId(OWN_TENANT);
+        runBlocking(() -> TenantContext.setCurrentTenantId(OWN_TENANT));
     }
 
     @AfterEach
     void tearDown() {
+        runBlocking(TenantContext::clear);
         TenantContext.clear();
     }
 

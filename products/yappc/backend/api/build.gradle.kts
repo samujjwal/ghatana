@@ -49,6 +49,8 @@ dependencies {
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:ai-integration"))
+    implementation(project(":platform:java:ai-integration:feature-store"))
+    implementation(project(":platform:java:ai-integration:registry"))
     implementation(project(":platform:java:security"))
     implementation(project(":platform:java:agent-framework"))
     implementation(project(":platform:java:agent-memory"))
@@ -70,10 +72,6 @@ dependencies {
     
     // JWT Dependencies - uses platform security module's JWT support
     implementation(project(":platform:java:security"))
-    // JJWT for local JWT token provider
-    implementation("io.jsonwebtoken:jjwt-api:0.12.3")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.3")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.3")
     
     // ActiveJ Framework - using version catalog
     implementation(libs.activej.boot)

@@ -76,7 +76,7 @@ class DataDriftDetectorTest {
         // Verify no drift warning emitted
         verify(metrics, never()).incrementCounter(
                 argThat((String s) -> s.contains("drift")),
-                any());
+                org.mockito.ArgumentMatchers.<java.util.Map<String, String>>any());
     }
 
     /**

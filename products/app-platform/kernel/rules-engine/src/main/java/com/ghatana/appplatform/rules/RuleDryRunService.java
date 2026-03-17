@@ -55,23 +55,23 @@ public final class RuleDryRunService {
         Objects.requireNonNull(input,           "input");
 
         log.info("Dry-run: policy={} bundleVersion={} compareWithLive={}",
-                policyPath, candidateBundle.bundleVersion(), compareWithLive);
+                policyPath, candidateBundle.version(), compareWithLive);
 
         return opaEvaluationService.evaluate(policyPath, input)
                 .then(candidateResult -> {
                     if (!compareWithLive) {
-                        return Promise.of(new DryRunReport(candidateBundle.bundleVersion(),
-                                policyPath, candidateResult, null, false));
+                        return Promise.of(new DryRunReport(String.valueOf(candidateBundle.version()),
+                                policyPath, candidateResult.result(), null, false));
                     }
                     return opaEvaluationService.evaluate(policyPath, input)
                             .map(liveResult -> {
-                                boolean diverges = !Objects.equals(candidateResult, liveResult);
+                                boolean diverges = !Objects.equals(candidateResult.result(), liveResult.result());
                                 if (diverges) {
                                     log.warn("Dry-run divergence detected: policy={} bundleVersion={}",
-                                            policyPath, candidateBundle.bundleVersion());
+                                                    policyPath, candidateBundle.version());
                                 }
-                                return new DryRunReport(candidateBundle.bundleVersion(),
-                                        policyPath, candidateResult, liveResult, diverges);
+                                return new DryRunReport(String.valueOf(candidateBundle.version()),
+                                        policyPath, candidateResult.result(), liveResult.result(), diverges);
                             });
                 });
     }

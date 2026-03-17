@@ -429,7 +429,7 @@ class AuditQueryControllerE2eTest extends EventloopTestBase {
         @Override
         public Promise<List<AuditEvent>> findByEventType(String tenantId, String eventType) {
             return Promise.of(store.getOrDefault(tenantId, Collections.emptyList()).stream()
-                    .filter(e -> e.eventType().equals(eventType))
+                    .filter(e -> eventType == null || eventType.equals(e.eventType()))
                     .collect(Collectors.toList())
             );
         }
@@ -454,5 +454,20 @@ class AuditQueryControllerE2eTest extends EventloopTestBase {
         public Promise<Long> countByTenantId(String tenantId) {
             return Promise.of((long) store.getOrDefault(tenantId, Collections.emptyList()).size());
         }
+
+        @Override
+        public Promise<List<AuditEvent>> search(String tenantId, AuditQueryService.AuditSearchCriteria criteria) {
+            return Promise.of(store.getOrDefault(tenantId, Collections.emptyList()).stream()
+                    .filter(e -> criteria.resourceType() == null || criteria.resourceType().equals(e.resourceType()))
+                    .filter(e -> criteria.resourceId() == null || criteria.resourceId().equals(e.resourceId()))
+                    .filter(e -> criteria.principal() == null || criteria.principal().equals(e.principal()))
+                    .filter(e -> criteria.eventType() == null || criteria.eventType().equals(e.eventType()))
+                    .filter(e -> criteria.fromDate() == null || !e.timestamp().isBefore(criteria.fromDate()))
+                    .filter(e -> criteria.toDate() == null || !e.timestamp().isAfter(criteria.toDate()))
+                    .filter(e -> criteria.success() == null || criteria.success().equals(e.success()))
+                    .collect(Collectors.toList())
+            );
+        }
     }
 }
+

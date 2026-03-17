@@ -38,6 +38,9 @@ dependencies {
     // ─── JSON (OPA request/response serialisation) ────────────────────────────
     implementation(libs.jackson.databind)
 
+    // ─── Resilience4j (circuit breaker for OPA calls, K03-013) ───────────────
+    implementation(libs.resilience4j.circuitbreaker)
+
     // ─── Redis (result cache) ─────────────────────────────────────────────────
     implementation(libs.jedis)
 

@@ -627,72 +627,6 @@ capabilities:
   - rollout_config
   output_types:
   - flag_sync_result
-categories:
-- id: generation
-  name: Generation
-  description: Capabilities for generating code and content
-  icon: auto_fix_high
-  color: '#10B981'
-- id: testing
-  name: Testing
-  description: Capabilities for testing and quality assurance
-  icon: bug_report
-  color: '#F59E0B'
-- id: analysis
-  name: Analysis
-  description: Capabilities for code and system analysis
-  icon: analytics
-  color: '#3B82F6'
-- id: documentation
-  name: Documentation
-  description: Capabilities for documentation generation
-  icon: description
-  color: '#8B5CF6'
-- id: debugging
-  name: Debugging
-  description: Capabilities for debugging and troubleshooting
-  icon: pest_control
-  color: '#EF4444'
-- id: deployment
-  name: Deployment
-  description: Capabilities for deployment and operations
-  icon: cloud_upload
-  color: '#06B6D4'
-- id: data
-  name: Data & Database
-  description: Capabilities for data management
-  icon: storage
-  color: '#EC4899'
-- id: research
-  name: Research
-  description: Capabilities for research and exploration
-  icon: search
-  color: '#6366F1'
-- id: ai
-  name: AI/ML
-  description: AI and machine learning capabilities
-  icon: psychology
-  color: '#14B8A6'
-- id: cloud-security
-  name: Cloud Security
-  description: Capabilities for cloud security assessment and risk management
-  icon: shield
-  color: '#DC2626'
-- id: compliance
-  name: Compliance
-  description: Capabilities for regulatory compliance evaluation
-  icon: verified
-  color: '#7C3AED'
-- id: lifecycle
-  name: Project Lifecycle
-  description: Capabilities for project lifecycle management
-  icon: cycle
-  color: '#0EA5E9'
-- id: orchestration
-  name: Orchestration
-  description: Capabilities for multi-agent orchestration and coordination
-  icon: hub
-  color: '#F97316'
 - id: portfolio-analysis
   name: Portfolio Analysis
   description: Assess and analyze product portfolio health, value, and strategic fit
@@ -1200,3 +1134,97 @@ categories:
   output_types:
   - priority_ranking
   - roadmap_input
+- id: cost-optimization
+  name: Cost Optimization
+  description: Optimize cloud and infrastructure costs via rightsizing and reservations
+  category: operations
+  agent_capability: CostOptimization
+  input_types:
+  - request
+  output_types:
+  - result
+- id: portfolio-health-monitoring
+  name: Portfolio Health Monitoring
+  description: Monitor KPIs, delivery, and risk across the product portfolio
+  category: portfolio
+  agent_capability: PortfolioHealthMonitoring
+  input_types:
+  - request
+  output_types:
+  - result
+- id: support-engineering
+  name: Support Engineering
+  description: Manage incident triage, escalation, and post-incident reviews
+  category: operations
+  agent_capability: SupportEngineering
+  input_types:
+  - request
+  output_types:
+  - result
+
+categories:
+- id: generation
+  name: Generation
+  description: Capabilities for generating code and content
+  icon: auto_fix_high
+  color: '#10B981'
+- id: testing
+  name: Testing
+  description: Capabilities for testing and quality assurance
+  icon: bug_report
+  color: '#F59E0B'
+- id: analysis
+  name: Analysis
+  description: Capabilities for code and system analysis
+  icon: analytics
+  color: '#3B82F6'
+- id: documentation
+  name: Documentation
+  description: Capabilities for documentation generation
+  icon: description
+  color: '#8B5CF6'
+- id: debugging
+  name: Debugging
+  description: Capabilities for debugging and troubleshooting
+  icon: pest_control
+  color: '#EF4444'
+- id: deployment
+  name: Deployment
+  description: Capabilities for deployment and operations
+  icon: cloud_upload
+  color: '#06B6D4'
+- id: data
+  name: Data & Database
+  description: Capabilities for data management
+  icon: storage
+  color: '#EC4899'
+- id: research
+  name: Research
+  description: Capabilities for research and exploration
+  icon: search
+  color: '#6366F1'
+- id: ai
+  name: AI/ML
+  description: AI and machine learning capabilities
+  icon: psychology
+  color: '#14B8A6'
+- id: cloud-security
+  name: Cloud Security
+  description: Capabilities for cloud security assessment and risk management
+  icon: shield
+  color: '#DC2626'
+- id: compliance
+  name: Compliance
+  description: Capabilities for regulatory compliance evaluation
+  icon: verified
+  color: '#7C3AED'
+- id: lifecycle
+  name: Project Lifecycle
+  description: Capabilities for project lifecycle management
+  icon: cycle
+  color: '#0EA5E9'
+- id: orchestration
+  name: Orchestration
+  description: Capabilities for multi-agent orchestration and coordination
+  icon: hub
+  color: '#F97316'

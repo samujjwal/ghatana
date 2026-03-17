@@ -7,8 +7,7 @@
  * @module services/telemetryService
  */
 
-import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { atom, createStore } from 'jotai';
 // Note: @react-native-community/netinfo must be installed as a dependency
 // npm install @react-native-community/netinfo
 // For now, we use a fallback if not available
@@ -78,18 +77,30 @@ const DEFAULT_BATCH_SIZE = 10;
 const DEFAULT_FLUSH_INTERVAL_MS = 30000;
 const DEFAULT_MAX_BUFFER_SIZE = 100;
 
-/**
- * Telemetry Service store.
- */
-export const useTelemetryStore = create<TelemetryState>()(
-    subscribeWithSelector(() => ({
-        buffer: [] as GuardianEventPayload[],
-        isOnline: true as boolean,
-        lastFlushTime: null as number | null,
-        totalSent: 0,
-        totalErrors: 0,
-    }))
-);
+const telemetryStore = createStore();
+const bufferAtom        = atom<GuardianEventPayload[]>([]);
+const isOnlineAtom      = atom(true);
+const lastFlushAtom     = atom<number | null>(null);
+const totalSentAtom     = atom(0);
+const totalErrorsAtom   = atom(0);
+
+/** Zustand-compatible singleton accessor. */
+export const useTelemetryStore = {
+  getState: (): TelemetryState => ({
+    buffer: telemetryStore.get(bufferAtom),
+    isOnline: telemetryStore.get(isOnlineAtom),
+    lastFlushTime: telemetryStore.get(lastFlushAtom),
+    totalSent: telemetryStore.get(totalSentAtom),
+    totalErrors: telemetryStore.get(totalErrorsAtom),
+  }),
+  setState: (partial: Partial<TelemetryState>) => {
+    if (partial.buffer !== undefined) telemetryStore.set(bufferAtom, partial.buffer);
+    if (partial.isOnline !== undefined) telemetryStore.set(isOnlineAtom, partial.isOnline);
+    if (partial.lastFlushTime !== undefined) telemetryStore.set(lastFlushAtom, partial.lastFlushTime);
+    if (partial.totalSent !== undefined) telemetryStore.set(totalSentAtom, partial.totalSent);
+    if (partial.totalErrors !== undefined) telemetryStore.set(totalErrorsAtom, partial.totalErrors);
+  },
+};
 
 // Private state
 let config: TelemetryConfig | null = null;

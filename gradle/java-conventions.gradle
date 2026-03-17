@@ -183,7 +183,37 @@ project.afterEvaluate {
                 '--enable-preview',
                 '-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager'
             ]
-            
+
+            // ── Testcontainers Docker socket configuration ────────────────────
+            // On macOS Docker Desktop 29+ the default CLI proxy socket
+            // (/var/run/docker.sock) returns HTTP 400 for docker-java API v1.32
+            // (TCP path /v1.32/info) because Docker 29 requires API >= 1.44.
+            // Strategy (cross-platform — CI Linux + macOS local dev):
+            //   1. If DOCKER_HOST env var is already set (Linux CI) → forward it.
+            //   2. Else if ~/.testcontainers.properties has docker.host → use that.
+            //   3. Either way, set DOCKER_API_VERSION=1.44 so docker-java uses a
+            //      minimal API version accepted by modern Docker daemons.
+            //   4. On Linux without any explicit config, TC auto-detects
+            //      /var/run/docker.sock and that socket accepts old API versions.
+            def resolvedDockerHost = System.getenv('DOCKER_HOST')
+            if (!resolvedDockerHost) {
+                def tcProps = new File(System.getProperty('user.home'), '.testcontainers.properties')
+                if (tcProps.exists()) {
+                    def props = new Properties()
+                    tcProps.withInputStream { props.load(it) }
+                    resolvedDockerHost = props.getProperty('docker.host')
+                }
+            }
+            if (resolvedDockerHost) {
+                environment 'DOCKER_HOST', resolvedDockerHost
+                // Docker Desktop 29+ requires API >= 1.44; docker-java 3.3.x defaults
+                // to 1.32.  Setting DOCKER_API_VERSION forces a compatible version.
+                if (!System.getenv('DOCKER_API_VERSION')) {
+                    environment 'DOCKER_API_VERSION', '1.44'
+                }
+            }
+            // ── End Docker socket configuration ───────────────────────────────
+
             // Always run tests, even when nothing changed
             dependsOn 'cleanTest'
             

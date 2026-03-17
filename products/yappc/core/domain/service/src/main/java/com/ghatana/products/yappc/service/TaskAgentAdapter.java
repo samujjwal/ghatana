@@ -61,8 +61,10 @@ public class TaskAgentAdapter {
         return typedAgent.execute(input, agentContext)
                 .map(agentResult -> {
                     // Extract the output from agent result
-                    // Some legacy handlers might already unwrap the result and pass just a Map
-                    if (agentResult instanceof Map) {
+                    // Some legacy handlers might already unwrap the result and pass just a Map.
+                    // Cast to Object first since AgentResult is a final record type.
+                    Object rawResult = agentResult;
+                    if (rawResult instanceof Map) {
                         @SuppressWarnings("unchecked")
                         TOutput output = (TOutput) agentResult;
                         return output;

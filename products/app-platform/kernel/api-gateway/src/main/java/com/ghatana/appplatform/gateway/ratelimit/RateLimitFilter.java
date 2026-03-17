@@ -1,6 +1,7 @@
 package com.ghatana.appplatform.gateway.ratelimit;
 
 import com.ghatana.platform.http.server.filter.FilterChain;
+import io.activej.http.HttpHeader;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.HttpHeaders;
@@ -25,7 +26,7 @@ public class RateLimitFilter implements FilterChain.Filter {
 
     private static final Logger LOG = LoggerFactory.getLogger(RateLimitFilter.class);
 
-    private static final HttpHeaders.Value TENANT_HEADER = HttpHeaders.of("X-Tenant-Id");
+    private static final HttpHeader TENANT_HEADER = HttpHeaders.of("X-Tenant-Id");
 
     private final TokenBucketRateLimiter rateLimiter;
 
@@ -50,7 +51,8 @@ public class RateLimitFilter implements FilterChain.Filter {
             return Promise.of(HttpResponse.ofCode(429)
                 .withHeader(HttpHeaders.of("Retry-After"), String.valueOf(retryAfterSeconds))
                 .withHeader(HttpHeaders.of("X-RateLimit-Remaining"), "0")
-                .withPlainText("Rate limit exceeded. Retry after " + retryAfterSeconds + " seconds."));
+                .withPlainText("Rate limit exceeded. Retry after " + retryAfterSeconds + " seconds.")
+                .build());
         }
 
         LOG.debug("[RateLimitFilter] Allowed tenant={} tokensLeft={}", tenantId, result.tokensLeft());

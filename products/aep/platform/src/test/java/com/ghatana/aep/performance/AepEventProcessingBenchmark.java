@@ -38,13 +38,15 @@ public class AepEventProcessingBenchmark {
     // Standard JUnit runner for JMH
     @org.junit.jupiter.api.Test
     public void runJmh() throws Exception {
+        // Allow concurrent JMH runners in CI (multiple generated harness classes)
+        System.setProperty("jmh.ignoreLock", "true");
         Options opt = new OptionsBuilder()
                 .include(AepEventProcessingBenchmark.class.getSimpleName())
                 .warmupIterations(1)
                 .warmupTime(TimeValue.seconds(1))
                 .measurementIterations(1)
                 .measurementTime(TimeValue.seconds(1))
-                .forks(1)
+                .forks(0)  // in-process to avoid forked JVM startup overhead in CI
                 .shouldFailOnError(true)
                 .build();
 

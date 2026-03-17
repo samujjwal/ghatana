@@ -11,7 +11,7 @@ import com.ghatana.appplatform.calendar.domain.CalendarConversionResult;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
-import io.activej.http.RoutingServlet;
+import com.ghatana.platform.http.server.servlet.RoutingServlet;
 import io.activej.promise.Promise;
 
 import java.time.LocalDate;
@@ -46,9 +46,10 @@ public final class CalendarConversionServlet {
      * Builds the routing servlet. Attach to an existing {@code RoutingServlet} or HTTP server.
      */
     public RoutingServlet buildRoutes() {
-        return RoutingServlet.create()
-            .map(HttpMethod.GET, "/calendar/convert", this::handleConvert)
-            .map(HttpMethod.GET, "/calendar/today",   this::handleToday);
+        RoutingServlet router = new RoutingServlet();
+        router.addAsyncRoute(HttpMethod.GET, "/calendar/convert", this::handleConvert);
+        router.addAsyncRoute(HttpMethod.GET, "/calendar/today",   this::handleToday);
+        return router;
     }
 
     // ── Handlers  ─────────────────────────────────────────────────────────────
@@ -130,14 +131,16 @@ public final class CalendarConversionServlet {
         return Promise.of(HttpResponse.ofCode(400)
             .withBody(("{\"error\":\"BAD_REQUEST\",\"message\":\"" + escape(message) + "\"}").getBytes())
             .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE,
-                io.activej.http.HttpHeaderValue.of("application/json")));
+                io.activej.http.HttpHeaderValue.of("application/json"))
+            .build());
     }
 
     private static HttpResponse jsonResponse(int code, String body) {
         return HttpResponse.ofCode(code)
             .withBody(body.getBytes())
             .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE,
-                io.activej.http.HttpHeaderValue.of("application/json"));
+                io.activej.http.HttpHeaderValue.of("application/json"))
+            .build();
     }
 
     private static String escape(String s) {

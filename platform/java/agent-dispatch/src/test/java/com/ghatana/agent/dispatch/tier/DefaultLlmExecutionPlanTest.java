@@ -121,7 +121,7 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should use default provider/model when not specified in step")
+        @DisplayName("should return FAILED when model not specified (no hardcoded fallback)")
         void shouldUseDefaults() {
             CatalogAgentEntry entry = CatalogAgentEntry.builder()
                     .id("agent-default")
@@ -132,13 +132,10 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
                     ))
                     .build();
 
-            when(llmProvider.invoke(eq("ANTHROPIC"), eq("claude-3-5-sonnet-20241022"), anyString(), eq(0.2), eq(2000)))
-                    .thenReturn(Promise.of((Object) "default response"));
-
             AgentResult<Object> result = runPromise(() -> plan.execute(entry, "input", agentContext));
 
-            assertThat(result.isSuccess()).isTrue();
-            verify(llmProvider).invoke("ANTHROPIC", "claude-3-5-sonnet-20241022", "", 0.2, 2000);
+            assertThat(result.isSuccess()).isFalse();
+            assertThat(result.getExplanation()).containsIgnoringCase("model");
         }
 
         @Test

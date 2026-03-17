@@ -1,0 +1,57 @@
+id: ab-test-setup-task-agent
+name: A/B Test Setup
+version: 1.0.0
+namespace: yappc.tasks.product-intelligence
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
+description: A/B Test Setup task agent
+summary: Specialised task agent for A/B Test Setup
+metadata:
+  level: 3
+  domain: product-intelligence
+  tags:
+  - task-agent
+  - level3
+  - product-intelligence
+identity:
+  agentType: deterministic
+  subtype: rule
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: graceful-degrade
+  criticality: medium
+  autonomyLevel: automated
+interfaces:
+  inputs:
+  - name: task_request
+    schema: dynamic
+  outputs:
+  - name: task_result
+    schema: dynamic
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+tools:
+- file_read
+- file_write
+capabilities:
+- experimentation-coordination
+delegation:
+  can_delegate_to: []
+  escalates_to: product-intelligence-orchestrator
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 8000
+  timeout_ms: 15000

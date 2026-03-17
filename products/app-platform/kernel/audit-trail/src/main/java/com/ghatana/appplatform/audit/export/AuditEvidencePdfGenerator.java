@@ -258,7 +258,7 @@ public class AuditEvidencePdfGenerator {
             // Metadata block
             String[][] fields = {
                 { "Tenant ID:",      tenantId },
-                { "Date Range:",     TS_FMT.format(from) + " UTC  →  " + TS_FMT.format(to) + " UTC" },
+                { "Date Range:",     TS_FMT.format(from) + " UTC  ->  " + TS_FMT.format(to) + " UTC" },
                 { "Requested By:",   requestedBy },
                 { "Generated At:",   TS_FMT.format(Instant.now()) + " UTC" },
                 { "Total Entries:",  String.valueOf(totalRows) },

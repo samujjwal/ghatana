@@ -46,7 +46,7 @@ class FiscalYearCalculatorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("March 13 2026 (BS 2082/11/29) is in fiscal year FY 2082/83")
+    @DisplayName("March 13 2026 (BS 2082/11/30) is in fiscal year FY 2082/83")
     void march2026IsInFY2082() {
         // BS 2082/11 = Falgun = Q3 of FY 2082/83 (FY starts Shrawan 2082 ≈ Jul 2025)
         FiscalYear fy = calc.getFiscalYear(LocalDate.of(2026, 3, 13));
@@ -73,7 +73,8 @@ class FiscalYearCalculatorTest extends EventloopTestBase {
         FiscalYear fy = calc.getFiscalYear(LocalDate.of(2024, 7, 17));
         assertThat(fy.contains(LocalDate.of(2025, 1, 15))).isTrue();
         assertThat(fy.contains(LocalDate.of(2025, 7, 30))).isFalse(); // next FY
-        assertThat(fy.contains(LocalDate.of(2024, 7, 16))).isFalse(); // before FY
+        assertThat(fy.contains(LocalDate.of(2024, 7, 16))).isTrue();  // Shrawan 1 = first day OF FY
+        assertThat(fy.contains(LocalDate.of(2024, 7, 15))).isFalse(); // Ashadh 32 = day before FY start
     }
 
     @Test

@@ -8,10 +8,11 @@ import com.ghatana.yappc.infrastructure.datacloud.adapter.SecurityReport;
 import com.ghatana.yappc.infrastructure.datacloud.adapter.SecurityScanner;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
-import io.activej.test.rules.EventloopRule;
-import org.junit.ClassRule;
-import org.junit.DisplayName;
-import org.junit.Test;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
+import java.util.concurrent.Callable;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,10 +42,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @DisplayName("Security Scanning Integration Tests")
-public class SecurityScannerIntegrationTest {
+public class SecurityScannerIntegrationTest extends EventloopTestBase {
 
-    @ClassRule
-    public static EventloopRule eventloopRule = new EventloopRule();
+    
+    
 
     @Test
     @DisplayName("CompositeScanner#scan - executes all strategies in parallel")
@@ -57,14 +58,9 @@ public class SecurityScannerIntegrationTest {
             @Override
             public Promise<SecurityReport> scan(Path projectPath) {
                 scanner1ExecutionCount.incrementAndGet();
-                return Promise.of(SecurityReport.builder()
-                    .scannerName("Scanner1")
-                    .status(SecurityReport.Status.CLEAN)
-                    .findings(List.of(
-                        new SecurityReport.Finding(
-                            "S1-001", SecurityReport.Severity.MEDIUM, "Finding from Scanner 1")
-                    ))
-                    .build());
+                return Promise.of(SecurityReport.withFindings(List.of(
+                        new SecurityReport.Finding("S1-001", "Finding from Scanner 1", SecurityReport.Severity.MEDIUM, "unknown")
+                    ), "Scanner1"));
             }
         };
 
@@ -72,14 +68,9 @@ public class SecurityScannerIntegrationTest {
             @Override
             public Promise<SecurityReport> scan(Path projectPath) {
                 scanner2ExecutionCount.incrementAndGet();
-                return Promise.of(SecurityReport.builder()
-                    .scannerName("Scanner2")
-                    .status(SecurityReport.Status.CLEAN)
-                    .findings(List.of(
-                        new SecurityReport.Finding(
-                            "S2-001", SecurityReport.Severity.HIGH, "Finding from Scanner 2")
-                    ))
-                    .build());
+                return Promise.of(SecurityReport.withFindings(List.of(
+                        new SecurityReport.Finding("S2-001", "Finding from Scanner 2", SecurityReport.Severity.HIGH, "unknown")
+                    ), "Scanner2"));
             }
         };
 
@@ -87,15 +78,13 @@ public class SecurityScannerIntegrationTest {
         Path testPath = Paths.get(".");
 
         // WHEN
-        SecurityReport result = eventloopRule.getEventloop().run(() ->
-            composite.scan(testPath)
-        ).getResult();
+        SecurityReport result = runPromise(() -> composite.scan(testPath));
 
         // THEN
         assertThat(scanner1ExecutionCount).hasValue(1);
         assertThat(scanner2ExecutionCount).hasValue(1);
         assertThat(result).isNotNull();
-        assertThat(result.getFindings()).hasSize(2);
+        assertThat(result.findings()).hasSize(2);
         assertThat(result.getScannerName()).contains("Scanner1").contains("Scanner2");
     }
 
@@ -103,28 +92,19 @@ public class SecurityScannerIntegrationTest {
     @DisplayName("CompositeScanner#scan - deduplicates identical findings")
     public void testCompositeDeduplicatesFinding() {
         // GIVEN
-        SecurityReport finding = new SecurityReport.Finding(
-            "SHARED-ID", SecurityReport.Severity.HIGH, "Shared vulnerability");
+        SecurityReport.Finding finding = new SecurityReport.Finding("SHARED-ID", "Shared vulnerability", SecurityReport.Severity.HIGH, "unknown");
 
         SecurityScanner duplicateScanner1 = new SecurityScanner() {
             @Override
             public Promise<SecurityReport> scan(Path projectPath) {
-                return Promise.of(SecurityReport.builder()
-                    .scannerName("Scanner1")
-                    .status(SecurityReport.Status.VULNERABLE)
-                    .findings(List.of(finding))
-                    .build());
+                return Promise.of(SecurityReport.withFindings(List.of(finding), "Scanner1"));
             }
         };
 
         SecurityScanner duplicateScanner2 = new SecurityScanner() {
             @Override
             public Promise<SecurityReport> scan(Path projectPath) {
-                return Promise.of(SecurityReport.builder()
-                    .scannerName("Scanner2")
-                    .status(SecurityReport.Status.VULNERABLE)
-                    .findings(List.of(finding))
-                    .build());
+                return Promise.of(SecurityReport.withFindings(List.of(finding), "Scanner2"));
             }
         };
 
@@ -133,12 +113,10 @@ public class SecurityScannerIntegrationTest {
         );
 
         // WHEN
-        SecurityReport result = eventloopRule.getEventloop().run(() ->
-            composite.scan(Paths.get("."))
-        ).getResult();
+        SecurityReport result = runPromise(() -> composite.scan(Paths.get(".")));
 
         // THEN
-        assertThat(result.getFindings()).hasSize(1); // Deduplicated
+        assertThat(result.findings()).hasSize(1); // Deduplicated
         assertThat(result.getStatus()).isEqualTo(SecurityReport.Status.VULNERABLE);
     }
 
@@ -149,33 +127,23 @@ public class SecurityScannerIntegrationTest {
         SecurityScanner cleanScanner = new SecurityScanner() {
             @Override
             public Promise<SecurityReport> scan(Path projectPath) {
-                return Promise.of(SecurityReport.builder()
-                    .scannerName("CleanScanner")
-                    .status(SecurityReport.Status.CLEAN)
-                    .findings(List.of())
-                    .build());
+                return Promise.of(SecurityReport.clean("CleanScanner"));
             }
         };
 
         SecurityScanner vulnerableScanner = new SecurityScanner() {
             @Override
             public Promise<SecurityReport> scan(Path projectPath) {
-                return Promise.of(SecurityReport.builder()
-                    .scannerName("VulnerableScanner")
-                    .status(SecurityReport.Status.VULNERABLE)
-                    .findings(List.of(
-                        new SecurityReport.Finding("V-001", SecurityReport.Severity.CRITICAL, "Critical issue")
-                    ))
-                    .build());
+                return Promise.of(SecurityReport.withFindings(List.of(
+                        new SecurityReport.Finding("V-001", "Critical issue", SecurityReport.Severity.CRITICAL, "unknown")
+                    ), "VulnerableScanner"));
             }
         };
 
         CompositeSecurityScanner composite = new CompositeSecurityScanner(List.of(cleanScanner, vulnerableScanner));
 
         // WHEN
-        SecurityReport result = eventloopRule.getEventloop().run(() ->
-            composite.scan(Paths.get("."))
-        ).getResult();
+        SecurityReport result = runPromise(() -> composite.scan(Paths.get(".")));
 
         // THEN
         assertThat(result.getStatus()).isEqualTo(SecurityReport.Status.VULNERABLE);
@@ -195,26 +163,20 @@ public class SecurityScannerIntegrationTest {
         SecurityScanner successScanner = new SecurityScanner() {
             @Override
             public Promise<SecurityReport> scan(Path projectPath) {
-                return Promise.of(SecurityReport.builder()
-                    .scannerName("SuccessScanner")
-                    .status(SecurityReport.Status.CLEAN)
-                    .findings(List.of(
-                        new SecurityReport.Finding("S-001", SecurityReport.Severity.LOW, "Low severity")
-                    ))
-                    .build());
+                return Promise.of(SecurityReport.withFindings(List.of(
+                        new SecurityReport.Finding("S-001", "Low severity", SecurityReport.Severity.LOW, "unknown")
+                    ), "SuccessScanner"));
             }
         };
 
         CompositeSecurityScanner composite = new CompositeSecurityScanner(List.of(failingScanner, successScanner));
 
         // WHEN
-        SecurityReport result = eventloopRule.getEventloop().run(() ->
-            composite.scan(Paths.get("."))
-        ).getResult();
+        SecurityReport result = runPromise(() -> composite.scan(Paths.get(".")));
 
         // THEN
         assertThat(result).isNotNull();
-        assertThat(result.getFindings()).hasSize(1); // Only from success scanner
+        assertThat(result.findings()).hasSize(1); // Only from success scanner
         assertThat(result.getScannerName()).contains("SuccessScanner");
     }
 
@@ -225,48 +187,30 @@ public class SecurityScannerIntegrationTest {
         SecurityScanner satMockScanner = new SecurityScanner() {
             @Override
             public Promise<SecurityReport> scan(Path projectPath) {
-                return Promise.of(SecurityReport.builder()
-                    .scannerName("StaticAnalysisScanner(SAST)")
-                    .status(SecurityReport.Status.CLEAN)
-                    .findings(List.of(
-                        new SecurityReport.Finding(
-                            "SAST-CMD-001",
-                            SecurityReport.Severity.CRITICAL,
-                            "Command injection in generated code"
-                        )
-                    ))
-                    .build());
+                return Promise.of(SecurityReport.withFindings(List.of(
+                        new SecurityReport.Finding("SAST-CMD-001", "Command injection in generated code", SecurityReport.Severity.CRITICAL, "unknown")
+                    ), "StaticAnalysisScanner(SAST)"));
             }
         };
 
         SecurityScanner osvMockScanner = new SecurityScanner() {
             @Override
             public Promise<SecurityReport> scan(Path projectPath) {
-                return Promise.of(SecurityReport.builder()
-                    .scannerName("OsvScannerAdapter")
-                    .status(SecurityReport.Status.VULNERABLE)
-                    .findings(List.of(
-                        new SecurityReport.Finding(
-                            "CVE-2024-12345",
-                            SecurityReport.Severity.HIGH,
-                            "Remote code execution in dependency org.example:lib:1.0.0"
-                        )
-                    ))
-                    .build());
+                return Promise.of(SecurityReport.withFindings(List.of(
+                        new SecurityReport.Finding("CVE-2024-12345", "Remote code execution in dependency org.example:lib:1.0.0", SecurityReport.Severity.HIGH, "unknown")
+                    ), "OsvScannerAdapter"));
             }
         };
 
         CompositeSecurityScanner composite = new CompositeSecurityScanner(List.of(satMockScanner, osvMockScanner));
 
         // WHEN
-        SecurityReport result = eventloopRule.getEventloop().run(() ->
-            composite.scan(Paths.get("products/yappc"))
-        ).getResult();
+        SecurityReport result = runPromise(() -> composite.scan(Paths.get("products/yappc")));
 
         // THEN
         assertThat(result.getStatus()).isEqualTo(SecurityReport.Status.VULNERABLE); // OSV found vulnerability
-        assertThat(result.getFindings()).hasSize(2); // Both SAST and OSV findings
-        assertThat(result.findingsByCategory(SecurityReport.Severity.CRITICAL)).hasSize(1); // SAST finding
-        assertThat(result.findingsByCategory(SecurityReport.Severity.HIGH)).hasSize(1); // OSV finding
+        assertThat(result.findings()).hasSize(2); // Both SAST and OSV findings
+        assertThat(result.findings().stream().filter(f -> f.severity() == SecurityReport.Severity.CRITICAL).toList()).hasSize(1); // SAST finding
+        assertThat(result.findings().stream().filter(f -> f.severity() == SecurityReport.Severity.HIGH).toList()).hasSize(1); // OSV finding
     }
 }

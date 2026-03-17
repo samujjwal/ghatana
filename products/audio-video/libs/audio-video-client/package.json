@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/audio-video-client",
+  "name": "@ghatana/audio-video-product-client",
   "version": "1.0.0",
   "description": "Unified service client for audio-video application",
   "main": "dist/index.js",
@@ -18,7 +18,7 @@
     }
   },
   "dependencies": {
-    "@ghatana/audio-video-types": "workspace:*"
+    "@ghatana/audio-video-product-types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

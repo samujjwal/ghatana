@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Card, Button, Input, Loading } from '@ghatana/audio-video-ui';
+import { Card, Button, Input, Loading } from '@ghatana/audio-video-product-ui';
 
 const TTSPanel: React.FC = () => {
   const [text, setText] = React.useState('');

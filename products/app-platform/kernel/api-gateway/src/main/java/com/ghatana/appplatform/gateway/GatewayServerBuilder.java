@@ -4,6 +4,7 @@ import com.ghatana.appplatform.iam.port.SigningKeyProvider;
 import com.ghatana.platform.governance.security.TenantExtractionFilter;
 import com.ghatana.platform.http.server.filter.FilterChain;
 import com.ghatana.platform.http.server.server.HttpServerBuilder;
+import com.ghatana.platform.http.server.servlet.RoutingServlet;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpServer;
 
@@ -41,6 +42,8 @@ public final class GatewayServerBuilder {
     private int port = 8080;
     private String host = "0.0.0.0";
     private SigningKeyProvider signingKeyProvider;
+    private String requiredIssuer = "https://iam.ghatana.io";
+    private String requiredAudience = "api-gateway";
     private AsyncServlet iamHandler;
     private AsyncServlet ledgerHandler;
     private AsyncServlet calendarHandler;
@@ -63,10 +66,20 @@ public final class GatewayServerBuilder {
     }
 
     /**
-     * Provides the RSA signing key source used by {@link JwtValidationFilter}.
+     * Sets the required issuer claim for JWT validation.
      *
-     * @param signingKeyProvider active key provider
+     * @param requiredIssuer expected {@code iss} claim value
      */
+    public GatewayServerBuilder withRequiredIssuer(String requiredIssuer) {
+        this.requiredIssuer = requiredIssuer;
+        return this;
+    }
+
+    public GatewayServerBuilder withRequiredAudience(String requiredAudience) {
+        this.requiredAudience = requiredAudience;
+        return this;
+    }
+
     public GatewayServerBuilder withSigningKeyProvider(SigningKeyProvider signingKeyProvider) {
         this.signingKeyProvider = signingKeyProvider;
         return this;
@@ -102,7 +115,7 @@ public final class GatewayServerBuilder {
         requireNonNull(ledgerHandler,     "ledgerHandler");
         requireNonNull(calendarHandler,   "calendarHandler");
 
-        AsyncServlet routingServlet = FinanceRoutingServlet.build(
+        RoutingServlet routingServlet = FinanceRoutingServlet.build(
                 iamHandler, ledgerHandler, calendarHandler);
 
         return HttpServerBuilder.create()
@@ -110,8 +123,9 @@ public final class GatewayServerBuilder {
                 .withPort(port)
                 .withHealthCheck("/health")
                 .addFilter(TenantExtractionFilter.lenient())
-                .addFilter(new JwtValidationFilter(signingKeyProvider))
-                .build(routingServlet);
+                .addFilter(new JwtValidationFilter(signingKeyProvider, requiredIssuer, requiredAudience))
+                .addServlet(routingServlet)
+                .build();
     }
 
     private static <T> T requireNonNull(T value, String fieldName) {

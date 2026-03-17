@@ -126,6 +126,7 @@ include(":products:yappc:core:framework:integration-test")
 include(":products:yappc:core:refactorer:api")
 include(":products:yappc:core:refactorer:engine")
 include(":products:yappc:infrastructure:datacloud")
+include(":products:yappc:infrastructure:security")
 include(":products:yappc:libs:java:yappc-domain")
 include(":products:yappc:launcher")
 

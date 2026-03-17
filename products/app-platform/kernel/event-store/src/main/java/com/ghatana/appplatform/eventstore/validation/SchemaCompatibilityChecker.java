@@ -172,16 +172,33 @@ public final class SchemaCompatibilityChecker {
      * <p>Rules applied:
      * <ol>
      *   <li>No new required field may be added (old consumers don't know about it).</li>
+     *   <li>No new optional property may be added (any structural addition is at least MINOR).</li>
      * </ol>
      */
     private void checkForward(JsonNode oldRoot, JsonNode newRoot, List<String> violations) {
         Set<String> oldRequired  = requiredFields(oldRoot);
         Set<String> newRequired  = requiredFields(newRoot);
+        JsonNode    oldProps      = oldRoot.path("properties");
+        JsonNode    newProps      = newRoot.path("properties");
 
+        // Rule 1: No new required field
         for (String field : newRequired) {
             if (!oldRequired.contains(field)) {
                 violations.add("FORWARD: required field '" + field
                     + "' is new in the schema — old consumers cannot produce it.");
+            }
+        }
+
+        // Rule 2: No new optional property (any schema addition is at least a MINOR bump)
+        if (oldProps.isObject() && newProps.isObject()) {
+            Set<String> oldPropKeys = new HashSet<>();
+            oldProps.fieldNames().forEachRemaining(oldPropKeys::add);
+            for (Iterator<String> it = newProps.fieldNames(); it.hasNext(); ) {
+                String field = it.next();
+                if (!oldPropKeys.contains(field) && !newRequired.contains(field)) {
+                    violations.add("FORWARD: optional property '" + field
+                        + "' added — structural addition requires at least a MINOR version bump.");
+                }
             }
         }
     }

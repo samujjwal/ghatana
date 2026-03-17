@@ -57,8 +57,8 @@ services:
     image: grafana/grafana:10.2.3
     container_name: virtualorg-grafana
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD must be set}
       GF_INSTALL_PLUGINS: grafana-clock-panel
     volumes:
       - grafana_data:/var/lib/grafana
@@ -92,12 +92,12 @@ services:
       # Database
       DATABASE_URL: jdbc:postgresql://ghatana-postgres:5432/virtual_org
       DATABASE_USERNAME: ghatana
-      DATABASE_PASSWORD: ghatana123
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set}
 
       # Redis
       REDIS_HOST: ghatana-redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: redis123
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
 
       # Observability
       OTLP_TRACES_ENDPOINT: http://otel-collector:4317
@@ -152,10 +152,10 @@ services:
       LLM_API_KEY: ${OPENAI_API_KEY}
       DATABASE_URL: jdbc:postgresql://ghatana-postgres:5432/virtual_org
       DATABASE_USERNAME: ghatana
-      DATABASE_PASSWORD: ghatana123
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set}
       REDIS_HOST: ghatana-redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: redis123
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       OTLP_TRACES_ENDPOINT: http://otel-collector:4317
       OTLP_METRICS_ENDPOINT: http://otel-collector:4317
       AGENT_ROLE: ARCHITECT

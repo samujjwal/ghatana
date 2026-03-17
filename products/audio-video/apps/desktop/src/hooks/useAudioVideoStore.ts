@@ -1,12 +1,12 @@
 /**
  * @doc.type hook
- * @doc.purpose Zustand store for audio-video application state
+ * @doc.purpose Jotai atoms for audio-video application state
  * @doc.layer application
  * @doc.pattern state management
  */
 
-import { create } from 'zustand';
-import type { AudioVideoSettings, ServiceType } from '@ghatana/audio-video-types';
+import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
+import type { AudioVideoSettings, ServiceType } from '@ghatana/audio-video-product-types';
 
 interface AudioVideoStore {
   // Settings
@@ -89,18 +89,30 @@ const defaultSettings: AudioVideoSettings = {
   }
 };
 
-export const useAudioVideoStore = create<AudioVideoStore>((set, get) => ({
-  settings: defaultSettings,
-  updateSettings: (newSettings) => set((state) => ({
-    settings: { ...state.settings, ...newSettings }
-  })),
-  
-  activeService: 'stt',
-  setActiveService: (service) => set({ activeService: service }),
-  
-  isProcessing: false,
-  setIsProcessing: (processing) => set({ isProcessing: processing }),
-  
-  error: null,
-  setError: (error) => set({ error })
-}));
+// ── Atoms ────────────────────────────────────────────────────────────────
+
+export const settingsAtom = atom<AudioVideoSettings>(defaultSettings);
+export const activeServiceAtom = atom<ServiceType>('stt');
+export const isProcessingAtom = atom(false);
+export const errorAtom = atom<string | null>(null);
+
+export const updateSettingsAtom = atom(
+  null,
+  (get, set, newSettings: Partial<AudioVideoSettings>) => {
+    set(settingsAtom, { ...get(settingsAtom), ...newSettings });
+  }
+);
+
+// ── Composite hook (drop-in replacement for the old useAudioVideoStore) ───────
+export function useAudioVideoStore() {
+  const [settings, setSettings] = useAtom(settingsAtom);
+  const [activeService, setActiveService] = useAtom(activeServiceAtom);
+  const [isProcessing, setIsProcessing] = useAtom(isProcessingAtom);
+  const [error, setError] = useAtom(errorAtom);
+
+  const updateSettings = (newSettings: Partial<AudioVideoSettings>) => {
+    setSettings((prev) => ({ ...prev, ...newSettings }));
+  };
+
+  return { settings, updateSettings, activeService, setActiveService, isProcessing, setIsProcessing, error, setError };
+}

@@ -16,6 +16,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.stream.Collectors;
 
 /**
@@ -72,6 +74,7 @@ import java.util.stream.Collectors;
 public class AuditQueryController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuditQueryController.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final AuditQueryService auditQueryService;
 
@@ -118,7 +121,7 @@ public class AuditQueryController {
             logger.warn("[AUDIT] Query without tenantId");
             return Promise.of(
                     HttpResponse.ofCode(400)
-                            .withJson(Map.of("error", "tenantId required"))
+                            .withJson("{\"error\":\"tenantId required\"}")
                             .build()
             );
         }
@@ -160,7 +163,7 @@ public class AuditQueryController {
                     );
 
                     return HttpResponse.ok200()
-                            .withJson(response)
+                            .withJson(toJson(response))
                             .build();
                 })
                 .mapException(ex -> {
@@ -180,7 +183,7 @@ public class AuditQueryController {
         if (tenantId == null || tenantId.isEmpty() || eventId == null || eventId.isEmpty()) {
             return Promise.of(
                     HttpResponse.ofCode(400)
-                            .withJson(Map.of("error", "tenantId and eventId required"))
+                            .withJson("{\"error\":\"tenantId and eventId required\"}")
                             .build()
             );
         }
@@ -192,11 +195,11 @@ public class AuditQueryController {
                     if (optEvent.isPresent()) {
                         Map<String, Object> response = eventToMap(optEvent.get());
                         return HttpResponse.ok200()
-                                .withJson(response)
+                                .withJson(toJson(response))
                                 .build();
                     } else {
                         return HttpResponse.ofCode(404)
-                                .withJson(Map.of("error", "Audit event not found"))
+                                .withJson("{\"error\":\"Audit event not found\"}")
                                 .build();
                     }
                 })
@@ -216,7 +219,7 @@ public class AuditQueryController {
         if (tenantId == null || tenantId.isEmpty()) {
             return Promise.of(
                     HttpResponse.ofCode(400)
-                            .withJson(Map.of("error", "tenantId required"))
+                            .withJson("{\"error\":\"tenantId required\"}")
                             .build()
             );
         }
@@ -229,7 +232,7 @@ public class AuditQueryController {
                             "total", count
                     );
                     return HttpResponse.ok200()
-                            .withJson(response)
+                            .withJson(toJson(response))
                             .build();
                 })
                 .mapException(ex -> {
@@ -243,15 +246,23 @@ public class AuditQueryController {
      */
     private Map<String, Object> eventToMap(AuditEvent event) {
         return Map.of(
-                "id", event.id(),
-                "tenantId", event.tenantId(),
-                "eventType", event.eventType(),
-                "principal", event.principal(),
-                "resourceType", event.resourceType(),
-                "resourceId", event.resourceId(),
-                "success", event.success(),
-                "timestamp", event.timestamp().toString(),
-                "details", event.details() != null ? event.details() : Map.of()
+                "id", event.getId(),
+                "tenantId", event.getTenantId(),
+                "eventType", event.getEventType(),
+                "principal", event.getPrincipal() != null ? event.getPrincipal() : "",
+                "resourceType", event.getResourceType() != null ? event.getResourceType() : "",
+                "resourceId", event.getResourceId() != null ? event.getResourceId() : "",
+                "success", event.getSuccess(),
+                "timestamp", event.getTimestamp().toString(),
+                "details", event.getDetails() != null ? event.getDetails() : Map.of()
         );
+    }
+
+    private static String toJson(Object obj) {
+        try {
+            return MAPPER.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("JSON serialization failed", e);
+        }
     }
 }

@@ -46,7 +46,7 @@ dependencies {
     implementation(libs.jackson.dataformat.yaml)
 
     // JSON Schema validation for configuration governance
-    implementation("com.networknt:json-schema-validator:1.0.95")
+    implementation("com.networknt:json-schema-validator:1.5.9")
 
     // Observability — Prometheus metrics scrape endpoint
     implementation(libs.micrometer.registry.prometheus)

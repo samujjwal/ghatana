@@ -137,87 +137,83 @@ public class AuthGatewayLauncher extends Launcher {
                 // Login - issue JWT token after credential validation
                 .with(POST, "/auth/login", request -> {
                     metrics.incrementCounter("auth.gateway.login.count");
-                    try {
-                        String body = request.loadBody().getResult().getString(java.nio.charset.StandardCharsets.UTF_8);
-                        String username = extractJsonField(body, "username");
-                        String password = extractJsonField(body, "password");
+                    // Load body asynchronously — never call .getResult() on the eventloop thread
+                    return request.loadBody()
+                        .then(byteBuf -> {
+                            String body = byteBuf.getString(java.nio.charset.StandardCharsets.UTF_8);
+                            String username = extractJsonField(body, "username");
+                            String password = extractJsonField(body, "password");
 
-                        if (username == null || username.isEmpty()) {
-                            metrics.incrementCounter("auth.gateway.login.rejected");
-                            return HttpResponse.ofCode(400)
-                                    .withJson("{\"error\":\"Username is required\"}")
-                                    .build()
-                                    .toPromise();
-                        }
-                        if (password == null || password.isEmpty()) {
-                            metrics.incrementCounter("auth.gateway.login.rejected");
-                            return HttpResponse.ofCode(400)
-                                    .withJson("{\"error\":\"Password is required\"}")
-                                    .build()
-                                    .toPromise();
-                        }
+                            if (username == null || username.isEmpty()) {
+                                metrics.incrementCounter("auth.gateway.login.rejected");
+                                return Promise.of(HttpResponse.ofCode(400)
+                                        .withJson("{\"error\":\"Username is required\"}")
+                                        .build());
+                            }
+                            if (password == null || password.isEmpty()) {
+                                metrics.incrementCounter("auth.gateway.login.rejected");
+                                return Promise.of(HttpResponse.ofCode(400)
+                                        .withJson("{\"error\":\"Password is required\"}")
+                                        .build());
+                            }
 
-                        // Validate credentials against the credential store
-                        return credentialStore.findByUsername(username)
-                                .then(userOpt -> {
-                                    if (userOpt.isEmpty()) {
-                                        LOGGER.warn("Login attempt for unknown user: {}", username);
-                                        metrics.incrementCounter("auth.gateway.login.failed");
-                                        return HttpResponse.ofCode(401)
-                                                .withJson("{\"error\":\"Invalid username or password\"}")
-                                                .build()
-                                                .toPromise();
-                                    }
-                                    CredentialStore.StoredUser user = userOpt.get();
-                                    if (!user.enabled()) {
-                                        LOGGER.warn("Login attempt for disabled user: {}", username);
-                                        metrics.incrementCounter("auth.gateway.login.disabled");
-                                        return HttpResponse.ofCode(403)
-                                                .withJson("{\"error\":\"Account is disabled\"}")
-                                                .build()
-                                                .toPromise();
-                                    }
-                                    if (!PasswordHasher.verify(password, user.passwordHash())) {
-                                        LOGGER.warn("Invalid password for user: {}", username);
-                                        metrics.incrementCounter("auth.gateway.login.failed");
-                                        return HttpResponse.ofCode(401)
-                                                .withJson("{\"error\":\"Invalid username or password\"}")
-                                                .build()
-                                                .toPromise();
-                                    }
+                            // Validate credentials against the credential store
+                            return credentialStore.findByUsername(username)
+                                    .then(userOpt -> {
+                                        if (userOpt.isEmpty()) {
+                                            LOGGER.warn("Login attempt for unknown user: {}", username);
+                                            metrics.incrementCounter("auth.gateway.login.failed");
+                                            return Promise.of(HttpResponse.ofCode(401)
+                                                    .withJson("{\"error\":\"Invalid username or password\"}")
+                                                    .build());
+                                        }
+                                        CredentialStore.StoredUser user = userOpt.get();
+                                        if (!user.enabled()) {
+                                            LOGGER.warn("Login attempt for disabled user: {}", username);
+                                            metrics.incrementCounter("auth.gateway.login.disabled");
+                                            return Promise.of(HttpResponse.ofCode(403)
+                                                    .withJson("{\"error\":\"Account is disabled\"}")
+                                                    .build());
+                                        }
+                                        if (!PasswordHasher.verify(password, user.passwordHash())) {
+                                            LOGGER.warn("Invalid password for user: {}", username);
+                                            metrics.incrementCounter("auth.gateway.login.failed");
+                                            return Promise.of(HttpResponse.ofCode(401)
+                                                    .withJson("{\"error\":\"Invalid username or password\"}")
+                                                    .build());
+                                        }
 
-                                    // Credentials valid — issue tokens
-                                    String accessToken = tokenProvider.createToken(
-                                            user.username(), user.roles(),
-                                            java.util.Map.of(
-                                                    "email", user.email(),
-                                                    "tenantId", user.tenantId(),
-                                                    "tokenType", "ACCESS"));
-                                    String refreshToken = tokenProvider.createToken(
-                                            user.username(), user.roles(),
-                                            java.util.Map.of(
-                                                    "email", user.email(),
-                                                    "tenantId", user.tenantId(),
-                                                    "tokenType", "REFRESH"));
-                                    String response = String.format(
-                                            "{\"accessToken\":\"%s\",\"refreshToken\":\"%s\",\"expiresIn\":%d}",
-                                            accessToken, refreshToken, 3600);
-                                    LOGGER.info("User '{}' authenticated successfully (tenant: {})",
-                                            username, user.tenantId());
-                                    metrics.incrementCounter("auth.gateway.login.success");
-                                    return HttpResponse.ok200()
-                                            .withJson(response)
-                                            .build()
-                                            .toPromise();
-                                });
-                    } catch (Exception ex) {
-                        LOGGER.error("Login failed", ex);
-                        metrics.incrementCounter("auth.gateway.login.errors");
-                        return HttpResponse.ofCode(500)
-                                .withJson("{\"error\":\"Login failed\"}")
-                                .build()
-                                .toPromise();
-                    }
+                                        // Credentials valid — issue tokens
+                                        String accessToken = tokenProvider.createToken(
+                                                user.username(), user.roles(),
+                                                java.util.Map.of(
+                                                        "email", user.email(),
+                                                        "tenantId", user.tenantId(),
+                                                        "tokenType", "ACCESS"));
+                                        String refreshToken = tokenProvider.createToken(
+                                                user.username(), user.roles(),
+                                                java.util.Map.of(
+                                                        "email", user.email(),
+                                                        "tenantId", user.tenantId(),
+                                                        "tokenType", "REFRESH"));
+                                        String response = String.format(
+                                                "{\"accessToken\":\"%s\",\"refreshToken\":\"%s\",\"expiresIn\":%d}",
+                                                accessToken, refreshToken, 3600);
+                                        LOGGER.info("User '{}' authenticated successfully (tenant: {})",
+                                                username, user.tenantId());
+                                        metrics.incrementCounter("auth.gateway.login.success");
+                                        return Promise.of(HttpResponse.ok200()
+                                                .withJson(response)
+                                                .build());
+                                    });
+                        })
+                        .then(Promise::of, ex -> {
+                            LOGGER.error("Login failed", ex);
+                            metrics.incrementCounter("auth.gateway.login.errors");
+                            return Promise.of(HttpResponse.ofCode(500)
+                                    .withJson("{\"error\":\"Login failed\"}")
+                                    .build());
+                        });
                 })
                 // Validate - verify JWT token
                 .with(GET, "/auth/validate", request -> {

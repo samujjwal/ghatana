@@ -1,0 +1,57 @@
+id: tool-registry-task-agent
+name: Tool Registry
+version: 1.0.0
+namespace: yappc.tasks.engineering
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
+description: Tool Registry task agent
+summary: Specialised task agent for Tool Registry
+metadata:
+  level: 3
+  domain: engineering
+  tags:
+  - task-agent
+  - level3
+  - engineering
+identity:
+  agentType: deterministic
+  subtype: rule
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: graceful-degrade
+  criticality: medium
+  autonomyLevel: automated
+interfaces:
+  inputs:
+  - name: task_request
+    schema: dynamic
+  outputs:
+  - name: task_result
+    schema: dynamic
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+tools:
+- file_read
+- file_write
+capabilities:
+- platform-engineering
+delegation:
+  can_delegate_to: []
+  escalates_to: engineering-orchestrator
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 8000
+  timeout_ms: 15000

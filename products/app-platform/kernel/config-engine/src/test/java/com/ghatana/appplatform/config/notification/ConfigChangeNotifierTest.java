@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Testcontainers
 @DisplayName("ConfigChangeNotifier — Integration Tests")
+@org.junit.jupiter.api.Disabled("Requires Docker")
 class ConfigChangeNotifierTest extends EventloopTestBase {
 
     @Container

@@ -15,8 +15,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Definition-driven durable workflow runtime.
@@ -154,7 +157,9 @@ public final class DurableWorkflowRuntime {
                 WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED));
 
             WorkflowRun current = run.withStatus(WorkflowRunStatus.RUNNING);
-            stateStore.save(current).getResult();
+            // awaitBlocking is safe here: we are on a virtual thread inside Promise.ofBlocking,
+            // so the eventloop continues pumping while this thread waits on the latch.
+            awaitBlocking(stateStore.save(current));
 
             String stepId = current.currentStepId();
             Map<String, Object> ctx = new HashMap<>(current.variables());
@@ -180,14 +185,14 @@ public final class DurableWorkflowRuntime {
 
                     // Update run with new step and current variables
                     current = current.withCurrentStep(stepId).withVariables(ctx);
-                    stateStore.save(current).getResult();
+                    awaitBlocking(stateStore.save(current));
 
                 } catch (WaitSuspendException e) {
                     // WAIT step — persist and return
                     current = current.withStatus(WorkflowRunStatus.WAITING)
                                      .withCurrentStep(e.nextStepId())
                                      .withVariables(ctx);
-                    stateStore.save(current).getResult();
+                    awaitBlocking(stateStore.save(current));
 
                     emitEvent(WorkflowLifecycleEvent.forStep(
                         current.runId(), current.workflowId(),
@@ -202,7 +207,7 @@ public final class DurableWorkflowRuntime {
 
                     current = current.withStatus(WorkflowRunStatus.FAILED)
                                      .withError(e.getMessage());
-                    stateStore.save(current).getResult();
+                    awaitBlocking(stateStore.save(current));
 
                     emitEvent(WorkflowLifecycleEvent.of(
                         current.runId(), current.workflowId(),
@@ -215,7 +220,7 @@ public final class DurableWorkflowRuntime {
             // All steps done
             current = current.withVariables(ctx)
                              .withCompleted(WorkflowRunStatus.COMPLETED, Instant.now());
-            stateStore.save(current).getResult();
+            awaitBlocking(stateStore.save(current));
 
             emitEvent(WorkflowLifecycleEvent.of(
                 current.runId(), current.workflowId(),
@@ -272,7 +277,7 @@ public final class DurableWorkflowRuntime {
                     Thread.sleep(sleepMs);
                 }
 
-                Map<String, Object> result = operator.execute(ctx, stepDef.config()).getResult();
+                Map<String, Object> result = awaitBlocking(operator.execute(ctx, stepDef.config()));
                 if (result != null) {
                     ctx.putAll(result);
                 }
@@ -308,7 +313,7 @@ public final class DurableWorkflowRuntime {
     private String executeParallel(
             WorkflowStepDefinition stepDef,
             Map<String, Object> ctx,
-            WorkflowDefinition def) {
+            WorkflowDefinition def) throws Exception {
         // Parallel steps are defined via config["parallelStepIds"] as a comma-separated list
         Object parallelIds = stepDef.config().get("parallelStepIds");
         if (parallelIds == null) {
@@ -335,8 +340,8 @@ public final class DurableWorkflowRuntime {
             }));
         }
 
-        // Join all
-        Promises.toList(promises).getResult();
+        // Join all — block this virtual thread until all parallel branches complete
+        awaitBlocking(Promises.toList(promises));
         return stepDef.nextStep();
     }
 
@@ -347,12 +352,12 @@ public final class DurableWorkflowRuntime {
                 "SUB_WORKFLOW step '%s' has no subWorkflowId".formatted(stepDef.stepId()));
         }
 
-        // Start sub-workflow synchronously and merge results
-        WorkflowRun subRun = start(
+        // Start sub-workflow and block until complete (we are already on a virtual thread)
+        WorkflowRun subRun = awaitBlocking(start(
             stepDef.subWorkflowId(),
             "sub-tenant", // inherit from parent in production
             UUID.randomUUID().toString(),
-            ctx).getResult();
+            ctx));
 
         if (subRun.status() == WorkflowRunStatus.COMPLETED) {
             ctx.putAll(subRun.variables());
@@ -402,6 +407,47 @@ public final class DurableWorkflowRuntime {
                     event.phase(), e.getMessage(), e);
             }
         }
+    }
+
+    // ── Blocking bridge helper ────────────────────────────────────────────
+
+    /**
+     * Blocks the current non-eventloop thread (a virtual thread inside
+     * {@code Promise.ofBlocking}) until the given Promise completes, then
+     * returns its result or rethrows its exception.
+     *
+     * <p><strong>MUST NOT</strong> be called from the ActiveJ eventloop thread —
+     * only from threads dispatched by {@code Promise.ofBlocking}.
+     *
+     * @param promise the promise to await
+     * @param <T>     result type
+     * @return the completed result
+     * @throws Exception if the promise completes exceptionally or times out
+     */
+    private static <T> T awaitBlocking(Promise<T> promise) throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<T> resultRef = new AtomicReference<>();
+        AtomicReference<Throwable> errorRef = new AtomicReference<>();
+
+        // whenComplete callback is invoked on the eventloop thread when the promise settles.
+        // The CountDownLatch signals the waiting virtual thread with proper memory visibility.
+        promise.whenComplete((result, error) -> {
+            resultRef.set(result);
+            errorRef.set(error);
+            latch.countDown();
+        });
+
+        if (!latch.await(60, TimeUnit.SECONDS)) {
+            throw new RuntimeException(
+                "awaitBlocking: Promise did not complete within 60 seconds — possible deadlock");
+        }
+
+        Throwable error = errorRef.get();
+        if (error != null) {
+            if (error instanceof Exception ex) throw ex;
+            throw new RuntimeException("Promise completed with non-Exception throwable", error);
+        }
+        return resultRef.get();
     }
 
     // ── Exception for WAIT suspension ────────────────────────────────────

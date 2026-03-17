@@ -33,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Testcontainers
 @DisplayName("PostgresConfigStore — Integration Tests")
+@org.junit.jupiter.api.Disabled("Requires Docker")
 class PostgresConfigStoreTest extends EventloopTestBase {
 
     @Container

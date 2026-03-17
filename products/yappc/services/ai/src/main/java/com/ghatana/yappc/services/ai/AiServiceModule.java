@@ -174,7 +174,8 @@ public class AiServiceModule extends AbstractModule {
                     .timeoutSeconds(60)
                     .maxRetries(2)
                     .build();
-            builder.addProvider("ollama", new OllamaCompletionService(cfg, null, metrics));
+            builder.addProvider("ollama", new ToolAwareOllamaCompletionService(
+                    new OllamaCompletionService(cfg, null, metrics)));
             if (!anyConfigured) {
                 builder.defaultProvider("ollama");
             }

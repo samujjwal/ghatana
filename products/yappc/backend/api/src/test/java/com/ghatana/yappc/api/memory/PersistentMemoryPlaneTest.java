@@ -6,11 +6,11 @@ package com.ghatana.yappc.api.memory;
 
 import com.ghatana.agent.memory.model.MemoryItem;
 import com.ghatana.agent.memory.model.episode.EnhancedEpisode;
+import com.ghatana.agent.memory.model.taskstate.TaskState;
 import com.ghatana.agent.memory.model.working.WorkingMemoryConfig;
-import com.ghatana.agent.memory.persistence.JdbcMemoryItemRepository;
-import com.ghatana.agent.memory.persistence.JdbcTaskStateRepository;
 import com.ghatana.agent.memory.persistence.MemoryItemRepository;
 import com.ghatana.agent.memory.persistence.PersistentMemoryPlane;
+import com.ghatana.agent.memory.persistence.TaskStateRepository;
 import com.ghatana.agent.memory.store.taskstate.JdbcTaskStateStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -18,6 +18,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,14 +75,23 @@ class PersistentMemoryPlaneTest extends EventloopTestBase {
         int size() { return store.size(); }
     }
 
+    /** No-op in-memory TaskStateRepository for tests — task state never used in these tests. */
+    private static class NoOpTaskStateRepository implements TaskStateRepository {
+        @Override public Promise<TaskState> save(TaskState task) { return Promise.of(task); }
+        @Override public Promise<TaskState> findById(String taskId) { return Promise.of(null); }
+        @Override public Promise<List<TaskState>> findActiveByAgent(String agentId) { return Promise.of(List.of()); }
+        @Override public Promise<Void> updateStatus(String taskId, String status) { return Promise.complete(); }
+        @Override public Promise<Void> archive(String taskId) { return Promise.complete(); }
+        @Override public Promise<Integer> archiveInactiveSince(Instant since) { return Promise.of(0); }
+    }
+
     private MapMemoryItemRepository itemRepository;
     private PersistentMemoryPlane memoryPlane;
 
     @BeforeEach
     void setUp() {
         itemRepository = new MapMemoryItemRepository();
-        JdbcTaskStateRepository taskStateRepo = new JdbcTaskStateRepository();
-        JdbcTaskStateStore taskStateStore = new JdbcTaskStateStore(taskStateRepo);
+        JdbcTaskStateStore taskStateStore = new JdbcTaskStateStore(new NoOpTaskStateRepository());
         WorkingMemoryConfig config = WorkingMemoryConfig.builder()
                 .maxEntries(100)
                 .build();
@@ -124,7 +135,7 @@ class PersistentMemoryPlaneTest extends EventloopTestBase {
         // Simulate restart: create a new plane backed by the SAME itemRepository
         PersistentMemoryPlane restoredPlane = new PersistentMemoryPlane(
                 itemRepository,
-                new JdbcTaskStateStore(new JdbcTaskStateRepository()),
+                new JdbcTaskStateStore(new NoOpTaskStateRepository()),
                 WorkingMemoryConfig.builder().build());
 
         // Episode must still be readable from the shared store
@@ -173,7 +184,7 @@ class PersistentMemoryPlaneTest extends EventloopTestBase {
     void constructedWithDefaultConfig() {
         PersistentMemoryPlane plane = new PersistentMemoryPlane(
                 itemRepository,
-                new JdbcTaskStateStore(new JdbcTaskStateRepository()),
+                new JdbcTaskStateStore(new NoOpTaskStateRepository()),
                 WorkingMemoryConfig.builder().build());
         assertThat(plane).isNotNull();
     }

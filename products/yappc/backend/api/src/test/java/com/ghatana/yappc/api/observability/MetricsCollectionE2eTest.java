@@ -4,9 +4,10 @@
  */
 package com.ghatana.yappc.api.observability;
 
-import com.ghatana.platform.observability.Metrics;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -76,9 +77,9 @@ class MetricsCollectionE2eTest extends EventloopTestBase {
 
             // THEN — histogram present in output
             assertThat(prometheusText)
-                    .contains("agent_execution_duration_ms_bucket")
-                    .contains("agent_execution_duration_ms_count")
-                    .contains("agent_execution_duration_ms_sum");
+                    .contains("agent_execution_duration_ms_seconds_bucket")
+                    .contains("agent_execution_duration_ms_seconds_count")
+                    .contains("agent_execution_duration_ms_seconds_sum");
         }
 
         @Test
@@ -115,9 +116,9 @@ class MetricsCollectionE2eTest extends EventloopTestBase {
 
             // THEN — histogram present
             assertThat(prometheusText)
-                    .contains("llm_call_latency_ms_bucket")
-                    .contains("llm_call_latency_ms_count")
-                    .contains("llm_call_latency_ms_sum")
+                    .contains("llm_call_latency_ms_seconds_bucket")
+                    .contains("llm_call_latency_ms_seconds_count")
+                    .contains("llm_call_latency_ms_seconds_sum")
                     .contains("gpt-4")
                     .contains("gpt-3.5-turbo");
         }
@@ -189,11 +190,11 @@ class MetricsCollectionE2eTest extends EventloopTestBase {
 
             // THEN — bucket lines present for histogram_quantile calculation
             assertThat(prometheusText)
-                    .contains("agent_execution_duration_ms_bucket");
+                    .contains("agent_execution_duration_ms_seconds_bucket");
 
             // Verify bucket labels exist (le="X" for bucket boundaries)
             long bucketLines = prometheusText.lines()
-                    .filter(line -> line.contains("agent_execution_duration_ms_bucket") && line.contains("le="))
+                    .filter(line -> line.contains("agent_execution_duration_ms_seconds_bucket") && line.contains("le="))
                     .count();
             assertThat(bucketLines).isGreaterThan(0);
         }
@@ -291,9 +292,9 @@ class MetricsCollectionE2eTest extends EventloopTestBase {
 
             // THEN — intent.capture.duration histogram present
             assertThat(prometheusText)
-                    .contains("intent_capture_duration_ms_bucket")
-                    .contains("intent_capture_duration_ms_count")
-                    .contains("intent_capture_duration_ms_sum")
+                    .contains("intent_capture_duration_ms_seconds_bucket")
+                    .contains("intent_capture_duration_ms_seconds_count")
+                    .contains("intent_capture_duration_ms_seconds_sum")
                     .contains("trace-intent-001");
         }
 
@@ -310,11 +311,11 @@ class MetricsCollectionE2eTest extends EventloopTestBase {
             String prometheusText = metricsCollector.scrape();
 
             // THEN — histogram data suitable for percentile calculation
-            assertThat(prometheusText).contains("intent_capture_duration_ms_bucket");
+            assertThat(prometheusText).contains("intent_capture_duration_ms_seconds_bucket");
 
             // Verify count matches 4 records
             String countLine = prometheusText.lines()
-                    .filter(l -> l.contains("intent_capture_duration_ms_count") && !l.startsWith("#"))
+                    .filter(l -> l.contains("intent_capture_duration_ms_seconds_count") && !l.startsWith("#"))
                     .findFirst()
                     .orElse("");
             assertThat(countLine).isNotEmpty();
@@ -338,10 +339,10 @@ class MetricsCollectionE2eTest extends EventloopTestBase {
             assertThat(prometheusText)
                     .contains("intent_capture_duration_ms")
                     .contains("phase_advance_count_total")
-                    .contains("{phase=\"PERCEIVE\"}")
-                    .contains("{phase=\"REASON\"}")
-                    .contains("{phase=\"ACT\"}")
-                    .contains("{phase=\"CAPTURE\"}")
+                    .contains("phase=\"PERCEIVE\"")
+                    .contains("phase=\"REASON\"")
+                    .contains("phase=\"ACT\"")
+                    .contains("phase=\"CAPTURE\"")
                     .contains("agent_execution_duration_ms");
         }
 
@@ -376,31 +377,47 @@ class MetricsCollectionE2eTest extends EventloopTestBase {
      */
     private static class MockMetricsRecorder {
         private final MicrometerMetricsCollector collector;
+        private final MeterRegistry registry;
 
         MockMetricsRecorder(MicrometerMetricsCollector collector) {
             this.collector = collector;
+            this.registry = collector.getMeterRegistry();
         }
 
         void recordAgentExecutionDuration(String agentId, long durationMs) {
-            // In real implementation, this would use Metrics.Timer
-            // For testing, we directly interact with the internal registry
-            // This is a simplified mock — production code would use actual Metrics API
+            Timer.builder("agent_execution_duration_ms")
+                    .tags(Tags.of("agent_id", agentId))
+                    .publishPercentileHistogram(true)
+                    .register(registry)
+                    .record(durationMs, TimeUnit.MILLISECONDS);
         }
 
         void recordAgentExecutionDurationWithCorrelationId(String agentId, long durationMs, String correlationId) {
-            // Mock implementation with correlation ID
+            Timer.builder("agent_execution_duration_ms")
+                    .tags(Tags.of("agent_id", agentId, "correlation_id", correlationId))
+                    .publishPercentileHistogram(true)
+                    .register(registry)
+                    .record(durationMs, TimeUnit.MILLISECONDS);
         }
 
         void recordPhaseAdvance(String phase) {
-            // In real implementation: Metrics.Counter.increment("phase_advance_count", phase)
+            registry.counter("phase_advance_count", Tags.of("phase", phase)).increment();
         }
 
         void recordLlmCallLatency(String model, long latencyMs) {
-            // In real implementation: Metrics.Timer.record("llm_call_latency_ms", model)
+            Timer.builder("llm_call_latency_ms")
+                    .tags(Tags.of("model", model))
+                    .publishPercentileHistogram(true)
+                    .register(registry)
+                    .record(latencyMs, TimeUnit.MILLISECONDS);
         }
 
         void recordIntentCaptureDuration(long durationMs, String correlationId) {
-            // In real implementation: Metrics.Timer.record("intent_capture_duration_ms", correlationId)
+            Timer.builder("intent_capture_duration_ms")
+                    .tags(Tags.of("correlation_id", correlationId))
+                    .publishPercentileHistogram(true)
+                    .register(registry)
+                    .record(durationMs, TimeUnit.MILLISECONDS);
         }
     }
 }

@@ -7,8 +7,6 @@ import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import com.ghatana.yappc.services.lifecycle.operators.PhaseTransitionValidatorOperator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
-import io.activej.test.ExpectedException;
-import io.activej.test.rules.EventloopRule;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
@@ -19,10 +17,12 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 @DisplayName("YAPPC AEP Pipeline E2E Tests (Item 7.2)")
 class YappcAepPipelineE2eTest {
@@ -94,7 +94,7 @@ class YappcAepPipelineE2eTest {
         void shouldStartSuccessfully() {
             Promise<Void> result = triggerListenerBootstrap.start();
 
-            assertThat(result.isCompleted()).isTrue();
+            assertThat(result.isComplete()).isTrue();
             assertThat(triggerListenerBootstrap.isRunning()).isTrue();
             assertThat(triggerListenerBootstrap.getSubscriptionCount()).isEqualTo(1);
 
@@ -116,7 +116,7 @@ class YappcAepPipelineE2eTest {
             assertThat(triggerListenerBootstrap.getSubscriptionCount()).isEqualTo(1);
 
             verify(mockEventCloud, times(1)).subscribe(
-                any(String.class),
+                nullable(String.class),
                 any(String.class),
                 any(EventCloud.EventHandler.class)
             );
@@ -130,7 +130,7 @@ class YappcAepPipelineE2eTest {
 
             Promise<Void> result = triggerListenerBootstrap.stop();
 
-            assertThat(result.isCompleted()).isTrue();
+            assertThat(result.isComplete()).isTrue();
             assertThat(triggerListenerBootstrap.isRunning()).isFalse();
             assertThat(triggerListenerBootstrap.getSubscriptionCount()).isEqualTo(0);
 
@@ -382,7 +382,7 @@ class YappcAepPipelineE2eTest {
         void shouldGracefullyHandleStopWithoutStart() {
             Promise<Void> result = triggerListenerBootstrap.stop();
 
-            assertThat(result.isCompleted()).isTrue();
+            assertThat(result.isComplete()).isTrue();
             assertThat(triggerListenerBootstrap.isRunning()).isFalse();
         }
     }

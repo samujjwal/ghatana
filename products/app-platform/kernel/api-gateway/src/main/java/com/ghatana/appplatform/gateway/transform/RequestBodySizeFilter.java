@@ -1,6 +1,7 @@
 package com.ghatana.appplatform.gateway.transform;
 
 import com.ghatana.platform.http.server.filter.FilterChain;
+import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -36,7 +37,7 @@ public final class RequestBodySizeFilter implements FilterChain.Filter {
     /** Default maximum body size: 1 MiB. */
     public static final long DEFAULT_MAX_BYTES = 1_048_576L;
 
-    private static final HttpHeaders.Value CONTENT_LENGTH = HttpHeaders.of("Content-Length");
+    private static final HttpHeader CONTENT_LENGTH = HttpHeaders.of("Content-Length");
     private static final String BODY_TOO_LARGE = "Request body too large. Maximum allowed size is %d bytes.";
 
     private final long maxBytes;
@@ -73,7 +74,8 @@ public final class RequestBodySizeFilter implements FilterChain.Filter {
             } catch (NumberFormatException e) {
                 log.debug("Malformed Content-Length header: '{}' — rejecting with 400", contentLengthHeader);
                 return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Malformed Content-Length header."));
+                        .withPlainText("Malformed Content-Length header.")
+                        .build());
             }
 
             if (declaredSize > maxBytes) {
@@ -81,7 +83,8 @@ public final class RequestBodySizeFilter implements FilterChain.Filter {
                         declaredSize, maxBytes, request.getPath());
                 return Promise.of(HttpResponse.ofCode(413)
                         .withHeader(HttpHeaders.of("Content-Type"), "text/plain; charset=utf-8")
-                        .withPlainText(String.format(BODY_TOO_LARGE, maxBytes)));
+                        .withPlainText(String.format(BODY_TOO_LARGE, maxBytes))
+                        .build());
             }
         }
 

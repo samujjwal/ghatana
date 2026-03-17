@@ -110,11 +110,11 @@ class EmbeddingResultTest {
         }
 
         @Test
-        @DisplayName("fromOpenAI throws UnsupportedOperationException")
+        @DisplayName("fromOpenAI throws IllegalArgumentException for unsupported embedding type")
         void fromOpenAIThrows() {
             assertThatThrownBy(() -> EmbeddingResult.fromOpenAI(new Object(), "text", "model"))
-                    .isInstanceOf(UnsupportedOperationException.class)
-                    .hasMessageContaining("fromOpenAI");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("embedding");
         }
     }
 

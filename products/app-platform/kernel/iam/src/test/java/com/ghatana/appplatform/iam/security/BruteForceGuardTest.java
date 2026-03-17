@@ -42,7 +42,7 @@ class BruteForceGuardTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        when(jedisPool.getResource()).thenReturn(jedis);
+        lenient().when(jedisPool.getResource()).thenReturn(jedis);
         guard = new BruteForceGuard(jedisPool, Executors.newSingleThreadExecutor());
     }
 

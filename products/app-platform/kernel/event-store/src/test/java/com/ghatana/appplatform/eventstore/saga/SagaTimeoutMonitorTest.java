@@ -15,6 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import io.activej.eventloop.Eventloop;
+import java.util.concurrent.Executors;
 
 /**
  * Unit tests for {@link SagaTimeoutMonitor}.
@@ -57,8 +59,7 @@ class SagaTimeoutMonitorTest {
         when(sagaStore.findTimedOutInstances(any(Instant.class)))
                 .thenReturn(List.of(timedOut1, timedOut2));
 
-        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator,
-                Duration.ofMinutes(5), Duration.ofSeconds(30));
+        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator, Duration.ofMinutes(5), Duration.ofSeconds(30), Eventloop.create(), Executors.newSingleThreadExecutor());
         monitor.checkForTimeouts();
 
         verify(orchestrator).onStepFailed(eq("saga-1"), contains("timed out"));
@@ -70,8 +71,7 @@ class SagaTimeoutMonitorTest {
     void checkForTimeoutsNoOpWhenEmpty() {
         when(sagaStore.findTimedOutInstances(any(Instant.class))).thenReturn(List.of());
 
-        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator,
-                Duration.ofMinutes(5), Duration.ofSeconds(30));
+        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator, Duration.ofMinutes(5), Duration.ofSeconds(30), Eventloop.create(), Executors.newSingleThreadExecutor());
         monitor.checkForTimeouts();
 
         verifyNoInteractions(orchestrator);
@@ -83,8 +83,7 @@ class SagaTimeoutMonitorTest {
         when(sagaStore.findTimedOutInstances(any(Instant.class)))
                 .thenThrow(new RuntimeException("DB error"));
 
-        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator,
-                Duration.ofMinutes(5), Duration.ofSeconds(30));
+        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator, Duration.ofMinutes(5), Duration.ofSeconds(30), Eventloop.create(), Executors.newSingleThreadExecutor());
         monitor.checkForTimeouts(); // must not propagate
 
         verifyNoInteractions(orchestrator);
@@ -99,8 +98,7 @@ class SagaTimeoutMonitorTest {
         doThrow(new RuntimeException("orchestrator fail"))
                 .when(orchestrator).onStepFailed(eq("saga-err"), any());
 
-        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator,
-                Duration.ofMinutes(5), Duration.ofSeconds(30));
+        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator, Duration.ofMinutes(5), Duration.ofSeconds(30), Eventloop.create(), Executors.newSingleThreadExecutor());
         monitor.checkForTimeouts();
 
         verify(orchestrator).onStepFailed(eq("saga-ok"), any());
@@ -109,9 +107,7 @@ class SagaTimeoutMonitorTest {
     @Test
     @DisplayName("start_and_stop — lifecycle flags are correct")
     void startAndStopLifecycle() throws InterruptedException {
-        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator,
-                Duration.ofMinutes(5), Duration.ofSeconds(60));
-        when(sagaStore.findTimedOutInstances(any())).thenReturn(List.of());
+        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator, Duration.ofMinutes(5), Duration.ofSeconds(60), Eventloop.create(), Executors.newSingleThreadExecutor());
 
         assertThat(monitor.isRunning()).isFalse();
         monitor.start();
@@ -123,9 +119,7 @@ class SagaTimeoutMonitorTest {
     @Test
     @DisplayName("start_duplicateCall — second start is silently ignored")
     void startDuplicateCallIgnored() {
-        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator,
-                Duration.ofMinutes(5), Duration.ofSeconds(60));
-        when(sagaStore.findTimedOutInstances(any())).thenReturn(List.of());
+        monitor = new SagaTimeoutMonitor(sagaStore, orchestrator, Duration.ofMinutes(5), Duration.ofSeconds(60), Eventloop.create(), Executors.newSingleThreadExecutor());
 
         monitor.start();
         monitor.start(); // must not throw

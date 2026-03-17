@@ -145,6 +145,15 @@ jobs:
       - name: Check for deprecated @ghatana/ui usage
         run: pnpm run check:deprecated-ui
 
+      - name: Check duplicate workspace package names
+        run: pnpm run check:duplicate-packages
+
+      - name: Enforce JWT dependency policy
+        run: pnpm run check:jwt-policy
+
+      - name: Enforce OSS license policy
+        run: pnpm run check:license-policy
+
       - name: Typecheck
         working-directory: products/yappc/frontend
         run: pnpm typecheck

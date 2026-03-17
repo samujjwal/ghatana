@@ -5,7 +5,7 @@
 package com.ghatana.yappc.infrastructure.security;
 
 import com.ghatana.yappc.infrastructure.datacloud.adapter.SecurityScanner;
-import com.ghatana.platform.domain.domain.security.SecurityReport;
+import com.ghatana.yappc.infrastructure.datacloud.adapter.SecurityReport;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +21,9 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
- *
- * <p>Queries the OSV API for known vulnerabilities in project dependencies.
+
+/**
+ * Dependency vulnerability scanner backed by the OSV (Open Source Vulnerabilities) database.
  *
  * <p><b>Integration:</b> Composed with StaticAnalysisScanner in SecurityServiceAdapter
  * to provide comprehensive security coverage (both SAST + dependency scanning).
@@ -223,33 +224,29 @@ public class OsvScannerAdapter implements SecurityScanner {
      * Build SecurityReport from aggregated vulnerabilities.
      */
     private SecurityReport buildSecurityReport(List<Vulnerability> vulnerabilities) {
-        Map<String, Object> details = new HashMap<>();
-        details.put("vulnerabilitySource", "OSV");
-        details.put("totalVulnerabilities", vulnerabilities.size());
-        details.put("byPackage",
-                vulnerabilities.stream()
-                        .collect(Collectors.groupingBy(
-                                Vulnerability::packageName,
-                                Collectors.counting()
-                        ))
-        );
-        details.put("bySeverity",
-                vulnerabilities.stream()
-                        .collect(Collectors.groupingBy(
-                                Vulnerability::severity,
-                                Collectors.counting()
-                        ))
-        );
+        if (vulnerabilities.isEmpty()) {
+            return SecurityReport.clean("OSV_SCAN");
+        }
 
-        boolean hasHighSeverity = vulnerabilities.stream()
-                .anyMatch(v -> "HIGH".equals(v.severity()));
+        List<SecurityReport.Finding> findings = vulnerabilities.stream()
+                .map(v -> {
+                    SecurityReport.Severity sev = switch (v.severity() != null ? v.severity() : "MEDIUM") {
+                        case "CRITICAL" -> SecurityReport.Severity.CRITICAL;
+                        case "HIGH"     -> SecurityReport.Severity.HIGH;
+                        case "LOW"      -> SecurityReport.Severity.LOW;
+                        case "INFO"     -> SecurityReport.Severity.INFO;
+                        default         -> SecurityReport.Severity.MEDIUM;
+                    };
+                    return new SecurityReport.Finding(
+                            v.cveId() != null ? v.cveId() : v.packageName(),
+                            v.description() != null ? v.description() : v.packageName() + " has an OSV vulnerability",
+                            sev,
+                            ""
+                    );
+                })
+                .collect(Collectors.toList());
 
-        return new SecurityReport(
-                "OSV_SCAN",
-                hasHighSeverity ? "VULNERABLE" : "SECURE",
-                details,
-                System.currentTimeMillis()
-        );
+        return SecurityReport.withFindings(findings, "OSV_SCAN");
     }
 
     // =========================================================================

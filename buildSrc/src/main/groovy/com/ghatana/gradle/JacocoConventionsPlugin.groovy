@@ -44,6 +44,34 @@ class JacocoConventionsPlugin implements Plugin<Project> {
                     project.logger.debug('Could not resolve sourceSets.main.output.classesDirs when configuring jacocoTestReport: ' + e.message)
                 }
             }
+
+            // Enforce minimum code coverage. Target: 70% line coverage (escalate to 80% after stabilization).
+            project.tasks.register('jacocoTestCoverageVerification', org.gradle.testing.jacoco.tasks.JacocoCoverageVerification) {
+                dependsOn project.tasks.named('jacocoTestReport')
+                violationRules {
+                    rule {
+                        limit {
+                            counter = 'LINE'
+                            value = 'COVEREDRATIO'
+                            minimum = 0.70
+                        }
+                    }
+                }
+                // Apply the same excludes as the report task.
+                def excludes = ['**/generated/**', '**/test/**', '**/proto/**']
+                try {
+                    def classesDirs = project.sourceSets.main.output.classesDirs.files
+                    def filtered = classesDirs.collect { dir -> project.fileTree(dir: dir, exclude: excludes) }
+                    classDirectories.setFrom(project.files(filtered))
+                } catch (Exception e) {
+                    project.logger.debug('Could not resolve sourceSets.main.output.classesDirs for coverage verification: ' + e.message)
+                }
+            }
+
+            // Wire coverage verification into the check lifecycle.
+            project.tasks.named('check') {
+                dependsOn project.tasks.named('jacocoTestCoverageVerification')
+            }
         }
     }
 }

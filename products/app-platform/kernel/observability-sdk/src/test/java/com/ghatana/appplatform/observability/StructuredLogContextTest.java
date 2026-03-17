@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for {@link StructuredLogContext}.
@@ -61,8 +62,10 @@ class StructuredLogContextTest {
         Map<String, String> snap = StructuredLogContext.snapshot();
 
         assertThat(snap).containsEntry("k1", "v1").containsEntry("k2", "v2");
-        // Mutating snapshot must not affect the context
-        snap.put("k3", "v3");
+        // Snapshot is immutable — mutation must throw
+        assertThatThrownBy(() -> snap.put("k3", "v3"))
+                .isInstanceOf(UnsupportedOperationException.class);
+        // Original context is unaffected
         assertThat(StructuredLogContext.get("k3")).isNull();
     }
 

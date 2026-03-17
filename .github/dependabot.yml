@@ -1,0 +1,100 @@
+# Dependabot configuration — automated dependency updates
+# Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+
+updates:
+  # ── Gradle (Java platform + all product modules) ────────────────────────────
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - java
+    reviewers:
+      - ghatana/platform-team
+    groups:
+      activej:
+        patterns:
+          - "io.activej:*"
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+          - "org.springframework:*"
+      nimbus-jose:
+        patterns:
+          - "com.nimbusds:*"
+      log4j:
+        patterns:
+          - "org.apache.logging.log4j:*"
+      opentelemetry:
+        patterns:
+          - "io.opentelemetry:*"
+          - "io.opentelemetry.instrumentation:*"
+      testing:
+        patterns:
+          - "org.junit.jupiter:*"
+          - "org.assertj:*"
+          - "org.mockito:*"
+
+  # ── npm / pnpm (root workspace + TypeScript monorepo) ──────────────────────
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - javascript
+    reviewers:
+      - ghatana/frontend-team
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      jotai:
+        patterns:
+          - "jotai"
+          - "jotai-*"
+      vite:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+      testing:
+        patterns:
+          - "jest"
+          - "@jest/*"
+          - "@testing-library/*"
+          - "vitest"
+
+  # ── GitHub Actions ───────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    reviewers:
+      - ghatana/devops-team

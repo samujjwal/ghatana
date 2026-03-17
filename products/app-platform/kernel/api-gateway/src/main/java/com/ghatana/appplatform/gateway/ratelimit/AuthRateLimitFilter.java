@@ -4,6 +4,7 @@
  */
 package com.ghatana.appplatform.gateway.ratelimit;
 
+import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -56,8 +57,8 @@ public final class AuthRateLimitFilter {
     private static final String GLOBAL_KEY = "auth:global";
 
     // ── Headers ──────────────────────────────────────────────────────────────
-    private static final HttpHeaders.Value H_TENANT     = HttpHeaders.of("X-Tenant-Id");
-    private static final HttpHeaders.Value H_FORWARDED  = HttpHeaders.of("X-Forwarded-For");
+    private static final HttpHeader H_TENANT     = HttpHeaders.of("X-Tenant-Id");
+    private static final HttpHeader H_FORWARDED  = HttpHeaders.of("X-Forwarded-For");
 
     private final TokenBucketRateLimiter limiter;
 
@@ -134,6 +135,7 @@ public final class AuthRateLimitFilter {
         return Promise.of(HttpResponse.ofCode(429)
             .withHeader(HttpHeaders.of("Retry-After"), String.valueOf(retryAfterSec))
             .withHeader(HttpHeaders.of("X-RateLimit-Scope"), scope)
-            .withPlainText("Auth rate limit exceeded. Retry after " + retryAfterSec + " seconds."));
+            .withPlainText("Auth rate limit exceeded. Retry after " + retryAfterSec + " seconds.")
+            .build());
     }
 }

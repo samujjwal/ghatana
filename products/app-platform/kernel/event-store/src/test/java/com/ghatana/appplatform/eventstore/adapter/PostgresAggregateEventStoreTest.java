@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -36,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
+@Disabled("Requires Docker / Testcontainers")
 @Testcontainers
 @DisplayName("AggregateEventStore — Integration Tests")
 class PostgresAggregateEventStoreTest extends EventloopTestBase {

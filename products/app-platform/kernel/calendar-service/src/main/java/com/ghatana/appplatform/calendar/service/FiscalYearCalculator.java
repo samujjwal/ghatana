@@ -163,7 +163,7 @@ public final class FiscalYearCalculator {
      * <p>Quarter boundaries advance every 3 months from {@code fyStartMonth}.
      */
     private int quarterForBsMonth(int bsMonth) {
-        return fiscalPeriodForBsMonth(bsMonth) / 3 + 1;
+        return (fiscalPeriodForBsMonth(bsMonth) - 1) / 3 + 1;
     }
 
     /**

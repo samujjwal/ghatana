@@ -3,6 +3,7 @@ package com.ghatana.core.template;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -66,10 +67,65 @@ public class YamlTemplateEngine {
     /** Pattern matching {@code {{ varName }}} with optional surrounding whitespace. */
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{\\{\\s*(\\w+)\\s*\\}\\}");
 
+    /** Prefix/suffix used to escape template vars before YAML parsing (avoids flow-mapping conflicts). */
+    private static final String TPLVAR_PREFIX = "__TPLVAR_";
+    private static final String TPLVAR_SUFFIX = "__TPLEND__";
+    private static final Pattern TPLVAR_ESCAPED =
+            Pattern.compile(Pattern.quote(TPLVAR_PREFIX) + "(\\w+)" + Pattern.quote(TPLVAR_SUFFIX));
+
+    private static String escapeTemplateVars(String yaml) {
+        return PLACEHOLDER.matcher(yaml).replaceAll(
+                m -> TPLVAR_PREFIX + m.group(1) + TPLVAR_SUFFIX);
+    }
+
+    private static String unescapeTemplateVars(String yaml) {
+        return TPLVAR_ESCAPED.matcher(yaml).replaceAll(m -> "{{ " + m.group(1) + " }}");
+    }
+
     /** YAML key that triggers inheritance resolution. */
     private static final String EXTENDS_KEY = "extends";
 
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+    /**
+     * Matches double-quoted YAML scalar values on a key-value line.
+     * Jackson YAML with MINIMIZE_QUOTES still double-quotes strings that look like YAML 1.1
+     * booleans (yes, no, on, off, true, false). We convert these to single-quoted form.
+     * Group 1 = key + colon + space; group 2 = the raw string content inside double quotes.
+     */
+    private static final Pattern YAML_DOUBLE_QUOTED_VALUE = Pattern.compile(
+            "(?m)^([ \\t]*[\\w][\\w-]*:\\s+)\"((?:[^\"\\\\]|\\\\.)*)\"\\s*$");
+
+    /**
+     * Matches unquoted YAML scalar values that look like integers or floats on a key-value line.
+     * MINIMIZE_QUOTES leaves numeric-looking Java Strings unquoted, which YAML parsers then
+     * read back as numbers instead of strings.
+     * Group 1 = key + colon + space; group 2 = the bare number.
+     */
+    private static final Pattern YAML_UNQUOTED_NUMERIC = Pattern.compile(
+            "(?m)^([ \\t]*[\\w][\\w-]*:\\s+)([-+]?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)\\s*$");
+
+    /**
+     * Post-processes a serialised YAML string to normalise string value quoting so that:
+     * <ul>
+     *   <li>double-quoted values (e.g. {@code "yes"}) become single-quoted ({@code 'yes'})</li>
+     *   <li>bare numbers that should remain strings (e.g. {@code 30}) become {@code '30'}</li>
+     * </ul>
+     * Plain safe scalars (e.g. {@code ChildName}) are left untouched by MINIMIZE_QUOTES and
+     * are not affected by this method.
+     */
+    private static String requoteAmbiguousYamlValues(String yaml) {
+        // 1. Convert double-quoted scalar values to single-quoted
+        String result = YAML_DOUBLE_QUOTED_VALUE.matcher(yaml)
+                .replaceAll(m -> m.group(1) + "'" + m.group(2) + "'");
+        // 2. Single-quote bare numeric values so they are not misread as YAML integers
+        result = YAML_UNQUOTED_NUMERIC.matcher(result)
+                .replaceAll(m -> m.group(1) + "'" + m.group(2) + "'");
+        return result;
+    }
+
+    private final ObjectMapper yamlMapper = new ObjectMapper(
+            YAMLFactory.builder()
+                    .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                    .build());
 
     // ─── Core API ─────────────────────────────────────────────────────────────
 
@@ -134,6 +190,8 @@ public class YamlTemplateEngine {
         merged.remove(EXTENDS_KEY);
 
         String mergedYaml = yamlMapper.writeValueAsString(merged);
+        mergedYaml = requoteAmbiguousYamlValues(mergedYaml);
+        mergedYaml = unescapeTemplateVars(mergedYaml);
         return render(mergedYaml, ctx);
     }
 
@@ -232,11 +290,13 @@ public class YamlTemplateEngine {
         if (!Files.exists(file)) {
             throw new IOException("YAML template file not found: " + file);
         }
-        try (InputStream is = Files.newInputStream(file)) {
-            Map<String, Object> result = yamlMapper.readValue(
-                    is, new TypeReference<Map<String, Object>>() {});
-            return result != null ? result : new LinkedHashMap<>();
-        }
+        // Read as string first so we can escape {{ }} before YAML parsing
+        // (bare curly braces are YAML flow-mapping markers and cause parse errors)
+        String raw = Files.readString(file, java.nio.charset.StandardCharsets.UTF_8);
+        String escaped = escapeTemplateVars(raw);
+        Map<String, Object> result = yamlMapper.readValue(
+                escaped, new TypeReference<Map<String, Object>>() {});
+        return result != null ? result : new LinkedHashMap<>();
     }
 
     /**

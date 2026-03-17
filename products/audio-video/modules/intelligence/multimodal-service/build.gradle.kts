@@ -13,6 +13,9 @@ repositories {
 }
 
 dependencies {
+    // Audio-Video common (shared AI inference client, health/metrics, gRPC interceptors)
+    implementation(project(":products:audio-video:libs:common"))
+
     // gRPC
     implementation(libs.grpc.netty)
     implementation(libs.grpc.protobuf)

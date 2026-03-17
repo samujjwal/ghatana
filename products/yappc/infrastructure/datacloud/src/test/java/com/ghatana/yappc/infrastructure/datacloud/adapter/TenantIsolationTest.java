@@ -77,6 +77,7 @@ class TenantIsolationTest extends EventloopTestBase {
 
     @AfterEach
     void tearDown() {
+        runBlocking(TenantContext::clear);
         TenantContext.clear();
     }
 
@@ -96,12 +97,14 @@ class TenantIsolationTest extends EventloopTestBase {
             Entity alphaEntity = makeEntity(TENANT_ALPHA, entityId);
 
             TenantContext.setCurrentTenantId(TENANT_ALPHA);
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA));
             when(entityRepository.save(eq(TENANT_ALPHA), any(Entity.class)))
                     .thenReturn(Promise.of(alphaEntity));
             runPromise(() -> repository.save(new TestEntity(entityId, "alpha-item", 1)));
 
             // WHEN — tenant-B switches context and queries findAll
             TenantContext.setCurrentTenantId(TENANT_BETA);
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_BETA));
             when(entityRepository.findAll(eq(TENANT_BETA), anyString(), any(), any(), anyInt(), anyInt()))
                     .thenReturn(Promise.of(List.of())); // tenant-B namespace has no data
 
@@ -126,6 +129,7 @@ class TenantIsolationTest extends EventloopTestBase {
             Entity alphaEntity = makeEntity(TENANT_ALPHA, entityId);
 
             TenantContext.setCurrentTenantId(TENANT_ALPHA);
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA));
             when(entityRepository.save(eq(TENANT_ALPHA), any(Entity.class)))
                     .thenReturn(Promise.of(alphaEntity));
             when(entityRepository.findAll(eq(TENANT_ALPHA), anyString(), any(), any(), anyInt(), anyInt()))
@@ -147,6 +151,7 @@ class TenantIsolationTest extends EventloopTestBase {
         void shouldThrowSecurityExceptionForBlankTenant() {
             // GIVEN — a blank tenant ID is explicitly set (simulates misconfigured filter)
             TenantContext.setCurrentTenantId("   ");
+            runBlocking(() -> TenantContext.setCurrentTenantId("   "));
 
             // WHEN / THEN — any repository operation throws SecurityException before hitting the DB
             assertThat(runPromiseThrowing(() -> repository.findAll()))
@@ -171,6 +176,7 @@ class TenantIsolationTest extends EventloopTestBase {
             // GIVEN
             UUID entityId = UUID.randomUUID();
             TenantContext.setCurrentTenantId(TENANT_ALPHA);
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA));
             when(entityRepository.save(anyString(), any(Entity.class)))
                     .thenReturn(Promise.of(makeEntity(TENANT_ALPHA, entityId)));
 
@@ -188,6 +194,7 @@ class TenantIsolationTest extends EventloopTestBase {
         void findByIdPropagatesTenantId() {
             // GIVEN
             TenantContext.setCurrentTenantId(TENANT_ALPHA);
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA));
             when(entityRepository.findById(anyString(), anyString(), any(UUID.class)))
                     .thenReturn(Promise.of(Optional.empty()));
 
@@ -206,6 +213,7 @@ class TenantIsolationTest extends EventloopTestBase {
             // GIVEN
             UUID entityId = UUID.randomUUID();
             TenantContext.setCurrentTenantId(TENANT_ALPHA);
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA));
             when(entityRepository.delete(anyString(), anyString(), any(UUID.class)))
                     .thenReturn(Promise.of(null));
 
@@ -249,7 +257,10 @@ class TenantIsolationTest extends EventloopTestBase {
      */
     private Throwable runPromiseThrowing(java.util.concurrent.Callable<io.activej.promise.Promise<?>> callable) {
         try {
-            runPromise(callable);
+            @SuppressWarnings("unchecked")
+            java.util.concurrent.Callable<io.activej.promise.Promise<Object>> typed =
+                (java.util.concurrent.Callable<io.activej.promise.Promise<Object>>) (Object) callable;
+            runPromise(typed);
             return null;
         } catch (Throwable t) {
             return t;

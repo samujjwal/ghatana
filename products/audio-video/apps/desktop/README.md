@@ -43,9 +43,9 @@ A unified desktop application for all audio-video processing capabilities, combi
 
 ### Shared Libraries
 
-- **@ghatana/audio-video-types**: TypeScript type definitions
-- **@ghatana/audio-video-client**: Unified service client
-- **@ghatana/audio-video-ui**: Shared React components
+- **@ghatana/audio-video-product-types**: TypeScript type definitions
+- **@ghatana/audio-video-product-client**: Unified service client
+- **@ghatana/audio-video-product-ui**: Shared React components
 
 ### Desktop Application
 

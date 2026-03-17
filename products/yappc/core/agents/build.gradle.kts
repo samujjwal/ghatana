@@ -18,6 +18,9 @@ dependencies {
     // Framework core (for FeatureFlags, Result, etc.)
     implementation(project(":products:yappc:core:framework"))
 
+    // Domain types and repository ports (LearnedPolicy, LearnedPolicyRepository)
+    implementation(project(":products:yappc:backend:persistence"))
+
     // AI module
     implementation(project(":products:yappc:core:ai"))
 

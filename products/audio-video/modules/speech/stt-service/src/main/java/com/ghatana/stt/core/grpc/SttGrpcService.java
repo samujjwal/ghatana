@@ -83,7 +83,7 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
                     // Record inference features for ML pipeline (fire-and-forget)
                     if (result != null && subject != null) {
                         int bytesPerSample = audio.bitsPerSample() / 8;
-                        long audioLengthMs = audio.pcmData().length * 1000L
+                        long audioLengthMs = audio.data().length * 1000L
                                 / (audio.sampleRate() * audio.channels() * bytesPerSample);
                         java.util.Map<String, Object> features = new java.util.HashMap<>();
                         features.put("language", language != null ? language : "unknown");

@@ -58,7 +58,7 @@ public final class RequestSchemaValidator implements com.ghatana.platform.http.s
         String contentType = request.getHeader(io.activej.http.HttpHeaders.CONTENT_TYPE);
         if (contentType == null || !contentType.contains("application/json")) {
             log.debug("Non-JSON content type on validated route: {} {}", method, path);
-            return Promise.of(HttpResponse.ofCode(415)); // Unsupported Media Type
+            return Promise.of(HttpResponse.ofCode(415).build()); // Unsupported Media Type
         }
 
         String body;
@@ -66,15 +66,15 @@ public final class RequestSchemaValidator implements com.ghatana.platform.http.s
             body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
         } catch (Exception e) {
             log.warn("Failed to read request body for schema validation: {}", e.getMessage());
-            return Promise.of(HttpResponse.ofCode(400));
+            return Promise.of(HttpResponse.ofCode(400).build());
         }
 
         ValidationResult validationResult = schema.validate(body);
         if (!validationResult.valid()) {
             log.warn("Schema validation failed: route={} errors={}", routeKey, validationResult.errors());
             return Promise.of(HttpResponse.ofCode(400)
-                    .withBody(("Schema validation failed: " + validationResult.errors())
-                            .getBytes(StandardCharsets.UTF_8)));
+                    .withPlainText("Schema validation failed: " + validationResult.errors())
+                    .build());
         }
 
         return next.serve(request);

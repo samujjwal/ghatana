@@ -69,15 +69,15 @@ class BsCalendarConversionTest {
         }
 
         @Test
-        @DisplayName("March 13 2026 → BS 2082/11/29 (today in BS)")
+        @DisplayName("March 13 2026 → BS 2082/11/30 (today in BS)")
         void todayMarch2026() {
             // BS 2082 starts April 13, 2025
-            // March 13, 2026 = 334 days into BS 2082
-            // months: 31+32+31+32+31+30+30+29+30+29 = 305, so month 11 day 29
+            // March 13, 2026 = 335 days into BS 2082
+            // months: 31+32+31+32+31+30+30+29+30+29 = 305, so month 11 day 30
             var result = BsCalendarConversion.gregorianToBs(LocalDate.of(2026, 3, 13));
             assertThat(result.year()).isEqualTo(2082);
             assertThat(result.month()).isEqualTo(11);
-            assertThat(result.day()).isEqualTo(29);
+            assertThat(result.day()).isEqualTo(30);
         }
 
         @Test

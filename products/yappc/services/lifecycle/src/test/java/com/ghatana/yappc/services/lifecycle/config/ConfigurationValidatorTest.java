@@ -1,6 +1,5 @@
 package com.ghatana.yappc.services.lifecycle.config;
 
-import io.activej.test.ExpectedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

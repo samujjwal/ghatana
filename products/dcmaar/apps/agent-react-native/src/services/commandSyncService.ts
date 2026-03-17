@@ -8,8 +8,7 @@
  * @module services/commandSyncService
  */
 
-import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { atom, createStore } from 'jotai';
 
 /**
  * Sync snapshot returned by the backend `/devices/:id/sync` endpoint.
@@ -93,20 +92,36 @@ const DEFAULT_MIN_POLL_INTERVAL = 30;
 const DEFAULT_MAX_POLL_INTERVAL = 300;
 const DEFAULT_INITIAL_POLL_INTERVAL = 60;
 
-/**
- * Command Sync Service store.
- */
-export const useCommandSyncStore = create<CommandSyncState>()(
-    subscribeWithSelector(() => ({
-        isRunning: false as boolean,
-        lastSnapshot: null as SyncSnapshot | null,
-        lastSyncTime: null as number | null,
-        lastSyncVersion: null as string | null,
-        currentPollIntervalSeconds: DEFAULT_INITIAL_POLL_INTERVAL,
-        consecutiveErrors: 0,
-        error: null as string | null,
-    }))
-);
+const commandSyncStore = createStore();
+const isRunningAtom       = atom(false);
+const lastSnapshotAtom    = atom<SyncSnapshot | null>(null);
+const lastSyncTimeAtom    = atom<number | null>(null);
+const lastSyncVersionAtom = atom<string | null>(null);
+const pollIntervalAtom    = atom(DEFAULT_INITIAL_POLL_INTERVAL);
+const consErrorsAtom      = atom(0);
+const errorAtom           = atom<string | null>(null);
+
+/** Zustand-compatible singleton accessor. */
+export const useCommandSyncStore = {
+  getState: (): CommandSyncState => ({
+    isRunning: commandSyncStore.get(isRunningAtom),
+    lastSnapshot: commandSyncStore.get(lastSnapshotAtom),
+    lastSyncTime: commandSyncStore.get(lastSyncTimeAtom),
+    lastSyncVersion: commandSyncStore.get(lastSyncVersionAtom),
+    currentPollIntervalSeconds: commandSyncStore.get(pollIntervalAtom),
+    consecutiveErrors: commandSyncStore.get(consErrorsAtom),
+    error: commandSyncStore.get(errorAtom),
+  }),
+  setState: (partial: Partial<CommandSyncState>) => {
+    if (partial.isRunning !== undefined) commandSyncStore.set(isRunningAtom, partial.isRunning);
+    if (partial.lastSnapshot !== undefined) commandSyncStore.set(lastSnapshotAtom, partial.lastSnapshot);
+    if (partial.lastSyncTime !== undefined) commandSyncStore.set(lastSyncTimeAtom, partial.lastSyncTime);
+    if (partial.lastSyncVersion !== undefined) commandSyncStore.set(lastSyncVersionAtom, partial.lastSyncVersion);
+    if (partial.currentPollIntervalSeconds !== undefined) commandSyncStore.set(pollIntervalAtom, partial.currentPollIntervalSeconds);
+    if (partial.consecutiveErrors !== undefined) commandSyncStore.set(consErrorsAtom, partial.consecutiveErrors);
+    if (partial.error !== undefined) commandSyncStore.set(errorAtom, partial.error);
+  },
+};
 
 // Private state
 let config: CommandSyncConfig | null = null;

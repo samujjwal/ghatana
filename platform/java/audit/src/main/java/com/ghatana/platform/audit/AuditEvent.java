@@ -87,6 +87,17 @@ public class AuditEvent {
         return details.get(key);
     }
 
+    // Convenience record-style accessors (aliases for bean-style getters)
+    public String id()           { return id; }
+    public String tenantId()     { return tenantId; }
+    public String eventType()    { return eventType; }
+    public String principal()    { return principal; }
+    public String resourceType() { return resourceType; }
+    public String resourceId()   { return resourceId; }
+    public Boolean success()     { return success; }
+    public Instant timestamp()   { return timestamp; }
+    public Map<String, Object> details() { return Collections.unmodifiableMap(details); }
+
     public static Builder builder() {
         return new Builder();
     }

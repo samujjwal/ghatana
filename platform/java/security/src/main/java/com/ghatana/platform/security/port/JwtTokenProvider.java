@@ -13,7 +13,7 @@ import java.util.Optional;
  *
  * <p>This is the canonical replacement for the deprecated JWT interfaces:
  * <ul>
- *   <li>{@code com.ghatana.platform.auth.JwtTokenProvider} (concrete, JJWT)</li>
+ *   <li>{@code com.ghatana.platform.auth.JwtTokenProvider} (legacy concrete implementation)</li>
  *   <li>{@code com.ghatana.platform.auth.port.JwtTokenProvider} (async port)</li>
  * </ul>
  *

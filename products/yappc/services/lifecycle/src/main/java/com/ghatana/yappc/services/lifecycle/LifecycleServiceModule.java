@@ -591,9 +591,9 @@ public class LifecycleServiceModule extends AbstractModule {
      * @doc.gaa.lifecycle capture
      */
     @Provides
-    TaskStateStore taskStateStore() {
+    TaskStateStore taskStateStore(javax.sql.DataSource dataSource) {
         logger.info("Creating JdbcTaskStateStore (YAPPC-Ph8)");
-        JdbcTaskStateRepository repository = new JdbcTaskStateRepository();
+        JdbcTaskStateRepository repository = new JdbcTaskStateRepository(dataSource);
         return new JdbcTaskStateStore(repository);
     }
 
@@ -972,15 +972,8 @@ public class LifecycleServiceModule extends AbstractModule {
             ExecutionQueue executionQueue,
             io.micrometer.core.instrument.MeterRegistry meterRegistry) {
         logger.info("Creating TriggerListener");
-        com.ghatana.platform.observability.Metrics metrics = 
-            new com.ghatana.platform.observability.Metrics() {
-                private final MeterRegistry registry = meterRegistry;
-                
-                @Override
-                public com.ghatana.platform.observability.Metrics.Counter counter(String name) {
-                    return count -> registry.counter(name).increment(count);
-                }
-            };
+        com.ghatana.platform.observability.Metrics metrics =
+            new com.ghatana.platform.observability.Metrics(meterRegistry);
         return new TriggerListener(executionQueue, metrics);
     }
 

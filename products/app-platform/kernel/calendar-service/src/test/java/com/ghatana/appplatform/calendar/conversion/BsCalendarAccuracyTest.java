@@ -54,7 +54,7 @@ class BsCalendarAccuracyTest {
                         LocalDate gregorian = BsCalendarConversion.bsToGregorian(bsYear, bsMonth, bsDay);
 
                         // Gregorian → BS
-                        BsDateComponents back = BsCalendarConversion.gregorianToBs(gregorian);
+                        BsCalendarConversion.BsDateComponents back = BsCalendarConversion.gregorianToBs(gregorian);
 
                         // Round-trip check
                         if (back.year() != bsYear || back.month() != bsMonth || back.day() != bsDay) {

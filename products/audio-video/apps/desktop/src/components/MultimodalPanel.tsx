@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Card, Button, Loading } from '@ghatana/audio-video-ui';
+import { Card, Button, Loading } from '@ghatana/audio-video-product-ui';
 
 const MultimodalPanel: React.FC = () => {
   const [isProcessing, setIsProcessing] = React.useState(false);

@@ -9,8 +9,7 @@
  * @module services/commandExecutionService
  */
 
-import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { atom, createStore } from 'jotai';
 import type { GuardianCommand } from './commandSyncService';
 
 /**
@@ -51,16 +50,24 @@ interface CommandExecutionState {
     isProcessing: boolean;
 }
 
-/**
- * Command Execution Service store.
- */
-export const useCommandExecutionStore = create<CommandExecutionState>()(
-    subscribeWithSelector(() => ({
-        executionHistory: new Map<string, CommandResult>(),
-        pendingCommands: [] as GuardianCommand[],
-        isProcessing: false as boolean,
-    }))
-);
+const commandExecStore = createStore();
+const executionHistoryAtom = atom(new Map<string, CommandResult>());
+const pendingCommandsAtom  = atom<GuardianCommand[]>([]);
+const isProcessingAtom     = atom(false);
+
+/** Zustand-compatible singleton accessor. */
+export const useCommandExecutionStore = {
+  getState: (): CommandExecutionState => ({
+    executionHistory: commandExecStore.get(executionHistoryAtom),
+    pendingCommands: commandExecStore.get(pendingCommandsAtom),
+    isProcessing: commandExecStore.get(isProcessingAtom),
+  }),
+  setState: (partial: Partial<CommandExecutionState>) => {
+    if (partial.executionHistory !== undefined) commandExecStore.set(executionHistoryAtom, partial.executionHistory);
+    if (partial.pendingCommands !== undefined) commandExecStore.set(pendingCommandsAtom, partial.pendingCommands);
+    if (partial.isProcessing !== undefined) commandExecStore.set(isProcessingAtom, partial.isProcessing);
+  },
+};
 
 // Private state
 let config: CommandExecutionConfig | null = null;

@@ -124,7 +124,7 @@ public class LearnedPolicyController {
                         return Promise.of(ApiResponse.ok(body));
                     });
                 })
-                .mapException(ApiResponse::fromException);
+                .then(Promise::of, e -> Promise.of(ApiResponse.fromException(e)));
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

@@ -106,12 +106,13 @@ public class PolicyLearningService {
             LearnedPolicy policy = toLearnedPolicy(proc, tenantId);
             chain = chain.then(count ->
                     policyRepository.save(policy)
-                            .map(saved -> count + 1)
-                            .mapException(ex -> {
-                                log.warn("PolicyLearningService: failed to save policy '{}': {}",
-                                        policy.getId(), ex.getMessage());
-                                return count;   // don't fail — this is fire-and-forget
-                            }));
+                            .then(
+                                    saved -> Promise.of(count + 1),
+                                    ex -> {
+                                        log.warn("PolicyLearningService: failed to save policy '{}': {}",
+                                                policy.getId(), ex.getMessage());
+                                        return Promise.of(count);  // fire-and-forget: don't propagate
+                                    }));
         }
         return chain;
     }
@@ -197,7 +198,7 @@ public class PolicyLearningService {
             if (i > 0) sb.append(",");
             ProcedureStep s = steps.get(i);
             sb.append("{\"order\":").append(i + 1).append(",");
-            sb.append("\"action\":\"").append(escape(s.getAction())).append("\"}");
+            sb.append("\"action\":\"").append(escape(s.getDescription())).append("\"}");
         }
         sb.append("]}");
         return sb.toString();

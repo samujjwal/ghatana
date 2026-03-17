@@ -1498,10 +1498,10 @@ public class ProductionModule extends SharedBaseModule {
    * @doc.pattern Repository
    */
   @Provides
-  com.ghatana.agent.memory.store.taskstate.TaskStateStore taskStateStore() {
+  com.ghatana.agent.memory.store.taskstate.TaskStateStore taskStateStore(javax.sql.DataSource dataSource) {
     logger.info("Creating JdbcTaskStateStore");
     com.ghatana.agent.memory.persistence.JdbcTaskStateRepository repo =
-        new com.ghatana.agent.memory.persistence.JdbcTaskStateRepository();
+        new com.ghatana.agent.memory.persistence.JdbcTaskStateRepository(dataSource);
     return new com.ghatana.agent.memory.store.taskstate.JdbcTaskStateStore(repo);
   }
 

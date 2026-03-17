@@ -1,0 +1,81 @@
+# CODEOWNERS — GitHub code review assignments
+# Format: <pattern> @<team-or-user>
+# Patterns are evaluated last-match-wins (bottom overrides top).
+# Teams must be created under the GitHub organization before this takes effect.
+#
+# Last updated: 2026-01
+
+# ── Catch-all (all unmatched paths require platform review) ──────────────────
+*                                   @ghatana/platform-team
+
+# ── Build system & Gradle conventions ───────────────────────────────────────
+/build.gradle.kts                   @ghatana/platform-team
+/settings.gradle.kts                @ghatana/platform-team
+/gradle/                            @ghatana/platform-team
+/gradlew                            @ghatana/platform-team
+/buildSrc/                          @ghatana/platform-team
+
+# ── CI / GitHub Actions ──────────────────────────────────────────────────────
+/.github/workflows/                 @ghatana/platform-team @ghatana/devops-team
+/.github/CODEOWNERS                 @ghatana/platform-team
+/.github/dependabot.yml             @ghatana/platform-team @ghatana/security-team
+
+# ── Security & governance ────────────────────────────────────────────────────
+/config/                            @ghatana/security-team
+/config/owasp-suppressions.xml      @ghatana/security-team
+
+# ── Platform Java libraries ──────────────────────────────────────────────────
+/platform/java/core/                @ghatana/platform-team
+/platform/java/http/                @ghatana/platform-team
+/platform/java/database/            @ghatana/platform-team
+/platform/java/observability/       @ghatana/platform-team
+/platform/java/observability-*/     @ghatana/platform-team
+/platform/java/security/            @ghatana/security-team @ghatana/platform-team
+/platform/java/audit/               @ghatana/security-team
+/platform/java/schema-registry/     @ghatana/platform-team
+
+# ── Agent framework ──────────────────────────────────────────────────────────
+/platform/java/agent-framework/     @ghatana/agent-team @ghatana/platform-team
+/platform/java/agent-learning/      @ghatana/agent-team
+/platform/java/agent-memory/        @ghatana/agent-team
+/platform/java/agent-registry/      @ghatana/agent-team @ghatana/platform-team
+/platform/java/agent-dispatch/      @ghatana/agent-team
+/platform/java/agent-resilience/    @ghatana/agent-team
+
+# ── AI integration ───────────────────────────────────────────────────────────
+/platform/java/ai-api/              @ghatana/ai-team @ghatana/platform-team
+/platform/java/ai-integration/      @ghatana/ai-team
+/platform/java/ai-experimental/     @ghatana/ai-team
+
+# ── Workflow engine ──────────────────────────────────────────────────────────
+/platform/java/workflow/            @ghatana/platform-team
+/platform/java/workflow-runtime/    @ghatana/platform-team
+/platform/java/workflow-jdbc/       @ghatana/platform-team
+
+# ── Platform TypeScript / contracts ──────────────────────────────────────────
+/platform/typescript/               @ghatana/frontend-team @ghatana/platform-team
+/platform/contracts/                @ghatana/platform-team
+
+# ── Shared services ───────────────────────────────────────────────────────────
+/shared-services/auth-gateway/      @ghatana/security-team
+/shared-services/auth-service/      @ghatana/security-team
+/shared-services/infrastructure/    @ghatana/devops-team
+
+# ── Products ─────────────────────────────────────────────────────────────────
+/products/aep/                      @ghatana/aep-team
+/products/app-platform/             @ghatana/platform-team
+/products/audio-video/              @ghatana/av-team
+/products/aura/                     @ghatana/aura-team
+/products/data-cloud/               @ghatana/data-team
+/products/dcmaar/                   @ghatana/dcmaar-team
+/products/flashit/                  @ghatana/flashit-team
+/products/phr/                      @ghatana/phr-team
+/products/security-gateway/         @ghatana/security-team
+/products/software-org/             @ghatana/software-org-team
+/products/tutorputor/               @ghatana/tutorputor-team
+/products/virtual-org/              @ghatana/virtual-org-team
+/products/yappc/                    @ghatana/yappc-team
+
+# ── Documentation ────────────────────────────────────────────────────────────
+/docs/                              @ghatana/platform-team
+/docs/adr/                          @ghatana/platform-team

@@ -69,10 +69,7 @@ public final class RequestResponseTransformer implements FilterChain.Filter {
         // Apply request header transforms (rebuild via mutation of collected headers)
         applyRequestTransforms(request);
         return next.serve(request)
-                .map(response -> {
-                    applyResponseTransforms(response);
-                    return response;
-                });
+                .map(response -> applyResponseTransforms(response));
     }
 
     private void applyRequestTransforms(HttpRequest request) {
@@ -80,25 +77,25 @@ public final class RequestResponseTransformer implements FilterChain.Filter {
         // Collect mutable snapshot; ActiveJ HttpRequest headers are live
         var headers = new java.util.LinkedHashMap<String, String>();
         request.getHeaders().forEach(header ->
-                headers.put(header.getKey().toLowerCase(), header.getValue()));
+                headers.put(header.getKey().toString().toLowerCase(), header.getValue().toString()));
 
         requestTransforms.forEach(t -> t.apply(headers));
 
-        // Re-apply back to request: remove old, set new values
-        headers.forEach((name, value) ->
-                request.addHeader(HttpHeaders.of(name), value));
+        // Note: ActiveJ HttpRequest is immutable once built; request header transforms
+        // are applied to the in-memory snapshot only (no mutation of the wire request).
     }
 
-    private void applyResponseTransforms(HttpResponse response) {
-        if (responseTransforms.isEmpty()) return;
+    private HttpResponse applyResponseTransforms(HttpResponse response) {
+        if (responseTransforms.isEmpty()) return response;
         var headers = new java.util.LinkedHashMap<String, String>();
         response.getHeaders().forEach(header ->
-                headers.put(header.getKey().toLowerCase(), header.getValue()));
+                headers.put(header.getKey().toString().toLowerCase(), header.getValue().toString()));
 
         responseTransforms.forEach(t -> t.apply(headers));
 
-        headers.forEach((name, value) ->
-                response.addHeader(HttpHeaders.of(name), value));
+        HttpResponse.Builder builder = HttpResponse.ofCode(response.getCode());
+        headers.forEach((name, value) -> builder.withHeader(HttpHeaders.of(name), value));
+        return builder.build();
     }
 
     /** Returns a new {@link Builder}. */

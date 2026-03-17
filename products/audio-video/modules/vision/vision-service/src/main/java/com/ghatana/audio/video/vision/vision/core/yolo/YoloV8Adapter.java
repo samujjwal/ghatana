@@ -227,7 +227,7 @@ public class YoloV8Adapter {
     
     private void initializeYoloModel(String modelPath) {
         LOG.info("Loading YOLOv8 ONNX model from: {}", modelPath);
-        net = Dnn.readNetFromOnnx(modelPath);
+        net = Dnn.readNetFromONNX(modelPath);
         if (net.empty()) {
             throw new RuntimeException("OpenCV DNN failed to load ONNX model: " + modelPath);
         }

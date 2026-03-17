@@ -265,8 +265,11 @@ class PolicyConfigLoaderTest {
         @DisplayName("throws IllegalStateException on duplicate policy IDs across files (8.2.7)")
         void throwsOnDuplicateIdAcrossFiles(@TempDir Path tmpDir) throws IOException {
             String yaml = "policies:\n  - id: dup_policy\n    rules: []\n";
-            Files.writeString(tmpDir.resolve("file1.yaml"), yaml);
-            Files.writeString(tmpDir.resolve("file2.yaml"), yaml);
+            // The loader resolves {yappc.config.dir}/policies/*.yaml, so create a policies/ subdir
+            Path policiesDir = tmpDir.resolve("policies");
+            Files.createDirectories(policiesDir);
+            Files.writeString(policiesDir.resolve("file1.yaml"), yaml);
+            Files.writeString(policiesDir.resolve("file2.yaml"), yaml);
 
             // loadAll returns both; the constructor's buildIndex() will throw on duplicate
             // Use the constructor path via system property

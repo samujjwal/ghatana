@@ -55,8 +55,7 @@ public class ConfigurationValidator {
      */
     public ConfigurationValidator(File schemaDir) {
         this.schemaDir = schemaDir;
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new YAMLFactory().createModule());
+        this.objectMapper = new ObjectMapper(new YAMLFactory());
         this.schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
 
         loadSchemas();
@@ -85,7 +84,7 @@ public class ConfigurationValidator {
                 logger.warn("Schema file not found: {}", schemaFile.getAbsolutePath());
                 return null;
             }
-            return schemaFactory.getSchema(schemaFile.toURI().toURL());
+            return schemaFactory.getSchema(schemaFile.toURI());
         } catch (Exception e) {
             logger.error("Error loading schema {}: {}", schemaFileName, e.getMessage(), e);
             return null;
@@ -167,7 +166,7 @@ public class ConfigurationValidator {
             } else {
                 List<String> errorMessages = new ArrayList<>();
                 for (com.networknt.schema.ValidationMessage error : errors) {
-                    String message = String.format("%s: %s", error.getPath(), error.getMessage());
+                    String message = String.format("%s: %s", error.getInstanceLocation(), error.getMessage());
                     errorMessages.add(message);
                     logger.debug("  - {}", message);
                 }

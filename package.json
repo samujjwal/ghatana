@@ -21,7 +21,10 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "pnpm -r --parallel exec rm -rf node_modules dist build .turbo",
     "typecheck": "pnpm -r --parallel --filter './platform/typescript/**' --filter './products/*/ui' exec tsc --noEmit",
-    "check:deprecated-ui": "./scripts/check-deprecated-ui.sh"
+    "check:deprecated-ui": "./scripts/check-deprecated-ui.sh",
+    "check:duplicate-packages": "./scripts/check-duplicate-package-names.sh",
+    "check:jwt-policy": "./scripts/check-jwt-dependency-policy.sh",
+    "check:license-policy": "./scripts/check-license-policy.sh"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

@@ -13,6 +13,7 @@ dependencies {
     implementation(project(":products:yappc:services:domain"))
     implementation(project(":products:yappc:libs:java:yappc-domain"))
     implementation(project(":products:yappc:infrastructure:datacloud"))
+    implementation(project(":products:yappc:infrastructure:security"))
 
     // Core Platform Libraries
     implementation(project(":platform:java:core"))

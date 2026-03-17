@@ -200,27 +200,29 @@ public final class LocalFileSecretProvider implements SecretProvider {
 
     @Override
     public Promise<SecretValue> rotateSecret(String path) {
-        return Promise.ofBlocking(executor, () -> {
-            // Generate a new 256-bit random secret value
-            byte[] newValueBytes = new byte[32];
-            random.nextBytes(newValueBytes);
-            char[] newValue = Base64.getEncoder().encodeToString(newValueBytes).toCharArray();
-            Arrays.fill(newValueBytes, (byte) 0);
+        // Generate a new 256-bit random secret value up front (on eventloop thread — cheap)
+        byte[] newValueBytes = new byte[32];
+        random.nextBytes(newValueBytes);
+        char[] newValue = Base64.getEncoder().encodeToString(newValueBytes).toCharArray();
+        Arrays.fill(newValueBytes, (byte) 0);
 
-            // Load existing metadata for max-age carry-over
+        // Read existing metadata (blocking IO), then delegate to putSecret (also blocking)
+        return Promise.ofBlocking(executor, () -> {
             Path file = resolveFile(path);
             boolean autoRotate = false;
             if (Files.exists(file)) {
                 Properties existing = loadProperties(file);
                 autoRotate = Boolean.parseBoolean(existing.getProperty("auto_rotate", "false"));
             }
-
+            return autoRotate;
+        }).then(autoRotate -> {
             SecretMetadata metadata = new SecretMetadata(
                     "auto-rotated", null, autoRotate, "local");
-            SecretValue result = putSecret(path, newValue, metadata).getResult();
-            Arrays.fill(newValue, '\0');
-            LOG.info("Secret rotated: path={}, newVersion={}", path, result.version());
-            return result;
+            return putSecret(path, newValue, metadata)
+                    .whenResult(result -> {
+                        Arrays.fill(newValue, '\0');
+                        LOG.info("Secret rotated: path={}, newVersion={}", path, result.version());
+                    });
         });
     }
 

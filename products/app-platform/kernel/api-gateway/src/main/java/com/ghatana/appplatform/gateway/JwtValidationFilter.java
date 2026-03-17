@@ -74,7 +74,7 @@ public final class JwtValidationFilter implements FilterChain.Filter {
         String authHeader = request.getHeader(io.activej.http.HttpHeaders.of(AUTH_HEADER));
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
             log.debug("Missing or malformed Authorization header");
-            return Promise.of(HttpResponse.ofCode(401));
+            return Promise.of(HttpResponse.ofCode(401).build());
         }
 
         String token = authHeader.substring(BEARER_PREFIX.length());
@@ -85,13 +85,13 @@ public final class JwtValidationFilter implements FilterChain.Filter {
             // Reject non-RS256 tokens immediately
             if (!JWSAlgorithm.RS256.equals(jwt.getHeader().getAlgorithm())) {
                 log.warn("Rejected token with unexpected algorithm={}", jwt.getHeader().getAlgorithm());
-                return Promise.of(HttpResponse.ofCode(401));
+                return Promise.of(HttpResponse.ofCode(401).build());
             }
 
             JWSVerifier verifier = new RSASSAVerifier(signingKeyProvider.getSigningKey().toRSAPublicKey());
             if (!jwt.verify(verifier)) {
                 log.warn("JWT signature verification failed");
-                return Promise.of(HttpResponse.ofCode(401));
+                return Promise.of(HttpResponse.ofCode(401).build());
             }
 
             JWTClaimsSet claims = jwt.getJWTClaimsSet();
@@ -101,33 +101,33 @@ public final class JwtValidationFilter implements FilterChain.Filter {
             Date expiry = claims.getExpirationTime();
             if (expiry == null || expiry.before(now)) {
                 log.debug("JWT is expired or missing expiry claim");
-                return Promise.of(HttpResponse.ofCode(401));
+                return Promise.of(HttpResponse.ofCode(401).build());
             }
 
             // Validate not-before (nbf) — reject tokens not yet valid
             Date notBefore = claims.getNotBeforeTime();
             if (notBefore != null && notBefore.after(now)) {
                 log.debug("JWT not yet valid: nbf={}", notBefore);
-                return Promise.of(HttpResponse.ofCode(401));
+                return Promise.of(HttpResponse.ofCode(401).build());
             }
 
             // Validate issuer (iss) — reject tokens from untrusted issuers
             String issuer = claims.getIssuer();
             if (issuer == null || !requiredIssuer.equals(issuer)) {
                 log.warn("JWT issuer mismatch: expected={}, actual={}", requiredIssuer, issuer);
-                return Promise.of(HttpResponse.ofCode(401));
+                return Promise.of(HttpResponse.ofCode(401).build());
             }
 
             // Validate audience (aud) — reject tokens not intended for this service
             List<String> audience = claims.getAudience();
             if (audience == null || !audience.contains(requiredAudience)) {
                 log.warn("JWT audience mismatch: expected={}, actual={}", requiredAudience, audience);
-                return Promise.of(HttpResponse.ofCode(401));
+                return Promise.of(HttpResponse.ofCode(401).build());
             }
 
         } catch (ParseException | com.nimbusds.jose.JOSEException e) {
             log.debug("JWT parse/verify error: {}", e.getMessage());
-            return Promise.of(HttpResponse.ofCode(401));
+            return Promise.of(HttpResponse.ofCode(401).build());
         }
 
         return next.serve(request);

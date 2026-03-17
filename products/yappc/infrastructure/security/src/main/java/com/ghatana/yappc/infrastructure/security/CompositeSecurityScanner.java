@@ -75,24 +75,23 @@ public class CompositeSecurityScanner implements SecurityScanner {
 
         logger.info("Running composite scan on {} with {} scanners", projectPath, scanners.size());
 
-        // Run all scanners in parallel
+        // Run all scanners in parallel; individual failures produce clean reports rather than failing the whole run
         List<Promise<SecurityReport>> reports = scanners.stream()
             .map(scanner -> {
                 logger.debug("Executing scanner: {}", scanner.getClass().getSimpleName());
                 return scanner.scan(projectPath)
-                    .catchException(e -> {
-                        // Log but don't fail — allow partial scanning if one scanner fails
-                        logger.warn("Scanner {} failed: {}", scanner.getClass().getSimpleName(), e.getMessage());
-                        return SecurityReport.builder()
-                            .scannerName(scanner.getClass().getSimpleName() + "-FAILED")
-                            .status(SecurityReport.Status.CLEAN) // Neutral default
-                            .findings(List.of())
-                            .build();
-                    });
+                    .then(
+                        report -> Promise.of(report),
+                        e -> {
+                            // Log but don't fail — allow partial scanning if one scanner fails
+                            logger.warn("Scanner {} failed: {}", scanner.getClass().getSimpleName(), e.getMessage());
+                            return Promise.of(SecurityReport.clean(scanner.getClass().getSimpleName() + "-FAILED"));
+                        }
+                    );
             })
             .toList();
 
-        return Promises.all(reports)
+        return Promises.toList(reports)
             .map(this::mergeReports);
     }
 
@@ -108,7 +107,6 @@ public class CompositeSecurityScanner implements SecurityScanner {
         // Aggregate finding details
         StringBuilder scannerNames = new StringBuilder();
         List<SecurityReport.Finding> allFindings = new ArrayList<>();
-        SecurityReport.Status overallStatus = SecurityReport.Status.CLEAN;
 
         for (SecurityReport report : reports) {
             if (report.getScannerName() != null) {
@@ -118,27 +116,18 @@ public class CompositeSecurityScanner implements SecurityScanner {
                 scannerNames.append(report.getScannerName());
             }
 
-            if (report.getFindings() != null) {
-                allFindings.addAll(report.getFindings());
-            }
-
-            // Overall status is VULNERABLE if any report is VULNERABLE
-            if (report.getStatus() == SecurityReport.Status.VULNERABLE) {
-                overallStatus = SecurityReport.Status.VULNERABLE;
+            if (report.findings() != null) {
+                allFindings.addAll(report.findings());
             }
         }
 
         // Deduplicate findings by (type, severity, description)
         List<SecurityReport.Finding> deduped = deduplicateFindings(allFindings);
 
-        logger.info("Merged composite report: {} findings after dedup, status={}",
-            deduped.size(), overallStatus);
+        logger.info("Merged composite report: {} findings after dedup", deduped.size());
 
-        return SecurityReport.builder()
-            .scannerName("CompositeScanner[" + scannerNames + "]")
-            .status(overallStatus)
-            .findings(deduped)
-            .build();
+        String name = "CompositeScanner[" + scannerNames + "]";
+        return deduped.isEmpty() ? SecurityReport.clean(name) : SecurityReport.withFindings(deduped, name);
     }
 
     /**

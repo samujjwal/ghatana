@@ -28,6 +28,7 @@ info:
   version: "1.0.0-SNAPSHOT"
   license:
     name: Proprietary — Ghatana Internal
+    identifier: LicenseRef-Ghatana-Proprietary
   contact:
     name: Data-Cloud Platform Team
     email: data-cloud@ghatana.internal
@@ -316,10 +317,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  service:    { type: string }
-                  version:    { type: string }
-                  description:{ type: string }
-                  timestamp:  { type: string, format: date-time }
+                  service:     { type: string }
+                  version:     { type: string }
+                  description: { type: string }
+                  timestamp:   { type: string, format: date-time }
 
   /metrics:
     get:

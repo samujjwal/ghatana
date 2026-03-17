@@ -46,6 +46,31 @@ public interface DlqPublisher {
             String correlationId);
 
     /**
+     * Convenience method for publishing error events from pipeline listeners that
+     * do not yet have full tenant/pipeline context.
+     *
+     * @param eventId    the event identifier (used as correlationId)
+     * @param eventType  the event type
+     * @param errorCode  short error code (e.g., "EMPTY_PAYLOAD", "PROCESSING_ERROR")
+     * @param errorMsg   human-readable error description
+     * @return Promise completing when the DLQ entry has been persisted
+     */
+    default Promise<Void> publishErrorEvent(
+            String eventId,
+            String eventType,
+            String errorCode,
+            String errorMsg) {
+        return publish(
+                "unknown",
+                "unknown",
+                "unknown",
+                eventType,
+                java.util.Map.of("eventId", eventId, "errorCode", errorCode),
+                errorCode + ": " + errorMsg,
+                eventId);
+    }
+
+    /**
      * No-operation implementation for use in tests or when DLQ is not configured.
      *
      * @return a {@link DlqPublisher} that logs and discards

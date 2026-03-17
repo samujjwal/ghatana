@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,7 +44,7 @@ class SigningKeyRotatorTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        when(jedisPool.getResource()).thenReturn(jedis);
+        lenient().when(jedisPool.getResource()).thenReturn(jedis);
         rotator = new SigningKeyRotator(jedisPool, Executors.newSingleThreadExecutor());
     }
 

@@ -513,49 +513,71 @@ public class AuthService extends HttpServerLauncher {
             })
             // Token introspection
             .with(POST, "/auth/token/introspect", request -> {
-                // Extract token from Authorization header or request body
+                // Prefer Authorization header to avoid unnecessary body load
                 String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-                String token;
                 if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                    token = authHeader.substring(7);
-                } else {
-                    // Fallback: extract token from body (expects {"token":"..."})
-                    String body = request.loadBody().getResult().getString(java.nio.charset.StandardCharsets.UTF_8);
-                    token = extractJsonField(body, "token");
-                }
-                if (token == null || token.isEmpty()) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                            .withJson("{\"active\":false,\"error\":\"No token provided\"}")
-                            .build());
-                }
-                return tokenIntrospector.introspect(token)
-                    .map(user -> HttpResponse.ok200()
-                        .withJson(String.format("{\"active\":true,\"subject\":\"%s\"}", user.getUserId()))
-                        .build())
-                    .then(
-                        Promise::of,
-                        error -> Promise.of(HttpResponse.ofCode(401)
-                            .withJson("{\"active\":false}")
+                    String token = authHeader.substring(7);
+                    if (token.isEmpty()) {
+                        return Promise.of(HttpResponse.ofCode(400)
+                                .withJson("{\"active\":false,\"error\":\"No token provided\"}")
+                                .build());
+                    }
+                    return tokenIntrospector.introspect(token)
+                        .map(user -> HttpResponse.ok200()
+                            .withJson(String.format("{\"active\":true,\"subject\":\"%s\"}", user.getUserId()))
                             .build())
-                    );
+                        .then(
+                            Promise::of,
+                            error -> Promise.of(HttpResponse.ofCode(401)
+                                .withJson("{\"active\":false}")
+                                .build())
+                        );
+                }
+                // Fallback: extract token from body (expects {"token":"..."}) — load body asynchronously
+                return request.loadBody().then(byteBuf -> {
+                    String body = byteBuf.getString(java.nio.charset.StandardCharsets.UTF_8);
+                    String token = extractJsonField(body, "token");
+                    if (token == null || token.isEmpty()) {
+                        return Promise.of(HttpResponse.ofCode(400)
+                                .withJson("{\"active\":false,\"error\":\"No token provided\"}")
+                                .build());
+                    }
+                    return tokenIntrospector.introspect(token)
+                        .map(user -> HttpResponse.ok200()
+                            .withJson(String.format("{\"active\":true,\"subject\":\"%s\"}", user.getUserId()))
+                            .build())
+                        .then(
+                            Promise::of,
+                            error -> Promise.of(HttpResponse.ofCode(401)
+                                .withJson("{\"active\":false}")
+                                .build())
+                        );
+                });
             })
             // Session logout
             .with(POST, "/auth/logout", request -> {
-                // Extract session ID from X-Session-Id header or cookie
+                // Prefer X-Session-Id header to avoid unnecessary body load
                 String sessionId = request.getHeader(HttpHeaders.of("X-Session-Id"));
-                if (sessionId == null || sessionId.isEmpty()) {
-                    // Fallback: extract from request body
-                    String body = request.loadBody().getResult().getString(java.nio.charset.StandardCharsets.UTF_8);
-                    sessionId = extractJsonField(body, "sessionId");
-                }
                 if (sessionId != null && !sessionId.isEmpty()) {
                     sessionManager.invalidateSession(sessionId);
                     log.info("Session invalidated: {}", sessionId);
+                    return HttpResponse.ok200()
+                        .withJson("{\"status\":\"logged_out\"}")
+                        .build()
+                        .toPromise();
                 }
-                return HttpResponse.ok200()
-                    .withJson("{\"status\":\"logged_out\"}")
-                    .build()
-                    .toPromise();
+                // Fallback: extract session ID from request body — load body asynchronously
+                return request.loadBody().then(byteBuf -> {
+                    String body = byteBuf.getString(java.nio.charset.StandardCharsets.UTF_8);
+                    String sid = extractJsonField(body, "sessionId");
+                    if (sid != null && !sid.isEmpty()) {
+                        sessionManager.invalidateSession(sid);
+                        log.info("Session invalidated: {}", sid);
+                    }
+                    return Promise.of(HttpResponse.ok200()
+                        .withJson("{\"status\":\"logged_out\"}")
+                        .build());
+                });
             })
             // Health check
             .with(GET, "/health", request ->

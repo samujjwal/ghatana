@@ -400,8 +400,12 @@ public final class EventloopTestUtil {
                     }
                     p.whenComplete((res, err) -> {
                         if (err != null) {
-                            errRef.set(err); 
-                        }else {
+                            errRef.set(err);
+                            // Clear fatal if it's the same exception — it will be propagated
+                            // via errRef on the test thread, so @AfterEach should not rethrow it.
+                            // This handles Promise.ofBlocking which calls handleError internally.
+                            fatal.compareAndSet(err, null);
+                        } else {
                             resultRef.set(res);
                         }
                         done.countDown();

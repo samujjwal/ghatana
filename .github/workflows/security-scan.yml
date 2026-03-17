@@ -47,7 +47,7 @@ jobs:
 
             - name: Install dependencies (pnpm)
               if: matrix.product.pm == 'pnpm'
-              run: pnpm install --no-frozen-lockfile || true
+              run: pnpm install --no-frozen-lockfile
               working-directory: ${{ matrix.product.path }}
 
             - name: Run npm audit
@@ -95,7 +95,7 @@ jobs:
               uses: gradle/actions/setup-gradle@v3
 
             - name: Run OWASP dependency-check
-              run: ./gradlew dependencyCheckAnalyze --no-daemon || true
+              run: ./gradlew dependencyCheckAnalyze --no-daemon
 
             - name: Upload OWASP report
               uses: actions/upload-artifact@v4

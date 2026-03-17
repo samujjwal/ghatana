@@ -68,8 +68,7 @@ class AuditedAggregateEventStoreTest extends EventloopTestBase {
                 .sequenceNumber(0)
                 .build();
 
-        var mockReceipt = new com.ghatana.appplatform.audit.domain.AuditReceipt(
-                UUID.randomUUID().toString(), "hash", 0L);
+        var mockReceipt = new com.ghatana.appplatform.audit.domain.AuditReceipt(UUID.randomUUID().toString(), 0L, "prev-hash", "hash", java.time.Instant.now());
 
         org.mockito.Mockito.when(delegate.appendEvent(any(), any(), any(), any(), any()))
                 .thenReturn(io.activej.promise.Promise.of(record));
@@ -130,7 +129,7 @@ class AuditedAggregateEventStoreTest extends EventloopTestBase {
         org.mockito.Mockito.when(delegate.appendEvent(any(), any(), any(), any(), any()))
                 .thenReturn(io.activej.promise.Promise.of(record));
 
-        var receipt = new com.ghatana.appplatform.audit.domain.AuditReceipt("id", "hash", 0);
+        var receipt = new com.ghatana.appplatform.audit.domain.AuditReceipt("id", 0L, "prev-hash", "hash", java.time.Instant.now());
         var capturedAuditEntry = new java.util.concurrent.atomic.AtomicReference<AuditEntry>();
 
         org.mockito.Mockito.when(auditTrailStore.log(any())).thenAnswer(inv -> {

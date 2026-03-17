@@ -1,0 +1,57 @@
+id: pricing-intelligence-task-agent
+name: Pricing Intelligence
+version: 1.0.0
+namespace: yappc.tasks.discovery
+status: active
+owners:
+- team: yappc-core
+  contact: yappc-core@ghatana.com
+description: Pricing Intelligence task agent
+summary: Specialised task agent for Pricing Intelligence
+metadata:
+  level: 3
+  domain: discovery
+  tags:
+  - task-agent
+  - level3
+  - discovery
+identity:
+  agentType: deterministic
+  subtype: rule
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: graceful-degrade
+  criticality: medium
+  autonomyLevel: automated
+interfaces:
+  inputs:
+  - name: task_request
+    schema: dynamic
+  outputs:
+  - name: task_result
+    schema: dynamic
+reasoningProfile:
+  reasonerPortfolio:
+  - rule-engine
+  - llm
+  defaultReasoner: llm
+  reasoningStrategy: deterministic-first
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+tools:
+- file_read
+- file_write
+capabilities:
+- market-analysis
+delegation:
+  can_delegate_to: []
+  escalates_to: discovery-orchestrator
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 8000
+  timeout_ms: 15000
