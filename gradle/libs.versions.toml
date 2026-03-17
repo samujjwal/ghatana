@@ -58,7 +58,7 @@ google-auth-library-oauth2-http = "1.39.1"
 google-cloud-core = "2.60.3"
 google-http-client = "2.0.1"
 proto-google-common-protos = "2.29.0"
-grpc = "1.75.0"
+grpc = "1.80.0"
 
 # Jakarta EE
 jakarta-annotation = "2.1.1"
