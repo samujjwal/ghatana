@@ -11,7 +11,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useFeatureFlag } from '@ghatana/yappc-config/features/feature-flags';
+import { useFeatureFlag } from '@yappc/core/config/features/feature-flags';
 
 interface FeatureHighlight {
     id: string;

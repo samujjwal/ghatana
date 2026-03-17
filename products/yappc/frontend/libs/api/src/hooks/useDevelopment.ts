@@ -92,7 +92,7 @@ import {
   type PullRequestFilter,
   type FeatureFlagFilter,
   type EpicFilter,
-} from '@ghatana/yappc-api';
+} from '@yappc/core/api';
 
 import {
   sprintsAtom,

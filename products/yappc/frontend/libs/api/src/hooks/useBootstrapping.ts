@@ -65,7 +65,7 @@ import {
   type AISuggestionContext,
   type RegenerateOptions,
   type BootstrapSessionFilter,
-} from '@ghatana/yappc-api';
+} from '@yappc/core/api';
 
 import {
   sessionAtom,

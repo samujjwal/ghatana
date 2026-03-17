@@ -11,7 +11,7 @@ import { DataTable } from './DataTable';
 
 import type { DataTableColumn, SortConfig, FilterConfig, PaginationConfig } from './types';
 import type { Meta, StoryObj } from '@storybook/react';
-import type { Item } from '@ghatana/yappc-types/devsecops';
+import type { Item } from '@yappc/core/types/devsecops';
 
 const meta: Meta<typeof DataTable> = {
   title: 'DevSecOps/DataTable',

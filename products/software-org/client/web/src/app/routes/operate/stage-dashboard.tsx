@@ -33,7 +33,7 @@ import {
   SearchBar,
   FilterPanel,
 } from '@ghatana/yappc-ui';
-import type { Item, ItemFilter } from '@ghatana/yappc-types/devsecops';
+import type { Item, ItemFilter } from '@yappc/core/types/devsecops';
 import { Badge, KpiCard } from '@/components/ui';
 
 // Mock stage health data

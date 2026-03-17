@@ -20,7 +20,7 @@ import type {
   IntegrationConfig,
   JiraIntegration,
   SonarQubeIntegration,
-} from '@ghatana/yappc-types/devsecops';
+} from '@yappc/core/types/devsecops';
 
 
 /**

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { WorkItemSummary, WorkItemStatus, WorkItemType } from '@/types/workItem';
 import { useItems, usePhases, mockPhases } from '@ghatana/yappc-store/devsecops';
-import type { Item as DevSecOpsStoreItem, PhaseKey } from '@ghatana/yappc-types/devsecops';
+import type { Item as DevSecOpsStoreItem, PhaseKey } from '@yappc/core/types/devsecops';
 import { mapWorkItemStatusToDevSecOpsStatus, mapWorkItemPriorityToDevSecOpsPriority, inferDevSecOpsPhaseIdFromWorkItemStatus } from './mapWorkItemToDevSecOpsItem';
 import type { DevSecOpsPhaseId } from '@/config/devsecopsEngineerFlow';
 

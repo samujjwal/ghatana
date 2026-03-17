@@ -51,7 +51,7 @@ import {
 } from '../../state/configAtoms';
 
 // DevSecOps persona integration - use canonical types and hook
-import type { PersonaType } from '@ghatana/yappc-types/devsecops';
+import type { PersonaType } from '@yappc/core/types/devsecops';
 import { usePersonas } from '../../hooks/useConfigData';
 import { getPersonaDashboard } from './persona-configs';
 

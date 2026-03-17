@@ -1,4 +1,4 @@
-import type { Workspace, Project, Task } from '@ghatana/yappc-types';
+import type { Workspace, Project, Task } from '@yappc/core/types';
 
 // Mutable mock arrays (exported so node-side seed helpers can augment them)
 export const mockWorkspaces: Workspace[] = [

@@ -21,7 +21,7 @@ import React, { useState } from 'react';
 import { Box, Card, CardContent, CardActions, Typography, IconButton, Chip, LinearProgress, Collapse, Tooltip, Divider } from '@ghatana/ui';
 import { ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, RefreshCw as RefreshIcon, TrendingUp as TrendingUpIcon, TrendingDown as TrendingDownIcon, Clock as ScheduleIcon, AlertTriangle as WarningIcon, Gauge as EffortIcon, Info as InfoIcon } from 'lucide-react';
 
-import type { Prediction, PredictionType, ContributingFactor } from '@ghatana/yappc-types';
+import type { Prediction, PredictionType, ContributingFactor } from '@yappc/core/types';
 
 /**
  * PredictionCard props

@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
 
 import { lightTheme, darkTheme } from './theme';
 
@@ -43,7 +44,7 @@ function ThemeProvider({
 }: ThemeProviderProps) {
   // Get system preference
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-  
+
   // State for theme mode
   const [mode, setMode] = useState<ThemeMode>(() => {
     // Try to get theme from localStorage
@@ -71,10 +72,10 @@ function ThemeProvider({
   // Listen for system preference changes
   useEffect(() => {
     if (disableSystemPreference) return;
-    
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     mediaQuery.addEventListener('change', handleSystemPreferenceChange);
-    
+
     return () => {
       mediaQuery.removeEventListener('change', handleSystemPreferenceChange);
     };

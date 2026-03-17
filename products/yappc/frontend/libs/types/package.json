@@ -10,6 +10,10 @@
       "import": "./src/index.ts",
       "types": "./dist/types/index.d.ts"
     },
+    "./tasks": {
+      "import": "./src/tasks/index.ts",
+      "types": "./dist/types/tasks/index.d.ts"
+    },
     "./devsecops": {
       "import": "./src/devsecops/index.ts",
       "types": "./dist/types/devsecops/index.d.ts"

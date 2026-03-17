@@ -5,8 +5,8 @@ import type {
   Phase,
   ActivityLog,
   PersonaDashboardSummary,
-} from '@ghatana/yappc-types/devsecops';
-import { createDevSecOpsOverview } from '@ghatana/yappc-types/devsecops/fixtures';
+} from '@yappc/core/types/devsecops';
+import { createDevSecOpsOverview } from '@yappc/core/types/devsecops/fixtures';
 import { devsecopsClient } from '@ghatana/yappc-api/devsecops/client';
 import {
   // Canvas/store-level hooks for shared UI state (view mode, filters, side panel, current phase)

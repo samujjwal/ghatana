@@ -69,7 +69,7 @@ import {
   type ServiceHealth,
   type OnCallSchedule,
   type MetricPoint,
-} from '@ghatana/yappc-api';
+} from '@yappc/core/api';
 
 // =============================================================================
 // Incident Hooks

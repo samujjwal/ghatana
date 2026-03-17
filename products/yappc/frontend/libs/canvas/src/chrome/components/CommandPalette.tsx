@@ -37,13 +37,13 @@ const { SPACING, COLORS, TYPOGRAPHY, Z_INDEX, SHADOWS, RADIUS } = CANVAS_TOKENS;
 export interface CommandPaletteProps {
   /** Command registry to use */
   registry: CommandRegistry;
-  
+
   /** Current context for command filtering */
   context: CommandContext;
-  
+
   /** Callback when command executed */
   onExecute?: (commandId: string) => void;
-  
+
   /** Callback when palette closed */
   onClose?: () => void;
 }
@@ -91,19 +91,19 @@ export function CommandPalette({
           e.preventDefault();
           setSelectedIndex(prev => Math.min(prev + 1, results.length - 1));
           break;
-        
+
         case 'ArrowUp':
           e.preventDefault();
           setSelectedIndex(prev => Math.max(prev - 1, 0));
           break;
-        
+
         case 'Enter':
           e.preventDefault();
           if (results[selectedIndex]) {
             handleExecute(results[selectedIndex].id);
           }
           break;
-        
+
         case 'Escape':
           e.preventDefault();
           handleClose();
@@ -148,9 +148,9 @@ export function CommandPalette({
       create: COLORS.SUCCESS,
       navigate: COLORS.INFO,
       edit: COLORS.PRIMARY,
-      view: COLORS.PHASE_VISION,
+      view: COLORS.INFO,  // PHASE_VISION not available
       help: COLORS.WARNING,
-      arrange: COLORS.PHASE_ARCHITECTURE,
+      arrange: COLORS.PRIMARY,  // PHASE_ARCHITECTURE not available
     };
     return colors[category];
   };
@@ -194,7 +194,7 @@ export function CommandPalette({
           fullWidth
           placeholder="Type a command or search..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           autoComplete="off"
           InputProps={{
@@ -308,7 +308,7 @@ export function CommandPalette({
                       className="flex items-center ml-auto"
                       style={{ gap: SPACING.XS }}
                     >
-                      {command.shortcut.split('+').map((key, i) => (
+                      {command.shortcut.split('+').map((key: string, i: number) => (
                         <React.Fragment key={i}>
                           {i > 0 && <span style={{ color: COLORS.TEXT_SECONDARY, paddingTop: SPACING.XS / 2, paddingBottom: SPACING.XS / 2, backgroundColor: COLORS.NEUTRAL_100, fontWeight: CANVAS_TOKENS.FONT_WEIGHT.MEDIUM }}>+</span>}
                           <Box
@@ -332,7 +332,7 @@ export function CommandPalette({
       <Box
         style={{
           padding: SPACING.SM,
-          backgroundColor: COLORS.NEUTRAL_50,
+          backgroundColor: COLORS.PANEL_BG_LIGHT,
           borderTop: `1px solid ${COLORS.BORDER_LIGHT}`,
           display: 'flex',
           alignItems: 'center',

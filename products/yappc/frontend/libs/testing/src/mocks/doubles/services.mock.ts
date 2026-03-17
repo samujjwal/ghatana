@@ -4,7 +4,7 @@
 
 import { vi } from 'vitest';
 
-import type { Project, Task, Workspace } from '@ghatana/yappc-types';
+import type { Project, Task, Workspace } from '@yappc/core/types';
 
 /**
  * Mock workspace service for testing

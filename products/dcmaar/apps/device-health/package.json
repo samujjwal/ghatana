@@ -151,7 +151,7 @@
     "react-router-dom": "^7.13.0",
     "rimraf": "^6.1.2",
     "strip-json-comments": "5.0.3",
-    "tailwindcss": "4.1.18",
+    "tailwindcss": "^4.1.18",
     "terser": "5.46.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
@@ -195,17 +195,17 @@
     "idb": "^8.0.3",
     "npm-run-all": "^4.1.5",
     "postcss": "^8.5.6",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "react-router-dom": "^7.9.5",
     "strip-json-comments": "5.0.3",
-    "tailwindcss": "4.1.16",
+    "tailwindcss": "^4.1.18",
     "terser": "5.44.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.13",
+    "vitest": "^4.0.18",
     "web-vitals": "^5.1.0",
     "webextension-polyfill": "^0.12.0",
-    "zod": "^4.1.12"
+    "zod": "^4.3.6"
   }
 }

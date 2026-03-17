@@ -10,7 +10,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 import { Timeline } from './Timeline';
 
-import type { Item, Milestone, Phase } from '@ghatana/yappc-types/devsecops';
+import type { Item, Milestone, Phase } from '@yappc/core/types/devsecops';
 
 describe('Timeline', () => {
   const mockItems: Item[] = [

@@ -18,7 +18,7 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { InstitutionalizeStepData, InstitutionalAction } from '@ghatana/yappc-types';
+import type { InstitutionalizeStepData, InstitutionalAction } from '@yappc/core/types';
 
 // ============================================================================
 // CONSTANTS

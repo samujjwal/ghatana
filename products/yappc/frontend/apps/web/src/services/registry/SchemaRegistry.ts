@@ -18,7 +18,7 @@ import type {
   RegistryEntry,
   ValidationResult,
   MigrationHook,
-} from '@ghatana/yappc-types';
+} from '@yappc/core/types';
 
 /**
  *

@@ -75,7 +75,7 @@ import {
   type PolicyInput,
   type SecurityAlert,
   type AuditLogEntry,
-} from '@ghatana/yappc-api';
+} from '@yappc/core/api';
 
 // =============================================================================
 // Vulnerability Hooks

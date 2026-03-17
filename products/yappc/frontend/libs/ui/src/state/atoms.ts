@@ -12,7 +12,7 @@ import type {
   Workspace as StoreWorkspace,
   Project as StoreProject,
   Task as StoreTask,
-} from '@ghatana/yappc-types';
+} from '@yappc/core/types';
 
 // ============================================================================
 // Theme State

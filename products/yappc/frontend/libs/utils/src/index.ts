@@ -17,20 +17,18 @@ export * from './featureFlags';
 export * from './performance';
 
 // ============================================================================
-// CONSOLIDATED LIBRARIES
+// CONSOLIDATED LIBRARIES (REMOVED - packages don't exist)
 // ============================================================================
 
-// REMOVED: deprecated @ghatana/yappc-infrastructure
-// REMOVED: deprecated @ghatana/yappc-infrastructure
-// // // Infrastructure adapters (from @ghatana/yappc-infrastructure)
-export * from '../../infrastructure/src';
+// REMOVED: @ghatana/yappc-infrastructure - package doesn't exist
+// REMOVED: @ghatana/yappc-platform-tools - package doesn't exist
+// REMOVED: @ghatana/yappc-performance - package doesn't exist
 
-// REMOVED: deprecated @ghatana/yappc-platform-tools
-// REMOVED: deprecated @ghatana/yappc-platform-tools
-// // // Platform tools (from @ghatana/yappc-platform-tools)
-export * from '../../platform-tools/src';
-
-// REMOVED: deprecated @ghatana/yappc-performance
-// REMOVED: deprecated @ghatana/yappc-performance
-// // // Performance monitoring (from @ghatana/yappc-performance)
-export * from '../../performance/src';
+// ============================================================================
+// DEPRECATION WARNING
+// ============================================================================
+// eslint-disable-next-line no-console
+console.warn(
+  '[DEPRECATED] @ghatana/yappc-utils is deprecated. Use @yappc/core/utils instead. ' +
+    'See: docs/NAMING_CONVENTIONS.md'
+);

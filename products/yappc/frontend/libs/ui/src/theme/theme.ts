@@ -1,7 +1,8 @@
+import { createTheme, alpha } from '@mui/material/styles';
 
-import { 
-  palette, 
-  lightColors, 
+import {
+  palette,
+  lightColors,
   darkColors,
   typographyVariants,
   fontFamilies,
@@ -219,10 +220,11 @@ const getThemeOptions = (mode: PaletteMode): ThemeOptions => {
               textDecoration: 'underline',
             },
           },
-          'input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus': {
-            WebkitBoxShadow: `0 0 0 100px ${colors.background.paper} inset !important`,
-            WebkitTextFillColor: colors.text.primary,
-          },
+          'input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus':
+            {
+              WebkitBoxShadow: `0 0 0 100px ${colors.background.paper} inset !important`,
+              WebkitTextFillColor: colors.text.primary,
+            },
         },
       },
       MuiAppBar: {
@@ -442,10 +444,14 @@ const getThemeOptions = (mode: PaletteMode): ThemeOptions => {
             margin: '0 8px',
             padding: '8px 16px',
             '&.Mui-selected': {
-              backgroundColor: isDark ? alpha(primary[500], 0.16) : alpha(primary[500], 0.08),
+              backgroundColor: isDark
+                ? alpha(primary[500], 0.16)
+                : alpha(primary[500], 0.08),
               color: isDark ? primary[300] : primary[600],
               '&:hover': {
-                backgroundColor: isDark ? alpha(primary[500], 0.24) : alpha(primary[500], 0.12),
+                backgroundColor: isDark
+                  ? alpha(primary[500], 0.24)
+                  : alpha(primary[500], 0.12),
               },
               '& .MuiListItemIcon-root': {
                 color: isDark ? primary[300] : primary[600],

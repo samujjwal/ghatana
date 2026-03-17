@@ -15,7 +15,7 @@ import { useParams } from "react-router";
 import { useCallback } from "react";
 import { useAtomValue } from 'jotai';
 import { currentUserAtom } from '../../../stores/user.store';
-import { useGetProjectsQuery } from "@ghatana/yappc-api";
+import { useGetProjectsQuery } from '@ghatana/yappc-api';
 
 import { RouteErrorBoundary } from "../../../components/route/ErrorBoundary";
 import { DeployPanelHost } from "../../../components/deploy";

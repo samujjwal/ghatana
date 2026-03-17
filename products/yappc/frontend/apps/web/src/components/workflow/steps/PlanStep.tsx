@@ -18,7 +18,7 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { PlanStepData, RiskAssessment } from '@ghatana/yappc-types';
+import type { PlanStepData, RiskAssessment } from '@yappc/core/types';
 
 // ============================================================================
 // CONSTANTS

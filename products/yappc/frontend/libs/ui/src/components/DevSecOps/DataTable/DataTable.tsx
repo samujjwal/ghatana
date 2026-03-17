@@ -24,7 +24,7 @@ import { useMemo, useState } from 'react';
 import { DataTableUtils } from './utils';
 
 import type { DataTableProps, DataTableColumn, SortConfig } from './types';
-import type { Item } from '@ghatana/yappc-types/devsecops';
+import type { Item } from '@yappc/core/types/devsecops';
 
 /**
  * DataTable component for displaying tabular data with sorting, filtering, and pagination

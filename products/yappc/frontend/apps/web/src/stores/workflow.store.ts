@@ -19,7 +19,7 @@ import type {
     WorkflowSteps,
     WorkflowAuditEntry,
     WORKFLOW_STEPS,
-} from '@ghatana/yappc-types';
+} from '@yappc/core/types';
 
 // Removed: import { sampleWorkflows } from './workflow.sample-data';
 // Workflows are now loaded from the API via TanStack Query

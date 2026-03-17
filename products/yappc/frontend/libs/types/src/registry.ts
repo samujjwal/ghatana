@@ -15,7 +15,7 @@
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
- * import { RegistryEntry, RegistryFilter, ValidationResult } from '@ghatana/yappc-types/registry';
+ * import { RegistryEntry, RegistryFilter, ValidationResult } from '@yappc/core/types/registry';
  *
  * const entry: RegistryEntry<ComponentDefinition> = {
  *   key: 'namespace:component-id',

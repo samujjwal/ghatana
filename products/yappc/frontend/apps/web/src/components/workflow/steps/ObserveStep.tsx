@@ -18,7 +18,7 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { ObserveStepData, Anomaly } from '@ghatana/yappc-types';
+import type { ObserveStepData, Anomaly } from '@yappc/core/types';
 
 // ============================================================================
 // CONSTANTS

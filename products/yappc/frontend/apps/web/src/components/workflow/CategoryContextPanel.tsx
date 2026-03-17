@@ -11,7 +11,7 @@ import React from 'react';
 import { Box, Typography, Surface as Paper, Chip, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Collapse, IconButton, Tooltip, alpha } from '@ghatana/ui';
 import { ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Shield as SecurityIcon, Gavel as GavelIcon, Bug as BugIcon, Hammer as BuildIcon, CloudUpload as DeployIcon, HeartPulse as OpsIcon, Brain as IdeaIcon, Building2 as ArchIcon, TrendingUp as OptimizeIcon, GraduationCap as LearnIcon, CheckCircle as CheckIcon, AlertTriangle as WarningIcon, Info as InfoIcon } from 'lucide-react';
 
-import type { WorkflowCategory, WorkflowStep } from '@ghatana/yappc-types';
+import type { WorkflowCategory, WorkflowStep } from '@yappc/core/types';
 
 // ============================================================================
 // TYPES

@@ -14,7 +14,7 @@ import type {
   TimelineItemPosition,
   TimelineMilestonePosition,
 } from './types';
-import type { Item, Milestone } from '@ghatana/yappc-types/devsecops';
+import type { Item, Milestone } from '@yappc/core/types/devsecops';
 
 /**
  * Timeline utility functions

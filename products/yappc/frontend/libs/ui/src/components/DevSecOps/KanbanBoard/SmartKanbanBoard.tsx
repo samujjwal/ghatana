@@ -24,7 +24,7 @@ import { Sparkles as AIIcon, Lightbulb as SuggestionIcon, AlertTriangle as Warni
 
 import { KanbanBoard } from './KanbanBoard';
 import type { KanbanBoardProps, KanbanColumn } from './types';
-import type { Item, ItemStatus } from '@ghatana/yappc-types/devsecops';
+import type { Item, ItemStatus } from '@yappc/core/types/devsecops';
 
 /**
  * AI Suggestion for Kanban operations

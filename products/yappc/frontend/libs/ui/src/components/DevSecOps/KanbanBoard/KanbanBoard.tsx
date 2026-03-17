@@ -32,7 +32,7 @@ import { useMemo, useState } from 'react';
 import { ItemCard } from '../ItemCard';
 
 import type { KanbanBoardProps, KanbanColumn } from './types';
-import type { Item, ItemStatus } from '@ghatana/yappc-types/devsecops';
+import type { Item, ItemStatus } from '@yappc/core/types/devsecops';
 
 /**
  * Default column configuration

@@ -19,8 +19,8 @@ import {
 } from '../../../stores/workflow.store';
 import { CategoryContextPanel } from '../CategoryContextPanel';
 
-import type { IntentStepData, WorkflowType, WorkflowCategory } from '@ghatana/yappc-types';
-import { WORKFLOW_TYPE_TO_CATEGORY } from '@ghatana/yappc-types';
+import type { IntentStepData, WorkflowType, WorkflowCategory } from '@yappc/core/types';
+import { WORKFLOW_TYPE_TO_CATEGORY } from '@yappc/core/types';
 
 // ============================================================================
 // CONSTANTS

@@ -4,7 +4,7 @@
  * @module DevSecOps/KanbanBoard/types
  */
 
-import type { Item, ItemStatus } from '@ghatana/yappc-types/devsecops';
+import type { Item, ItemStatus } from '@yappc/core/types/devsecops';
 
 /**
  * Kanban column configuration

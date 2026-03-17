@@ -16,7 +16,7 @@ import { Accordion, AccordionDetails, AccordionSummary, FormGroup } from '@mui/m
 import { useState } from 'react';
 
 import type { FilterPanelProps } from './types';
-import type { ItemStatus, Priority } from '@ghatana/yappc-types/devsecops';
+import type { ItemStatus, Priority } from '@yappc/core/types/devsecops';
 
 
 const STATUS_OPTIONS: ItemStatus[] = [

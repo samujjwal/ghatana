@@ -28,7 +28,7 @@ import {
   authErrorAtom,
 } from '@ghatana/yappc-canvas';
 
-import type { User } from '@ghatana/yappc-types';
+import type { User } from '@yappc/core/types';
 
 // ============================================================================
 // Types

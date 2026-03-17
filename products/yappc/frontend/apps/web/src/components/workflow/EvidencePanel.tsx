@@ -20,7 +20,7 @@ import {
     showAISuggestionsAtom,
 } from '../../stores/workflow.store';
 
-import type { WorkflowAuditEntry, AuditAction } from '@ghatana/yappc-types';
+import type { WorkflowAuditEntry, AuditAction } from '@yappc/core/types';
 
 // ============================================================================
 // TYPES

@@ -20,7 +20,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useCanvasShortcuts } from '@/components/canvas/hooks/useCanvasShortcuts';
 import { useCanvasPersistence } from '@/services/canvas/CanvasPersistence';
 import { useCanvasLifecycle } from '@/services/canvas/lifecycle/CanvasLifecycle';
-import type { LifecyclePhase } from '@ghatana/yappc-types/lifecycle';
+import type { LifecyclePhase } from '@yappc/core/types/lifecycle';
 import {
   toReactFlowNode,
   toReactFlowEdge,

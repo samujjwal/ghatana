@@ -4,7 +4,7 @@
  * @module DevSecOps/ItemCard/types
  */
 
-import type { Item } from '@ghatana/yappc-types/devsecops';
+import type { Item } from '@yappc/core/types/devsecops';
 
 /**
  * Props for the ItemCard component

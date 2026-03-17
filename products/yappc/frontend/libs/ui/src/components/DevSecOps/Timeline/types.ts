@@ -4,7 +4,7 @@
  * @module DevSecOps/Timeline/types
  */
 
-import type { Item, Milestone, Phase } from '@ghatana/yappc-types/devsecops';
+import type { Item, Milestone, Phase } from '@yappc/core/types/devsecops';
 
 /**
  * Props for the Timeline component

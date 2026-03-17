@@ -18,7 +18,7 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { LearnStepData, Lesson, RootCause } from '@ghatana/yappc-types';
+import type { LearnStepData, Lesson, RootCause } from '@yappc/core/types';
 
 // ============================================================================
 // CONSTANTS

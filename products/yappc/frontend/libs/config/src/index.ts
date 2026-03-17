@@ -17,14 +17,20 @@ export * from './tasks/configLoader';
 export * from './patterns/async-patterns';
 
 // Feature flags
-export * from './features/feature-flags';
+export * from './features/feature-flags.tsx';
 
 // Result types
 export * from './results/result';
 
 // ============================================================================
-// REMOVED: deprecated @ghatana/yappc-storage
-// REMOVED: deprecated @ghatana/yappc-storage
-// // // CONSOLIDATED: Storage (from @ghatana/yappc-storage)
+// REMOVED: @ghatana/yappc-storage - package doesn't exist
 // ============================================================================
-export * from '../../storage/src';
+
+// ============================================================================
+// DEPRECATION WARNING
+// ============================================================================
+// eslint-disable-next-line no-console
+console.warn(
+  '[DEPRECATED] @ghatana/yappc-config is deprecated. Use @yappc/core/config instead. ' +
+    'See: docs/NAMING_CONVENTIONS.md'
+);

@@ -50,7 +50,7 @@
     "type-check": "tsc --noEmit"
   },
   "peerDependencies": {
-    "react": "^19.1.0",
+    "react": "^19.2.4",
     "@mui/material": "^7.0.0"
   },
   "dependencies": {

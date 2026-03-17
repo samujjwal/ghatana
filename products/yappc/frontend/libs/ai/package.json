@@ -17,11 +17,11 @@
     "./testing": "./src/ml/testing/index.ts"
   },
   "dependencies": {
-    "@ghatana/yappc-types": "workspace:*",
+    "@yappc/core": "workspace:*",
     "@ghatana/yappc-ui": "workspace:*"
   },
   "peerDependencies": {
-    "react": "^19.0.0"
+    "react": "^19.2.4"
   },
   "keywords": [
     "ai",

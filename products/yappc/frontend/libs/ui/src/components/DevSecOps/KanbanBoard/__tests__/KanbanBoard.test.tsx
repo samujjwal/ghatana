@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { KanbanBoard } from '../KanbanBoard';
 import type { KanbanBoardProps } from '../types';
-import type { Item } from '@ghatana/yappc-types/devsecops';
+import type { Item } from '@yappc/core/types/devsecops';
 
 /**
  * KanbanBoard Component Unit Tests

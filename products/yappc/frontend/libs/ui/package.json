@@ -4,65 +4,22 @@
   "version": "0.0.1",
   "type": "module",
   "main": "./src/index.ts",
-  "types": "./dist/types/index.d.ts",
+  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "import": "./src/index.ts",
-      "types": "./dist/types/index.d.ts"
-    },
-    "./tokens": {
-      "import": "./src/tokens/index.ts",
-      "types": "./dist/types/tokens/index.d.ts"
-    },
-    "./components/DevSecOps": {
-      "import": "./src/components/DevSecOps/index.ts",
-      "types": "./dist/types/components/DevSecOps/index.d.ts"
-    },
-    "./components/CommandPalette": {
-      "import": "./src/components/CommandPalette.tsx",
-      "types": "./dist/types/components/CommandPalette.d.ts"
-    },
-    "./components/Breadcrumb/Breadcrumb.tailwind": {
-      "import": "./src/components/Breadcrumb/Breadcrumb.tailwind.tsx",
-      "types": "./dist/types/components/Breadcrumb/Breadcrumb.tailwind.d.ts"
-    },
-    "./components/Breadcrumb": {
-      "import": "./src/components/Breadcrumb/index.ts",
-      "types": "./dist/types/components/Breadcrumb/index.d.ts"
-    },
-    "./components/Shortcuts/ShortcutHelper": {
-      "import": "./src/components/Shortcuts/ShortcutHelper.tsx",
-      "types": "./dist/types/components/Shortcuts/ShortcutHelper.d.ts"
-    },
-    "./utils/*": {
-      "import": "./src/utils/*",
-      "types": "./dist/types/utils/*"
-    },
-    "./utils": {
-      "import": "./src/utils/index.ts",
-      "types": "./dist/types/utils/index.d.ts"
-    },
-    "./state": {
-      "import": "./src/state/index.ts",
-      "types": "./dist/types/state/index.d.ts"
-    },
-    "./state/*": {
-      "import": "./src/state/*",
-      "types": "./dist/types/state/*"
-    },
-    "./hooks": {
-      "import": "./src/hooks/index.ts",
-      "types": "./dist/types/hooks/index.d.ts"
-    },
-    "./hooks/*": {
-      "import": "./src/hooks/*",
-      "types": "./dist/types/hooks/*"
-    }
+    ".": "./src/index.ts",
+    "./tokens": "./src/tokens/index.ts",
+    "./components/*": "./src/components/*",
+    "./utils": "./src/utils/index.ts",
+    "./utils/*": "./src/utils/*",
+    "./state": "./src/state/index.ts",
+    "./state/*": "./src/state/*",
+    "./hooks": "./src/hooks/index.ts",
+    "./hooks/*": "./src/hooks/*"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
@@ -71,10 +28,14 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@floating-ui/react": "^0.27.17",
     "@floating-ui/react-dom": "^2.1.7",
+    "@ghatana/yappc-canvas": "workspace:*",
     "@ghatana/yappc-crdt": "workspace:*",
-    "framer-motion": "^12.31.0",
+    "@ghatana/yappc-realtime": "workspace:*",
+    "@mui/material": "^7.3.0",
+    "framer-motion": "^12.35.0",
     "jotai": "^2.17.0",
     "jotai-devtools": "^0.13.0",
+    "react-router-dom": "^7.5.0",
     "zod": "^4.3.6"
   },
   "scripts": {
@@ -98,7 +59,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
-    "@ghatana/yappc-types": "workspace:*",
+    "@yappc/core": "workspace:*",
     "autoprefixer": "^10.4.24",
     "clsx": "^2.1.1",
     "eslint-plugin-storybook": "^10.2.4",

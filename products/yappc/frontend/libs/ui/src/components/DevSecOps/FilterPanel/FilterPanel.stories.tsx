@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { FilterPanel } from './FilterPanel';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import type { ItemFilter } from '@ghatana/yappc-types/devsecops';
+import type { ItemFilter } from '@yappc/core/types/devsecops';
 
 
 const meta: Meta<typeof FilterPanel> = {

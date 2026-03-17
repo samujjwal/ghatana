@@ -1,0 +1,150 @@
+name: Dependency Convergence Enforcement
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Check Dependency Version Alignment
+  # ─────────────────────────────────────────────
+  check-convergence:
+    name: Check Version Convergence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Dependency Alignment Check
+        run: |
+          node scripts/align-dependencies.js --check-only --verbose
+
+  # ─────────────────────────────────────────────
+  # Check for Duplicate Dependencies
+  # ─────────────────────────────────────────────
+  check-duplicates:
+    name: Check Duplicate Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for Duplicate Dependencies
+        run: |
+          echo "Checking for duplicate dependencies in lockfile..."
+          
+          # List all dependencies with their versions
+          pnpm list --depth=0 --json > deps.json
+          
+          # Find packages with multiple versions
+          jq -r '.[].dependencies | to_entries[] | "\(.key):\(.value.version)"' deps.json | \
+            sort | uniq -d > duplicates.txt
+          
+          if [ -s duplicates.txt ]; then
+            echo "❌ Duplicate dependencies found:"
+            cat duplicates.txt
+            exit 1
+          else
+            echo "✅ No duplicate dependencies found"
+          fi
+
+  # ─────────────────────────────────────────────
+  # Check Peer Dependency Compatibility
+  # ─────────────────────────────────────────────
+  check-peer-deps:
+    name: Check Peer Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check Peer Dependency Compatibility
+        run: |
+          echo "Checking peer dependency compatibility..."
+          
+          # Use pnpm to check peer dependencies
+          pnpm install --strict-peer-dependencies || {
+            echo "⚠️ Peer dependency warnings found"
+            pnpm install --strict-peer-dependencies 2>&1 | head -50
+          }
+
+  # ─────────────────────────────────────────────
+  # Bundle Size Check
+  # ─────────────────────────────────────────────
+  bundle-size:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: |
+          cd products/yappc/frontend/apps/web
+          pnpm build 2>&1 | tee build.log || true
+
+      - name: Check bundle size
+        run: |
+          if [ -f "products/yappc/frontend/apps/web/dist/assets" ]; then
+            echo "Bundle assets:"
+            ls -lh products/yappc/frontend/apps/web/dist/assets/*.js 2>/dev/null | awk '{print $5, $9}'
+            
+            # Calculate total size
+            TOTAL_SIZE=$(du -sb products/yappc/frontend/apps/web/dist/assets/*.js 2>/dev/null | awk '{sum+=$1} END {print sum}')
+            echo "Total JS bundle size: $((TOTAL_SIZE / 1024)) KB"
+            
+            # Warn if over 2MB
+            if [ $TOTAL_SIZE -gt 2097152 ]; then
+              echo "⚠️ Bundle size exceeds 2MB target"
+            fi
+          fi

@@ -16,7 +16,7 @@ import type {
     TaskDomainId,
     LifecycleStage,
     AutomationLevel,
-} from '@ghatana/yappc-types/tasks';
+} from '@yappc/core/types/tasks';
 
 // ============================================================================
 // Test Data Factories

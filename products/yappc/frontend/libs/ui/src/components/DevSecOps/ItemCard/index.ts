@@ -6,4 +6,4 @@
 
 export { ItemCard } from './ItemCard';
 export type { ItemCardProps, Item } from './types';
-export type { Priority, ItemStatus } from '@ghatana/yappc-types/devsecops';
+export type { Priority, ItemStatus } from '@yappc/core/types/devsecops';

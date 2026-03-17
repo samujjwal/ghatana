@@ -5,7 +5,7 @@
 import { faker } from '../faker-shim';
 import { createUser } from './user.factory';
 
-import type { Workspace, User } from '@ghatana/yappc-types';
+import type { Workspace, User } from '@yappc/core/types';
 
 /**
  *

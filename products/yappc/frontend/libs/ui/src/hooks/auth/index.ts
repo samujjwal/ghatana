@@ -26,7 +26,7 @@ import {
 } from '@ghatana/yappc-canvas';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import type { User } from '@ghatana/yappc-types';
+import type { User } from '@yappc/core/types';
 
 // ============================================================================
 // Session Timeout Hook

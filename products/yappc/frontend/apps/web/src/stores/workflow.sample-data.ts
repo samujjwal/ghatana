@@ -7,7 +7,7 @@
  * @doc.pattern Sample Data
  */
 
-import type { Workflow, WorkflowTemplate } from '@ghatana/yappc-types';
+import type { Workflow, WorkflowTemplate } from '@yappc/core/types';
 
 /**
  * Sample workflows for development and demo purposes.

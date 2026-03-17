@@ -18,7 +18,7 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { ExecuteStepData, ChangeRecord } from '@ghatana/yappc-types';
+import type { ExecuteStepData, ChangeRecord } from '@yappc/core/types';
 
 // ============================================================================
 // CONSTANTS

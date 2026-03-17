@@ -15,7 +15,7 @@ import type {
     Prediction,
     AnomalyAlert,
     RecommendationSuggestion,
-} from '@ghatana/yappc-types';
+} from '@yappc/core/types';
 
 /**
  * Copilot chat message

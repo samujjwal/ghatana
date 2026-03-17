@@ -43,7 +43,7 @@ import {
 //   CREATE_BOOTSTRAP_SESSION,
 //   UPDATE_BOOTSTRAP_SESSION,
 //   SUBSCRIBE_SESSION_UPDATES,
-// } from '@ghatana/yappc-api';
+// } from '@yappc/core/api';
 
 // =============================================================================
 // Types

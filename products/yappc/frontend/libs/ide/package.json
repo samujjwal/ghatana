@@ -27,7 +27,7 @@
     "@ghatana/yappc-canvas": "workspace:*",
     "@ghatana/yappc-code-editor": "workspace:*",
     "@ghatana/yappc-crdt": "workspace:*",
-    "@ghatana/yappc-types": "workspace:*",
+    "@yappc/core": "workspace:*",
     "@ghatana/yappc-ui": "workspace:*",
     "jotai": "^2.17.0",
     "react": "^19.2.4",
@@ -51,7 +51,7 @@
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   }
 }

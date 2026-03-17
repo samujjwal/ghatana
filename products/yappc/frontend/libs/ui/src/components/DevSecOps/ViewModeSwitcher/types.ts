@@ -4,7 +4,7 @@
  * @module DevSecOps/ViewModeSwitcher/types
  */
 
-import type { ViewMode } from '@ghatana/yappc-types/devsecops';
+import type { ViewMode } from '@yappc/core/types/devsecops';
 
 /**
  * Props for the ViewModeSwitcher component

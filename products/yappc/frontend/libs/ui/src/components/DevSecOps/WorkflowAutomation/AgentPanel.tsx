@@ -24,8 +24,8 @@ import type {
     WorkflowAgentRole,
     AgentExecutionResult,
     AgentCapability,
-} from '@ghatana/yappc-types/devsecops/workflow-automation';
-import type { Item } from '@ghatana/yappc-types/devsecops';
+} from '@yappc/core/types/devsecops/workflow-automation';
+import type { Item } from '@yappc/core/types/devsecops';
 
 // ============================================================================
 // TYPES

@@ -12,7 +12,7 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@ghatana/yappc-types": [
+      "@yappc/core/types": [
         "../../libs/types/src"
       ],
       "@ghatana/yappc-types/*": [
@@ -39,7 +39,7 @@
       "@ghatana/canvas/*": [
         "../canvas/src/*"
       ],
-      "@ghatana/yappc-api": [
+      "@yappc/core/api": [
         "../../libs/api/src"
       ],
       "@ghatana/yappc-api/*": [

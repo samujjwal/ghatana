@@ -18,7 +18,7 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { ContextStepData, ContextReference } from '@ghatana/yappc-types';
+import type { ContextStepData, ContextReference } from '@yappc/core/types';
 
 // ============================================================================
 // CONSTANTS

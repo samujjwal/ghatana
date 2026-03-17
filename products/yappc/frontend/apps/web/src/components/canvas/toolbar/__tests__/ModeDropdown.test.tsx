@@ -17,7 +17,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { ModeDropdown } from '../ModeDropdown';
-import type { CanvasMode } from '@ghatana/yappc-types/canvasMode';
+import type { CanvasMode } from '@yappc/core/types/canvasMode';
 
 describe('ModeDropdown', () => {
     const defaultProps = {

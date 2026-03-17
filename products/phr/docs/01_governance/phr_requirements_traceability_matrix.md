@@ -1,0 +1,137 @@
+# PHR Platform — Requirements Traceability Matrix
+
+**Version:** 2.0  
+**Date:** 2026-01-19
+
+| Field              | Value                                                                                                                                                                                                          |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Document Owner** | PHR Platform Lead                                                                                                                                                                                              |
+| **Approved By**    | Chief Product Officer                                                                                                                                                                                          |
+| **Classification** | Internal — Restricted                                                                                                                                                                                          |
+| **Last Review**    | 2026-01-19                                                                                                                                                                                                     |
+| **Next Review**    | 2026-04-19 (Quarterly)                                                                                                                                                                                         |
+| **Companion Docs** | [Core MVP Release Definition](phr_core_mvp_release_definition.md), [Phase 2 Release Definition](phr_phase2_release_definition.md), [E2E Requirements](../02_strategy_and_requirements/phr-e2e-requirements.md) |
+
+This matrix ties active requirements to screens, APIs, data models, owners, and test packs.
+
+It is intentionally focused on:
+
+- Core MVP implementation scope
+- explicitly committed Phase 2 extensions
+- MVP delivery across mobile, web, and desktop clients
+
+---
+
+## 1. Data Classification Legend
+
+All requirements involving patient data MUST carry a data classification tag. These classifications drive encryption, retention, access control, and audit policies.
+
+| Classification        | Description                       | Encryption                             | Retention                        | Access                          | Examples                                              |
+| --------------------- | --------------------------------- | -------------------------------------- | -------------------------------- | ------------------------------- | ----------------------------------------------------- |
+| **C1 — Public**       | Non-sensitive, non-PII            | TLS in transit                         | Application lifecycle            | Any authenticated user          | App version, feature flags                            |
+| **C2 — Internal**     | Internal operational data, no PII | TLS + at-rest                          | 1 year                           | Role-based                      | Audit metadata, system logs                           |
+| **C3 — Confidential** | PII, demographic, contact         | TLS + AES-256 at-rest                  | 7 years (or patient request)     | Consent + RBAC                  | Patient name, NID, address, phone                     |
+| **C4 — Restricted**   | Clinical, financial, genetic      | TLS + AES-256 + field-level encryption | 7 years minimum (Directive 2081) | Explicit consent + RBAC + audit | Diagnoses, lab results, medications, insurance claims |
+
+## 2. Implementation Status Legend
+
+| Status             | Meaning                                    |
+| ------------------ | ------------------------------------------ |
+| 🟢 **Implemented** | Code complete, tested, deployed to staging |
+| 🟡 **In Progress** | Actively being developed                   |
+| 🔵 **Designed**    | Architecture/API defined, not yet coded    |
+| ⚪ **Planned**     | Scoped but not yet designed                |
+| 🔴 **Blocked**     | Dependency or decision blocking progress   |
+
+## 3. Global Standards Cross-Reference
+
+| Standard             | Relevance                                                  | Requirements Impacted                                                   |
+| -------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **FHIR R4**          | Interoperability, resource modeling                        | REQ-FHIR-001, REQ-EXPORT-001, REQ-HIB-001, REQ-HIB-002, all data models |
+| **Directive 2081**   | 21 mandatory EMR modules, security audit, data sovereignty | REQ-MOHP-004, REQ-MOHP-005, REQ-SEC-SOVEREIGN-001, REQ-SEC-PRIVACY-002  |
+| **Privacy Act 2075** | Consent, data subject rights, breach notification          | REQ-SEC-PRIVACY-002, REQ-PATIENT-003, REQ-EXPORT-001                    |
+| **openIMIS IG**      | Insurance eligibility, claim submission                    | REQ-HIB-001, REQ-HIB-002, REQ-INS-003, REQ-INS-006, REQ-INS-011         |
+| **OWASP Top 10**     | Security controls across all modules                       | All REQ-SEC-\*, audit and auth requirements                             |
+| **WCAG 2.2 AA**      | Accessibility for all UI surfaces                          | REQ-ACCESS-VISION-006, REQ-PLATFORM-CLIENT-001                          |
+| **ICD-10**           | Condition coding (international classification)            | REQ-PATIENT-001 (Condition resources)                                   |
+| **LOINC**            | Lab result coding                                          | REQ-PATIENT-006 (Observation resources)                                 |
+| **WHO SMART**        | Clinical decision support framework (future)               | Future Phase 3-4 requirements                                           |
+
+---
+
+## 4. Matrix
+
+| Requirement ID            | Phase   | Status | Data Class | Capability                    | Primary screen/flow         | Primary API                            | Primary data                                                                      | Owner                                      | Acceptance summary                                                                               | Test IDs                        | Global Std                       |
+| ------------------------- | ------- | ------ | ---------- | ----------------------------- | --------------------------- | -------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------- | -------------------------------- |
+| `REQ-PATIENT-001`         | MVP     | 🔵     | C4         | longitudinal records          | timeline                    | `GET /patients/:id/timeline`           | `Encounter`, `Observation`, `Condition`, `MedicationRequest`, `DocumentReference` | `EncounterModule` + read aggregator        | patient can view consolidated history with policy enforcement                                    | `API-007`, `SVC-003`, `UI-005`  | FHIR R4, ICD-10                  |
+| `REQ-PATIENT-002`         | MVP     | 🔵     | C4         | document import               | documents                   | `POST /documents`                      | `DocumentReference`, `StoredObject`                                               | `DocumentModule`                           | patient can upload and later retrieve supported medical files                                    | `API-017`, `SVC-007`, `UI-009`  | FHIR R4                          |
+| `REQ-PATIENT-003`         | MVP     | 🔵     | C3         | provider access grants        | access grants               | `POST /access-grants`                  | `ConsentGrant`                                                                    | `ConsentModule`                            | patient can create time-bounded grants                                                           | `API-022`, `SVC-010`, `UI-010`  | Privacy Act 2075                 |
+| `REQ-PATIENT-004`         | MVP     | 🔵     | C2         | reminders baseline            | appointments/meds           | reminder planning flow                 | `ReminderPlan`                                                                    | `NotificationModule`                       | reminder plans are created for eligible flows                                                    | `SVC-006`, `NFR-012`            | —                                |
+| `REQ-PATIENT-005`         | Phase 2 | ⚪     | C4         | telemedicine attendance       | telemedicine room           | `POST /telemedicine/sessions/:id/join` | `TelemedicineSession`                                                             | `TelemedicineModule`                       | patient can join authorized telemedicine session                                                 | `API-031`, `SVC-014`, `UI-013`  | —                                |
+| `REQ-PATIENT-006`         | MVP     | 🔵     | C4         | health metrics                | observations                | `GET /patients/:id/observation-trends` | `Observation`                                                                     | `ObservationModule`                        | patient sees filtered and trended metrics                                                        | `API-013`, `SVC-004`, `UI-006`  | FHIR R4, LOINC                   |
+| `REQ-PATIENT-007`         | Phase 2 | ⚪     | C3         | family records                | caregiver dependents        | delegated summary APIs                 | `RelatedPerson`, `CaregiverRelationship`                                          | `FamilyModule`                             | dependent access is scope-limited and explicit                                                   | `API-030`, `SVC-013`, `UI-014`  | Privacy Act 2075                 |
+| `REQ-PATIENT-008`         | MVP     | 🔵     | C4         | export baseline               | reports/export              | future export endpoints                | clinical tables + documents                                                       | `InteroperabilityModule`                   | exports available in approved formats                                                            | `API-027`, `SVC-011`, `NFR-009` | FHIR R4                          |
+| `REQ-PATIENT-009`         | Phase 2 | ⚪     | C4         | offline access                | patient app shell           | sync/offline service APIs              | sync support tables                                                               | platform/client                            | selected surfaces work with declared offline rules                                               | `UI-015`, `NFR-015`             | —                                |
+| `REQ-PATIENT-010`         | MVP     | 🔵     | C3         | voice input                   | patient voice input         | `POST /audio-input`                    | `AudioTranscription`, `InputProvenance`                                           | `DataInputModule`                          | patient can submit voice input with provenance                                                   | `API-028`, `SVC-012`, `UI-012`  | —                                |
+| `REQ-PROVIDER-001`        | MVP     | 🔵     | C4         | patient summary access        | provider patient summary    | `GET /patients/:id`                    | `Patient`                                                                         | `PatientModule`                            | provider can read permitted patient summary                                                      | `API-004`, `SVC-002`, `UI-007`  | FHIR R4, Directive 2081          |
+| `REQ-PROVIDER-003`        | MVP     | 🔵     | C4         | encounter notes               | encounter detail            | `PATCH /encounters/:id`                | `Encounter`                                                                       | `EncounterModule`                          | provider updates encounter within scope                                                          | `API-010`, `SVC-005`, `UI-008`  | FHIR R4                          |
+| `REQ-PROVIDER-004`        | MVP     | 🔵     | C4         | prescriptions                 | provider medication request | `POST /medication-requests`            | `MedicationRequest`                                                               | `MedicationModule`                         | provider can create medication request with validation                                           | `API-015`, `SVC-005`, `UI-008`  | FHIR R4                          |
+| `REQ-PROVIDER-009`        | Phase 2 | ⚪     | C4         | telemedicine consult          | telemedicine room           | `POST /telemedicine/sessions`          | `TelemedicineSession`                                                             | `TelemedicineModule`                       | provider can create and conduct session                                                          | `API-032`, `SVC-014`, `UI-013`  | —                                |
+| `REQ-PROVIDER-016`        | MVP     | 🔵     | C4         | eligibility before consult    | insurance summary           | `POST /insurance/eligibility-check`    | `Coverage`, `EligibilityCheckLog`                                                 | `InsuranceModule`                          | authorized staff can verify eligibility                                                          | `API-020`, `SVC-008`, `UI-011`  | openIMIS IG                      |
+| `REQ-PROVIDER-017`        | Phase 2 | ⚪     | C4         | claims submit                 | claims                      | `POST /claims`                         | `Claim`, `ClaimSubmissionAttempt`                                                 | `BillingModule`                            | claims are submitted once with durable attempt state                                             | `API-029`, `SVC-015`, `UI-016`  | openIMIS IG                      |
+| `REQ-HIB-001`             | Phase 2 | ⚪     | C4         | FHIR claim submission         | claims                      | `POST /claims`                         | `Claim`                                                                           | `BillingModule`                            | outbound claim mapping follows agreed contract                                                   | `API-029`, `SVC-015`, `NFR-010` | FHIR R4, openIMIS IG             |
+| `REQ-HIB-002`             | MVP     | 🔵     | C4         | eligibility verification      | insurance summary           | `POST /insurance/eligibility-check`    | `EligibilityCheckLog`                                                             | `InsuranceModule`                          | eligibility request/response is logged                                                           | `API-020`, `SVC-008`, `NFR-010` | FHIR R4, openIMIS IG             |
+| `REQ-MOHP-004`            | MVP     | 🔵     | C2         | Nepal data locality           | deployment/runtime          | infra controls                         | DB/object/integration config                                                      | platform                                   | all primary storage and processing remain in Nepal                                               | `NFR-004`, `NFR-005`            | Directive 2081                   |
+| `REQ-MOHP-005`            | MVP     | 🔵     | C2         | audit logs                    | all sensitive flows         | audit endpoints + middleware           | `AuditLog`                                                                        | `AuditModule`                              | sensitive reads and writes are auditable                                                         | `API-024`, `SVC-009`, `NFR-001` | Directive 2081, Privacy Act 2075 |
+| `REQ-PROFILE-001`         | MVP     | 🔵     | C3         | patient create                | registration                | `POST /patients`                       | `Patient`                                                                         | `PatientModule`                            | valid patient create with required fields                                                        | `API-003`, `SVC-001`, `UI-002`  | FHIR R4                          |
+| `REQ-PROFILE-004`         | MVP     | 🔵     | C3         | patient profile update        | patient profile             | `PATCH /patients/:id`                  | `Patient`                                                                         | `PatientModule`                            | allowed fields update successfully                                                               | `API-005`, `SVC-002`, `UI-004`  | FHIR R4                          |
+| `REQ-MED-004`             | MVP     | 🔵     | C4         | OCR conversion                | OCR review                  | `POST /documents/:id/ocr`              | `OcrExtractionResult`                                                             | `DataInputModule`                          | OCR result enters reviewed workflow                                                              | `API-025`, `SVC-012`, `UI-017`  | —                                |
+| `REQ-PLATFORM-CLIENT-001` | MVP     | 🔵     | C1         | multi-channel delivery        | app shell                   | shared route contracts                 | shared frontend state + platform shells                                           | platform/client                            | mobile, web, and desktop clients expose the committed Core MVP flows with channel-appropriate UX | `UI-001`, `UI-009`, `NFR-008`   | WCAG 2.2 AA                      |
+| `REQ-MED-017`             | MVP     | 🔵     | C3         | record sharing                | access grants               | access grant APIs                      | `ConsentGrant`                                                                    | `ConsentModule`                            | patient sharing rules enforced consistently                                                      | `API-022`, `SVC-010`, `UI-010`  | Privacy Act 2075                 |
+| `REQ-APT-001`             | MVP     | 🔵     | C3         | appointment booking           | book appointment            | `POST /appointments`                   | `Appointment`                                                                     | `AppointmentModule`                        | booking succeeds when slot is free                                                               | `API-016`, `SVC-006`, `UI-008`  | FHIR R4                          |
+| `REQ-APT-006`             | Phase 2 | ⚪     | C3         | telemedicine appointment type | telemedicine scheduling     | appointment + telemedicine APIs        | `Appointment`, `TelemedicineSession`                                              | `AppointmentModule` + `TelemedicineModule` | appointment can be linked to consultation room                                                   | `API-032`, `SVC-014`, `UI-013`  | —                                |
+| `REQ-INS-003`             | MVP     | 🔵     | C4         | coverage details              | insurance summary           | `GET /patients/:id/coverage`           | `Coverage`                                                                        | `InsuranceModule`                          | patient sees active coverage state                                                               | `API-019`, `SVC-008`, `UI-011`  | openIMIS IG                      |
+| `REQ-INS-006`             | MVP     | 🔵     | C4         | eligibility check             | insurance summary           | `POST /insurance/eligibility-check`    | `EligibilityCheckLog`                                                             | `InsuranceModule`                          | eligibility status is retrieved and stored                                                       | `API-020`, `SVC-008`, `UI-011`  | openIMIS IG                      |
+| `REQ-INS-011`             | Phase 2 | ⚪     | C4         | claim submission              | claims                      | `POST /claims`                         | `Claim`                                                                           | `BillingModule`                            | staff can submit claim on behalf of patient                                                      | `API-029`, `SVC-015`, `UI-016`  | openIMIS IG                      |
+| `REQ-FAMILY-007`          | Phase 2 | ⚪     | C3         | caregiver role                | caregiver/dependent         | delegated access APIs                  | `CaregiverRelationship`, `ConsentGrant`                                           | `FamilyModule` + `ConsentModule`           | caregiver role is scoped and revocable                                                           | `API-030`, `SVC-013`, `UI-014`  | Privacy Act 2075                 |
+| `REQ-FHIR-001`            | MVP     | 🔵     | C4         | inbound FHIR gateway          | interoperability            | import/export APIs                     | FHIR-backed tables                                                                | `InteroperabilityModule`                   | inbound data accepted through controlled paths                                                   | `API-027`, `SVC-011`, `NFR-011` | FHIR R4                          |
+| `REQ-EXPORT-001`          | MVP     | 🔵     | C4         | export all patient data       | export/report               | export API                             | clinical tables + docs                                                            | `InteroperabilityModule`                   | patient export is complete and auditable                                                         | `API-027`, `SVC-011`, `NFR-009` | FHIR R4, Privacy Act 2075        |
+| `REQ-SEC-PRIVACY-002`     | MVP     | 🔵     | C3         | explicit consent              | access grants               | consent APIs                           | `ConsentGrant`                                                                    | `ConsentModule`                            | access decisions reflect explicit consent state                                                  | `API-022`, `SVC-010`, `NFR-002` | Privacy Act 2075, Directive 2081 |
+| `REQ-SEC-SOVEREIGN-001`   | MVP     | 🔵     | C2         | in-country storage            | runtime/deployment          | infra                                  | DB and object storage                                                             | platform                                   | all primary data stores are Nepal-hosted                                                         | `NFR-004`, `NFR-005`            | Directive 2081                   |
+| `REQ-ACCESS-VISION-006`   | MVP     | 🔵     | C1         | screen reader support         | all shipped UI              | all                                    | frontend components                                                               | frontend/design-system                     | shipped surfaces meet accessibility baseline                                                     | `UI-001`, `UI-018`, `NFR-007`   | WCAG 2.2 AA                      |
+
+---
+
+## 5. Missing Requirements (Identified in v2.0 Review)
+
+The following requirements should be added in the next matrix update. They are identified from the gap analysis in [phr_refinement_backlog_and_next_steps.md](phr_refinement_backlog_and_next_steps.md) and [phr-e2e-requirements.md](../02_strategy_and_requirements/phr-e2e-requirements.md):
+
+| Gap Area          | Suggested Requirement ID    | Description                                                            | Priority |
+| ----------------- | --------------------------- | ---------------------------------------------------------------------- | -------- |
+| **Security**      | `REQ-SEC-OWASP-001`         | All OWASP Top 10 risks addressed with automated verification in CI/CD  | P0       |
+| **Security**      | `REQ-SEC-DPIA-001`          | DPIA completed and reviewed before production launch                   | P0       |
+| **Security**      | `REQ-SEC-PENTEST-001`       | External penetration test completed per Directive 2081                 | P0       |
+| **Privacy**       | `REQ-PRIVACY-BREACH-001`    | 72-hour breach notification procedure operational                      | P0       |
+| **Privacy**       | `REQ-PRIVACY-RETENTION-001` | Data retention policies enforced (7-year clinical, 1-year operational) | P1       |
+| **Emergency**     | `REQ-EMERGENCY-QR-001`      | Emergency QR health card with privacy-preserving summary               | P1       |
+| **FCHV**          | `REQ-FCHV-001`              | Simplified FCHV registration and data entry flow                       | P2       |
+| **Multi-tenancy** | `REQ-TENANT-001`            | Tenant isolation enforced at DB, API, and storage layers               | P1       |
+| **ASR**           | `REQ-ASR-ACCURACY-001`      | Nepali medical ASR ≥85% accuracy on top 500 medical terms              | P2       |
+| **Performance**   | `REQ-PERF-001`              | API p95 latency ≤300ms, page load ≤2s on 3G                            | P1       |
+
+---
+
+## 6. Usage Rule
+
+Every new implementation item should add or update:
+
+- requirement id
+- workflow doc
+- route contract reference
+- schema reference
+- at least one testcase id
+- **data classification tag** (C1–C4)
+- **implementation status** (🟢/🟡/🔵/⚪/🔴)
+- **global standard cross-reference** (if applicable)
+
+No story is implementation-ready until all eight exist.

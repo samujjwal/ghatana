@@ -16,11 +16,17 @@ interface Theme {
  * Returns a key that is present on theme.palette and exposes `.main` or
  * falls back to the provided fallback (defaults to 'primary').
  */
-export function resolveThemeColor(theme: Theme, key: string | undefined, fallback: string = 'primary') {
+export function resolveThemeColor(
+  theme: Theme,
+  key: string | undefined,
+  fallback: string = 'primary'
+) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const p: Record<string, { main?: string } | undefined> = (theme && (theme as unknown).palette) || {};
+  const p: Record<string, { main?: string } | undefined> =
+    (theme && (theme as any).palette) || {};
   if (key && p[key] && typeof p[key].main === 'string') return key;
-  if (fallback && p[fallback] && typeof p[fallback].main === 'string') return fallback;
+  if (fallback && p[fallback] && typeof p[fallback].main === 'string')
+    return fallback;
   return 'primary';
 }
 
@@ -40,7 +46,7 @@ export default resolveThemeColor;
 export function resolveMuiColor(
   theme: Theme,
   key: string | undefined,
-  fallback: string = 'primary',
+  fallback: string = 'primary'
 ): string {
   // runtime value is a string; cast to the OverridableStringUnion to satisfy callers
   return resolveThemeColor(theme, key, fallback);
@@ -55,7 +61,11 @@ export function resolveMuiColor(
  * (which accept palette keys) and `getPaletteMain` when a concrete CSS color string is required
  * (for inline styles, sx values, or canvas rendering).
  */
-export function getPaletteMain(theme: Theme, key: string | undefined, fallback: string = 'primary'): string {
+export function getPaletteMain(
+  theme: Theme,
+  key: string | undefined,
+  fallback: string = 'primary'
+): string {
   const paletteKey = resolveThemeColor(theme, key, fallback);
   // We intentionally perform a dynamic lookup here. The security rule flags generic object
   // injection for indexed access; this is acceptable because the source of `paletteKey` is

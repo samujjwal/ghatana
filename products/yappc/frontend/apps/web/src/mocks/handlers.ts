@@ -4,8 +4,8 @@ import type {
   DevSecOpsOverview,
   Item,
   BulkOperationResult,
-} from '@ghatana/yappc-types/devsecops';
-import { createDevSecOpsOverview } from '@ghatana/yappc-types/devsecops/fixtures';
+} from '@yappc/core/types/devsecops';
+import { createDevSecOpsOverview } from '@yappc/core/types/devsecops/fixtures';
 
 // Types
 /**

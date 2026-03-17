@@ -11,7 +11,7 @@ import { TemplateGallery } from '@/components/canvas/templates/TemplateGallery';
 import { CanvasWelcomeDialog } from '@/components/canvas/onboarding/CanvasWelcomeDialog';
 import { AINotificationToast } from '@/components/canvas/ai/AINotificationToast';
 import { ContextualHelpManager } from '@/components/canvas/help/ContextualHelpManager';
-import type { LifecyclePhase } from '@ghatana/yappc-types/lifecycle';
+import type { LifecyclePhase } from '@yappc/core/types/lifecycle';
 import type { CanvasElement } from '@/components/canvas/workspace/canvasAtoms';
 
 export interface CanvasPanelsProps {

@@ -1,4 +1,4 @@
-import { useGlobalStateValue } from '@ghatana/yappc-ui';
+import { useGlobalStateValue } from '../state';
 import React from 'react';
 
 import type { Platform } from './platform';
@@ -53,7 +53,7 @@ export const useResponsive = () => {
 export const usePlatformResponsive = () => {
   const platform = useGlobalStateValue<Platform>('store:platform');
   const responsive = useResponsive();
-  
+
   return {
     platform,
     isDesktop: platform === 'desktop',
@@ -81,9 +81,9 @@ export const getPlatformStyles = (
 ) => {
   return {
     ...(styles.base || {}),
-    ...(platform === 'desktop' && styles.desktop || {}),
-    ...(platform === 'mobile' && styles.mobile || {}),
-    ...(platform === 'web' && styles.web || {}),
+    ...((platform === 'desktop' && styles.desktop) || {}),
+    ...((platform === 'mobile' && styles.mobile) || {}),
+    ...((platform === 'web' && styles.web) || {}),
   };
 };
 
@@ -93,16 +93,14 @@ export const getPlatformStyles = (
  * @param styles Responsive styles
  * @returns Merged styles with media query keys
  */
-export const getResponsiveStyles = (
-  styles: {
-    base?: Record<string, unknown>;
-    xs?: Record<string, unknown>;
-    sm?: Record<string, unknown>;
-    md?: Record<string, unknown>;
-    lg?: Record<string, unknown>;
-    xl?: Record<string, unknown>;
-  }
-) => {
+export const getResponsiveStyles = (styles: {
+  base?: Record<string, unknown>;
+  xs?: Record<string, unknown>;
+  sm?: Record<string, unknown>;
+  md?: Record<string, unknown>;
+  lg?: Record<string, unknown>;
+  xl?: Record<string, unknown>;
+}) => {
   return {
     ...(styles.base || {}),
     '@media (max-width: 639px)': styles.xs || {},

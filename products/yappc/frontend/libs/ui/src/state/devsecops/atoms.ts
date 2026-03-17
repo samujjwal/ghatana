@@ -10,7 +10,7 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
-import { devsecopsClient } from '@ghatana/yappc-api/devsecops/client';
+import { devsecopsClient } from '@yappc/core/api/devsecops/client';
 
 import type {
   Item,
@@ -19,7 +19,7 @@ import type {
   SortConfig,
   ViewConfig,
   ViewMode,
-} from '@ghatana/yappc-types/devsecops';
+} from '@yappc/core/types/devsecops';
 
 
 // ============================================================================

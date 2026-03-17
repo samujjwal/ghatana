@@ -11,7 +11,7 @@ import type {
   Phase,
   User,
   BulkOperationResult,
-} from '@ghatana/yappc-types/devsecops';
+} from '@yappc/core/types/devsecops';
 
 /**
  * DevSecOps API Client

@@ -11,7 +11,7 @@ import {
 import { UnifiedRegistry } from '../registry/UnifiedRegistry';
 import { logger } from '../../utils/Logger';
 
-import type { ComponentDefinition } from '@ghatana/yappc-types';
+import type { ComponentDefinition } from '@yappc/core/types';
 
 /**
  *

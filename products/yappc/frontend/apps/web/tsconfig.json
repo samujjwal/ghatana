@@ -87,7 +87,7 @@
       "@ghatana/yappc-ide/*": [
         "../../libs/ide/src/*"
       ],
-      "@ghatana/yappc-types": [
+      "@yappc/core/types": [
         "../../libs/types/src"
       ],
       "@ghatana/yappc-types/*": [
@@ -99,7 +99,7 @@
       "@ghatana/yappc-types/devsecops/*": [
         "../../libs/types/src/devsecops/*"
       ],
-      "@ghatana/yappc-api": [
+      "@yappc/core/api": [
         "../../libs/api/src"
       ],
       "@ghatana/yappc-api/*": [

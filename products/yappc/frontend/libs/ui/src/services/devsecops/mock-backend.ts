@@ -19,7 +19,7 @@ import type {
   Phase,
   SortConfig,
   User,
-} from '@ghatana/yappc-types/devsecops';
+} from '@yappc/core/types/devsecops';
 
 /**
  * Mock data generator utilities

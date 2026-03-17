@@ -17,7 +17,7 @@ import type {
   ItemIntegration,
   JiraIntegration,
   SonarQubeIntegration,
-} from '@ghatana/yappc-types/devsecops';
+} from '@yappc/core/types/devsecops';
 
 /**
  * Base integration adapter interface

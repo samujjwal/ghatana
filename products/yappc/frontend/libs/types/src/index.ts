@@ -124,7 +124,12 @@ export interface Project {
  * @doc.layer product
  * @doc.pattern Value Object
  */
-export type ProjectType = 'UI' | 'Backend' | 'Mobile' | 'Desktop' | 'Full-Stack';
+export type ProjectType =
+  | 'UI'
+  | 'Backend'
+  | 'Mobile'
+  | 'Desktop'
+  | 'Full-Stack';
 
 /**
  * Enumeration of deployment targets.
@@ -278,7 +283,12 @@ export interface Notification {
  * @doc.layer product
  * @doc.pattern Value Object
  */
-export type NotificationType = 'mention' | 'assignment' | 'comment' | 'status_change' | 'system';
+export type NotificationType =
+  | 'mention'
+  | 'assignment'
+  | 'comment'
+  | 'status_change'
+  | 'system';
 
 // ============================================================================
 // CANVAS TYPES
@@ -740,3 +750,11 @@ export interface Capability {
 // ============================================================================
 export * from '../../state/src';
 
+// ============================================================================
+// DEPRECATION WARNING
+// ============================================================================
+// eslint-disable-next-line no-console
+console.warn(
+  '[DEPRECATED] @ghatana/yappc-types is deprecated. Use @yappc/core/types instead. ' +
+    'See: docs/NAMING_CONVENTIONS.md'
+);

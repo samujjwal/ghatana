@@ -2,9 +2,9 @@
  * Component Registry - Central registry for all canvas components
  */
 
-import { RegistryComparator } from '@ghatana/yappc-types';
+import { RegistryComparator } from '@yappc/core/types';
 
-import type { ComponentDefinition, RegistryEntry, RegistryFilter } from '@ghatana/yappc-types';
+import type { ComponentDefinition, RegistryEntry, RegistryFilter } from '@yappc/core/types';
 
 /**
  *

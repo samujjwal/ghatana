@@ -5,7 +5,7 @@
 import { faker } from '../faker-shim';
 import { createProject } from './project.factory';
 
-import type { Task, Project, User } from '@ghatana/yappc-types';
+import type { Task, Project, User } from '@yappc/core/types';
 
 /**
  *

@@ -46,10 +46,10 @@
       "@ghatana/yappc-collab/*": ["libs/collab/src/*"],
       "@ghatana/yappc-ide": ["libs/ide/src"],
       "@ghatana/yappc-ide/*": ["libs/ide/src/*"],
-      "@ghatana/yappc-types": ["libs/types/src"],
+      "@yappc/core/types": ["libs/types/src"],
       "@ghatana/yappc-types/*": ["libs/types/src/*"],
 
-      "@ghatana/yappc-api": ["libs/api/src"],
+      "@yappc/core/api": ["libs/api/src"],
       "@ghatana/yappc-api/*": ["libs/api/src/*"],
       "@ghatana/yappc-testing": ["libs/testing/src"],
       "@ghatana/yappc-testing/*": ["libs/testing/src/*"],

@@ -19,7 +19,7 @@ import type {
     WorkItemStatus,
 } from '@/types/workItem';
 import type { DevSecOpsPhaseId } from '@/config/devsecopsEngineerFlow';
-import type { ItemStatus as DevSecOpsCoreItemStatus, Priority as DevSecOpsCorePriority } from '@ghatana/yappc-types/devsecops';
+import type { ItemStatus as DevSecOpsCoreItemStatus, Priority as DevSecOpsCorePriority } from '@yappc/core/types/devsecops';
 
 /**
  * Status values used by the DevSecOps item model.

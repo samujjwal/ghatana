@@ -15,7 +15,7 @@ import { Box, ToggleButton, ToggleButtonGroup, Tooltip } from '@ghatana/ui';
 
 
 import type { ViewModeSwitcherProps, ViewModeMetadata } from './types';
-import type { ViewMode } from '@ghatana/yappc-types/devsecops';
+import type { ViewMode } from '@yappc/core/types/devsecops';
 
 const VIEW_MODE_METADATA: Record<ViewMode, ViewModeMetadata> = {
   canvas: {

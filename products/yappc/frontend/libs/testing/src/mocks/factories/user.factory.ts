@@ -4,7 +4,7 @@
 
 import { faker } from '../faker-shim';
 
-import type { User } from '@ghatana/yappc-types';
+import type { User } from '@yappc/core/types';
 
 /**
  *

@@ -1,8 +1,8 @@
 /**
  * API Client Library
- * 
+ *
  * Central export for all API clients including GraphQL, DevSecOps, AI, Auth, etc.
- * 
+ *
  * @doc.type module
  * @doc.purpose API client library exports
  * @doc.layer api
@@ -112,7 +112,16 @@ export { aiClient } from './ai';
 // =============================================================================
 // GraphQL (consolidated from @ghatana/yappc-api)
 // Re-exported here as the canonical API client entry point.
-// Direct imports from '@ghatana/yappc-api' still work but are deprecated.
+// Direct imports from '@yappc/core/api' still work but are deprecated.
 // =============================================================================
 
 export * from '../../graphql/src';
+
+// ============================================================================
+// DEPRECATION WARNING
+// ============================================================================
+// eslint-disable-next-line no-console
+console.warn(
+  '[DEPRECATED] @ghatana/yappc-api is deprecated. Use @yappc/core/api instead. ' +
+    'See: docs/NAMING_CONVENTIONS.md'
+);

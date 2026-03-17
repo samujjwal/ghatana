@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 
 import { createUser, createAdminUser } from '../factories/user.factory';
 
-import type { User } from '@ghatana/yappc-types';
+import type { User } from '@yappc/core/types';
 
 /**
  * Mock authentication service for testing

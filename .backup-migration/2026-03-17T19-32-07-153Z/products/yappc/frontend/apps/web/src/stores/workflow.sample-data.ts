@@ -1,0 +1,841 @@
+/**
+ * Sample Workflow Data for Development/Demo
+ *
+ * @doc.type data
+ * @doc.purpose Provide sample workflows for UI development
+ * @doc.layer product
+ * @doc.pattern Sample Data
+ */
+
+import type { Workflow, WorkflowTemplate } from '@ghatana/yappc-types';
+
+/**
+ * Sample workflows for development and demo purposes.
+ * These are loaded into the store when the app starts.
+ */
+export const sampleWorkflows: Workflow[] = [
+    {
+        id: 'wf-sample-1',
+        workflowType: 'BUG_FIX',
+        category: 'DEVELOPMENT',
+        name: 'Fix login timeout issue',
+        status: 'ACTIVE',
+        currentStep: 'EXECUTE',
+        aiMode: 'AI_ASSISTED',
+        ownerId: 'alice',
+        ownerName: 'Alice Johnson',
+        createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+        updatedAt: new Date(Date.now() - 3600000).toISOString(),
+        contributors: [
+            { userId: 'alice', userName: 'Alice Johnson', role: 'OWNER', joinedAt: new Date(Date.now() - 86400000 * 3).toISOString() },
+            { userId: 'bob', userName: 'Bob Smith', role: 'REVIEWER', joinedAt: new Date(Date.now() - 86400000 * 2).toISOString() },
+        ],
+        steps: {
+            intent: {
+                status: 'COMPLETED',
+                data: {
+                    workflowType: 'BUG_FIX',
+                    goalStatement: 'Fix the login timeout issue causing users to be logged out after 5 minutes',
+                    successCriteria: [
+                        'Session timeout increased to 30 minutes',
+                        'Token refresh mechanism working',
+                        'No regression in auth flow',
+                    ],
+                },
+                aiConfidence: 0.92,
+                completedAt: new Date(Date.now() - 86400000 * 2),
+            },
+            context: {
+                status: 'COMPLETED',
+                data: {
+                    systemsImpacted: ['auth-service', 'api-gateway', 'user-session-store'],
+                    constraints: ['Zero downtime deployment', 'Token backward compatibility'],
+                    references: [
+                        {
+                            id: 'ref-1',
+                            type: 'DOCUMENT',
+                            name: 'Auth Architecture',
+                            url: 'https://docs.example.com/auth-architecture',
+                        },
+                    ],
+                },
+                aiConfidence: 0.88,
+                completedAt: new Date(Date.now() - 86400000),
+            },
+            plan: {
+                status: 'COMPLETED',
+                data: {
+                    selectedPlan: [
+                        { id: 't1', title: 'Update session timeout config', order: 1 },
+                        { id: 't2', title: 'Implement token refresh', order: 2 },
+                        { id: 't3', title: 'Add monitoring alerts', order: 3 },
+                    ],
+                    alternatives: [],
+                    riskAssessment: {
+                        level: 'LOW',
+                        factors: ['Token expiration edge cases', 'Concurrent request handling'],
+                        mitigations: ['Comprehensive testing', 'Gradual rollout'],
+                        rollbackPlan: 'Revert config changes via feature flag',
+                    },
+                },
+                aiConfidence: 0.85,
+                completedAt: new Date(Date.now() - 43200000),
+            },
+            execute: {
+                status: 'IN_PROGRESS',
+                data: {
+                    changes: [
+                        {
+                            id: 'c1',
+                            type: 'CODE',
+                            description: 'Update session timeout to 30 minutes',
+                            status: 'COMPLETED',
+                        },
+                        {
+                            id: 'c2',
+                            type: 'CODE',
+                            description: 'Implement token refresh endpoint',
+                            status: 'IN_REVIEW',
+                        },
+                    ],
+                    executors: [],
+                    artifacts: [],
+                },
+                startedAt: new Date(Date.now() - 21600000),
+            },
+            verify: {
+                status: 'NOT_STARTED',
+                data: {
+                    verificationStatus: 'PENDING',
+                    evidence: [],
+                    acceptanceChecklist: [],
+                },
+            },
+            observe: {
+                status: 'NOT_STARTED',
+                data: {
+                    metricsDelta: { before: {}, after: {}, percentChange: {} },
+                    anomalies: [],
+                    observationWindow: {
+                        startedAt: new Date().toISOString(),
+                        durationHours: 24,
+                        status: 'ACTIVE',
+                    },
+                },
+            },
+            learn: {
+                status: 'NOT_STARTED',
+                data: {
+                    lessons: [],
+                    rootCauses: [],
+                },
+            },
+            institutionalize: {
+                status: 'NOT_STARTED',
+                data: {
+                    actions: [],
+                    approvalChain: [],
+                    effectiveDate: undefined,
+                },
+            },
+        },
+        audit: [
+            {
+                id: 'audit-1',
+                step: 'INTENT',
+                action: 'STEP_COMPLETED',
+                timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
+                userId: 'alice',
+                userName: 'Alice Johnson',
+                details: { aiConfidence: 0.92 },
+            },
+            {
+                id: 'audit-2',
+                step: 'CONTEXT',
+                action: 'STEP_COMPLETED',
+                timestamp: new Date(Date.now() - 86400000).toISOString(),
+                userId: 'alice',
+                userName: 'Alice Johnson',
+                details: { aiConfidence: 0.88 },
+            },
+            {
+                id: 'audit-3',
+                step: 'PLAN',
+                action: 'STEP_COMPLETED',
+                timestamp: new Date(Date.now() - 43200000).toISOString(),
+                userId: 'bob',
+                userName: 'Bob Smith',
+                details: { aiConfidence: 0.85 },
+            },
+        ],
+        metrics: {
+            stepDurations: {
+                INTENT: 3600000,
+                CONTEXT: 7200000,
+                PLAN: 10800000,
+            },
+            revisitCount: 0,
+            aiSuggestionsAccepted: 0,
+            aiSuggestionsRejected: 0,
+            blockedCount: 0,
+        },
+    },
+    {
+        id: 'wf-sample-2',
+        workflowType: 'FEATURE',
+        category: 'DEVELOPMENT',
+        name: 'Implement user dashboard v2',
+        status: 'ACTIVE',
+        currentStep: 'PLAN',
+        aiMode: 'AI_ASSISTED',
+        ownerId: 'david',
+        ownerName: 'David Brown',
+        createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+        updatedAt: new Date(Date.now() - 7200000).toISOString(),
+        contributors: [
+            { userId: 'david', userName: 'David Brown', role: 'OWNER', joinedAt: new Date(Date.now() - 86400000 * 5).toISOString() },
+            { userId: 'eve', userName: 'Eve Davis', role: 'CONTRIBUTOR', joinedAt: new Date(Date.now() - 86400000 * 3).toISOString() },
+        ],
+        steps: {
+            intent: {
+                status: 'COMPLETED',
+                data: {
+                    workflowType: 'FEATURE',
+                    goalStatement: 'Build a new user dashboard with real-time analytics and customizable widgets',
+                    successCriteria: [
+                        'Dashboard loads in under 2 seconds',
+                        'Users can customize widget layout',
+                        'Real-time data updates every 30 seconds',
+                        'Mobile responsive design',
+                    ],
+                },
+                aiConfidence: 0.95,
+                completedAt: new Date(Date.now() - 86400000 * 4),
+            },
+            context: {
+                status: 'COMPLETED',
+                data: {
+                    systems: ['dashboard-service', 'analytics-api', 'widget-engine', 'websocket-server'],
+                    constraints: ['Must work on IE11', 'Accessibility AA compliant', 'CDN-friendly assets'],
+                    references: ['https://figma.com/file/dashboard-v2-designs', 'https://docs.example.com/widget-api'],
+                },
+                aiConfidence: 0.91,
+                completedAt: new Date(Date.now() - 86400000 * 2),
+            },
+            plan: {
+                status: 'IN_PROGRESS',
+                data: {
+                    tasks: [
+                        { id: 't1', title: 'Setup dashboard service scaffold', status: 'DONE', assignee: 'david' },
+                        { id: 't2', title: 'Implement widget framework', status: 'IN_PROGRESS', assignee: 'eve' },
+                        { id: 't3', title: 'Build analytics integration', status: 'TODO', assignee: 'frank' },
+                        { id: 't4', title: 'Create widget library', status: 'TODO' },
+                        { id: 't5', title: 'Implement drag-and-drop layout', status: 'TODO' },
+                    ],
+                    riskAssessment: 'MEDIUM',
+                    hasRollbackPlan: true,
+                    rollbackPlan: 'Feature flag to switch back to v1 dashboard',
+                },
+                startedAt: new Date(Date.now() - 86400000),
+            },
+            execute: { status: 'NOT_STARTED', data: {} },
+            verify: { status: 'NOT_STARTED', data: {} },
+            observe: { status: 'NOT_STARTED', data: {} },
+            learn: { status: 'NOT_STARTED', data: {} },
+            institutionalize: { status: 'NOT_STARTED', data: {} },
+        },
+        audit: [
+            {
+                id: 'audit-4',
+                step: 'INTENT',
+                action: 'STEP_COMPLETED',
+                timestamp: new Date(Date.now() - 86400000 * 4).toISOString(),
+                userId: 'david',
+                userName: 'David Brown',
+                details: { aiConfidence: 0.95 },
+            },
+            {
+                id: 'audit-5',
+                step: 'CONTEXT',
+                action: 'STEP_COMPLETED',
+                timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
+                userId: 'david',
+                userName: 'David Brown',
+                details: { aiConfidence: 0.91 },
+            },
+        ],
+        metrics: {
+            stepDurations: {
+                INTENT: 7200000,
+                CONTEXT: 14400000,
+            },
+            revisitCount: 0,
+            aiSuggestionsAccepted: 0,
+            aiSuggestionsRejected: 0,
+            blockedCount: 0,
+        },
+    },
+    {
+        id: 'wf-sample-3',
+        workflowType: 'RELEASE',
+        category: 'RELEASE',
+        name: 'Q1 2024 Release',
+        status: 'DRAFT',
+        currentStep: 'INTENT',
+        aiMode: 'AI_ASSISTED',
+        ownerId: 'carol',
+        ownerName: 'Carol Wilson',
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+        updatedAt: new Date(Date.now() - 1800000).toISOString(),
+        contributors: [{ userId: 'carol', userName: 'Carol Wilson', role: 'OWNER', joinedAt: new Date(Date.now() - 3600000).toISOString() }],
+        steps: {
+            intent: {
+                status: 'IN_PROGRESS',
+                data: {
+                    workflowType: 'RELEASE',
+                    goalStatement: 'Deploy Q1 2024 release with new dashboard and auth improvements',
+                },
+                startedAt: new Date(Date.now() - 1800000).toISOString(),
+            },
+            context: { status: 'NOT_STARTED', data: {} },
+            plan: { status: 'NOT_STARTED', data: {} },
+            execute: { status: 'NOT_STARTED', data: {} },
+            verify: { status: 'NOT_STARTED', data: {} },
+            observe: { status: 'NOT_STARTED', data: {} },
+            learn: { status: 'NOT_STARTED', data: {} },
+            institutionalize: { status: 'NOT_STARTED', data: {} },
+        },
+        audit: [],
+        metrics: {
+            stepDurations: {},
+            revisitCount: 0,
+            aiSuggestionsAccepted: 0,
+            aiSuggestionsRejected: 0,
+            blockedCount: 0,
+        },
+    },
+    // Security Incident Response (SecOps)
+    {
+        id: 'wf-sample-secops-1',
+        workflowType: 'SECURITY_INCIDENT',
+        category: 'SECOPS',
+        name: 'Critical Vulnerability CVE-2024-1234',
+        status: 'IN_PROGRESS',
+        currentStep: 'EXECUTE',
+        aiMode: 'AI_AUTONOMOUS',
+        ownerId: 'security-team',
+        ownerName: 'Security Team',
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        updatedAt: new Date(Date.now() - 3600000).toISOString(),
+        contributors: [
+            { userId: 'security-team', userName: 'Security Team', role: 'OWNER', joinedAt: new Date(Date.now() - 86400000).toISOString() },
+            { userId: 'sre-oncall', userName: 'SRE On-Call', role: 'CONTRIBUTOR', joinedAt: new Date(Date.now() - 72000000).toISOString() },
+        ],
+        steps: {
+            intent: {
+                status: 'COMPLETED',
+                data: {
+                    workflowType: 'SECURITY_INCIDENT',
+                    goalStatement: 'Remediate critical RCE vulnerability in authentication service',
+                    successCriteria: ['Vulnerability patched', 'No active exploitation', 'Systems hardened'],
+                    priority: 'P0',
+                    severity: 'CRITICAL',
+                },
+                startedAt: new Date(Date.now() - 86400000).toISOString(),
+                completedAt: new Date(Date.now() - 82800000).toISOString(),
+            },
+            context: {
+                status: 'COMPLETED',
+                data: {
+                    systemsImpacted: ['auth-service', 'api-gateway', 'user-service'],
+                    threatIntelligence: 'Active exploitation in the wild reported by CISA',
+                    affectedVersions: ['2.1.0 - 2.3.4'],
+                    cveDetails: { score: 9.8, vector: 'NETWORK', exploitAvailable: true },
+                },
+                startedAt: new Date(Date.now() - 82800000).toISOString(),
+                completedAt: new Date(Date.now() - 79200000).toISOString(),
+            },
+            plan: {
+                status: 'COMPLETED',
+                data: {
+                    selectedPlan: {
+                        id: 'plan-immediate-patch',
+                        title: 'Immediate Patch and Harden',
+                        description: 'Emergency patch deployment with additional WAF rules',
+                    },
+                    containmentStrategy: 'Enable WAF rules to block exploit patterns',
+                    remediationPlan: 'Rolling update to patched version 2.3.5',
+                    rollbackPlan: 'Revert with immediate WAF mitigation',
+                },
+                startedAt: new Date(Date.now() - 79200000).toISOString(),
+                completedAt: new Date(Date.now() - 75600000).toISOString(),
+            },
+            execute: {
+                status: 'IN_PROGRESS',
+                data: {
+                    tasksCompleted: ['WAF rules deployed', 'Staging patched and tested'],
+                    tasksInProgress: ['Production rolling update - 60% complete'],
+                    tasksPending: ['Post-patch security scan'],
+                },
+                startedAt: new Date(Date.now() - 75600000).toISOString(),
+            },
+            verify: { status: 'NOT_STARTED', data: {} },
+            observe: { status: 'NOT_STARTED', data: {} },
+            learn: { status: 'NOT_STARTED', data: {} },
+            institutionalize: { status: 'NOT_STARTED', data: {} },
+        },
+        audit: [
+            {
+                id: 'audit-sec-1',
+                step: 'INTENT',
+                action: 'STEP_COMPLETED',
+                timestamp: new Date(Date.now() - 82800000).toISOString(),
+                userId: 'security-team',
+                userName: 'Security Team',
+                details: { severity: 'CRITICAL', escalation: true },
+            },
+        ],
+        metrics: {
+            stepDurations: {
+                INTENT: 3600000,
+                CONTEXT: 3600000,
+                PLAN: 3600000,
+            },
+            revisitCount: 0,
+            aiSuggestionsAccepted: 5,
+            aiSuggestionsRejected: 0,
+            blockedCount: 0,
+        },
+    },
+    // Compliance Audit (GRC)
+    {
+        id: 'wf-sample-grc-1',
+        workflowType: 'AUDIT_PREP',
+        category: 'GRC',
+        name: 'SOC 2 Type II Annual Audit 2024',
+        status: 'IN_PROGRESS',
+        currentStep: 'CONTEXT',
+        aiMode: 'AI_ASSISTED',
+        ownerId: 'compliance-lead',
+        ownerName: 'Compliance Lead',
+        createdAt: new Date(Date.now() - 86400000 * 14).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000).toISOString(),
+        contributors: [
+            { userId: 'compliance-lead', userName: 'Compliance Lead', role: 'OWNER', joinedAt: new Date(Date.now() - 86400000 * 14).toISOString() },
+            { userId: 'it-director', userName: 'IT Director', role: 'REVIEWER', joinedAt: new Date(Date.now() - 86400000 * 12).toISOString() },
+        ],
+        steps: {
+            intent: {
+                status: 'COMPLETED',
+                data: {
+                    workflowType: 'AUDIT_PREP',
+                    goalStatement: 'Prepare for and pass SOC 2 Type II annual audit with zero critical findings',
+                    successCriteria: ['All controls evidenced', 'No critical gaps', 'Audit passed'],
+                    auditScope: ['Security', 'Availability', 'Confidentiality'],
+                    regulatoryFramework: 'SOC 2 Type II',
+                },
+                startedAt: new Date(Date.now() - 86400000 * 14).toISOString(),
+                completedAt: new Date(Date.now() - 86400000 * 12).toISOString(),
+            },
+            context: {
+                status: 'IN_PROGRESS',
+                data: {
+                    previousFindings: ['Access review automation needed', 'MFA coverage gaps'],
+                    controlsInScope: 142,
+                    evidenceCollected: 89,
+                    gaps: ['Vendor risk assessments incomplete', 'Backup testing documentation missing'],
+                },
+                startedAt: new Date(Date.now() - 86400000 * 12).toISOString(),
+            },
+            plan: { status: 'NOT_STARTED', data: {} },
+            execute: { status: 'NOT_STARTED', data: {} },
+            verify: { status: 'NOT_STARTED', data: {} },
+            observe: { status: 'NOT_STARTED', data: {} },
+            learn: { status: 'NOT_STARTED', data: {} },
+            institutionalize: { status: 'NOT_STARTED', data: {} },
+        },
+        audit: [],
+        metrics: {
+            stepDurations: {
+                INTENT: 172800000,
+            },
+            revisitCount: 0,
+            aiSuggestionsAccepted: 12,
+            aiSuggestionsRejected: 3,
+            blockedCount: 0,
+        },
+    },
+    // Production Incident (Operations)
+    {
+        id: 'wf-sample-ops-1',
+        workflowType: 'INCIDENT',
+        category: 'OPERATIONS',
+        name: 'Database Connection Pool Exhaustion',
+        status: 'COMPLETED',
+        currentStep: 'INSTITUTIONALIZE',
+        aiMode: 'AI_AUTONOMOUS',
+        ownerId: 'sre-team',
+        ownerName: 'SRE Team',
+        createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000).toISOString(),
+        contributors: [
+            { userId: 'sre-team', userName: 'SRE Team', role: 'OWNER', joinedAt: new Date(Date.now() - 86400000 * 3).toISOString() },
+            { userId: 'db-admin', userName: 'Database Admin', role: 'CONTRIBUTOR', joinedAt: new Date(Date.now() - 86400000 * 3).toISOString() },
+        ],
+        steps: {
+            intent: {
+                status: 'COMPLETED',
+                data: {
+                    workflowType: 'INCIDENT',
+                    goalStatement: 'Resolve database connection pool exhaustion causing API timeouts',
+                    successCriteria: ['Service restored', 'Root cause fixed', 'Monitoring improved'],
+                    severity: 'SEV1',
+                    impactedServices: ['order-api', 'inventory-api', 'checkout'],
+                },
+                startedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+                completedAt: new Date(Date.now() - 86400000 * 3 + 900000).toISOString(),
+            },
+            context: {
+                status: 'COMPLETED',
+                data: {
+                    systemsImpacted: ['PostgreSQL primary', 'Connection pooler (PgBouncer)'],
+                    recentChanges: ['New batch job deployed 2 hours before incident'],
+                    logs: 'Connection refused - too many clients',
+                    metricsSnapshot: { activeConnections: 500, maxConnections: 500, waitingQueries: 1247 },
+                },
+                startedAt: new Date(Date.now() - 86400000 * 3 + 900000).toISOString(),
+                completedAt: new Date(Date.now() - 86400000 * 3 + 2700000).toISOString(),
+            },
+            plan: {
+                status: 'COMPLETED',
+                data: {
+                    selectedPlan: {
+                        id: 'plan-connection-fix',
+                        title: 'Fix Connection Leak and Scale Pool',
+                        description: 'Patch batch job connection leak and increase pool size',
+                    },
+                    mitigationStrategy: 'Temporarily increase max connections and restart batch job',
+                },
+                startedAt: new Date(Date.now() - 86400000 * 3 + 2700000).toISOString(),
+                completedAt: new Date(Date.now() - 86400000 * 3 + 3600000).toISOString(),
+            },
+            execute: {
+                status: 'COMPLETED',
+                data: {
+                    tasksCompleted: ['Batch job killed', 'Pool size increased', 'Connection leak patched'],
+                },
+                startedAt: new Date(Date.now() - 86400000 * 3 + 3600000).toISOString(),
+                completedAt: new Date(Date.now() - 86400000 * 3 + 7200000).toISOString(),
+            },
+            verify: {
+                status: 'COMPLETED',
+                data: {
+                    acceptanceChecklist: [
+                        { item: 'API response times normal', checked: true },
+                        { item: 'Connection count stable', checked: true },
+                        { item: 'No error logs', checked: true },
+                    ],
+                },
+                startedAt: new Date(Date.now() - 86400000 * 3 + 7200000).toISOString(),
+                completedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+            },
+            observe: {
+                status: 'COMPLETED',
+                data: {
+                    metricsDelta: { p99Latency: '-85%', errorRate: '-99.9%', connectionUtilization: '-40%' },
+                    observationPeriod: '24 hours',
+                },
+                startedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+                completedAt: new Date(Date.now() - 86400000).toISOString(),
+            },
+            learn: {
+                status: 'COMPLETED',
+                data: {
+                    rootCauses: ['Batch job not releasing connections on error', 'Pool size too conservative'],
+                    lessons: ['Add connection leak detection', 'Implement connection timeout'],
+                    improvements: ['Add PgBouncer metrics to dashboard', 'Create runbook for connection issues'],
+                },
+                startedAt: new Date(Date.now() - 86400000).toISOString(),
+                completedAt: new Date(Date.now() - 43200000).toISOString(),
+            },
+            institutionalize: {
+                status: 'COMPLETED',
+                data: {
+                    updates: {
+                        runbooks: ['connection-pool-exhaustion.md created'],
+                        monitoring: ['Alert added for connection utilization > 80%'],
+                        templates: ['Batch job template updated with connection handling'],
+                    },
+                    approvals: [{ approver: 'Tech Lead', approvedAt: new Date(Date.now() - 21600000).toISOString() }],
+                },
+                startedAt: new Date(Date.now() - 43200000).toISOString(),
+                completedAt: new Date(Date.now() - 14400000).toISOString(),
+            },
+        },
+        audit: [
+            {
+                id: 'audit-ops-1',
+                step: 'INTENT',
+                action: 'STEP_COMPLETED',
+                timestamp: new Date(Date.now() - 86400000 * 3 + 900000).toISOString(),
+                userId: 'sre-team',
+                userName: 'SRE Team',
+                details: { severity: 'SEV1', timeToAcknowledge: '5 minutes' },
+            },
+        ],
+        metrics: {
+            stepDurations: {
+                INTENT: 900000,
+                CONTEXT: 1800000,
+                PLAN: 900000,
+                EXECUTE: 3600000,
+                VERIFY: 79200000,
+                OBSERVE: 86400000,
+                LEARN: 43200000,
+                INSTITUTIONALIZE: 28800000,
+            },
+            revisitCount: 1,
+            aiSuggestionsAccepted: 8,
+            aiSuggestionsRejected: 1,
+            blockedCount: 0,
+        },
+    },
+    // Threat Modeling (Architecture)
+    {
+        id: 'wf-sample-arch-1',
+        workflowType: 'THREAT_MODEL',
+        category: 'ARCHITECTURE',
+        name: 'Payment Gateway Integration Threat Model',
+        status: 'IN_PROGRESS',
+        currentStep: 'PLAN',
+        aiMode: 'AI_ASSISTED',
+        ownerId: 'security-architect',
+        ownerName: 'Security Architect',
+        createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000).toISOString(),
+        contributors: [
+            { userId: 'security-architect', userName: 'Security Architect', role: 'OWNER', joinedAt: new Date(Date.now() - 86400000 * 5).toISOString() },
+            { userId: 'payments-lead', userName: 'Payments Lead', role: 'REVIEWER', joinedAt: new Date(Date.now() - 86400000 * 4).toISOString() },
+        ],
+        steps: {
+            intent: {
+                status: 'COMPLETED',
+                data: {
+                    workflowType: 'THREAT_MODEL',
+                    goalStatement: 'Identify and mitigate security threats for new payment gateway integration',
+                    successCriteria: ['All STRIDE threats analyzed', 'Mitigations defined', 'PCI-DSS controls mapped'],
+                    systemScope: 'Payment processing flow from checkout to settlement',
+                },
+                startedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+                completedAt: new Date(Date.now() - 86400000 * 4).toISOString(),
+            },
+            context: {
+                status: 'COMPLETED',
+                data: {
+                    architecture: {
+                        components: ['Checkout UI', 'Payment API', 'Token Vault', 'Gateway Proxy', 'External Gateway'],
+                        dataFlows: ['Card data tokenization', 'Token-to-PAN exchange', 'Settlement batch'],
+                    },
+                    trustBoundaries: ['Public Internet', 'DMZ', 'Private Subnet', 'HSM Boundary'],
+                    pciScope: ['Payment API', 'Token Vault', 'Gateway Proxy'],
+                },
+                startedAt: new Date(Date.now() - 86400000 * 4).toISOString(),
+                completedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+            },
+            plan: {
+                status: 'IN_PROGRESS',
+                data: {
+                    threats: [
+                        { id: 'T1', category: 'Spoofing', description: 'Attacker impersonates merchant', mitigation: 'Mutual TLS authentication' },
+                        { id: 'T2', category: 'Tampering', description: 'Transaction amount modification', mitigation: 'Request signing with HMAC' },
+                        { id: 'T3', category: 'Information Disclosure', description: 'Card data leakage in logs', mitigation: 'PII masking, log sanitization' },
+                    ],
+                    mitigations: ['mTLS for all gateway calls', 'Request signing', 'Tokenization at edge'],
+                },
+                startedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+            },
+            execute: { status: 'NOT_STARTED', data: {} },
+            verify: { status: 'NOT_STARTED', data: {} },
+            observe: { status: 'NOT_STARTED', data: {} },
+            learn: { status: 'NOT_STARTED', data: {} },
+            institutionalize: { status: 'NOT_STARTED', data: {} },
+        },
+        audit: [],
+        metrics: {
+            stepDurations: {
+                INTENT: 86400000,
+                CONTEXT: 172800000,
+            },
+            revisitCount: 0,
+            aiSuggestionsAccepted: 6,
+            aiSuggestionsRejected: 2,
+            blockedCount: 0,
+        },
+    },
+];
+
+/**
+ * Sample workflow templates for development.
+ */
+export const sampleTemplates: WorkflowTemplate[] = [
+    {
+        id: 'template-bug-fix',
+        name: 'Bug Fix Template',
+        description: 'Standard template for bug fixes with root cause analysis',
+        workflowType: 'BUG_FIX',
+        category: 'DEVELOPMENT',
+        defaultIntent: {
+            workflowType: 'BUG_FIX',
+            goalStatement: '',
+            successCriteria: ['Bug is fixed', 'No regression introduced', 'Root cause documented'],
+        },
+        requiredFields: {
+            INTENT: ['goalStatement', 'successCriteria'],
+            CONTEXT: ['systemsImpacted'],
+            VERIFY: ['acceptanceChecklist'],
+        },
+        defaultRisks: ['Regression risk', 'Incomplete fix'],
+        defaultMetrics: ['Time to resolution', 'Test coverage'],
+        isSystem: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'template-feature',
+        name: 'Feature Development Template',
+        description: 'Template for new feature implementation with full lifecycle',
+        workflowType: 'FEATURE',
+        category: 'DEVELOPMENT',
+        defaultIntent: {
+            workflowType: 'FEATURE',
+            goalStatement: '',
+            successCriteria: ['Feature functional', 'Tests passing', 'Documentation updated'],
+        },
+        requiredFields: {
+            INTENT: ['goalStatement', 'successCriteria'],
+            CONTEXT: ['systemsImpacted', 'constraints'],
+            PLAN: ['selectedPlan', 'riskAssessment'],
+        },
+        defaultRisks: ['Scope creep', 'Integration issues'],
+        defaultMetrics: ['Velocity', 'Code coverage', 'Defect rate'],
+        isSystem: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'template-security-incident',
+        name: 'Security Incident Response',
+        description: 'Template for security incident response and remediation (SecOps)',
+        workflowType: 'SECURITY_INCIDENT',
+        category: 'SECOPS',
+        defaultIntent: {
+            workflowType: 'SECURITY_INCIDENT',
+            goalStatement: '',
+            successCriteria: ['Threat contained', 'Vulnerability patched', 'No data breach'],
+        },
+        requiredFields: {
+            INTENT: ['goalStatement', 'severity', 'affectedAssets'],
+            CONTEXT: ['threatIntelligence', 'affectedSystems'],
+            PLAN: ['containmentStrategy', 'remediationPlan'],
+            VERIFY: ['vulnerabilityScan', 'accessAudit'],
+        },
+        defaultRisks: ['Data exfiltration', 'Service disruption', 'Lateral movement'],
+        defaultMetrics: ['MTTD', 'MTTR', 'Blast radius'],
+        isSystem: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'template-audit-prep',
+        name: 'Compliance Audit Preparation',
+        description: 'Template for preparing for compliance audits (GRC)',
+        workflowType: 'AUDIT_PREP',
+        category: 'GRC',
+        defaultIntent: {
+            workflowType: 'AUDIT_PREP',
+            goalStatement: '',
+            successCriteria: ['All evidence collected', 'Controls validated', 'Gaps documented'],
+        },
+        requiredFields: {
+            INTENT: ['goalStatement', 'auditScope', 'regulatoryFramework'],
+            CONTEXT: ['controls', 'previousFindings'],
+            EXECUTE: ['evidenceCollection'],
+            VERIFY: ['controlAssessment'],
+        },
+        defaultRisks: ['Missing evidence', 'Control gaps', 'Non-compliance findings'],
+        defaultMetrics: ['Control coverage', 'Evidence completeness', 'Gap count'],
+        isSystem: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'template-incident-response',
+        name: 'Incident Response (SRE)',
+        description: 'Template for production incident response and resolution',
+        workflowType: 'INCIDENT',
+        category: 'OPERATIONS',
+        defaultIntent: {
+            workflowType: 'INCIDENT',
+            goalStatement: '',
+            successCriteria: ['Service restored', 'Root cause identified', 'Runbook updated'],
+        },
+        requiredFields: {
+            INTENT: ['goalStatement', 'severity', 'impactedServices'],
+            CONTEXT: ['systemState', 'recentChanges', 'logs'],
+            PLAN: ['mitigationStrategy'],
+            LEARN: ['rootCauses', 'lessons'],
+        },
+        defaultRisks: ['Extended outage', 'Data loss', 'SLA breach'],
+        defaultMetrics: ['MTTR', 'Impact duration', 'Customer impact'],
+        isSystem: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'template-deployment',
+        name: 'Release Deployment',
+        description: 'Template for controlled release deployment with verification gates',
+        workflowType: 'DEPLOYMENT',
+        category: 'RELEASE',
+        defaultIntent: {
+            workflowType: 'DEPLOYMENT',
+            goalStatement: '',
+            successCriteria: ['Deployment successful', 'Health checks passing', 'No regressions'],
+        },
+        requiredFields: {
+            INTENT: ['goalStatement', 'targetEnvironment'],
+            CONTEXT: ['releaseArtifacts', 'configChanges'],
+            PLAN: ['rolloutStrategy', 'rollbackPlan'],
+            VERIFY: ['smokeTests', 'healthChecks'],
+            OBSERVE: ['metricsDelta'],
+        },
+        defaultRisks: ['Deployment failure', 'Performance regression', 'Configuration drift'],
+        defaultMetrics: ['Deployment time', 'Rollback rate', 'Error rate delta'],
+        isSystem: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'template-threat-model',
+        name: 'Threat Modeling',
+        description: 'Template for security threat modeling and risk assessment',
+        workflowType: 'THREAT_MODEL',
+        category: 'ARCHITECTURE',
+        defaultIntent: {
+            workflowType: 'THREAT_MODEL',
+            goalStatement: '',
+            successCriteria: ['Threats identified', 'Mitigations defined', 'Security controls documented'],
+        },
+        requiredFields: {
+            INTENT: ['goalStatement', 'systemScope'],
+            CONTEXT: ['architecture', 'dataFlows', 'trustBoundaries'],
+            PLAN: ['threats', 'mitigations'],
+            INSTITUTIONALIZE: ['securityControls', 'designPatterns'],
+        },
+        defaultRisks: ['Missed threats', 'Inadequate mitigations'],
+        defaultMetrics: ['Threat coverage', 'Mitigation completeness'],
+        isSystem: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+];

@@ -1,18 +1,92 @@
 /**
  * @ghatana/yappc-ui - YAPPC-specific UI components
- * 
+ *
  * This package extends the root @ghatana/ui with YAPPC-specific components.
  * Common components are re-exported from @ghatana/ui for convenience.
  */
 
 // ============================================================================
-// SHARED LAYOUT COMPONENTS (Consolidated from route duplications)
+// MUI COMPONENTS (Re-exported for convenience)
 // ============================================================================
 export {
-  PageHeader,
-  LayoutCard,
-  EntityCard,
-} from './components/Layout';
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Box,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  ListItemIcon,
+  Chip,
+  Typography,
+  Divider,
+  TextField,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Avatar,
+  Tooltip,
+  Badge,
+  Paper,
+  Card,
+  CardContent,
+  Tabs,
+  Tab,
+  AppBar,
+  Toolbar,
+  Drawer,
+  Snackbar,
+  Alert,
+  CircularProgress,
+  LinearProgress,
+  Select,
+  Checkbox,
+  Radio,
+  Switch,
+  FormControl,
+  FormControlLabel,
+  InputLabel,
+  OutlinedInput,
+  InputAdornment,
+  Autocomplete,
+  Stack,
+  Grid,
+  Container,
+  Collapse,
+  Breadcrumbs,
+  Link,
+  Stepper,
+  Step,
+  StepLabel,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Pagination,
+  Slider,
+  Modal,
+  Fade,
+  Grow,
+  Backdrop,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  ToggleButton,
+  ToggleButtonGroup,
+  ClickAwayListener,
+  // Custom alias for InteractiveList (combination of List + interactive props)
+  List as InteractiveList,
+} from '@mui/material';
+
+// ============================================================================
+// SHARED LAYOUT COMPONENTS (Consolidated from route duplications)
+// ============================================================================
+export { PageHeader, LayoutCard, EntityCard } from './components/Layout';
 export type {
   PageHeaderProps,
   LayoutCardProps,
@@ -63,10 +137,10 @@ export type {
   RegisterFormProps,
   PasswordResetRequestProps,
   PasswordResetConfirmProps,
-  LoginFormData,
-  RegisterFormData,
-  PasswordResetRequestData,
-  PasswordResetConfirmData,
+  // Note: PasswordResetRequestData and PasswordResetConfirmData are not exported from Auth
+  // Types below are re-exported from zodValidation - see below
+  // LoginFormData,
+  // RegisterFormData,
   ProtectedRouteProps,
   LoginPageProps,
   RegisterPageProps,
@@ -77,11 +151,10 @@ export type {
 export { ToastProvider, useToast } from './components/Toast';
 export type {
   ToastData,
-  ToastType,
-  ToastPositionType,
-  ToastOptions,
-  ToastContextValue,
-  ToastProviderProps,
+  ToastSeverity as ToastType,
+  ToastPosition as ToastPositionType,
+  ToastProps as ToastOptions,
+  // Note: ToastContextValue and ToastProviderProps are not exported from Toast.tailwind
 } from './components/Toast';
 
 // Loading Components
@@ -155,7 +228,10 @@ export type { Command } from './components/CommandPalette';
 export { ShortcutHelper } from './components/Shortcuts/ShortcutHelper';
 export type { ShortcutHelperProps } from './components/Shortcuts/ShortcutHelper';
 export { Breadcrumb } from './components/Breadcrumb';
-export type { BreadcrumbItemType, BreadcrumbProps } from './components/Breadcrumb';
+export type {
+  BreadcrumbItemType,
+  BreadcrumbProps,
+} from './components/Breadcrumb';
 
 // Error Boundary
 export { ErrorBoundary } from './components/ErrorBoundary';
@@ -173,11 +249,24 @@ export type { EmptyStateProps } from './components/EmptyState';
 export { PageIntegrationExample } from './patterns/PageIntegrationExample';
 export type { PageIntegrationExampleProps } from './patterns/PageIntegrationExample';
 
-export { ResponsiveLayout, ResponsiveGrid, useMediaQuery, useIsMobile, useIsTablet, useIsDesktop } from './patterns/ResponsiveLayout';
-export type { ResponsiveLayoutProps, ResponsiveGridProps } from './patterns/ResponsiveLayout';
+export {
+  ResponsiveLayout,
+  ResponsiveGrid,
+  useMediaQuery,
+  useIsMobile,
+  useIsTablet,
+  useIsDesktop,
+} from './patterns/ResponsiveLayout';
+export type {
+  ResponsiveLayoutProps,
+  ResponsiveGridProps,
+} from './patterns/ResponsiveLayout';
 
 // Select Components
-export { SelectTailwind, SelectOption } from './components/Select/Select.tailwind';
+export {
+  SelectTailwind,
+  SelectOption,
+} from './components/Select/Select.tailwind';
 export { Popover, PopoverTrigger, PopoverClose } from './components/Popover';
 export type { PopoverProps, PopoverPlacement } from './components/Popover';
 
@@ -197,7 +286,12 @@ export type {
 } from './components/Table/SelectableTable';
 
 // Search Components
-export { SearchProvider, SearchInterface, SearchResults, useSearch } from './components/Search';
+export {
+  SearchProvider,
+  SearchInterface,
+  SearchResults,
+  useSearch,
+} from './components/Search';
 export type {
   SearchResult,
   SearchContextValue,
@@ -217,10 +311,14 @@ export {
   useObjectGlobalState,
   useBatchGlobalStateUpdate,
   useGlobalStateKeys,
-  useGlobalStateStatistics
+  useGlobalStateStatistics,
 } from './state/useGlobalState';
 export { StateManager } from './state/StateManager';
-export type { AtomKey, AtomMetadata, StateManagerConfig } from './state/StateManager';
+export type {
+  AtomKey,
+  AtomMetadata,
+  StateManagerConfig,
+} from './state/StateManager';
 
 export {
   EnhancedThemeProvider,
@@ -277,40 +375,9 @@ export * from './utils';
 export { cn } from './utils/cn';
 
 // ============================================================================
-// PREVIOUSLY MUI-SOURCED COMPONENTS — now re-exported from @ghatana/ui
-// Consumers should import from @ghatana/ui directly. These re-exports
-// exist for backward compatibility during the migration period.
+// PREVIOUSLY MUI-SOURCED COMPONENTS — now re-exported from @mui/material at top of file
+// Consumers should import from @ghatana/yappc-ui directly.
 // ============================================================================
-
-export {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Autocomplete,
-  Backdrop,
-  Breadcrumbs,
-  ButtonGroup,
-  CardMedia,
-  Collapse,
-  Drawer,
-  Fade,
-  Grow,
-  Icon,
-  Link,
-  ListItemAvatar,
-  ListItemButton,
-  ListItemSecondaryAction,
-  MenuItem,
-  Slide,
-  Snackbar,
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialIcon,
-  SwipeableDrawer,
-  TextField,
-  ToggleButtonGroup,
-  Zoom,
-} from '@ghatana/ui';
 export { useTheme as useMuiTheme } from '@mui/material/styles';
 
 // ============================================================================
@@ -365,22 +432,23 @@ export * from './config';
 // Direct imports from the source packages still work but are deprecated.
 // ============================================================================
 
-// REMOVED: deprecated @ghatana/yappc-design-tokens
-// REMOVED: deprecated @ghatana/yappc-design-tokens
-// // // Design tokens (from @ghatana/yappc-design-tokens)
-export * from '../../design-tokens/src';
+// REMOVED: deprecated @ghatana/yappc-design-tokens - package doesn't exist
+// export * from '../../design-tokens/src';
 
-// REMOVED: deprecated @ghatana/yappc-layout
-// REMOVED: deprecated @ghatana/yappc-layout
-// // // Layout (from @ghatana/yappc-layout)
-export * from '../../layout/src';
+// REMOVED: deprecated @ghatana/yappc-layout - package doesn't exist
+// export * from '../../layout/src';
 
-// REMOVED: deprecated @ghatana/yappc-form-generator
-// REMOVED: deprecated @ghatana/yappc-form-generator
-// // // Form generator (from @ghatana/yappc-form-generator)
-export * from '../../form-generator/src';
+// REMOVED: deprecated @ghatana/yappc-form-generator - package doesn't exist
+// export * from '../../form-generator/src';
 
-// REMOVED: deprecated @ghatana/yappc-accessibility
-// REMOVED: deprecated @ghatana/yappc-accessibility
-// // // Accessibility (from @ghatana/yappc-accessibility)
-export * from '../../accessibility/src';
+// REMOVED: deprecated @ghatana/yappc-accessibility - package doesn't exist
+// export * from '../../accessibility/src';
+
+// ============================================================================
+// DEPRECATION WARNING
+// ============================================================================
+// eslint-disable-next-line no-console
+console.warn(
+  '[DEPRECATED] @ghatana/yappc-ui is deprecated. Use @yappc/ui instead. ' +
+    'See: docs/NAMING_CONVENTIONS.md'
+);

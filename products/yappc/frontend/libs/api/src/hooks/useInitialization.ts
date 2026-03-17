@@ -52,7 +52,7 @@ import {
   type EnvironmentInput,
   type TeamInvite,
   type CostEstimate,
-} from '@ghatana/yappc-api';
+} from '@yappc/core/api';
 
 // =============================================================================
 // Wizard Hooks

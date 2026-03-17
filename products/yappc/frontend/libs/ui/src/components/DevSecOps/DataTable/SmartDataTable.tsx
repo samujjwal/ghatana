@@ -24,7 +24,7 @@ import { Search as SearchIcon, Brain as AIIcon, XCircle as ClearIcon, Sparkles a
 
 import { DataTable } from './DataTable';
 import type { DataTableProps, FilterConfig, FilterValue } from './types';
-import type { Item } from '@ghatana/yappc-types/devsecops';
+import type { Item } from '@yappc/core/types/devsecops';
 
 /**
  * Parsed query intent

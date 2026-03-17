@@ -18,7 +18,7 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { VerifyStepData, VerificationEvidence, ChecklistItem } from '@ghatana/yappc-types';
+import type { VerifyStepData, VerificationEvidence, ChecklistItem } from '@yappc/core/types';
 
 // ============================================================================
 // CONSTANTS

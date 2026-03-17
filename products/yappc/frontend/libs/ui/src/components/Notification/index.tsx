@@ -9,7 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
-import type { Notification as NotificationType } from '@ghatana/yappc-types';
+import type { Notification as NotificationType } from '@yappc/core/types';
 
 interface NotificationAction {
   label: string;

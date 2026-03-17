@@ -16,7 +16,7 @@ import type {
   ComponentDefinition,
   RegistryEntry,
   RegistrySearchQuery,
-} from '@ghatana/yappc-types';
+} from '@yappc/core/types';
 
 /**
  * Unified Registry Implementation
