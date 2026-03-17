@@ -25,6 +25,7 @@
 ## 1. Core Health Record Features
 
 ### 1.1 Patient Profile & Registration
+
 - **Patient registration and enrollment** with NID/citizenship verification
 - **Personal profile management** (name, DOB, gender, blood type, emergency contacts)
 - **Profile photo and digital identity** management
@@ -37,6 +38,7 @@
 - **Vaccination history** with immunization records and schedule
 
 ### 1.2 Medical Records Management
+
 - **Complete medical history** with searchable archive
 - **Visit records** from multiple healthcare providers
 - **Encounter documentation** (date, facility, provider, reason for visit)
@@ -54,6 +56,7 @@
 - **Pathology and specimen tracking** (where applicable)
 
 ### 1.3 Record Import & Data Integration
+
 - **Automated EHR/EMR data import** from partnering hospitals (FHIR-compliant)
 - **Bulk upload capability** (CSV, PDF medical records)
 - **Barcode scanning** of physical medical documents
@@ -69,6 +72,7 @@
 ## 2. Telemedicine & Remote Care
 
 ### 2.1 Video Consultation Features
+
 - **Schedule virtual appointments** with healthcare providers
 - **Real-time video consultation** (1-on-1 with provider)
 - **Screen sharing** for provider to review records during call
@@ -81,6 +85,7 @@
 - **Video call quality adaptive bitrate** (for low-bandwidth areas)
 
 ### 2.2 Audio Consultation Features
+
 - **Audio-only consultation option** for lower bandwidth areas
 - **Call scheduling and reminders**
 - **Real-time transcription of audio calls** (optional, with consent)
@@ -89,6 +94,7 @@
 - **Asynchronous voice messaging** for non-urgent queries
 
 ### 2.3 Consultation Management
+
 - **Consultation history and archive**
 - **Provider information and credentials** display
 - **Availability calendar** of providers
@@ -102,6 +108,7 @@
 ## 3. Voice & Audio Features
 
 ### 3.1 Audio Transcription
+
 - **Real-time speech-to-text** during audio consultations
 - **Automatic audio transcription** for clinical notes
 - **Medical dictation support** (provider records notes by voice)
@@ -114,6 +121,7 @@
 - **Export transcripts** as text or PDF
 
 ### 3.2 Voice Input for Record Creation
+
 - **Voice-based clinical note entry** by healthcare providers
 - **Voice prescription entry** (spoken → digital prescription)
 - **Voice-to-structured data** (vital signs, measurements spoken aloud)
@@ -124,7 +132,8 @@
 - **Background noise filtering** and audio enhancement
 
 ### 3.3 Medical Speech Recognition (ASR)
-- **Google Cloud Speech-to-Text** integration (MVP phase)
+
+- **Vosk on-premise ASR (Apache 2.0)** integration (MVP phase)
 - **Custom Nepali medical terminology corpus** development
 - **Custom medical ASR model** training (Year 2+)
 - **Support for medical abbreviations** (BP, HR, SpO2, etc.)
@@ -133,6 +142,7 @@
 - **Integration with Kathmandu University ASR research**
 
 ### 3.4 Voice Features for Accessibility
+
 - **Voice-based app navigation** (hands-free for elderly/disabled)
 - **Audio playback of medical records** (screen reader integration)
 - **Verbal appointments reminders**
@@ -144,6 +154,7 @@
 ## 4. Clinical Integration Features
 
 ### 4.1 Laboratory Information Integration
+
 - **Lab test order placement** (from provider)
 - **Lab test result receipt** and storage
 - **Lab result interpretation** with reference ranges
@@ -155,6 +166,7 @@
 - **LIS (Laboratory Information System) integration** with partner labs
 
 ### 4.2 Pharmacy Integration
+
 - **Prescription delivery tracking**
 - **Medication availability checking** across pharmacies
 - **Prescription transfer** between pharmacies
@@ -167,6 +179,7 @@
 - **Pharmacy partner network** across Nepal
 
 ### 4.3 Radiology & Imaging
+
 - **Radiology order placement**
 - **Imaging appointment scheduling**
 - **DICOM image storage** (X-ray, CT, MRI, ultrasound)
@@ -177,6 +190,7 @@
 - **Imaging facility directory**
 
 ### 4.4 Specialist Referral Management
+
 - **Referral request generation** by primary provider
 - **Referral status tracking**
 - **Specialist search and booking**
@@ -186,6 +200,7 @@
 - **Cross-facility referral tracking** (inter-hospital)
 
 ### 4.5 Emergency & Critical Information
+
 - **Emergency contact storage** (phone numbers)
 - **Emergency medical information** (blood type, allergies, advance directives)
 - **Emergency access code** (for first responders)
@@ -200,6 +215,7 @@
 ## 5. Insurance & Billing Features
 
 ### 5.1 Insurance Integration
+
 - **Social health insurance enrollment** verification
 - **Insurance eligibility checking** (real-time)
 - **Insurance card storage** (digital insurance ID)
@@ -213,6 +229,7 @@
 - **openIMIS integration** for claim processing
 
 ### 5.2 Billing & Payment
+
 - **Medical bill storage** from facilities
 - **Payment receipt tracking**
 - **Out-of-pocket expense tracking**
@@ -225,6 +242,7 @@
 - **Itemized billing breakdown**
 
 ### 5.3 Financial Analytics
+
 - **Healthcare spending dashboard**
 - **Annual medical expense report** (tax deduction purposes)
 - **Family health spending trends**
@@ -238,6 +256,7 @@
 ## 6. Notification & Reminder Features
 
 ### 6.1 Appointment Reminders
+
 - **Appointment scheduling** (at any facility or provider)
 - **Appointment confirmation** (SMS + app notification)
 - **Reminder before appointment** (24 hours, 2 hours)
@@ -248,6 +267,7 @@
 - **Provider's calendar access** for appointment sync
 
 ### 6.2 Medication Reminders
+
 - **Medication schedule setup** by patient or provider
 - **Daily medication reminders** (push notification + SMS)
 - **Medication adherence tracking**
@@ -259,6 +279,7 @@
 - **Medication log** (did you take it?)
 
 ### 6.3 Health Alerts
+
 - **Abnormal lab result alerts**
 - **Blood pressure out of range** alerts
 - **Chronic disease management** alerts (diabetes, hypertension)
@@ -269,6 +290,7 @@
 - **Insurance coverage expiration alerts**
 
 ### 6.4 Preventive Care Reminders
+
 - **Annual health checkup** reminders
 - **Cancer screening reminders** (age-appropriate)
 - **Vaccination schedule reminders**
@@ -282,6 +304,7 @@
 ## 7. Security & Compliance Features
 
 ### 7.1 Authentication & Access Control
+
 - **Multi-factor authentication (MFA)** for user login
   - OTP via SMS
   - Biometric (fingerprint, face recognition)
@@ -298,6 +321,7 @@
 - **Biometric unlock** option
 
 ### 7.2 Data Encryption & Protection
+
 - **AES-256 encryption** for data at rest
 - **TLS 1.3 encryption** for data in transit
 - **End-to-end encryption** for sensitive consultations
@@ -308,6 +332,7 @@
 - **Secure deletion** (when data needs to be removed)
 
 ### 7.3 Audit Logging & Compliance
+
 - **Tamper-proof audit logs** of all data access
 - **Audit trail entry fields:**
   - Timestamp
@@ -323,6 +348,7 @@
 - **Regulatory audit readiness**
 
 ### 7.4 Data Sovereignty & Localization
+
 - **On-premise data storage** within Nepal
 - **No cloud storage outside Nepal** borders
 - **Colocation at Nepal-IX** (primary)
@@ -333,6 +359,7 @@
 - **Data center access controls**
 
 ### 7.5 Privacy & Consent Management
+
 - **Granular consent management**
   - Consent for each provider/organization accessing data
   - Consent for data sharing with family members
@@ -346,6 +373,7 @@
 - **Activity log visibility** (see who accessed your data)
 
 ### 7.6 Regulatory Compliance
+
 - **Individual Privacy Act 2078 (2018)** compliance
 - **Health Insurance Board (HIB)** openIMIS compliance
 - **Integrated EMR Directive 2081** compliance
@@ -361,6 +389,7 @@
 ## 8. Data Management & Analytics
 
 ### 8.1 Personal Health Analytics
+
 - **Health dashboard** with key metrics
 - **BMI tracking** (weight, height trends)
 - **Blood pressure trends** (visualization over time)
@@ -373,6 +402,7 @@
 - **Health timeline** (major events visualization)
 
 ### 8.2 Medical History Search & Organization
+
 - **Full-text search** across all medical records
 - **Timeline view** of all medical events
 - **Chronological organization** by date
@@ -384,6 +414,7 @@
 - **Quick access to recent records**
 
 ### 8.3 Data Export & Sharing
+
 - **Export records as PDF** (formatted for printing)
 - **Export records as FHIR JSON** (for providers)
 - **Export summary report** (for insurance)
@@ -395,6 +426,7 @@
 - **Bulk export** of all records
 
 ### 8.4 Data Visualization & Insights
+
 - **Disease trend charts** (visualization of chronic conditions)
 - **Medication timeline** (what you took, when)
 - **Lab result graphs** (trending values over time)
@@ -407,6 +439,7 @@
 ## 9. User Experience & Accessibility
 
 ### 9.1 Multilingual Support
+
 - **Nepali interface** (primary language)
 - **English interface** (for international users/providers)
 - **Maithili support** (dialect support for eastern Nepal)
@@ -416,6 +449,7 @@
 - **Right-to-left text support** (where applicable)
 
 ### 9.2 Accessibility Features
+
 - **Screen reader compatibility** (WCAG 2.1 AA compliance)
 - **High contrast mode** (for visually impaired users)
 - **Text size adjustment** (large font option)
@@ -427,6 +461,7 @@
 - **Simple language option** (lower health literacy users)
 
 ### 9.3 Health Literacy Design
+
 - **Plain language** explanations of medical terms
 - **Medical term glossary** (built-in definitions)
 - **Visual health literacy aids** (illustrations, icons)
@@ -437,6 +472,7 @@
 - **Illustrated medication instructions**
 
 ### 9.4 Design for Elderly & Vulnerable Users
+
 - **Large, easy-to-tap buttons**
 - **Simple, uncluttered interface**
 - **Reduced animation** (minimalist design)
@@ -447,6 +483,7 @@
 - **Phone number for customer support** (not just chat)
 
 ### 9.5 Offline Capability
+
 - **Offline-first architecture** (work without internet)
 - **Offline record access** (medical history cached locally)
 - **Offline medication reminders**
@@ -461,6 +498,7 @@
 ## 10. Advanced Features & Integrations
 
 ### 10.1 Wearable Device Integration
+
 - **Smartwatch health data sync** (Apple Watch, Wear OS)
 - **Fitness tracker data** (steps, exercise, calories)
 - **Health metrics from wearables** (heart rate, SpO2, temperature)
@@ -470,6 +508,7 @@
 - **Anomaly detection** from wearable data (Phase 4)
 
 ### 10.2 IoT Health Devices
+
 - **Blood pressure monitor sync** (Bluetooth)
 - **Glucose meter sync** (for diabetics)
 - **Thermometer integration**
@@ -480,6 +519,7 @@
 - **Device pairing and management**
 
 ### 10.3 FCHV (Female Community Health Volunteer) Integration
+
 - **FCHV data entry portal** (for health workers)
 - **FCHV training** on PHR data entry
 - **Community health worker dashboard**
@@ -490,6 +530,7 @@
 - **Data accuracy validation** by FCHVs
 
 ### 10.4 AI/ML Health Insights (Phase 4+)
+
 - **Disease risk scoring** (predictive models)
 - **Medication interaction warnings** (AI-enhanced)
 - **Health trend predictions** (future health status)
@@ -500,6 +541,7 @@
 - **Lifestyle recommendations** (diet, exercise)
 
 ### 10.5 Provider Directory & Reputation
+
 - **Provider search** (doctor, facility, specialist)
 - **Provider credentials** display and verification
 - **Patient ratings and reviews** (anonymized)
@@ -510,6 +552,7 @@
 - **Opening hours** and location
 
 ### 10.6 Public Health Integration
+
 - **Disease surveillance reporting** (for health ministry)
 - **Epidemiological data** (anonymized, aggregated)
 - **Outbreak alerts** (if disease detected)
@@ -522,6 +565,7 @@
 ## 11. Caregiver & Family Features
 
 ### 11.1 Multi-User Family Profiles
+
 - **Family account setup** (primary + dependent profiles)
 - **Family plan pricing** (discount for multiple users)
 - **Shared family health hub**
@@ -533,6 +577,7 @@
 - **Family health summary** (monthly report)
 
 ### 11.2 Caregiver Role & Permissions
+
 - **Caregiver profile creation** (parent, spouse, adult child)
 - **Limited access permissions** (read-only or edit)
 - **Data sharing consent** (what caregiver can see)
@@ -543,6 +588,7 @@
 - **Caregiver communication** channel (in-app messaging)
 
 ### 11.3 Elderly & Dependent Care
+
 - **Simplified interface** for elderly users
 - **Large text and buttons** for accessibility
 - **Medication reminders** (verbal and visual)
@@ -553,6 +599,7 @@
 - **Fall risk assessment** (for elderly users)
 
 ### 11.4 Parent-Child Health Management
+
 - **Child growth tracking** (height, weight percentiles)
 - **Immunization schedule** (childhood vaccines)
 - **Developmental milestones** (tracking)
@@ -567,7 +614,9 @@
 ## Implementation Priority Matrix
 
 ### Phase 1 (MVP — Months 1-6): Foundation
+
 **MUST HAVE:**
+
 - Patient registration and profile management
 - Medical record import/upload capability
 - Medication and prescription tracking
@@ -578,7 +627,9 @@
 - Basic security features (encryption, audit logs)
 
 ### Phase 2 (Months 7-12): Core Features
+
 **SHOULD HAVE:**
+
 - Telemedicine video consultation
 - Audio transcription (basic)
 - Insurance claim submission
@@ -589,7 +640,9 @@
 - Advanced search and filters
 
 ### Phase 3 (Months 13-18): Extended Features
+
 **NICE TO HAVE:**
+
 - Custom medical ASR model
 - Wearable device integration
 - FCHV data entry portal
@@ -599,7 +652,9 @@
 - Provider directory and ratings
 
 ### Phase 4 (Months 19-24): Advanced & AI Features
+
 **FUTURE STATE:**
+
 - Predictive health modeling
 - Personalized health recommendations
 - IoT device ecosystem
@@ -612,18 +667,18 @@
 
 ## Feature Compliance Matrix
 
-| Feature Category | EMR Directive 2081 Module | HIB/openIMIS Compliant | FHIR Compatible | Security Audit Ready |
-|---|---|---|---|---|
-| Patient Profile | 01 — Online Registration | ✅ Yes | ✅ Yes | ✅ Yes |
-| Medical Records | 02 — Clinical Documentation | ✅ Yes | ✅ Partial | ✅ Yes |
-| Prescriptions | 03 — Prescription Management | ✅ Yes | ✅ Yes | ✅ Yes |
-| Lab Results | 04 — Laboratory Integration | ✅ Yes | ✅ Yes | ✅ Yes |
-| Billing | 05 — Billing/Financial | ✅ Yes | ✅ Yes | ✅ Yes |
-| Notifications | 06 — Notifications/Alerts | ✅ Yes | ✅ Yes | ✅ Yes |
-| Telemedicine | 17 — Telemedicine | ✅ Yes | ✅ Yes | ✅ Yes |
-| Mobile App | 19 — Mobile Application | ✅ Yes | ✅ Yes | ✅ Yes |
-| Interoperability | 20 — Interoperability Layer | ✅ Yes | ✅ Yes | ✅ Yes |
-| Security/Audit | 21 — Security & Audit | ✅ Yes | ✅ Yes | ✅ Yes |
+| Feature Category | EMR Directive 2081 Module    | HIB/openIMIS Compliant | FHIR Compatible | Security Audit Ready |
+| ---------------- | ---------------------------- | ---------------------- | --------------- | -------------------- |
+| Patient Profile  | 01 — Online Registration     | ✅ Yes                 | ✅ Yes          | ✅ Yes               |
+| Medical Records  | 02 — Clinical Documentation  | ✅ Yes                 | ✅ Partial      | ✅ Yes               |
+| Prescriptions    | 03 — Prescription Management | ✅ Yes                 | ✅ Yes          | ✅ Yes               |
+| Lab Results      | 04 — Laboratory Integration  | ✅ Yes                 | ✅ Yes          | ✅ Yes               |
+| Billing          | 05 — Billing/Financial       | ✅ Yes                 | ✅ Yes          | ✅ Yes               |
+| Notifications    | 06 — Notifications/Alerts    | ✅ Yes                 | ✅ Yes          | ✅ Yes               |
+| Telemedicine     | 17 — Telemedicine            | ✅ Yes                 | ✅ Yes          | ✅ Yes               |
+| Mobile App       | 19 — Mobile Application      | ✅ Yes                 | ✅ Yes          | ✅ Yes               |
+| Interoperability | 20 — Interoperability Layer  | ✅ Yes                 | ✅ Yes          | ✅ Yes               |
+| Security/Audit   | 21 — Security & Audit        | ✅ Yes                 | ✅ Yes          | ✅ Yes               |
 
 ---
 
@@ -635,11 +690,11 @@
 4. **Offline-first architecture** essential for rural users
 5. **Nepali language support** is non-negotiable (MVP requirement)
 6. **Custom ASR development** begins Month 7, delivery Month 15+
-7. **Telemedicine video** can use standard SDK (Twilio, Jitsi) for MVP
+7. **Telemedicine video** can use Jitsi (Apache 2.0, self-hosted) for MVP
 8. **openIMIS integration** requires HIB API access (request in Month 2)
 9. **FCHV integration** requires DoHS MOU signing
 10. **Accessibility (WCAG 2.1 AA)** required for all user-facing features
 
 ---
 
-*Feature list prepared based on PHR Nepal Feasibility Report v2.0 with all corrections and enhancements applied. Ready for sprint planning and development roadmap creation.*
+_Feature list prepared based on PHR Nepal Feasibility Report v2.0 with all corrections and enhancements applied. Ready for sprint planning and development roadmap creation._

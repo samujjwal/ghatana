@@ -6,6 +6,30 @@
 **Date:** March 2025  
 **Status:** Ready for Implementation
 
+> **⚠️ Architectural Evolution Note (added during doc review)**
+>
+> This consolidated report was written during the feasibility/planning phase. The following decisions have since been **revised** in the detailed architecture docs:
+>
+> | Report Phase                                                          | Current Architecture                                                                                                                 | Authoritative Doc                                        |
+> | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+> | HAPI FHIR Server (Java) as FHIR API layer                             | **NestJS** (Node.js) modular monolith with Prisma + PostgreSQL; FHIR compliance via FHIR-shaped models, not a standalone FHIR server | `phr_nestjs_modules_detailed_architecture.md`            |
+> | MedicationStatement (FHIR resource)                                   | **MedicationRequest** (active prescriptions); MedicationStatement deferred to L3+                                                    | `phr_mvp_activation_plan.md`                             |
+> | Generic tech stack (React.js, ELK, Redis, Google Cloud STT, Firebase) | See licensing-aligned replacements below                                                                                             | `phr_frontend_route_and_component_map.md`, platform docs |
+>
+> **Licensing policy**: All third-party tools must be **open-source with permissive commercial-use licenses** (Apache 2.0, MIT, BSD, LGPL, PostgreSQL). The following substitutions apply across all PHR docs:
+>
+> | Original (Non-Permissive)                      | Replacement (Permissive)                                  | License          |
+> | ---------------------------------------------- | --------------------------------------------------------- | ---------------- |
+> | Elasticsearch / Kibana / Logstash (ELK) — SSPL | **OpenSearch + OpenSearch Dashboards + Fluent Bit**       | Apache 2.0       |
+> | Redis — SSPL + RSALv2                          | **Valkey** (Linux Foundation fork)                        | BSD 3-Clause     |
+> | MinIO — AGPL v3                                | **Ceph** (RADOS Gateway, S3-compatible)                   | LGPL 2.1/3.0     |
+> | Google Cloud Speech-to-Text — Proprietary      | **Vosk** (on-premise streaming ASR) + **Whisper** (batch) | Apache 2.0 / MIT |
+> | Firebase Cloud Messaging — Proprietary         | **ntfy** (self-hosted push) + APNS for iOS                | Apache 2.0       |
+> | Realm Database — BSL 1.1                       | **Encrypted SQLite** (already planned)                    | Public domain    |
+>
+> Regulatory analysis, market study, competitive landscape, and financial projections remain valid.
+> For authoritative technical architecture, refer to the `phr_nestjs_modules_*` and `phr_mvp_*` docs.
+
 ---
 
 ## Table of Contents
@@ -93,6 +117,7 @@ This report expands upon all previous research, incorporates verified correction
 The **Government of Nepal, Ministry of Health and Population (MoHP), has mandated the implementation of interoperable Electronic Medical Record (EMR) systems through the "Integrated EMR Operation and Management Directives, 2081"** (एकीकृत विद्युतिय चिकित्सा अभिलेख प्रणाली सञ्चालन तथा व्यवस्थापन निर्देशिका, २०८१). This directive is now fully enacted and operational, with the MoHP establishing the **Standards and Interoperability Lab (SIL-Nepal)** to enforce FHIR compliance.
 
 ### Key Verification Points:
+
 - **Enactment Status:** Confirmed active and enforceable
 - **Enforcement Body:** Standards and Interoperability Lab (SIL-Nepal), MoHP
 - **Registration Window:** All health institutions and EMR service providers must register their systems within **12 months** of directive endorsement
@@ -106,29 +131,29 @@ The **Government of Nepal, Ministry of Health and Population (MoHP), has mandate
 
 ### Complete List of Mandated Modules and PHR Mapping:
 
-| **Module ID** | **Module Name** | **PHR Feature Mapping** | **Priority** |
-|---|---|---|---|
-| 01 | Online Registration / Client Registration | Patient Profile Creation | Core |
-| 02 | Clinical Documentation | Medical History, Visit Records | Core |
-| 03 | Prescription Management | Prescription Records, History | Core |
-| 04 | Laboratory Information Integration | Test/Lab History | Core |
-| 05 | Billing / Financial Management | Billing Module | Core |
-| 06 | Notifications / Alerts | Appointment Reminders | Core |
-| 07 | Emergency Services | Emergency Contact, Critical Alerts | Extended |
-| 08 | Blood Bank Management | Blood Type, Donor History | Extended |
-| 09 | Bed Management | Hospital Admission Tracking | Extended |
-| 10 | Operation Theater Management | Surgical History | Extended |
-| 11 | Radiology Information System | Imaging Records | Extended |
-| 12 | Pharmacy Management | Medication Dispensing History | Extended |
-| 13 | Inventory Management | Not directly applicable | N/A |
-| 14 | Human Resource Management | Not directly applicable | N/A |
-| 15 | Reporting and Analytics | Personal Health Analytics | Value-add |
-| 16 | Referral Management | Cross-facility referral tracking | Core |
-| 17 | Telemedicine Integration | Virtual consultation records | Extended |
-| 18 | Patient Portal | **This is your PHR** | Core |
-| 19 | Mobile Application | Mobile PHR access | Core |
-| 20 | Interoperability Layer | FHIR API Gateway | Core |
-| 21 | Security and Audit Trail | Comprehensive logging | Core |
+| **Module ID** | **Module Name**                           | **PHR Feature Mapping**            | **Priority** |
+| ------------- | ----------------------------------------- | ---------------------------------- | ------------ |
+| 01            | Online Registration / Client Registration | Patient Profile Creation           | Core         |
+| 02            | Clinical Documentation                    | Medical History, Visit Records     | Core         |
+| 03            | Prescription Management                   | Prescription Records, History      | Core         |
+| 04            | Laboratory Information Integration        | Test/Lab History                   | Core         |
+| 05            | Billing / Financial Management            | Billing Module                     | Core         |
+| 06            | Notifications / Alerts                    | Appointment Reminders              | Core         |
+| 07            | Emergency Services                        | Emergency Contact, Critical Alerts | Extended     |
+| 08            | Blood Bank Management                     | Blood Type, Donor History          | Extended     |
+| 09            | Bed Management                            | Hospital Admission Tracking        | Extended     |
+| 10            | Operation Theater Management              | Surgical History                   | Extended     |
+| 11            | Radiology Information System              | Imaging Records                    | Extended     |
+| 12            | Pharmacy Management                       | Medication Dispensing History      | Extended     |
+| 13            | Inventory Management                      | Not directly applicable            | N/A          |
+| 14            | Human Resource Management                 | Not directly applicable            | N/A          |
+| 15            | Reporting and Analytics                   | Personal Health Analytics          | Value-add    |
+| 16            | Referral Management                       | Cross-facility referral tracking   | Core         |
+| 17            | Telemedicine Integration                  | Virtual consultation records       | Extended     |
+| 18            | Patient Portal                            | **This is your PHR**               | Core         |
+| 19            | Mobile Application                        | Mobile PHR access                  | Core         |
+| 20            | Interoperability Layer                    | FHIR API Gateway                   | Core         |
+| 21            | Security and Audit Trail                  | Comprehensive logging              | Core         |
 
 **Strategic Implication:** Your PHR must be designed to receive data from all 21 modules when they exist in source EMRs, even if your app doesn't implement every module natively. The interoperability layer (Module 20) is your primary technical focus.
 
@@ -140,20 +165,21 @@ The directive mandates that all EMR systems must undergo a **third-party securit
 
 ### Audit Specifics and Technical Requirements:
 
-| **Audit Component** | **Specific Requirements** | **Technical Implementation** |
-|---|---|---|
-| **Data Encryption** | AES-256 for data at rest; TLS 1.3 for data in transit | Database encryption; HTTPS with strong cipher suites |
-| **Access Controls** | Role-Based Access Control (RBAC) with granular permissions | Patient, provider, and admin roles with least-privilege access |
-| **Authentication** | Multi-factor authentication (MFA) for provider access | OTP, biometric, or hardware token support |
-| **Audit Logs** | Tamper-proof logs of all data access events | Immutable logging with timestamp, user ID, IP, and action |
-| **Vulnerability Assessment** | Annual penetration testing by certified firm | Contract with recognized security firm |
-| **Data Backup** | Encrypted backups with geographic redundancy | On-premise backup to secondary location within Nepal |
-| **Incident Response** | Documented breach notification procedure | 72-hour notification to MoHP per draft IT Bill |
-| **Physical Security** | Data center access controls and monitoring | Colocation at Nepal-IX or certified local data center |
+| **Audit Component**          | **Specific Requirements**                                  | **Technical Implementation**                                   |
+| ---------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| **Data Encryption**          | AES-256 for data at rest; TLS 1.3 for data in transit      | Database encryption; HTTPS with strong cipher suites           |
+| **Access Controls**          | Role-Based Access Control (RBAC) with granular permissions | Patient, provider, and admin roles with least-privilege access |
+| **Authentication**           | Multi-factor authentication (MFA) for provider access      | OTP, biometric, or hardware token support                      |
+| **Audit Logs**               | Tamper-proof logs of all data access events                | Immutable logging with timestamp, user ID, IP, and action      |
+| **Vulnerability Assessment** | Annual penetration testing by certified firm               | Contract with recognized security firm                         |
+| **Data Backup**              | Encrypted backups with geographic redundancy               | On-premise backup to secondary location within Nepal           |
+| **Incident Response**        | Documented breach notification procedure                   | 72-hour notification to MoHP per draft IT Bill                 |
+| **Physical Security**        | Data center access controls and monitoring                 | Colocation at Nepal-IX or certified local data center          |
 
 ### Approved Audit Firms:
 
 The MoHP maintains a list of recognized third-party security auditors. Nepali firms qualified in healthcare IT security include:
+
 - **Vairav Technology** (Nepali cybersecurity firm)
 - **InfoDevelopers** (with security practice)
 - **Deerwalk Services** (healthcare IT expertise)
@@ -176,13 +202,12 @@ In 2021, the Nepali telemedicine platform "Aama ko Maya" faced significant regul
 1. **Primary Data Center:** Must be physically located in Nepal
    - Recommended: **Nepal-IX** (Internet Exchange of Nepal) in Kathmandu
    - Alternative: **WorldLink Data Center** (local colocation options)
-   
 2. **Backup Location:** Secondary encrypted backup also within Nepal
    - Geographic separation (not same city) preferred
    - Encrypted, immutable backup archives
 
 3. **Data Processing:** All processing must occur within Nepal
-   - No data transit to AWS, Google Cloud, Azure (except via secure API for specific services)
+   - No data transit to AWS, Google Cloud, Azure — all services run on-premise
    - Analytics and reporting computed on-premise
 
 4. **Provider & Enterprise APIs:** May send FHIR data securely, but primary storage remains on-premise
@@ -234,18 +259,21 @@ In 2021, the Nepali telemedicine platform "Aama ko Maya" faced significant regul
 Your PHR must integrate with three critical national systems:
 
 ### A. Health Management Information System (HMIS)
+
 - **Operated by:** Department of Health Services (DoHS)
 - **Purpose:** Aggregate district-level health data for planning
 - **PHR Alignment:** Provide anonymized, aggregated data for HMIS reporting (with patient consent)
 - **Contact:** https://dohs.gov.np
 
 ### B. Social Health Insurance (SHI) — openIMIS
+
 - **Operated by:** Health Insurance Board (HIB)
 - **Coverage:** 9 million Nepalis enrolled in social health insurance
 - **PHR Alignment:** Enable claim submission, eligibility checking, and claim tracking
 - **Contact:** https://healthinsurance.gov.np
 
 ### C. Health Facilities Registry (HFR)
+
 - **Operated by:** MoHP — Ministry of Health
 - **Purpose:** Registry of all public, private, and NGO health facilities
 - **PHR Alignment:** Integrate facility directory for referral and appointment booking
@@ -259,21 +287,22 @@ Nepal's **Individual Privacy Act 2078 (2018)** established the legal framework f
 
 ### Key Privacy Requirements for PHR:
 
-| **Privacy Principle** | **Legal Requirement** | **PHR Implementation** |
-|---|---|---|
-| **Purpose Limitation** | Data collected for health purposes only | Clear privacy policy; no data sharing for marketing |
-| **Data Minimization** | Collect only necessary data | Request only essential health information |
-| **Consent** | Explicit, informed consent for processing | Granular consent for each data use (provider access, analytics, research) |
-| **Right to Access** | Patient can request own data copy | Provide data export in FHIR JSON + PDF format |
-| **Right to Rectification** | Patient can correct inaccurate data | Edit capability for all patient-entered data |
-| **Right to Erasure** | Patient can request data deletion (with exceptions) | Support data deletion (retain only audit logs) |
-| **Data Retention** | Retain only as long as necessary | Define retention periods per data type (e.g., 7 years for claims per HIB) |
-| **Breach Notification** | Notify affected parties within 72 hours | Incident response plan; notification templates ready |
-| **Data Transfer** | Cannot transfer outside Nepal without explicit consent | Enforce geographic restriction |
+| **Privacy Principle**      | **Legal Requirement**                                  | **PHR Implementation**                                                    |
+| -------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------- |
+| **Purpose Limitation**     | Data collected for health purposes only                | Clear privacy policy; no data sharing for marketing                       |
+| **Data Minimization**      | Collect only necessary data                            | Request only essential health information                                 |
+| **Consent**                | Explicit, informed consent for processing              | Granular consent for each data use (provider access, analytics, research) |
+| **Right to Access**        | Patient can request own data copy                      | Provide data export in FHIR JSON + PDF format                             |
+| **Right to Rectification** | Patient can correct inaccurate data                    | Edit capability for all patient-entered data                              |
+| **Right to Erasure**       | Patient can request data deletion (with exceptions)    | Support data deletion (retain only audit logs)                            |
+| **Data Retention**         | Retain only as long as necessary                       | Define retention periods per data type (e.g., 7 years for claims per HIB) |
+| **Breach Notification**    | Notify affected parties within 72 hours                | Incident response plan; notification templates ready                      |
+| **Data Transfer**          | Cannot transfer outside Nepal without explicit consent | Enforce geographic restriction                                            |
 
 ### Privacy Impact Assessment (PIA):
 
 Conduct a formal PIA before MVP launch:
+
 1. Document all data flows
 2. Identify privacy risks (unauthorized access, data breach, misuse)
 3. Implement mitigation controls
@@ -288,14 +317,14 @@ The **Health Insurance Board (HIB)** operates the Social Health Insurance progra
 
 ### 2.7.1 HIB Technical Requirements for PHR Integration
 
-| **Requirement** | **Specification** | **PHR Implementation** |
-|---|---|---|
-| **API authentication** | HIB-issued API credentials | Register as openIMIS API consumer through HIB IT Department |
-| **Claim format** | FHIR R4 Claim resource per openIMIS IG | Map PHR billing data to openIMIS FHIR Implementation Guide |
-| **Patient eligibility check** | Real-time FHIR CoverageEligibilityRequest | Implement at point of record import from insured facility |
-| **Supporting documents** | Attachments as FHIR DocumentReference | Lab reports, prescriptions must be attachable to claim |
-| **Claim status tracking** | FHIR ClaimResponse polling | Show "Claim submitted," "Under review," "Approved/Rejected" to patient |
-| **Data retention for claims** | 7 years per HIB policy | Claims data must be retained separately from other PHR data |
+| **Requirement**               | **Specification**                         | **PHR Implementation**                                                 |
+| ----------------------------- | ----------------------------------------- | ---------------------------------------------------------------------- |
+| **API authentication**        | HIB-issued API credentials                | Register as openIMIS API consumer through HIB IT Department            |
+| **Claim format**              | FHIR R4 Claim resource per openIMIS IG    | Map PHR billing data to openIMIS FHIR Implementation Guide             |
+| **Patient eligibility check** | Real-time FHIR CoverageEligibilityRequest | Implement at point of record import from insured facility              |
+| **Supporting documents**      | Attachments as FHIR DocumentReference     | Lab reports, prescriptions must be attachable to claim                 |
+| **Claim status tracking**     | FHIR ClaimResponse polling                | Show "Claim submitted," "Under review," "Approved/Rejected" to patient |
+| **Data retention for claims** | 7 years per HIB policy                    | Claims data must be retained separately from other PHR data            |
 
 ### 2.7.2 HIB Engagement Plan
 
@@ -314,18 +343,18 @@ The **Health Insurance Board (HIB)** operates the Social Health Insurance progra
 
 ### Updated Market Indicators (Verified & Corrected)
 
-| **Metric** | **Data Point** | **Source / Year** |
-|---|---|---|
-| **Population** | 30 million | CBS Census 2021 |
-| **Smartphone penetration** | 139 per 100 people (2020/21 baseline; current estimate 160+) | NTA Annual Report 2020/21; NTA Telecom Status 2024 |
-| **Internet reach** | 63% nationwide | NTA Telecom Status Report, FY 2080/81 (2023/24) |
-| **Mobile broadband subscriptions** | 42 million | NTA Telecom Status Report 2024 |
-| **Social health insurance enrollment** | 9 million individuals | MoHP Health Insurance Board, March 2025 |
-| **Health facilities on openIMIS** | 375 facilities | MoHP / GIZ openIMIS Dashboard, March 2025 |
-| **openIMIS active users** | 7,147 | MoHP / GIZ openIMIS Dashboard, March 2025 |
-| **Private hospitals** | 300+ | DoHS Annual Report 2022/23 |
-| **Public hospitals (federal/provincial)** | 125+ | DoHS Annual Report 2022/23 |
-| **Digital health market growth (global)** | 21% CAGR through 2031 | Grand View Research 2024 |
+| **Metric**                                | **Data Point**                                               | **Source / Year**                                  |
+| ----------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------- |
+| **Population**                            | 30 million                                                   | CBS Census 2021                                    |
+| **Smartphone penetration**                | 139 per 100 people (2020/21 baseline; current estimate 160+) | NTA Annual Report 2020/21; NTA Telecom Status 2024 |
+| **Internet reach**                        | 63% nationwide                                               | NTA Telecom Status Report, FY 2080/81 (2023/24)    |
+| **Mobile broadband subscriptions**        | 42 million                                                   | NTA Telecom Status Report 2024                     |
+| **Social health insurance enrollment**    | 9 million individuals                                        | MoHP Health Insurance Board, March 2025            |
+| **Health facilities on openIMIS**         | 375 facilities                                               | MoHP / GIZ openIMIS Dashboard, March 2025          |
+| **openIMIS active users**                 | 7,147                                                        | MoHP / GIZ openIMIS Dashboard, March 2025          |
+| **Private hospitals**                     | 300+                                                         | DoHS Annual Report 2022/23                         |
+| **Public hospitals (federal/provincial)** | 125+                                                         | DoHS Annual Report 2022/23                         |
+| **Digital health market growth (global)** | 21% CAGR through 2031                                        | Grand View Research 2024                           |
 
 ### TAM (Total Addressable Market) Analysis
 
@@ -385,27 +414,32 @@ The **Health Insurance Board (HIB)** operates the Social Health Insurance progra
 ## 3.3 Key Market Drivers
 
 ### 1. Regulatory Compliance Mandate
+
 - **Directive 2081** creates mandatory EMR adoption for all facilities
 - **SIL-Nepal conformance** becomes prerequisite for system contracts
 - **First-mover advantage** for compliant PHR solutions
 
 ### 2. Fragmentation of Health Records
+
 - **No unified system** for patient records across public/private providers
 - **9M insured** individuals lack central record repository
 - **Provider switching costs** high when records not portable
 - **Patient-owned record solves** this fragmentation problem
 
 ### 3. Financial Incentives for Providers
+
 - **Claims submission efficiency** (save hours of paperwork per month)
 - **Patient engagement tools** (improved retention)
 - **Revenue cycle optimization** (faster reimbursement)
 
 ### 4. Insurance Integration
+
 - **openIMIS partnership** unlocks 9M user base
 - **Claim processing automation** valuable to 375 facilities
 - **Revenue share** from insurance claims (sustainable model)
 
 ### 5. Urban Health Market Expansion
+
 - **Metro Kathmandu:** 3M population, 85%+ smartphone penetration
 - **Other cities (Pokhara, Biratnagar, Dhanbad):** 500K+ each
 - **Urban health spending** growing 15%+ annually
@@ -418,15 +452,15 @@ Reaching 10,000 registered users by end of Phase 3 (Month 18) requires a structu
 
 ### 3.4.1 Channel Mix and Targets
 
-| **Channel** | **Year 1 Target (Users)** | **CAC (USD)** | **Budget Required** | **Priority** |
-|---|---|---|---|---|
-| Hospital referral (pilot sites) | 3,000 | $1.50 | $4,500 | P1 — Highest |
-| FCHV network | 2,000 | $2.65 | $5,300 | P1 — Highest |
-| Telecom bundle (Ncell/NTC) | 2,500 | $1.15 | $2,875 | P1 — Strategic |
-| Social media (Facebook/TikTok) | 1,500 | $6.00 | $9,000 | P2 |
-| NRN diaspora (Facebook groups, community orgs) | 500 | $9.00 | $4,500 | P2 |
-| Word of mouth / referral program | 500 | ~$2.00 | $1,000 | P2 |
-| **Total** | **10,000** | **~$2.72 blended** | **~$27,175** | |
+| **Channel**                                    | **Year 1 Target (Users)** | **CAC (USD)**      | **Budget Required** | **Priority**   |
+| ---------------------------------------------- | ------------------------- | ------------------ | ------------------- | -------------- |
+| Hospital referral (pilot sites)                | 3,000                     | $1.50              | $4,500              | P1 — Highest   |
+| FCHV network                                   | 2,000                     | $2.65              | $5,300              | P1 — Highest   |
+| Telecom bundle (Ncell/NTC)                     | 2,500                     | $1.15              | $2,875              | P1 — Strategic |
+| Social media (Facebook/TikTok)                 | 1,500                     | $6.00              | $9,000              | P2             |
+| NRN diaspora (Facebook groups, community orgs) | 500                       | $9.00              | $4,500              | P2             |
+| Word of mouth / referral program               | 500                       | ~$2.00             | $1,000              | P2             |
+| **Total**                                      | **10,000**                | **~$2.72 blended** | **~$27,175**        |                |
 
 > The $40K Phase 3 marketing budget covers acquisition ($27K) plus creative production, PR, and brand development.
 
@@ -444,13 +478,13 @@ Reaching 10,000 registered users by end of Phase 3 (Month 18) requires a structu
 
 Acquisition without retention is a leaky bucket. The following retention programs should run from Day 1:
 
-| **Program** | **Trigger** | **Channel** | **Expected Impact** |
-|---|---|---|---|
-| Day 7 health tip | 7 days after registration | Push notification | Re-engage passive users |
-| Medication reminder setup | After first prescription record added | In-app prompt | Activate sticky feature |
-| Family invite prompt | After 30 days solo use | In-app prompt | Convert to Family plan |
-| Annual health summary | 12 months after registration | Email + PDF | Demonstrate long-term value |
-| Insurance claim saved | After first claim processed | Push notification | Monetization conversion |
+| **Program**               | **Trigger**                           | **Channel**       | **Expected Impact**         |
+| ------------------------- | ------------------------------------- | ----------------- | --------------------------- |
+| Day 7 health tip          | 7 days after registration             | Push notification | Re-engage passive users     |
+| Medication reminder setup | After first prescription record added | In-app prompt     | Activate sticky feature     |
+| Family invite prompt      | After 30 days solo use                | In-app prompt     | Convert to Family plan      |
+| Annual health summary     | 12 months after registration          | Email + PDF       | Demonstrate long-term value |
+| Insurance claim saved     | After first claim processed           | Push notification | Monetization conversion     |
 
 ---
 
@@ -459,6 +493,7 @@ Acquisition without retention is a leaky bucket. The following retention program
 ## 4.1 Direct Competitors in Nepal
 
 ### **Hamro Doctor**
+
 - **Founded:** 2015, Kathmandu
 - **Positioning:** Telehealth + hospital network
 - **Strengths:** Brand recognition, insurance integration, 500K+ downloads
@@ -466,6 +501,7 @@ Acquisition without retention is a leaky bucket. The following retention program
 - **Market Share:** ~30% of telemedicine market (limited PHR)
 
 ### **Jeevee**
+
 - **Founded:** 2016, Kathmandu
 - **Positioning:** Health & wellness app
 - **Strengths:** Wellness tracking, appointment booking
@@ -473,12 +509,14 @@ Acquisition without retention is a leaky bucket. The following retention program
 - **Market Share:** ~15% of wellness app market
 
 ### **Aama ko Maya** (Largely Inactive)
+
 - **Founded:** 2020
 - **Original Positioning:** PHR + telemedicine
 - **Current Status:** Dormant after regulatory issues (data sovereignty)
 - **Lessons:** Data sovereignty requirements are non-negotiable
 
 ### **Major International Competitors (India-based, testing Nepal market)**
+
 - **1mg (India):** Pharmacy + telemedicine, active in Kathmandu
 - **Practo (India):** Appointment + records (minimal presence)
 - **Apollo 24/7 (India):** Telehealth (limited Nepal presence)
@@ -487,16 +525,16 @@ Acquisition without retention is a leaky bucket. The following retention program
 
 ## 4.2 Strategic Gap Analysis
 
-| **Capability** | **Hamro Doctor** | **Jeevee** | **Your PHR** |
-|---|---|---|---|
-| **Comprehensive PHR** | ❌ (Consultation-focused) | ❌ (Wellness-focused) | ✅ (Core feature) |
-| **EMR Interoperability** | ⚠️ (Limited) | ❌ | ✅ (FHIR-native) |
-| **Voice/ASR** | ❌ | ❌ | ✅ (Innovation) |
-| **Insurance Integration** | ⚠️ (Partial) | ❌ | ✅ (Full openIMIS) |
-| **Offline Capability** | ❌ | ❌ | ✅ (Phase 2) |
-| **Caregiver Support** | ❌ | ❌ | ✅ (Phase 2) |
-| **Data Sovereignty** | ⚠️ (Issues) | ✅ (On-premise) | ✅ (Data-native) |
-| **Regulatory Compliance** | ⚠️ (Partial) | ❌ | ✅ (Directive 2081) |
+| **Capability**            | **Hamro Doctor**          | **Jeevee**            | **Your PHR**        |
+| ------------------------- | ------------------------- | --------------------- | ------------------- |
+| **Comprehensive PHR**     | ❌ (Consultation-focused) | ❌ (Wellness-focused) | ✅ (Core feature)   |
+| **EMR Interoperability**  | ⚠️ (Limited)              | ❌                    | ✅ (FHIR-native)    |
+| **Voice/ASR**             | ❌                        | ❌                    | ✅ (Innovation)     |
+| **Insurance Integration** | ⚠️ (Partial)              | ❌                    | ✅ (Full openIMIS)  |
+| **Offline Capability**    | ❌                        | ❌                    | ✅ (Phase 2)        |
+| **Caregiver Support**     | ❌                        | ❌                    | ✅ (Phase 2)        |
+| **Data Sovereignty**      | ⚠️ (Issues)               | ✅ (On-premise)       | ✅ (Data-native)    |
+| **Regulatory Compliance** | ⚠️ (Partial)              | ❌                    | ✅ (Directive 2081) |
 
 **Key Gap:** No competitor offers a **comprehensive, voice-enabled, fully compliant PHR** with all the above capabilities. This is your market opportunity.
 
@@ -538,6 +576,7 @@ Acquisition without retention is a leaky bucket. The following retention program
 **Threat:** Hamro Doctor copies voice features and FHIR integration
 
 **Response Strategy:**
+
 1. **Speed-to-market:** Launch voice ASR by Month 15 (before they can)
 2. **Regulatory moat:** Achieve SIL-Nepal certification first (barrier to entry)
 3. **Data defensibility:** Establish caregiver/family ecosystem lock-in
@@ -549,6 +588,7 @@ Acquisition without retention is a leaky bucket. The following retention program
 **Threat:** Well-funded Indian competitor with brand recognition
 
 **Response Strategy:**
+
 1. **Regulation as moat:** Data sovereignty requirement blocks them from full integration
 2. **Localization:** Deep Nepali language + dialect support (they can't match quickly)
 3. **Trust positioning:** "Built for Nepal by Nepali team" vs. "Foreign player"
@@ -560,6 +600,7 @@ Acquisition without retention is a leaky bucket. The following retention program
 **Threat:** DoHS/MoHP launches competing system
 
 **Response Strategy:**
+
 1. **Partnership, not competition:** Propose integration pathway
 2. **Technology provider:** Offer infrastructure/ASR to government system
 3. **Complementary positioning:** B2C (consumer PHR) vs. B2G (national system)
@@ -571,6 +612,7 @@ Acquisition without retention is a leaky bucket. The following retention program
 **Threat:** Competitors expand from South Asia
 
 **Response Strategy:**
+
 1. **Regulatory differentiation:** Nepal-specific FHIR profiles, Directive 2081 compliance
 2. **Language superiority:** Nepali ASR and multi-dialect support
 3. **Partnership depth:** Relationships with SIL-Nepal, HIB, DoHS
@@ -588,23 +630,23 @@ Acquisition without retention is a leaky bucket. The following retention program
 
 ### FHIR Resources Your PHR Will Handle
 
-| **FHIR Resource** | **Purpose** | **Mapping** |
-|---|---|---|
-| **Patient** | Patient demographics | Patient profile |
-| **Condition** | Medical diagnosis | Chronic conditions, diagnoses |
-| **Procedure** | Surgical/clinical procedures | Surgical history, procedures |
-| **Medication** | Medication information | Medication master data |
-| **MedicationStatement** | Medication usage | Current medications, history |
-| **MedicationRequest** | Prescription | Active prescriptions |
-| **Observation** | Vital signs, lab results | BP, heart rate, lab values |
-| **DiagnosticReport** | Lab/radiology report | Test results, imaging reports |
-| **Encounter** | Clinical visit | Hospital visits, consultations |
-| **Immunization** | Vaccination record | Vaccination history |
-| **AllergyIntolerance** | Allergies | Allergy tracking |
-| **CarePlan** | Care plan | Chronic disease management plans |
-| **Claim** | Insurance claim | Insurance billing integration |
-| **Coverage** | Insurance coverage | Insurance eligibility |
-| **DocumentReference** | External document | Scanned PDFs, discharge summaries |
+| **FHIR Resource**       | **Purpose**                  | **Mapping**                       |
+| ----------------------- | ---------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Patient**             | Patient demographics         | Patient profile                   |
+| **Condition**           | Medical diagnosis            | Chronic conditions, diagnoses     |
+| **Procedure**           | Surgical/clinical procedures | Surgical history, procedures      |
+| **Medication**          | Medication information       | Medication master data            |
+| **MedicationStatement** | Medication usage             | Current medications, history      | _(Note: Current architecture uses **MedicationRequest** for L1 MVP; MedicationStatement deferred to L3+)_ |
+| **MedicationRequest**   | Prescription                 | Active prescriptions              |
+| **Observation**         | Vital signs, lab results     | BP, heart rate, lab values        |
+| **DiagnosticReport**    | Lab/radiology report         | Test results, imaging reports     |
+| **Encounter**           | Clinical visit               | Hospital visits, consultations    |
+| **Immunization**        | Vaccination record           | Vaccination history               |
+| **AllergyIntolerance**  | Allergies                    | Allergy tracking                  |
+| **CarePlan**            | Care plan                    | Chronic disease management plans  |
+| **Claim**               | Insurance claim              | Insurance billing integration     |
+| **Coverage**            | Insurance coverage           | Insurance eligibility             |
+| **DocumentReference**   | External document            | Scanned PDFs, discharge summaries |
 
 ### Implementation Approach
 
@@ -630,54 +672,54 @@ Acquisition without retention is a leaky bucket. The following retention program
 
 ### Backend Architecture
 
-| **Component** | **Technology** | **Rationale** |
-|---|---|---|
-| **Web Framework** | Node.js + Express | JavaScript ecosystem; rapid development; good healthcare library support |
-| **FHIR Server** | HAPI FHIR (Java) | Gold standard for FHIR; excellent Nepal regulatory compliance track record; runs on-premise |
-| **Database (Primary)** | PostgreSQL | Open-source; excellent on-premise reliability; HIPAA-compliant; JSON support for flexible FHIR storage |
-| **Database (Cache)** | Redis | Fast caching; session management; medication reminder queues |
-| **Message Queue** | RabbitMQ or Kafka | Asynchronous processing (ASR, image processing, notifications) |
-| **File Storage** | MinIO (S3-compatible) | On-premise object storage; medical imaging (DICOM) support; open-source |
-| **Authentication** | Keycloak | Open-source identity provider; OIDC/OAuth2; MFA support |
-| **Encryption** | OpenSSL + NIST standards | AES-256, TLS 1.3; audit trail support |
+| **Component**          | **Technology**                      | **Rationale**                                                                                                 |
+| ---------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Web Framework**      | Node.js + Express                   | JavaScript ecosystem; rapid development; good healthcare library support                                      |
+| **FHIR Server**        | HAPI FHIR (Java)                    | Gold standard for FHIR; excellent Nepal regulatory compliance track record; runs on-premise                   |
+| **Database (Primary)** | PostgreSQL                          | Open-source; excellent on-premise reliability; HIPAA-compliant; JSON support for flexible FHIR storage        |
+| **Database (Cache)**   | Valkey (BSD 3-Clause)               | Fast caching; session management; medication reminder queues; Linux Foundation Redis fork; permissive license |
+| **Message Queue**      | RabbitMQ or Kafka                   | Asynchronous processing (ASR, image processing, notifications)                                                |
+| **File Storage**       | Ceph (RADOS Gateway, S3-compatible) | On-premise object storage; medical imaging (DICOM) support; open-source (LGPL); proven at scale               |
+| **Authentication**     | Keycloak                            | Open-source identity provider; OIDC/OAuth2; MFA support                                                       |
+| **Encryption**         | OpenSSL + NIST standards            | AES-256, TLS 1.3; audit trail support                                                                         |
 
 ### Frontend Architecture
 
-| **Component** | **Technology** | **Rationale** |
-|---|---|---|
-| **Web App** | React + TypeScript | Component reuse; strong ecosystem; WCAG accessibility support |
-| **Mobile (iOS)** | React Native or Swift | React Native = code reuse; Swift = maximum performance |
-| **Mobile (Android)** | React Native or Kotlin | React Native = code reuse; Kotlin = Android-native performance |
-| **UI Framework** | Material-UI or shadcn/ui | Accessible, professional components; Nepali language support |
-| **State Management** | Redux or TanStack Query | Offline-first state; cache management |
-| **Analytics** | Plausible Analytics (privacy-compliant) | GDPR/privacy-friendly; no third-party tracking |
-| **Offline Support** | React Query + Service Workers | Data syncing; offline-first capability |
+| **Component**        | **Technology**                          | **Rationale**                                                  |
+| -------------------- | --------------------------------------- | -------------------------------------------------------------- |
+| **Web App**          | React + TypeScript                      | Component reuse; strong ecosystem; WCAG accessibility support  |
+| **Mobile (iOS)**     | React Native or Swift                   | React Native = code reuse; Swift = maximum performance         |
+| **Mobile (Android)** | React Native or Kotlin                  | React Native = code reuse; Kotlin = Android-native performance |
+| **UI Framework**     | Material-UI or shadcn/ui                | Accessible, professional components; Nepali language support   |
+| **State Management** | Redux or TanStack Query                 | Offline-first state; cache management                          |
+| **Analytics**        | Plausible Analytics (privacy-compliant) | GDPR/privacy-friendly; no third-party tracking                 |
+| **Offline Support**  | React Query + Service Workers           | Data syncing; offline-first capability                         |
 
 ### Integration Services
 
-| **Service** | **Technology** | **Purpose** |
-|---|---|---|
-| **Speech-to-Text (ASR)** | Google Cloud Speech-to-Text (MVP) → Custom model (Year 2) | Nepali medical transcription |
-| **Video Conferencing** | Twilio or Jitsi (on-premise) | Telemedicine consultations |
-| **Push Notifications** | Firebase Cloud Messaging (Nepal-compliant alternative: AWS SNS) | Appointment reminders, alerts |
-| **Email** | Postfix (on-premise) or SendGrid | Clinical notifications, reports |
-| **SMS** | Sparrow SMS (Nepal-based) or Twilio | Appointment reminders, OTP |
-| **Payment Processing** | Khalti or eSewa (Nepal digital wallets) | Subscription payments |
-| **Imaging (DICOM)** | DCM4CHEE or PACS lite | Radiology/imaging storage |
+| **Service**              | **Technology**                                                                         | **Purpose**                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **Speech-to-Text (ASR)** | Vosk (Apache 2.0, on-premise streaming) + Whisper (MIT, batch) → Custom model (Year 2) | Nepali medical transcription; fully on-premise; data-sovereign        |
+| **Video Conferencing**   | Jitsi (Apache 2.0, on-premise)                                                         | Telemedicine consultations; fully self-hosted; permissive license     |
+| **Push Notifications**   | ntfy (Apache 2.0, self-hosted) + APNS (iOS)                                            | Appointment reminders, alerts; self-hosted; no proprietary dependency |
+| **Email**                | Postfix (on-premise, IPL/EPL)                                                          | Clinical notifications, reports                                       |
+| **SMS**                  | Sparrow SMS (Nepal-based)                                                              | Appointment reminders, OTP                                            |
+| **Payment Processing**   | Khalti or eSewa (Nepal digital wallets)                                                | Subscription payments                                                 |
+| **Imaging (DICOM)**      | DCM4CHEE or PACS lite                                                                  | Radiology/imaging storage                                             |
 
 ### Infrastructure
 
-| **Component** | **Specification** | **Rationale** |
-|---|---|---|
-| **Primary Data Center** | Nepal-IX colocation | Data sovereignty compliance; redundancy |
-| **Secondary Data Center** | Alternative location in Nepal | Geographic redundancy for backup |
-| **Servers (Primary)** | 2× powerful servers (dual redundancy) | High availability |
-| **Load Balancer** | Nginx or HAProxy | Distributes traffic; on-premise |
-| **VPN/Secure Connection** | OpenVPN or WireGuard | Secure provider connections |
-| **CDN (Optional)** | Cloudflare (with Nepal jurisdiction) | Static asset delivery (if provider supports) |
-| **Monitoring** | Prometheus + Grafana | System health monitoring |
-| **Logging** | ELK Stack (Elasticsearch, Logstash, Kibana) | Audit trail, debugging |
-| **Backup** | Veeam or Bacula (encrypted) | Daily backup; immutable archives |
+| **Component**             | **Specification**                               | **Rationale**                                                   |
+| ------------------------- | ----------------------------------------------- | --------------------------------------------------------------- |
+| **Primary Data Center**   | Nepal-IX colocation                             | Data sovereignty compliance; redundancy                         |
+| **Secondary Data Center** | Alternative location in Nepal                   | Geographic redundancy for backup                                |
+| **Servers (Primary)**     | 2× powerful servers (dual redundancy)           | High availability                                               |
+| **Load Balancer**         | Nginx or HAProxy                                | Distributes traffic; on-premise                                 |
+| **VPN/Secure Connection** | OpenVPN or WireGuard                            | Secure provider connections                                     |
+| **CDN (Optional)**        | Cloudflare (with Nepal jurisdiction)            | Static asset delivery (if provider supports)                    |
+| **Monitoring**            | Prometheus + Grafana                            | System health monitoring                                        |
+| **Logging**               | OpenSearch + OpenSearch Dashboards + Fluent Bit | Audit trail, debugging; Apache 2.0 (replaces SSPL-licensed ELK) |
+| **Backup**                | BorgBackup (BSD) or Restic (BSD 2-Clause)       | Daily backup; encrypted, deduplicated; permissive license       |
 
 ---
 
@@ -701,12 +743,12 @@ Acquisition without retention is a leaky bucket. The following retention program
     │   │       ├─ Encrypted data at rest (AES-256)
     │   │       └─ Audit logs (immutable)
     │   │
-    │   └─→ [Redis Cache]
+    │   └─→ [Valkey Cache]
     │       └─ Session management, reminders
     │
-    └─→ [File Storage (MinIO)]
+    └─→ [File Storage (Ceph)]
         └─ DICOM images, PDFs, scans
-        
+
 [Daily Encrypted Backup]
     ↓
 [Secondary Data Center (Nepal)]
@@ -716,6 +758,7 @@ Acquisition without retention is a leaky bucket. The following retention program
 ### Data Flows: What Stays In-Country
 
 ✅ **STAYS IN NEPAL:**
+
 - Patient health records (primary)
 - User authentication and credentials
 - Audit logs
@@ -724,11 +767,13 @@ Acquisition without retention is a leaky bucket. The following retention program
 - All sensitive PHI (Protected Health Information)
 
 ⚠️ **RESTRICTED OUTFLOW (Encrypted, Minimal):**
+
 - FHIR data exports to partner EMR systems (via secure API)
-- ASR audio clips to Google Cloud Speech-to-Text (sent encrypted, returned transcript only)
-- Push notifications (via Firebase, but only identifiers, no PHI)
+- ASR audio clips processed on-premise via Vosk/Whisper (no data leaves Nepal)
+- Push notifications via ntfy (self-hosted; only notification identifiers, no PHI)
 
 ❌ **NEVER LEAVES NEPAL:**
+
 - Patient names, contact information
 - Medical history or diagnoses
 - Test results or vital signs
@@ -816,6 +861,7 @@ Rural Nepal often lacks reliable internet. Your PHR must work offline and sync w
 ### Offline Capability Requirements
 
 **Offline-First Features:**
+
 - ✅ View cached medical records (read-only)
 - ✅ View offline medication reminders
 - ✅ View offline appointment calendar
@@ -824,6 +870,7 @@ Rural Nepal often lacks reliable internet. Your PHR must work offline and sync w
 - ✅ Queue data entry when online
 
 **Offline Limitations (Acknowledged):**
+
 - ❌ Cannot access real-time data (will be cached version)
 - ❌ Cannot submit new prescriptions (will queue for later)
 - ❌ Cannot video consult (no connectivity)
@@ -835,23 +882,25 @@ Rural Nepal often lacks reliable internet. Your PHR must work offline and sync w
 
 ```javascript
 // Example: Service Worker for offline support
-self.addEventListener('fetch', event => {
-  if (event.request.method === 'GET') {
+self.addEventListener("fetch", (event) => {
+  if (event.request.method === "GET") {
     event.respondWith(
-      caches.match(event.request)
-        .then(response => {
-          return response || fetch(event.request)
-            .then(response => {
+      caches.match(event.request).then((response) => {
+        return (
+          response ||
+          fetch(event.request)
+            .then((response) => {
               let responseToCache = response.clone();
-              caches.open('v1').then(cache => {
+              caches.open("v1").then((cache) => {
                 cache.put(event.request, responseToCache);
               });
               return response;
             })
             .catch(() => {
-              return caches.match('/offline.html');
-            });
-        })
+              return caches.match("/offline.html");
+            })
+        );
+      }),
     );
   }
 });
@@ -934,11 +983,11 @@ Nepal's health literacy varies widely (urban educated vs. rural farmers). Your P
 
 ### Health Literacy Levels
 
-| **Level** | **Definition** | **Design Implications** |
-|---|---|---|
-| **Low** | Cannot understand medical terms; needs simple language, illustrations | Large buttons, icons, minimal text |
-| **Medium** | Understands common health concepts; needs definitions of technical terms | Glossary, tooltips, clear examples |
-| **High** | Understands complex medical concepts; wants detailed information | Advanced settings, medical references, research links |
+| **Level**  | **Definition**                                                           | **Design Implications**                               |
+| ---------- | ------------------------------------------------------------------------ | ----------------------------------------------------- |
+| **Low**    | Cannot understand medical terms; needs simple language, illustrations    | Large buttons, icons, minimal text                    |
+| **Medium** | Understands common health concepts; needs definitions of technical terms | Glossary, tooltips, clear examples                    |
+| **High**   | Understands complex medical concepts; wants detailed information         | Advanced settings, medical references, research links |
 
 ### Design Guidelines for Low Health Literacy
 
@@ -992,12 +1041,12 @@ Nepal's health literacy varies widely (urban educated vs. rural farmers). Your P
 
 **Permission Levels (Patient Controls):**
 
-| **Permission Level** | **Read** | **Edit** | **Schedule** | **Delete** |
-|---|---|---|---|---|
-| **View Only** | ✅ | ❌ | ❌ | ❌ |
-| **Manage Appointments** | ✅ | ✅ | ✅ | ❌ |
-| **Full Access** | ✅ | ✅ | ✅ | ✅ |
-| **Emergency Only** | ✅ (if patient unconscious) | ⚠️ (limited) | ✅ | ❌ |
+| **Permission Level**    | **Read**                    | **Edit**     | **Schedule** | **Delete** |
+| ----------------------- | --------------------------- | ------------ | ------------ | ---------- |
+| **View Only**           | ✅                          | ❌           | ❌           | ❌         |
+| **Manage Appointments** | ✅                          | ✅           | ✅           | ❌         |
+| **Full Access**         | ✅                          | ✅           | ✅           | ✅         |
+| **Emergency Only**      | ✅ (if patient unconscious) | ⚠️ (limited) | ✅           | ❌         |
 
 ---
 
@@ -1006,14 +1055,17 @@ Nepal's health literacy varies widely (urban educated vs. rural farmers). Your P
 ### Language Support
 
 **MVP (Month 6):**
+
 - ✅ Nepali (primary)
 - ✅ English (for providers, international users)
 
 **Phase 2 (Month 12):**
+
 - ✅ Maithili (eastern Nepal, ~5M speakers)
 - ✅ Newari (Kathmandu Valley, ~800K speakers)
 
 **Phase 3+ (Month 18+):**
+
 - ✅ Tamang (mountain communities, ~1.5M speakers)
 - ✅ Gurung (western Nepal, ~600K speakers)
 
@@ -1031,23 +1083,27 @@ Nepal's health literacy varies widely (urban educated vs. rural farmers). Your P
 ### Accessibility (WCAG 2.1 AA Compliance)
 
 **Vision:**
+
 - ✅ Text size adjustable (100% → 200%)
 - ✅ High contrast mode
 - ✅ Color-blind friendly (avoid red-green only)
 - ✅ Screen reader compatible (ARIA labels)
 
 **Hearing:**
+
 - ✅ Closed captions for video consultations
 - ✅ Visual notifications (flashing alerts)
 - ✅ Transcripts of audio messages
 
 **Motor (Difficulty with Fine Touch):**
+
 - ✅ Large, easy-to-tap buttons (minimum 48x48 dp)
 - ✅ Keyboard navigation (no mouse required)
 - ✅ Voice control (hands-free app navigation)
 - ✅ Eye-tracking support (for severely disabled users)
 
 **Cognitive (Dementia, Low Literacy):**
+
 - ✅ Simple, uncluttered interface
 - ✅ Clear, large text
 - ✅ Minimal jargon
@@ -1063,11 +1119,14 @@ Nepal's health literacy varies widely (urban educated vs. rural farmers). Your P
 ### Current State of Nepali ASR (2025)
 
 **General Nepali ASR:**
-- **Google Cloud Speech-to-Text:** Works for general Nepali; ≈75-80% accuracy
+
+- **Vosk (Apache 2.0):** On-premise streaming ASR; supports Nepali; ≈ 70-80% accuracy on general speech; runs locally — no data leaves Nepal
+- **OpenAI Whisper (MIT):** Batch transcription; higher accuracy but not real-time; can run on-premise GPU
 - **Automatic Speech Recognition (ASR):** Research ongoing at Kathmandu University, IOE Pulchowk
 - **Commercial Tools:** Limited Nepali support; mostly English + Hindi
 
 **Medical Nepali ASR:**
+
 - ❌ **No production system** for medical Nepali
 - ❌ **No medical terminology corpus** (specialized vocabulary)
 - ⚠️ **Research ongoing:** IOE Pulchowk + Kathmandu University partnerships
@@ -1076,7 +1135,7 @@ Nepal's health literacy varies widely (urban educated vs. rural farmers). Your P
 
 General ASR trained on news, conversations, movies. Medical ASR requires:
 
-1. **Medical Terminology:** 
+1. **Medical Terminology:**
    - "Hypertension" (not in general Nepali)
    - "Myocardial infarction" (not in everyday speech)
    - Nepali medical terms: "Raktachaap" (blood pressure), "Hridroy" (heart)
@@ -1093,24 +1152,29 @@ General ASR trained on news, conversations, movies. Medical ASR requires:
 
 ### Your Innovation Plan
 
-**Phase 1 (MVP, Month 6):** Use Google Cloud Speech-to-Text
+**Phase 1 (MVP, Month 6):** Use Vosk on-premise ASR (Apache 2.0)
+
 - Works for ~75-80% of cases
 - Manual correction available (provider edits transcript)
 - Acceptable for MVP validation
+- No recurring API costs — runs entirely on-premise
 
 **Phase 2 (Month 7-12):** Build Nepali Medical Corpus
+
 - Collect 500+ hours of Nepali medical conversations (with consent)
 - Transcribe manually (partner with IOE Pulchowk students)
 - Label medical entities (diseases, drugs, procedures)
 - Create training dataset
 
 **Phase 3 (Month 13-18):** Train Custom Model
+
 - Partner with Kathmandu University
 - Fine-tune model on Nepali medical corpus
 - Test on held-out dataset (aim for 85%+ accuracy)
 - Deploy to production (gradual rollout)
 
 **Phase 4 (Month 19-24):** Optimize for Dialects
+
 - Collect additional data for Maithili, Newari, Tamang
 - Train dialect-specific models
 - Improve accuracy to 90%+
@@ -1119,44 +1183,45 @@ General ASR trained on news, conversations, movies. Medical ASR requires:
 
 ## 6.2 Implementation Strategy
 
-### MVP ASR Implementation (Using Google Cloud)
+### MVP ASR Implementation (Using Vosk — On-Premise, Apache 2.0)
 
 ```python
-from google.cloud import speech_v1
-import io
+from vosk import Model, KaldiRecognizer
+import wave
+import json
 
 def transcribe_medical_audio(audio_file_path):
-    """Transcribe medical Nepali audio to text using Google Cloud Speech-to-Text"""
-    
-    client = speech_v1.SpeechClient()
-    
-    with io.open(audio_file_path, "rb") as audio_file:
-        content = audio_file.read()
-    
-    audio = speech_v1.RecognitionAudio(content=content)
-    
-    config = speech_v1.RecognitionConfig(
-        encoding=speech_v1.RecognitionConfig.AudioEncoding.LINEAR16,
-        language_code="ne-NP",  # Nepali language
-        enable_automatic_punctuation=True,
-        model="medical_dictation"  # If available; otherwise use default
-    )
-    
-    response = client.recognize(config=config, audio=audio)
-    
-    # Extract transcript with confidence scores
+    """Transcribe medical Nepali audio to text using Vosk (on-premise ASR)"""
+
+    model = Model("vosk-model-ne")  # Nepali language model
+
+    wf = wave.open(audio_file_path, "rb")
+    rec = KaldiRecognizer(model, wf.getframerate())
+    rec.SetWords(True)
+
     transcript = ""
-    confidence = []
-    
-    for result in response.results:
-        for alternative in result.alternatives:
-            transcript += alternative.transcript + " "
-            confidence.append(alternative.confidence)
-    
+    confidence_scores = []
+
+    while True:
+        data = wf.readframes(4000)
+        if len(data) == 0:
+            break
+        if rec.AcceptWaveform(data):
+            result = json.loads(rec.Result())
+            transcript += result.get("text", "") + " "
+            if "result" in result:
+                for word in result["result"]:
+                    confidence_scores.append(word.get("conf", 0.0))
+
+    final_result = json.loads(rec.FinalResult())
+    transcript += final_result.get("text", "")
+
+    avg_confidence = sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0.0
+
     return {
         "transcript": transcript.strip(),
-        "average_confidence": sum(confidence) / len(confidence),
-        "low_confidence_segments": [c for c in confidence if c < 0.7]  # Flag uncertain parts
+        "average_confidence": avg_confidence,
+        "low_confidence_segments": [c for c in confidence_scores if c < 0.7]
     }
 ```
 
@@ -1167,7 +1232,7 @@ def transcribe_medical_audio(audio_file_path):
     ↓
 [Audio recorded + encrypted]
     ↓
-[Sent to ASR (Google Cloud or custom model)]
+[Sent to ASR (Vosk on-premise or custom model)]
     ↓
 [Transcript returned with confidence scores]
     ↓
@@ -1193,16 +1258,17 @@ def transcribe_medical_audio(audio_file_path):
 
 ### Academic Partners
 
-| **Institution** | **Department** | **Potential Collaboration** | **Timeline** |
-|---|---|---|---|
-| **Kathmandu University** | Health Informatics | FHIR training, research on health app design | Immediate (Month 1) |
-| **IOE Pulchowk** | Computer Engineering | ASR research, custom model development | Immediate (Month 3) |
-| **Patan Academy** | Medical Science | Clinical validation, medical terminology | Month 6 |
-| **Nepal Health Research Council** | Governance | Ethics approval for data collection | Immediate (Month 2) |
+| **Institution**                   | **Department**       | **Potential Collaboration**                  | **Timeline**        |
+| --------------------------------- | -------------------- | -------------------------------------------- | ------------------- |
+| **Kathmandu University**          | Health Informatics   | FHIR training, research on health app design | Immediate (Month 1) |
+| **IOE Pulchowk**                  | Computer Engineering | ASR research, custom model development       | Immediate (Month 3) |
+| **Patan Academy**                 | Medical Science      | Clinical validation, medical terminology     | Month 6             |
+| **Nepal Health Research Council** | Governance           | Ethics approval for data collection          | Immediate (Month 2) |
 
 ### Research Collaboration Framework
 
 **Agreement:** Joint research on Nepali medical ASR
+
 - **Your contribution:** Data (with patient consent), infrastructure, commercialization path
 - **University contribution:** Research, students, publications
 - **Output:** Custom ASR model; publishable research paper
@@ -1216,6 +1282,7 @@ def transcribe_medical_audio(audio_file_path):
 ### Who Are FCHVs?
 
 **Female Community Health Volunteers (FCHVs):**
+
 - ~50,000 community health workers across Nepal
 - Trained on basic health education and screening
 - Work in villages and remote areas
@@ -1257,6 +1324,7 @@ Instead of patients traveling to clinics, FCHVs can:
 **Month 16-18:** Scale to 500 FCHVs across 3-5 districts
 
 **Incentive Model:**
+
 - NPR 25 per new patient registration
 - Bonus: NPR 10 for each patient who completes 3 health records
 - Payment: Monthly via mobile wallet (M-Banking)
@@ -1267,15 +1335,15 @@ Instead of patients traveling to clinics, FCHVs can:
 
 ### Supported Devices (Phase 2+)
 
-| **Device Type** | **Examples** | **Data Captured** | **Integration** |
-|---|---|---|---|
-| **Smartwatch** | Apple Watch, Wear OS | Heart rate, steps, workouts, sleep | Bluetooth + Wear OS API |
-| **Fitness Tracker** | Fitbit, Garmin | Activity, calories, sleep patterns | FHIR Observation Resource |
-| **Blood Pressure Monitor** | Omron, A&D | Systolic, diastolic, heart rate | Bluetooth + FHIR Observation |
-| **Glucose Meter** | Accu-Check, OneTouch | Blood glucose readings | Bluetooth + FHIR Observation |
-| **Thermometer** | Smart thermometers | Temperature readings | WiFi + REST API |
-| **Weight Scale** | Smart scales | Weight, BMI | Bluetooth + WiFi |
-| **Pulse Oximeter** | Contec, CMS50 | SpO2 (blood oxygen) | Bluetooth |
+| **Device Type**            | **Examples**         | **Data Captured**                  | **Integration**              |
+| -------------------------- | -------------------- | ---------------------------------- | ---------------------------- |
+| **Smartwatch**             | Apple Watch, Wear OS | Heart rate, steps, workouts, sleep | Bluetooth + Wear OS API      |
+| **Fitness Tracker**        | Fitbit, Garmin       | Activity, calories, sleep patterns | FHIR Observation Resource    |
+| **Blood Pressure Monitor** | Omron, A&D           | Systolic, diastolic, heart rate    | Bluetooth + FHIR Observation |
+| **Glucose Meter**          | Accu-Check, OneTouch | Blood glucose readings             | Bluetooth + FHIR Observation |
+| **Thermometer**            | Smart thermometers   | Temperature readings               | WiFi + REST API              |
+| **Weight Scale**           | Smart scales         | Weight, BMI                        | Bluetooth + WiFi             |
+| **Pulse Oximeter**         | Contec, CMS50        | SpO2 (blood oxygen)                | Bluetooth                    |
 
 ### Data Flow from Wearables
 
@@ -1328,21 +1396,25 @@ AI/ML model to alert user/provider:
 ### Predictive Health Models (Future, Year 2+)
 
 **Example 1: Cardiovascular Risk Score**
+
 - Input: Age, BP, cholesterol, smoking history, diabetes status, weight
 - Output: 10-year risk of heart attack/stroke
 - Action: Recommend preventive care (exercise, medication review)
 
 **Example 2: Diabetes Risk Prediction**
+
 - Input: Age, weight, family history, glucose readings
 - Output: Probability of developing diabetes in 5 years
 - Action: Suggest lifestyle changes (diet, exercise)
 
 **Example 3: Medication Interaction Checker**
+
 - Input: All current medications
 - Output: Severity of interactions (none, minor, moderate, severe)
 - Action: Alert provider to review regimen
 
 **Example 4: Personalized Health Recommendations**
+
 - Input: Health history, current conditions, medications
 - Output: Tailored recommendations (vaccination schedule, screenings, lifestyle)
 - Action: Push notifications for preventive care
@@ -1393,28 +1465,28 @@ AI/ML model to alert user/provider:
 
 ### Timeline
 
-| Week | Milestone | Owner |
-|---|---|---|
-| 1-2 | Infrastructure setup (Nepal-IX colocation) | DevOps |
-| 3-4 | FHIR server installation + configuration | CTO + Backend |
-| 5-6 | Database schema design | Backend Lead |
-| 7-10 | Core API development (Patient, Medication) | 2× Backend Engineers |
+| Week  | Milestone                                           | Owner                         |
+| ----- | --------------------------------------------------- | ----------------------------- |
+| 1-2   | Infrastructure setup (Nepal-IX colocation)          | DevOps                        |
+| 3-4   | FHIR server installation + configuration            | CTO + Backend                 |
+| 5-6   | Database schema design                              | Backend Lead                  |
+| 7-10  | Core API development (Patient, Medication)          | 2× Backend Engineers          |
 | 11-14 | Security implementation (encryption, auth, logging) | Security Consultant + Backend |
-| 15-18 | Integration testing | QA + Backend |
-| 19-22 | Compliance review + documentation | Founder + Compliance |
-| 23-26 | SIL-Nepal engagement + pilot hospital selection | Founder |
+| 15-18 | Integration testing                                 | QA + Backend                  |
+| 19-22 | Compliance review + documentation                   | Founder + Compliance          |
+| 23-26 | SIL-Nepal engagement + pilot hospital selection     | Founder                       |
 
 ### Budget (Phase 1)
 
-| Item | Cost (USD) | Notes |
-|---|---|---|
-| Server hardware (dual redundancy) | $15,000 | 2× powerful servers for Nepal-IX |
-| Colocation (6 months) | $3,000 | Nepal-IX hosting fees |
-| HAPI FHIR license (free) + support | $2,000 | Community version, part-time consultant |
-| Software licenses (Keycloak, PostreSQL, etc.) | $1,000 | Most open-source |
-| Team (4 people, 6 months) | $30,000 | CTO, 2 engineers, security consultant (part-time) |
-| Compliance & legal | $5,000 | Privacy audit, data residency documentation |
-| **Total Phase 1** | **$56,000** | |
+| Item                                           | Cost (USD)  | Notes                                                                                                   |
+| ---------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| Server hardware (dual redundancy)              | $15,000     | 2× powerful servers for Nepal-IX                                                                        |
+| Colocation (6 months)                          | $3,000      | Nepal-IX hosting fees                                                                                   |
+| HAPI FHIR license (free) + support             | $2,000      | Community version, part-time consultant _(Note: architecture evolved to NestJS; budget re-allocatable)_ |
+| Software licenses (Keycloak, PostgreSQL, etc.) | $1,000      | All open-source with permissive licenses                                                                |
+| Team (4 people, 6 months)                      | $30,000     | CTO, 2 engineers, security consultant (part-time)                                                       |
+| Compliance & legal                             | $5,000      | Privacy audit, data residency documentation                                                             |
+| **Total Phase 1**                              | **$56,000** |                                                                                                         |
 
 ---
 
@@ -1434,12 +1506,12 @@ AI/ML model to alert user/provider:
    - [ ] Patient web portal (access records, update profile)
 
 3. **Telemedicine (Basic)**
-   - [ ] Video consultation integration (Twilio or Jitsi)
+   - [ ] Video consultation integration (Jitsi, on-premise)
    - [ ] Consultation notes generation
    - [ ] Follow-up appointment scheduling
 
 4. **ASR Integration (MVP)**
-   - [ ] Google Cloud Speech-to-Text integration
+   - [ ] Vosk (Apache 2.0) on-premise ASR deployment
    - [ ] Transcription UI for providers
    - [ ] Medical terminology glossary (Nepali medical terms)
 
@@ -1455,17 +1527,17 @@ AI/ML model to alert user/provider:
 
 ### Timeline
 
-| Month | Milestone | Team |
-|---|---|---|
-| **Month 7** | Mobile app architecture + setup | Mobile Lead + 1 engineer |
-| **Month 7-8** | Core screens development | 2× Mobile Engineers |
-| **Month 8** | Push notifications + offline support | Backend + Mobile |
-| **Month 8-9** | Web app (provider + patient portals) | 1× Full-stack + 1× Frontend |
-| **Month 9** | Telemedicine integration | Backend + Mobile |
-| **Month 9-10** | ASR integration + testing | Backend + QA |
-| **Month 10** | Insurance integration (openIMIS API) | Backend |
-| **Month 11** | User testing + bug fixes | QA + Design |
-| **Month 12** | Security testing + final prep for Phase 3 | Security + QA |
+| Month          | Milestone                                 | Team                        |
+| -------------- | ----------------------------------------- | --------------------------- |
+| **Month 7**    | Mobile app architecture + setup           | Mobile Lead + 1 engineer    |
+| **Month 7-8**  | Core screens development                  | 2× Mobile Engineers         |
+| **Month 8**    | Push notifications + offline support      | Backend + Mobile            |
+| **Month 8-9**  | Web app (provider + patient portals)      | 1× Full-stack + 1× Frontend |
+| **Month 9**    | Telemedicine integration                  | Backend + Mobile            |
+| **Month 9-10** | ASR integration + testing                 | Backend + QA                |
+| **Month 10**   | Insurance integration (openIMIS API)      | Backend                     |
+| **Month 11**   | User testing + bug fixes                  | QA + Design                 |
+| **Month 12**   | Security testing + final prep for Phase 3 | Security + QA               |
 
 ### Team Additions (Phase 2)
 
@@ -1477,14 +1549,14 @@ AI/ML model to alert user/provider:
 
 ### Budget (Phase 2)
 
-| Item | Cost (USD) | Notes |
-|---|---|---|
-| Team (8 people, 6 months) | $60,000 | Engineers, QA, designer |
-| Infrastructure (colocation, servers) | $3,000 | Ongoing costs |
-| Development tools (IDE, testing, etc.) | $2,000 | Licenses, cloud credits |
-| User research & testing | $3,000 | Recruit users, incentives |
-| Marketing (initial positioning) | $5,000 | Website, PR, brand assets |
-| **Total Phase 2** | **$73,000** | |
+| Item                                   | Cost (USD)  | Notes                     |
+| -------------------------------------- | ----------- | ------------------------- |
+| Team (8 people, 6 months)              | $60,000     | Engineers, QA, designer   |
+| Infrastructure (colocation, servers)   | $3,000      | Ongoing costs             |
+| Development tools (IDE, testing, etc.) | $2,000      | Licenses, cloud credits   |
+| User research & testing                | $3,000      | Recruit users, incentives |
+| Marketing (initial positioning)        | $5,000      | Website, PR, brand assets |
+| **Total Phase 2**                      | **$73,000** |                           |
 
 ### Exit Criteria (Phase 2 Complete)
 
@@ -1533,29 +1605,29 @@ AI/ML model to alert user/provider:
 
 ### Timeline
 
-| Month | Milestone | Owner |
-|---|---|---|
-| **Month 13** | Engage security audit firm | Founder + CTO |
-| **Month 13-14** | Address audit findings | Security + Engineering |
-| **Month 14** | Submit to SIL-Nepal for conformance testing | CTO |
-| **Month 15** | Production deployment (go-live infrastructure) | DevOps + Backend |
-| **Month 15** | Launch beta with pilot hospitals | Founder + Product |
-| **Month 16** | Audit certification received | Security |
-| **Month 16-17** | Marketing campaign | Marketing + Founder |
-| **Month 17** | FCHV network onboarding (50-100 FCHVs trained) | Operations + Founder |
-| **Month 17-18** | Public launch (app stores + website) | Product + Marketing |
+| Month           | Milestone                                      | Owner                  |
+| --------------- | ---------------------------------------------- | ---------------------- |
+| **Month 13**    | Engage security audit firm                     | Founder + CTO          |
+| **Month 13-14** | Address audit findings                         | Security + Engineering |
+| **Month 14**    | Submit to SIL-Nepal for conformance testing    | CTO                    |
+| **Month 15**    | Production deployment (go-live infrastructure) | DevOps + Backend       |
+| **Month 15**    | Launch beta with pilot hospitals               | Founder + Product      |
+| **Month 16**    | Audit certification received                   | Security               |
+| **Month 16-17** | Marketing campaign                             | Marketing + Founder    |
+| **Month 17**    | FCHV network onboarding (50-100 FCHVs trained) | Operations + Founder   |
+| **Month 17-18** | Public launch (app stores + website)           | Product + Marketing    |
 
 ### Budget (Phase 3)
 
-| Item | Cost (USD) | Notes |
-|---|---|---|
-| Security audit (external firm) | $8,000 | Third-party certification |
-| SIL-Nepal conformance testing | $2,000 | Testing fees |
-| Team (8-10 people, 6 months) | $75,000 | Full team |
-| Infrastructure (production) | $4,000 | Colocation + backup |
-| Marketing & launch | $40,000 | Ad spend, PR, events |
-| FCHV training & incentives | $5,000 | Train 50-100 FCHVs |
-| **Total Phase 3** | **$134,000** | |
+| Item                           | Cost (USD)   | Notes                     |
+| ------------------------------ | ------------ | ------------------------- |
+| Security audit (external firm) | $8,000       | Third-party certification |
+| SIL-Nepal conformance testing  | $2,000       | Testing fees              |
+| Team (8-10 people, 6 months)   | $75,000      | Full team                 |
+| Infrastructure (production)    | $4,000       | Colocation + backup       |
+| Marketing & launch             | $40,000      | Ad spend, PR, events      |
+| FCHV training & incentives     | $5,000       | Train 50-100 FCHVs        |
+| **Total Phase 3**              | **$134,000** |                           |
 
 ### User Targets (Phase 3 End)
 
@@ -1599,24 +1671,24 @@ AI/ML model to alert user/provider:
 
 ### Budget (Phase 4)
 
-| Item | Cost (USD) | Notes |
-|---|---|---|
-| Team (10-12 people, 6 months) | $100,000 | Additional ML engineer, operations staff |
-| Custom ASR development | $15,000 | Model training, annotation, testing |
-| Infrastructure scaling | $5,000 | Higher server capacity, backup expansion |
-| FCHV expansion & incentives | $10,000 | Train 500 FCHVs, monthly incentives |
-| Marketing & user acquisition | $40,000 | Continued acquisition campaigns |
-| Research partnerships (KU, IOE) | $5,000 | Academic collaboration funding |
-| **Total Phase 4** | **$175,000** | |
+| Item                            | Cost (USD)   | Notes                                    |
+| ------------------------------- | ------------ | ---------------------------------------- |
+| Team (10-12 people, 6 months)   | $100,000     | Additional ML engineer, operations staff |
+| Custom ASR development          | $15,000      | Model training, annotation, testing      |
+| Infrastructure scaling          | $5,000       | Higher server capacity, backup expansion |
+| FCHV expansion & incentives     | $10,000      | Train 500 FCHVs, monthly incentives      |
+| Marketing & user acquisition    | $40,000      | Continued acquisition campaigns          |
+| Research partnerships (KU, IOE) | $5,000       | Academic collaboration funding           |
+| **Total Phase 4**               | **$175,000** |                                          |
 
 ### Total 24-Month Investment
 
-| Phase | Cost | Cumulative |
-|---|---|---|
-| Phase 1 (Foundation) | $56,000 | $56,000 |
-| Phase 2 (MVP) | $73,000 | $129,000 |
-| Phase 3 (Launch) | $134,000 | $263,000 |
-| Phase 4 (Scale) | $175,000 | **$438,000** |
+| Phase                | Cost     | Cumulative   |
+| -------------------- | -------- | ------------ |
+| Phase 1 (Foundation) | $56,000  | $56,000      |
+| Phase 2 (MVP)        | $73,000  | $129,000     |
+| Phase 3 (Launch)     | $134,000 | $263,000     |
+| Phase 4 (Scale)      | $175,000 | **$438,000** |
 
 ---
 
@@ -1627,6 +1699,7 @@ AI/ML model to alert user/provider:
 ### 1. B2C (Direct-to-Patient) Subscriptions
 
 **Swasthya Basic (Free)**
+
 - Unlimited medical record storage
 - Appointment scheduling
 - Medication reminders (basic)
@@ -1634,6 +1707,7 @@ AI/ML model to alert user/provider:
 - **Goal:** User acquisition; conversion funnel
 
 **Swasthya Plus (NPR 299/month or USD 2.30/month)**
+
 - Everything in Basic +
 - Family profiles (up to 3 members)
 - Advanced medication tracking (drug interactions)
@@ -1643,6 +1717,7 @@ AI/ML model to alert user/provider:
 - **Target:** Health-conscious urban users, families
 
 **Swasthya Premium (NPR 499/month or USD 3.80/month)**
+
 - Everything in Plus +
 - Unlimited family profiles
 - One monthly telehealth consultation (with partner doctor)
@@ -1652,6 +1727,7 @@ AI/ML model to alert user/provider:
 - **Target:** Users with chronic conditions, remote monitoring
 
 **Swasthya Family (NPR 999/month or USD 7.65/month)**
+
 - Everything in Premium +
 - Unlimited video consultations (within monthly allowance)
 - Caregiver profiles (elderly parent tracking)
@@ -1663,6 +1739,7 @@ AI/ML model to alert user/provider:
 ### 2. B2B (Healthcare Provider) Subscriptions
 
 **Swasthya for Clinics — Small (NPR 200,000/month or NPR 300,000 annual or NPR 500/patient)**
+
 - Patient record access (read-write)
 - Prescription management
 - Appointment scheduling
@@ -1671,6 +1748,7 @@ AI/ML model to alert user/provider:
 - **Target:** Small clinics (50-200 patient records)
 
 **Swasthya for Hospitals — Medium (NPR 500,000/month or NPR 750,000 annual or NPR 400/patient)**
+
 - Everything in Small +
 - Multi-user provider access
 - Lab integration (LIS import)
@@ -1681,6 +1759,7 @@ AI/ML model to alert user/provider:
 - **Target:** Mid-size hospitals (500-2000 patient records)
 
 **Swasthya for Health Systems — Large (NPR 1,000,000/month or NPR 1,500,000 annual or NPR 300/patient)**
+
 - Everything in Medium +
 - Unlimited users
 - Full FHIR API access
@@ -1693,6 +1772,7 @@ AI/ML model to alert user/provider:
 ### 3. Insurance & Billing Integration Revenue
 
 **Insurance Claim Processing (Pay-per-transaction)**
+
 - **Processing Fee:** NPR 10 per claim processed through PHR
 - **Volume:** 100,000 claims/year → NPR 1,000,000 revenue
 - **Player:** HIB, private insurance companies
@@ -1700,12 +1780,14 @@ AI/ML model to alert user/provider:
 - **Annual Revenue (Year 1):** ~NPR 500,000 (conservative); ~NPR 5M (optimistic at scale)
 
 **Insurance Eligibility Checking (Pay-per-check)**
+
 - **Checking Fee:** NPR 2 per eligibility check
 - **Volume:** 500,000 checks/year → NPR 1,000,000 revenue
 - **Player:** Doctors checking patient insurance before treatment
 - **Annual Revenue (Year 1):** ~NPR 200,000 (conservative)
 
 **Insurance Validation & Verification (Pay-per-validation)**
+
 - **Validation Fee:** NPR 5 per validation
 - **Volume:** 200,000 validations/year → NPR 1,000,000 revenue
 - **Player:** HIB validating claims for fraud detection
@@ -1714,6 +1796,7 @@ AI/ML model to alert user/provider:
 ### 4. Data Insights & Analytics (B2B)
 
 **Anonymized Health Analytics (For Government, Pharma, Research)**
+
 - **Data Insights License:** USD 5,000-50,000 per quarter (for aggregated, anonymized data)
 - **Examples:**
   - "Prevalence of hypertension in urban Nepal (aggregated, anonymized)"
@@ -1724,6 +1807,7 @@ AI/ML model to alert user/provider:
 - **Privacy:** All data anonymized, encrypted, with explicit patient consent
 
 **Pharma Research & Real-World Evidence (Phase 3+)**
+
 - **Study Sponsorship:** Pharma companies sponsor clinical trials/observational studies
 - **Recruiting patients:** "We have diabetes patients on metformin — are you interested in a research study?"
 - **Revenue:** NPR 50,000-100,000 per study
@@ -1736,53 +1820,56 @@ AI/ML model to alert user/provider:
 ### Year 1 Conservative Scenario
 
 **Assumptions:**
+
 - 3,000 registered users by Month 18
 - 10% subscription conversion (300 users on premium tiers)
 - B2B: 2 pilot hospitals (50 users each)
 - Insurance transactions: 50,000 claims processed
 
-| Revenue Stream | Volume | Rate | Year 1 (NPR) | USD (at 133 NPR/USD) |
-|---|---|---|---|---|
-| **B2C Subscriptions** | | | | |
-| - Swasthya Basic (free tier, indirect) | 2,700 | Free | 0 | $0 |
-| - Swasthya Plus | 200 | NPR 299/mo × 12 | 718,400 | $5,400 |
-| - Swasthya Premium | 70 | NPR 499/mo × 12 | 419,640 | $3,150 |
-| - Swasthya Family | 30 | NPR 999/mo × 12 | 359,640 | $2,700 |
-| **B2B Subscriptions** | | | | |
-| - B2B Small (2 clinics) | 2 | NPR 300,000/year | 600,000 | $4,500 |
-| - B2B Medium (pilot hospitals) | 2 | NPR 750,000/year | 1,500,000 | $11,300 |
-| **Insurance Transactions** | | | | |
-| - Claim processing | 50,000 | NPR 10/claim | 500,000 | $3,800 |
-| - Eligibility checking | 100,000 | NPR 2/check | 200,000 | $1,500 |
-| - Validation | 50,000 | NPR 5/validation | 250,000 | $1,900 |
-| **Data Insights** | 1 | NPR 100,000 | 100,000 | $750 |
-| **TOTAL Year 1 Revenue** | | | **NPR 4,648,680** | **~USD 35,000** |
+| Revenue Stream                         | Volume  | Rate             | Year 1 (NPR)      | USD (at 133 NPR/USD) |
+| -------------------------------------- | ------- | ---------------- | ----------------- | -------------------- |
+| **B2C Subscriptions**                  |         |                  |                   |                      |
+| - Swasthya Basic (free tier, indirect) | 2,700   | Free             | 0                 | $0                   |
+| - Swasthya Plus                        | 200     | NPR 299/mo × 12  | 718,400           | $5,400               |
+| - Swasthya Premium                     | 70      | NPR 499/mo × 12  | 419,640           | $3,150               |
+| - Swasthya Family                      | 30      | NPR 999/mo × 12  | 359,640           | $2,700               |
+| **B2B Subscriptions**                  |         |                  |                   |                      |
+| - B2B Small (2 clinics)                | 2       | NPR 300,000/year | 600,000           | $4,500               |
+| - B2B Medium (pilot hospitals)         | 2       | NPR 750,000/year | 1,500,000         | $11,300              |
+| **Insurance Transactions**             |         |                  |                   |                      |
+| - Claim processing                     | 50,000  | NPR 10/claim     | 500,000           | $3,800               |
+| - Eligibility checking                 | 100,000 | NPR 2/check      | 200,000           | $1,500               |
+| - Validation                           | 50,000  | NPR 5/validation | 250,000           | $1,900               |
+| **Data Insights**                      | 1       | NPR 100,000      | 100,000           | $750                 |
+| **TOTAL Year 1 Revenue**               |         |                  | **NPR 4,648,680** | **~USD 35,000**      |
 
 ### Year 2 Moderate Scenario
 
 **Assumptions:**
+
 - 25,000 registered users
 - 15% subscription conversion
 - B2B: 8 hospitals integrated
 - Insurance transactions: 500,000 claims
 - ASR model deployed
 
-| Revenue Stream | Volume | Rate | Year 2 (NPR) | USD |
-|---|---|---|---|---|
-| **B2C Subscriptions** | | | | |
-| - Plus/Premium/Family | 3,750 | Average NPR 533/mo × 12 | 23,986,500 | $180,500 |
-| **B2B Subscriptions** | | | | |
-| - Small (5 clinics) | 5 | NPR 300,000/year | 1,500,000 | $11,300 |
-| - Medium (8 hospitals) | 8 | NPR 750,000/year | 6,000,000 | $45,100 |
-| **Insurance Transactions** | | | | |
-| - Claim processing | 500,000 | NPR 10/claim | 5,000,000 | $37,600 |
-| - Eligibility + Validation | 300,000 | NPR 3.5/avg | 1,050,000 | $7,900 |
-| **Data Insights** | 2 | NPR 300,000 avg | 600,000 | $4,500 |
-| **TOTAL Year 2 Revenue** | | | **NPR 38,136,500** | **~USD 287,000** |
+| Revenue Stream             | Volume  | Rate                    | Year 2 (NPR)       | USD              |
+| -------------------------- | ------- | ----------------------- | ------------------ | ---------------- |
+| **B2C Subscriptions**      |         |                         |                    |                  |
+| - Plus/Premium/Family      | 3,750   | Average NPR 533/mo × 12 | 23,986,500         | $180,500         |
+| **B2B Subscriptions**      |         |                         |                    |                  |
+| - Small (5 clinics)        | 5       | NPR 300,000/year        | 1,500,000          | $11,300          |
+| - Medium (8 hospitals)     | 8       | NPR 750,000/year        | 6,000,000          | $45,100          |
+| **Insurance Transactions** |         |                         |                    |                  |
+| - Claim processing         | 500,000 | NPR 10/claim            | 5,000,000          | $37,600          |
+| - Eligibility + Validation | 300,000 | NPR 3.5/avg             | 1,050,000          | $7,900           |
+| **Data Insights**          | 2       | NPR 300,000 avg         | 600,000            | $4,500           |
+| **TOTAL Year 2 Revenue**   |         |                         | **NPR 38,136,500** | **~USD 287,000** |
 
 ### Year 3 Growth Scenario
 
 **Assumptions:**
+
 - 100,000 registered users
 - 20% subscription conversion
 - B2B: 25 hospitals integrated
@@ -1790,28 +1877,28 @@ AI/ML model to alert user/provider:
 - Full FCHV network (500 FCHVs generating referrals)
 - Telecom bundle live (Ncell, 10,000 users)
 
-| Revenue Stream | Volume | Rate | Year 3 (NPR) | USD |
-|---|---|---|---|---|
-| **B2C Subscriptions** | | | | |
-| - Plus/Premium/Family | 20,000 | Average NPR 600/mo × 12 | 144,000,000 | $1,080,000 |
-| **B2B Subscriptions** | | | | |
-| - Small (15 clinics) | 15 | NPR 300,000/year | 4,500,000 | $33,800 |
-| - Medium (25 hospitals) | 25 | NPR 750,000/year | 18,750,000 | $140,900 |
-| - Large (2 health networks) | 2 | NPR 1,500,000/year | 3,000,000 | $22,600 |
-| **Insurance Transactions** | | | | |
-| - Claim processing | 2,000,000 | NPR 10/claim | 20,000,000 | $150,400 |
-| - Eligibility + Validation | 1,000,000 | NPR 3.5/avg | 3,500,000 | $26,300 |
-| **Data Insights** | 4 | NPR 1,000,000 avg | 4,000,000 | $30,100 |
-| **Pharma Research** | 3 | NPR 75,000 avg | 225,000 | $1,700 |
-| **TOTAL Year 3 Revenue** | | | **NPR 197,975,000** | **~USD 1,485,700** |
+| Revenue Stream              | Volume    | Rate                    | Year 3 (NPR)        | USD                |
+| --------------------------- | --------- | ----------------------- | ------------------- | ------------------ |
+| **B2C Subscriptions**       |           |                         |                     |                    |
+| - Plus/Premium/Family       | 20,000    | Average NPR 600/mo × 12 | 144,000,000         | $1,080,000         |
+| **B2B Subscriptions**       |           |                         |                     |                    |
+| - Small (15 clinics)        | 15        | NPR 300,000/year        | 4,500,000           | $33,800            |
+| - Medium (25 hospitals)     | 25        | NPR 750,000/year        | 18,750,000          | $140,900           |
+| - Large (2 health networks) | 2         | NPR 1,500,000/year      | 3,000,000           | $22,600            |
+| **Insurance Transactions**  |           |                         |                     |                    |
+| - Claim processing          | 2,000,000 | NPR 10/claim            | 20,000,000          | $150,400           |
+| - Eligibility + Validation  | 1,000,000 | NPR 3.5/avg             | 3,500,000           | $26,300            |
+| **Data Insights**           | 4         | NPR 1,000,000 avg       | 4,000,000           | $30,100            |
+| **Pharma Research**         | 3         | NPR 75,000 avg          | 225,000             | $1,700             |
+| **TOTAL Year 3 Revenue**    |           |                         | **NPR 197,975,000** | **~USD 1,485,700** |
 
 ### Revenue Projections Summary
 
-| Year | Conservative (NPR) | Moderate (NPR) | Optimistic (NPR) | USD (Conservative) |
-|---|---|---|---|---|
-| Year 1 | NPR 2,500,000 | NPR 4,648,680 | NPR 8,000,000 | $18,800 |
-| Year 2 | NPR 15,000,000 | NPR 38,136,500 | NPR 60,000,000 | $112,800 |
-| Year 3 | NPR 80,000,000 | NPR 197,975,000 | NPR 300,000,000 | $601,500 |
+| Year   | Conservative (NPR) | Moderate (NPR)  | Optimistic (NPR) | USD (Conservative) |
+| ------ | ------------------ | --------------- | ---------------- | ------------------ |
+| Year 1 | NPR 2,500,000      | NPR 4,648,680   | NPR 8,000,000    | $18,800            |
+| Year 2 | NPR 15,000,000     | NPR 38,136,500  | NPR 60,000,000   | $112,800           |
+| Year 3 | NPR 80,000,000     | NPR 197,975,000 | NPR 300,000,000  | $601,500           |
 
 **Note:** Conservative = 50% of moderate projections; Optimistic = 150% of moderate. Actual results depend on user acquisition, retention, and B2B partnerships.
 
@@ -1822,25 +1909,30 @@ AI/ML model to alert user/provider:
 ### Customer Acquisition Cost (CAC)
 
 **Hospital Referral (Highest Quality):**
+
 - **Cost:** NPR 200 (printing QR card + staff training) per hospital = NPR 600 for 3 hospitals
 - **Users acquired:** 1,000
 - **CAC:** NPR 0.60 per user (~USD 0.005) ← **BEST channel**
 
 **FCHV Network:**
+
 - **Cost:** NPR 25 per referral (incentive) + 10 hours training per district (cost: NPR 500 per trainer)
 - **Users acquired:** 2,000 referrals in Year 1
 - **CAC:** NPR 35 per user (~USD 0.26)
 
 **Telecom Bundle (Ncell):**
+
 - **Cost:** Ncell promotional/co-marketing (estimated value: NPR 100,000 year 1)
 - **Users acquired:** 2,500 from bundle visibility
 - **CAC:** NPR 40 per user (~USD 0.30)
 
 **Social Media (Facebook/TikTok Ads):**
+
 - **Cost:** USD 1 per click (industry standard); conversion rate 6% (industry average)
 - **Cost per user:** USD 1 ÷ 0.06 = **USD 16.67 (~NPR 2,220)** ← **EXPENSIVE**
 
 **Blended CAC (Year 1 across all channels):**
+
 - Hospital referral: 1,000 users @ NPR 1 = NPR 1,000
 - FCHV: 2,000 users @ NPR 35 = NPR 70,000
 - Telecom: 2,500 users @ NPR 40 = NPR 100,000
@@ -1852,6 +1944,7 @@ AI/ML model to alert user/provider:
 ### Lifetime Value (LTV)
 
 **Premium Subscriber LTV:**
+
 - **Monthly subscription:** NPR 500 average (mix of Plus/Premium/Family)
 - **Retention (annual churn):** 70% (30% annual churn)
 - **Year 1 monthly active:** 500 × 1.0 = 500
@@ -1861,6 +1954,7 @@ AI/ML model to alert user/provider:
 - **LTV from subscriptions:** NPR 500 × 26.3 = **NPR 13,150**
 
 **Add: Insurance claims transaction value:**
+
 - **User generates:** ~40 claims/year (average)
 - **Revenue per claim:** NPR 10
 - **User lifetime claims:** 40 × 2.6 years = 104 claims
@@ -1879,17 +1973,20 @@ This suggests unit economics are strong IF retention holds at 70% annual.
 ### Churn Analysis
 
 **Subscription Churn (Monthly):**
+
 - **Year 1 target:** 5% monthly churn (95% retention) = 60% annual retention
 - **Year 2 target:** 3% monthly churn (97% retention) = 72% annual retention
 - **Year 3 target:** 2% monthly churn (98% retention) = 78% annual retention
 
 **Churn drivers to monitor:**
+
 1. **Non-engagement:** Users don't add records for 3 months
 2. **Feature gaps:** Users want features not yet available
 3. **Price sensitivity:** Users downgrade to free or churn entirely
 4. **Provider switching:** User switches to competitor (Hamro Doctor, etc.)
 
 **Retention strategies (Phase 2+):**
+
 - **Day 7 re-engagement:** "Add your first medical record" push notification
 - **Day 30 feature unlock:** Unlock family profiles after 1 month
 - **Day 90 incentive:** "Your health summary report is ready — download PDF"
@@ -1901,17 +1998,18 @@ This suggests unit economics are strong IF retention holds at 70% annual.
 
 ### Sensitivity Table: Revenue Variance by Key Assumptions
 
-| Variable | Pessimistic | Base Case | Optimistic | Impact |
-|---|---|---|---|---|
-| **Subscription conversion rate** | 8% | 15% | 25% | ±40% revenue |
-| **Average subscription price** | NPR 400 | NPR 533 | NPR 700 | ±30% revenue |
-| **Annual churn rate** | 40% | 30% | 20% | ±25% revenue |
-| **Insurance claim volume** | 250,000 | 500,000 | 1,000,000 | ±50% revenue |
-| **B2B adoption rate** | 3 hospitals | 8 hospitals | 15 hospitals | ±40% revenue |
+| Variable                         | Pessimistic | Base Case   | Optimistic   | Impact       |
+| -------------------------------- | ----------- | ----------- | ------------ | ------------ |
+| **Subscription conversion rate** | 8%          | 15%         | 25%          | ±40% revenue |
+| **Average subscription price**   | NPR 400     | NPR 533     | NPR 700      | ±30% revenue |
+| **Annual churn rate**            | 40%         | 30%         | 20%          | ±25% revenue |
+| **Insurance claim volume**       | 250,000     | 500,000     | 1,000,000    | ±50% revenue |
+| **B2B adoption rate**            | 3 hospitals | 8 hospitals | 15 hospitals | ±40% revenue |
 
 ### Break-Even Analysis
 
 **Fixed Costs (Annual):**
+
 - Salaries (10 people avg): NPR 6,000,000/year
 - Infrastructure (servers, colocation, backup): NPR 600,000
 - Tools & software licenses: NPR 200,000
@@ -1920,6 +2018,7 @@ This suggests unit economics are strong IF retention holds at 70% annual.
 - **Total fixed: NPR 7,600,000/year**
 
 **Variable Costs (Per User):**
+
 - Cloud API (ASR, notifications): ~NPR 50/user/year
 - Payment processing fee (3% on subscriptions): ~NPR 15/user/year
 - Support & maintenance: ~NPR 25/user/year
@@ -1935,11 +2034,13 @@ Break-even users = Fixed costs ÷ (Average revenue per user - Variable cost per 
 - **Break-even users:** 7,600,000 ÷ 1,410 = **5,390 users**
 
 **Timeline to break-even:**
+
 - Year 1 end: ~4,000 users (not yet break-even)
 - Year 2 end: ~25,000 users (**✓ BREAK-EVEN achieved**)
 - Year 3 end: ~100,000 users (highly profitable)
 
 **Year 2 Profitability:**
+
 - Revenue (Year 2 projections): NPR 38,136,500
 - Fixed costs: NPR 7,600,000
 - Variable costs (25,000 users × NPR 90): NPR 2,250,000
@@ -1954,6 +2055,7 @@ Your company can secure funding without diluting equity through grants.
 ### Government Grants
 
 **1. Ministry of Health & Population (MoHP) — Digital Health Grants**
+
 - **Funding:** NPR 5-20 million for digital health innovation
 - **Purpose:** Support EMR compliance solutions
 - **Eligibility:** Phase 1 systems that pass SIL-Nepal testing
@@ -1961,6 +2063,7 @@ Your company can secure funding without diluting equity through grants.
 - **Timeline:** Funding awarded Month 18-20
 
 **2. Department of Industry (DoI) — Export Promotion Grant**
+
 - **Funding:** NPR 2-5 million for tech companies scaling regionally
 - **Purpose:** Support Nepal tech exports to South Asia
 - **Eligibility:** Revenue-generating, high-growth tech
@@ -1968,6 +2071,7 @@ Your company can secure funding without diluting equity through grants.
 - **Timeline:** Apply by Month 16
 
 **3. Nepal Investment Bank (NIB) / Nepal Rastra Bank — Innovation Fund**
+
 - **Funding:** USD 50,000-200,000 for financial inclusion tech
 - **Purpose:** Support digital health, insurance integration
 - **Eligibility:** Health + financial services combination
@@ -1977,6 +2081,7 @@ Your company can secure funding without diluting equity through grants.
 ### International Donors & Impact Funds
 
 **1. WHO Nepal — Technical Assistance Grant**
+
 - **Funding:** USD 20,000-50,000 for research/pilot
 - **Purpose:** Support Directive 2081 compliance, FHIR adoption
 - **Eligibility:** Non-profit or social enterprise status
@@ -1984,6 +2089,7 @@ Your company can secure funding without diluting equity through grants.
 - **Timeline:** Fast-track (2-3 months)
 
 **2. Global Fund / GAVI — Health Security Grants**
+
 - **Funding:** USD 100,000-500,000 for pandemic preparedness
 - **Purpose:** Digital surveillance, data integration
 - **Eligibility:** Systems that support public health goals
@@ -1991,6 +2097,7 @@ Your company can secure funding without diluting equity through grants.
 - **Timeline:** Apply Month 10; award Month 18+
 
 **3. Premji Foundation — Digital Health**
+
 - **Funding:** INR 50-100 lakhs (USD 60,000-120,000) for South Asia health tech
 - **Purpose:** Health equity, underserved populations
 - **Eligibility:** Strong social impact + tech excellence
@@ -1998,6 +2105,7 @@ Your company can secure funding without diluting equity through grants.
 - **Timeline:** Annual cycle; apply Month 6
 
 **4. Omidyar Network — Tech for Social Good**
+
 - **Funding:** USD 100,000-500,000 grants + equity option
 - **Purpose:** Platform for civic engagement, health equity
 - **Eligibility:** Systems addressing market fragmentation
@@ -2007,6 +2115,7 @@ Your company can secure funding without diluting equity through grants.
 ### University Research Funding
 
 **1. Kathmandu University — Research Grants**
+
 - **Funding:** NPR 500,000-2,000,000 for joint research
 - **Purpose:** ASR, health informatics research
 - **Eligibility:** Academic + industry partnership
@@ -2014,6 +2123,7 @@ Your company can secure funding without diluting equity through grants.
 - **Timeline:** Quarterly cycle
 
 **2. Nepal Health Research Council — Research Grants**
+
 - **Funding:** NPR 1-3 million for health research
 - **Purpose:** Ethics-approved studies (PHR efficacy, adoption)
 - **Eligibility:** Research with societal impact
@@ -2024,15 +2134,15 @@ Your company can secure funding without diluting equity through grants.
 
 **Year 1-2 Sequence:**
 
-| Month | Grant/Fund | Amount (USD) | Status |
-|---|---|---|---|
-| Month 8-10 | Application submission (5 grants) | - | In-progress |
-| Month 12-16 | MoHP Digital Health Grant | $30,000 | Expected award |
-| Month 14-18 | WHO Technical Assistance | $25,000 | Expected award |
-| Month 16-20 | DoI Export Promotion | $20,000 | Expected award |
-| Month 18-22 | Premji Foundation | $80,000 | Expected award |
-| Month 20-24 | GAVI/Global Fund (slow-track) | $200,000 | Possible award |
-| **TOTAL Non-Dilutive** | **~$400,000** | | |
+| Month                  | Grant/Fund                        | Amount (USD) | Status         |
+| ---------------------- | --------------------------------- | ------------ | -------------- |
+| Month 8-10             | Application submission (5 grants) | -            | In-progress    |
+| Month 12-16            | MoHP Digital Health Grant         | $30,000      | Expected award |
+| Month 14-18            | WHO Technical Assistance          | $25,000      | Expected award |
+| Month 16-20            | DoI Export Promotion              | $20,000      | Expected award |
+| Month 18-22            | Premji Foundation                 | $80,000      | Expected award |
+| Month 20-24            | GAVI/Global Fund (slow-track)     | $200,000     | Possible award |
+| **TOTAL Non-Dilutive** | **~$400,000**                     |              |                |
 
 This grant strategy allows you to extend runway without diluting equity.
 
@@ -2045,18 +2155,21 @@ Nepal's government can become a significant revenue source. Here's how:
 ### Government Health Procurement Models
 
 **Model 1: Direct Procurement (MoHP buys licenses)**
+
 - **Buyer:** Ministry of Health & Population
 - **Use case:** Deploy PHR for all public health facilities (125+ hospitals, 1000+ health centers)
 - **Pricing:** NPR 100,000-500,000 per facility annually
 - **Revenue potential:** 125 hospitals × NPR 250,000 = **NPR 31.25 million/year**
 
 **Model 2: Social Health Insurance (openIMIS integration)**
+
 - **Buyer:** Health Insurance Board
 - **Use case:** Integration with openIMIS for 9M insured population
 - **Pricing:** Per-transaction (NPR 10/claim) or volume license (NPR 2-5M/year)
 - **Revenue potential:** 2M claims/year × NPR 10 = **NPR 20 million/year**
 
 **Model 3: District Health Office Procurement**
+
 - **Buyer:** 77 District Health Offices
 - **Use case:** District-level health record system
 - **Pricing:** NPR 50,000-100,000 per district/year
@@ -2094,12 +2207,14 @@ Nepal's government can become a significant revenue source. Here's how:
 ### Government Procurement Strategy
 
 **Key Advantages:**
+
 - **Large contract value** (NPR 20-30M/year potential)
 - **Long-term commitment** (3-5 year contracts)
 - **Stable cash flow** (quarterly or annual billing)
 - **Market validation** (government endorsement)
 
 **Challenges:**
+
 - **Slow process** (18-24 months from RFP to deployment)
 - **Procurement bureaucracy** (multiple approvals, audits)
 - **Price negotiation** (government wants discounts)
@@ -2121,20 +2236,21 @@ Nepal's government can become a significant revenue source. Here's how:
 
 ### Liability Risks & Mitigations
 
-| **Risk** | **Potential Impact** | **Mitigation Strategy** |
-|---|---|---|
-| **Data Accuracy Error** | Patient harmed due to incorrect medical record | Implement multi-source data validation; provider sign-off required before patient sees critical data |
-| **Unauthorized Access** | Patient privacy breach; reputation damage | Strong authentication (MFA); audit logging; annual penetration testing |
-| **System Downtime** | Interruption of patient care access | 99.5% uptime SLA; redundant infrastructure; disaster recovery plan |
-| **Data Loss** | Patient records permanently lost | Encrypted backup (daily + monthly); geographic redundancy |
-| **Compliance Violation** | Regulatory penalties from MoHP | Built-in compliance checks; annual SIL-Nepal audits; legal review |
-| **Medical Malpractice Claim** | Patient sues company for harm linked to app data | Clear disclaimers; insurance policy; documented provider responsibility |
+| **Risk**                      | **Potential Impact**                             | **Mitigation Strategy**                                                                              |
+| ----------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| **Data Accuracy Error**       | Patient harmed due to incorrect medical record   | Implement multi-source data validation; provider sign-off required before patient sees critical data |
+| **Unauthorized Access**       | Patient privacy breach; reputation damage        | Strong authentication (MFA); audit logging; annual penetration testing                               |
+| **System Downtime**           | Interruption of patient care access              | 99.5% uptime SLA; redundant infrastructure; disaster recovery plan                                   |
+| **Data Loss**                 | Patient records permanently lost                 | Encrypted backup (daily + monthly); geographic redundancy                                            |
+| **Compliance Violation**      | Regulatory penalties from MoHP                   | Built-in compliance checks; annual SIL-Nepal audits; legal review                                    |
+| **Medical Malpractice Claim** | Patient sues company for harm linked to app data | Clear disclaimers; insurance policy; documented provider responsibility                              |
 
 ### Data Accuracy Disclaimer & Terms of Service
 
 Your app must include clear disclaimers:
 
 **In-App Disclaimer:**
+
 ```
 ⚠️ IMPORTANT: This app stores medical records for your reference only.
 
@@ -2162,11 +2278,13 @@ Your app must include clear disclaimers:
 ### Medical Liability Insurance
 
 **Recommended Coverage:**
+
 - **Professional Liability Insurance:** USD 1-2 million (covers errors, omissions, misdiagnosis links)
 - **Cyber Liability Insurance:** USD 500,000-1 million (covers data breaches, recovery costs)
 - **Director & Officers Insurance:** USD 250,000 (covers leadership liability)
 
 **Insurance Providers (Operating in Nepal):**
+
 - Global Samarth (Nepal-based, medical liability)
 - Reliance Insurance (partner with international insurers)
 - International SOS Insurance (expat-oriented, available in Nepal)
@@ -2207,27 +2325,28 @@ To ensure legitimate healthcare providers can add data:
 
 ### Breakdown by Phase
 
-| Phase | Duration | Capital (USD) | Key Use |
-|---|---|---|---|
-| **Phase 1** | Months 1-6 | $56,000 | Infrastructure, FHIR, security setup, core team |
-| **Phase 2** | Months 7-12 | $73,000 | MVP app, telemedicine, UX research |
-| **Phase 3** | Months 13-18 | $134,000 | Security audit, launch, marketing |
-| **Phase 4** | Months 19-24 | $175,000 | Scale, custom ASR, FCHV expansion |
-| **TOTAL 24 Months** | | **$438,000** | |
+| Phase               | Duration     | Capital (USD) | Key Use                                         |
+| ------------------- | ------------ | ------------- | ----------------------------------------------- |
+| **Phase 1**         | Months 1-6   | $56,000       | Infrastructure, FHIR, security setup, core team |
+| **Phase 2**         | Months 7-12  | $73,000       | MVP app, telemedicine, UX research              |
+| **Phase 3**         | Months 13-18 | $134,000      | Security audit, launch, marketing               |
+| **Phase 4**         | Months 19-24 | $175,000      | Scale, custom ASR, FCHV expansion               |
+| **TOTAL 24 Months** |              | **$438,000**  |                                                 |
 
 ### Funding Mix Strategy
 
 **Recommended capital structure to minimize dilution:**
 
-| Source | Amount (USD) | % of Total | Notes |
-|---|---|---|---|
-| Founder investment | $50,000 | 11% | Skin in the game |
-| Angel investors (NRN network) | $150,000 | 34% | 10-15% equity |
-| Pre-seed VC | $150,000 | 34% | 10-15% equity |
-| Grants (non-dilutive) | $88,000 | 20% | No equity given |
-| **TOTAL** | **$438,000** | **100%** | |
+| Source                        | Amount (USD) | % of Total | Notes            |
+| ----------------------------- | ------------ | ---------- | ---------------- |
+| Founder investment            | $50,000      | 11%        | Skin in the game |
+| Angel investors (NRN network) | $150,000     | 34%        | 10-15% equity    |
+| Pre-seed VC                   | $150,000     | 34%        | 10-15% equity    |
+| Grants (non-dilutive)         | $88,000      | 20%        | No equity given  |
+| **TOTAL**                     | **$438,000** | **100%**   |                  |
 
 **Equity dilution:**
+
 - Founders maintain: 70% equity
 - Angel investors: 15% equity
 - VC investors: 15% equity
@@ -2249,24 +2368,28 @@ To ensure legitimate healthcare providers can add data:
 ### Investor Landscape in Nepal
 
 **Local VCs (Nepal-based):**
+
 - **Dolma Impact Fund** (focus: financial inclusion, health tech)
 - **Founder's Den** (startup accelerator, pre-seed focus)
 - **Startup Nepal** (government-supported ecosystem)
 - **Kathmandu Angels** (high-net-worth individual investors)
 
 **Regional VCs (India, South Asia):**
+
 - **Blume Ventures** (early-stage India VC, active in Nepal)
 - **Matrix Partners India** (health tech focus)
 - **Lightbox** (fintech + health, India-focused)
 - **500 Global** (global, Southeast Asia operations)
 
 **International Impact Investors:**
+
 - **Omidyar Network** (social impact tech)
 - **Premji Foundation** (South Asia health/education)
 - **CDC Group** (UK development finance)
 - **IFC / World Bank** (development finance institution)
 
 **Angel Networks:**
+
 - **NRN (Non-Resident Nepali) Angel Investors:** 15,000+ Nepalis living abroad; growing interest in home country startups
 - **Diaspora communities** (Qatar, Saudi Arabia, USA, Australia) increasingly investing in Nepal
 - **Corporate angels** (bankers, healthcare executives)
@@ -2280,17 +2403,20 @@ To ensure legitimate healthcare providers can add data:
 **Target:** USD 150,000 from angels + micro-VCs
 
 **Investor Profile:**
+
 - Interested in early-stage, high-risk ventures
 - Understand Nepal market + healthcare
 - Can deploy capital quickly (3-4 months)
 - Willing to invest $25,000-50,000 per ticket
 
 **Pitch Message:**
-- *"Bridging fragmented Nepal health records with voice-enabled PHR compliant with Directive 2081"*
-- *"Capturing 10K users (1 million TAM) by Month 18; path to NPR 200M+ revenue by Year 3"*
-- *"Founder has [health tech + Nepal market expertise]; team building now"*
+
+- _"Bridging fragmented Nepal health records with voice-enabled PHR compliant with Directive 2081"_
+- _"Capturing 10K users (1 million TAM) by Month 18; path to NPR 200M+ revenue by Year 3"_
+- _"Founder has [health tech + Nepal market expertise]; team building now"_
 
 **Potential Investors:**
+
 1. **Dolma Impact Fund** — "Health tech aligns with financial inclusion mission"
 2. **NRN Angel Investors** (5-10 investors, USD 20K-50K each)
 3. **Kathmandu University endowment** — "Support alumni-founded health innovation"
@@ -2301,17 +2427,20 @@ To ensure legitimate healthcare providers can add data:
 **Target:** USD 300,000-500,000 from early-stage VCs + late-stage angels
 
 **Investor Profile:**
+
 - Evidence of product-market fit (1,000+ users)
 - Revenue validation (government/B2B pilots)
 - Path to profitability clear
 - Regulatory compliance assured
 
 **Pitch Message:**
-- *"Profitable unit economics (LTV:CAC 28:1); break-even Month 20"*
-- *"SIL-Nepal certified; government procurement pipeline worth NPR 30M+/year"*
-- *"Dominant market position in Nepal; expansion to India/Bangladesh via regulatory play"*
+
+- _"Profitable unit economics (LTV:CAC 28:1); break-even Month 20"_
+- _"SIL-Nepal certified; government procurement pipeline worth NPR 30M+/year"_
+- _"Dominant market position in Nepal; expansion to India/Bangladesh via regulatory play"_
 
 **Potential Investors:**
+
 1. **Founder's Den** (Nepal-based accelerator providing seed investment)
 2. **Matrix Partners India** (health tech lead investor)
 3. **Blume Ventures** (India-based, early health tech)
@@ -2323,17 +2452,20 @@ To ensure legitimate healthcare providers can add data:
 **Target:** USD 1-2 million to scale across South Asia
 
 **Investor Profile:**
+
 - Proof of market expansion (5,000+ users)
 - Strong revenue growth (200%+ YoY)
 - Clear path to Series B
 - Regional expansion validated
 
 **Pitch Message:**
-- *"Became Nepal's dominant PHR in 18 months; now scaling to India (300M target), Bangladesh, Pakistan"*
-- *"Regulatory moat: Custom ASR, FHIR compliance barrier to entry; competitors 12+ months behind"*
-- *"NPR 1B+ revenue potential by Year 5; expansion to Southeast Asia (Myanmar, Sri Lanka)"*
+
+- _"Became Nepal's dominant PHR in 18 months; now scaling to India (300M target), Bangladesh, Pakistan"_
+- _"Regulatory moat: Custom ASR, FHIR compliance barrier to entry; competitors 12+ months behind"_
+- _"NPR 1B+ revenue potential by Year 5; expansion to Southeast Asia (Myanmar, Sri Lanka)"_
 
 **Potential Investors:**
+
 1. **Global health tech VCs** (Khosla Impact, Builders VC)
 2. **India-focused growth VCs** (Peak XV, Lightbox)
 3. **International development finance** (IFC, CDC)
@@ -2345,44 +2477,44 @@ To ensure legitimate healthcare providers can add data:
 
 ## Core Business Metrics
 
-| **Metric** | **Month 6 Target** | **Month 12 Target** | **Month 18 Target** | **Month 24 Target** |
-|---|---|---|---|---|
-| **User Metrics** | | | | |
-| Total registered users | 500 | 5,000 | 10,000 | 50,000 |
-| Active users (MAU) | 200 | 2,000 | 4,000 | 20,000 |
-| User retention (Day 30) | 60% | 70% | 75% | 80% |
-| **Monetization** | | | | |
-| Paying users (subscription) | 50 | 500 | 1,500 | 10,000 |
-| Monthly recurring revenue (MRR) | NPR 25,000 | NPR 300,000 | NPR 800,000 | NPR 3,000,000 |
-| Annual revenue run rate | NPR 300,000 | NPR 5M | NPR 15M | NPR 50M+ |
-| **Engagement** | | | | |
-| Medical records per user | 3 | 8 | 15 | 25 |
-| Records imported (total) | 1,500 | 40,000 | 150,000 | 1M+ |
-| **Partnerships** | | | | |
-| Healthcare facilities integrated | 1 | 5 | 15 | 50+ |
-| Providers (doctors, nurses, staff) | 10 | 50 | 150 | 500+ |
-| Insurance partners | 1 (HIB sandbox) | 1 (HIB live) | 2-3 | 5+ |
+| **Metric**                         | **Month 6 Target** | **Month 12 Target** | **Month 18 Target** | **Month 24 Target** |
+| ---------------------------------- | ------------------ | ------------------- | ------------------- | ------------------- |
+| **User Metrics**                   |                    |                     |                     |                     |
+| Total registered users             | 500                | 5,000               | 10,000              | 50,000              |
+| Active users (MAU)                 | 200                | 2,000               | 4,000               | 20,000              |
+| User retention (Day 30)            | 60%                | 70%                 | 75%                 | 80%                 |
+| **Monetization**                   |                    |                     |                     |                     |
+| Paying users (subscription)        | 50                 | 500                 | 1,500               | 10,000              |
+| Monthly recurring revenue (MRR)    | NPR 25,000         | NPR 300,000         | NPR 800,000         | NPR 3,000,000       |
+| Annual revenue run rate            | NPR 300,000        | NPR 5M              | NPR 15M             | NPR 50M+            |
+| **Engagement**                     |                    |                     |                     |                     |
+| Medical records per user           | 3                  | 8                   | 15                  | 25                  |
+| Records imported (total)           | 1,500              | 40,000              | 150,000             | 1M+                 |
+| **Partnerships**                   |                    |                     |                     |                     |
+| Healthcare facilities integrated   | 1                  | 5                   | 15                  | 50+                 |
+| Providers (doctors, nurses, staff) | 10                 | 50                  | 150                 | 500+                |
+| Insurance partners                 | 1 (HIB sandbox)    | 1 (HIB live)        | 2-3                 | 5+                  |
 
 ## Technology & Compliance Metrics
 
-| **Metric** | **Target Status** |
-|---|---|
-| **FHIR Compliance** | SIL-Nepal certified by Month 16 |
-| **Security** | Third-party audit passed; ISO-27001 certification path |
-| **Uptime** | 99.5% availability (5.26 hours downtime/month max) |
+| **Metric**          | **Target Status**                                        |
+| ------------------- | -------------------------------------------------------- |
+| **FHIR Compliance** | SIL-Nepal certified by Month 16                          |
+| **Security**        | Third-party audit passed; ISO-27001 certification path   |
+| **Uptime**          | 99.5% availability (5.26 hours downtime/month max)       |
 | **Data Protection** | AES-256 encryption; TLS 1.3; on-premise storage verified |
-| **ASR Accuracy** | 80% (Google Cloud) → 85%+ (custom model by Month 20) |
-| **Load Capacity** | Support 50,000+ concurrent users by Month 24 |
+| **ASR Accuracy**    | 80% (Vosk on-premise) → 85%+ (custom model by Month 20)  |
+| **Load Capacity**   | Support 50,000+ concurrent users by Month 24             |
 
 ## User Health Metrics
 
-| **Metric** | **Target** |
-|---|---|
+| **Metric**                   | **Target**                                 |
+| ---------------------------- | ------------------------------------------ |
 | **NPS (Net Promoter Score)** | 50+ by Month 12 (excellent for healthcare) |
-| **Customer Satisfaction** | 4.5+/5 stars in app store |
-| **Support Response Time** | <24 hours for urgent issues |
-| **Feature Request Response** | Track + prioritize; ship 1 feature/sprint |
-| **User Churn (Monthly)** | <3% (97%+ retention) by Month 12 |
+| **Customer Satisfaction**    | 4.5+/5 stars in app store                  |
+| **Support Response Time**    | <24 hours for urgent issues                |
+| **Feature Request Response** | Track + prioritize; ship 1 feature/sprint  |
+| **User Churn (Monthly)**     | <3% (97%+ retention) by Month 12           |
 
 ---
 
@@ -2390,49 +2522,49 @@ To ensure legitimate healthcare providers can add data:
 
 ## Government & Regulatory Partnerships
 
-| **Partner** | **Role** | **Engagement Timeline** |
-|---|---|---|
-| **Standards & Interoperability Lab (SIL-Nepal)** | FHIR conformance testing, certification | Month 1 (kickoff) → Month 16 (certification) |
-| **Ministry of Health & Population (MoHP)** | Regulatory guidance, government procurement | Month 2 (meetings) → Month 18 (procurement) |
-| **Health Insurance Board (HIB)** | openIMIS API access, claim processing integration | Month 2 (request access) → Month 12 (live claims) |
-| **Department of Health Services (DoHS)** | HMIS alignment, FCHV network partnership | Month 4 (MOU) → Month 12 (FCHV rollout) |
+| **Partner**                                      | **Role**                                          | **Engagement Timeline**                           |
+| ------------------------------------------------ | ------------------------------------------------- | ------------------------------------------------- |
+| **Standards & Interoperability Lab (SIL-Nepal)** | FHIR conformance testing, certification           | Month 1 (kickoff) → Month 16 (certification)      |
+| **Ministry of Health & Population (MoHP)**       | Regulatory guidance, government procurement       | Month 2 (meetings) → Month 18 (procurement)       |
+| **Health Insurance Board (HIB)**                 | openIMIS API access, claim processing integration | Month 2 (request access) → Month 12 (live claims) |
+| **Department of Health Services (DoHS)**         | HMIS alignment, FCHV network partnership          | Month 4 (MOU) → Month 12 (FCHV rollout)           |
 
 ## Academic & Research Partnerships
 
-| **Partner** | **Focus Area** | **Collaboration** |
-|---|---|---|
+| **Partner**                                   | **Focus Area**                            | **Collaboration**                                |
+| --------------------------------------------- | ----------------------------------------- | ------------------------------------------------ |
 | **Kathmandu University — Health Informatics** | FHIR training, health app design research | Joint student projects; interns; research papers |
-| **IOE Pulchowk — Computer Engineering** | Nepali ASR development, NLP | Custom ASR model training; PhD supervision |
-| **Patan Academy of Health Sciences** | Clinical validation, medical terminology | Advisor board; terminology database |
-| **Nepal Health Research Council** | Ethics approval, research governance | Study registration; ethics oversight |
+| **IOE Pulchowk — Computer Engineering**       | Nepali ASR development, NLP               | Custom ASR model training; PhD supervision       |
+| **Patan Academy of Health Sciences**          | Clinical validation, medical terminology  | Advisor board; terminology database              |
+| **Nepal Health Research Council**             | Ethics approval, research governance      | Study registration; ethics oversight             |
 
 ## Implementation & Clinical Partners
 
-| **Partner** | **Role** | **Status** |
-|---|---|---|
-| **Bayalpata Hospital** | MVP pilot site | WHO-supported; existing FHIR-capable EMR |
-| **Gulmi Hospital** | Pilot site | WHO-supported EMR |
-| **Armed Police Force Hospital** | Reference implementation | Existing EMR; potential integration |
-| **WHO Nepal** | Technical assistance, health system alignment | Digital health team engagement |
-| **GIZ Nepal** | openIMIS support, insurance integration | Technical assistance for SHI integration |
+| **Partner**                     | **Role**                                      | **Status**                               |
+| ------------------------------- | --------------------------------------------- | ---------------------------------------- |
+| **Bayalpata Hospital**          | MVP pilot site                                | WHO-supported; existing FHIR-capable EMR |
+| **Gulmi Hospital**              | Pilot site                                    | WHO-supported EMR                        |
+| **Armed Police Force Hospital** | Reference implementation                      | Existing EMR; potential integration      |
+| **WHO Nepal**                   | Technical assistance, health system alignment | Digital health team engagement           |
+| **GIZ Nepal**                   | openIMIS support, insurance integration       | Technical assistance for SHI integration |
 
 ## Technology Partners
 
-| **Partner** | **Capability** | **Engagement** |
-|---|---|---|
-| **Google for Startups** | Cloud credits, ASR access, mentorship | Apply for startup program (Month 3) |
-| **Microsoft for Startups** | Azure credits, AI/ML tools, training | Apply for startup program (Month 3) |
-| **CloudFactory Nepal** | Local hosting, data operations, consulting | Colocation partnership; potential outsourcing |
-| **Deerwalk Services** | Healthcare IT expertise, security consulting | Consulting support; security audit support |
+| **Partner**                | **Capability**                               | **Engagement**                                |
+| -------------------------- | -------------------------------------------- | --------------------------------------------- |
+| **Google for Startups**    | Cloud credits, ASR access, mentorship        | Apply for startup program (Month 3)           |
+| **Microsoft for Startups** | Azure credits, AI/ML tools, training         | Apply for startup program (Month 3)           |
+| **CloudFactory Nepal**     | Local hosting, data operations, consulting   | Colocation partnership; potential outsourcing |
+| **Deerwalk Services**      | Healthcare IT expertise, security consulting | Consulting support; security audit support    |
 
 ## Telecom & Payment Partners
 
-| **Partner** | **Integration** | **Timeline** |
-|---|---|---|
-| **Ncell (Nepal's largest telecom)** | "Ncell Health" bundle (PHR + data) | Negotiation Month 6-9; launch Month 12+ |
-| **NTC (Nepal Telecom)** | Data bundle inclusion | Secondary option if Ncell unavailable |
-| **Khalti (payment processor)** | Subscription payment processing | Integrate Month 5; live Month 6 |
-| **eSewa (digital wallet)** | Subscription + appointment payments | Alternative payment method; integrate Month 6 |
+| **Partner**                         | **Integration**                     | **Timeline**                                  |
+| ----------------------------------- | ----------------------------------- | --------------------------------------------- |
+| **Ncell (Nepal's largest telecom)** | "Ncell Health" bundle (PHR + data)  | Negotiation Month 6-9; launch Month 12+       |
+| **NTC (Nepal Telecom)**             | Data bundle inclusion               | Secondary option if Ncell unavailable         |
+| **Khalti (payment processor)**      | Subscription payment processing     | Integrate Month 5; live Month 6               |
+| **eSewa (digital wallet)**          | Subscription + appointment payments | Alternative payment method; integrate Month 6 |
 
 ---
 
@@ -2473,7 +2605,7 @@ To ensure legitimate healthcare providers can add data:
    - Begin SIL-Nepal alignment
 
 7. **Voice ASR Phased Approach**
-   - Start with Google Cloud Speech-to-Text for MVP
+   - Start with Vosk (Apache 2.0, on-premise) for MVP
    - Begin collecting Nepali medical terminology corpus
    - Plan custom model development for Year 2
 
@@ -2516,62 +2648,62 @@ The window for registration under Directive 2081 is open—**immediate action** 
 
 ## Appendix A: Key Contacts and Resources
 
-| **Resource** | **Contact** | **Purpose** |
-|---|---|---|
-| Ministry of Health and Population | https://mohp.gov.np | Regulatory guidance |
-| SIL-Nepal | sil@mohp.gov.np | FHIR conformance testing |
-| Department of Health Services (IHIMS) | https://dohs.gov.np | HMIS alignment |
-| Health Insurance Board | https://healthinsurance.gov.np | openIMIS integration |
-| Kathmandu University (Health Informatics) | https://ku.edu.np/hi | Academic partnership |
-| WHO Nepal | https://nepalwho.org | Technical assistance |
-| Nepal Telecommunications Authority (NTA) | nta@nta.gov.np | Telecom market data |
-| National Identity Card Office | NICDB.gov.np | Patient identity verification |
+| **Resource**                              | **Contact**                    | **Purpose**                   |
+| ----------------------------------------- | ------------------------------ | ----------------------------- |
+| Ministry of Health and Population         | https://mohp.gov.np            | Regulatory guidance           |
+| SIL-Nepal                                 | sil@mohp.gov.np                | FHIR conformance testing      |
+| Department of Health Services (IHIMS)     | https://dohs.gov.np            | HMIS alignment                |
+| Health Insurance Board                    | https://healthinsurance.gov.np | openIMIS integration          |
+| Kathmandu University (Health Informatics) | https://ku.edu.np/hi           | Academic partnership          |
+| WHO Nepal                                 | https://nepalwho.org           | Technical assistance          |
+| Nepal Telecommunications Authority (NTA)  | nta@nta.gov.np                 | Telecom market data           |
+| National Identity Card Office             | NICDB.gov.np                   | Patient identity verification |
 
 ## Appendix B: Abbreviations
 
-| **Abbreviation** | **Full Form** |
-|---|---|
-| ASR | Automatic Speech Recognition |
-| CAC | Customer Acquisition Cost |
-| CBS | Central Bureau of Statistics |
-| CDC | Centers for Disease Control (UK development arm) |
-| DHIS2 | District Health Information System 2 |
-| DoHS | Department of Health Services |
-| DoI | Department of Industry |
-| EMR | Electronic Medical Record |
-| FHIR | Fast Healthcare Interoperability Resources |
-| FCHV | Female Community Health Volunteer |
-| GIZ | Deutsche Gesellschaft für Internationale Zusammenarbeit (German dev. org) |
-| HIB | Health Insurance Board |
-| HMIS | Health Management Information System |
-| IHIMS | Integrated Health Information Management Section |
-| IFC | International Finance Corporation |
-| IoT | Internet of Things |
-| LIS | Laboratory Information System |
-| LTV | Lifetime Value |
-| MAU | Monthly Active Users |
-| MFA | Multi-Factor Authentication |
-| MoHP | Ministry of Health and Population |
-| MOU | Memorandum of Understanding |
-| MVP | Minimum Viable Product |
-| NID | National Identity Card |
-| NRN | Non-Resident Nepali |
-| NTA | Nepal Telecommunications Authority |
-| NPR | Nepali Rupee |
-| openIMIS | Open Insurance Management Information System |
-| PACS | Picture Archiving and Communication System |
-| PHR | Personal Health Record |
-| RBAC | Role-Based Access Control |
-| RFP | Request for Proposal |
-| SIL | Standards and Interoperability Lab |
-| SHI | Social Health Insurance |
-| SUS | System Usability Scale |
-| TAM | Total Addressable Market |
-| USD | United States Dollar |
-| WHO | World Health Organization |
+| **Abbreviation** | **Full Form**                                                             |
+| ---------------- | ------------------------------------------------------------------------- |
+| ASR              | Automatic Speech Recognition                                              |
+| CAC              | Customer Acquisition Cost                                                 |
+| CBS              | Central Bureau of Statistics                                              |
+| CDC              | Centers for Disease Control (UK development arm)                          |
+| DHIS2            | District Health Information System 2                                      |
+| DoHS             | Department of Health Services                                             |
+| DoI              | Department of Industry                                                    |
+| EMR              | Electronic Medical Record                                                 |
+| FHIR             | Fast Healthcare Interoperability Resources                                |
+| FCHV             | Female Community Health Volunteer                                         |
+| GIZ              | Deutsche Gesellschaft für Internationale Zusammenarbeit (German dev. org) |
+| HIB              | Health Insurance Board                                                    |
+| HMIS             | Health Management Information System                                      |
+| IHIMS            | Integrated Health Information Management Section                          |
+| IFC              | International Finance Corporation                                         |
+| IoT              | Internet of Things                                                        |
+| LIS              | Laboratory Information System                                             |
+| LTV              | Lifetime Value                                                            |
+| MAU              | Monthly Active Users                                                      |
+| MFA              | Multi-Factor Authentication                                               |
+| MoHP             | Ministry of Health and Population                                         |
+| MOU              | Memorandum of Understanding                                               |
+| MVP              | Minimum Viable Product                                                    |
+| NID              | National Identity Card                                                    |
+| NRN              | Non-Resident Nepali                                                       |
+| NTA              | Nepal Telecommunications Authority                                        |
+| NPR              | Nepali Rupee                                                              |
+| openIMIS         | Open Insurance Management Information System                              |
+| PACS             | Picture Archiving and Communication System                                |
+| PHR              | Personal Health Record                                                    |
+| RBAC             | Role-Based Access Control                                                 |
+| RFP              | Request for Proposal                                                      |
+| SIL              | Standards and Interoperability Lab                                        |
+| SHI              | Social Health Insurance                                                   |
+| SUS              | System Usability Scale                                                    |
+| TAM              | Total Addressable Market                                                  |
+| USD              | United States Dollar                                                      |
+| WHO              | World Health Organization                                                 |
 
 ---
 
 **Document prepared as a comprehensive, corrected, and integrated version of the PHR Nepal Feasibility Report. All corrections from phr-fixes.md have been applied. All new sections are ready for immediate implementation planning.**
 
-*Version 2.0 — Final, All Corrections Applied — Ready for Development & Fundraising*
+_Version 2.0 — Final, All Corrections Applied — Ready for Development & Fundraising_

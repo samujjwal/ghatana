@@ -1,0 +1,3483 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "foreignKeys"
+}
+
+enum ResourceStatus {
+  draft
+  active
+  inactive
+  entered_in_error
+  unknown
+}
+
+enum PublicationStatus {
+  draft
+  active
+  retired
+  unknown
+}
+
+enum AdministrativeGender {
+  male
+  female
+  other
+  unknown
+}
+
+enum AccessGrantScope {
+  read
+  write
+  export
+  share
+  emergency
+}
+
+model Tenant {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  name        String
+  countryCode String?  @db.VarChar(2)
+  timezone    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organizations Organization[]
+  patients      Patient[]
+  practitioners Practitioner[]
+}
+
+model Identifier {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @db.Uuid
+  system        String?
+  value         String
+  use           String?
+  typeCode      String?
+  assignerRef   String?
+  periodStart   DateTime?
+  periodEnd     DateTime?
+  payload       Json?
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId, system, value])
+}
+
+model Coding {
+  id           String   @id @default(uuid()) @db.Uuid
+  system       String?
+  version      String?
+  code         String?
+  display      String?
+  userSelected Boolean?
+}
+
+model HumanName {
+  id          String   @id @default(uuid()) @db.Uuid
+  use         String?
+  family      String?
+  given       String[]
+  prefix      String[]
+  suffix      String[]
+  text        String?
+  periodStart DateTime?
+  periodEnd   DateTime?
+}
+
+model Address {
+  id          String   @id @default(uuid()) @db.Uuid
+  use         String?
+  type        String?
+  text        String?
+  line        String[]
+  city        String?
+  district    String?
+  state       String?
+  postalCode  String?
+  country     String?
+  periodStart DateTime?
+  periodEnd   DateTime?
+}
+
+model ContactPoint {
+  id          String   @id @default(uuid()) @db.Uuid
+  system      String?
+  value       String?
+  use         String?
+  rank        Int?
+  periodStart DateTime?
+  periodEnd   DateTime?
+}
+
+model AuditLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid
+  actorType      String
+  actorId        String?
+  patientId      String?  @db.Uuid
+  resourceType   String
+  resourceId     String
+  action         String
+  outcome        String?
+  ipAddress      String?
+  userAgent      String?
+  occurredAt     DateTime @default(now())
+  details        Json?
+
+  @@index([tenantId, resourceType, resourceId])
+  @@index([tenantId, patientId, occurredAt])
+}
+
+model ConsentGrant {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenantId        String           @db.Uuid
+  patientId       String           @db.Uuid
+  grantedToType   String
+  grantedToId     String
+  scope           AccessGrantScope
+  startsAt        DateTime?
+  endsAt          DateTime?
+  status          ResourceStatus   @default(active)
+  restrictions    Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId, grantedToType, grantedToId])
+}
+
+model Organization {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @db.Uuid
+  logicalId         String   @unique
+  active            Boolean  @default(true)
+  name              String
+  alias             String[]
+  resource          Json
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, name])
+}
+
+model Practitioner {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @db.Uuid
+  logicalId         String   @unique
+  active            Boolean  @default(true)
+  gender            AdministrativeGender?
+  birthDate         DateTime?
+  resource          Json
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, logicalId])
+}
+
+model Patient {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @db.Uuid
+  logicalId         String   @unique
+  active            Boolean  @default(true)
+  gender            AdministrativeGender?
+  birthDate         DateTime?
+  deceasedBoolean   Boolean?
+  deceasedDateTime  DateTime?
+  managingOrgId     String?  @db.Uuid
+  resource          Json
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  encounters         Encounter[]
+  observations       Observation[]
+  conditions         Condition[]
+  medicationRequests MedicationRequest[]
+  appointments       Appointment[]
+  consents           ConsentGrant[]
+
+  @@index([tenantId, logicalId])
+  @@index([tenantId, managingOrgId])
+}
+
+model Encounter {
+  id                String         @id @default(uuid()) @db.Uuid
+  tenantId          String         @db.Uuid
+  logicalId         String         @unique
+  patientId         String?        @db.Uuid
+  status            ResourceStatus @default(active)
+  classCode         String?
+  serviceType       String?
+  startAt           DateTime?
+  endAt             DateTime?
+  resource          Json
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  patient Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+
+  observations       Observation[]
+  conditions         Condition[]
+  medicationRequests MedicationRequest[]
+
+  @@index([tenantId, patientId, startAt])
+}
+
+model Observation {
+  id                String         @id @default(uuid()) @db.Uuid
+  tenantId          String         @db.Uuid
+  logicalId         String         @unique
+  patientId         String?        @db.Uuid
+  encounterId       String?        @db.Uuid
+  status            ResourceStatus @default(active)
+  codeSystem        String?
+  code              String?
+  valueQuantity     Decimal?       @db.Decimal(18,6)
+  valueString       String?
+  unit              String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  patient   Patient?   @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  encounter Encounter? @relation(fields: [encounterId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, patientId, code, effectiveDateTime])
+  @@index([tenantId, encounterId])
+}
+
+model Condition {
+  id                 String         @id @default(uuid()) @db.Uuid
+  tenantId           String         @db.Uuid
+  logicalId          String         @unique
+  patientId          String?        @db.Uuid
+  encounterId        String?        @db.Uuid
+  status             ResourceStatus @default(active)
+  clinicalStatus     String?
+  verificationStatus String?
+  category           String?
+  codeSystem         String?
+  code               String?
+  onsetDateTime      DateTime?
+  abatementDateTime  DateTime?
+  resource           Json
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  patient   Patient?   @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  encounter Encounter? @relation(fields: [encounterId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, patientId, code])
+  @@index([tenantId, encounterId])
+}
+
+model Medication {
+  id                String            @id @default(uuid()) @db.Uuid
+  tenantId          String            @db.Uuid
+  logicalId         String            @unique
+  status            PublicationStatus @default(active)
+  codeSystem        String?
+  code              String?
+  formCode          String?
+  amountNumerator   Decimal?          @db.Decimal(18,6)
+  amountDenominator Decimal?          @db.Decimal(18,6)
+  resource          Json
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  requests MedicationRequest[]
+
+  @@index([tenantId, code])
+}
+
+model MedicationRequest {
+  id                String         @id @default(uuid()) @db.Uuid
+  tenantId          String         @db.Uuid
+  logicalId         String         @unique
+  patientId         String?        @db.Uuid
+  encounterId       String?        @db.Uuid
+  medicationId      String?        @db.Uuid
+  status            ResourceStatus @default(active)
+  intent            String?
+  authoredOn        DateTime?
+  doNotPerform      Boolean?
+  dosageInstruction Json?
+  dispenseRequest   Json?
+  resource          Json
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  patient    Patient?    @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  encounter  Encounter?  @relation(fields: [encounterId], references: [id], onDelete: SetNull)
+  medication Medication? @relation(fields: [medicationId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, patientId, authoredOn])
+  @@index([tenantId, encounterId])
+  @@index([tenantId, medicationId])
+}
+
+model Appointment {
+  id                 String         @id @default(uuid()) @db.Uuid
+  tenantId           String         @db.Uuid
+  logicalId          String         @unique
+  patientId          String?        @db.Uuid
+  status             ResourceStatus @default(active)
+  serviceCategory    String?
+  appointmentType    String?
+  startAt            DateTime?
+  endAt              DateTime?
+  minutesDuration    Int?
+  cancellationReason String?
+  resource           Json
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  patient Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, patientId, startAt])
+}
+
+
+// ---------- Generic FHIR resource tables ----------
+
+model Account {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ActivityDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model AdministrableProductDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model AdverseEvent {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model AllergyIntolerance {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model AppointmentResponse {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ArtifactAssessment {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model AuditEvent {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Basic {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Binary {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model BiologicallyDerivedProduct {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model BiologicallyDerivedProductDispense {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model BodyStructure {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Bundle {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model CapabilityStatement {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model CarePlan {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model CareTeam {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ChargeItem {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ChargeItemDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Citation {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Claim {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ClaimResponse {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ClinicalImpression {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ClinicalUseDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model CodeSystem {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Communication {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model CommunicationRequest {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model CompartmentDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Composition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ConceptMap {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ConditionDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Consent {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Contract {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Coverage {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model CoverageEligibilityRequest {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model CoverageEligibilityResponse {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model DetectedIssue {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Device {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model DeviceAssociation {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model DeviceDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model DeviceDispense {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model DeviceMetric {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model DeviceRequest {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model DeviceUsage {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model DiagnosticReport {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model DocumentManifest {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model DocumentReference {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model EncounterHistory {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Endpoint {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model EnrollmentRequest {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model EnrollmentResponse {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model EpisodeOfCare {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model EventDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Evidence {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model EvidenceReport {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model EvidenceVariable {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ExampleScenario {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ExplanationOfBenefit {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model FamilyMemberHistory {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Flag {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model FormularyItem {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model GenomicStudy {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Goal {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model GraphDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Group {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model GuidanceResponse {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model HealthcareService {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ImagingSelection {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ImagingStudy {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Immunization {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ImmunizationEvaluation {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ImmunizationRecommendation {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ImplementationGuide {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Ingredient {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model InsurancePlan {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model InventoryItem {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model InventoryReport {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Invoice {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Library {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Linkage {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ListResource {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Location {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ManufacturedItemDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Measure {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model MeasureReport {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model MedicationAdministration {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model MedicationDispense {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model MedicationKnowledge {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model MedicationStatement {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model MedicinalProductDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model MessageDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model MessageHeader {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model MolecularSequence {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model NamingSystem {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model NutritionIntake {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model NutritionOrder {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model NutritionProduct {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ObservationDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model OperationDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model OperationOutcome {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model OrganizationAffiliation {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model PackagedProductDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Parameters {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model PaymentNotice {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model PaymentReconciliation {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Permission {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Person {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model PlanDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model PractitionerRole {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Procedure {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Provenance {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Questionnaire {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model QuestionnaireResponse {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model RegulatedAuthorization {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model RelatedPerson {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model RequestOrchestration {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Requirements {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ResearchStudy {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ResearchSubject {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model RiskAssessment {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Schedule {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SearchParameter {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ServiceRequest {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Slot {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Specimen {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SpecimenDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model StructureDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model StructureMap {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Subscription {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SubscriptionStatus {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SubscriptionTopic {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Substance {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SubstanceDefinition {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SubstanceNucleicAcid {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SubstancePolymer {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SubstanceProtein {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SubstanceReferenceInformation {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SubstanceSourceMaterial {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SupplyDelivery {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model SupplyRequest {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Task {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model TerminologyCapabilities {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model TestPlan {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model TestReport {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model TestScript {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model Transport {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model ValueSet {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            PublicationStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model VerificationResult {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}
+
+model VisionPrescription {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String?          @db.Uuid
+  logicalId         String           @unique
+  version           Int              @default(1)
+  status            ResourceStatus?
+  subjectRef        String?
+  encounterRef      String?
+  authorRef         String?
+  organizationRef   String?
+  effectiveDateTime DateTime?
+  issuedAt          DateTime?
+  resource          Json
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tenantId, subjectRef])
+  @@index([tenantId, encounterRef])
+  @@index([tenantId, status])
+}

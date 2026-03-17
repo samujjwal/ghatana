@@ -28,6 +28,7 @@
 ## 1.1 System Vision
 
 A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal that:
+
 - Enables patients to own and control their medical records
 - Integrates with healthcare facilities via FHIR APIs
 - Complies with Government Directive 2081 and data sovereignty requirements
@@ -39,6 +40,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 1.2 System Scope
 
 ### In Scope
+
 - Patient health record management (storage, retrieval, sharing)
 - Provider access to patient records
 - Appointment scheduling and reminders
@@ -51,6 +53,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - Offline-first capability with sync
 
 ### Out of Scope (Phase 1-2)
+
 - AI-powered diagnostic suggestions (Phase 4)
 - Wearable device integration (Phase 2+)
 - IoT device support (Phase 2+)
@@ -61,15 +64,15 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 
 ## 1.3 Success Criteria
 
-| Metric | Target | Timeline |
-|--------|--------|----------|
-| **Functional Completeness** | All MVP features operational | Month 6 |
-| **User Adoption** | 10,000 registered users | Month 18 |
-| **FHIR Compliance** | SIL-Nepal certification | Month 16 |
-| **Security** | Third-party audit pass | Month 16 |
-| **Uptime** | 99.5% availability | Ongoing |
-| **Performance** | <2s page load time (90th percentile) | Month 12 |
-| **User Satisfaction** | NPS >50 | Month 18 |
+| Metric                      | Target                               | Timeline |
+| --------------------------- | ------------------------------------ | -------- |
+| **Functional Completeness** | All MVP features operational         | Month 6  |
+| **User Adoption**           | 10,000 registered users              | Month 18 |
+| **FHIR Compliance**         | SIL-Nepal certification              | Month 16 |
+| **Security**                | Third-party audit pass               | Month 16 |
+| **Uptime**                  | 99.5% availability                   | Ongoing  |
+| **Performance**             | <2s page load time (90th percentile) | Month 12 |
+| **User Satisfaction**       | NPS >50                              | Month 18 |
 
 ---
 
@@ -78,6 +81,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 2.1 Patient/User Requirements
 
 ### Primary Needs
+
 - **REQ-PATIENT-001:** View complete medical history across providers
 - **REQ-PATIENT-002:** Add/import medical records from multiple providers
 - **REQ-PATIENT-003:** Grant time-limited access to providers (revocable)
@@ -90,6 +94,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-PATIENT-010:** Use voice/audio for data entry and queries
 
 ### Secondary Needs
+
 - **REQ-PATIENT-011:** Receive appointment reminders (SMS + push)
 - **REQ-PATIENT-012:** View insurance claim status
 - **REQ-PATIENT-013:** Compare healthcare costs across providers
@@ -102,6 +107,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-PATIENT-020:** Reset account password easily (account recovery)
 
 ### Accessibility Needs
+
 - **REQ-PATIENT-021:** Large text/high contrast mode (accessibility)
 - **REQ-PATIENT-022:** Screen reader compatible interface (WCAG 2.1 AA)
 - **REQ-PATIENT-023:** Voice-based app navigation (hands-free)
@@ -113,6 +119,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 2.2 Healthcare Provider Requirements
 
 ### Physician/Doctor Needs
+
 - **REQ-PROVIDER-001:** View assigned patient medical history
 - **REQ-PROVIDER-002:** Search patient records by medical condition, medication, lab results
 - **REQ-PROVIDER-003:** Add clinical notes to patient record (with signature)
@@ -125,6 +132,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-PROVIDER-010:** Record consultation outcomes and follow-up plans
 
 ### Nurse/Healthcare Worker Needs
+
 - **REQ-PROVIDER-011:** Enter vital signs (BP, heart rate, temperature, SpO2)
 - **REQ-PROVIDER-012:** Log patient vitals with timestamp and signature
 - **REQ-PROVIDER-013:** View patient allergy and medication history
@@ -132,6 +140,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-PROVIDER-015:** Track medication administration (for hospitalized patients)
 
 ### Administrative Staff Needs
+
 - **REQ-PROVIDER-016:** Verify insurance eligibility before consultation
 - **REQ-PROVIDER-017:** Submit insurance claims on behalf of patients
 - **REQ-PROVIDER-018:** Track claim status and reimbursement
@@ -143,6 +152,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 2.3 Health Insurance Board (HIB) Requirements
 
 ### Insurance Claim Processing
+
 - **REQ-HIB-001:** Receive claim submissions in FHIR Claim format
 - **REQ-HIB-002:** Validate patient eligibility in real-time
 - **REQ-HIB-003:** Process claims with supporting documents (PDF, images)
@@ -152,6 +162,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-HIB-007:** Retain claims data for 7+ years per HIB policy
 
 ### Reporting & Analytics
+
 - **REQ-HIB-008:** Extract anonymized claim data for HMIS (aggregated, consented)
 - **REQ-HIB-009:** Generate monthly claim volume and approval rate reports
 - **REQ-HIB-010:** Monitor facility-level claim processing patterns
@@ -161,6 +172,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 2.4 Ministry of Health & Population (MoHP) Requirements
 
 ### Regulatory Compliance
+
 - **REQ-MOHP-001:** System must comply with Integrated EMR Directive 2081
 - **REQ-MOHP-002:** FHIR compliance verified by SIL-Nepal
 - **REQ-MOHP-003:** Third-party security audit completed annually
@@ -169,6 +181,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-MOHP-006:** Privacy compliance per Individual Privacy Act 2078
 
 ### Public Health Integration
+
 - **REQ-MOHP-007:** Enable anonymized data contribution to HMIS (with consent)
 - **REQ-MOHP-008:** Support disease surveillance reporting (aggregated)
 - **REQ-MOHP-009:** Provide epidemiological data for public health planning
@@ -179,6 +192,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 2.5 Administrator Requirements
 
 ### System Administration
+
 - **REQ-ADMIN-001:** Manage user accounts (create, disable, reset)
 - **REQ-ADMIN-002:** Configure role-based access control (RBAC)
 - **REQ-ADMIN-003:** Monitor system health (uptime, performance, errors)
@@ -195,6 +209,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.1 Patient Registration & Profile Management
 
 ### Patient Registration (MVP)
+
 - **REQ-REG-001:** Register new patient with name, DOB, gender, contact
 - **REQ-REG-002:** Verify identity using NID/citizenship number (integration with NID database)
 - **REQ-REG-003:** Verify email and phone number via OTP
@@ -205,6 +220,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-REG-008:** Support multiple language patient interactions (Nepali, English)
 
 ### Patient Profile Management (MVP)
+
 - **REQ-PROFILE-001:** Display patient profile with demographics
 - **REQ-PROFILE-002:** Edit profile information (self-service)
 - **REQ-PROFILE-003:** Upload profile photo (encrypted storage)
@@ -225,6 +241,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.2 Medical Records Management
 
 ### Record Import & Ingestion (MVP)
+
 - **REQ-MED-001:** Import patient records via FHIR API from healthcare facilities
 - **REQ-MED-002:** Support manual upload of PDF medical documents
 - **REQ-MED-003:** Support CSV bulk import of patient records
@@ -237,6 +254,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-MED-010:** Track record source (which facility, which provider)
 
 ### Medical Record Organization (MVP)
+
 - **REQ-MED-011:** Display records in chronological timeline
 - **REQ-MED-012:** Filter records by type (visit, lab, prescription, imaging)
 - **REQ-MED-013:** Filter records by provider or facility
@@ -249,6 +267,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-MED-020:** Show record metadata (date, provider, facility, status)
 
 ### Record Display & Sharing (MVP)
+
 - **REQ-MED-021:** Display record details (full text view)
 - **REQ-MED-022:** Export record as PDF (formatted for printing)
 - **REQ-MED-023:** Export record as FHIR JSON (for provider systems)
@@ -260,6 +279,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-MED-029:** Generate shareable summary report (for insurance, doctor visit)
 
 ### Clinical Observations & Vital Signs (MVP)
+
 - **REQ-MED-030:** Store vital signs (BP, heart rate, temperature, SpO2, weight, height)
 - **REQ-MED-031:** Record blood glucose levels (for diabetics)
 - **REQ-MED-032:** Record cholesterol values (total, LDL, HDL, triglycerides)
@@ -270,6 +290,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-MED-037:** Record oxygen saturation (SpO2) with timestamp
 
 ### Diagnoses & Conditions (MVP)
+
 - **REQ-MED-038:** Record diagnoses with ICD-10 codes
 - **REQ-MED-039:** Record diagnosis date and provider
 - **REQ-MED-040:** Display active vs. resolved conditions
@@ -283,6 +304,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.3 Medication Management
 
 ### Prescription Management (MVP)
+
 - **REQ-MED-045:** Store prescription records (medication name, dose, frequency, duration)
 - **REQ-MED-046:** Display prescription in Nepali and English
 - **REQ-MED-047:** Record prescribing provider and date
@@ -296,6 +318,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-MED-055:** Generic alternative suggestions (when available)
 
 ### Medication History & Tracking (MVP)
+
 - **REQ-MED-056:** Display complete medication history (past prescriptions)
 - **REQ-MED-057:** Show current active medications list
 - **REQ-MED-058:** Timeline view of medication changes over time
@@ -305,6 +328,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-MED-062:** Track medication costs (paid by patient or insurance)
 
 ### Medication Interaction Checking (MVP)
+
 - **REQ-MED-063:** Check for drug-drug interactions (all current medications)
 - **REQ-MED-064:** Check for drug-allergy interactions
 - **REQ-MED-065:** Display interaction severity (minor, moderate, severe)
@@ -317,6 +341,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.4 Laboratory Results & Imaging
 
 ### Lab Result Management (MVP)
+
 - **REQ-LAB-001:** Import lab results from partner laboratories
 - **REQ-LAB-002:** Display lab test name, value, unit, reference range
 - **REQ-LAB-003:** Mark results as normal, low, or high
@@ -326,17 +351,20 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-LAB-007:** Display lab facility and ordering provider
 
 ### Lab Trends & Analytics (MVP)
+
 - **REQ-LAB-008:** Plot lab value trends over time (line chart)
 - **REQ-LAB-009:** Compare lab values across visits
 - **REQ-LAB-010:** Alert if lab value out of normal range
 - **REQ-LAB-011:** Show reference ranges for different age/gender
 
 ### Lab Interpretation (MVP)
+
 - **REQ-LAB-012:** Display plain-language interpretation of results
 - **REQ-LAB-013:** Link to education content (what does this result mean?)
 - **REQ-LAB-014:** Provide links to reliable health information resources
 
 ### Imaging & Radiology (Phase 2)
+
 - **REQ-IMG-001:** Store imaging metadata (type, date, facility, provider)
 - **REQ-IMG-002:** DICOM viewer for X-rays, CT, MRI, ultrasound
 - **REQ-IMG-003:** Zoom, rotate, pan capabilities in DICOM viewer
@@ -349,6 +377,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.5 Appointment Management
 
 ### Appointment Scheduling (MVP)
+
 - **REQ-APT-001:** List available appointment slots (provider calendar)
 - **REQ-APT-002:** Filter appointments by provider, facility, type
 - **REQ-APT-003:** Book appointment with confirmation
@@ -360,6 +389,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-APT-009:** Auto-suggest appointment based on patient history (e.g., annual checkup due)
 
 ### Appointment Reminders (MVP)
+
 - **REQ-APT-010:** Send reminder 24 hours before appointment
 - **REQ-APT-011:** Send reminder 2 hours before appointment
 - **REQ-APT-012:** Remind via SMS (required) + push notification (optional)
@@ -369,6 +399,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-APT-016:** Record no-show (patient didn't attend appointment)
 
 ### Appointment History (MVP)
+
 - **REQ-APT-017:** Display past appointments with notes
 - **REQ-APT-018:** Display upcoming appointments
 - **REQ-APT-019:** Export appointment list (for travel, reference)
@@ -378,6 +409,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.6 Telemedicine & Remote Consultation
 
 ### Video Consultation (MVP)
+
 - **REQ-TELE-001:** Initiate video call with provider
 - **REQ-TELE-002:** Real-time video streaming (HD quality)
 - **REQ-TELE-003:** Automatic bitrate adjustment (for low-bandwidth areas)
@@ -390,12 +422,14 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-TELE-010:** Session timer (display call duration)
 
 ### Audio Consultation (MVP)
+
 - **REQ-TELE-011:** Initiate audio-only call (for low-bandwidth users)
 - **REQ-TELE-012:** Audio quality optimization (noise reduction)
 - **REQ-TELE-013:** Record audio call (with consent)
 - **REQ-TELE-014:** Store audio file (encrypted)
 
 ### Real-Time Audio Transcription (MVP)
+
 - **REQ-TELE-015:** Enable transcription of video/audio consultation
 - **REQ-TELE-016:** Display live captions during call (for deaf users)
 - **REQ-TELE-017:** Automatic ASR (Automatic Speech Recognition) in Nepali
@@ -405,6 +439,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-TELE-021:** Search transcripts for keywords
 
 ### Voice Input for Data Entry (MVP)
+
 - **REQ-TELE-022:** Provider can record clinical notes via voice
 - **REQ-TELE-023:** Auto-transcription to text (with manual review)
 - **REQ-TELE-024:** Provider can dictate prescriptions
@@ -412,6 +447,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-TELE-026:** Medical term recognition (acronyms, abbreviations)
 
 ### Consultation Documentation (MVP)
+
 - **REQ-TELE-027:** Auto-generate consultation summary from transcript
 - **REQ-TELE-028:** Provider writes consultation notes
 - **REQ-TELE-029:** Record consultation outcome (diagnosis, treatment plan)
@@ -424,12 +460,14 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.7 Medication Reminders & Adherence
 
 ### Medication Reminder Setup (MVP)
+
 - **REQ-MED-REMIND-001:** Patient sets medication reminder frequency
 - **REQ-MED-REMIND-002:** Customize reminder time (morning, afternoon, evening)
 - **REQ-MED-REMIND-003:** Option to disable reminders
 - **REQ-MED-REMIND-004:** Reminder includes medication name, dose, timing
 
 ### Medication Adherence Tracking (MVP)
+
 - **REQ-MED-REMIND-005:** Patient logs when medication taken
 - **REQ-MED-REMIND-006:** System tracks adherence rate (% of doses taken)
 - **REQ-MED-REMIND-007:** Identify patterns of missed doses
@@ -437,6 +475,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-MED-REMIND-009:** Display adherence summary (daily, weekly, monthly)
 
 ### Medication Refill Reminders (MVP)
+
 - **REQ-MED-REMIND-010:** Remind patient 7 days before prescription expires
 - **REQ-MED-REMIND-011:** Enable refill request from reminder
 - **REQ-MED-REMIND-012:** Notify pharmacy of refill request
@@ -447,6 +486,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.8 Insurance & Billing
 
 ### Insurance Information Management (MVP)
+
 - **REQ-INS-001:** Store insurance card information (digitally)
 - **REQ-INS-002:** Record insurance provider and policy number
 - **REQ-INS-003:** Display insurance coverage details
@@ -454,6 +494,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-INS-005:** Display co-payment amounts
 
 ### Insurance Eligibility Verification (MVP)
+
 - **REQ-INS-006:** Real-time eligibility check against openIMIS
 - **REQ-INS-007:** Display eligibility status before treatment
 - **REQ-INS-008:** Show coverage limit for current year
@@ -461,6 +502,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-INS-010:** Verify eligibility at point of care (provider portal)
 
 ### Claim Submission & Tracking (MVP)
+
 - **REQ-INS-011:** Submit insurance claim on patient's behalf (with consent)
 - **REQ-INS-012:** Attach supporting documents (receipts, test results, prescriptions)
 - **REQ-INS-013:** Auto-populate claim with patient/provider/facility data
@@ -472,6 +514,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-INS-019:** Appeal claim denials (with documentation)
 
 ### Billing Management (MVP)
+
 - **REQ-INS-020:** Store medical bills from providers
 - **REQ-INS-021:** Display itemized bill (procedure, cost, insurance covered, out-of-pocket)
 - **REQ-INS-022:** Calculate out-of-pocket costs
@@ -482,6 +525,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-INS-027:** Expense categorization (doctor visit, lab, pharmacy, etc.)
 
 ### Financial Analytics (Phase 2)
+
 - **REQ-INS-028:** Calculate total healthcare spending (monthly, yearly)
 - **REQ-INS-029:** Show spending by category (doctor, lab, pharmacy, etc.)
 - **REQ-INS-030:** Compare costs across providers (transparency)
@@ -493,12 +537,14 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.9 Emergency & Critical Information
 
 ### Emergency Contact Management (MVP)
+
 - **REQ-EMG-001:** Store emergency contact names and phone numbers
 - **REQ-EMG-002:** Mark primary emergency contact
 - **REQ-EMG-003:** Support multiple emergency contacts
 - **REQ-EMG-004:** Display emergency contacts prominently
 
 ### Emergency Medical Summary (MVP)
+
 - **REQ-EMG-005:** Generate one-page medical emergency summary
 - **REQ-EMG-006:** Include allergies, blood type, current medications
 - **REQ-EMG-007:** Include chronic conditions and procedures
@@ -507,6 +553,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-EMG-010:** Emergency QR code (first responders can scan)
 
 ### Critical Alerts (MVP)
+
 - **REQ-EMG-011:** Drug allergy alerts (when prescribed incompatible medication)
 - **REQ-EMG-012:** Life-threatening drug interaction alerts
 - **REQ-EMG-013:** Critical lab value alerts (dangerously high/low)
@@ -518,6 +565,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.10 Notifications & Alerts
 
 ### Notification Delivery (MVP)
+
 - **REQ-NOTIF-001:** Send push notifications (mobile app)
 - **REQ-NOTIF-002:** Send SMS notifications (for non-app users)
 - **REQ-NOTIF-003:** Send email notifications (opt-in)
@@ -527,6 +575,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-NOTIF-007:** Urgent notifications bypass quiet hours
 
 ### Alert Types (MVP)
+
 - **REQ-NOTIF-008:** Appointment reminder (24h, 2h before)
 - **REQ-NOTIF-009:** Medication reminder
 - **REQ-NOTIF-010:** Medication refill reminder
@@ -543,6 +592,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.11 Referral Management (Phase 2)
 
 ### Referral Creation (Phase 2)
+
 - **REQ-REF-001:** Create referral to specialist from primary doctor
 - **REQ-REF-002:** Include patient medical summary in referral
 - **REQ-REF-003:** Specify reason for referral
@@ -550,6 +600,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-REF-005:** Send referral electronically to specialist facility
 
 ### Referral Tracking (Phase 2)
+
 - **REQ-REF-006:** Track referral status (accepted, scheduled, completed)
 - **REQ-REF-007:** Display specialist appointment scheduled via referral
 - **REQ-REF-008:** Receive feedback from specialist back to primary doctor
@@ -561,6 +612,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.12 Blood Bank Management (Phase 2)
 
 ### Blood Donor Registry (Phase 2)
+
 - **REQ-BLOOD-001:** Record patient blood type (A, B, AB, O)
 - **REQ-BLOOD-002:** Record Rh factor (+/-)
 - **REQ-BLOOD-003:** Allow patient to register as blood donor
@@ -572,6 +624,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.13 Family & Caregiver Management
 
 ### Multi-User Family Profiles (MVP)
+
 - **REQ-FAMILY-001:** Create family account (primary user + dependents)
 - **REQ-FAMILY-002:** Add family members (children, spouse, parents)
 - **REQ-FAMILY-003:** Share family health hub (visible to all family members)
@@ -580,6 +633,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-FAMILY-006:** Display family tree (relationships)
 
 ### Caregiver Access & Permissions (MVP)
+
 - **REQ-FAMILY-007:** Assign caregiver role to family member
 - **REQ-FAMILY-008:** Configure caregiver permissions (read-only, edit, etc.)
 - **REQ-FAMILY-009:** Time-limited caregiver access (auto-expire)
@@ -590,6 +644,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-FAMILY-014:** Caregiver receives health alerts
 
 ### Caregiver Dashboard (MVP)
+
 - **REQ-FAMILY-015:** View health status of assigned dependents
 - **REQ-FAMILY-016:** Track medication adherence for dependent
 - **REQ-FAMILY-017:** Schedule appointments for dependent
@@ -597,6 +652,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-FAMILY-019:** Communication channel with dependent's providers
 
 ### Child Health Tracking (MVP for Phase 2)
+
 - **REQ-FAMILY-020:** Track child growth (height, weight percentiles)
 - **REQ-FAMILY-021:** Immunization schedule tracker for children
 - **REQ-FAMILY-022:** Developmental milestones tracking
@@ -608,6 +664,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 3.14 Data Import/Export & Interoperability
 
 ### FHIR API Gateway (MVP)
+
 - **REQ-FHIR-001:** Accept inbound FHIR API calls from external EMR systems
 - **REQ-FHIR-002:** Standard FHIR R4 resources (Patient, Medication, Observation, etc.)
 - **REQ-FHIR-003:** API authentication via OAuth2 + client certificates
@@ -616,6 +673,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-FHIR-006:** Comprehensive API documentation
 
 ### Data Export (MVP)
+
 - **REQ-EXPORT-001:** Export all patient data as FHIR JSON
 - **REQ-EXPORT-002:** Export medical records as PDF (formatted)
 - **REQ-EXPORT-003:** Export structured data as CSV
@@ -626,6 +684,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-EXPORT-008:** Encrypt exported data
 
 ### Data Import (MVP)
+
 - **REQ-IMPORT-001:** Import FHIR data from partner facilities
 - **REQ-IMPORT-002:** Import PDF medical documents
 - **REQ-IMPORT-003:** Import CSV patient data (bulk)
@@ -639,20 +698,21 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 
 ## 4.1 Performance Requirements
 
-| Requirement | Target | Rationale |
-|---|---|---|
-| **Page Load Time** | <2s (90th percentile) | Mobile users with slow networks |
-| **Search Response** | <1s for 100K records | Full-text search performance |
-| **API Response Time** | <500ms (p95) | External integrations |
-| **Concurrent Users** | 10,000 peak | Scale to 50K users |
-| **Database Query** | <100ms for typical query | Responsive UI |
-| **Video Bitrate** | 500kbps min (adaptive) | Work on 2G/3G networks |
-| **App Startup** | <3s on modern phone | User experience |
-| **File Upload** | Support 50MB files | Medical imaging support |
+| Requirement           | Target                   | Rationale                       |
+| --------------------- | ------------------------ | ------------------------------- |
+| **Page Load Time**    | <2s (90th percentile)    | Mobile users with slow networks |
+| **Search Response**   | <1s for 100K records     | Full-text search performance    |
+| **API Response Time** | <500ms (p95)             | External integrations           |
+| **Concurrent Users**  | 10,000 peak              | Scale to 50K users              |
+| **Database Query**    | <100ms for typical query | Responsive UI                   |
+| **Video Bitrate**     | 500kbps min (adaptive)   | Work on 2G/3G networks          |
+| **App Startup**       | <3s on modern phone      | User experience                 |
+| **File Upload**       | Support 50MB files       | Medical imaging support         |
 
 **Implementation:**
+
 - REQ-PERF-001: Implement database indexing for common queries
-- REQ-PERF-002: Use caching (Redis) for frequently accessed data
+- REQ-PERF-002: Use caching (Valkey) for frequently accessed data
 - REQ-PERF-003: Lazy-load records (paginate timeline)
 - REQ-PERF-004: Optimize images (compression, thumbnails)
 - REQ-PERF-005: Use CDN for static assets
@@ -662,15 +722,16 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 
 ## 4.2 Scalability Requirements
 
-| Requirement | Target | Justification |
-|---|---|---|
-| **User Scaling** | 50,000+ users by Year 3 | Market opportunity |
-| **Data Scaling** | 1B+ medical records | Historical data accumulation |
-| **Horizontal Scaling** | Add servers without downtime | Handle growth |
-| **Database Scaling** | Sharding/replication support | Large dataset management |
-| **Storage Scaling** | Multi-TB storage | Medical imaging storage |
+| Requirement            | Target                       | Justification                |
+| ---------------------- | ---------------------------- | ---------------------------- |
+| **User Scaling**       | 50,000+ users by Year 3      | Market opportunity           |
+| **Data Scaling**       | 1B+ medical records          | Historical data accumulation |
+| **Horizontal Scaling** | Add servers without downtime | Handle growth                |
+| **Database Scaling**   | Sharding/replication support | Large dataset management     |
+| **Storage Scaling**    | Multi-TB storage             | Medical imaging storage      |
 
 **Implementation:**
+
 - REQ-SCALE-001: Stateless web servers (scale horizontally)
 - REQ-SCALE-002: Database replication (read replicas)
 - REQ-SCALE-003: Message queue (async processing)
@@ -680,15 +741,16 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 
 ## 4.3 Availability & Reliability
 
-| Requirement | Target | Implementation |
-|---|---|---|
-| **Uptime SLA** | 99.5% | Redundant servers, monitoring |
-| **Mean Time to Recovery (MTTR)** | <15 minutes | Automated failover |
-| **Backup Frequency** | Daily encrypted backups | Data protection |
-| **Disaster Recovery** | Recover within 4 hours | Backup in secondary datacenter |
-| **Data Consistency** | No data loss | Transaction logs, replication |
+| Requirement                      | Target                  | Implementation                 |
+| -------------------------------- | ----------------------- | ------------------------------ |
+| **Uptime SLA**                   | 99.5%                   | Redundant servers, monitoring  |
+| **Mean Time to Recovery (MTTR)** | <15 minutes             | Automated failover             |
+| **Backup Frequency**             | Daily encrypted backups | Data protection                |
+| **Disaster Recovery**            | Recover within 4 hours  | Backup in secondary datacenter |
+| **Data Consistency**             | No data loss            | Transaction logs, replication  |
 
 **Implementation:**
+
 - REQ-AVAIL-001: Primary + secondary servers in different locations
 - REQ-AVAIL-002: Load balancer with health checks
 - REQ-AVAIL-003: Automated database failover
@@ -699,16 +761,17 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 
 ## 4.4 Maintainability & Supportability
 
-| Requirement | Implementation |
-|---|---|
-| **Code Quality** | SonarQube checks, 80% code coverage |
-| **Documentation** | API docs, architecture docs, operations manual |
-| **Logging** | Centralized logging (ELK stack) |
-| **Monitoring** | Real-time alerting (Prometheus + Grafana) |
-| **Support Runbooks** | Documented procedures for common issues |
-| **CI/CD Pipeline** | Automated testing and deployment |
+| Requirement          | Implementation                                 |
+| -------------------- | ---------------------------------------------- |
+| **Code Quality**     | SonarQube checks, 80% code coverage            |
+| **Documentation**    | API docs, architecture docs, operations manual |
+| **Logging**          | Centralized logging (OpenSearch + Fluent Bit)  |
+| **Monitoring**       | Real-time alerting (Prometheus + Grafana)      |
+| **Support Runbooks** | Documented procedures for common issues        |
+| **CI/CD Pipeline**   | Automated testing and deployment               |
 
 **Implementation:**
+
 - REQ-MAINTAIN-001: Automated tests (unit, integration, e2e)
 - REQ-MAINTAIN-002: Code review process
 - REQ-MAINTAIN-003: Version control (Git)
@@ -718,27 +781,27 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 
 ## 4.5 Usability Requirements
 
-| Requirement | Implementation |
-|---|---|
+| Requirement                   | Implementation                                               |
+| ----------------------------- | ------------------------------------------------------------ |
 | **WCAG 2.1 AA Accessibility** | Screen reader compatible, high contrast, keyboard navigation |
-| **Mobile-First Design** | Responsive, touch-optimized, works on older phones |
-| **Multilingual Support** | Nepali, English, Maithili, Newari |
-| **Health Literacy** | Plain language, illustrations, glossary |
-| **User Testing** | Usability testing with 10+ users per feature |
-| **Accessibility Testing** | Automated + manual accessibility audits |
+| **Mobile-First Design**       | Responsive, touch-optimized, works on older phones           |
+| **Multilingual Support**      | Nepali, English, Maithili, Newari                            |
+| **Health Literacy**           | Plain language, illustrations, glossary                      |
+| **User Testing**              | Usability testing with 10+ users per feature                 |
+| **Accessibility Testing**     | Automated + manual accessibility audits                      |
 
 ---
 
 ## 4.6 Compliance Requirements
 
-| Requirement | Details |
-|---|---|
-| **Directive 2081** | FHIR compliance, 21 core modules, security audit |
+| Requirement          | Details                                            |
+| -------------------- | -------------------------------------------------- |
+| **Directive 2081**   | FHIR compliance, 21 core modules, security audit   |
 | **Privacy Act 2078** | Consent, data minimization, right to access/delete |
-| **Data Sovereignty** | Data stored on-premise (within Nepal) |
-| **Security Audit** | Third-party audit annually |
-| **HIB Compliance** | openIMIS integration, claim format, data retention |
-| **FHIR Standard** | R4 resources, conformance profile |
+| **Data Sovereignty** | Data stored on-premise (within Nepal)              |
+| **Security Audit**   | Third-party audit annually                         |
+| **HIB Compliance**   | openIMIS integration, claim format, data retention |
+| **FHIR Standard**    | R4 resources, conformance profile                  |
 
 ---
 
@@ -747,6 +810,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 5.1 Healthcare Facility Integrations (MVP)
 
 ### EMR Integration (FHIR-based)
+
 - **REQ-INT-EMR-001:** Receive patient data from hospital EMR systems
 - **REQ-INT-EMR-002:** Standard FHIR R4 resources
 - **REQ-INT-EMR-003:** OAuth2 authentication for EMR API calls
@@ -755,12 +819,14 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-INT-EMR-006:** Data validation on receipt
 
 ### Pharmacy Integration (Phase 2)
+
 - **REQ-INT-PHARM-001:** Query pharmacy for medication availability
 - **REQ-INT-PHARM-002:** Send prescription to pharmacy (order placement)
 - **REQ-INT-PHARM-003:** Receive prescription fulfillment notification
 - **REQ-INT-PHARM-004:** Track prescription pickup status
 
 ### Lab Integration (Phase 2)
+
 - **REQ-INT-LAB-001:** Receive lab results from partner labs
 - **REQ-INT-LAB-002:** Support multiple lab partners
 - **REQ-INT-LAB-003:** Auto-notify patient when results available
@@ -771,6 +837,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 5.2 Insurance Integration
 
 ### openIMIS Integration (MVP)
+
 - **REQ-INT-OPENIMIS-001:** Real-time eligibility verification
 - **REQ-INT-OPENIMIS-002:** Submit claims in FHIR format
 - **REQ-INT-OPENIMIS-003:** Receive claim response (approved/rejected)
@@ -783,12 +850,14 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 5.3 Government System Integration
 
 ### HMIS Integration (Phase 2)
+
 - **REQ-INT-HMIS-001:** Export anonymized health data to HMIS
 - **REQ-INT-HMIS-002:** Aggregated, no patient-identifying information
 - **REQ-INT-HMIS-003:** Frequency: Monthly or quarterly
 - **REQ-INT-HMIS-004:** Data format: CSV or agreed-upon format
 
 ### SIL-Nepal Conformance (MVP)
+
 - **REQ-INT-SIL-001:** FHIR conformance testing
 - **REQ-INT-SIL-002:** Validation against SIL-Nepal profiles
 - **REQ-INT-SIL-003:** Annual re-testing
@@ -798,7 +867,8 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 5.4 Telemedicine Platform Integration (MVP)
 
 ### Video Conferencing Integration
-- **REQ-INT-VIDEO-001:** Integrate Twilio, Jitsi, or similar
+
+- **REQ-INT-VIDEO-001:** Integrate Jitsi (Apache 2.0, self-hosted)
 - **REQ-INT-VIDEO-002:** Support WebRTC for web app
 - **REQ-INT-VIDEO-003:** Encrypt video calls (SRTP)
 - **REQ-INT-VIDEO-004:** Record calls (encrypted)
@@ -808,6 +878,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 5.5 Payment Integration
 
 ### Digital Payment (MVP)
+
 - **REQ-INT-PAY-001:** Khalti integration (Nepal's largest digital wallet)
 - **REQ-INT-PAY-002:** eSewa integration (alternative payment)
 - **REQ-INT-PAY-003:** Mobile wallet payments
@@ -820,6 +891,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 5.6 Communication Services
 
 ### SMS Notifications (MVP)
+
 - **REQ-INT-SMS-001:** Integrate Sparrow SMS (Nepal-based)
 - **REQ-INT-SMS-002:** Send appointment reminders via SMS
 - **REQ-INT-SMS-003:** Send medication reminders via SMS
@@ -827,12 +899,14 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 - **REQ-INT-SMS-005:** Two-way SMS support (reply to confirm)
 
 ### Push Notifications (MVP)
-- **REQ-INT-PUSH-001:** Firebase Cloud Messaging (FCM) for Android
+
+- **REQ-INT-PUSH-001:** ntfy (Apache 2.0, self-hosted) for Android
 - **REQ-INT-PUSH-002:** Apple Push Notification (APN) for iOS
 - **REQ-INT-PUSH-003:** Rich notifications with actions
 
 ### Email (MVP)
-- **REQ-INT-EMAIL-001:** Postfix on-premise email (or SendGrid)
+
+- **REQ-INT-EMAIL-001:** Postfix on-premise email
 - **REQ-INT-EMAIL-002:** Send password reset emails
 - **REQ-INT-EMAIL-003:** Send appointment reminders (opt-in)
 - **REQ-INT-EMAIL-004:** Send reports (health summary)
@@ -842,11 +916,13 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 5.7 Analytics & Monitoring Integration (Phase 2)
 
 ### Health Analytics
+
 - **REQ-INT-ANALYTICS-001:** Integrate Plausible Analytics (privacy-compliant)
 - **REQ-INT-ANALYTICS-002:** Track user behavior (no personal data)
 - **REQ-INT-ANALYTICS-003:** Feature usage analytics
 
 ### System Monitoring
+
 - **REQ-INT-MONITOR-001:** Prometheus for metrics collection
 - **REQ-INT-MONITOR-002:** Grafana for dashboards
 - **REQ-INT-MONITOR-003:** Alerting on threshold breaches
@@ -856,7 +932,8 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 5.8 ASR/Voice Integration (MVP)
 
 ### Speech-to-Text (MVP & Phase 2+)
-- **REQ-INT-ASR-001:** Google Cloud Speech-to-Text (MVP)
+
+- **REQ-INT-ASR-001:** Vosk on-premise ASR (Apache 2.0) (MVP)
 - **REQ-INT-ASR-002:** Nepali language support
 - **REQ-INT-ASR-003:** Medical terminology recognition (enhanced)
 - **REQ-INT-ASR-004:** Custom ASR model (Phase 2+)
@@ -870,6 +947,7 @@ A patient-centric, voice-enabled Personal Health Record (PHR) system for Nepal t
 ## 6.1 Core Data Entities
 
 ### Patient Entity
+
 ```
 Patient
 ├─ ID (UUID, not NID)
@@ -898,11 +976,13 @@ Patient
 ```
 
 **Storage:**
+
 - REQ-DATA-PATIENT-001: Encrypt sensitive fields (name, contact)
 - REQ-DATA-PATIENT-002: Store audit log of access
 - REQ-DATA-PATIENT-003: Support soft delete (archive, not permanent)
 
 ### Medical Record Entity
+
 ```
 MedicalRecord
 ├─ ID (UUID)
@@ -925,6 +1005,7 @@ MedicalRecord
 ```
 
 ### Medication Entity
+
 ```
 Medication
 ├─ ID (UUID)
@@ -951,6 +1032,7 @@ Medication
 ```
 
 ### Appointment Entity
+
 ```
 Appointment
 ├─ ID (UUID)
@@ -972,6 +1054,7 @@ Appointment
 ```
 
 ### Consultation Entity
+
 ```
 Consultation
 ├─ ID (UUID)
@@ -993,6 +1076,7 @@ Consultation
 ```
 
 ### Insurance Claim Entity
+
 ```
 Claim
 ├─ ID (UUID)
@@ -1024,6 +1108,7 @@ Claim
 ## 6.2 Data Storage Architecture
 
 ### Primary Storage (On-Premise, Nepal-IX)
+
 ```
 PostgreSQL Database
 ├─ Patient Records
@@ -1037,13 +1122,15 @@ PostgreSQL Database
 ```
 
 **Encryption:**
+
 - REQ-DATA-ENC-001: AES-256 for sensitive fields (names, medical history)
 - REQ-DATA-ENC-002: TLS 1.3 for all network communication
 - REQ-DATA-ENC-003: Row-level security (patient can only see own data)
 
-### File Storage (MinIO S3-compatible)
+### File Storage (Ceph RADOS Gateway, S3-compatible)
+
 ```
-MinIO Bucket Structure
+Ceph Bucket Structure
 ├─ patients/{patient_id}/
 │  ├─ medical_records/
 │  │  └─ {record_id}.pdf
@@ -1056,6 +1143,7 @@ MinIO Bucket Structure
 ```
 
 **Backup Strategy:**
+
 - REQ-DATA-BACKUP-001: Daily encrypted backup
 - REQ-DATA-BACKUP-002: Geographic redundancy (secondary datacenter in Nepal)
 - REQ-DATA-BACKUP-003: Backup retention: 1 month (recent) + 1 archive (yearly)
@@ -1065,20 +1153,21 @@ MinIO Bucket Structure
 
 ## 6.3 Data Retention & Lifecycle
 
-| Data Type | Retention Period | Rationale |
-|---|---|---|
-| **Medical Records** | Indefinite (patient's lifetime + 10 years after death) | Clinical requirement |
-| **Insurance Claims** | 7 years | HIB policy |
-| **Audit Logs** | 3 years | Regulatory requirement |
-| **Consultation Recordings** | 1 year (then delete, keep transcript) | Storage optimization |
-| **Backup Archives** | 7 years | Disaster recovery |
-| **Deleted Accounts** | 30 days (then permanently delete) | GDPR-like right to be forgotten |
+| Data Type                   | Retention Period                                       | Rationale                       |
+| --------------------------- | ------------------------------------------------------ | ------------------------------- |
+| **Medical Records**         | Indefinite (patient's lifetime + 10 years after death) | Clinical requirement            |
+| **Insurance Claims**        | 7 years                                                | HIB policy                      |
+| **Audit Logs**              | 3 years                                                | Regulatory requirement          |
+| **Consultation Recordings** | 1 year (then delete, keep transcript)                  | Storage optimization            |
+| **Backup Archives**         | 7 years                                                | Disaster recovery               |
+| **Deleted Accounts**        | 30 days (then permanently delete)                      | GDPR-like right to be forgotten |
 
 ---
 
 ## 6.4 Data Privacy & Encryption
 
 ### Personal Data Classification
+
 ```
 Level 1 (Highly Sensitive) - Encrypt + Log Access
 ├─ Patient Name
@@ -1097,6 +1186,7 @@ Level 3 (Semi-Public) - No Encryption
 ```
 
 **Encryption Implementation:**
+
 - REQ-DATA-PRIV-001: Use AES-256 for Level 1 & 2
 - REQ-DATA-PRIV-002: TLS 1.3 for all data in transit
 - REQ-DATA-PRIV-003: Field-level encryption (not just database encryption)
@@ -1109,6 +1199,7 @@ Level 3 (Semi-Public) - No Encryption
 ## 7.1 Authentication & Access Control
 
 ### User Authentication (MVP)
+
 - **REQ-SEC-AUTH-001:** Username/password with strong validation
 - **REQ-SEC-AUTH-002:** Multi-factor authentication (MFA) for providers
 - **REQ-SEC-AUTH-003:** OTP via SMS for MFA
@@ -1118,6 +1209,7 @@ Level 3 (Semi-Public) - No Encryption
 - **REQ-SEC-AUTH-007:** Account lockout after 5 failed login attempts
 
 ### Authorization & RBAC (MVP)
+
 - **REQ-SEC-RBAC-001:** Role-based access control (RBAC)
 - **REQ-SEC-RBAC-002:** Roles: Patient, Provider (doctor/nurse), Admin, Caregiver
 - **REQ-SEC-RBAC-003:** Least privilege principle (minimal permissions)
@@ -1140,6 +1232,7 @@ Level 3 (Semi-Public) - No Encryption
 ## 7.2 Data Encryption & Protection
 
 ### Encryption Standards (MVP)
+
 - **REQ-SEC-ENC-001:** AES-256 for data at rest
 - **REQ-SEC-ENC-002:** TLS 1.3 for data in transit
 - **REQ-SEC-ENC-003:** SHA-256 for password hashing (bcrypt or Argon2)
@@ -1147,6 +1240,7 @@ Level 3 (Semi-Public) - No Encryption
 - **REQ-SEC-ENC-005:** PFS (Perfect Forward Secrecy) for TLS
 
 ### Key Management (MVP)
+
 - **REQ-SEC-KEY-001:** Encryption keys stored separately from data
 - **REQ-SEC-KEY-002:** Key rotation annually
 - **REQ-SEC-KEY-003:** Master key stored in hardware security module (HSM) or Vault
@@ -1158,6 +1252,7 @@ Level 3 (Semi-Public) - No Encryption
 ## 7.3 Audit Logging & Monitoring
 
 ### Audit Trail (MVP)
+
 - **REQ-SEC-AUDIT-001:** Log all data access (read, create, update, delete)
 - **REQ-SEC-AUDIT-002:** Immutable logs (cannot be deleted or modified)
 - **REQ-SEC-AUDIT-003:** Log entries include: timestamp, user, IP, action, object, result
@@ -1165,6 +1260,7 @@ Level 3 (Semi-Public) - No Encryption
 - **REQ-SEC-AUDIT-005:** Real-time alerts on suspicious activity
 
 **Example Audit Log Entry:**
+
 ```json
 {
   "timestamp": "2025-03-15T10:30:45.123Z",
@@ -1183,6 +1279,7 @@ Level 3 (Semi-Public) - No Encryption
 ```
 
 ### Security Monitoring (MVP)
+
 - **REQ-SEC-MONITOR-001:** Real-time security event monitoring
 - **REQ-SEC-MONITOR-002:** Alert on suspicious patterns (multiple failed logins, mass data access)
 - **REQ-SEC-MONITOR-003:** Automated response to threats (lock account, disable access)
@@ -1194,6 +1291,7 @@ Level 3 (Semi-Public) - No Encryption
 ## 7.4 Vulnerability Management
 
 ### Vulnerability Assessment (MVP)
+
 - **REQ-SEC-VULN-001:** Annual penetration testing by certified firm
 - **REQ-SEC-VULN-002:** Vulnerability scanning on code (SAST)
 - **REQ-SEC-VULN-003:** Vulnerability scanning on dependencies (SCA)
@@ -1201,6 +1299,7 @@ Level 3 (Semi-Public) - No Encryption
 - **REQ-SEC-VULN-005:** Responsible disclosure program (bug bounty)
 
 ### Patch Management (MVP)
+
 - **REQ-SEC-PATCH-001:** Patch critical vulnerabilities within 24 hours
 - **REQ-SEC-PATCH-002:** Patch high-severity within 1 week
 - **REQ-SEC-PATCH-003:** Patch medium/low within 30 days
@@ -1212,6 +1311,7 @@ Level 3 (Semi-Public) - No Encryption
 ## 7.5 Incident Response & Data Breach
 
 ### Incident Response Plan (MVP)
+
 - **REQ-SEC-INCIDENT-001:** Documented incident response procedure
 - **REQ-SEC-INCIDENT-002:** Incident classification (severity levels)
 - **REQ-SEC-INCIDENT-003:** Incident reporting template
@@ -1219,6 +1319,7 @@ Level 3 (Semi-Public) - No Encryption
 - **REQ-SEC-INCIDENT-005:** Post-incident analysis (root cause)
 
 ### Data Breach Notification (MVP)
+
 - **REQ-SEC-BREACH-001:** Notify affected patients within 72 hours
 - **REQ-SEC-BREACH-002:** Notify MoHP within 72 hours (per draft IT Bill)
 - **REQ-SEC-BREACH-003:** Preserve evidence for investigation
@@ -1226,6 +1327,7 @@ Level 3 (Semi-Public) - No Encryption
 - **REQ-SEC-BREACH-005:** Communicate remediation steps to patients
 
 **Breach Notification Template:**
+
 ```
 Subject: Healthcare Data Security Incident — Action Required
 
@@ -1249,6 +1351,7 @@ Sincerely,
 ## 7.6 Compliance Requirements
 
 ### Directive 2081 Compliance (MVP)
+
 - **REQ-SEC-DIR2081-001:** FHIR R4 resource implementation
 - **REQ-SEC-DIR2081-002:** All 21 EMR modules support (receive from external EMRs)
 - **REQ-SEC-DIR2081-003:** Interoperability layer (FHIR API Gateway)
@@ -1256,6 +1359,7 @@ Sincerely,
 - **REQ-SEC-DIR2081-005:** Third-party security audit
 
 ### Individual Privacy Act 2078 Compliance (MVP)
+
 - **REQ-SEC-PRIVACY-001:** Data minimization (collect only necessary data)
 - **REQ-SEC-PRIVACY-002:** Explicit consent for data processing
 - **REQ-SEC-PRIVACY-003:** Right to access (provide copy of personal data)
@@ -1265,9 +1369,10 @@ Sincerely,
 - **REQ-SEC-PRIVACY-007:** Privacy impact assessment (PIA)
 
 ### Data Sovereignty (MVP)
+
 - **REQ-SEC-SOVEREIGN-001:** All primary data stored in Nepal
 - **REQ-SEC-SOVEREIGN-002:** No backup or copy outside Nepal
-- **REQ-SEC-SOVEREIGN-003: Data processing occurs within Nepal
+- \*\*REQ-SEC-SOVEREIGN-003: Data processing occurs within Nepal
 - **REQ-SEC-SOVEREIGN-004:** Regular audit of data location
 - **REQ-SEC-SOVEREIGN-005:** Documentation for MoHP verification
 
@@ -1280,6 +1385,7 @@ Sincerely,
 ### Patient Mobile App (iOS & Android)
 
 **Core Screens (MVP):**
+
 - **Dashboard:** Health summary, upcoming appointments, recent records, alerts
 - **Medical History:** Timeline of records, search, filter, organize
 - **Medications:** Current meds, reminders, adherence tracking
@@ -1289,6 +1395,7 @@ Sincerely,
 - **Settings:** Notifications, language, privacy, logout
 
 **UI/UX Principles:**
+
 - REQ-UI-MOBILE-001: Mobile-first responsive design
 - REQ-UI-MOBILE-002: Touch-optimized buttons (minimum 44x44 pts)
 - REQ-UI-MOBILE-003: Bottom navigation for easy thumb access
@@ -1305,6 +1412,7 @@ Sincerely,
 ### Provider Web Portal
 
 **Screens:**
+
 - **Dashboard:** Assigned patients, pending tasks, alerts
 - **Patient Search:** Find patient, view records
 - **Patient Details:** Complete medical history, add notes
@@ -1314,6 +1422,7 @@ Sincerely,
 - **Settings:** Configure availability, manage access
 
 **UI/UX Requirements:**
+
 - REQ-UI-WEB-PROV-001: Desktop-optimized layout
 - REQ-UI-WEB-PROV-002: Keyboard shortcuts for power users
 - REQ-UI-WEB-PROV-003: Customizable dashboard
@@ -1323,6 +1432,7 @@ Sincerely,
 ### Admin Web Portal
 
 **Screens:**
+
 - **User Management:** View, create, disable users
 - **System Health:** Uptime, errors, performance metrics
 - **Audit Logs:** Searchable access logs
@@ -1334,6 +1444,7 @@ Sincerely,
 ## 8.3 Accessibility Requirements (WCAG 2.1 AA)
 
 ### Vision Accessibility
+
 - **REQ-ACCESS-VISION-001:** Minimum 4.5:1 contrast ratio for text
 - **REQ-ACCESS-VISION-002:** Resizable text (up to 200%)
 - **REQ-ACCESS-VISION-003:** High contrast mode toggle
@@ -1343,12 +1454,14 @@ Sincerely,
 - **REQ-ACCESS-VISION-007:** Focus indicator visible (keyboard navigation)
 
 ### Hearing Accessibility
+
 - **REQ-ACCESS-HEARING-001:** Captions for video content
 - **REQ-ACCESS-HEARING-002:** Transcripts for audio consultations
 - **REQ-ACCESS-HEARING-003:** Visual alerts (flashing for important notifications)
 - **REQ-ACCESS-HEARING-004:** Alternative to audio alerts (haptic feedback, visual)
 
 ### Motor Accessibility
+
 - **REQ-ACCESS-MOTOR-001:** Large touch targets (48x48 dp minimum)
 - **REQ-ACCESS-MOTOR-002:** Keyboard-only navigation (no mouse required)
 - **REQ-ACCESS-MOTOR-003:** Voice command support (hands-free)
@@ -1356,6 +1469,7 @@ Sincerely,
 - **REQ-ACCESS-MOTOR-005:** No time-limited interactions (no flash/blink/auto-advance)
 
 ### Cognitive Accessibility
+
 - **REQ-ACCESS-COGNITIVE-001:** Simple, clear language (avoid jargon)
 - **REQ-ACCESS-COGNITIVE-002:** Consistent design patterns
 - **REQ-ACCESS-COGNITIVE-003:** Clear error messages (what went wrong, how to fix)
@@ -1367,12 +1481,14 @@ Sincerely,
 ## 8.4 Multilingual Support
 
 ### Language Requirements
+
 - **REQ-UI-LANG-001:** Nepali (primary language, complete support)
 - **REQ-UI-LANG-002:** English (secondary, all key features)
 - **REQ-UI-LANG-003:** Maithili (eastern Nepal, key features) — Phase 2
 - **REQ-UI-LANG-004:** Newari (Kathmandu Valley, key features) — Phase 2
 
 ### Localization (i18n) Implementation
+
 - REQ-UI-I18N-001: String translation framework (gettext or i18n library)
 - REQ-UI-I18N-002: Pseudo-localization for QA (testing)
 - REQ-UI-I18N-003: Right-to-left (RTL) text support (if needed)
@@ -1385,6 +1501,7 @@ Sincerely,
 ## 8.5 Health Literacy Design
 
 ### Plain Language Requirements
+
 - **REQ-UI-LITERACY-001:** Define medical terms in plain language
 - **REQ-UI-LITERACY-002:** Use illustrations for concepts
 - **REQ-UI-LITERACY-003:** Medical term glossary (in-app)
@@ -1393,6 +1510,7 @@ Sincerely,
 - **REQ-UI-LITERACY-006:** Example data in forms
 
 ### Health Education Features
+
 - **REQ-UI-LITERACY-007:** Health tips and education articles
 - **REQ-UI-LITERACY-008:** Video tutorials (with captions)
 - **REQ-UI-LITERACY-009:** FAQ section
@@ -1405,6 +1523,7 @@ Sincerely,
 ## 9.1 Infrastructure Architecture
 
 ### Server Infrastructure (MVP)
+
 ```
 Nepal-IX Datacenter (Primary)
 ├─ Load Balancer (Nginx/HAProxy)
@@ -1418,9 +1537,9 @@ Nepal-IX Datacenter (Primary)
 │  └─ (8 CPU, 32GB RAM, 500GB SSD)
 ├─ Database Replication (Read Replica)
 │  └─ (4 CPU, 16GB RAM, 500GB SSD)
-├─ Redis Cache
+├─ Valkey Cache
 │  └─ (2 CPU, 8GB RAM)
-├─ File Storage (MinIO S3)
+├─ File Storage (Ceph RADOS Gateway)
 │  └─ (4 CPU, 16GB RAM, 2TB storage)
 └─ Backup System
    └─ Daily encrypted backup (external 2TB drive)
@@ -1430,6 +1549,7 @@ Secondary Datacenter (Backup — Different location in Nepal)
 ```
 
 **Infrastructure Requirements:**
+
 - REQ-INFRA-001: Redundant power supply (UPS, generator)
 - REQ-INFRA-002: Redundant network connectivity
 - REQ-INFRA-003: Environmental monitoring (temperature, humidity)
@@ -1441,6 +1561,7 @@ Secondary Datacenter (Backup — Different location in Nepal)
 ## 9.2 Network Requirements
 
 ### Network Security
+
 - **REQ-NET-001:** Firewall (UFW on servers, hardware firewall)
 - **REQ-NET-002:** VPN for provider access (OpenVPN)
 - **REQ-NET-003:** All traffic encrypted (TLS 1.3 minimum)
@@ -1448,6 +1569,7 @@ Secondary Datacenter (Backup — Different location in Nepal)
 - **REQ-NET-005:** WAF (Web Application Firewall) rules
 
 ### Network Performance
+
 - **REQ-NET-006:** Low latency (<50ms within Nepal)
 - **REQ-NET-007:** Sufficient bandwidth (10 Mbps redundant links)
 - **REQ-NET-008:** CDN for static assets (optional, Cloudflare with Nepal jurisdiction support)
@@ -1457,6 +1579,7 @@ Secondary Datacenter (Backup — Different location in Nepal)
 ## 9.3 Deployment Strategy
 
 ### CI/CD Pipeline
+
 - **REQ-DEPLOY-001:** Automated testing (unit, integration, e2e)
 - **REQ-DEPLOY-002:** Code review before merge
 - **REQ-DEPLOY-003:** Staged deployments (dev → staging → production)
@@ -1465,6 +1588,7 @@ Secondary Datacenter (Backup — Different location in Nepal)
 - **REQ-DEPLOY-006:** Deployment documentation and runbooks
 
 ### Deployment Process
+
 ```
 Git Push
   ↓
@@ -1490,6 +1614,7 @@ Monitoring (24 hours post-deployment)
 ## 9.4 Configuration Management
 
 ### Environment Configuration
+
 - **REQ-CONFIG-001:** Separate configs for dev, staging, production
 - **REQ-CONFIG-002:** Use environment variables for secrets (API keys, DB passwords)
 - **REQ-CONFIG-003:** Configuration management tool (Ansible or Terraform)
@@ -1502,18 +1627,21 @@ Monitoring (24 hours post-deployment)
 ## 10.1 Testing Strategy
 
 ### Unit Testing (MVP)
+
 - **REQ-TEST-UNIT-001:** Minimum 80% code coverage
 - **REQ-TEST-UNIT-002:** Test all business logic
 - **REQ-TEST-UNIT-003:** Jest or Mocha for JavaScript testing
 - **REQ-TEST-UNIT-004:** Run on every code commit
 
 ### Integration Testing (MVP)
+
 - **REQ-TEST-INT-001:** Test API endpoints
 - **REQ-TEST-INT-002:** Test database operations
 - **REQ-TEST-INT-003:** Test external integrations (openIMIS, SMS, email)
 - **REQ-TEST-INT-004:** Run on staging environment
 
 ### End-to-End Testing (MVP)
+
 - **REQ-TEST-E2E-001:** Test complete user workflows (register → book appointment → consult)
 - **REQ-TEST-E2E-002:** Selenium or Cypress for browser automation
 - **REQ-TEST-E2E-003:** Test on real devices (iOS, Android)
@@ -1521,25 +1649,29 @@ Monitoring (24 hours post-deployment)
 - **REQ-TEST-E2E-005:** Run weekly, before each release
 
 ### Performance Testing (Phase 2)
+
 - **REQ-TEST-PERF-001:** Load testing (concurrent users)
 - **REQ-TEST-PERF-002:** Stress testing (beyond expected load)
 - **REQ-TEST-PERF-003:** Endurance testing (sustained load over hours)
 - **REQ-TEST-PERF-004:** Use Apache JMeter or k6
 
 ### Security Testing (MVP)
-- **REQ-TEST-SEC-001:** Static analysis (SonarQube, Checkmarx)
+
+- **REQ-TEST-SEC-001:** Static analysis (SonarQube, Semgrep)
 - **REQ-TEST-SEC-002:** Dynamic analysis (OWASP ZAP)
-- **REQ-TEST-SEC-003:** Dependency scanning (SNYK)
+- **REQ-TEST-SEC-003:** Dependency scanning (Trivy)
 - **REQ-TEST-SEC-004:** Penetration testing (annual, external firm)
 - **REQ-TEST-SEC-005:** Vulnerability assessment
 
 ### Accessibility Testing (MVP)
+
 - **REQ-TEST-ACC-001:** Automated accessibility checks (axe, WAVE)
 - **REQ-TEST-ACC-002:** Manual screen reader testing (NVDA, JAWS)
 - **REQ-TEST-ACC-003:** Keyboard navigation testing
 - **REQ-TEST-ACC-004:** Color contrast verification
 
 ### Usability Testing (MVP)
+
 - **REQ-TEST-UX-001:** User testing with 5+ participants per feature
 - **REQ-TEST-UX-002:** Think-aloud protocol (observe and record)
 - **REQ-TEST-UX-003:** Task-based scenarios
@@ -1550,27 +1682,29 @@ Monitoring (24 hours post-deployment)
 
 ## 10.2 Quality Metrics
 
-| Metric | Target | Measurement |
-|---|---|---|
-| **Code Coverage** | ≥80% | SonarQube |
-| **Bug Escape Rate** | <1% | Bugs found in production / total bugs |
-| **Test Automation** | 90%+ | Automated tests / total test cases |
-| **Uptime** | 99.5% | Monitoring dashboard |
-| **Page Load Time** | <2s (p90) | Real User Monitoring (RUM) |
-| **NPS Score** | >50 | User surveys |
-| **Accessibility Compliance** | WCAG 2.1 AA | Automated + manual audit |
+| Metric                       | Target      | Measurement                           |
+| ---------------------------- | ----------- | ------------------------------------- |
+| **Code Coverage**            | ≥80%        | SonarQube                             |
+| **Bug Escape Rate**          | <1%         | Bugs found in production / total bugs |
+| **Test Automation**          | 90%+        | Automated tests / total test cases    |
+| **Uptime**                   | 99.5%       | Monitoring dashboard                  |
+| **Page Load Time**           | <2s (p90)   | Real User Monitoring (RUM)            |
+| **NPS Score**                | >50         | User surveys                          |
+| **Accessibility Compliance** | WCAG 2.1 AA | Automated + manual audit              |
 
 ---
 
 ## 10.3 Release Management
 
 ### Release Cadence
+
 - **REQ-RELEASE-001:** Major releases: Quarterly (every 3 months)
 - **REQ-RELEASE-002:** Minor releases: Monthly feature updates
 - **REQ-RELEASE-003:** Patch releases: As needed for bugs/security
 - **REQ-RELEASE-004:** Hotfixes: Production issues, deploy within 4 hours
 
 ### Release Checklist
+
 - [ ] All tests pass (unit, integration, e2e)
 - [ ] Security scan clean (no vulnerabilities)
 - [ ] Code review approved
@@ -1589,6 +1723,7 @@ Monitoring (24 hours post-deployment)
 ## 11.1 Monitoring & Alerting
 
 ### System Monitoring (MVP)
+
 - **REQ-OPS-MON-001:** CPU usage monitoring
 - **REQ-OPS-MON-002:** Memory usage monitoring
 - **REQ-OPS-MON-003:** Disk space monitoring
@@ -1597,12 +1732,14 @@ Monitoring (24 hours post-deployment)
 - **REQ-OPS-MON-006:** Error rate monitoring
 
 ### Application Monitoring (MVP)
+
 - **REQ-OPS-APP-001:** API response time (p50, p95, p99)
 - **REQ-OPS-APP-002:** Error rates by endpoint
 - **REQ-OPS-APP-003:** User session tracking
 - **REQ-OPS-APP-004:** Feature usage analytics
 
 ### Alerting (MVP)
+
 - **REQ-OPS-ALERT-001:** CPU >80% → alert
 - **REQ-OPS-ALERT-002:** Memory >90% → alert
 - **REQ-OPS-ALERT-003:** Disk >85% → alert
@@ -1612,6 +1749,7 @@ Monitoring (24 hours post-deployment)
 - **REQ-OPS-ALERT-007:** Backup failure → alert
 
 **Alert Delivery:**
+
 - Slack channel (operations team)
 - PagerDuty (escalation)
 - SMS (critical issues)
@@ -1622,6 +1760,7 @@ Monitoring (24 hours post-deployment)
 ## 11.2 Support & Maintenance
 
 ### Customer Support (MVP)
+
 - **REQ-OPS-SUPPORT-001:** Email support (support@company.com)
 - **REQ-OPS-SUPPORT-002:** Response time: <24 hours for normal, <4 hours for urgent
 - **REQ-OPS-SUPPORT-003:** Support knowledge base (FAQ)
@@ -1629,6 +1768,7 @@ Monitoring (24 hours post-deployment)
 - **REQ-OPS-SUPPORT-005:** Escalation process for unresolved issues
 
 ### Maintenance Windows (MVP)
+
 - **REQ-OPS-MAINT-001:** Regular maintenance: Monthly, Sunday 12-2 AM (low-traffic)
 - **REQ-OPS-MAINT-002:** Emergency maintenance: As needed, with user notification
 - **REQ-OPS-MAINT-003:** Maintenance window: ≤30 minutes
@@ -1640,6 +1780,7 @@ Monitoring (24 hours post-deployment)
 ## 11.3 Runbooks & Documentation
 
 ### Operational Runbooks
+
 - **REQ-OPS-RUNBOOK-001:** Server restart procedure
 - **REQ-OPS-RUNBOOK-002:** Database failover procedure
 - **REQ-OPS-RUNBOOK-003:** Backup and restore procedure
@@ -1649,6 +1790,7 @@ Monitoring (24 hours post-deployment)
 - **REQ-OPS-RUNBOOK-007:** Performance troubleshooting guide
 
 ### Documentation (MVP)
+
 - **REQ-OPS-DOC-001:** API documentation (Swagger/OpenAPI)
 - **REQ-OPS-DOC-002:** Architecture documentation
 - **REQ-OPS-DOC-003:** Deployment guide
@@ -1665,28 +1807,28 @@ Monitoring (24 hours post-deployment)
 
 ### Gap Analysis & Additions
 
-| Gap ID | Category | Description | Impact | Recommendation | Priority |
-|--------|----------|-------------|--------|-----------------|----------|
-| **G-01** | **User Management** | No user account recovery (forgotten password) | High | Implement password reset via email + OTP | MVP |
-| **G-02** | **User Management** | No account deactivation/deletion process | High | Implement 30-day delete window with data archival | MVP |
-| **G-03** | **Performance** | No caching strategy documented | High | Implement Redis caching for common queries | MVP |
-| **G-04** | **Scalability** | No database sharding strategy | Medium | Plan sharding for 1M+ records (Phase 3) | Phase 2 |
-| **G-05** | **Testing** | No API versioning strategy | Medium | Implement API v1, v2 support for backwards compatibility | Phase 2 |
-| **G-06** | **Monitoring** | No real-time health dashboard for ops team | High | Build ops dashboard (uptime, errors, performance) | Phase 1 |
-| **G-07** | **Documentation** | No API rate limiting specification | Medium | Implement 100 requests/min per user (configurable) | Phase 1 |
-| **G-08** | **Support** | No self-service password reset | High | Add email-based password reset (OTP verification) | MVP |
-| **G-09** | **Consent** | No consent revocation interface for patients | High | Allow patient to revoke provider access anytime | MVP |
-| **G-10** | **Data Quality** | No data validation rules specified | High | Validate date ranges, medical codes, numeric ranges | MVP |
-| **G-11** | **Sync** | No offline sync conflict resolution | Medium | Implement last-write-wins strategy with user notification | Phase 1 |
-| **G-12** | **Emergency** | No Emergency SOS button specification | Medium | 1-tap emergency contact calling + location sharing | Phase 2 |
-| **G-13** | **Analytics** | No anonymized data export for research | Medium | Support de-identified dataset export (with ethics approval) | Phase 3 |
-| **G-14** | **Compliance** | No data breach simulation/testing | High | Annual breach response drill (tabletop exercise) | Phase 1 |
-| **G-15** | **API** | No webhook support for external systems | Medium | Support webhooks for EMR integrations (real-time updates) | Phase 2 |
-| **G-16** | **Mobile** | No app signing/certificate management | High | Implement proper app signing certificates (iOS/Android) | MVP |
-| **G-17** | **Backup** | No backup integrity verification | High | Weekly backup restoration test (verify recovery) | Phase 1 |
-| **G-18** | **Load Balancing** | No session stickiness requirement | Medium | Implement sticky sessions or distributed session store | Phase 1 |
-| **G-19** | **Frontend** | No error boundary/crash reporting | Medium | Implement Sentry for frontend error tracking | Phase 1 |
-| **G-20** | **Security** | No rate limiting on login attempts (explicit) | High | 5-attempt lockout, progressive delays (1s, 5s, 30s) | MVP |
+| Gap ID   | Category            | Description                                   | Impact | Recommendation                                              | Priority |
+| -------- | ------------------- | --------------------------------------------- | ------ | ----------------------------------------------------------- | -------- |
+| **G-01** | **User Management** | No user account recovery (forgotten password) | High   | Implement password reset via email + OTP                    | MVP      |
+| **G-02** | **User Management** | No account deactivation/deletion process      | High   | Implement 30-day delete window with data archival           | MVP      |
+| **G-03** | **Performance**     | No caching strategy documented                | High   | Implement Valkey caching for common queries                 | MVP      |
+| **G-04** | **Scalability**     | No database sharding strategy                 | Medium | Plan sharding for 1M+ records (Phase 3)                     | Phase 2  |
+| **G-05** | **Testing**         | No API versioning strategy                    | Medium | Implement API v1, v2 support for backwards compatibility    | Phase 2  |
+| **G-06** | **Monitoring**      | No real-time health dashboard for ops team    | High   | Build ops dashboard (uptime, errors, performance)           | Phase 1  |
+| **G-07** | **Documentation**   | No API rate limiting specification            | Medium | Implement 100 requests/min per user (configurable)          | Phase 1  |
+| **G-08** | **Support**         | No self-service password reset                | High   | Add email-based password reset (OTP verification)           | MVP      |
+| **G-09** | **Consent**         | No consent revocation interface for patients  | High   | Allow patient to revoke provider access anytime             | MVP      |
+| **G-10** | **Data Quality**    | No data validation rules specified            | High   | Validate date ranges, medical codes, numeric ranges         | MVP      |
+| **G-11** | **Sync**            | No offline sync conflict resolution           | Medium | Implement last-write-wins strategy with user notification   | Phase 1  |
+| **G-12** | **Emergency**       | No Emergency SOS button specification         | Medium | 1-tap emergency contact calling + location sharing          | Phase 2  |
+| **G-13** | **Analytics**       | No anonymized data export for research        | Medium | Support de-identified dataset export (with ethics approval) | Phase 3  |
+| **G-14** | **Compliance**      | No data breach simulation/testing             | High   | Annual breach response drill (tabletop exercise)            | Phase 1  |
+| **G-15** | **API**             | No webhook support for external systems       | Medium | Support webhooks for EMR integrations (real-time updates)   | Phase 2  |
+| **G-16** | **Mobile**          | No app signing/certificate management         | High   | Implement proper app signing certificates (iOS/Android)     | MVP      |
+| **G-17** | **Backup**          | No backup integrity verification              | High   | Weekly backup restoration test (verify recovery)            | Phase 1  |
+| **G-18** | **Load Balancing**  | No session stickiness requirement             | Medium | Implement sticky sessions or distributed session store      | Phase 1  |
+| **G-19** | **Frontend**        | No error boundary/crash reporting             | Medium | Implement Sentry for frontend error tracking                | Phase 1  |
+| **G-20** | **Security**        | No rate limiting on login attempts (explicit) | High   | 5-attempt lockout, progressive delays (1s, 5s, 30s)         | MVP      |
 
 ---
 
@@ -1695,6 +1837,7 @@ Monitoring (24 hours post-deployment)
 ### A. Authentication & Password Management
 
 **REQ-NEW-AUTH-001: Password Reset Flow**
+
 ```
 Patient clicks "Forgot Password"
   ↓
@@ -1712,6 +1855,7 @@ Login successful
 ```
 
 **REQ-NEW-AUTH-002: Account Deletion**
+
 ```
 Patient requests account deletion
   ↓
@@ -1727,6 +1871,7 @@ Account marked as deleted
 ```
 
 **REQ-NEW-AUTH-003: Session Management**
+
 - Session timeout: 15 minutes for providers, 30 minutes for patients
 - Session refresh: Auto-refresh on activity
 - Multiple sessions: Allow 1 active session per device, option to invalidate other sessions
@@ -1737,6 +1882,7 @@ Account marked as deleted
 ### B. Consent & Data Sharing
 
 **REQ-NEW-CONSENT-001: Granular Consent Model**
+
 ```
 Patient grants consent to Provider:
 ├─ Data types: All / Specific (medications, lab results, notes)
@@ -1747,12 +1893,14 @@ Patient grants consent to Provider:
 ```
 
 **REQ-NEW-CONSENT-002: Consent Withdrawal**
+
 - Patient can revoke provider access immediately
 - Provider gets notification of revoked access
 - System removes provider's access (no future queries)
 - Existing data accessed before revocation remains in logs (audit trail)
 
 **REQ-NEW-CONSENT-003: Emergency Access Override**
+
 - First responders can access emergency summary with emergency PIN
 - Emergency access bypasses normal consent (for life-threatening situations)
 - Emergency access fully logged with timestamp and responder info
@@ -1763,6 +1911,7 @@ Patient grants consent to Provider:
 ### C. Data Quality & Validation
 
 **REQ-NEW-VALID-001: Medical Data Validation**
+
 - Date of birth: Not in future, not >120 years old
 - Blood pressure: Systolic 40-300 mmHg, Diastolic 20-180 mmHg
 - Weight: 0.5-600 kg
@@ -1773,12 +1922,14 @@ Patient grants consent to Provider:
 - ICD-10 codes: Must match official WHO list
 
 **REQ-NEW-VALID-002: Provider Verification**
+
 - Doctor license verification via Nepal Medical Council
 - Nurse license verification via Nursing Council
 - License validity checked quarterly
 - Automatic account disable if license expired
 
 **REQ-NEW-VALID-003: Facility Verification**
+
 - Facility registration checked against DoHS registry
 - Valid facility types: Hospital, Clinic, Lab, Pharmacy, Imaging Center
 - Facility contact info required (phone, address, GPS)
@@ -1789,6 +1940,7 @@ Patient grants consent to Provider:
 ### D. Notifications
 
 **REQ-NEW-NOTIF-001: Notification Center**
+
 - In-app notification center (history of all notifications)
 - Notification categories (appointments, medications, alerts, messages)
 - Filter/search notifications
@@ -1796,12 +1948,14 @@ Patient grants consent to Provider:
 - Delete old notifications
 
 **REQ-NEW-NOTIF-002: Notification Preferences (Advanced)**
+
 - Per-notification-type preferences (enable/disable)
 - Delivery method preferences (push, SMS, email)
 - Do Not Disturb hours
 - Quiet mode (no notifications except emergencies)
 
 **REQ-NEW-NOTIF-003: SMS Fallback**
+
 - If push fails, retry via SMS
 - SMS for critical alerts (emergency, medication missed)
 - SMS confirmation link for appointment reminders
@@ -1811,6 +1965,7 @@ Patient grants consent to Provider:
 ### E. Offline & Sync
 
 **REQ-NEW-OFFLINE-001: Offline Data Sync**
+
 - Queue for failed requests (stored locally)
 - Auto-retry when connectivity restored
 - Conflict resolution: Last-write-wins with user notification
@@ -1818,11 +1973,13 @@ Patient grants consent to Provider:
 - Allow manual sync button
 
 **REQ-NEW-OFFLINE-002: Offline Data Integrity**
+
 - Verify data integrity after sync
 - Flag conflicts for user review (manual resolution)
 - Log all sync events for audit
 
 **REQ-NEW-OFFLINE-003: Offline Limitations Disclosure**
+
 - Display banner when offline: "Some features not available"
 - Show which features are unavailable offline
 - Estimate when sync will occur
@@ -1832,6 +1989,7 @@ Patient grants consent to Provider:
 ### F. Emergency Features
 
 **REQ-NEW-EMERGENCY-001: SOS Button (Phase 2)**
+
 ```
 Patient taps SOS button
   ↓
@@ -1849,6 +2007,7 @@ First responders can access emergency summary via QR code
 ```
 
 **REQ-NEW-EMERGENCY-002: Emergency Mode (Bypass)** (Phase 2)
+
 - Access emergency summary without authentication (emergency PIN only)
 - First respader authentication: via SMS + phone number
 - QR code on patient emergency card → access emergency info
@@ -1859,6 +2018,7 @@ First responders can access emergency summary via QR code
 ### G. Analytics & Insights
 
 **REQ-NEW-ANALYTICS-001: Personal Health Dashboard (Phase 3)**
+
 - Health score (composite metric: 0-100)
 - Risk indicators (cardio risk, diabetes risk, etc.)
 - Medication adherence rate
@@ -1867,6 +2027,7 @@ First responders can access emergency summary via QR code
 - Health trends (BMI, BP over time)
 
 **REQ-NEW-ANALYTICS-002: AI Health Insights (Phase 4)**
+
 - Personalized health recommendations based on age, conditions, risk factors
 - Medication effectiveness tracking (user reports symptoms improving/worsening)
 - Drug interaction alerts (AI-powered, more comprehensive)
@@ -1878,6 +2039,7 @@ First responders can access emergency summary via QR code
 ### H. Accessibility & Design
 
 **REQ-NEW-ACCESS-001: Simplified Mode (for elderly/low-literacy users)**
+
 - Hide advanced options
 - Larger text (18pt+)
 - Fewer menu items (most common actions)
@@ -1885,11 +2047,13 @@ First responders can access emergency summary via QR code
 - Step-by-step wizards for complex tasks
 
 **REQ-NEW-ACCESS-002: Voice Navigation**
+
 - Voice commands: "Show my medications," "Schedule appointment," "Call doctor"
 - Voice confirmation for actions: "Are you sure you want to delete this record?"
 - Voice feedback: System reads out actions and confirmations
 
 **REQ-NEW-ACCESS-003: Color & Text Customization**
+
 - Custom font sizes (12-24pt)
 - Color theme: Light, Dark, High Contrast
 - Dyslexia-friendly font option (OpenDyslexic)
@@ -1900,12 +2064,14 @@ First responders can access emergency summary via QR code
 ### I. Medical Record Enhancements
 
 **REQ-NEW-MED-001: Record Versioning**
+
 - Track changes to records (who edited what, when)
 - Show before/after comparison
 - Revert to previous version (with audit trail)
 - Reason for edit field (optional but recommended)
 
 **REQ-NEW-MED-002: Record Comments/Collaboration**
+
 - Provider can add comments to records
 - Patient can comment on records
 - Discussion thread for each record
@@ -1913,6 +2079,7 @@ First responders can access emergency summary via QR code
 - Comment history with edit tracking
 
 **REQ-NEW-MED-003: Record Attachments**
+
 - Attach multiple file types (PDF, images, audio, video)
 - Video uploads for patient-recorded symptoms
 - Audio uploads for voice notes
@@ -1924,6 +2091,7 @@ First responders can access emergency summary via QR code
 ### J. Export & Reporting
 
 **REQ-NEW-EXPORT-001: Scheduled Exports**
+
 - Auto-export medical records weekly/monthly
 - Delivery method: Email, cloud backup (Google Drive, Dropbox)
 - Format: FHIR JSON, PDF, CSV
@@ -1931,6 +2099,7 @@ First responders can access emergency summary via QR code
 - Notification when export complete
 
 **REQ-NEW-EXPORT-002: Custom Report Generator**
+
 - Select date range
 - Select record types (medications, labs, visits)
 - Select fields to include
@@ -1938,6 +2107,7 @@ First responders can access emergency summary via QR code
 - Add signature line for printing
 
 **REQ-NEW-EXPORT-003: Annual Health Summary**
+
 - Automatic generation on anniversary date
 - Include: Top diagnoses, medications, providers, costs
 - Visuals: Charts, trends
@@ -1949,18 +2119,21 @@ First responders can access emergency summary via QR code
 ### K. Provider Tools
 
 **REQ-NEW-PROVIDER-001: Provider Dashboard Customization**
+
 - Drag-and-drop widgets
 - Filter patients by facility, department, condition
 - Saved views (e.g., "My Diabetic Patients")
 - Bulk actions on patient list (mass messaging, reminders)
 
 **REQ-NEW-PROVIDER-002: Template Notes**
+
 - Reusable clinical note templates (for common conditions)
 - Auto-populate with patient data where applicable
 - Drag-and-drop template builder
 - Share templates across facility
 
 **REQ-NEW-PROVIDER-003: Decision Support**
+
 - Drug interaction checker (built-in)
 - Dosage calculator (for age, weight)
 - Drug-disease interaction checker
@@ -1972,6 +2145,7 @@ First responders can access emergency summary via QR code
 ### L. Compliance & Governance
 
 **REQ-NEW-COMPLY-001: Data Subject Access Request (DSAR)**
+
 - Patient can request copy of all personal data (GDPR-style)
 - System generates DSAR report (all records, logs, metadata)
 - Deliver as FHIR export + CSV + PDF
@@ -1979,12 +2153,14 @@ First responders can access emergency summary via QR code
 - Track all DSARs and fulfillment
 
 **REQ-NEW-COMPLY-002: Audit Report Generation**
+
 - Generate compliance report for regulators (MoHP, HIB)
 - Include: User access logs, data modifications, security events
 - Time period: Last 3 months, 1 year, custom
 - Format: PDF report + raw CSV
 
 **REQ-NEW-COMPLY-003: Privacy Policy & Terms**
+
 - Versioned privacy policy (track changes)
 - User acceptance logging (when user accepted which version)
 - Multi-language support (Nepali, English)
@@ -1996,12 +2172,14 @@ First responders can access emergency summary via QR code
 ### M. Marketing & User Acquisition
 
 **REQ-NEW-MARKETING-001: Referral Program**
+
 - Patient refers friend → both get incentive (NPR 100-500)
 - Referral link: Unique per user
 - Tracking: Referrer → Referred-to linking
 - Redemption: Credit in account, withdrawal to wallet
 
 **REQ-NEW-MARKETING-002: In-App Messaging**
+
 - In-app banners for product announcements
 - Pop-up tips for new features (first-time users)
 - Email campaigns (newsletters, feature announcements)
@@ -2009,6 +2187,7 @@ First responders can access emergency summary via QR code
 - Unsubscribe option for all
 
 **REQ-NEW-MARKETING-003: Onboarding Flow**
+
 - Interactive tutorial on first login
 - Checklist: Complete profile → Add record → Schedule appointment
 - Incentive: Unlock features as you complete actions
@@ -2019,15 +2198,17 @@ First responders can access emergency summary via QR code
 ## 12.3 Phase-Wise Requirement Breakdown
 
 ### MVP (Phase 1, Months 1-6): Core Foundation
+
 **Count: 150+ requirements**
 
 **Must Include:**
+
 - Patient registration & profile
 - Medical record import/storage
 - Medication management
 - Appointment scheduling & reminders
 - Basic telemedicine (video/audio)
-- ASR transcription (Google Cloud)
+- ASR transcription (Vosk on-premise)
 - Insurance eligibility checking
 - FHIR API gateway
 - Security audit readiness
@@ -2036,6 +2217,7 @@ First responders can access emergency summary via QR code
 - Web provider portal
 
 **Can Defer to Phase 2+:**
+
 - Custom ASR model
 - Wearable integration
 - Caregiver features (advanced)
@@ -2045,9 +2227,11 @@ First responders can access emergency summary via QR code
 ---
 
 ### Phase 2 (Months 7-12): MVP+
+
 **Count: 50+ new requirements**
 
 **Add:**
+
 - Offline-first capability
 - Caregiver/family profiles
 - Medication refill integration
@@ -2065,9 +2249,11 @@ First responders can access emergency summary via QR code
 ---
 
 ### Phase 3 (Months 13-18): Extended Features
+
 **Count: 30+ new requirements**
 
 **Add:**
+
 - Custom Nepali ASR model (deployment)
 - FCHV integration
 - Wearable device support
@@ -2083,9 +2269,11 @@ First responders can access emergency summary via QR code
 ---
 
 ### Phase 4+ (Months 19-24): Advanced & AI
+
 **Count: 20+ new requirements**
 
 **Add:**
+
 - Predictive health modeling
 - AI health insights & recommendations
 - IoT device integration
@@ -2098,13 +2286,13 @@ First responders can access emergency summary via QR code
 
 ## 12.4 Requirement Prioritization Matrix
 
-| Priority | Count | Examples | Timeline |
-|----------|-------|----------|----------|
-| **P0 — Critical** | 80 | Auth, FHIR, encryption, audit logs, registration | MVP (Month 6) |
-| **P1 — High** | 70 | Medical records, medications, appointments, telemedicine, ASR | MVP + Phase 2 |
-| **P2 — Medium** | 60 | Offline sync, caregiver, analytics, integrations | Phase 2 |
-| **P3 — Low** | 50 | AI insights, advanced features, marketplace | Phase 3+ |
-| **P4 — Nice-to-Have** | 40 | Customization, advanced personalization | Phase 4+ |
+| Priority              | Count | Examples                                                      | Timeline      |
+| --------------------- | ----- | ------------------------------------------------------------- | ------------- |
+| **P0 — Critical**     | 80    | Auth, FHIR, encryption, audit logs, registration              | MVP (Month 6) |
+| **P1 — High**         | 70    | Medical records, medications, appointments, telemedicine, ASR | MVP + Phase 2 |
+| **P2 — Medium**       | 60    | Offline sync, caregiver, analytics, integrations              | Phase 2       |
+| **P3 — Low**          | 50    | AI insights, advanced features, marketplace                   | Phase 3+      |
+| **P4 — Nice-to-Have** | 40    | Customization, advanced personalization                       | Phase 4+      |
 
 ---
 
@@ -2125,6 +2313,7 @@ This comprehensive end-to-end requirements document covers:
 ✅ **Data requirements** (entities, storage, encryption, lifecycle)
 
 **Next Step:** Use this document as your detailed specification for:
+
 - Development sprint planning
 - Architecture design
 - QA test case creation
@@ -2133,4 +2322,4 @@ This comprehensive end-to-end requirements document covers:
 
 ---
 
-*End-to-End Requirements Document v1.0 — Ready for Implementation Planning*
+_End-to-End Requirements Document v1.0 — Ready for Implementation Planning_
