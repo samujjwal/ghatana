@@ -5,8 +5,8 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
-import type { TenantId, UserId, PaginatedResult } from '@ghatana/tutorputor-contracts';
+import type { PrismaClient } from '@tutorputor/db';
+import type { TenantId, UserId, PaginatedResult } from '@tutorputor/contracts';
 
 // =============================================================================
 // Types

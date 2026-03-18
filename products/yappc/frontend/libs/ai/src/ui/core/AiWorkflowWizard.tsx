@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Box, Surface as Paper, Stepper, Step, StepLabel, StepLabel as StepContent, Typography, Alert, LinearProgress, IconButton, Drawer } from '@ghatana/ui';
+import { Box, Surface as Paper, Stepper, Step, StepLabel, StepLabel as StepContent, Typography, Alert, LinearProgress, IconButton, Drawer } from '@ghatana/design-system';
 import { X as CloseIcon, Sparkles as AIIcon } from 'lucide-react';
 
 import {

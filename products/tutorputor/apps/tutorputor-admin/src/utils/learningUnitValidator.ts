@@ -9,7 +9,7 @@
  * @doc.pattern Validator
  */
 
-import type { LearningUnit, Claim, Evidence, Task } from '@ghatana/tutorputor-contracts/v1/learning-unit';
+import type { LearningUnit, Claim, Evidence, Task } from '@tutorputor/contracts/v1/learning-unit';
 
 export interface ValidationResult {
     isValid: boolean;

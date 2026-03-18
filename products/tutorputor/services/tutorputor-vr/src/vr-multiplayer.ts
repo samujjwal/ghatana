@@ -14,8 +14,8 @@ import type {
   UserId,
   PaginatedResult,
   PaginationArgs,
-} from '@ghatana/tutorputor-contracts/v1';
-import type { VRMultiplayerSession, VRLabId, VRParticipant } from '@ghatana/tutorputor-contracts/v1';
+} from '@tutorputor/contracts/v1';
+import type { VRMultiplayerSession, VRLabId, VRParticipant } from '@tutorputor/contracts/v1';
 
 export class VRMultiplayerServiceImpl implements VRMultiplayerService {
   private publisher: Redis;

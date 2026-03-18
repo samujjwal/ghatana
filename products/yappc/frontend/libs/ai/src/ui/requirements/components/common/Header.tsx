@@ -1,4 +1,4 @@
-import { AppBar, Toolbar, Typography, Button, Box } from '@ghatana/ui';import { useNavigate } from 'react-router-dom'
+import { AppBar, Toolbar, Typography, Button, Box } from '@ghatana/design-system';import { useNavigate } from 'react-router-dom'
 
 const Header = () => {
   const navigate = useNavigate()

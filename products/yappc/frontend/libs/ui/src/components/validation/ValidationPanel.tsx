@@ -32,10 +32,10 @@ import {
   Check,
 } from 'lucide-react';
 
-import { cn } from '@ghatana/ui';
-import { Button } from '@ghatana/ui';
-import { Input } from '@ghatana/ui';
-import { Badge } from '@ghatana/ui';
+import { cn } from '@ghatana/design-system';
+import { Button } from '@ghatana/design-system';
+import { Input } from '@ghatana/design-system';
+import { Badge } from '@ghatana/design-system';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,14 +43,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
-} from '@ghatana/yappc-ui';
-import { Tooltip } from '@ghatana/ui';
-import { TooltipContent, TooltipTrigger } from '@ghatana/yappc-ui';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@ghatana/yappc-ui';
-import { ScrollArea } from '@ghatana/yappc-ui';
-import { Progress } from '@ghatana/ui';
+} from '@yappc/ui';
+import { Tooltip } from '@ghatana/design-system';
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@yappc/ui';
+import { ScrollArea } from '@yappc/ui';
+import { Progress } from '@ghatana/design-system';
 
-import { validationStateAtom } from '@ghatana/yappc-canvas';
+import { validationStateAtom } from '@yappc/canvas';
 
 // =============================================================================
 // Types

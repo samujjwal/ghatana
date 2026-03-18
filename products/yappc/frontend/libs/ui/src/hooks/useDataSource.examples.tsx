@@ -6,7 +6,7 @@
 
 import { Trash2 as DeleteIcon } from 'lucide-react';
 import { RefreshCw as RefreshIcon } from 'lucide-react';
-import { Box, Card, CardContent, Typography, Button, Spinner as CircularProgress, Alert, Stack, TextField, Chip, Grid, InteractiveList as List, ListItem, ListItemText, Divider } from '@ghatana/ui';
+import { Box, Card, CardContent, Typography, Button, Spinner as CircularProgress, Alert, Stack, TextField, Chip, Grid, InteractiveList as List, ListItem, ListItemText, Divider } from '@ghatana/design-system';
 import { resolveMuiColor } from '../utils/safePalette';
 import React, { useState } from 'react';
 

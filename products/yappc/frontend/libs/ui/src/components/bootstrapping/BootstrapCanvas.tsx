@@ -27,18 +27,18 @@ import {
   Share2,
 } from 'lucide-react';
 
-import { cn } from '@ghatana/ui';
-import { Button } from '@ghatana/ui';
-import { Badge } from '@ghatana/ui';
-import { Tooltip } from '@ghatana/ui';
-import { TooltipContent, TooltipTrigger } from '@ghatana/yappc-ui';
+import { cn } from '@ghatana/design-system';
+import { Button } from '@ghatana/design-system';
+import { Badge } from '@ghatana/design-system';
+import { Tooltip } from '@ghatana/design-system';
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 
 // Reuse existing canvas component
 import { ProjectCanvas, type ProjectCanvasRef } from '../canvas/ProjectCanvas';
 import { PhaseProgressBar } from './PhaseProgressBar';
 
 // Import bootstrapping state
-import type { BootstrapPhase, CanvasNode as BootstrapNode } from '@ghatana/yappc-canvas';
+import type { BootstrapPhase, CanvasNode as BootstrapNode } from '@yappc/canvas';
 import {
   currentPhaseAtom,
   canvasNodesAtom,
@@ -48,7 +48,7 @@ import {
   canvasViewportAtom,
   validationReportAtom,
   commandSuggestionsAtom,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 // =============================================================================
 // Types

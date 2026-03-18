@@ -18,7 +18,7 @@ import type {
   SimAction,
   SimulationStep,
   SimKeyframe,
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 
 // =============================================================================
 // Types

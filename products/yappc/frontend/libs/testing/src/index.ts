@@ -5,9 +5,9 @@
  * 
  * @example
  * ```typescript
- * import { renderWithProviders } from '@ghatana/yappc-testing/helpers';
- * import { mockUser, mockCanvas } from '@ghatana/yappc-testing/mocks';
- * import { waitForAsync } from '@ghatana/yappc-testing/utils';
+ * import { renderWithProviders } from '@yappc/testing/helpers';
+ * import { mockUser, mockCanvas } from '@yappc/testing/mocks';
+ * import { waitForAsync } from '@yappc/testing/utils';
  * ```
  */
 

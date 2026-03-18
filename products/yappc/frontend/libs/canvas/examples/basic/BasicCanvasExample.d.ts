@@ -15,7 +15,7 @@
  * ```tsx
  * // Development-only usage
  * if (process.env.NODE_ENV === 'development') {
- *   const { BasicCanvasExample } = await import('@ghatana/yappc-canvas/examples/basic');
+ *   const { BasicCanvasExample } = await import('@yappc/canvas/examples/basic');
  *   <BasicCanvasExample onElementAdd={handleAdd} />
  * }
  * ```

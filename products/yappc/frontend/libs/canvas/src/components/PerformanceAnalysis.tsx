@@ -34,8 +34,8 @@ import {
   DialogContent,
   DialogActions,
   Typography,
-} from '@ghatana/ui';
-import { TextField } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
 import { usePerformanceAnalysis } from '../hooks/usePerformanceAnalysis';
 import type {
     MetricType,

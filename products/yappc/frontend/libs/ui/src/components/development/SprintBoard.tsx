@@ -66,32 +66,32 @@ import {
   PlayCircle,
 } from 'lucide-react';
 
-import { cn } from '@ghatana/ui';
-import { Button } from '@ghatana/ui';
-import { Input } from '@ghatana/ui';
-import { Badge } from '@ghatana/ui';
-import { Avatar } from '@ghatana/ui';
-import { AvatarFallback, AvatarImage } from '@ghatana/yappc-ui';
+import { cn } from '@ghatana/design-system';
+import { Button } from '@ghatana/design-system';
+import { Input } from '@ghatana/design-system';
+import { Badge } from '@ghatana/design-system';
+import { Avatar } from '@ghatana/design-system';
+import { AvatarFallback, AvatarImage } from '@yappc/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@ghatana/yappc-ui';
-import { Tooltip } from '@ghatana/ui';
-import { TooltipContent, TooltipTrigger } from '@ghatana/yappc-ui';
-import { Dialog, DialogContent, DialogTitle } from '@ghatana/ui';
-import { DialogHeader, DialogTrigger } from '@ghatana/yappc-ui';
-import { ScrollArea } from '@ghatana/yappc-ui';
-import { Progress } from '@ghatana/ui';
+} from '@yappc/ui';
+import { Tooltip } from '@ghatana/design-system';
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+import { Dialog, DialogContent, DialogTitle } from '@ghatana/design-system';
+import { DialogHeader, DialogTrigger } from '@yappc/ui';
+import { ScrollArea } from '@yappc/ui';
+import { Progress } from '@ghatana/design-system';
 
 import {
   activeSprintAtom,
   sprintBoardAtom,
   selectedStoryAtom,
   sprintStoriesAtom,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 // =============================================================================
 // Types

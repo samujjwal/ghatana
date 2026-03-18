@@ -19,9 +19,9 @@ import {
   DialogActions,
   IconButton,
   Typography,
-} from '@ghatana/ui';
-import { CardMedia, TextField } from '@ghatana/ui';
-import { SelectTailwind as Select, SelectOption } from '@ghatana/yappc-ui';
+} from '@ghatana/design-system';
+import { CardMedia, TextField } from '@ghatana/design-system';
+import { SelectTailwind as Select, SelectOption } from '@yappc/ui';
 import { useCallback, useMemo, useState } from 'react';
 
 import type { DocumentTemplate } from '../history/historyManager';

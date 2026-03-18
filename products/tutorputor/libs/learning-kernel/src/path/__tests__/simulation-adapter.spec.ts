@@ -16,7 +16,7 @@ import {
   estimateCompletionTime,
   validateSimulationStep,
 } from "../simulation-adapter";
-import type { SimulationManifest, SimulationDomain } from "@ghatana/tutorputor-contracts/v1/simulation";
+import type { SimulationManifest, SimulationDomain } from "@tutorputor/contracts/v1/simulation";
 
 // =============================================================================
 // Test Fixtures

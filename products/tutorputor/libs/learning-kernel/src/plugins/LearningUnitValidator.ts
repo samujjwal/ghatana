@@ -16,8 +16,8 @@ import type {
     PluginMetadata,
     ValidationResult,
     ValidationIssue,
-} from '@ghatana/tutorputor-contracts/v1/plugin-interfaces';
-import type { LearningUnit } from '@ghatana/tutorputor-contracts/v1/learning-unit';
+} from '@tutorputor/contracts/v1/plugin-interfaces';
+import type { LearningUnit } from '@tutorputor/contracts/v1/learning-unit';
 
 /**
  * Validation rule definition.

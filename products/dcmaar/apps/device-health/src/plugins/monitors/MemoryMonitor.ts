@@ -5,7 +5,7 @@
  * Phase 3f: Monitor Plugins Implementation
  */
 
-import { BaseMonitorPlugin } from '@ghatana/dcmaar-plugin-abstractions';
+import { BaseMonitorPlugin } from '@dcmaar/plugin-abstractions';
 
 declare global {
   interface Window {

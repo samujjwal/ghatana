@@ -7,7 +7,7 @@
  * @module pipeline/processors/PolicyEvaluationProcessor
  */
 
-import { BaseEventProcessor, BrowserStorageAdapter } from '@ghatana/dcmaar-browser-extension-core';
+import { BaseEventProcessor, BrowserStorageAdapter } from '@dcmaar/browser-extension-core';
 import type { WebsiteBlocker, BlockingPolicy, WebsiteCategory } from '../../blocker/WebsiteBlocker';
 import type {
     EnrichedEvent,

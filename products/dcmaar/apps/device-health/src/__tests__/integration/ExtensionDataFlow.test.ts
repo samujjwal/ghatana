@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ExtensionDataFlow } from '../../app/background/integration/ExtensionDataFlow';
-import type { Event } from '@ghatana/dcmaar-connectors';
+import type { Event } from '@dcmaar/connectors';
 
 describe('ExtensionDataFlow', () => {
   let dataFlow: ExtensionDataFlow;

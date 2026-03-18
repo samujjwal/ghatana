@@ -24,8 +24,8 @@ import {
   Chip,
   Tooltip,
   InteractiveList as List,
-} from '@ghatana/ui';
-import { TextField, ListItemButton, Collapse } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { TextField, ListItemButton, Collapse } from '@ghatana/design-system';
 import React, { useState, useMemo } from 'react';
 
 import { type Frame , FrameManager} from '../lib/canvas/FrameManager';

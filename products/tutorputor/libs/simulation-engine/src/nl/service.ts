@@ -7,8 +7,8 @@
  * @doc.pattern Service
  */
 
-import type { SimulationManifest } from '@ghatana/tutorputor-contracts/v1/simulation';
-import type { AIProxyService } from '@ghatana/tutorputor-contracts/v1/services';
+import type { SimulationManifest } from '@tutorputor/contracts/v1/simulation';
+import type { AIProxyService } from '@tutorputor/contracts/v1/services';
 import { NLIntentParser, type ParsedIntent } from './intent-parser';
 import { RefinementEngine, type RefinementResult } from './refinement-engine';
 

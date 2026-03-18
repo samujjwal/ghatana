@@ -6,7 +6,7 @@
  */
 
 import React, { useCallback, useMemo } from 'react';
-import { Surface as Paper, Box, Typography, IconButton, Badge, Chip, Alert as MuiAlert, AlertTitle, Button, Collapse, InteractiveList as List, ListItem, ListItemText, ListItemIcon, Divider, Tooltip, Spinner as CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Switch, FormControlLabel } from '@ghatana/ui';
+import { Surface as Paper, Box, Typography, IconButton, Badge, Chip, Alert as MuiAlert, AlertTitle, Button, Collapse, InteractiveList as List, ListItem, ListItemText, ListItemIcon, Divider, Tooltip, Spinner as CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Switch, FormControlLabel } from '@ghatana/design-system';
 import { RefreshCw as RefreshIcon, Bell as NotificationsIcon, Bell as NotificationsActiveIcon, CheckCircle as HealthyIcon, AlertTriangle as WarningIcon, AlertCircle as CriticalIcon, HelpCircle as UnknownIcon, Activity as TimelineIcon, FileText as ReportIcon, ChevronDown as ExpandIcon, ChevronUp as CollapseIcon, Settings as SettingsIcon, Power as CircuitBreakerIcon } from 'lucide-react';
 import {
     useServiceHealth,

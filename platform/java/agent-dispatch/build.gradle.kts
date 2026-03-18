@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.ghatana.platform.agent"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 description = "Agent Dispatch — Three-tier dispatcher (Tier-J/Tier-S/Tier-L) bridging catalog definitions to runtime execution"
 

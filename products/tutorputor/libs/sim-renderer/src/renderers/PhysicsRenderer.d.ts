@@ -6,7 +6,7 @@
  * @doc.layer product
  * @doc.pattern Renderer
  */
-import type { PhysicsBodyEntity, PhysicsSpringEntity, PhysicsVectorEntity, PhysicsParticleEntity } from "@ghatana/tutorputor-contracts/v1/simulation";
+import type { PhysicsBodyEntity, PhysicsSpringEntity, PhysicsVectorEntity, PhysicsParticleEntity } from "@tutorputor/contracts/v1/simulation";
 import type { EntityRenderer } from "../types";
 /**
  * Renderer for physics rigid bodies.

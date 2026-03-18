@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ComplianceServiceImpl } from '../service';
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 
 function makeMockPrisma() {
     return {

@@ -16,7 +16,7 @@ import {
   Eye,
 } from 'lucide-react';
 import { PresenceUser, PresenceLocation } from '../PresenceManager';
-import { cn } from '@ghatana/ui';
+import { cn } from '@ghatana/design-system';
 
 // =============================================================================
 // Types

@@ -6,7 +6,7 @@ import { captureException } from './config/sentry';
 import { useAtomValue } from 'jotai';
 import { isAuthenticatedAtom, userAtom } from './stores/authStore';
 import { authService } from './services/auth.service';
-import { RoleContext, ROLE_CONFIG, type UserRole } from '@ghatana/dcmaar-dashboard-core';
+import { RoleContext, ROLE_CONFIG, type UserRole } from '@dcmaar/dashboard-core';
 
 // Lazy load pages for code splitting
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));

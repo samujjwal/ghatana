@@ -19,7 +19,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Box, TextField, InputAdornment, IconButton, Chip, Tooltip, Typography, Collapse, Surface as Paper, Spinner as CircularProgress, Alert } from '@ghatana/ui';
+import { Box, TextField, InputAdornment, IconButton, Chip, Tooltip, Typography, Collapse, Surface as Paper, Spinner as CircularProgress, Alert } from '@ghatana/design-system';
 import { Search as SearchIcon, Brain as AIIcon, XCircle as ClearIcon, Sparkles as SmartIcon, Mic as VoiceIcon, Lightbulb as SuggestionIcon } from 'lucide-react';
 
 import { DataTable } from './DataTable';

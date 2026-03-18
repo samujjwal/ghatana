@@ -34,8 +34,8 @@ import { createRuntimeService } from '../service';
 // import { createBiologyKernel } from '../biology-kernel';
 // import { createMedicineKernel } from '../medicine-kernel';
 // import { createSystemDynamicsKernel } from '../system-dynamics-kernel';
-import type { SimulationManifest, SimEntity, SimulationStep, SimAction } from '@ghatana/tutorputor-contracts/v1/simulation/types';
-import type { SimRuntimeService } from '@ghatana/tutorputor-contracts/v1/simulation/services';
+import type { SimulationManifest, SimEntity, SimulationStep, SimAction } from '@tutorputor/contracts/v1/simulation/types';
+import type { SimRuntimeService } from '@tutorputor/contracts/v1/simulation/services';
 
 /**
  * Full integration test suite for simulation engine

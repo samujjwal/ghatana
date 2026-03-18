@@ -7,7 +7,7 @@
  */
 
 import { X as CloseIcon, GitCompare as CompareIcon, GitCompareArrows as CompareArrows, PlusCircle as AddIcon, MinusCircle as RemoveIcon, Pencil as ModifyIcon, AlertTriangle as WarningIcon } from 'lucide-react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Stack, IconButton, Box, Divider, Chip, InteractiveList as List, ListItem, ListItemText, FormControl, InputLabel, Select, MenuItem, Alert, Surface as Paper } from '@ghatana/ui';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Stack, IconButton, Box, Divider, Chip, InteractiveList as List, ListItem, ListItemText, FormControl, InputLabel, Select, MenuItem, Alert, Surface as Paper } from '@ghatana/design-system';
 import React, { useState, useMemo } from 'react';
 
 import type { DocumentVersion, VersionDiff } from '../history/historyManager';

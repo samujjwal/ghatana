@@ -29,7 +29,7 @@ import type {
   PaymentWebhookEvent,
   PaginationArgs,
   PaginatedResult,
-} from '@ghatana/tutorputor-contracts/v1/types';
+} from '@tutorputor/contracts/v1/types';
 
 import type {
   SubscriptionService,
@@ -37,7 +37,7 @@ import type {
   InvoiceService,
   PaymentTransactionService,
   PaymentWebhookService,
-} from '@ghatana/tutorputor-contracts/v1/services';
+} from '@tutorputor/contracts/v1/services';
 
 import type { PlanConfig, ProrationResult, UsageSnapshot, NotificationService } from './types';
 

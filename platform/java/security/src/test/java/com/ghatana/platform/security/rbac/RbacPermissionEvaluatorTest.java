@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
@@ -63,7 +64,7 @@ class RbacPermissionEvaluatorTest {
         @Test
         @DisplayName("should return true when any role has permission")
         void shouldReturnTrueWhenAnyRoleMatches() {
-            when(policyService.hasPermission("READER", "*", "event:read:all")).thenReturn(false);
+            lenient().when(policyService.hasPermission("READER", "*", "event:read:all")).thenReturn(false);
             when(policyService.hasPermission("ADMIN", "*", "event:read:all")).thenReturn(true);
 
             assertThat(evaluator.hasPermission("ignored", Set.of("READER", "ADMIN"), "event:read:all"))

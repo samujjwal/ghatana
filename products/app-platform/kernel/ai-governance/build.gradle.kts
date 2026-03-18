@@ -17,7 +17,7 @@ plugins {
 }
 
 group = "com.ghatana.appplatform"
-version = "0.1.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 description = "K-09: AI/ML Governance kernel — model registry, explainability, drift detection, bias monitoring"
 
 java {

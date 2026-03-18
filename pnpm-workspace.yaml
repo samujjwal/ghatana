@@ -2,6 +2,14 @@ packages:
   # Platform TypeScript libraries
   - "platform/typescript/*"
   - "platform/typescript/canvas/flow-canvas"
+  - "platform/typescript/capabilities/*"
+  - "platform/typescript/foundation/*"
+
+  # Domain-based organization
+  - "domain/*/*"
+
+  # Apps
+  - "apps/*"
 
   # Product UIs
   - "products/data-cloud/ui"
@@ -24,6 +32,7 @@ packages:
   # audio-video product
   - "products/audio-video/apps/*"
   - "products/audio-video/libs/*"
+  - "products/audio-video/libs/typescript/*"
   - "products/audio-video/modules/intelligence/ai-voice/apps/*"
   - "products/audio-video/modules/intelligence/ai-voice/libs/*"
 

@@ -12,7 +12,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@ghatana/yappc-canvas';
+import { useAuth } from '@yappc/canvas';
 import { ProtectedRoute } from '../ProtectedRoute';
 import { useToast } from '../../Toast';
 import { Page } from '../../Page/Page';

@@ -5,8 +5,8 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
-import { ModuleStatus } from "@ghatana/tutorputor-contracts/v1";
+import type { PrismaClient } from '@tutorputor/db';
+import { ModuleStatus } from "@tutorputor/contracts/v1";
 import type {
     CMSService,
     AIProxyService,
@@ -18,7 +18,7 @@ import type {
     ModuleId,
     TenantId,
     UserId,
-} from '@ghatana/tutorputor-contracts';
+} from '@tutorputor/contracts';
 
 export class CMSServiceImpl implements CMSService {
     constructor(

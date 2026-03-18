@@ -9,7 +9,7 @@ import { Lock as LockIcon } from 'lucide-react';
 import { User as PersonIcon } from 'lucide-react';
 import { Search as SearchIcon } from 'lucide-react';
 import { Eye as VisibilityIcon } from 'lucide-react';
-import { Stack, Box, Typography, Grid } from '@ghatana/ui';
+import { Stack, Box, Typography, Grid } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { TextField, TextFieldProps } from './TextField.enhanced';

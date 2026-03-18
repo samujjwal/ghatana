@@ -8,7 +8,7 @@
  * @module pipeline/sources/CommandSyncSource
  */
 
-import { BaseEventSource } from '@ghatana/dcmaar-browser-extension-core';
+import { BaseEventSource } from '@dcmaar/browser-extension-core';
 
 /**
  * Sync snapshot returned by the backend `/devices/:id/sync` endpoint.

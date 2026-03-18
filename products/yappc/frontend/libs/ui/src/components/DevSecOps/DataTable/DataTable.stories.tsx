@@ -4,7 +4,7 @@
  * @module DevSecOps/DataTable/stories
  */
 
-import { Box, Chip, LinearProgress, Typography } from '@ghatana/ui';
+import { Box, Chip, LinearProgress, Typography } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { DataTable } from './DataTable';

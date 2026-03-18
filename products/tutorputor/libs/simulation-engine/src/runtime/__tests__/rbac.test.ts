@@ -15,8 +15,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import type { SimulationManifest, SimulationId } from '@ghatana/tutorputor-contracts/v1/simulation/types';
-import type { TenantId, UserId, UserRole } from '@ghatana/tutorputor-contracts/v1/types';
+import type { SimulationManifest, SimulationId } from '@tutorputor/contracts/v1/simulation/types';
+import type { TenantId, UserId, UserRole } from '@tutorputor/contracts/v1/types';
 // =============================================================================
 // Types & Interfaces
 // =============================================================================

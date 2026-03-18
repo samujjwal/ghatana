@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createPhysicsKernel } from '../physics-kernel';
-import type { SimulationManifest, SimEntity, SimAction, SimulationStep } from '@ghatana/tutorputor-contracts/v1/simulation/types';
+import type { SimulationManifest, SimEntity, SimAction, SimulationStep } from '@tutorputor/contracts/v1/simulation/types';
 
 /**
  * Helper to create a minimal physics manifest

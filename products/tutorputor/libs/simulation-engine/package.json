@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/tutorputor-simulation-engine",
+  "name": "@tutorputor/simulation-engine",
   "version": "1.0.0",
   "description": "Unified simulation engine for runtime, authoring and natural language.",
   "main": "src/index.ts",
@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "fastify": "^4.24.3",
-    "@ghatana/tutorputor-db": "workspace:*",
-    "@ghatana/tutorputor-ai-proxy": "workspace:*"
+    "@tutorputor/db": "workspace:*",
+    "@tutorputor/ai-proxy": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.ghatana.products.yappc.refactorer"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 description = "Refactorer Engine - Unified core, engine & language support (merged: refactorer-core + refactorer-engine + refactorer-languages)"
 

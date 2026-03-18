@@ -68,7 +68,7 @@ interface LogEntry extends CanvasEvent {
  *
  * @example
  * ```tsx
- * import { EventLog } from '@ghatana/yappc-canvas/devtools';
+ * import { EventLog } from '@yappc/canvas/devtools';
  *
  * function App() {
  *   const handleSubscribe = (callback) => {

@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-browser-extension-core",
+  "name": "@dcmaar/browser-extension-core",
   "version": "1.0.0",
   "description": "Core framework for building browser extensions with Source-Processor-Sink architecture",
   "type": "module",
@@ -29,9 +29,9 @@
   "author": "DCMAAR Team",
   "license": "MIT",
   "dependencies": {
-    "@ghatana/dcmaar-types": "workspace:*",
-    "@ghatana/dcmaar-plugin-abstractions": "workspace:*",
-    "@ghatana/dcmaar-connectors": "workspace:*",
+    "@dcmaar/types": "workspace:*",
+    "@dcmaar/plugin-abstractions": "workspace:*",
+    "@dcmaar/connectors": "workspace:*",
     "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {

@@ -10,7 +10,7 @@
  * @doc.pattern Service
  */
 
-import type { SsoService } from "@ghatana/tutorputor-contracts/v1/services";
+import type { SsoService } from "@tutorputor/contracts/v1/services";
 import type {
     IdentityProviderConfig,
     SsoLoginRequest,
@@ -21,8 +21,8 @@ import type {
     TenantId,
     UserId,
     UserRole,
-} from "@ghatana/tutorputor-contracts/v1/types";
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
+} from "@tutorputor/contracts/v1/types";
+import type { TutorPrismaClient } from "@tutorputor/db";
 import { OidcClient, type OidcVerifiedClaims } from "./oidc/OidcClient.js";
 import { randomUUID } from "crypto";
 

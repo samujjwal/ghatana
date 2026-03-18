@@ -1,7 +1,7 @@
 import { apiUrl } from '../config/api';
 import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { useAtomValue } from 'jotai';
-import { useDashboardData } from '@ghatana/dcmaar-dashboard-core';
+import { useDashboardData } from '@dcmaar/dashboard-core';
 import { devicesStatusAtom } from '../stores/eventsStore';
 import { websocketService } from '../services/websocket.service';
 import type { DeviceStatusEvent } from '../services/websocket.service';

@@ -1,5 +1,5 @@
 import { ExternalLink as OpenInNew, RefreshCw as Refresh, Clock as AccessTime, Info, Hammer as Build, Bug as BugReport, CloudUpload, Shield as Security, Gauge as Speed } from 'lucide-react';
-import { Card, CardContent, Typography, Box, IconButton, Tooltip, Divider, Stack, Skeleton } from '@ghatana/ui';
+import { Card, CardContent, Typography, Box, IconButton, Tooltip, Divider, Stack, Skeleton } from '@ghatana/design-system';
 import React from 'react';
 
 import { StatusBadge } from './StatusBadge';

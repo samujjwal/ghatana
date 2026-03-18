@@ -4,7 +4,7 @@
  * Visual documentation of all design tokens
  */
 
-import { Box, Typography, Grid, Surface as Paper, Stack } from '@ghatana/ui';
+import { Box, Typography, Grid, Surface as Paper, Stack } from '@ghatana/design-system';
 import React from 'react';
 
 /** @ts-ignore - MUI Grid item prop typing issue in test config */

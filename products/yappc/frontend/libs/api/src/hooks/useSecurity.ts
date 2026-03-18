@@ -24,7 +24,7 @@ import {
   securityScoreAtom,
   securityAlertsAtom,
   auditLogsAtom,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 import {
   GET_VULNERABILITY,

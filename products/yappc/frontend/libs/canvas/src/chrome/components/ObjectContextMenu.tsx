@@ -18,7 +18,7 @@
  */
 
 import { Copy as DuplicateIcon, Trash2 as DeleteIcon, Lock as LockIcon, LockOpen as UnlockIcon, BringToFront as BringToFrontIcon, SendToBack as SendToBackIcon, Users as GroupIcon, Ungroup as UngroupIcon, Pencil as EditIcon, Eye as ShowIcon, EyeOff as HideIcon, Search as SearchIcon, History as HistoryIcon } from 'lucide-react';
-import { Menu, MenuItem, ListItemIcon, ListItemText, Divider, Box, Typography, Input as InputBase } from '@ghatana/ui';
+import { Menu, MenuItem, ListItemIcon, ListItemText, Divider, Box, Typography, Input as InputBase } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 

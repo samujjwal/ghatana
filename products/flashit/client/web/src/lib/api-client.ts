@@ -3,7 +3,7 @@
  * Extends shared FlashitApiClient with web-specific endpoints
  */
 
-import { FlashitApiClient } from '@ghatana/flashit-shared';
+import { FlashitApiClient } from '@flashit/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:2900';
 

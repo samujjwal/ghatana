@@ -3,7 +3,7 @@
  * Defines the contract for notification delivery plugins
  */
 
-import { IPlugin } from '@ghatana/dcmaar-types';
+import { IPlugin } from '@dcmaar/types';
 
 export interface INotification extends IPlugin {
   /**

@@ -19,8 +19,8 @@ import type {
   EvidenceEvent,
   ProcessingResult,
   ProcessingContext,
-} from "@ghatana/tutorputor-contracts/v1/plugin-interfaces";
-import { CANONICAL_CBM_SCORING } from "@ghatana/tutorputor-contracts/v1/learning-unit";
+} from "@tutorputor/contracts/v1/plugin-interfaces";
+import { CANONICAL_CBM_SCORING } from "@tutorputor/contracts/v1/learning-unit";
 
 /**
  * CBM scoring configuration.

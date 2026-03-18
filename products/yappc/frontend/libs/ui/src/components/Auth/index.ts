@@ -40,7 +40,7 @@ export type { LoginPageProps, RegisterPageProps, DashboardPageProps } from './ex
 /**
  * @example Login Page
  * 
- * import { LoginForm } from '@ghatana/yappc-ui';
+ * import { LoginForm } from '@yappc/ui';
  * 
  * function LoginPage() {
  *   const navigate = useNavigate();
@@ -60,7 +60,7 @@ export type { LoginPageProps, RegisterPageProps, DashboardPageProps } from './ex
 /**
  * @example Register Page
  * 
- * import { RegisterForm } from '@ghatana/yappc-ui';
+ * import { RegisterForm } from '@yappc/ui';
  * 
  * function RegisterPage() {
  *   const navigate = useNavigate();
@@ -80,7 +80,7 @@ export type { LoginPageProps, RegisterPageProps, DashboardPageProps } from './ex
 /**
  * @example Password Reset Flow
  * 
- * import { PasswordResetRequest, PasswordResetConfirm } from '@ghatana/yappc-ui';
+ * import { PasswordResetRequest, PasswordResetConfirm } from '@yappc/ui';
  * 
  * function ResetPasswordPage() {
  *   const [searchParams] = useSearchParams();

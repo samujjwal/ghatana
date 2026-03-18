@@ -4,7 +4,7 @@
  * @module DevSecOps/KanbanBoard/stories
  */
 
-import { Box, Surface as Paper, Typography } from '@ghatana/ui';
+import { Box, Surface as Paper, Typography } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { KanbanBoard } from './KanbanBoard';

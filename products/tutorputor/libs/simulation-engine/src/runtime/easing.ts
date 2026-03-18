@@ -7,7 +7,7 @@
  * @doc.pattern Utility
  */
 
-import type { EasingFunction } from "@ghatana/tutorputor-contracts/v1/simulation";
+import type { EasingFunction } from "@tutorputor/contracts/v1/simulation";
 
 /**
  * Easing function implementation.

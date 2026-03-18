@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 import type {
     TeacherService,
     Classroom,
@@ -18,7 +18,7 @@ import type {
     TenantId,
     UserId,
     UserSummary,
-} from '@ghatana/tutorputor-contracts';
+} from '@tutorputor/contracts';
 
 type ClassroomWithRelations = {
     id: string;

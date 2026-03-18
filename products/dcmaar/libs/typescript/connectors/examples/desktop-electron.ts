@@ -14,7 +14,7 @@ import {
   MetricsCollector,
   HealthChecker,
   createMemoryHealthCheck,
-} from '@ghatana/dcmaar-connectors';
+} from '@dcmaar/connectors';
 
 // ========================================
 // Main Process (Node.js)

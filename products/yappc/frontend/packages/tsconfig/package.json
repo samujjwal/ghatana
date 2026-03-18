@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/yappc-tsconfig",
+  "name": "@yappc/tsconfig",
   "private": true,
   "version": "1.0.0",
   "files": [

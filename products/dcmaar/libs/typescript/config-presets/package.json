@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-config-presets",
+  "name": "@dcmaar/config-presets",
   "version": "0.1.0",
   "description": "Shared configuration presets for DCMAAR platform (agent, desktop, extension)",
   "main": "dist/index.js",

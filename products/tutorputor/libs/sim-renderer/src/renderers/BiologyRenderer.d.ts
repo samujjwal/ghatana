@@ -6,7 +6,7 @@
  * @doc.layer product
  * @doc.pattern Renderer
  */
-import type { BioCellEntity, BioOrganelleEntity, BioCompartmentEntity, BioEnzymeEntity, BioSignalEntity, BioGeneEntity } from "@ghatana/tutorputor-contracts/v1/simulation";
+import type { BioCellEntity, BioOrganelleEntity, BioCompartmentEntity, BioEnzymeEntity, BioSignalEntity, BioGeneEntity } from "@tutorputor/contracts/v1/simulation";
 import type { EntityRenderer } from "../types";
 /**
  * Renderer for biological cells.

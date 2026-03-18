@@ -10,7 +10,7 @@
  * @doc.pattern Service
  */
 
-import type { TutorResponsePayload, TutorCitation } from "@ghatana/tutorputor-contracts/v1/types";
+import type { TutorResponsePayload, TutorCitation } from "@tutorputor/contracts/v1/types";
 
 export interface WebSearchConfig {
   apiProvider: 'duckduckgo' | 'google' | 'bing';

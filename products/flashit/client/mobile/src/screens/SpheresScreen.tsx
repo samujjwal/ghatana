@@ -25,7 +25,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RootStackParamList } from '../navigation';
 import { useApi } from '../contexts/ApiContext';
-import { Sphere, SphereType, SphereVisibility } from '@ghatana/flashit-shared';
+import { Sphere, SphereType, SphereVisibility } from '@flashit/shared';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Spheres'>;
 

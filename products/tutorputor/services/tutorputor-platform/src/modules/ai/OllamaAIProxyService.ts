@@ -10,17 +10,17 @@
  * @doc.pattern Service
  */
 
-import type { AIProxyService } from "@ghatana/tutorputor-contracts/v1/services";
+import type { AIProxyService } from "@tutorputor/contracts/v1/services";
 import type {
   TenantId,
   UserId,
   ModuleId,
   TutorResponsePayload,
-} from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/types";
 import type {
   ParsedIntent,
   IntentParams,
-} from "@ghatana/tutorputor-contracts/v1/simulation/types";
+} from "@tutorputor/contracts/v1/simulation/types";
 
 export class OllamaAIProxyService implements AIProxyService {
   private baseUrl: string;

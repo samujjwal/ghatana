@@ -1,5 +1,5 @@
 {
-    "name": "@ghatana/tutorputor-kernel-registry",
+    "name": "@tutorputor/kernel-registry",
     "version": "1.0.0",
     "description": "Kernel plugin registry service for TutorPutor",
     "type": "module",
@@ -14,8 +14,8 @@
         "lint": "eslint src --ext .ts"
     },
     "dependencies": {
-        "@ghatana/tutorputor-sim-sdk": "workspace:*",
-        "@ghatana/tutorputor-contracts": "workspace:*",
+        "@tutorputor/sim-sdk": "workspace:*",
+        "@tutorputor/contracts": "workspace:*",
         "@hono/node-server": "^1.19.9",
         "hono": "^4.11.7",
         "zod": "^4.3.6",

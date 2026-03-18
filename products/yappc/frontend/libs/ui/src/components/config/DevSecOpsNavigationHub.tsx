@@ -30,8 +30,8 @@ import {
   Select,
   FormControl,
   InputLabel,
-} from '@ghatana/ui';
-import { MenuItem } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { MenuItem } from '@ghatana/design-system';
 import { LayoutDashboard as DashboardIcon, GitBranch as WorkflowIcon, Shield as SecurityIcon, Code as CodeIcon, Gauge as PerformanceIcon, ClipboardList as TaskIcon, User as PersonaIcon, Activity as PhaseIcon, Settings as ConfigIcon, RefreshCw as RefreshIcon } from 'lucide-react';
 
 // Config hooks and state

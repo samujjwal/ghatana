@@ -18,7 +18,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Box, Surface as Paper, Typography, ToggleButton, ToggleButtonGroup, Button, IconButton, InteractiveList as List, ListItem, ListItemButton, ListItemText, ListItemIcon, Dialog, DialogTitle, DialogContent, DialogActions, Divider, Collapse, Alert } from '@ghatana/ui';
+import { Box, Surface as Paper, Typography, ToggleButton, ToggleButtonGroup, Button, IconButton, InteractiveList as List, ListItem, ListItemButton, ListItemText, ListItemIcon, Dialog, DialogTitle, DialogContent, DialogActions, Divider, Collapse, Alert } from '@ghatana/design-system';
 import { Smartphone as AndroidIcon, TabletSmartphone as IosIcon, Columns2 as SplitViewIcon, X as CloseIcon, Download as DownloadIcon, Copy as CopyIcon, Plus as AddIcon, ChevronDown as ExpandMoreIcon } from 'lucide-react';
 import type { Node } from '@xyflow/react';
 

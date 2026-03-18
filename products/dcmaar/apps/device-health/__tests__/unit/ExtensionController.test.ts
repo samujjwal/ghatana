@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ExtensionController } from '../../src/browser/controller/ExtensionController';
-import { BrowserStorageAdapter } from '@ghatana/dcmaar-browser-extension-core';
+import { BrowserStorageAdapter } from '@dcmaar/browser-extension-core';
 import { DEFAULT_EXTENSION_CONFIG } from '../../src/core/config/ExtensionConfig';
 
 // Mock adapters to isolate ExtensionController testing

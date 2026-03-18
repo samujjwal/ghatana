@@ -1,4 +1,4 @@
-import type { ExtensionPluginManifest } from "@ghatana/dcmaar-types";
+import type { ExtensionPluginManifest } from "@dcmaar/types";
 
 export const deviceHealthOnlyProfile: ExtensionPluginManifest = {
     appId: "dcmaar-unified-host-device-health",

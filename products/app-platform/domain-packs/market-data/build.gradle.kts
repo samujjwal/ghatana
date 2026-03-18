@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "com.ghatana.appplatform"
-version = "0.1.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 description = "D-04: Real-time market tick data domain pack"
 
 java {

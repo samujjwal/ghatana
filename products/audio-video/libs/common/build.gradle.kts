@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.ghatana.audio.video"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 description = "Audio-Video Common Library - Shared security, observability, and resilience utilities"
 

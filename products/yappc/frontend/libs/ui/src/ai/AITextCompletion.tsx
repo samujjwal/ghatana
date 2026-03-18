@@ -1,10 +1,10 @@
 import { X as CloseIcon, Check as CheckIcon } from 'lucide-react';
-import { TextField, Box, Spinner as CircularProgress, Chip, IconButton, Typography } from '@ghatana/ui';
+import { TextField, Box, Spinner as CircularProgress, Chip, IconButton, Typography } from '@ghatana/design-system';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 
 import { useAICompletion } from './hooks/useAICompletion';
 
-import type { IAIService } from '@ghatana/yappc-ai/core';
+import type { IAIService } from '@yappc/ai/core';
 
 /**
  * AITextCompletion props

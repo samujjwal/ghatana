@@ -7,7 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AICodeGenerationService, createAICodeGenerationService } from '../aiCodeGeneration';
-import type { IAIService, CompletionResult, AIProvider, AIServiceConfig, CompletionChunk, CompletionOptions, EmbeddingResponse } from '@ghatana/yappc-ai/core';
+import type { IAIService, CompletionResult, AIProvider, AIServiceConfig, CompletionChunk, CompletionOptions, EmbeddingResponse } from '@yappc/ai/core';
 import type { ServiceNodeData, DatabaseNodeData, APIEndpointNodeData } from '../../components/PersonaNodes';
 
 // Mock AI Service

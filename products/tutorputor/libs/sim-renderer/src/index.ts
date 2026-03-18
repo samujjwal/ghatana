@@ -16,7 +16,7 @@
  *   useRenderContext,
  *   useCanvasRendering,
  *   discreteRenderers,
- * } from '@ghatana/tutorputor-sim-renderer';
+ * } from '@tutorputor/sim-renderer';
  *
  * function SimCanvas({ entities }: { entities: SimEntity[] }) {
  *   const canvasRef = useRef<HTMLCanvasElement>(null);

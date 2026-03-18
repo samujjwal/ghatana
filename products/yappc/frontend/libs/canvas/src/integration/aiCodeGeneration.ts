@@ -10,7 +10,7 @@
  * @doc.pattern Service
  */
 
-import type { IAIService, CompletionOptions } from '@ghatana/yappc-ai/core';
+import type { IAIService, CompletionOptions } from '@yappc/ai/core';
 import {
     buildServicePrompt,
     buildAPIRoutePrompt,
@@ -20,7 +20,7 @@ import {
     buildTestGenerationPrompt,
     PERSONA_SYSTEM_PROMPTS,
     type Persona,
-} from '@ghatana/yappc-ai/core';
+} from '@yappc/ai/core';
 import type {
     ServiceNodeData,
     APIEndpointNodeData,

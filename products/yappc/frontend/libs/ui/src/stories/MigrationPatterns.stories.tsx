@@ -4,7 +4,7 @@
  * Before/after examples showing how to migrate from legacy patterns to design system
  */
 
-import { Box, Typography, Surface as Paper, Stack, Button as MuiButton } from '@ghatana/ui';
+import { Box, Typography, Surface as Paper, Stack, Button as MuiButton } from '@ghatana/design-system';
 import React from 'react';
 
 import { Button } from '../components/Button';
@@ -244,7 +244,7 @@ const CustomButton = ({ children, onClick }) => (
   Click me
 </CustomButton>`}
         afterCode={`// ✅ Use @ghatana/yappc-ui Button
-import { Button } from '@ghatana/ui';
+import { Button } from '@ghatana/design-system';
 
 <Button
   variant="solid"
@@ -294,7 +294,7 @@ import './MyComponent.css';
   Content
 </div>`}
         afterCode={`// ✅ Use Tailwind utility classes
-import { Box } from '@ghatana/ui';
+import { Box } from '@ghatana/design-system';
 
 // Simple: className with Tailwind
 <Box className="p-4 rounded-lg bg-white dark:bg-gray-900 shadow">
@@ -302,7 +302,7 @@ import { Box } from '@ghatana/ui';
 </Box>
 
 // Complex: compose classes with cn()
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 
 <Box className={cn(
   'bg-white dark:bg-gray-900 p-4 rounded-lg shadow',

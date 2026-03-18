@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useCallback, useState, useRef } from 'react';
-import { WebSocketClient } from '@ghatana/yappc-realtime';
+import { WebSocketClient } from '@yappc/realtime';
 
 /**
  * Chat message structure

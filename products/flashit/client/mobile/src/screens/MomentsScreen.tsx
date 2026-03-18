@@ -24,7 +24,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RootStackParamList } from '../navigation';
 import { useApi } from '../contexts/ApiContext';
-import { Moment } from '@ghatana/flashit-shared';
+import { Moment } from '@flashit/shared';
 import { formatDistanceToNow, format } from 'date-fns';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Moments'>;

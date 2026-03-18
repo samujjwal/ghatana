@@ -98,8 +98,25 @@ public final class PostgresAuditTrailStore implements AuditTrailStore {
                         }
                     }
 
-                    String currentHash = chainService.computeHash(previousHash, entry, nextSeq);
-                    Instant now        = entry.timestampGregorian();
+                    // Truncate to microseconds to match PostgreSQL TIMESTAMP precision
+                    // This ensures hash verification works after DB round-trip
+                    Instant now = entry.timestampGregorian().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+                    
+                    // Rebuild entry with truncated timestamp for hash computation
+                    AuditEntry entryForHash = AuditEntry.builder()
+                        .id(entry.id())
+                        .action(entry.action())
+                        .actor(entry.actor())
+                        .resource(entry.resource())
+                        .details(entry.details())
+                        .outcome(entry.outcome())
+                        .tenantId(entry.tenantId())
+                        .traceId(entry.traceId())
+                        .timestampBs(entry.timestampBs())
+                        .timestampGregorian(now)
+                        .build();
+                    
+                    String currentHash = chainService.computeHash(previousHash, entryForHash, nextSeq);
 
                     try (PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
                         ps.setString(1, entry.id());

@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { WebSocketClient } from '@ghatana/yappc-realtime';
+import { WebSocketClient } from '@yappc/realtime';
 import type { Node, Edge } from '@xyflow/react';
 
 /**

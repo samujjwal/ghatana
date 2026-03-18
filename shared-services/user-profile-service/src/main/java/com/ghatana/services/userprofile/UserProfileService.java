@@ -100,21 +100,23 @@ public class UserProfileService extends HttpServerLauncher {
     // ─── HTTP Handler ─────────────────────────────────────────────────────────
 
     @Provides
-    AsyncServlet servlet(UserProfileStore store, JwtTokenProvider jwtProvider) {
+    AsyncServlet servlet(io.activej.reactor.Reactor reactor, UserProfileStore store, JwtTokenProvider jwtProvider) {
         String internalKey = System.getenv().getOrDefault(ENV_INTERNAL_KEY, "");
 
-        return RoutingServlet.builder()
+        return RoutingServlet.builder(reactor)
                 // ── Liveness probe
                 .with(GET, "/health", request ->
                         Promise.of(HttpResponse.ok200()
                                 .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                                .withBody("{\"status\":\"UP\",\"service\":\"user-profile-service\"}".getBytes())))
+                                .withBody("{\"status\":\"UP\",\"service\":\"user-profile-service\"}".getBytes())
+                                .build()))
 
                 // ── Metrics
                 .with(GET, "/metrics", request ->
                         Promise.of(HttpResponse.ok200()
                                 .withHeader(HttpHeaders.CONTENT_TYPE, "text/plain")
-                                .withBody("# user_profile_service_up 1\n".getBytes())))
+                                .withBody("# user_profile_service_up 1\n".getBytes())
+                                .build()))
 
                 // ── GET /profiles/:userId
                 .with(GET, "/profiles/:userId", request -> {
@@ -139,10 +141,12 @@ public class UserProfileService extends HttpServerLauncher {
                             .map(opt -> opt
                                     .<HttpResponse>map(profile -> HttpResponse.ok200()
                                             .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                                            .withBody(profileToJson(profile).getBytes()))
+                                            .withBody(profileToJson(profile).getBytes())
+                                            .build())
                                     .orElse(HttpResponse.ofCode(404)
                                             .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                                            .withBody(("{\"error\":\"Profile not found for user " + sanitize(userId) + "\"}").getBytes())));
+                                            .withBody(("{\"error\":\"Profile not found for user " + sanitize(userId) + "\"}").getBytes())
+                                            .build()));
                 })
 
                 // ── PUT /profiles/:userId  (create or update)
@@ -165,13 +169,14 @@ public class UserProfileService extends HttpServerLauncher {
                     }
 
                     return request.loadBody().then(body -> {
-                        String json = body.getString(body.readRemaining());
+                        String json = body.asString(java.nio.charset.StandardCharsets.UTF_8);
                         try {
                             UserProfile profile = parseProfileFromJson(json, userId, tenantId);
                             return store.upsert(profile)
                                     .map(saved -> HttpResponse.ok200()
                                             .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                                            .withBody(profileToJson(saved).getBytes()));
+                                            .withBody(profileToJson(saved).getBytes())
+                                            .build());
                         } catch (IllegalArgumentException e) {
                             return Promise.of(error(400, e.getMessage()));
                         }
@@ -197,7 +202,7 @@ public class UserProfileService extends HttpServerLauncher {
                     }
 
                     return store.delete(tenantId, userId)
-                            .map(v -> HttpResponse.ofCode(204));
+                            .map(v -> HttpResponse.ofCode(204).build());
                 })
 
                 .build();
@@ -236,7 +241,7 @@ public class UserProfileService extends HttpServerLauncher {
         String token = authHeader.substring(7).strip();
         try {
             if (!jwt.validateToken(token)) return null;
-            return jwt.getUserIdFromToken(token);
+            return jwt.getUserIdFromToken(token).orElse(null);
         } catch (Exception e) {
             return null;
         }
@@ -293,7 +298,8 @@ public class UserProfileService extends HttpServerLauncher {
     private static HttpResponse error(int code, String message) {
         return HttpResponse.ofCode(code)
                 .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .withBody(("{\"error\":" + quote(message) + "}").getBytes());
+                .withBody(("{\"error\":" + quote(message) + "}").getBytes())
+                .build();
     }
 
     private static String quote(String s) {

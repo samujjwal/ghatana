@@ -1,7 +1,7 @@
 import type {
     TenantId,
-} from "@ghatana/tutorputor-contracts/v1/types";
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
+} from "@tutorputor/contracts/v1/types";
+import type { TutorPrismaClient } from "@tutorputor/db";
 import { z } from "zod";
 
 // =============================================================================

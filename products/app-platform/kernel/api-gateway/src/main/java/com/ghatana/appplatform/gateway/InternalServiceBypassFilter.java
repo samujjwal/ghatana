@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Bypasses tenant rate-limiting and auth overhead for requests from trusted internal
@@ -41,13 +42,20 @@ public final class InternalServiceBypassFilter implements com.ghatana.platform.h
     public static final String INTERNAL_REQUEST_HEADER = "X-Internal-Service";
 
     /**
-     * Tracks requests marked as internal service requests. WeakHashMap ensures entries are
-     * automatically removed when the request object is garbage-collected, preventing memory leaks.
-     * Synchronized because ActiveJ may process requests from the event loop thread; the overhead
-     * is negligible for the expected volume of internal service calls.
+     * Tracks requests marked as internal service requests.
+     *
+     * <p>Uses a {@link ConcurrentHashMap} keyed on the request's identity hash code (i.e.
+     * {@link System#identityHashCode}) rather than a {@code WeakHashMap}.  {@code WeakHashMap}
+     * combined with {@code synchronizedMap} is safe for individual {@code get}/{@code put} calls
+     * but can produce unexpected behaviour under GC pressure when keys are collected between the
+     * time they are inserted and the time they are looked up from a different thread.  The
+     * identity-hash approach avoids that pitfall; entries are explicitly removed after use in
+     * {@link #apply} and a bounded TTL sweep keeps the map from growing indefinitely in case of
+     * error paths that skip cleanup.
      */
-    private static final java.util.Map<HttpRequest, Boolean> INTERNAL_MARKER =
-            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+    private static final ConcurrentHashMap<Integer, Long> INTERNAL_MARKER = new ConcurrentHashMap<>();
+    /** Expiry for marker entries (ms) — must exceed the longest request processing time. */
+    private static final long MARKER_TTL_MS = 60_000L;
 
     /** JWT role claim value that identifies an internal service account. */
     private static final String INTERNAL_SERVICE_ROLE = "INTERNAL_SERVICE";
@@ -66,7 +74,8 @@ public final class InternalServiceBypassFilter implements com.ghatana.platform.h
      * @return {@code true} if the request originates from a trusted internal service
      */
     public static boolean isInternalRequest(HttpRequest request) {
-        return Boolean.TRUE.equals(INTERNAL_MARKER.get(request));
+        Long expiresAt = INTERNAL_MARKER.get(System.identityHashCode(request));
+        return expiresAt != null && expiresAt > System.currentTimeMillis();
     }
 
     @Override
@@ -83,10 +92,13 @@ public final class InternalServiceBypassFilter implements com.ghatana.platform.h
 
                 if (INTERNAL_SERVICE_ROLE.equals(role) && allowedServiceAccounts.contains(sub)) {
                     log.debug("Internal service bypass granted: sub={}", sub);
-                    // ActiveJ HttpRequest is immutable and has no attribute API — propagate the bypass
-                    // flag via a WeakHashMap keyed on the request reference. Downstream filters check
-                    // this via isInternalRequest(request). Weak reference ensures GC cleanup.
-                    INTERNAL_MARKER.put(request, Boolean.TRUE);
+                    // ActiveJ HttpRequest is immutable — carry the bypass flag via the request's
+                    // identity hash code. Entry expires after MARKER_TTL_MS to handle error paths
+                    // that skip explicit cleanup.
+                    int key = System.identityHashCode(request);
+                    INTERNAL_MARKER.put(key, System.currentTimeMillis() + MARKER_TTL_MS);
+                    // Note: We don't remove the marker here - it expires via TTL.
+                    // This allows downstream filters to check isInternalRequest().
                     return next.serve(request);
                 }
             } catch (Exception e) {

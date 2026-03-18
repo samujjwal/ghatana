@@ -18,7 +18,7 @@ import type {
   SimEntityBase,
   SimulationStep,
   EasingFunction,
-} from '@ghatana/tutorputor-contracts/v1/simulation';
+} from '@tutorputor/contracts/v1/simulation';
 
 import { KernelRegistry } from './kernel-registry';
 import { getEasingFunction } from './easing';

@@ -5,7 +5,7 @@
  * and calculation of learning progress from assessment data.
  */
 
-import { PrismaClient } from "@ghatana/tutorputor-db";
+import { PrismaClient } from "@tutorputor/db";
 import {
     Credential,
     CredentialFilter,

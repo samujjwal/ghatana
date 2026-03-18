@@ -5,7 +5,7 @@ import { Button, Input, Spinner } from '@ghatana/design-system';
 import { useAuth } from '../hooks/useAuth';
 import type {
   IdentityProviderConfig,
-} from '@ghatana/tutorputor-contracts/v1/types';
+} from '@tutorputor/contracts/v1/types';
 
 type ProviderType = 'oidc' | 'saml';
 

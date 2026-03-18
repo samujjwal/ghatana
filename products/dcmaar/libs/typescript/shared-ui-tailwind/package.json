@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-shared-ui-tailwind",
+  "name": "@dcmaar/shared-ui-tailwind",
   "version": "1.0.0",
   "description": "DCMAAR UI adapter — re-exports from @ghatana/design-system with DCMAAR-specific extensions",
   "type": "module",

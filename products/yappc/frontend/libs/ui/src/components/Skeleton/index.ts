@@ -1,2 +1,2 @@
-export { Skeleton } from '@ghatana/yappc-ui';
-export type { SkeletonProps, SkeletonVariant } from '@ghatana/yappc-ui';
+export { Skeleton } from '@yappc/ui';
+export type { SkeletonProps, SkeletonVariant } from '@yappc/ui';

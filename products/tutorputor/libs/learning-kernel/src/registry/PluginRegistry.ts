@@ -21,7 +21,7 @@ import type {
     AuthoringTool,
     Notifier,
     PluginType,
-} from '@ghatana/tutorputor-contracts/v1/plugin-interfaces';
+} from '@tutorputor/contracts/v1/plugin-interfaces';
 
 /**
  * Plugin categories supported by the registry.

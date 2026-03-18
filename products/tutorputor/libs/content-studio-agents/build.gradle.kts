@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.ghatana.tutorputor"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 java {
     toolchain {

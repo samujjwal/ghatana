@@ -5,7 +5,7 @@
  * Supports pretty-printing and filtering options.
  */
 
-import { BaseConnector, type IConnector } from '@ghatana/dcmaar-connectors';
+import { BaseConnector, type IConnector } from '@dcmaar/connectors';
 import type { SinkAdapter } from '../types';
 import { Logger } from '../../utils/logger';
 

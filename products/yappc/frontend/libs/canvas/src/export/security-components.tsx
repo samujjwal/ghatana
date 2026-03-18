@@ -20,15 +20,15 @@ import {
   Tooltip,
   LinearProgress,
   InteractiveList as List,
-} from '@ghatana/ui';
-import { ListItemSecondaryAction, Collapse } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { ListItemSecondaryAction, Collapse } from '@ghatana/design-system';
 import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
   useTheme,
   resolveMuiColor,
-} from '@ghatana/yappc-ui';
+} from '@yappc/ui';
 import React, { useState, useCallback, useMemo } from 'react';
 
 import { useSecurityAudit } from './hooks';

@@ -6,7 +6,7 @@
  * @module DevSecOps/DataTable
  */
 
-import { Box, Surface as Paper, Typography } from '@ghatana/ui';
+import { Box, Surface as Paper, Typography } from '@ghatana/design-system';
 import {
   Checkbox,
   Skeleton,

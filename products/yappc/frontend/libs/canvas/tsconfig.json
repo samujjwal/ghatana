@@ -6,8 +6,8 @@
     "baseUrl": ".",
     "paths": {
       "@ghatana/canvas/examples/*": ["./examples/*"],
-      "@ghatana/yappc-ai": ["../ai/src/index.ts"],
-      "@ghatana/yappc-ai/*": ["../ai/src/*"]
+      "@yappc/ai": ["../ai/src/index.ts"],
+      "@yappc/ai/*": ["../ai/src/*"]
     },
     "composite": true,
     "declaration": true,

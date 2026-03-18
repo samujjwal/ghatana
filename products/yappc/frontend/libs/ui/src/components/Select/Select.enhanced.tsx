@@ -9,7 +9,7 @@
 
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import { AlertCircle as ErrorIcon } from 'lucide-react';
-import { Select as MuiSelect, FormControl, InputLabel, MenuItem, FormHelperText, type SelectProps as MuiSelectProps, type SelectChangeEvent } from '@ghatana/ui';
+import { Select as MuiSelect, FormControl, InputLabel, MenuItem, FormHelperText, type SelectProps as MuiSelectProps, type SelectChangeEvent } from '@ghatana/design-system';
 import { getPaletteMain } from '../../utils/safePalette';
 import {
   borderRadiusSm,

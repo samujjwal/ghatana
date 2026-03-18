@@ -2,13 +2,13 @@
  * Storybook Stories for SmartSuggestions Component
  */
 
-import { Box, Typography, TextField } from '@ghatana/ui';
+import { Box, Typography, TextField } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { SmartSuggestions } from './SmartSuggestions';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import type { IAIService, CompletionResponse, Suggestion } from '@ghatana/yappc-ai/core';
+import type { IAIService, CompletionResponse, Suggestion } from '@yappc/ai/core';
 
 // Mock AI Service
 const createMockAIService = (delay = 800): IAIService => ({

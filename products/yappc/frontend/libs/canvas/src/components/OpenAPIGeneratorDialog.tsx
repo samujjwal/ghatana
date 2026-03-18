@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Select, MenuItem, FormControl, InputLabel, Box, Typography, Tabs, Tab, Switch, FormControlLabel, Alert, IconButton, Chip, Surface as Paper, Divider } from '@ghatana/ui';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Select, MenuItem, FormControl, InputLabel, Box, Typography, Tabs, Tab, Switch, FormControlLabel, Alert, IconButton, Chip, Surface as Paper, Divider } from '@ghatana/design-system';
 import { X as CloseIcon, Download as DownloadIcon, Copy as CopyIcon, CheckCircle as CheckIcon, AlertCircle as ErrorIcon, Plug as APIIcon } from 'lucide-react';
 import type { Node } from '@xyflow/react';
 import { OpenAPIService, type OpenAPIGenerationOptions, type APINodeData } from '../services/OpenAPIService';

@@ -7,8 +7,8 @@
  * @doc.pattern Utility
  */
 
-import type { Difficulty } from "@ghatana/tutorputor-contracts/v1/types";
-import type { CurriculumLevel } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
+import type { Difficulty } from "@tutorputor/contracts/v1/types";
+import type { CurriculumLevel } from "@tutorputor/contracts/v1/curriculum/types";
 
 /**
  * Parse time strings like "20 min", "1 hr", "1.5 hours" to minutes.

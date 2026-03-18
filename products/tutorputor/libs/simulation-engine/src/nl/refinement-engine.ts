@@ -12,7 +12,7 @@ import type {
   SimulationManifest,
   SimEntityBase,
   SimulationStep,
-} from '@ghatana/tutorputor-contracts/v1/simulation/types';
+} from '@tutorputor/contracts/v1/simulation/types';
 import "./type-augmentations";
 import type { ParsedIntent, IntentParams } from './intent-parser';
 

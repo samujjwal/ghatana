@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Input, Select, Toggle, Badge } from '@ghatana/dcmaar-shared-ui-tailwind';
+import { Card, Button, Input, Select, Toggle, Badge } from '@dcmaar/shared-ui-tailwind';
 
 interface SourceConfig {
     type: string;

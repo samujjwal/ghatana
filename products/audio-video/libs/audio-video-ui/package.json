@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/audio-video-product-ui",
+  "name": "@audio-video/ui",
   "version": "1.0.0",
   "description": "Shared UI components for audio-video application",
   "main": "dist/index.js",

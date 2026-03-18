@@ -6,7 +6,7 @@
  * @doc.layer product
  * @doc.pattern Renderer
  */
-import type { DiscreteNodeEntity, DiscreteEdgeEntity, DiscretePointerEntity } from "@ghatana/tutorputor-contracts/v1/simulation";
+import type { DiscreteNodeEntity, DiscreteEdgeEntity, DiscretePointerEntity } from "@tutorputor/contracts/v1/simulation";
 import type { EntityRenderer } from "../types";
 /**
  * Renderer for discrete algorithm nodes.

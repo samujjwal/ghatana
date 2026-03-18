@@ -1,4 +1,4 @@
-import { setDashboardFetch } from '@ghatana/dcmaar-dashboard-core';
+import { setDashboardFetch } from '@dcmaar/dashboard-core';
 
 export function configureDashboardCore(): void {
     setDashboardFetch(async (path: string) => {

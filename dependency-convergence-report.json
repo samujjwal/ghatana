@@ -1,0 +1,118 @@
+{
+  "timestamp": "2026-03-18T01:53:10.756Z",
+  "packagesAnalyzed": 105,
+  "misalignments": [
+    {
+      "dependency": "@tanstack/react-query",
+      "target": "^5.90.20",
+      "versions": {
+        "^5.90.20": [
+          {
+            "pkg": "@ghatana/data-cloud-ui",
+            "path": "/home/samujjwal/Developments/ghatana/products/data-cloud/ui/package.json"
+          },
+          {
+            "pkg": "@ghatana/yappc-web-app",
+            "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/apps/web/package.json"
+          },
+          {
+            "pkg": "@ghatana/dcmaar-child-mobile",
+            "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/child-mobile/package.json"
+          },
+          {
+            "pkg": "@ghatana/dcmaar-device-health-extension",
+            "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/device-health/package.json"
+          },
+          {
+            "pkg": "@ghatana/dcmaar-parent-dashboard",
+            "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/parent-dashboard/package.json"
+          },
+          {
+            "pkg": "@ghatana/dcmaar-parent-mobile",
+            "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/parent-mobile/package.json"
+          },
+          {
+            "pkg": "@ghatana/content-explorer",
+            "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/apps/content-explorer/package.json"
+          },
+          {
+            "pkg": "@ghatana/tutorputor-admin",
+            "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/apps/tutorputor-admin/package.json"
+          },
+          {
+            "pkg": "@ghatana/tutorputor-mobile",
+            "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/apps/tutorputor-mobile/package.json"
+          },
+          {
+            "pkg": "@ghatana/tutorputor-web",
+            "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/apps/tutorputor-web/package.json"
+          }
+        ],
+        "^5.90.21": [
+          {
+            "pkg": "@ghatana/aep-ui",
+            "path": "/home/samujjwal/Developments/ghatana/products/aep/ui/package.json"
+          }
+        ],
+        "^5.0.0": [
+          {
+            "pkg": "@ghatana/yappc-ui",
+            "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/ui/package.json"
+          },
+          {
+            "pkg": "@ghatana/dcmaar-dashboard-core",
+            "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/guardian-dashboard-core/package.json"
+          }
+        ],
+        "^5.90.12": [
+          {
+            "pkg": "@ghatana/flashit-mobile",
+            "path": "/home/samujjwal/Developments/ghatana/products/flashit/client/mobile/package.json"
+          },
+          {
+            "pkg": "@ghatana/flashit-web",
+            "path": "/home/samujjwal/Developments/ghatana/products/flashit/client/web/package.json"
+          }
+        ]
+      },
+      "severity": "medium"
+    }
+  ],
+  "fixes": [
+    {
+      "package": "@ghatana/aep-ui",
+      "path": "/home/samujjwal/Developments/ghatana/products/aep/ui/package.json",
+      "dependency": "@tanstack/react-query",
+      "from": "^5.90.21",
+      "to": "^5.90.20"
+    },
+    {
+      "package": "@ghatana/yappc-ui",
+      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/ui/package.json",
+      "dependency": "@tanstack/react-query",
+      "from": "^5.0.0",
+      "to": "^5.90.20"
+    },
+    {
+      "package": "@ghatana/dcmaar-dashboard-core",
+      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/guardian-dashboard-core/package.json",
+      "dependency": "@tanstack/react-query",
+      "from": "^5.0.0",
+      "to": "^5.90.20"
+    },
+    {
+      "package": "@ghatana/flashit-mobile",
+      "path": "/home/samujjwal/Developments/ghatana/products/flashit/client/mobile/package.json",
+      "dependency": "@tanstack/react-query",
+      "from": "^5.90.12",
+      "to": "^5.90.20"
+    },
+    {
+      "package": "@ghatana/flashit-web",
+      "path": "/home/samujjwal/Developments/ghatana/products/flashit/client/web/package.json",
+      "dependency": "@tanstack/react-query",
+      "from": "^5.90.12",
+      "to": "^5.90.20"
+    }
+  ]
+}

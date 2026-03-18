@@ -13,7 +13,7 @@ import type {
   LtiContextId,
   LtiResourceLinkId,
   LtiRole,
-} from '@ghatana/tutorputor-contracts/v1/types';
+} from '@tutorputor/contracts/v1/types';
 
 /**
  * LTI Platform database record.

@@ -7,8 +7,8 @@
  * @doc.pattern Utility
  */
 
-import { createPrismaClient as createDbPrismaClient } from "@ghatana/tutorputor-db";
-import type { TutorPrismaClient as DbTutorPrismaClient } from "@ghatana/tutorputor-db";
+import { createPrismaClient as createDbPrismaClient } from "@tutorputor/db";
+import type { TutorPrismaClient as DbTutorPrismaClient } from "@tutorputor/db";
 
 export type TutorPrismaClient = DbTutorPrismaClient;
 

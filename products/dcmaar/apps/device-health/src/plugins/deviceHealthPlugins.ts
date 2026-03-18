@@ -4,11 +4,11 @@ import {
     RemoteStoragePlugin,
     SlackNotificationPlugin,
     WebhookNotificationPlugin,
-} from "@ghatana/dcmaar-plugin-abstractions";
+} from "@dcmaar/plugin-abstractions";
 import type {
     ExtensionPluginFactory,
     ExtensionPluginFactoryContext,
-} from "@ghatana/dcmaar-browser-extension-core";
+} from "@dcmaar/browser-extension-core";
 import { CPUMonitor } from "./monitors/CPUMonitor";
 import { MemoryMonitor } from "./monitors/MemoryMonitor";
 import { BatteryMonitor } from "./monitors/BatteryMonitor";

@@ -1,6 +1,6 @@
 import { AlertCircle as ErrorIcon } from 'lucide-react';
 import { TrendingUp as TrendingUpIcon } from 'lucide-react';
-import { Card, CardContent, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Typography } from '@ghatana/ui';
+import { Card, CardContent, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Typography } from '@ghatana/design-system';
 import { Grid } from '../../Grid/Grid.tailwind';
 import React from 'react';
 

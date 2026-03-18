@@ -10,8 +10,8 @@
  * @doc.pattern AIEnhancement
  */
 
-import type { SimulationManifest, SimulationDomain } from '@ghatana/tutorputor-contracts/v1/simulation/types';
-import type { GenerateManifestRequest, GenerateManifestResult } from '@ghatana/tutorputor-contracts/v1/simulation/types';
+import type { SimulationManifest, SimulationDomain } from '@tutorputor/contracts/v1/simulation/types';
+import type { GenerateManifestRequest, GenerateManifestResult } from '@tutorputor/contracts/v1/simulation/types';
 
 /**
  * Enhanced prompt configuration

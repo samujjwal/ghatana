@@ -10,7 +10,7 @@
  * @doc.pattern Service
  */
 
-import type { AssessmentService } from "@ghatana/tutorputor-contracts/v1/services";
+import type { AssessmentService } from "@tutorputor/contracts/v1/services";
 import type {
   Assessment,
   AssessmentSummary,
@@ -26,8 +26,8 @@ import type {
   ModuleId,
   AssessmentId,
   Difficulty,
-} from "@ghatana/tutorputor-contracts/v1/types";
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
+} from "@tutorputor/contracts/v1/types";
+import type { TutorPrismaClient } from "@tutorputor/db";
 
 // =============================================================================
 // Types

@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/tutorputor-vr-labs",
+  "name": "@tutorputor/vr-labs",
   "version": "1.0.0",
   "private": true,
   "description": "VR Labs service for immersive learning experiences",
@@ -12,12 +12,11 @@
     "lint": "eslint src/**/*.ts"
   },
   "dependencies": {
-    "@ghatana/tutorputor-contracts": "workspace:*",
-    "@ghatana/tutorputor-db": "workspace:*",
+    "@tutorputor/contracts": "workspace:*",
+    "@tutorputor/db": "workspace:*",
     "@aws-sdk/client-s3": "^3.982.0",
     "@aws-sdk/s3-request-presigner": "^3.982.0",
-    "ioredis": "^5.9.2",
-    "uuid": "^13.0.0"
+    "ioredis": "^5.9.2"
   },
   "devDependencies": {
     "@types/node": "^25.2.0",

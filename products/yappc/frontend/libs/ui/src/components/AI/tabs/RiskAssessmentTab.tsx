@@ -1,6 +1,6 @@
 import { Lightbulb as LightbulbIcon } from 'lucide-react';
 import { AlertTriangle as WarningIcon } from 'lucide-react';
-import { Card, CardContent, Chip, LinearProgress, InteractiveList as List, ListItem, ListItemIcon, ListItemText as ListItemSecondaryAction, ListItemText, Typography } from '@ghatana/ui';
+import { Card, CardContent, Chip, LinearProgress, InteractiveList as List, ListItem, ListItemIcon, ListItemText as ListItemSecondaryAction, ListItemText, Typography } from '@ghatana/design-system';
 import { Grid } from '../../Grid';
 import React from 'react';
 

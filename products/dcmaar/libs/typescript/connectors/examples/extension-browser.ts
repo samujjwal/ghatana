@@ -12,7 +12,7 @@ import {
   MetricsCollector,
   HealthChecker,
   createMemoryHealthCheck,
-} from '@ghatana/dcmaar-connectors';
+} from '@dcmaar/connectors';
 
 // ========================================
 // Background Script (Service Worker)

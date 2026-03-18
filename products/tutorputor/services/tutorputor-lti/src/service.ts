@@ -1,12 +1,12 @@
-import type { LTIService } from "@ghatana/tutorputor-contracts/v1/services";
+import type { LTIService } from "@tutorputor/contracts/v1/services";
 import type {
     LTIDeepLinkingContent,
     LTILaunchPayload,
     LTIValidationResult,
     ModuleId,
     TenantId
-} from "@ghatana/tutorputor-contracts/v1/types";
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
+} from "@tutorputor/contracts/v1/types";
+import type { TutorPrismaClient } from "@tutorputor/db";
 
 export type HealthAwareLTIService = LTIService & {
     checkHealth: () => Promise<boolean>;

@@ -11,7 +11,7 @@
  *
  * **Usage**:
  * ```typescript
- * import { ConnectorManager } from '@ghatana/dcmaar-connectors';
+ * import { ConnectorManager } from '@dcmaar/connectors';
  * import {
  *   ExtensionStorageProvider,
  *   ExtensionIpcChannel,

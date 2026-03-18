@@ -18,7 +18,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Surface as Paper, Typography, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel, IconButton, InteractiveList as List, ListItem, ListItemText, ListItemButton, Chip, Alert, Divider, Collapse, Tooltip, Stack } from '@ghatana/ui';
+import { Box, Surface as Paper, Typography, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel, IconButton, InteractiveList as List, ListItem, ListItemText, ListItemButton, Chip, Alert, Divider, Collapse, Tooltip, Stack } from '@ghatana/design-system';
 import { Plus as AddIcon, Settings as SettingsIcon, Trash2 as DeleteIcon, Upload as UploadIcon, Download as DownloadIcon, Share2 as ShareIcon, TrendingDown as PainIcon, TrendingUp as DelightIcon, Annoyed as SentimentVeryDissatisfied, Frown as SentimentDissatisfied, Meh as SentimentNeutral, Smile as SentimentSatisfied, Laugh as SentimentVerySatisfied, Pointer as TouchpointIcon, Brain as InsightIcon, Quote as QuoteIcon, ChevronDown as ExpandMore, ChevronUp as ExpandLess } from 'lucide-react';
 import type { Node } from '@xyflow/react';
 import { useUserJourney } from '../hooks/useUserJourney';

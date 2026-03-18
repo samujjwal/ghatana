@@ -12,7 +12,7 @@
 
 import { Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet, RouteObject } from 'react-router-dom';
-import { useAuth } from '@ghatana/yappc-canvas';
+import { useAuth } from '@yappc/canvas';
 import { ProtectedRoute, withProtectedRoute } from '../ProtectedRoute';
 import { Spinner } from '../../Loading/Spinner';
 import { LoginPage } from './LoginPage';
@@ -351,7 +351,7 @@ export const ProtectedEditorPage = withProtectedRoute(() => <div>Editor Page</di
  * ```tsx
  * import { RouterProvider } from 'react-router-dom';
  * import { Provider as JotaiProvider } from 'jotai';
- * import { ToastProvider } from '@ghatana/yappc-ui';
+ * import { ToastProvider } from '@yappc/ui';
  * import { router } from './router';
  * 
  * function App() {

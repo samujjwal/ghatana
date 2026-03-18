@@ -20,7 +20,7 @@ import {
   Typography,
   Alert,
   Spinner as CircularProgress,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import type { CodeExportResult } from '../hooks/useTemplateActions';
 
 /**

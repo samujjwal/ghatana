@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-shared-ui-charts",
+  "name": "@dcmaar/shared-ui-charts",
   "version": "1.0.0",
   "description": "DCMAAR chart components adapter — re-exports from @ghatana/charts",
   "type": "module",

@@ -13,7 +13,7 @@
 import {
   definePromptPackPlugin,
   pluginRegistry,
-} from '@ghatana/tutorputor-sim-sdk';
+} from '@tutorputor/sim-sdk';
 
 // ============================================
 // Define a custom domain prompt pack for Music Theory

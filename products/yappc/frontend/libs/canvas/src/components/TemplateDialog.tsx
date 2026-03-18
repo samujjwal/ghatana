@@ -20,8 +20,8 @@ import {
   Chip,
   Typography,
   InteractiveList as List,
-} from '@ghatana/ui';
-import { ListItemButton } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { ListItemButton } from '@ghatana/design-system';
 import { journeyTemplates } from '../templates/journeyTemplates';
 
 /**

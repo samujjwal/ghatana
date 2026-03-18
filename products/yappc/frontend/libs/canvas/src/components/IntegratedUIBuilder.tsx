@@ -21,8 +21,8 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import type * as Y from 'yjs';
 
-import { MultiFileCodeEditor } from '@ghatana/yappc-code-editor';
-import type { FileTab } from '@ghatana/yappc-code-editor';
+import { MultiFileCodeEditor } from '@yappc/code-editor';
+import type { FileTab } from '@yappc/code-editor';
 
 /**
  * UI Component definition

@@ -9,8 +9,8 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { KernelRegistry } from '../kernel-registry';
-import type { SimulationManifest } from '@ghatana/tutorputor-contracts/v1/simulation/types';
-import type { SimKernelService } from '@ghatana/tutorputor-contracts/v1/simulation/services';
+import type { SimulationManifest } from '@tutorputor/contracts/v1/simulation/types';
+import type { SimKernelService } from '@tutorputor/contracts/v1/simulation/services';
 
 function createMockKernel(): SimKernelService {
   return {

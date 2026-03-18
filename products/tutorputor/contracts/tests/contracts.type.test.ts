@@ -14,7 +14,7 @@ import type {
   AssessmentAttempt,
   AnalyticsSummary,
   MarketplaceListing
-} from "@ghatana/tutorputor-contracts/v1";
+} from "@tutorputor/contracts/v1";
 import type {
   ModuleDetail,
   ModuleSummary,
@@ -26,7 +26,7 @@ import type {
   AssessmentItemId,
   AssessmentAttemptId,
   ModuleDraftInput
-} from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/types";
 
 describe("TutorPutor contracts", () => {
   it("allow implementing a ContentService stub", async () => {

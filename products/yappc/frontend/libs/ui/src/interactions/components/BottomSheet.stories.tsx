@@ -1,5 +1,5 @@
 import { Share2 as ShareIcon, Heart as FavoriteIcon, BookmarkBorder as BookmarkIcon, Report as ReportIcon } from 'lucide-react';
-import { Box, Typography, InteractiveList as List, ListItem, ListItemText, Switch, Slider, Divider } from '@ghatana/ui';
+import { Box, Typography, InteractiveList as List, ListItem, ListItemText, Switch, Slider, Divider } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { BottomSheet } from './BottomSheet';

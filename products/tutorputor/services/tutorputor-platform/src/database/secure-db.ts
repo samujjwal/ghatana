@@ -10,7 +10,7 @@
  * - Query logging and monitoring
  */
 
-import { PrismaClient } from '@ghatana/tutorputor-db';
+import { PrismaClient } from '@tutorputor/db';
 import { getConfig } from '../config/config.js';
 import { createLogger, LogContext } from '../utils/logger.js';
 

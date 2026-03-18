@@ -5,9 +5,9 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
-import type { ContentStudioService } from '@ghatana/tutorputor-contracts/v1';
-import type { ContentNeeds, ExampleType } from '@ghatana/tutorputor-contracts/v1/learning-unit';
+import type { PrismaClient } from '@tutorputor/db';
+import type { ContentStudioService } from '@tutorputor/contracts/v1';
+import type { ContentNeeds, ExampleType } from '@tutorputor/contracts/v1/learning-unit';
 
 // Re-export types from contracts for backwards compatibility
 export type { ContentNeeds, ExampleType };

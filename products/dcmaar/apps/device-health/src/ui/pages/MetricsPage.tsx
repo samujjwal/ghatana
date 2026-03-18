@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Card, Skeleton } from '@ghatana/dcmaar-shared-ui-tailwind';
-import type { TimeRange } from '@ghatana/dcmaar-shared-ui-core';
+import { Card, Skeleton } from '@dcmaar/shared-ui-tailwind';
+import type { TimeRange } from '@dcmaar/shared-ui-core';
 
 import { useMetricsData } from '../hooks/useMetricsData';
 import { Sparkline } from '../components/data/Sparkline';

@@ -6,7 +6,7 @@
  * @module browser/flows/FlowTracker
  */
 
-import type { FlowEvent } from '@ghatana/dcmaar-browser-extension-core';
+import type { FlowEvent } from '@dcmaar/browser-extension-core';
 
 export interface FlowDefinition {
   id: string;

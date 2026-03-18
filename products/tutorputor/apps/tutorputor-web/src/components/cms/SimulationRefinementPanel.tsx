@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback } from "react";
-import type { SimulationManifest } from "@ghatana/tutorputor-contracts/v1/simulation/types";
+import type { SimulationManifest } from "@tutorputor/contracts/v1/simulation/types";
 
 interface RefinementSuggestion {
     id: string;

@@ -16,7 +16,7 @@ import { readFileSync } from "fs";
 import { join, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import type { TutorPrismaClient, TransactionClient } from "../prisma-utils.js";
-import type { DomainConcept } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
+import type { DomainConcept } from "@tutorputor/contracts/v1/curriculum/types";
 import type {
   LoaderOptions,
   LoaderResult,

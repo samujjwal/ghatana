@@ -10,8 +10,8 @@ import {
   Tooltip,
   Avatar,
   Stack,
-} from '@ghatana/ui';
-import { alpha, useTheme, resolveMuiColor } from '@ghatana/yappc-ui';
+} from '@ghatana/design-system';
+import { alpha, useTheme, resolveMuiColor } from '@yappc/ui';
 import React, { memo, useState } from 'react';
 
 import type { NodeProps } from '@xyflow/react';

@@ -7,7 +7,7 @@
  */
 
 import { Flag as FlagIcon } from 'lucide-react';
-import { Box, LinearProgress, Surface as Paper, Tooltip, Typography } from '@ghatana/ui';
+import { Box, LinearProgress, Surface as Paper, Tooltip, Typography } from '@ghatana/design-system';
 import { useMemo, useRef } from 'react';
 
 import { TimelineUtils } from './utils';

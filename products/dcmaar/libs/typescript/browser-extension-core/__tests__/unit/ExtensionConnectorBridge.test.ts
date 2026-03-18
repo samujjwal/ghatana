@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ExtensionConnectorBridge } from "../../src/plugins/ExtensionConnectorBridge";
-import type { ExtensionConnectorProfile } from "@ghatana/dcmaar-types";
+import type { ExtensionConnectorProfile } from "@dcmaar/types";
 
 // Mock @ghatana/dcmaar-connectors to avoid real network behavior
 const connectMock = vi.fn();

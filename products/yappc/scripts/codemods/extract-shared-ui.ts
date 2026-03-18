@@ -19,30 +19,30 @@ import { join, extname, resolve, dirname } from 'path';
 // Component extraction mapping
 const COMPONENT_MAPPINGS: Record<string, { from: string; to: string }> = {
   // Panels
-  'PropertyPanels': { from: '@ghatana/yappc-canvas', to: '@ghatana/yappc-ui' },
-  'OutlinePanel': { from: '@ghatana/yappc-canvas', to: '@ghatana/yappc-ui' },
-  'MinimapPanel': { from: '@ghatana/yappc-canvas', to: '@ghatana/yappc-ui' },
+  'PropertyPanels': { from: '@yappc/canvas', to: '@yappc/ui' },
+  'OutlinePanel': { from: '@yappc/canvas', to: '@yappc/ui' },
+  'MinimapPanel': { from: '@yappc/canvas', to: '@yappc/ui' },
   
   // Toolbars
-  'GroupingToolbar': { from: '@ghatana/yappc-canvas', to: '@ghatana/yappc-ui' },
-  'TestGenToolbar': { from: '@ghatana/yappc-ide', to: '@ghatana/yappc-ui' },
-  'OperationsToolbar': { from: '@ghatana/yappc-canvas', to: '@ghatana/yappc-ui' },
+  'GroupingToolbar': { from: '@yappc/canvas', to: '@yappc/ui' },
+  'TestGenToolbar': { from: '@ghatana/yappc-ide', to: '@yappc/ui' },
+  'OperationsToolbar': { from: '@yappc/canvas', to: '@yappc/ui' },
   
   // Menus
-  'ContextMenu': { from: '@ghatana/yappc-ide', to: '@ghatana/yappc-ui' },
-  'CanvasContextMenu': { from: '@ghatana/yappc-canvas', to: '@ghatana/yappc-ui' },
+  'ContextMenu': { from: '@ghatana/yappc-ide', to: '@yappc/ui' },
+  'CanvasContextMenu': { from: '@yappc/canvas', to: '@yappc/ui' },
   
   // Layout primitives
-  'SplitPanel': { from: '@ghatana/yappc-ide', to: '@ghatana/yappc-ui' },
-  'ResizablePanel': { from: '@ghatana/yappc-canvas', to: '@ghatana/yappc-ui' },
+  'SplitPanel': { from: '@ghatana/yappc-ide', to: '@yappc/ui' },
+  'ResizablePanel': { from: '@yappc/canvas', to: '@yappc/ui' },
   
   // Loading states
-  'LoadingOverlay': { from: '@ghatana/yappc-canvas', to: '@ghatana/yappc-ui' },
-  'LoadingStates': { from: '@ghatana/yappc-ide', to: '@ghatana/yappc-ui' },
+  'LoadingOverlay': { from: '@yappc/canvas', to: '@yappc/ui' },
+  'LoadingStates': { from: '@ghatana/yappc-ide', to: '@yappc/ui' },
   
   // Dialogs
-  'Dialog': { from: '@ghatana/yappc-canvas', to: '@ghatana/yappc-ui' },
-  'Modal': { from: '@ghatana/yappc-ide', to: '@ghatana/yappc-ui' },
+  'Dialog': { from: '@yappc/canvas', to: '@yappc/ui' },
+  'Modal': { from: '@ghatana/yappc-ide', to: '@yappc/ui' },
 };
 
 // File extensions to process

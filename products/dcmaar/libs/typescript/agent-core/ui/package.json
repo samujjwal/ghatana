@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-agent-ui",
+  "name": "@dcmaar/agent-ui",
   "version": "0.1.0",
   "description": "Shared UI components for DCMAAR agent applications",
   "main": "dist/index.js",

@@ -12,7 +12,7 @@
  */
 
 import { createHash } from 'crypto';
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 
 // =============================================================================
 // Types

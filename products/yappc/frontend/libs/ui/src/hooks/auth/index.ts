@@ -23,7 +23,7 @@ import {
   authLoadingAtom,
   authErrorAtom,
   authStateAtom,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import type { User } from '@yappc/core/types';

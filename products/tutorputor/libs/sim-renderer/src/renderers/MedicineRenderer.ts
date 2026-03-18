@@ -11,7 +11,7 @@ import type {
     MedCompartmentEntity,
     MedDoseEntity,
     MedInfectionAgentEntity,
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 import type { EntityRenderer, RenderContext } from "../types";
 import {
     drawCircle,

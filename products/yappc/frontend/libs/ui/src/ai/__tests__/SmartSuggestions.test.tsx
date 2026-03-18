@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { SmartSuggestions } from '../SmartSuggestions';
 
-import type { IAIService, CompletionResponse } from '@ghatana/yappc-ai/core';
+import type { IAIService, CompletionResponse } from '@yappc/ai/core';
 
 const createMockAIService = (completionText = '1. First suggestion\n2. Second suggestion\n3. Third suggestion'): IAIService => ({
     complete: vi.fn().mockResolvedValue({

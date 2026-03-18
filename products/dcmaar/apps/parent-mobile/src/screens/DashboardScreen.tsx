@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useDevices, useAlerts } from '@/hooks/useApi';
-import { useCanSeeSections } from '@ghatana/dcmaar-dashboard-core';
+import { useCanSeeSections } from '@dcmaar/dashboard-core';
 
 const DashboardScreen: React.FC = () => {
   const { data: devices, isLoading: devicesLoading, refetch: refetchDevices } = useDevices();

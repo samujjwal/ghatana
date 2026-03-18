@@ -2,7 +2,7 @@ import { Clock as AccessTimeIcon } from 'lucide-react';
 import { Heart as FavoriteIcon } from 'lucide-react';
 import { Heart as FavoriteBorderIcon } from 'lucide-react';
 import { MoreVertical as MoreVertIcon } from 'lucide-react';
-import { Typography, IconButton, Box, Chip } from '@ghatana/ui';
+import { Typography, IconButton, Box, Chip } from '@ghatana/design-system';
 import { resolveMuiColor } from '../../utils/safePalette';
 import React from 'react';
 

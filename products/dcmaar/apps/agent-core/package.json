@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-agent-core",
+  "name": "@dcmaar/agent-core",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

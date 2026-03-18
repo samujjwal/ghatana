@@ -25,7 +25,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Box, Surface as Paper, Stack, Typography, Chip, LinearProgress } from '@ghatana/ui';
+import { Box, Surface as Paper, Stack, Typography, Chip, LinearProgress } from '@ghatana/design-system';
 import { useMemo, useState } from 'react';
 
 

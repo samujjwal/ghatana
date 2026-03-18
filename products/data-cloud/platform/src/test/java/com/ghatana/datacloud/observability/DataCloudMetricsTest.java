@@ -2,6 +2,7 @@ package com.ghatana.datacloud.observability;
 
 import com.ghatana.datacloud.observability.DataCloudMetrics.OperationType;
 import com.ghatana.datacloud.observability.DataCloudMetrics.PluginType;
+import com.ghatana.platform.observability.SimpleMetricsCollector;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -39,7 +40,7 @@ class DataCloudMetricsTest {
     @BeforeEach
     void setUp() {
         registry = new SimpleMeterRegistry();
-        metrics = DataCloudMetrics.create(registry);
+        metrics = DataCloudMetrics.create(new SimpleMetricsCollector(registry));
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -51,16 +52,16 @@ class DataCloudMetricsTest {
     class ConstructionTests {
 
         @Test
-        @DisplayName("rejects null MeterRegistry")
+        @DisplayName("rejects null MetricsCollector")
         void rejectsNullRegistry() {
-            assertThatThrownBy(() -> DataCloudMetrics.create(null))
+            assertThatThrownBy(() -> DataCloudMetrics.create((com.ghatana.platform.observability.MetricsCollector) null))
                     .isInstanceOf(NullPointerException.class);
         }
 
         @Test
         @DisplayName("creates instance with valid registry")
         void createsWithValidRegistry() {
-            DataCloudMetrics m = DataCloudMetrics.create(new SimpleMeterRegistry());
+            DataCloudMetrics m = DataCloudMetrics.create(new SimpleMetricsCollector(new SimpleMeterRegistry()));
             assertThat(m).isNotNull();
         }
     }

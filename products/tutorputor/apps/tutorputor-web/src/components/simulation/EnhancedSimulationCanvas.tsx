@@ -8,7 +8,7 @@
  */
 
 import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
-import type { SimKeyframe, SimEntityBase, SimEntity, SimEntityId } from '@ghatana/tutorputor-contracts/v1/simulation';
+import type { SimKeyframe, SimEntityBase, SimEntity, SimEntityId } from '@tutorputor/contracts/v1/simulation';
 import {
     useRendererRegistry,
     useRenderContext,
@@ -17,7 +17,7 @@ import {
     useAnimation,
     defaultTheme,
     type RenderTheme,
-} from '@ghatana/tutorputor-sim-renderer';
+} from '@tutorputor/sim-renderer';
 
 /**
  * Enhanced canvas props.

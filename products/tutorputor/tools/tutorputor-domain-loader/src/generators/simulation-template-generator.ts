@@ -2,8 +2,8 @@ import { createLogger } from '../utils/logger.js';
 const logger = createLogger('simulation-template-generator');
 
 import type { TutorPrismaClient } from "../prisma-utils.js";
-import type { DomainConcept, ConceptModuleMapping } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
-import type { SimulationManifest as ContractSimulationManifest } from "@ghatana/tutorputor-contracts/v1/simulation/types";
+import type { DomainConcept, ConceptModuleMapping } from "@tutorputor/contracts/v1/curriculum/types";
+import type { SimulationManifest as ContractSimulationManifest } from "@tutorputor/contracts/v1/simulation/types";
 
 export interface SimulationTemplateGeneratorOptions {
   tenantId: string;

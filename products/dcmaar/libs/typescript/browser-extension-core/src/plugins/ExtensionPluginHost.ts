@@ -12,11 +12,11 @@ import {
     PluginLifecycleManager,
     PluginLoader,
     CorePluginManager,
-} from "@ghatana/dcmaar-plugin-abstractions";
+} from "@dcmaar/plugin-abstractions";
 import type {
     ExtensionPluginManifest,
     ExtensionPluginDescriptor,
-} from "@ghatana/dcmaar-types";
+} from "@dcmaar/types";
 
 import { ExtensionConnectorBridge } from "../plugins/ExtensionConnectorBridge";
 

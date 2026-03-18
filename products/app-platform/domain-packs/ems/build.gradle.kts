@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.ghatana.appplatform"
-version = "0.1.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 description = "D-02: Execution Management System domain pack"
 
 java {

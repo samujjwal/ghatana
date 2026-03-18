@@ -7,7 +7,7 @@
  */
 
 import { X as CloseIcon } from 'lucide-react';
-import { Box, Divider, Drawer, IconButton, Typography } from '@ghatana/ui';
+import { Box, Divider, Drawer, IconButton, Typography } from '@ghatana/design-system';
 
 import type { SidePanelProps } from './types';
 import type React from 'react';

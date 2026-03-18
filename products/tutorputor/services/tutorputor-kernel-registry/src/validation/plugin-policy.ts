@@ -8,7 +8,7 @@
  */
 
 import { z } from "zod";
-import type { PluginMetadata } from "@ghatana/tutorputor-sim-sdk";
+import type { PluginMetadata } from "@tutorputor/sim-sdk";
 
 // =============================================================================
 // Constants

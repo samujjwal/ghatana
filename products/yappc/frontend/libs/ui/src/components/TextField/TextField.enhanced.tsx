@@ -9,7 +9,7 @@
 
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import { AlertCircle as ErrorIcon } from 'lucide-react';
-import { TextField as BaseTextField, InputAdornment, IconButton, FormHelperText, type TextFieldProps as BaseTextFieldProps } from '@ghatana/ui';
+import { TextField as BaseTextField, InputAdornment, IconButton, FormHelperText, type TextFieldProps as BaseTextFieldProps } from '@ghatana/design-system';
 import {
   borderRadiusSm,
   borderRadiusMd,

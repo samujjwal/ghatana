@@ -10,8 +10,8 @@
  */
 
 import { X as CloseIcon, Pencil as EditIcon } from 'lucide-react';
-import { Box, IconButton, Surface as Paper } from '@ghatana/ui';
-import { TextField } from '@ghatana/ui';
+import { Box, IconButton, Surface as Paper } from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
 import React, { useState, useRef, useEffect } from 'react';
 
 import type { StickyNoteData } from '../types';

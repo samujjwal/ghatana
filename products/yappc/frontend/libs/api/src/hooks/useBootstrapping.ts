@@ -80,7 +80,7 @@ import {
   removeCanvasNodeAction,
   undoCanvasAction as undoAction,
   redoCanvasAction as redoAction,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 // =============================================================================
 // Session Hooks

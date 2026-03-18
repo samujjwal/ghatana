@@ -1,14 +1,14 @@
 import type {
     ExtensionPluginFactory,
     ExtensionPluginFactoryContext,
-} from "@ghatana/dcmaar-browser-extension-core";
+} from "@dcmaar/browser-extension-core";
 import {
     GuardianUsageCollectorPlugin,
     GuardianPolicyEvaluationPlugin,
     GUARDIAN_USAGE_COLLECTOR_PLUGIN_ID,
     GUARDIAN_POLICY_EVALUATOR_PLUGIN_ID,
-} from "@ghatana/dcmaar-guardian-plugins";
-import type { GuardianPluginMetadata } from "@ghatana/dcmaar-guardian-plugins";
+} from "@dcmaar/guardian-plugins";
+import type { GuardianPluginMetadata } from "@dcmaar/guardian-plugins";
 
 /**
  * Factory for GuardianUsageCollectorPlugin used by ExtensionPluginHost.

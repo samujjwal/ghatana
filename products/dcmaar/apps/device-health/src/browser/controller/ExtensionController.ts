@@ -33,7 +33,7 @@ import {
   type TabMetrics,
   type BrowserEvent,
   type UnifiedEventCapture,
-} from '@ghatana/dcmaar-browser-extension-core';
+} from '@dcmaar/browser-extension-core';
 import { SystemMetricsCollector } from '../metrics/SystemMetricsCollector';
 
 import { DEFAULT_DATA_FLOW_CONFIG } from '../../config/defaults';

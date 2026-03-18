@@ -10,7 +10,7 @@
 import { describe, it, expect } from "vitest";
 import { parseTimeToMinutes, mapDifficultyString, mapLevelString, generateSlug } from "../src/utils/mappers";
 import { parseRawConcept } from "../src/parsers/physics-parser";
-import type { RawConceptJSON } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
+import type { RawConceptJSON } from "@tutorputor/contracts/v1/curriculum/types";
 
 describe("Mappers", () => {
   describe("parseTimeToMinutes", () => {

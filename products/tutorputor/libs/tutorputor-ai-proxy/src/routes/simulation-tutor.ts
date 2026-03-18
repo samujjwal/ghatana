@@ -23,8 +23,8 @@ import {
 import type {
   SimulationManifest,
   SimKeyframe,
-} from "@ghatana/tutorputor-contracts/v1/simulation";
-import type { TenantId, UserId } from "@ghatana/tutorputor-contracts/v1";
+} from "@tutorputor/contracts/v1/simulation";
+import type { TenantId, UserId } from "@tutorputor/contracts/v1";
 
 // =============================================================================
 // Types

@@ -138,13 +138,13 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@ghatana/yappc-canvas': resolve(__dirname, './libs/canvas/src/index.ts'),
+      '@yappc/canvas': resolve(__dirname, './libs/canvas/src/index.ts'),
       '@ghatana/yappc-types': resolve(__dirname, './libs/types/src'),
       '@ghatana/yappc-api': resolve(__dirname, './libs/graphql/src'),
       '@ghatana/yappc-mocks': resolve(__dirname, './libs/mocks/src'),
       '@ghatana/yappc-diagram': resolve(__dirname, './libs/diagram/src'),
       '@ghatana/yappc-test-helpers': resolve(__dirname, './libs/test-helpers/src'),
-      '@ghatana/ui': resolve(__dirname, '../../../libs/typescript/ui/src'),
+      '@ghatana/design-system': resolve(__dirname, '../../../libs/typescript/ui/src'),
       // Use test-time mocks for Konva/react-konva to avoid jsdom canvas issues
       'react-konva': resolve(
         __dirname,

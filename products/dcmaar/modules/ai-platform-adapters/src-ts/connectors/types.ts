@@ -3,7 +3,7 @@
  * Following Desktop pattern from DesktopConnectorManager.ts
  */
 
-import type { ConnectionOptions } from '@ghatana/dcmaar-connectors';
+import type { ConnectionOptions } from '@dcmaar/connectors';
 
 export interface AgentConnectorConfig {
   version: string;

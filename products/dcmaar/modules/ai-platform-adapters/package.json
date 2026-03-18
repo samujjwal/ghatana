@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-agent-connectors",
+  "name": "@dcmaar/agent-connectors",
   "version": "0.1.0",
   "type": "module",
   "description": "TypeScript connector integration layer for DCMAAR Agent",
@@ -19,7 +19,7 @@
     "clean": "rimraf dist-ts"
   },
   "dependencies": {
-    "@ghatana/dcmaar-connectors": "workspace:*",
+    "@dcmaar/connectors": "workspace:*",
     "eventemitter3": "^5.0.1",
     "ws": "^8.18.3",
     "zod": "^4.3.6"

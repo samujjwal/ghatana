@@ -10,7 +10,7 @@
  */
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { Card } from '@ghatana/dcmaar-shared-ui-tailwind';
+import { Card } from '@dcmaar/shared-ui-tailwind';
 import { usePerformanceSummary, useMetricsHistory, useAlerts } from '../hooks/useAnalytics';
 import type { ProcessedMetrics } from '../../analytics/AnalyticsPipeline';
 import { useAnalyticsContext } from '../context/AnalyticsContext';

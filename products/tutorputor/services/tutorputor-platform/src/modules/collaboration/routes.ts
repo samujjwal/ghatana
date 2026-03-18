@@ -6,7 +6,7 @@ import type {
   ThreadId,
   PostId,
   ModuleId,
-} from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/types";
 
 /**
  * Collaboration routes - discussion threads and shared notes.

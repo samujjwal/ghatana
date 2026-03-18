@@ -25,13 +25,13 @@ import {
   Alert,
   InteractiveList as List,
   Surface as Paper,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
   TextField,
   ListItemSecondaryAction,
   Fade,
   MenuItem,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 import {

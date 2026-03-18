@@ -12,7 +12,7 @@ import type {
   SimulationRunRequest,
   SimulationRunResult,
   EconomicsConfig
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 import type {
   SimulationManifest,
   SimKeyframe,
@@ -21,7 +21,7 @@ import type {
   EconStockEntity,
   EconFlowEntity,
   EconAgentEntity
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 
 /**
  * Internal stock state.

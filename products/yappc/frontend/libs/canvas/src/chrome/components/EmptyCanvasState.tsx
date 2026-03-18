@@ -16,7 +16,7 @@
  * @doc.layer components
  */
 
-import { Box } from '@ghatana/ui';
+import { Box } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 import React from 'react';
 

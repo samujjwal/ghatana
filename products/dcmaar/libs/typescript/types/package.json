@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-types",
+  "name": "@dcmaar/types",
   "version": "1.0.0",
   "description": "Shared type definitions for DCMAAR framework",
   "main": "dist/index.js",

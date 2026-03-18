@@ -35,7 +35,19 @@
   "pnpm": {
     "overrides": {
       "react": "^19.2.4",
-      "react-dom": "^19.2.4"
+      "react-dom": "^19.2.4",
+      "@tanstack/react-query": "^5.90.20",
+      "jotai": "^2.17.0",
+      "zod": "^4.3.6",
+      "typescript": "^5.9.3",
+      "vite": "^7.3.1",
+      "vitest": "^4.0.18",
+      "tailwindcss": "^4.1.18",
+      "eslint": "^9.39.2",
+      "prettier": "^3.8.1",
+      "date-fns": "^4.1.0",
+      "axios": "npm:node-fetch@3",
+      "uuid": "npm:nanoid@5"
     }
   }
 }

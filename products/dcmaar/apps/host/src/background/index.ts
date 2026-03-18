@@ -1,14 +1,14 @@
-import { ExtensionPluginHost } from "@ghatana/dcmaar-browser-extension-core";
-import type { ExtensionPluginManifest } from "@ghatana/dcmaar-types";
+import { ExtensionPluginHost } from "@dcmaar/browser-extension-core";
+import type { ExtensionPluginManifest } from "@dcmaar/types";
 
 import {
     GUARDIAN_USAGE_COLLECTOR_PLUGIN_ID,
     GUARDIAN_POLICY_EVALUATOR_PLUGIN_ID,
     GuardianUsageCollectorPlugin,
     GuardianPolicyEvaluationPlugin,
-} from "@ghatana/dcmaar-guardian-plugins";
+} from "@dcmaar/guardian-plugins";
 
-import { CPUMonitor, MemoryMonitor, BatteryMonitor } from "@ghatana/dcmaar-plugin-extension";
+import { CPUMonitor, MemoryMonitor, BatteryMonitor } from "@dcmaar/plugin-extension";
 
 import { guardianOnlyProfile } from "../config/profiles/guardianOnlyProfile";
 import { deviceHealthOnlyProfile } from "../config/profiles/deviceHealthOnlyProfile";

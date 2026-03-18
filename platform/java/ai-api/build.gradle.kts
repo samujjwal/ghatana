@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.ghatana.platform"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 description = "AI API - Stable shared interfaces and abstractions for AI integration"
 

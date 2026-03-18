@@ -23,8 +23,8 @@ import {
   Typography,
   LinearProgress,
   Chip,
-} from '@ghatana/ui';
-import { MenuItem } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { MenuItem } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 import React, { useMemo } from 'react';
 

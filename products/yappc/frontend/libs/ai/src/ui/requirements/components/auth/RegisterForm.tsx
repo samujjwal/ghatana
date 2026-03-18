@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TextField, Button, Box, Alert, Link, Typography } from '@ghatana/ui';interface RegisterFormProps {
+import { TextField, Button, Box, Alert, Link, Typography } from '@ghatana/design-system';interface RegisterFormProps {
   onSwitchToLogin?: () => void
 }
 

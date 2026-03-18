@@ -21,7 +21,7 @@ plugins {
 }
 
 group = "com.ghatana.appplatform"
-version = "0.1.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 description = "K-04 Plugin runtime: manifest verification, T1/T2/T3 sandbox, capability enforcement"
 
 java {

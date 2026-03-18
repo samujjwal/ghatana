@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 import type {
     InstitutionAdminService,
     TenantId,
@@ -15,7 +15,7 @@ import type {
     UserSummary,
     PaginatedResult,
     ModuleId,
-} from '@ghatana/tutorputor-contracts';
+} from '@tutorputor/contracts';
 
 interface ServiceConfig {
     defaultPageSize: number;

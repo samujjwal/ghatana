@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-backend",
+  "name": "@dcmaar/backend",
   "version": "1.0.0",
   "description": "Guardian Parental Control Backend API with custom authentication",
   "main": "dist/server.js",

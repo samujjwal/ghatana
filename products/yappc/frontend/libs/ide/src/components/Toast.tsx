@@ -8,10 +8,10 @@
  * @doc.purpose IDE toast notification helpers
  * @doc.layer ui
  */
-import { useToast, type ToastData } from '@ghatana/ui';
+import { useToast, type ToastData } from '@ghatana/design-system';
 
-export { Toast, ToastProvider, useToast } from '@ghatana/ui';
-export type { ToastProps, ToastSeverity, ToastPosition, ToastData } from '@ghatana/ui';
+export { Toast, ToastProvider, useToast } from '@ghatana/design-system';
+export type { ToastProps, ToastSeverity, ToastPosition, ToastData } from '@ghatana/design-system';
 
 /**
  * Convenience hook providing severity-specific toast methods.
@@ -42,4 +42,4 @@ export function useToastNotifications() {
  * Re-export ToastContainer — the provider already renders it, but
  * exposed here for IDE panels that need manual control.
  */
-export { default as ToastContainer } from '@ghatana/ui';
+export { default as ToastContainer } from '@ghatana/design-system';

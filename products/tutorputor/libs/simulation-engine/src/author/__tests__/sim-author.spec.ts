@@ -26,7 +26,7 @@ import type {
   GenerateManifestResult,
   SimulationId,
   SimEntityId,
-} from "@ghatana/tutorputor-contracts/v1/simulation/types";
+} from "@tutorputor/contracts/v1/simulation/types";
 import { createSimulationAuthorService } from "../src/service";
 
 describe("SimAuthorService", () => {

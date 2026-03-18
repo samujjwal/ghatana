@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 import type { DataDeletionResult, RetainedDataInfo } from './types';
 
 /**

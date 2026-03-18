@@ -7,7 +7,7 @@
  * @module pipeline/GuardianPipeline
  */
 
-import { EventPipeline } from '@ghatana/dcmaar-browser-extension-core';
+import { EventPipeline } from '@dcmaar/browser-extension-core';
 import { TabActivitySource } from './sources/TabActivitySource';
 import { ContentScriptSource } from './sources/ContentScriptSource';
 import { CategoryEnrichmentProcessor } from './processors/CategoryEnrichmentProcessor';

@@ -1,5 +1,5 @@
 {
-    "name": "@ghatana/yappc-testing",
+    "name": "@yappc/testing",
     "version": "1.0.0",
     "description": "Unified testing utilities, helpers, and mocks for YAPPC",
     "type": "module",

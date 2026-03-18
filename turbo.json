@@ -1,0 +1,62 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    "**/.env.*local",
+    "**/package.json",
+    "tsconfig.base.json"
+  ],
+  "globalEnv": [
+    "NODE_ENV",
+    "CI",
+    "TURBO_TOKEN",
+    "TURBO_TEAM",
+    "TURBO_REMOTE_CACHE_SIGNATURE_KEY"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build", "^lint", "typecheck"],
+      "outputs": ["dist/**", "build/**", ".next/**", "!.next/cache/**"],
+      "outputLogs": "new-only"
+    },
+    "build:platform": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      "cache": true,
+      "outputLogs": "new-only"
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "outputLogs": "full"
+    },
+    "lint": {
+      "dependsOn": [],
+      "outputs": [],
+      "cache": true,
+      "outputLogs": "new-only"
+    },
+    "typecheck": {
+      "dependsOn": [],
+      "outputs": [],
+      "cache": true,
+      "outputLogs": "new-only"
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "cache": true,
+      "outputLogs": "new-only"
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "clean": {
+      "cache": false,
+      "outputs": []
+    }
+  },
+  "remoteCache": {
+    "enabled": true
+  }
+}

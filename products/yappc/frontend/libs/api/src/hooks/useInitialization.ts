@@ -23,7 +23,7 @@ import {
   environmentsAtom,
   costEstimateAtom,
   teamInvitesAtom,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 import {
   GET_WIZARD_STATE,

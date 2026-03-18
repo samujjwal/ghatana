@@ -1,6 +1,6 @@
 import React from 'react';
 import { Brain, AlertTriangle, Settings } from 'lucide-react';
-import type { AssessmentConfig } from '@ghatana/tutorputor-contracts/v1/learning-unit';
+import type { AssessmentConfig } from '@tutorputor/contracts/v1/learning-unit';
 
 interface AssessmentEditorProps {
     assessment: AssessmentConfig;

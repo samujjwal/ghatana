@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/yappc-realtime",
+  "name": "@yappc/realtime",
   "version": "0.1.0",
   "private": true,
   "type": "module",

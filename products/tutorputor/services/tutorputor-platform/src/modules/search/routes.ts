@@ -7,7 +7,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { SearchServiceImpl } from './service';
-import type { TenantId, ModuleId } from '@ghatana/tutorputor-contracts';
+import type { TenantId, ModuleId } from '@tutorputor/contracts';
 import type { SearchFilters } from './service';
 
 export const searchRoutes: FastifyPluginAsync = async (app) => {

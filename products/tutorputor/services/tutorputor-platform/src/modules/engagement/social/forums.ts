@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 import type { Redis } from 'ioredis';
 import type {
     ForumService,
@@ -13,7 +13,7 @@ import type {
     UserId,
     PaginationArgs,
     PaginatedResult,
-} from '@ghatana/tutorputor-contracts';
+} from '@tutorputor/contracts';
 
 import type {
     Forum,
@@ -21,7 +21,7 @@ import type {
     ForumTopic,
     ForumPost,
     ReactionType,
-} from '@ghatana/tutorputor-contracts/v1/social';
+} from '@tutorputor/contracts/v1/social';
 import slugify from 'slugify';
 import { nanoid } from 'nanoid';
 

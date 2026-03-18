@@ -10,7 +10,7 @@ import { Folder as FolderIcon } from 'lucide-react';
 import { Home as HomeIcon } from 'lucide-react';
 import { User as PersonIcon } from 'lucide-react';
 import { Settings as SettingsIcon } from 'lucide-react';
-import { Stack, Box, Typography, Card, CardContent } from '@ghatana/ui';
+import { Stack, Box, Typography, Card, CardContent } from '@ghatana/design-system';
 
 import { Breadcrumb } from './Breadcrumb.enhanced';
 

@@ -35,7 +35,8 @@ ext {
 
     // ── Logging ───────────────────────────────────────────────────────────────
     slf4jVersion           = '2.0.12'
-    logbackVersion         = '1.5.6'
+    // logbackVersion removed: Log4j2 is the canonical logging impl (see log4j2-config.gradle)
+    // Retain logback-classic exclusion in log4j2-config.gradle to prevent transitive pulls.
 
     // ── Database ──────────────────────────────────────────────────────────────
     hikariVersion          = '5.1.0'
@@ -49,7 +50,7 @@ ext {
     hibernateValidatorVersion = '8.0.1.Final'
 
     // ── AI / LLM ──────────────────────────────────────────────────────────────
-    langchain4jVersion     = '0.27.1'
+    langchain4jVersion     = '0.34.0'
 
     // ── Metrics / Observability ───────────────────────────────────────────────
     micrometerVersion      = '1.12.2'
@@ -61,8 +62,8 @@ ext {
     mockitoVersion         = '5.11.0'
     testcontainersVersion  = '1.19.3'
 
-    // ── Security ──────────────────────────────────────────────────────────────
-    jjwtVersion            = '0.12.5'
+    // ── Security — use Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt) directly
+    // jjwtVersion removed: codebase migrated to Nimbus JOSE+JWT (see libs.versions.toml)
 
     // ── Serialization / OpenAPI ───────────────────────────────────────────────
     swaggerParserVersion   = '2.1.22'
@@ -97,11 +98,8 @@ subprojects { sub ->
                 details.because("Platform BOM: SLF4J unified at $slf4jVersion")
             }
 
-            // Logback
-            if (group == 'ch.qos.logback') {
-                details.useVersion(logbackVersion)
-                details.because("Platform BOM: Logback unified at $logbackVersion")
-            }
+            // Logback: excluded from production classpath (Log4j2 is canonical)
+            // See log4j2-config.gradle for exclusion configuration.
 
             // JUnit 5
             if (group == 'org.junit.jupiter' || group == 'org.junit.platform') {

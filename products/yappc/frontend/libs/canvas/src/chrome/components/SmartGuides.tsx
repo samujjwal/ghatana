@@ -5,7 +5,7 @@
  * @doc.pattern Visual Feedback
  */
 
-import { Box } from '@ghatana/ui';
+import { Box } from '@ghatana/design-system';
 import React, { useMemo } from 'react';
 
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';

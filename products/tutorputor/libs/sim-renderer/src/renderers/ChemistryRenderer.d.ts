@@ -6,7 +6,7 @@
  * @doc.layer product
  * @doc.pattern Renderer
  */
-import type { ChemAtomEntity, ChemBondEntity, ChemMoleculeEntity, ChemReactionArrowEntity, ChemEnergyProfileEntity } from "@ghatana/tutorputor-contracts/v1/simulation";
+import type { ChemAtomEntity, ChemBondEntity, ChemMoleculeEntity, ChemReactionArrowEntity, ChemEnergyProfileEntity } from "@tutorputor/contracts/v1/simulation";
 import type { EntityRenderer } from "../types";
 /**
  * Renderer for chemistry atoms.

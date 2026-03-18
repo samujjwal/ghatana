@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { register, Counter, Histogram, Gauge } from "prom-client";
-import type { PrismaClient } from "@ghatana/tutorputor-db";
+import type { PrismaClient } from "@tutorputor/db";
 import type Redis from "ioredis";
 
 /**

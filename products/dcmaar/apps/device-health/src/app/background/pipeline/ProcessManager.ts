@@ -9,7 +9,7 @@
  * @since 2.0.0
  */
 
-import type { Event } from '@ghatana/dcmaar-connectors';
+import type { Event } from '@dcmaar/connectors';
 import {
   ProcessContract,
   ProcessExecutionContext,

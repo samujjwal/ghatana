@@ -14,7 +14,7 @@ vi.mock("ioredis", () => ({
   },
 }));
 
-import { PrismaClient } from "@ghatana/tutorputor-db";
+import { PrismaClient } from "@tutorputor/db";
 import Redis from "ioredis";
 
 /**

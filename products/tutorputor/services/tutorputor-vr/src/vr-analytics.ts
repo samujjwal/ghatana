@@ -10,8 +10,8 @@ import type {
   VRAnalyticsService,
   TenantId,
   UserId,
-} from '@ghatana/tutorputor-contracts/v1';
-import type { VRLabId, VRLabAnalytics, VRDeviceType, VRSessionId } from '@ghatana/tutorputor-contracts/v1';
+} from '@tutorputor/contracts/v1';
+import type { VRLabId, VRLabAnalytics, VRDeviceType, VRSessionId } from '@tutorputor/contracts/v1';
 
 export class VRAnalyticsServiceImpl implements VRAnalyticsService {
   constructor(private prisma: PrismaClient) {}

@@ -15,7 +15,7 @@ import type {
     VivaCondition,
     VivaConditionType,
     ConfidenceLevel,
-} from '@ghatana/tutorputor-contracts/v1/learning-unit';
+} from '@tutorputor/contracts/v1/learning-unit';
 
 /**
  * Prediction record for viva analysis

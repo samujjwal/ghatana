@@ -113,7 +113,8 @@ public class ApiApplication extends HttpServerLauncher {
       com.ghatana.yappc.api.dlq.DlqController dlqController,
       com.ghatana.yappc.api.history.AgentHistoryController agentHistoryController,
       com.ghatana.yappc.api.policy.LearnedPolicyController learnedPolicyController,
-      OutboxRelayService outboxRelayService) {
+      OutboxRelayService outboxRelayService,
+      com.ghatana.agent.catalog.CatalogRegistry catalogRegistry) {
 
     // Build routing servlet
     AsyncServlet routingServlet =

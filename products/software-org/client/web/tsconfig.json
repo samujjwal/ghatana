@@ -2,11 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -23,30 +19,14 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@/app/*": [
-        "./src/app/*"
-      ],
-      "@/features/*": [
-        "./src/features/*"
-      ],
-      "@/shared/*": [
-        "./src/shared/*"
-      ],
-      "@/hooks/*": [
-        "./src/hooks/*"
-      ],
-      "@/state/*": [
-        "./src/state/*"
-      ],
-      "@/services/*": [
-        "./src/services/*"
-      ],
-      "@/styles/*": [
-        "./src/styles/*"
-      ],
+      "@/*": ["./src/*"],
+      "@/app/*": ["./src/app/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/state/*": ["./src/state/*"],
+      "@/services/*": ["./src/services/*"],
+      "@/styles/*": ["./src/styles/*"],
       "@ghatana/design-system": [
         "../../../../platform/typescript/design-system/src/index.ts"
       ],
@@ -59,30 +39,18 @@
       "@ghatana/tokens": [
         "../../../../platform/typescript/tokens/src/index.ts"
       ],
-      "@ghatana/api": [
-        "../../../../platform/typescript/api/src/index.ts"
-      ],
+      "@ghatana/api": ["../../../../platform/typescript/api/src/index.ts"],
       "@ghatana/realtime": [
         "../../../../platform/typescript/realtime/src/index.ts"
       ],
-      "@ghatana/theme": [
-        "../../../../platform/typescript/theme/src/index.ts"
-      ],
-      "@ghatana/utils": [
+      "@ghatana/theme": ["../../../../platform/typescript/theme/src/index.ts"],
+      "@ghatana/platform-utils": [
         "../../../../platform/typescript/utils/src/index.ts"
       ]
     },
-    "types": [
-      "vite/client",
-      "vitest/globals",
-      "node",
-      "react",
-      "react-dom"
-    ]
+    "types": ["vite/client", "vitest/globals", "node", "react", "react-dom"]
   },
-  "include": [
-    "src"
-  ],
+  "include": ["src"],
   "exclude": [
     "src/pages/**",
     "src/**/examples/**",

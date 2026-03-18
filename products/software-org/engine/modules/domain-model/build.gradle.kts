@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.ghatana.products.software-org"
-version = "1.0.0"
+version = "2026.3.1-SNAPSHOT"
 
 dependencies {
     // Platform modules

@@ -65,7 +65,7 @@ type InspectorTab = 'document' | 'selection' | 'viewport' | 'history' | 'ui' | '
  *
  * @example
  * ```tsx
- * import { DevInspector } from '@ghatana/yappc-canvas/devtools';
+ * import { DevInspector } from '@yappc/canvas/devtools';
  *
  * function App() {
  *   return (

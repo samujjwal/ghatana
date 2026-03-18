@@ -16,7 +16,7 @@ import type {
     ProcessingResult,
     ProcessingContext,
     EvidenceEvent,
-} from '@ghatana/tutorputor-contracts/v1/plugin-interfaces';
+} from '@tutorputor/contracts/v1/plugin-interfaces';
 import type { PluginRegistry, PluginFilter } from '../registry/PluginRegistry';
 
 /**

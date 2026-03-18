@@ -6,7 +6,7 @@
  */
 
 import { Menu as MenuIcon, ArrowLeft as ArrowBackIcon, Home as HomeIcon } from 'lucide-react';
-import { Box, Container, Typography, Breadcrumb as Breadcrumbs, Link as MuiLink, IconButton, Button, Drawer, AppBar, Toolbar } from '@ghatana/ui';
+import { Box, Container, Typography, Breadcrumb as Breadcrumbs, Link as MuiLink, IconButton, Button, Drawer, AppBar, Toolbar } from '@ghatana/design-system';
 import React from 'react';
 
 import { TabNavigation } from '../Navigation/TabNavigation';

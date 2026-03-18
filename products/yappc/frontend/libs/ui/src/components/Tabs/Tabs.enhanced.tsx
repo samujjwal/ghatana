@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { Tabs as BaseTabs, Tab as BaseTab, Box, Badge } from '@ghatana/ui';
+import { Tabs as BaseTabs, Tab as BaseTab, Box, Badge } from '@ghatana/design-system';
 import {
   borderRadiusSm,
   borderRadiusMd,

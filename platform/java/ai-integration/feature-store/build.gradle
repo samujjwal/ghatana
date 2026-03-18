@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.ghatana.libs.aiplatform'
-version = '1.0-SNAPSHOT'
+version = '2026.3.1-SNAPSHOT'
 
 description = 'AI Platform Feature Store - Feature engineering, storage, and serving for ML pipelines'
 

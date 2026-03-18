@@ -75,7 +75,7 @@ export type { TooltipProps } from '../Tooltip';
  * @example With Tokens
  * ```tsx
  * import { Button } from '@ghatana/yappc-shared-ui-core/atoms';
- * import { Button } from '@ghatana/ui';
+ * import { Button } from '@ghatana/design-system';
  *
  * function ThemedButton() {
  *   return (

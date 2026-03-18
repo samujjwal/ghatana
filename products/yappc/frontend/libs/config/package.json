@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/yappc-config",
+  "name": "@yappc/config",
   "version": "1.0.0",
   "private": true,
   "type": "module",

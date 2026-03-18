@@ -1,5 +1,5 @@
 // OpenTelemetry MUST be initialized before any other imports for auto-instrumentation
-import './plugins/tracing';
+import "./plugins/tracing";
 
 import "dotenv/config";
 
@@ -42,16 +42,17 @@ import metricsPlugin from "./plugins/prometheus";
 import { registerTracingMiddleware } from "./middleware/tracing";
 import { initCache, disconnectCache } from "./lib/cache";
 import { JwtPayload } from "./lib/auth";
+import { assertProductionConfig } from "./lib/production-validation";
 
 /**
  * Builds and configures the Flashit Web API server with all middleware and routes.
- * 
+ *
  * @description Creates a Fastify server instance with security, CORS, rate limiting,
  * JWT authentication, and multipart file upload support. Registers all API routes
  * for the Flashit personal context capture platform.
- * 
+ *
  * @returns {FastifyInstance} Configured Fastify server instance
- * 
+ *
  * @example
  * ```typescript
  * const server = buildServer();
@@ -96,7 +97,8 @@ export const buildServer = () => {
   app.register(registerTracingMiddleware);
 
   // Multi-tenant isolation (extracts X-Tenant-ID / JWT tenantId)
-  const tenantIsolation = (await import('./middleware/tenant-isolation')).default;
+  const tenantIsolation = (await import("./middleware/tenant-isolation"))
+    .default;
   app.register(tenantIsolation, { strict: false });
 
   // JWT authentication
@@ -133,36 +135,36 @@ export const buildServer = () => {
   app.register(registerAuthRoutes);
   app.register(registerMomentRoutes);
   app.register(registerSphereRoutes);
-  app.register(uploadRoutes, { prefix: '/api/upload' });
-  app.register(progressiveUploadRoutes, { prefix: '/api/progressive' });
-  app.register(transcriptionRoutes, { prefix: '/api/transcription' });
-  app.register(searchRoutes, { prefix: '/api/search' });
-  app.register(analyticsRoutes, { prefix: '/api/analytics' });
-  app.register(collaborationRoutes, { prefix: '/api/collaboration' });
-  app.register(privacyRoutes, { prefix: '/api/privacy' });
-  app.register(momentLinkRoutes, { prefix: '/api/moments' });
-  app.register(memoryExpansionRoutes, { prefix: '/api/memory-expansion' });
-  app.register(healthRoutes, { prefix: '/api/health' });
-  app.register(adoptionRoutes, { prefix: '/api/adoption' });
+  app.register(uploadRoutes, { prefix: "/api/upload" });
+  app.register(progressiveUploadRoutes, { prefix: "/api/progressive" });
+  app.register(transcriptionRoutes, { prefix: "/api/transcription" });
+  app.register(searchRoutes, { prefix: "/api/search" });
+  app.register(analyticsRoutes, { prefix: "/api/analytics" });
+  app.register(collaborationRoutes, { prefix: "/api/collaboration" });
+  app.register(privacyRoutes, { prefix: "/api/privacy" });
+  app.register(momentLinkRoutes, { prefix: "/api/moments" });
+  app.register(memoryExpansionRoutes, { prefix: "/api/memory-expansion" });
+  app.register(healthRoutes, { prefix: "/api/health" });
+  app.register(adoptionRoutes, { prefix: "/api/adoption" });
   // Billing routes define absolute paths under /api/billing/* already
   app.register(registerBillingRoutes);
   app.register(registerReflectionRoutes);
   app.register(registerSystemRoutes);
-  app.register(templateRoutes, { prefix: '/api/templates' });
-  app.register(adminRoutes, { prefix: '/api/admin' });
-  app.register(notificationRoutes, { prefix: '/api/notifications' });
-  app.register(apiKeyRoutes, { prefix: '/api/api-keys' });
-  app.register(recommendationRoutes, { prefix: '/api/recommendations' });
-  app.register(knowledgeGraphRoutes, { prefix: '/api/knowledge-graph' });
+  app.register(templateRoutes, { prefix: "/api/templates" });
+  app.register(adminRoutes, { prefix: "/api/admin" });
+  app.register(notificationRoutes, { prefix: "/api/notifications" });
+  app.register(apiKeyRoutes, { prefix: "/api/api-keys" });
+  app.register(recommendationRoutes, { prefix: "/api/recommendations" });
+  app.register(knowledgeGraphRoutes, { prefix: "/api/knowledge-graph" });
 
   // Global error handler
   app.setErrorHandler((error: any, request: any, reply) => {
     const logger = request.logger || app.log;
-    
+
     // Log error with context
-    if (typeof logger.error === 'function' && logger.error.length > 1) {
+    if (typeof logger.error === "function" && logger.error.length > 1) {
       // Structured logger
-      logger.error('Request failed', error, {
+      logger.error("Request failed", error, {
         statusCode: error.statusCode || 500,
         errorName: error.name,
       });
@@ -213,6 +215,10 @@ export const buildServer = () => {
 
 export const start = async () => {
   const env = loadEnv();
+
+  // Validate production configuration before starting
+  await assertProductionConfig();
+
   const server = buildServer();
 
   try {
@@ -222,7 +228,7 @@ export const start = async () => {
     await server.listen({ port: env.PORT, host: env.HOST });
     server.log.info(
       { address: `http://${env.HOST}:${env.PORT}` },
-      "Flashit Web API listening"
+      "Flashit Web API listening",
     );
 
     // Start background cron jobs

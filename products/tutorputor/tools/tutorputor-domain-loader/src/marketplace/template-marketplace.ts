@@ -10,7 +10,7 @@
  * @doc.pattern Marketplace
  */
 
-import type { SimulationDomain } from "@ghatana/tutorputor-contracts/v1/simulation/types";
+import type { SimulationDomain } from "@tutorputor/contracts/v1/simulation/types";
 import {
   templateLibrary,
   type EnhancedTemplateMetadata,

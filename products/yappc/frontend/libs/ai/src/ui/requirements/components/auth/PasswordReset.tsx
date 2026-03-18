@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TextField, Button, Box, Alert, Typography } from '@ghatana/ui';interface PasswordResetProps {
+import { TextField, Button, Box, Alert, Typography } from '@ghatana/design-system';interface PasswordResetProps {
   onBackToLogin?: () => void
 }
 

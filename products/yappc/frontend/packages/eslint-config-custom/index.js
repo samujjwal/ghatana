@@ -21,6 +21,46 @@ const config = {
         'react/prop-types': 'off',
         '@typescript-eslint/explicit-function-return-type': 'off',
         '@typescript-eslint/explicit-module-boundary-types': 'off',
+        // --- Library migration enforcement gate ---
+        // The @ghatana/yappc-* packages are deprecated. New code MUST use @yappc/* equivalents.
+        // See docs/LIBRARY_CONSOLIDATION_PLAN.md for migration guidance.
+        'no-restricted-imports': [
+            'error',
+            {
+                paths: [
+                    {
+                        name: '@yappc/ui',
+                        message: 'Deprecated: use @yappc/ui instead. See LIBRARY_CONSOLIDATION_PLAN.md.',
+                    },
+                    {
+                        name: '@yappc/canvas',
+                        message: 'Deprecated: use @yappc/canvas instead. See LIBRARY_CONSOLIDATION_PLAN.md.',
+                    },
+                    {
+                        name: '@yappc/ai',
+                        message: 'Deprecated: use @yappc/ai instead. See LIBRARY_CONSOLIDATION_PLAN.md.',
+                    },
+                    {
+                        name: '@ghatana/yappc-ide',
+                        message: 'Deprecated: @ghatana/yappc-ide is sunset 2026-06-06 and has no replacement. Remove usages.',
+                    },
+                ],
+                patterns: [
+                    {
+                        group: ['@yappc/ui/*'],
+                        message: 'Deprecated: use @yappc/ui/* instead.',
+                    },
+                    {
+                        group: ['@yappc/canvas/*'],
+                        message: 'Deprecated: use @yappc/canvas/* instead.',
+                    },
+                    {
+                        group: ['@yappc/ai/*'],
+                        message: 'Deprecated: use @yappc/ai/* instead.',
+                    },
+                ],
+            },
+        ],
     },
     settings: {
         react: {

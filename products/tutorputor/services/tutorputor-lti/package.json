@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/tutorputor-lti-service",
+  "name": "@tutorputor/lti-service",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,8 +11,8 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@ghatana/tutorputor-contracts": "workspace:*",
-    "@ghatana/tutorputor-db": "workspace:*"
+    "@tutorputor/contracts": "workspace:*",
+    "@tutorputor/db": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.2.0",

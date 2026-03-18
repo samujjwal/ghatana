@@ -21,7 +21,7 @@
  *
  * @example
  * ```tsx
- * import { SketchCanvas, SketchToolbar, useSketchTools } from '@ghatana/yappc-canvas/sketch';
+ * import { SketchCanvas, SketchToolbar, useSketchTools } from '@yappc/canvas/sketch';
  *
  * function Whiteboard() {
  *   const [tool, setTool] = useState<SketchTool>('pen');

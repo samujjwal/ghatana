@@ -18,16 +18,16 @@
 
 import React, { useState } from 'react';
 import { useCompliance, type ComplianceFramework, type ControlStatus } from '../hooks/useCompliance';
-import { Button } from '@ghatana/ui';
-import { Card, CardContent, CardHeader } from '@ghatana/ui';
+import { Button } from '@ghatana/design-system';
+import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-} from '@ghatana/ui';
-import { TextField } from '@ghatana/ui';
-import { Typography } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
+import { Typography } from '@ghatana/design-system';
 
 export const ComplianceCanvas: React.FC = () => {
     const compliance = useCompliance();

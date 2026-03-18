@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { Spacer as GlobalSpacer } from '@ghatana/yappc-ui';
+import { Spacer as GlobalSpacer } from '@yappc/ui';
 
-import type { SpacerProps as GlobalSpacerProps } from '@ghatana/yappc-ui';
+import type { SpacerProps as GlobalSpacerProps } from '@yappc/ui';
 
 export type { GlobalSpacerProps as SpacerProps };
 

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.ghatana.platform"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 description = "Platform YAML Template Engine — variable substitution and inheritance for YAML config files"
 

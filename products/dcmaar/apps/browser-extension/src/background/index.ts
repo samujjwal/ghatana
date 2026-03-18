@@ -8,7 +8,7 @@ import browser from "webextension-polyfill";
 import { GuardianController } from "../controller/GuardianController";
 import {
   ExtensionPluginHost,
-} from "@ghatana/dcmaar-browser-extension-core";
+} from "@dcmaar/browser-extension-core";
 import guardianPluginManifest from "../config/guardian-plugin-manifest";
 import { registerGuardianPlugins } from "../plugins/guardianPlugins";
 

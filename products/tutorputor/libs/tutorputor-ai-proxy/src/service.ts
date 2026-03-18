@@ -1,14 +1,14 @@
 import OpenAI from "openai";
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
-import type { AIProxyService } from "@ghatana/tutorputor-contracts/v1/services";
+import type { TutorPrismaClient } from "@tutorputor/db";
+import type { AIProxyService } from "@tutorputor/contracts/v1/services";
 import type {
   TutorResponsePayload,
   TenantId,
   UserId,
   ModuleId,
   TutorCitation,
-} from "@ghatana/tutorputor-contracts/v1/types";
-import type { ParsedIntent } from "@ghatana/tutorputor-contracts/v1/simulation/types";
+} from "@tutorputor/contracts/v1/types";
+import type { ParsedIntent } from "@tutorputor/contracts/v1/simulation/types";
 import { WebSearchService, type WebSearchConfig } from "./web-search";
 
 // Type alias for backwards compatibility

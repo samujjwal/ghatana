@@ -1,6 +1,6 @@
 import "fastify";
 import type { Span } from "@opentelemetry/api";
-import type { UserRole } from "@ghatana/tutorputor-contracts/v1/types";
+import type { UserRole } from "@tutorputor/contracts/v1/types";
 
 declare module "fastify" {
   interface FastifySchema {

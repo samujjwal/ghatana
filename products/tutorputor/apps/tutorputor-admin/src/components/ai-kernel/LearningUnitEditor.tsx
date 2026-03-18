@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, Button, Input, Badge } from '@ghatana/design-system';
-import { LearningUnit, LearningUnitStatus } from '@ghatana/tutorputor-contracts/v1/learning-unit';
-import { LearningUnitValidator, ValidationResult } from '@ghatana/tutorputor-learning-kernel';
+import { LearningUnit, LearningUnitStatus } from '@tutorputor/contracts/v1/learning-unit';
+import { LearningUnitValidator, ValidationResult } from '@tutorputor/learning-kernel';
 
 interface LearningUnitEditorProps {
     initialUnit?: Partial<LearningUnit>;

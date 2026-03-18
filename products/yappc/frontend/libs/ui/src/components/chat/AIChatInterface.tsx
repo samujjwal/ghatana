@@ -47,23 +47,23 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
 
-import { cn } from '@ghatana/ui';
-import { Button } from '@ghatana/ui';
-import { Textarea } from '@ghatana/yappc-ui';
+import { cn } from '@ghatana/design-system';
+import { Button } from '@ghatana/design-system';
+import { Textarea } from '@yappc/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@ghatana/yappc-ui';
-import { Tooltip } from '@ghatana/ui';
-import { TooltipContent, TooltipTrigger } from '@ghatana/yappc-ui';
+} from '@yappc/ui';
+import { Tooltip } from '@ghatana/design-system';
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 
 import {
   conversationHistoryAtom,
   inputModeAtom,
   aiAgentStateAtom,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 // =============================================================================
 // Types

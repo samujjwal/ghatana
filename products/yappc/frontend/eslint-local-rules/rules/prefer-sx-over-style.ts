@@ -36,7 +36,7 @@ function isMuiImport(node: Node): boolean {
     : '';
   
   return source === '@mui/material' || 
-         source === '@ghatana/ui' || 
+         source === '@ghatana/design-system' || 
          source.startsWith('@mui/material/');
 }
 

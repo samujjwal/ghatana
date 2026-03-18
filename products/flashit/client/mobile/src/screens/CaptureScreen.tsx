@@ -27,7 +27,7 @@ import { useAtom } from 'jotai';
 import { RootStackParamList } from '../navigation';
 import { useApi } from '../contexts/ApiContext';
 import { mobileAtoms } from '../state/localAtoms';
-import { EMOTION_OPTIONS, TAG_SUGGESTIONS } from '@ghatana/flashit-shared';
+import { EMOTION_OPTIONS, TAG_SUGGESTIONS } from '@flashit/shared';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Capture'>;
 

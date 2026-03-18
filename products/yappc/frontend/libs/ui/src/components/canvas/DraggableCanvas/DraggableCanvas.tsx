@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Box, Typography, Card, Button, TextField } from '@ghatana/ui';
+import { Box, Typography, Card, Button, TextField } from '@ghatana/design-system';
 
 // ============================================================================
 // Types

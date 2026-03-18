@@ -13,7 +13,7 @@ const logger = createLogger('learning-path-generator');
  */
 
 import type { TutorPrismaClient } from "../prisma-utils.js";
-import type { DomainConcept, CurriculumLevel, ConceptModuleMapping } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
+import type { DomainConcept, CurriculumLevel, ConceptModuleMapping } from "@tutorputor/contracts/v1/curriculum/types";
 
 /**
  * Options for learning path generation.

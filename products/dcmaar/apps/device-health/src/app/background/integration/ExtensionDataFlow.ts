@@ -7,7 +7,7 @@
  * @module app/background/integration/ExtensionDataFlow
  */
 
-import type { Event } from '@ghatana/dcmaar-connectors';
+import type { Event } from '@dcmaar/connectors';
 import { BrowserEventSource, type BrowserEventSourceConfig } from '../../../connectors/sources/BrowserEventSource';
 import { IndexedDBSink, type IndexedDBSinkConfig } from '../../../connectors/sinks/IndexedDBSink';
 import { EventPipeline, type PipelineConfig } from '../pipeline/EventPipeline';

@@ -18,7 +18,7 @@ plugins {
 }
 
 group = "com.ghatana.appplatform"
-version = "0.1.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 description = "K-19: DLQ management — dead-letter capture, ML classification, bulk replay, SLA tracking"
 
 java {

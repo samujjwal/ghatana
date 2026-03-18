@@ -16,7 +16,7 @@
  * @doc.layer components
  */
 
-import { Box, Typography } from '@ghatana/ui';
+import { Box, Typography } from '@ghatana/design-system';
 import React, { useMemo } from 'react';
 
 import { CANVAS_TOKENS, LIFECYCLE_PHASES } from '../tokens/canvas-tokens';

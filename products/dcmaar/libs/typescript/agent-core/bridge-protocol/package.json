@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-bridge-protocol",
+  "name": "@dcmaar/bridge-protocol",
   "version": "0.1.0",
   "description": "Shared message contracts for the desktop ↔ extension middleware bridge",
   "main": "dist/index.js",

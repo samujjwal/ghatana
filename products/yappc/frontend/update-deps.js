@@ -29,12 +29,12 @@ const packages = [
 
 // Dependencies to update
 const depsToUpdate = {
-  '@ghatana/yappc-canvas': 'file:../canvas',
+  '@yappc/canvas': 'file:../canvas',
   '@ghatana/yappc-designer': 'file:../designer',
   '@ghatana/yappc-types': 'file:../types',
   '@ghatana/yappc-mocks': 'file:../mocks',
-  '@ghatana/yappc-ui': 'file:../../../../libs/typescript/ui',
-  '@ghatana/ui': 'file:../../../../libs/typescript/ui'
+  '@yappc/ui': 'file:../../../../libs/typescript/ui',
+  '@ghatana/design-system': 'file:../../../../libs/typescript/ui'
 };
 
 // Update package.json files

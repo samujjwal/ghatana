@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, FormControlLabel, Checkbox, Box, Typography, Tabs, Tab, IconButton, InteractiveList as List, ListItem, ListItemText, ListItemText as ListItemSecondaryAction, Chip, Alert, Spinner as CircularProgress, Surface as Paper, Divider } from '@ghatana/ui';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, FormControlLabel, Checkbox, Box, Typography, Tabs, Tab, IconButton, InteractiveList as List, ListItem, ListItemText, ListItemText as ListItemSecondaryAction, Chip, Alert, Spinner as CircularProgress, Surface as Paper, Divider } from '@ghatana/design-system';
 import { Plus as AddIcon, Trash2 as DeleteIcon, Code as CodeIcon, FileText as FileIcon, Download as DownloadIcon, Copy as CopyIcon } from 'lucide-react';
 import {
     useComponentGeneration,

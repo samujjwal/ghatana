@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/flashit-mobile",
+  "name": "@flashit/mobile",
   "version": "0.1.0",
   "description": "Flashit mobile app for iOS and Android",
   "main": "index.js",
@@ -22,12 +22,12 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",
-    "@ghatana/flashit-shared": "workspace:*",
+    "@flashit/shared": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/netinfo": "^11.4.1",
     "@react-navigation/native": "^7.1.26",
     "@react-navigation/native-stack": "^7.9.0",
-    "@tanstack/react-query": "^5.90.12",
+    "@tanstack/react-query": "^5.90.20",
     "@types/react": "~19.1.10",
     "@types/react-dom": "~19.1.7",
     "date-fns": "^4.1.0",

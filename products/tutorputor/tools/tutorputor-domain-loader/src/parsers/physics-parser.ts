@@ -23,7 +23,7 @@ import type {
   LearningObjectiveV2,
   SimulationRequirement,
   SimulationRequirementRole,
-} from "@ghatana/tutorputor-contracts/v1/curriculum/types";
+} from "@tutorputor/contracts/v1/curriculum/types";
 import { parseTimeToMinutes, mapDifficultyString, mapLevelString } from "../utils/mappers";
 
 /**

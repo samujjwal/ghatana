@@ -17,7 +17,7 @@ plugins {
 }
 
 group = "com.ghatana.appplatform"
-version = "0.1.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 description = "K-08: Data Governance — catalog, lineage, PII masking, GDPR erasure, data sovereignty"
 
 java {

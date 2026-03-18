@@ -19,7 +19,7 @@ import type {
   SimEntity,
   SimAction,
   ManifestValidationResult,
-} from "@ghatana/tutorputor-contracts/v1/simulation/types";
+} from "@tutorputor/contracts/v1/simulation/types";
 
 export type { SimulationManifest, SimulationDomain, ManifestValidationResult };
 

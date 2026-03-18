@@ -13,7 +13,7 @@ import { useAuth } from "../hooks/useAuth";
 import type {
   UserSummary,
   PaginatedResult,
-} from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/types";
 
 export function UsersPage() {
   const { tenantId } = useAuth();

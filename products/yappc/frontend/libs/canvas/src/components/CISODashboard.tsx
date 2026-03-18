@@ -33,8 +33,8 @@ import {
   DialogContent,
   DialogActions,
   Typography,
-} from '@ghatana/ui';
-import { TextField } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
 import { useCISODashboard } from '../hooks/useCISODashboard';
 import type {
     Severity,

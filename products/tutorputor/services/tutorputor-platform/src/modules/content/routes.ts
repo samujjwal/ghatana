@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import type { ContentService } from "@ghatana/tutorputor-contracts/v1/services";
-import type { UserId } from "@ghatana/tutorputor-contracts/v1/types";
+import type { ContentService } from "@tutorputor/contracts/v1/services";
+import type { UserId } from "@tutorputor/contracts/v1/types";
 
 interface ContentRouteConfigs {
     contentService: ContentService;

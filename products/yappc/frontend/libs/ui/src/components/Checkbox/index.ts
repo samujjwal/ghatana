@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { Checkbox as GlobalCheckbox } from '@ghatana/ui';
+import { Checkbox as GlobalCheckbox } from '@ghatana/design-system';
 
-import type { CheckboxProps as GlobalCheckboxProps } from '@ghatana/yappc-ui';
+import type { CheckboxProps as GlobalCheckboxProps } from '@yappc/ui';
 
 export type { GlobalCheckboxProps as CheckboxProps };
 

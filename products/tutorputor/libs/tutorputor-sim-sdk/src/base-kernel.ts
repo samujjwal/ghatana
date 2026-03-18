@@ -15,7 +15,7 @@ import type {
   SimulationDomain,
   SimulationRunRequest,
   SimulationRunResult,
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 
 /**
  * Kernel state snapshot.

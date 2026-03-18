@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
-import { Box } from '@ghatana/ui';import Header from './components/common/Header'
+import { Box } from '@ghatana/design-system';import Header from './components/common/Header'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import WorkspacePage from './pages/WorkspacePage'

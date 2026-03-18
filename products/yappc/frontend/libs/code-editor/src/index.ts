@@ -21,7 +21,7 @@
  *
  * @example
  * ```tsx
- * import { CodeEditor, CodeDiffViewer } from '@ghatana/yappc-code-editor';
+ * import { CodeEditor, CodeDiffViewer } from '@yappc/code-editor';
  *
  * function MyEditor() {
  *   const [code, setCode] = useState('');

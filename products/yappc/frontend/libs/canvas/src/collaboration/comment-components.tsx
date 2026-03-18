@@ -14,8 +14,8 @@ import {
   Tooltip,
   Badge,
   Surface as Paper,
-} from '@ghatana/ui';
-import { TextField, MenuItem } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { TextField, MenuItem } from '@ghatana/design-system';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 import {

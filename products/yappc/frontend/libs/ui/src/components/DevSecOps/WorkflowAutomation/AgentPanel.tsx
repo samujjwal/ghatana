@@ -11,14 +11,14 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Card, CardContent, Typography, Chip, IconButton, Button, Tooltip, InteractiveList as List, ListItem, ListItemText, ListItemText as ListItemSecondaryAction, Divider, LinearProgress, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel, Alert } from '@ghatana/ui';
+import { Box, Card, CardContent, Typography, Chip, IconButton, Button, Tooltip, InteractiveList as List, ListItem, ListItemText, ListItemText as ListItemSecondaryAction, Divider, LinearProgress, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel, Alert } from '@ghatana/design-system';
 import { Bot as AgentIcon, Play as ExecuteIcon, Settings as SettingsIcon, TrendingUp as PerformanceIcon, History as HistoryIcon } from 'lucide-react';
 
 import {
     useAgents,
     useAgentExecution,
     useWorkflowAnalytics,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 import type {
     WorkflowAgent,
     WorkflowAgentRole,

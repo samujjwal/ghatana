@@ -1,0 +1,112 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "yappc.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "yappc.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "yappc.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: metrics
+      path: {{ .Values.monitoring.serviceMonitor.path }}
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.monitoring.serviceMonitor.scrapeTimeout }}
+      scheme: http
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          action: replace
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_namespace]
+          action: replace
+          targetLabel: namespace
+        - sourceLabels: [__meta_kubernetes_pod_label_app_kubernetes_io_instance]
+          action: replace
+          targetLabel: instance
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: 'jvm_.*|process_.*|http_.*'
+          action: keep
+{{- end }}
+
+{{- if and .Values.monitoring.enabled .Values.monitoring.prometheusRule.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "yappc.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "yappc.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.prometheusRule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: yappc.rules
+      interval: 30s
+      rules:
+        {{- with .Values.monitoring.prometheusRule.rules }}
+        {{- toYaml . | nindent 8 }}
+        {{- else }}
+        # Default alerting rules
+        - alert: YAPPCHighErrorRate
+          expr: |
+            (sum(rate(http_requests_total{job="yappc",status=~"5.."}[5m])) by (instance) /
+             sum(rate(http_requests_total{job="yappc"}[5m])) by (instance)) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "YAPPC high error rate (instance {{ $labels.instance }})"
+            description: "YAPPC error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+        - alert: YAPPCHighLatency
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_seconds_bucket{job="yappc"}[5m])) by (le, instance)
+            ) > 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "YAPPC high latency detected (instance {{ $labels.instance }})"
+            description: "99th percentile latency is {{ $value }}s (threshold: 1s)"
+
+        - alert: YAPPCHighMemoryUsage
+          expr: |
+            (jvm_memory_used_bytes{job="yappc",area="heap"} / jvm_memory_max_bytes{job="yappc",area="heap"}) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "YAPPC heap memory usage high (instance {{ $labels.instance }})"
+            description: "Heap usage is {{ $value | humanizePercentage }} (threshold: 85%)"
+
+        - alert: YAPPCPodNotReady
+          expr: |
+            kube_pod_status_ready{pod=~"yappc.*",condition="false"} == 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "YAPPC pod not ready (pod {{ $labels.pod }})"
+            description: "Pod {{ $labels.pod }} has been not ready for more than 5 minutes"
+
+        - alert: YAPPCRestartingFrequently
+          expr: |
+            rate(kube_pod_container_status_restarts_total{pod=~"yappc.*"}[1h]) > 0.1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "YAPPC pod restarting frequently (pod {{ $labels.pod }})"
+            description: "Pod {{ $labels.pod }} has restarted {{ $value | humanize }} times in the last hour"
+        {{- end }}
+{{- end }}

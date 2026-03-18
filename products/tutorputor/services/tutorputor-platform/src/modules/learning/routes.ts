@@ -22,7 +22,7 @@ import type {
   ClassroomId,
   AssessmentItemId,
   AssessmentStatus,
-} from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/types";
 import { getTenantId, getUserId } from "../../utils/request-helpers.js";
 
 // =============================================================================

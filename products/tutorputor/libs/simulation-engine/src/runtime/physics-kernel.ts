@@ -21,7 +21,7 @@ import type {
   PhysicsVectorEntity,
   SimulationRunRequest,
   SimulationRunResult
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 
 /**
  * Integration method for physics stepping.

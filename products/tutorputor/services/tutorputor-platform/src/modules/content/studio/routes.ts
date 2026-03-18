@@ -28,7 +28,7 @@ import type {
   // GradeLevel,
   ExperienceStatus,
   ValidationPillar,
-} from "@ghatana/tutorputor-contracts/v1";
+} from "@tutorputor/contracts/v1";
 import type { ContentStudioService } from "./service.js";
 
 // =============================================================================

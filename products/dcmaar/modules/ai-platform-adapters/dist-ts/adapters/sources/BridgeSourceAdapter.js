@@ -4,7 +4,7 @@
  * Receives events from Desktop and Extension apps via the bridge protocol.
  * Implements the DCMAAR bridge protocol v1 for cross-application telemetry.
  */
-import { BaseConnector } from '@ghatana/dcmaar-connectors';
+import { BaseConnector } from '@dcmaar/connectors';
 import { Logger } from '../../utils/logger';
 import { WebSocketServer } from 'ws';
 import { EventEmitter } from 'eventemitter3';

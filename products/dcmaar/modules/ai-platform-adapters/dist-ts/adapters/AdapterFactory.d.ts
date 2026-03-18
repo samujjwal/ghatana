@@ -3,7 +3,7 @@
  * Creates pluggable source and sink adapters
  * Following Desktop pattern from DesktopConnectorManager
  */
-import type { IConnector } from '@ghatana/dcmaar-connectors';
+import type { IConnector } from '@dcmaar/connectors';
 import type { SourceAdapter, SinkAdapter, AdapterRegistry } from './types';
 export declare class AgentAdapterFactory implements AdapterRegistry {
     private sources;

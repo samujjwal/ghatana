@@ -26,7 +26,7 @@ import type {
     PhysicsVectorEntity,
     PhysicsParticleEntity,
     SimEntityBase,
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 
 // =============================================================================
 // Types

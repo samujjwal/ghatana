@@ -20,8 +20,8 @@ import type {
   UserId,
   PaginatedResult,
   PaginationArgs,
-} from '@ghatana/tutorputor-contracts/v1';
-import type { VRAsset, VRAssetId, VRAssetType } from '@ghatana/tutorputor-contracts/v1';
+} from '@tutorputor/contracts/v1';
+import type { VRAsset, VRAssetId, VRAssetType } from '@tutorputor/contracts/v1';
 
 export interface VRAssetServiceConfig {
   s3Bucket: string;

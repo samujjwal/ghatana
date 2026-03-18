@@ -16,7 +16,7 @@
 
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { useAtom } from 'jotai';
-import { authUserAtom, authTokenAtom } from '@ghatana/yappc-canvas';
+import { authUserAtom, authTokenAtom } from '@yappc/canvas';
 
 // ============================================================================
 // Types

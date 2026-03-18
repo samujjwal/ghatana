@@ -7,7 +7,7 @@
  * @module pipeline/sinks/RealTimeSyncSink
  */
 
-import { BaseEventSink } from '@ghatana/dcmaar-browser-extension-core';
+import { BaseEventSink } from '@dcmaar/browser-extension-core';
 import type { PolicyEvaluatedEvent } from '../types';
 
 /**

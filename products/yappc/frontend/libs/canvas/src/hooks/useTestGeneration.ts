@@ -19,10 +19,10 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNodes } from '@xyflow/react';
-import { AIRequirementsService } from '@ghatana/yappc-ai';
+import { AIRequirementsService } from '@yappc/ai';
 
 import type { Node } from '@xyflow/react';
-import type { GeneratedTestCase } from '@ghatana/yappc-ai';
+import type { GeneratedTestCase } from '@yappc/ai';
 import type { TestType, TestStatus } from '../components/TestGenToolbar';
 import type { TestCaseWithApproval } from '../components/TestResultsPanel';
 

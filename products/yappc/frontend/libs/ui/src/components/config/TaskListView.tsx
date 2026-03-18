@@ -11,7 +11,7 @@
 
 import React, { Suspense } from 'react';
 
-import { Box, Card, CardContent, Typography, Stack, Chip, Skeleton } from '@ghatana/ui';
+import { Box, Card, CardContent, Typography, Stack, Chip, Skeleton } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 
 import { useDomainById } from '../../hooks/useConfig';

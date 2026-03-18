@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { Button as BaseButton, Tooltip } from '@ghatana/ui';
+import { Button as BaseButton, Tooltip } from '@ghatana/design-system';
 import {
   borderRadiusSm,
   borderRadiusMd,

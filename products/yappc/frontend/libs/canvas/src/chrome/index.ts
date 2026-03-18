@@ -2,7 +2,7 @@
  * Canvas Chrome Components (consolidated from @yappc/canvas)
  *
  * UI chrome layer: panels, toolbars, command palette, minimap.
- * @deprecated Import directly from '@ghatana/yappc-canvas/chrome' instead of '@yappc/canvas'.
+ * @deprecated Import directly from '@yappc/canvas/chrome' instead of '@yappc/canvas'.
  */
 export * from './components/LayersPanel';
 export * from './components/EnhancedMinimap';

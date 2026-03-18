@@ -8,7 +8,7 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PresenceUser, PresenceState } from '../PresenceManager';
-import { cn } from '@ghatana/ui';
+import { cn } from '@ghatana/design-system';
 
 // =============================================================================
 // Types

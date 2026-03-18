@@ -26,7 +26,7 @@ vi.mock('bullmq', () => {
 });
 
 import { ContentGenerationOrchestrator, type OrchestrationRequest, type OrchestrationResult } from '../orchestrator';
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 
 function makeMockPrisma() {
     return {} as unknown as PrismaClient;

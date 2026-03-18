@@ -12,7 +12,7 @@
 
 import type {
   SimulationDomain,
-} from "@ghatana/tutorputor-contracts/v1/simulation/types";
+} from "@tutorputor/contracts/v1/simulation/types";
 
 /**
  * A loosely-typed manifest blueprint used by template authors.

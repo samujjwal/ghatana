@@ -3,7 +3,7 @@
  * Defines the contract for analytics and metrics plugins
  */
 
-import { IPlugin } from '@ghatana/dcmaar-types';
+import { IPlugin } from '@dcmaar/types';
 
 export interface IAnalytics extends IPlugin {
   /**

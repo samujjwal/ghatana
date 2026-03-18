@@ -4,7 +4,7 @@
  * @module DevSecOps/SidePanel/stories
  */
 
-import { Box, Button, Typography, Divider, Chip } from '@ghatana/ui';
+import { Box, Button, Typography, Divider, Chip } from '@ghatana/design-system';
 import { useState } from 'react';
 
 

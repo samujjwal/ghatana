@@ -12,7 +12,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ReactFlowProvider } from '@xyflow/react';
 import { useAIBrainstorming } from '../useAIBrainstorming';
-import type { IAIService, CompletionResponse } from '@ghatana/yappc-ai/core';
+import type { IAIService, CompletionResponse } from '@yappc/ai/core';
 
 // Mock React Flow hooks
 vi.mock('@xyflow/react', async () => {

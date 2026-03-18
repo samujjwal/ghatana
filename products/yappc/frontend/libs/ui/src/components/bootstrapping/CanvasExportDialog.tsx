@@ -28,19 +28,19 @@ import {
   Copy,
 } from 'lucide-react';
 
-import { cn } from '@ghatana/ui';
-import { Button } from '@ghatana/ui';
-import { Dialog } from '@ghatana/ui';
-import { Badge } from '@ghatana/ui';
-import { Input } from '@ghatana/ui';
-import { Progress } from '@ghatana/ui';
+import { cn } from '@ghatana/design-system';
+import { Button } from '@ghatana/design-system';
+import { Dialog } from '@ghatana/design-system';
+import { Badge } from '@ghatana/design-system';
+import { Input } from '@ghatana/design-system';
+import { Progress } from '@ghatana/design-system';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
-} from '@ghatana/yappc-ui';
+} from '@yappc/ui';
 
 // =============================================================================
 // Types

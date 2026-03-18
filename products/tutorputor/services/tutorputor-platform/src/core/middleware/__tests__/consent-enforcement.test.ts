@@ -12,7 +12,7 @@ import {
     ConsentCache,
     type ConsentCategory,
 } from '../consent-enforcement';
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 
 function makeMockPrisma() {
     return {

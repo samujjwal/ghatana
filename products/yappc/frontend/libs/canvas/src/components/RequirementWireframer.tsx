@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Surface as Paper, Box, Typography, TextField, Button, IconButton, Chip, Alert, AlertTitle, InteractiveList as List, ListItem, ListItemText, ListItemIcon, Divider, Card, CardContent, CardActions, Dialog, DialogTitle, DialogContent, DialogActions, Stepper, Step, StepLabel, Tooltip, ToggleButton, ToggleButtonGroup, Stack } from '@ghatana/ui';
+import { Surface as Paper, Box, Typography, TextField, Button, IconButton, Chip, Alert, AlertTitle, InteractiveList as List, ListItem, ListItemText, ListItemIcon, Divider, Card, CardContent, CardActions, Dialog, DialogTitle, DialogContent, DialogActions, Stepper, Step, StepLabel, Tooltip, ToggleButton, ToggleButtonGroup, Stack } from '@ghatana/design-system';
 import { X as CloseIcon, Play as PlayIcon, Pause as PauseIcon, SkipNext as NextIcon, SkipPrevious as PrevIcon, RotateCcw as ResetIcon, Plus as AddIcon, Trash2 as DeleteIcon, Link as LinkIcon, Download as ExportIcon, Gauge as SpeedIcon, CheckCircle as CheckIcon, AlertTriangle as WarningIcon, AlertCircle as ErrorIcon, LayoutGrid as ScreenIcon, Component as ComponentIcon, Rule as RuleIcon, Activity as FlowIcon, FileText as DescriptionIcon } from 'lucide-react';
 import { useRequirementWireframer, type WireframeElement, type BusinessRule, type FlowStep } from '../hooks/useRequirementWireframer';
 

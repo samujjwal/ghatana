@@ -56,7 +56,7 @@ export type { AppProps } from './AppExample';
  * 2. Create main.tsx:
  * ```tsx
  * import { createRoot } from 'react-dom/client';
- * import { App, initializeApp } from '@ghatana/yappc-ui';
+ * import { App, initializeApp } from '@yappc/ui';
  * import './index.css';
  * 
  * initializeApp();
@@ -80,7 +80,7 @@ export type { AppProps } from './AppExample';
  * @example Custom Login Page
  * 
  * ```tsx
- * import { LoginPage } from '@ghatana/yappc-ui';
+ * import { LoginPage } from '@yappc/ui';
  * import { Route } from 'react-router-dom';
  * import { MyLogo } from './components/MyLogo';
  * 
@@ -107,7 +107,7 @@ export type { AppProps } from './AppExample';
  * @example Custom Protected Dashboard
  * 
  * ```tsx
- * import { DashboardPage } from '@ghatana/yappc-ui';
+ * import { DashboardPage } from '@yappc/ui';
  * import { Route } from 'react-router-dom';
  * 
  * function Routes() {
@@ -133,8 +133,8 @@ export type { AppProps } from './AppExample';
  * ```tsx
  * import { RouterProvider } from 'react-router-dom';
  * import { Provider as JotaiProvider } from 'jotai';
- * import { ToastProvider } from '@ghatana/yappc-ui';
- * import { router } from '@ghatana/yappc-ui';
+ * import { ToastProvider } from '@yappc/ui';
+ * import { router } from '@yappc/ui';
  * 
  * function App() {
  *   return (
@@ -152,7 +152,7 @@ export type { AppProps } from './AppExample';
  * @example HOC Pattern for Protection
  * 
  * ```tsx
- * import { withProtectedRoute } from '@ghatana/yappc-ui';
+ * import { withProtectedRoute } from '@yappc/ui';
  * import { MyDashboard } from './components/MyDashboard';
  * 
  * // Protect with authentication only
@@ -178,8 +178,8 @@ export type { AppProps } from './AppExample';
  * 
  * ```tsx
  * import { createBrowserRouter } from 'react-router-dom';
- * import { ProtectedRoute } from '@ghatana/yappc-ui';
- * import { useAuth } from '@ghatana/yappc-canvas';
+ * import { ProtectedRoute } from '@yappc/ui';
+ * import { useAuth } from '@yappc/canvas';
  * 
  * const AppLayout = () => {
  *   const { user, isAuthenticated, isLoading } = useAuth();
@@ -242,8 +242,8 @@ export type { AppProps } from './AppExample';
  * ```tsx
  * import { render, screen } from '@testing-library/react';
  * import { Provider as JotaiProvider } from 'jotai';
- * import { ToastProvider } from '@ghatana/yappc-ui';
- * import { LoginPage } from '@ghatana/yappc-ui';
+ * import { ToastProvider } from '@yappc/ui';
+ * import { LoginPage } from '@yappc/ui';
  * 
  * describe('LoginPage', () => {
  *   it('renders login form', () => {

@@ -4,7 +4,7 @@
  * Following Desktop pattern from DesktopConnectorManager
  */
 
-import type { IConnector } from '@ghatana/dcmaar-connectors';
+import type { IConnector } from '@dcmaar/connectors';
 import type { SourceAdapter, SinkAdapter, AdapterRegistry } from './types';
 import { Logger } from '../utils/logger';
 import { BridgeSourceAdapter } from './sources/BridgeSourceAdapter';

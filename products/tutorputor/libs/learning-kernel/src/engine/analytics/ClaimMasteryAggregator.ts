@@ -18,7 +18,7 @@ import {
     getCBMScore,
     normalizeCBMScore,
     CANONICAL_EVIDENCE_WEIGHTS,
-} from '@ghatana/tutorputor-contracts/v1/learning-unit';
+} from '@tutorputor/contracts/v1/learning-unit';
 
 import type {
     BaseTelemetryEvent,
@@ -26,7 +26,7 @@ import type {
     SimGoalFailedEvent,
     AssessAnswerSubmitEvent,
     AssessConfidenceSubmitEvent,
-} from '@ghatana/tutorputor-contracts/v1/telemetry-events';
+} from '@tutorputor/contracts/v1/telemetry-events';
 
 import { ClaimMasteryCalculator, type EvidenceRecord } from './ClaimMastery';
 

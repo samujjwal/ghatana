@@ -65,8 +65,8 @@ export {
 /**
  * @example Basic Error Boundary
  * 
- * import { ErrorBoundary } from '@ghatana/ui';
-import { CardErrorFallback } from '@ghatana/yappc-ui';
+ * import { ErrorBoundary } from '@ghatana/design-system';
+import { CardErrorFallback } from '@yappc/ui';
  * 
  * function App() {
  *   return (
@@ -80,8 +80,8 @@ import { CardErrorFallback } from '@ghatana/yappc-ui';
 /**
  * @example Error Boundary with Reporting
  * 
- * import { ErrorBoundary } from '@ghatana/ui';
-import { reportError } from '@ghatana/yappc-ui';
+ * import { ErrorBoundary } from '@ghatana/design-system';
+import { reportError } from '@yappc/ui';
  * 
  * function App() {
  *   const handleError = (error: Error, errorInfo: ErrorInfo) => {
@@ -102,7 +102,7 @@ import { reportError } from '@ghatana/yappc-ui';
 /**
  * @example Programmatic Error Handling
  * 
- * import { useErrorHandler } from '@ghatana/yappc-ui';
+ * import { useErrorHandler } from '@yappc/ui';
  * 
  * function MyComponent() {
  *   const { error, clearError, tryCatchAsync } = useErrorHandler();
@@ -135,7 +135,7 @@ import { reportError } from '@ghatana/yappc-ui';
   *   ConsoleErrorReporter,
   *   CompositeErrorReporter 
  *,
-} from '@ghatana/yappc-ui';
+} from '@yappc/ui';
  * 
  * // Configure custom error reporter at app initialization
  * const reporter = new CompositeErrorReporter([
@@ -155,8 +155,8 @@ import { reportError } from '@ghatana/yappc-ui';
 /**
  * @example Error Reset with Keys
  * 
- * import { ErrorBoundary } from '@ghatana/ui';
-import { useErrorReset } from '@ghatana/yappc-ui';
+ * import { ErrorBoundary } from '@ghatana/design-system';
+import { useErrorReset } from '@yappc/ui';
  * 
  * function ParentComponent() {
  *   const { resetKey, reset } = useErrorReset();
@@ -175,7 +175,7 @@ import { useErrorReset } from '@ghatana/yappc-ui';
 /**
  * @example Async Error in Error Boundary
  * 
- * import { useAsyncError } from '@ghatana/yappc-ui';
+ * import { useAsyncError } from '@yappc/ui';
  * 
  * function MyComponent() {
  *   const throwError = useAsyncError();

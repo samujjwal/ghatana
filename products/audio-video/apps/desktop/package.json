@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/audio-video-desktop-app",
+  "name": "@audio-video/desktop-app",
   "private": true,
   "version": "1.0.0",
   "description": "Unified Audio-Video Desktop Application",

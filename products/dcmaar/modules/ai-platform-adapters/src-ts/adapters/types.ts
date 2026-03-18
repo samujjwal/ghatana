@@ -3,7 +3,7 @@
  * Following Desktop pattern from DesktopConnectorManager
  */
 
-import type { IConnector } from '@ghatana/dcmaar-connectors';
+import type { IConnector } from '@dcmaar/connectors';
 
 /**
  * Source adapter interface

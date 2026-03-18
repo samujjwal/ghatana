@@ -27,14 +27,14 @@ import {
   Checkbox,
   Surface as Paper,
   InteractiveList as List,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
   Drawer,
   ListItemSecondaryAction,
   TextField,
   MenuItem,
   Collapse,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import React, { useState, useCallback, useRef } from 'react';
 
 import type { Node, Edge } from '@xyflow/react';

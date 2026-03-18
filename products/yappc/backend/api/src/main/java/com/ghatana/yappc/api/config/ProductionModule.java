@@ -104,6 +104,7 @@ import com.ghatana.yappc.api.service.AgentRegistryService;
 // Agent catalog
 import com.ghatana.agent.catalog.CatalogRegistry;
 import com.ghatana.agent.catalog.loader.CatalogLoader;
+import com.ghatana.agent.registry.YamlAgentCatalogLoader;
 // Controllers
 import com.ghatana.yappc.api.bootstrapping.BootstrappingController;
 import com.ghatana.yappc.api.development.SprintController;
@@ -1030,38 +1031,16 @@ public class ProductionModule extends SharedBaseModule {
    * @doc.gaa.lifecycle perceive
    */
   @Provides
-  CatalogRegistry catalogRegistry(ObjectMapper objectMapper) {
+  CatalogRegistry catalogRegistry() {
+    // YamlAgentCatalogLoader resolves the root directory from:
+    //   1. System property  ghatana.catalog.root
+    //   2. Env var          GHATANA_CATALOG_ROOT
+    //   3. Default          ./platform/agent-catalog
+    YamlAgentCatalogLoader catalogLoader = new YamlAgentCatalogLoader();
     CatalogRegistry registry = CatalogRegistry.empty();
-
-    String catalogDirEnv = java.util.Optional
-        .ofNullable(System.getenv("YAPPC_AGENT_CATALOG_DIR"))
-        .filter(s -> !s.isBlank())
-        .orElse("config/agents");
-
-    Path catalogDir = Path.of(catalogDirEnv);
-    if (!java.nio.file.Files.isDirectory(catalogDir)) {
-      logger.warn("Agent catalog directory not found at '{}' — " +
-          "set YAPPC_AGENT_CATALOG_DIR or ensure config/agents is present. " +
-          "CatalogRegistry will be empty.", catalogDir.toAbsolutePath());
-      return registry;
-    }
-
-    com.fasterxml.jackson.databind.ObjectMapper yamlMapper =
-        new com.fasterxml.jackson.databind.ObjectMapper(
-            new com.fasterxml.jackson.dataformat.yaml.YAMLFactory());
-    CatalogLoader loader = new CatalogLoader(yamlMapper);
-
-    try {
-      java.util.List<com.ghatana.agent.catalog.AgentCatalog> catalogs =
-          loader.discoverAndLoad(catalogDir);
-      catalogs.forEach(registry::register);
-      logger.info("Loaded {} agent catalog(s) with {} agent definitions from {}",
-          catalogs.size(), registry.size(), catalogDir.toAbsolutePath());
-    } catch (Exception e) {
-      logger.error("Failed to load agent catalogs from '{}': {}",
-          catalogDir.toAbsolutePath(), e.getMessage(), e);
-    }
-
+    int agentCount = catalogLoader.loadInto(registry);
+    logger.info("CatalogRegistry populated with {} agent definition(s) from '{}'",
+        agentCount, catalogLoader.getCatalogRoot());
     return registry;
   }
 

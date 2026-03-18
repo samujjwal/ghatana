@@ -14,7 +14,7 @@ import {
   type ControllerState,
   type BrowserEvent,
   type ExtensionPluginHost,
-} from "@ghatana/dcmaar-browser-extension-core";
+} from "@dcmaar/browser-extension-core";
 import browser from "webextension-polyfill";
 import { WebsiteBlocker } from "../blocker/WebsiteBlocker";
 import {

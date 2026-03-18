@@ -4,7 +4,7 @@
  * Outputs events to console for debugging and development.
  * Supports pretty-printing and filtering options.
  */
-import { BaseConnector } from '@ghatana/dcmaar-connectors';
+import { BaseConnector } from '@dcmaar/connectors';
 import { Logger } from '../../utils/logger';
 /**
  * Sink adapter that outputs events to console

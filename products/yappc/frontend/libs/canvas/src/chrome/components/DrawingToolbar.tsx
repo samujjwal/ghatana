@@ -21,9 +21,9 @@ import {
   Slider,
   Typography,
   Divider,
-} from '@ghatana/ui';
-import { ToggleButtonGroup } from '@ghatana/ui';
-import { Popover } from '@ghatana/yappc-ui';
+} from '@ghatana/design-system';
+import { ToggleButtonGroup } from '@ghatana/design-system';
+import { Popover } from '@yappc/ui';
 import React, { useState } from 'react';
 
 import { CANVAS_TOKENS } from '../tokens';

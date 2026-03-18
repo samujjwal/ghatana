@@ -19,8 +19,8 @@ import {
   Typography,
   Divider,
   InteractiveList as List,
-} from '@ghatana/ui';
-import { TextField, ListItemButton } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { TextField, ListItemButton } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 

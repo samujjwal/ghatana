@@ -21,7 +21,7 @@ vi.mock('webextension-polyfill', () => {
 });
 
 import browser from 'webextension-polyfill';
-import { BrowserMessageRouter } from '@ghatana/dcmaar-browser-extension-core';
+import { BrowserMessageRouter } from '@dcmaar/browser-extension-core';
 import { Popup } from '../popup/Popup';
 
 describe('Popup', () => {

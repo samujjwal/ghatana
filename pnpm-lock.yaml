@@ -7,6 +7,18 @@ settings:
 overrides:
   react: ^19.2.4
   react-dom: ^19.2.4
+  '@tanstack/react-query': ^5.90.20
+  jotai: ^2.17.0
+  zod: ^4.3.6
+  typescript: ^5.9.3
+  vite: ^7.3.1
+  vitest: ^4.0.18
+  tailwindcss: ^4.1.18
+  eslint: ^9.39.2
+  prettier: ^3.8.1
+  date-fns: ^4.1.0
+  axios: npm:node-fetch@3
+  uuid: npm:nanoid@5
 
 importers:
 
@@ -16,7 +28,7 @@ importers:
         specifier: ^20.11.0
         version: 20.19.35
       prettier:
-        specifier: ^3.2.4
+        specifier: ^3.8.1
         version: 3.8.1
       turbo:
         specifier: ^1.12.0
@@ -58,44 +70,6 @@ importers:
 
   platform/typescript/api:
     devDependencies:
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  platform/typescript/audio-video-client:
-    dependencies:
-      '@ghatana/audio-video-types':
-        specifier: workspace:*
-        version: link:../audio-video-types
-    devDependencies:
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  platform/typescript/audio-video-types:
-    devDependencies:
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  platform/typescript/audio-video-ui:
-    dependencies:
-      '@ghatana/audio-video-types':
-        specifier: workspace:*
-        version: link:../audio-video-types
-      react:
-        specifier: ^19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.2.4
-        version: 19.2.4(react@19.2.4)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.14)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -204,15 +178,15 @@ importers:
 
   platform/typescript/design-system:
     dependencies:
+      '@ghatana/platform-utils':
+        specifier: workspace:*
+        version: link:../utils
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../theme
       '@ghatana/tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@ghatana/utils':
-        specifier: workspace:*
-        version: link:../utils
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -382,15 +356,15 @@ importers:
       '@ghatana/design-system':
         specifier: workspace:*
         version: link:../design-system
+      '@ghatana/platform-utils':
+        specifier: workspace:*
+        version: link:../utils
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../theme
       '@ghatana/tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@ghatana/utils':
-        specifier: workspace:*
-        version: link:../utils
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -479,14 +453,11 @@ importers:
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tanstack/react-query':
-        specifier: ^5.90.21
+        specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
       '@xyflow/react':
         specifier: ^12.10.0
         version: 12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      axios:
-        specifier: ^1.13.4
-        version: 1.13.6
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -697,6 +668,44 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  products/audio-video/libs/typescript/audio-video-client:
+    dependencies:
+      '@audio-video/types':
+        specifier: workspace:*
+        version: link:../audio-video-types
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  products/audio-video/libs/typescript/audio-video-types:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  products/audio-video/libs/typescript/audio-video-ui:
+    dependencies:
+      '@audio-video/types':
+        specifier: workspace:*
+        version: link:../audio-video-types
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   products/audio-video/modules/intelligence/ai-voice/apps/desktop:
     dependencies:
       '@ghatana/ai-voice-ui-react':
@@ -806,18 +815,15 @@ importers:
       '@ghatana/flow-canvas':
         specifier: workspace:*
         version: link:../../../platform/typescript/canvas/flow-canvas
+      '@ghatana/platform-utils':
+        specifier: workspace:*
+        version: link:../../../platform/typescript/utils
       '@ghatana/realtime':
         specifier: workspace:*
         version: link:../../../platform/typescript/realtime
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../platform/typescript/theme
-      '@ghatana/utils':
-        specifier: workspace:*
-        version: link:../../../platform/typescript/utils
-      '@ghatana/yappc-code-editor':
-        specifier: workspace:*
-        version: link:../../yappc/frontend/libs/code-editor
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.2(react@19.2.4))
@@ -827,9 +833,9 @@ importers:
       '@xyflow/react':
         specifier: ^12.10.0
         version: 12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      axios:
-        specifier: ^1.13.4
-        version: 1.13.6
+      '@yappc/code-editor':
+        specifier: workspace:*
+        version: link:../../yappc/frontend/libs/code-editor
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -970,7 +976,7 @@ importers:
 
   products/dcmaar/apps/agent-react-native:
     dependencies:
-      '@ghatana/dcmaar-agent-core':
+      '@dcmaar/agent-core':
         specifier: workspace:*
         version: link:../agent-core
       '@grpc/grpc-js':
@@ -1179,21 +1185,21 @@ importers:
 
   products/dcmaar/apps/browser-extension:
     dependencies:
+      '@dcmaar/browser-extension-core':
+        specifier: workspace:*
+        version: link:../../libs/typescript/browser-extension-core
+      '@dcmaar/guardian-plugins':
+        specifier: workspace:*
+        version: link:../guardian-plugins
+      '@dcmaar/plugin-abstractions':
+        specifier: workspace:*
+        version: link:../../libs/typescript/plugin-abstractions
+      '@dcmaar/types':
+        specifier: workspace:*
+        version: link:../../libs/typescript/types
       '@ghatana/charts':
         specifier: workspace:*
         version: link:../../../../platform/typescript/charts
-      '@ghatana/dcmaar-browser-extension-core':
-        specifier: workspace:*
-        version: link:../../libs/typescript/browser-extension-core
-      '@ghatana/dcmaar-guardian-plugins':
-        specifier: workspace:*
-        version: link:../guardian-plugins
-      '@ghatana/dcmaar-plugin-abstractions':
-        specifier: workspace:*
-        version: link:../../libs/typescript/plugin-abstractions
-      '@ghatana/dcmaar-types':
-        specifier: workspace:*
-        version: link:../../libs/typescript/types
       eventemitter3:
         specifier: ^5.0.4
         version: 5.0.4
@@ -1273,10 +1279,10 @@ importers:
 
   products/dcmaar/apps/child-mobile:
     dependencies:
-      '@ghatana/dcmaar-agent-react-native':
+      '@dcmaar/agent-react-native':
         specifier: workspace:*
         version: link:../agent-react-native
-      '@ghatana/dcmaar-dashboard-core':
+      '@dcmaar/dashboard-core':
         specifier: workspace:*
         version: link:../../libs/guardian-dashboard-core
       '@notifee/react-native':
@@ -1300,9 +1306,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
-      axios:
-        specifier: ^1.13.4
-        version: 1.13.6
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -1391,31 +1394,31 @@ importers:
 
   products/dcmaar/apps/device-health:
     dependencies:
-      '@ghatana/dcmaar-browser-extension-core':
+      '@dcmaar/browser-extension-core':
         specifier: workspace:*
         version: link:../../libs/typescript/browser-extension-core
-      '@ghatana/dcmaar-config-presets':
+      '@dcmaar/config-presets':
         specifier: workspace:*
         version: link:../../libs/typescript/config-presets
-      '@ghatana/dcmaar-connectors':
+      '@dcmaar/connectors':
         specifier: workspace:*
         version: link:../../libs/typescript/connectors
-      '@ghatana/dcmaar-plugin-abstractions':
+      '@dcmaar/plugin-abstractions':
         specifier: workspace:*
         version: link:../../libs/typescript/plugin-abstractions
-      '@ghatana/dcmaar-plugin-extension':
+      '@dcmaar/plugin-extension':
         specifier: workspace:*
         version: link:../../libs/typescript/plugin-extension
-      '@ghatana/dcmaar-shared-ui-charts':
+      '@dcmaar/shared-ui-charts':
         specifier: workspace:*
         version: link:../../libs/typescript/shared-ui-charts
-      '@ghatana/dcmaar-shared-ui-core':
+      '@dcmaar/shared-ui-core':
         specifier: workspace:*
         version: link:../../libs/typescript/shared-ui-core
-      '@ghatana/dcmaar-shared-ui-tailwind':
+      '@dcmaar/shared-ui-tailwind':
         specifier: workspace:*
         version: link:../../libs/typescript/shared-ui-tailwind
-      '@ghatana/dcmaar-types':
+      '@dcmaar/types':
         specifier: workspace:*
         version: link:../../libs/typescript/types
       '@ghatana/design-system':
@@ -1614,10 +1617,10 @@ importers:
 
   products/dcmaar/apps/guardian-plugins:
     dependencies:
-      '@ghatana/dcmaar-plugin-abstractions':
+      '@dcmaar/plugin-abstractions':
         specifier: workspace:*
         version: link:../../libs/typescript/plugin-abstractions
-      '@ghatana/dcmaar-types':
+      '@dcmaar/types':
         specifier: workspace:*
         version: link:../../libs/typescript/types
     devDependencies:
@@ -1627,19 +1630,19 @@ importers:
 
   products/dcmaar/apps/host:
     dependencies:
-      '@ghatana/dcmaar-browser-extension-core':
+      '@dcmaar/browser-extension-core':
         specifier: workspace:*
         version: link:../../libs/typescript/browser-extension-core
-      '@ghatana/dcmaar-guardian-plugins':
+      '@dcmaar/guardian-plugins':
         specifier: workspace:*
         version: link:../guardian-plugins
-      '@ghatana/dcmaar-plugin-abstractions':
+      '@dcmaar/plugin-abstractions':
         specifier: workspace:*
         version: link:../../libs/typescript/plugin-abstractions
-      '@ghatana/dcmaar-plugin-extension':
+      '@dcmaar/plugin-extension':
         specifier: workspace:*
         version: link:../../libs/typescript/plugin-extension
-      '@ghatana/dcmaar-types':
+      '@dcmaar/types':
         specifier: workspace:*
         version: link:../../libs/typescript/types
     devDependencies:
@@ -1655,7 +1658,7 @@ importers:
 
   products/dcmaar/apps/parent-dashboard:
     dependencies:
-      '@ghatana/dcmaar-dashboard-core':
+      '@dcmaar/dashboard-core':
         specifier: workspace:*
         version: link:../../libs/guardian-dashboard-core
       '@ghatana/design-system':
@@ -1667,9 +1670,6 @@ importers:
       '@sentry/react':
         specifier: ^10.38.0
         version: 10.42.0(react@19.2.4)
-      axios:
-        specifier: ^1.13.4
-        version: 1.13.6
       jotai:
         specifier: ^2.17.0
         version: 2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4)
@@ -1824,7 +1824,7 @@ importers:
       '@babel/runtime':
         specifier: ^7.28.6
         version: 7.28.6
-      '@ghatana/dcmaar-dashboard-core':
+      '@dcmaar/dashboard-core':
         specifier: workspace:*
         version: link:../../libs/guardian-dashboard-core
       '@notifee/react-native':
@@ -1848,9 +1848,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
-      axios:
-        specifier: ^1.13.4
-        version: 1.13.6
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -1960,13 +1957,13 @@ importers:
 
   products/dcmaar/libs/typescript/browser-extension-core:
     dependencies:
-      '@ghatana/dcmaar-connectors':
+      '@dcmaar/connectors':
         specifier: workspace:*
         version: link:../connectors
-      '@ghatana/dcmaar-plugin-abstractions':
+      '@dcmaar/plugin-abstractions':
         specifier: workspace:*
         version: link:../plugin-abstractions
-      '@ghatana/dcmaar-types':
+      '@dcmaar/types':
         specifier: workspace:*
         version: link:../types
       webextension-polyfill:
@@ -1994,7 +1991,7 @@ importers:
 
   products/dcmaar/libs/typescript/browser-extension-ui:
     dependencies:
-      '@ghatana/dcmaar-browser-extension-core':
+      '@dcmaar/browser-extension-core':
         specifier: workspace:*
         version: link:../browser-extension-core
       react:
@@ -2053,9 +2050,6 @@ importers:
       ajv:
         specifier: ^8.17.1
         version: 8.18.0
-      uuid:
-        specifier: ^13.0.0
-        version: 13.0.0
       ws:
         specifier: ^8.13.0
         version: 8.19.0
@@ -2105,7 +2099,7 @@ importers:
 
   products/dcmaar/libs/typescript/plugin-abstractions:
     dependencies:
-      '@ghatana/dcmaar-types':
+      '@dcmaar/types':
         specifier: workspace:*
         version: link:../types
     devDependencies:
@@ -2118,10 +2112,10 @@ importers:
 
   products/dcmaar/libs/typescript/plugin-extension:
     devDependencies:
-      '@ghatana/dcmaar-plugin-abstractions':
+      '@dcmaar/plugin-abstractions':
         specifier: workspace:*
         version: link:../plugin-abstractions
-      '@ghatana/dcmaar-types':
+      '@dcmaar/types':
         specifier: workspace:*
         version: link:../types
       '@types/node':
@@ -2316,7 +2310,7 @@ importers:
       '@babel/runtime':
         specifier: ^7.28.4
         version: 7.28.6
-      '@ghatana/flashit-shared':
+      '@flashit/shared':
         specifier: workspace:*
         version: link:../../libs/ts/shared
       '@react-native-async-storage/async-storage':
@@ -2332,7 +2326,7 @@ importers:
         specifier: ^7.9.0
         version: 7.14.4(@react-navigation/native@7.1.33(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.2.4))(react@19.2.4))(react-native-safe-area-context@5.6.2(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.2.4))(react@19.2.4))(react-native-screens@4.16.0(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.2.4))(react@19.2.4))(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.2.4))(react@19.2.4)
       '@tanstack/react-query':
-        specifier: ^5.90.12
+        specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
       '@types/react':
         specifier: ~19.1.10
@@ -2434,18 +2428,15 @@ importers:
 
   products/flashit/client/web:
     dependencies:
+      '@flashit/shared':
+        specifier: workspace:*
+        version: link:../../libs/ts/shared
       '@ghatana/design-system':
         specifier: workspace:*
         version: link:../../../../platform/typescript/design-system
-      '@ghatana/flashit-shared':
-        specifier: workspace:*
-        version: link:../../libs/ts/shared
       '@tanstack/react-query':
-        specifier: ^5.90.12
+        specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
-      axios:
-        specifier: ^1.13.2
-        version: 1.13.6
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -2535,15 +2526,6 @@ importers:
       '@fastify/multipart':
         specifier: ^9.4.0
         version: 9.4.0
-      '@ghatana/tutorputor-contracts':
-        specifier: workspace:*
-        version: link:../../contracts
-      '@ghatana/tutorputor-db':
-        specifier: workspace:*
-        version: link:../../libs/tutorputor-db
-      '@ghatana/tutorputor-platform':
-        specifier: workspace:*
-        version: link:../../services/tutorputor-platform
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.0
@@ -2559,6 +2541,15 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: ^1.39.0
         version: 1.40.0
+      '@tutorputor/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@tutorputor/db':
+        specifier: workspace:*
+        version: link:../../libs/tutorputor-db
+      '@tutorputor/platform':
+        specifier: workspace:*
+        version: link:../../services/tutorputor-platform
       fastify:
         specifier: ^5.7.4
         version: 5.8.1
@@ -2587,15 +2578,15 @@ importers:
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../../platform/typescript/theme
-      '@ghatana/tutorputor-contracts':
-        specifier: workspace:*
-        version: link:../../contracts
-      '@ghatana/tutorputor-ui-shared':
-        specifier: workspace:*
-        version: link:../../libs/tutorputor-ui-shared
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
+      '@tutorputor/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@tutorputor/ui-shared':
+        specifier: workspace:*
+        version: link:../../libs/tutorputor-ui-shared
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -2649,7 +2640,7 @@ importers:
         specifier: ^4.5.2
         version: 4.7.0(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       eslint:
-        specifier: ^9.28.0
+        specifier: ^9.39.2
         version: 9.39.3(jiti@2.6.1)
       eslint-plugin-react-hooks:
         specifier: ^5.2.0
@@ -2690,18 +2681,6 @@ importers:
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../../platform/typescript/theme
-      '@ghatana/tutorputor-contracts':
-        specifier: workspace:*
-        version: link:../../contracts
-      '@ghatana/tutorputor-learning-kernel':
-        specifier: workspace:^
-        version: link:../../libs/learning-kernel
-      '@ghatana/tutorputor-physics-simulation':
-        specifier: workspace:*
-        version: link:../../libs/physics-simulation
-      '@ghatana/tutorputor-ui-shared':
-        specifier: workspace:*
-        version: link:../../libs/tutorputor-ui-shared
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
@@ -2717,6 +2696,18 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.19.0
         version: 3.20.0
+      '@tutorputor/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@tutorputor/learning-kernel':
+        specifier: workspace:^
+        version: link:../../libs/learning-kernel
+      '@tutorputor/physics-simulation':
+        specifier: workspace:*
+        version: link:../../libs/physics-simulation
+      '@tutorputor/ui-shared':
+        specifier: workspace:*
+        version: link:../../libs/tutorputor-ui-shared
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -2811,9 +2802,6 @@ importers:
 
   products/tutorputor/apps/tutorputor-mobile:
     dependencies:
-      '@ghatana/tutorputor-contracts':
-        specifier: workspace:*
-        version: link:../../contracts
       '@react-native-async-storage/async-storage':
         specifier: ^2.2.0
         version: 2.2.0(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))
@@ -2829,6 +2817,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
+      '@tutorputor/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -2908,21 +2899,18 @@ importers:
       '@ghatana/tokens':
         specifier: workspace:*
         version: link:../../../../platform/typescript/tokens
-      '@ghatana/tutorputor-contracts':
-        specifier: workspace:*
-        version: link:../../contracts
-      '@ghatana/tutorputor-ui-shared':
-        specifier: workspace:*
-        version: link:../../libs/tutorputor-ui-shared
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
       '@tanstack/react-query-devtools':
         specifier: ^5.91.3
         version: 5.91.3(@tanstack/react-query@5.90.21(react@19.2.4))(react@19.2.4)
-      axios:
-        specifier: ^1.13.4
-        version: 1.13.6
+      '@tutorputor/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@tutorputor/ui-shared':
+        specifier: workspace:*
+        version: link:../../libs/tutorputor-ui-shared
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -3011,7 +2999,7 @@ importers:
 
   products/tutorputor/libs/assessments:
     dependencies:
-      '@ghatana/tutorputor-contracts':
+      '@tutorputor/contracts':
         specifier: workspace:*
         version: link:../../contracts
     devDependencies:
@@ -3024,7 +3012,7 @@ importers:
 
   products/tutorputor/libs/learning-kernel:
     dependencies:
-      '@ghatana/tutorputor-contracts':
+      '@tutorputor/contracts':
         specifier: workspace:*
         version: link:../../contracts
     devDependencies:
@@ -3086,24 +3074,24 @@ importers:
 
   products/tutorputor/libs/sim-renderer:
     dependencies:
+      '@ghatana/platform-utils':
+        specifier: workspace:*
+        version: link:../../../../platform/typescript/utils
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../../platform/typescript/theme
       '@ghatana/tokens':
         specifier: workspace:*
         version: link:../../../../platform/typescript/tokens
-      '@ghatana/tutorputor-contracts':
-        specifier: workspace:*
-        version: link:../../contracts
-      '@ghatana/utils':
-        specifier: workspace:*
-        version: link:../../../../platform/typescript/utils
       '@react-three/drei':
         specifier: ^10.7.7
         version: 10.7.7(@react-three/fiber@9.5.0(88c17e650a14d9ee6f6d3257baa086cb))(@types/react@19.2.14)(@types/three@0.183.1)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(three@0.182.0)
       '@react-three/fiber':
         specifier: ^9.5.0
         version: 9.5.0(88c17e650a14d9ee6f6d3257baa086cb)
+      '@tutorputor/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
       d3:
         specifier: ^7.9.0
         version: 7.9.0
@@ -3156,10 +3144,10 @@ importers:
 
   products/tutorputor/libs/simulation-engine:
     dependencies:
-      '@ghatana/tutorputor-ai-proxy':
+      '@tutorputor/ai-proxy':
         specifier: workspace:*
         version: link:../tutorputor-ai-proxy
-      '@ghatana/tutorputor-db':
+      '@tutorputor/db':
         specifier: workspace:*
         version: link:../tutorputor-db
       fastify:
@@ -3178,15 +3166,15 @@ importers:
 
   products/tutorputor/libs/tutorputor-ai-proxy:
     dependencies:
-      '@ghatana/tutorputor-contracts':
-        specifier: workspace:*
-        version: link:../../contracts
-      '@ghatana/tutorputor-db':
-        specifier: workspace:*
-        version: link:../tutorputor-db
       '@prisma/client':
         specifier: ^7.3.0
         version: 7.4.2(prisma@7.4.2(@types/react@19.2.14)(magicast@0.3.5)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
+      '@tutorputor/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@tutorputor/db':
+        specifier: workspace:*
+        version: link:../tutorputor-db
       fastify:
         specifier: ^5.7.4
         version: 5.8.1
@@ -3234,7 +3222,7 @@ importers:
 
   products/tutorputor/libs/tutorputor-sim-sdk:
     dependencies:
-      '@ghatana/tutorputor-contracts':
+      '@tutorputor/contracts':
         specifier: workspace:*
         version: link:../../contracts
       zod:
@@ -3287,15 +3275,15 @@ importers:
 
   products/tutorputor/services/tutorputor-kernel-registry:
     dependencies:
-      '@ghatana/tutorputor-contracts':
-        specifier: workspace:*
-        version: link:../../contracts
-      '@ghatana/tutorputor-sim-sdk':
-        specifier: workspace:*
-        version: link:../../libs/tutorputor-sim-sdk
       '@hono/node-server':
         specifier: ^1.19.9
         version: 1.19.11(hono@4.12.5)
+      '@tutorputor/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@tutorputor/sim-sdk':
+        specifier: workspace:*
+        version: link:../../libs/tutorputor-sim-sdk
       hono:
         specifier: ^4.11.7
         version: 4.12.5
@@ -3324,10 +3312,10 @@ importers:
 
   products/tutorputor/services/tutorputor-lti:
     dependencies:
-      '@ghatana/tutorputor-contracts':
+      '@tutorputor/contracts':
         specifier: workspace:*
         version: link:../../contracts
-      '@ghatana/tutorputor-db':
+      '@tutorputor/db':
         specifier: workspace:*
         version: link:../../libs/tutorputor-db
     devDependencies:
@@ -3343,15 +3331,15 @@ importers:
 
   products/tutorputor/services/tutorputor-payments:
     dependencies:
-      '@ghatana/tutorputor-contracts':
-        specifier: workspace:*
-        version: link:../../contracts
-      '@ghatana/tutorputor-db':
-        specifier: workspace:*
-        version: link:../../libs/tutorputor-db
       '@prisma/client':
         specifier: ^5.7.0
         version: 5.22.0(prisma@7.4.2(@types/react@19.2.14)(magicast@0.3.5)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))
+      '@tutorputor/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@tutorputor/db':
+        specifier: workspace:*
+        version: link:../../libs/tutorputor-db
       stripe:
         specifier: ^20.3.0
         version: 20.4.0(@types/node@25.2.0)
@@ -3386,21 +3374,6 @@ importers:
       '@fastify/websocket':
         specifier: ^11.2.0
         version: 11.2.0
-      '@ghatana/tutorputor-contracts':
-        specifier: workspace:*
-        version: link:../../contracts
-      '@ghatana/tutorputor-db':
-        specifier: workspace:*
-        version: link:../../libs/tutorputor-db
-      '@ghatana/tutorputor-learning-kernel':
-        specifier: workspace:*
-        version: link:../../libs/learning-kernel
-      '@ghatana/tutorputor-sim-renderer':
-        specifier: workspace:*
-        version: link:../../libs/sim-renderer
-      '@ghatana/tutorputor-simulation-engine':
-        specifier: workspace:*
-        version: link:../../libs/simulation-engine
       '@grpc/grpc-js':
         specifier: ^1.14.3
         version: 1.14.3
@@ -3416,15 +3389,27 @@ importers:
       '@sentry/profiling-node':
         specifier: ^10.38.0
         version: 10.42.0
+      '@tutorputor/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@tutorputor/db':
+        specifier: workspace:*
+        version: link:../../libs/tutorputor-db
+      '@tutorputor/learning-kernel':
+        specifier: workspace:*
+        version: link:../../libs/learning-kernel
+      '@tutorputor/sim-renderer':
+        specifier: workspace:*
+        version: link:../../libs/sim-renderer
+      '@tutorputor/simulation-engine':
+        specifier: workspace:*
+        version: link:../../libs/simulation-engine
       '@types/jsonwebtoken':
         specifier: ^9.0.6
         version: 9.0.10
       archiver:
         specifier: ^7.0.1
         version: 7.0.1
-      axios:
-        specifier: ^1.6.0
-        version: 1.13.6
       bullmq:
         specifier: ^5.67.2
         version: 5.70.2
@@ -3507,18 +3492,15 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.982.0
         version: 3.1002.0
-      '@ghatana/tutorputor-contracts':
+      '@tutorputor/contracts':
         specifier: workspace:*
         version: link:../../contracts
-      '@ghatana/tutorputor-db':
+      '@tutorputor/db':
         specifier: workspace:*
         version: link:../../libs/tutorputor-db
       ioredis:
         specifier: ^5.9.2
         version: 5.10.0
-      uuid:
-        specifier: ^13.0.0
-        version: 13.0.0
     devDependencies:
       '@types/node':
         specifier: ^25.2.0
@@ -3532,12 +3514,6 @@ importers:
 
   products/tutorputor/tools/tutorputor-domain-loader:
     dependencies:
-      '@ghatana/tutorputor-contracts':
-        specifier: workspace:*
-        version: link:../../contracts
-      '@ghatana/tutorputor-db':
-        specifier: workspace:*
-        version: link:../../libs/tutorputor-db
       '@libsql/client':
         specifier: ^0.17.0
         version: 0.17.0(encoding@0.1.13)
@@ -3547,6 +3523,12 @@ importers:
       '@prisma/client':
         specifier: 7.3.0
         version: 7.3.0(prisma@7.4.2(@types/react@19.2.14)(magicast@0.3.5)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
+      '@tutorputor/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@tutorputor/db':
+        specifier: workspace:*
+        version: link:../../libs/tutorputor-db
       commander:
         specifier: ^14.0.3
         version: 14.0.3
@@ -3672,42 +3654,12 @@ importers:
       '@ghatana/canvas':
         specifier: workspace:*
         version: link:../../../../../platform/typescript/canvas
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../../../platform/typescript/design-system
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../../../platform/typescript/theme
-      '@ghatana/ui':
-        specifier: workspace:*
-        version: link:../../../../../platform/typescript/ui
-      '@ghatana/yappc-ai':
-        specifier: workspace:*
-        version: link:../../libs/ai
-      '@ghatana/yappc-api':
-        specifier: workspace:*
-        version: link:../../libs/api
-      '@ghatana/yappc-auth':
-        specifier: workspace:*
-        version: link:../../libs/auth
-      '@ghatana/yappc-canvas':
-        specifier: workspace:*
-        version: link:../../libs/canvas
-      '@ghatana/yappc-code-editor':
-        specifier: workspace:*
-        version: link:../../libs/code-editor
-      '@ghatana/yappc-collab':
-        specifier: workspace:*
-        version: link:../../libs/collab
-      '@ghatana/yappc-crdt':
-        specifier: workspace:*
-        version: link:../../libs/crdt
-      '@ghatana/yappc-ide':
-        specifier: workspace:*
-        version: link:../../libs/ide
-      '@ghatana/yappc-testing':
-        specifier: workspace:*
-        version: link:../../libs/testing
-      '@ghatana/yappc-ui':
-        specifier: workspace:*
-        version: link:../../libs/ui
       '@growthbook/growthbook-react':
         specifier: ^1.3.0
         version: 1.6.5(react@19.2.4)
@@ -3732,9 +3684,39 @@ importers:
       '@xyflow/react':
         specifier: ^12.10.0
         version: 12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@yappc/ai':
+        specifier: workspace:*
+        version: link:../../libs/ai-new
+      '@yappc/api':
+        specifier: workspace:*
+        version: link:../../libs/api
+      '@yappc/auth':
+        specifier: workspace:*
+        version: link:../../libs/auth
+      '@yappc/canvas':
+        specifier: workspace:*
+        version: link:../../libs/canvas-new
+      '@yappc/code-editor':
+        specifier: workspace:*
+        version: link:../../libs/code-editor
+      '@yappc/collab':
+        specifier: workspace:*
+        version: link:../../libs/collab
       '@yappc/core':
         specifier: workspace:*
         version: link:../../libs/core
+      '@yappc/crdt':
+        specifier: workspace:*
+        version: link:../../libs/crdt
+      '@yappc/ide':
+        specifier: workspace:*
+        version: link:../../libs/ide
+      '@yappc/testing':
+        specifier: workspace:*
+        version: link:../../libs/testing
+      '@yappc/ui':
+        specifier: workspace:*
+        version: link:../../libs/ui-new
       axe-core:
         specifier: ^4.11.1
         version: 4.11.1
@@ -3917,15 +3899,37 @@ importers:
 
   products/yappc/frontend/libs/ai:
     dependencies:
-      '@ghatana/yappc-ui':
-        specifier: workspace:*
-        version: link:../ui
       '@yappc/core':
         specifier: workspace:*
         version: link:../core
+      '@yappc/ui-legacy':
+        specifier: workspace:*
+        version: link:../ui
       react:
         specifier: ^19.2.4
         version: 19.2.4
+
+  products/yappc/frontend/libs/ai-new:
+    dependencies:
+      '@yappc/core':
+        specifier: workspace:*
+        version: link:../core
+      '@yappc/ui':
+        specifier: workspace:*
+        version: link:../ui-new
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   products/yappc/frontend/libs/api:
     devDependencies:
@@ -3957,21 +3961,21 @@ importers:
       '@ghatana/canvas':
         specifier: workspace:*
         version: link:../../../../../platform/typescript/canvas
-      '@ghatana/ui':
+      '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../../../platform/typescript/ui
-      '@ghatana/yappc-ai':
-        specifier: workspace:*
-        version: link:../ai
-      '@ghatana/yappc-ui':
-        specifier: workspace:*
-        version: link:../ui
+        version: link:../../../../../platform/typescript/design-system
       '@xyflow/react':
         specifier: ^12.10.0
         version: 12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@yappc/ai-legacy':
+        specifier: workspace:*
+        version: link:../ai
       '@yappc/core':
         specifier: workspace:*
         version: link:../core
+      '@yappc/ui-legacy':
+        specifier: workspace:*
+        version: link:../ui
       jotai:
         specifier: ^2.17.0
         version: 2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4)
@@ -4019,6 +4023,37 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  products/yappc/frontend/libs/canvas-new:
+    dependencies:
+      '@yappc/core':
+        specifier: workspace:*
+        version: link:../core
+      '@yappc/ui':
+        specifier: workspace:*
+        version: link:../ui-new
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      y-indexeddb:
+        specifier: ^9.0.12
+        version: 9.0.12(yjs@13.6.29)
+      y-websocket:
+        specifier: ^3.0.0
+        version: 3.0.0(yjs@13.6.29)
+      yjs:
+        specifier: ^13.6.29
+        version: 13.6.29
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   products/yappc/frontend/libs/canvas/yappc-canvas:
     dependencies:
       '@ghatana/canvas':
@@ -4044,7 +4079,7 @@ importers:
         specifier: ^20.0.0
         version: 20.19.35
       eslint:
-        specifier: ^9.0.0
+        specifier: ^9.39.2
         version: 9.39.3(jiti@2.6.1)
       typescript:
         specifier: ^5.9.3
@@ -4080,12 +4115,12 @@ importers:
 
   products/yappc/frontend/libs/code-editor:
     dependencies:
-      '@ghatana/yappc-ui':
-        specifier: workspace:*
-        version: link:../ui
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@yappc/ui':
+        specifier: workspace:*
+        version: link:../ui-new
       monaco-editor:
         specifier: ^0.55.1
         version: 0.55.1
@@ -4111,9 +4146,9 @@ importers:
 
   products/yappc/frontend/libs/collab:
     dependencies:
-      '@ghatana/yappc-ui':
+      '@yappc/ui':
         specifier: workspace:*
-        version: link:../ui
+        version: link:../ui-new
       framer-motion:
         specifier: ^12.35.0
         version: 12.35.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -4175,10 +4210,10 @@ importers:
 
   products/yappc/frontend/libs/core:
     dependencies:
-      '@ghatana/yappc-config':
+      '@yappc/config':
         specifier: workspace:*
         version: link:../config
-      '@ghatana/yappc-utils':
+      '@yappc/utils':
         specifier: workspace:*
         version: link:../utils
       react:
@@ -4212,21 +4247,18 @@ importers:
 
   products/yappc/frontend/libs/ide:
     dependencies:
-      '@ghatana/yappc-canvas':
+      '@yappc/canvas':
         specifier: workspace:*
-        version: link:../canvas
-      '@ghatana/yappc-code-editor':
+        version: link:../canvas-new
+      '@yappc/code-editor':
         specifier: workspace:*
         version: link:../code-editor
-      '@ghatana/yappc-crdt':
-        specifier: workspace:*
-        version: link:../crdt
-      '@ghatana/yappc-ui':
-        specifier: workspace:*
-        version: link:../ui
       '@yappc/core':
         specifier: workspace:*
         version: link:../core
+      '@yappc/crdt':
+        specifier: workspace:*
+        version: link:../crdt
       jotai:
         specifier: ^2.17.0
         version: 2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4)
@@ -4236,12 +4268,6 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
-      uuid:
-        specifier: ^13.0.0
-        version: 13.0.0
-      yjs:
-        specifier: ^13.6.29
-        version: 13.6.29
     devDependencies:
       '@babel/core':
         specifier: ^7.29.0
@@ -4273,31 +4299,12 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
-      '@types/uuid':
-        specifier: ^11.0.0
-        version: 11.0.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
-
-  products/yappc/frontend/libs/live-preview-server:
-    dependencies:
-      ws:
-        specifier: ^8.19.0
-        version: 8.19.0
-    devDependencies:
-      '@types/node':
-        specifier: ^25.2.0
-        version: 25.2.0
-      '@types/ws':
-        specifier: ^8.18.1
-        version: 8.18.1
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
 
   products/yappc/frontend/libs/notifications:
     dependencies:
@@ -4378,21 +4385,21 @@ importers:
       '@floating-ui/react-dom':
         specifier: ^2.1.7
         version: 2.1.8(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@ghatana/yappc-canvas':
-        specifier: workspace:*
-        version: link:../canvas
-      '@ghatana/yappc-crdt':
-        specifier: workspace:*
-        version: link:../crdt
-      '@ghatana/yappc-realtime':
-        specifier: workspace:*
-        version: link:../realtime
       '@mui/material':
         specifier: ^7.3.0
         version: 7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tanstack/react-query':
-        specifier: ^5.0.0
+        specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
+      '@yappc/canvas':
+        specifier: workspace:*
+        version: link:../canvas-new
+      '@yappc/crdt':
+        specifier: workspace:*
+        version: link:../crdt
+      '@yappc/realtime':
+        specifier: workspace:*
+        version: link:../realtime
       framer-motion:
         specifier: ^12.35.0
         version: 12.35.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -4496,15 +4503,15 @@ importers:
 
   products/yappc/frontend/libs/ui-new:
     dependencies:
-      '@ghatana/yappc-chat':
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../../../platform/typescript/design-system
+      '@yappc/chat':
         specifier: workspace:*
         version: link:../chat
-      '@ghatana/yappc-notifications':
+      '@yappc/notifications':
         specifier: workspace:*
         version: link:../notifications
-      '@ghatana/yappc-ui':
-        specifier: workspace:*
-        version: link:../ui
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -4521,22 +4528,6 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-
-  products/yappc/frontend/libs/vite-plugin-live-edit:
-    dependencies:
-      minimatch:
-        specifier: ^10.1.2
-        version: 10.2.4
-    devDependencies:
-      '@types/node':
-        specifier: ^25.2.0
-        version: 25.2.0
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      vite:
-        specifier: ^7.3.1
-        version: 7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
   products/yappc/frontend/packages/eslint-config-custom:
     dependencies:
@@ -4570,6 +4561,38 @@ importers:
         version: 19.2.14
 
   products/yappc/frontend/packages/tsconfig: {}
+
+  products/yappc/frontend/packages/vite-plugin-live-edit:
+    dependencies:
+      minimatch:
+        specifier: ^10.1.2
+        version: 10.2.4
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.0
+        version: 25.2.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.3.1
+        version: 7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
+  products/yappc/tools/live-preview-server:
+    dependencies:
+      ws:
+        specifier: ^8.19.0
+        version: 8.19.0
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.0
+        version: 25.2.0
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   products/yappc/tools/vscode-extension:
     dependencies:
@@ -4933,7 +4956,7 @@ packages:
     engines: {node: ^10.13.0 || ^12.13.0 || >=14.0.0}
     peerDependencies:
       '@babel/core': ^7.11.0
-      eslint: ^7.5.0 || ^8.0.0 || ^9.0.0
+      eslint: ^9.39.2
 
   '@babel/generator@7.29.1':
     resolution: {integrity: sha512-qsaF+9Qcm2Qv8SRIMMscAvG4O3lJ0F1GuMo5HR/Bp02LopNgnZBC/EkbevHFeGs4ls/oPz9v+Bsmzbkbe+0dUw==}
@@ -6609,7 +6632,7 @@ packages:
     resolution: {integrity: sha512-phrYmNiYppR7znFEdqgfWHXR6NCkZEK7hwWDHZUjit/2/U0r6XvkDl0SYnoM51Hq7FhCGdLDT6zxCCOY1hexsQ==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     peerDependencies:
-      eslint: ^6.0.0 || ^7.0.0 || >=8.0.0
+      eslint: ^9.39.2
 
   '@eslint-community/regexpp@4.12.2':
     resolution: {integrity: sha512-EriSTlt5OC9/7SXkRSCAhfSxxoSUgBm33OH+IkwbdpgoqsSsUg7y3uh+IICI/Qg4BBWr3U2i39RpmycbxMq4ew==}
@@ -7334,8 +7357,8 @@ packages:
   '@joshwooding/vite-plugin-react-docgen-typescript@0.6.4':
     resolution: {integrity: sha512-6PyZBYKnnVNqOSB0YFly+62R7dmov8segT27A+RVTBVd4iAE6kbW9QBJGlyR2yG4D4ohzhZSTIu7BK1UTtmFFA==}
     peerDependencies:
-      typescript: '>= 4.3.x'
-      vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+      typescript: ^5.9.3
+      vite: ^7.3.1
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -8467,7 +8490,7 @@ packages:
     engines: {node: ^20.19 || ^22.12 || >=24.0}
     peerDependencies:
       prisma: '*'
-      typescript: '>=5.4.0'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       prisma:
         optional: true
@@ -8479,7 +8502,7 @@ packages:
     engines: {node: ^20.19 || ^22.12 || >=24.0}
     peerDependencies:
       prisma: '*'
-      typescript: '>=5.4.0'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       prisma:
         optional: true
@@ -8929,8 +8952,8 @@ packages:
     resolution: {integrity: sha512-TfeuzxtgbMC3BdSHRLCfMeDxqmSIQTB7O9UKXaT+Jp0O2ZdLxoGBOqMHlYra9MWxbkM/ssH0TnENaRUz79OHIw==}
     engines: {node: '>= 20.19.4'}
     peerDependencies:
-      eslint: '>=8'
-      prettier: '>=2'
+      eslint: ^9.39.2
+      prettier: ^3.8.1
 
   '@react-native/eslint-plugin@0.83.2':
     resolution: {integrity: sha512-mgqFrE66LQHsJq4eVCOwqi5dfJS7+2AmDk3UT+XnlntGz9pJBg/+gbZGp4aVfySrrPiYfYKVV7Vo9aw33SW6/g==}
@@ -9059,8 +9082,8 @@ packages:
       '@vitejs/plugin-rsc': ~0.5.7
       react-router: ^7.13.1
       react-server-dom-webpack: ^19.2.3
-      typescript: ^5.1.0
-      vite: ^5.1.0 || ^6.0.0 || ^7.0.0
+      typescript: ^5.9.3
+      vite: ^7.3.1
       wrangler: ^3.28.2 || ^4.0.0
     peerDependenciesMeta:
       '@react-router/serve':
@@ -9079,7 +9102,7 @@ packages:
     engines: {node: '>=20.0.0'}
     peerDependencies:
       '@react-router/dev': ^7.13.1
-      typescript: ^5.1.0
+      typescript: ^5.9.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -9089,7 +9112,7 @@ packages:
     engines: {node: '>=20.0.0'}
     peerDependencies:
       react-router: 7.13.1
-      typescript: ^5.1.0
+      typescript: ^5.9.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -9812,7 +9835,7 @@ packages:
     resolution: {integrity: sha512-+RWyGxvIsT5rx3E1AQJIhKJj9XA4pP2JpYBOY90460Lsf40e9zfgml4cORGYhNmC5N3PMo6QkfsEOO2gLcQNJA==}
     peerDependencies:
       storybook: ^10.2.15
-      vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+      vite: ^7.3.1
 
   '@storybook/csf-plugin@10.2.15':
     resolution: {integrity: sha512-QPZg2JXB3k7mMI7yoqurMWR6eisUDPrbjbM71L1wW4FUehW/CKChUWy97vP6Bgm1sU17Tfoc3nBRUdtEDC1RSw==}
@@ -9820,7 +9843,7 @@ packages:
       esbuild: '*'
       rollup: '*'
       storybook: ^10.2.15
-      vite: '*'
+      vite: ^7.3.1
       webpack: '*'
     peerDependenciesMeta:
       esbuild:
@@ -9854,7 +9877,7 @@ packages:
       react: ^19.2.4
       react-dom: ^19.2.4
       storybook: ^10.2.15
-      vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+      vite: ^7.3.1
 
   '@storybook/react@10.2.15':
     resolution: {integrity: sha512-gyreXMjiS1mRiagaGtAqia142hoQ3EDd2nIxwvZu0av/TWpq7Rn6Fh3a9Jdi6Y4psUO+CqGPPur0svgfAD/4+Q==}
@@ -9862,7 +9885,7 @@ packages:
       react: ^19.2.4
       react-dom: ^19.2.4
       storybook: ^10.2.15
-      typescript: '>= 4.9.x'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -9958,12 +9981,12 @@ packages:
   '@tailwindcss/aspect-ratio@0.4.2':
     resolution: {integrity: sha512-8QPrypskfBa7QIMuKHg2TA7BqES6vhBrDLOv8Unb6FcFyd3TjKbc6lcmb9UPQHxfl24sXoJ41ux/H7qQQvfaSQ==}
     peerDependencies:
-      tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
+      tailwindcss: ^4.1.18
 
   '@tailwindcss/forms@0.5.11':
     resolution: {integrity: sha512-h9wegbZDPurxG22xZSoWtdzc41/OlNEUQERNqI/0fOwa2aVlWGu7C35E/x6LDyD3lgtztFSSjKZyuVM0hxhbgA==}
     peerDependencies:
-      tailwindcss: '>=3.0.0 || >= 3.0.0-alpha.1 || >= 4.0.0-alpha.20 || >= 4.0.0-beta.1'
+      tailwindcss: ^4.1.18
 
   '@tailwindcss/node@4.1.18':
     resolution: {integrity: sha512-DoR7U1P7iYhw16qJ49fgXUlry1t4CpXeErJHnQ44JgTSKMaZUdf17cfn5mHchfJ4KRBZRFA/Coo+MUF5+gOaCQ==}
@@ -10149,12 +10172,12 @@ packages:
   '@tailwindcss/typography@0.5.19':
     resolution: {integrity: sha512-w31dd8HOx3k9vPtcQh5QHP9GwKcgbMp87j58qi6xgiBnFFtKEAgCWnDw4qUT8aHwkCp8bKvb/KGKWWHedP0AAg==}
     peerDependencies:
-      tailwindcss: '>=3.0.0 || insiders || >=4.0.0-alpha.20 || >=4.0.0-beta.1'
+      tailwindcss: ^4.1.18
 
   '@tailwindcss/vite@4.2.1':
     resolution: {integrity: sha512-TBf2sJjYeb28jD2U/OhwdW0bbOsxkWPwQ7SrqGf9sVcoYwZj7rkXljroBO9wKBut9XnmQLXanuDUeqQK0lGg/w==}
     peerDependencies:
-      vite: ^5.2.0 || ^6 || ^7
+      vite: ^7.3.1
 
   '@tanstack/query-core@5.90.20':
     resolution: {integrity: sha512-OMD2HLpNouXEfZJWcKeVKUgQ5n+n3A2JFmBaScpNDUqSrQSjiveC7dKMe53uJUg1nDG16ttFPz2xfilz6i2uVg==}
@@ -11028,10 +11051,6 @@ packages:
   '@types/uuid@10.0.0':
     resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
 
-  '@types/uuid@11.0.0':
-    resolution: {integrity: sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA==}
-    deprecated: This is a stub types definition. uuid provides its own type definitions, so you do not need this installed.
-
   '@types/vscode@1.109.0':
     resolution: {integrity: sha512-0Pf95rnwEIwDbmXGC08r0B4TQhAbsHQ5UyTIgVgoieDe4cOnf92usuR5dEczb6bTKEp7ziZH4TV1TRGPPCExtw==}
 
@@ -11055,21 +11074,21 @@ packages:
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       '@typescript-eslint/parser': ^8.56.1
-      eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.0.0'
+      eslint: ^9.39.2
+      typescript: ^5.9.3
 
   '@typescript-eslint/parser@8.56.1':
     resolution: {integrity: sha512-klQbnPAAiGYFyI02+znpBRLyjL4/BrBd0nyWkdC0s/6xFLkXYQ8OoRrSkqacS1ddVxf/LDyODIKbQ5TgKAf/Fg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.0.0'
+      eslint: ^9.39.2
+      typescript: ^5.9.3
 
   '@typescript-eslint/project-service@8.56.1':
     resolution: {integrity: sha512-TAdqQTzHNNvlVFfR+hu2PDJrURiwKsUvxFn1M0h95BB8ah5jejas08jUWG4dBA68jDMI988IvtfdAI53JzEHOQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      typescript: '>=4.8.4 <6.0.0'
+      typescript: ^5.9.3
 
   '@typescript-eslint/scope-manager@8.56.1':
     resolution: {integrity: sha512-YAi4VDKcIZp0O4tz/haYKhmIDZFEUPOreKbfdAN3SzUDMcPhJ8QI99xQXqX+HoUVq8cs85eRKnD+rne2UAnj2w==}
@@ -11079,14 +11098,14 @@ packages:
     resolution: {integrity: sha512-qOtCYzKEeyr3aR9f28mPJqBty7+DBqsdd63eO0yyDwc6vgThj2UjWfJIcsFeSucYydqcuudMOprZ+x1SpF3ZuQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      typescript: '>=4.8.4 <6.0.0'
+      typescript: ^5.9.3
 
   '@typescript-eslint/type-utils@8.56.1':
     resolution: {integrity: sha512-yB/7dxi7MgTtGhZdaHCemf7PuwrHMenHjmzgUW1aJpO+bBU43OycnM3Wn+DdvDO/8zzA9HlhaJ0AUGuvri4oGg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.0.0'
+      eslint: ^9.39.2
+      typescript: ^5.9.3
 
   '@typescript-eslint/types@8.56.1':
     resolution: {integrity: sha512-dbMkdIUkIkchgGDIv7KLUpa0Mda4IYjo4IAMJUZ+3xNoUXxMsk9YtKpTHSChRS85o+H9ftm51gsK1dZReY9CVw==}
@@ -11096,14 +11115,14 @@ packages:
     resolution: {integrity: sha512-qzUL1qgalIvKWAf9C1HpvBjif+Vm6rcT5wZd4VoMb9+Km3iS3Cv9DY6dMRMDtPnwRAFyAi7YXJpTIEXLvdfPxg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      typescript: '>=4.8.4 <6.0.0'
+      typescript: ^5.9.3
 
   '@typescript-eslint/utils@8.56.1':
     resolution: {integrity: sha512-HPAVNIME3tABJ61siYlHzSWCGtOoeP2RTIaHXFMPqjrQKCGB9OgUVdiNgH7TJS2JNIQ5qQ4RsAUDuGaGme/KOA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.0.0'
+      eslint: ^9.39.2
+      typescript: ^5.9.3
 
   '@typescript-eslint/visitor-keys@8.56.1':
     resolution: {integrity: sha512-KiROIzYdEV85YygXw6BI/Dx4fnBlFQu6Mq4QE4MOH9fFnhohw6wX/OAvDY2/C+ut0I3RSPKenvZJIVYqJNkhEw==}
@@ -11236,44 +11255,44 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
       terser: ^5.16.0
-      vite: ^7.0.0
+      vite: ^7.3.1
 
   '@vitejs/plugin-react@4.7.0':
     resolution: {integrity: sha512-gUu9hwfWvvEDBBmgtAowQCojwZmJ5mcLn3aufeCsitijs3+f2NsrPtlAWIR6OPiqljl96GVCUbLe0HyqIpVaoA==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
-      vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+      vite: ^7.3.1
 
   '@vitejs/plugin-react@5.1.4':
     resolution: {integrity: sha512-VIcFLdRi/VYRU8OL/puL7QXMYafHmqOnwTZY50U1JPlCNj30PxCMx65c494b1K9be9hX83KVt0+gTEwTWLqToA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
-      vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+      vite: ^7.3.1
 
   '@vitejs/plugin-vue-jsx@5.1.4':
     resolution: {integrity: sha512-70LmoVk9riR7qc4W2CpjsbNMWTPnuZb9dpFKX1emru0yP57nsc9k8nhLA6U93ngQapv5VDIUq2JatNfLbBIkrA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
-      vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0
+      vite: ^7.3.1
       vue: ^3.0.0
 
   '@vitejs/plugin-vue@6.0.4':
     resolution: {integrity: sha512-uM5iXipgYIn13UUQCZNdWkYk+sysBeA97d5mHsAoAt1u/wpN3+zxOmsVJWosuzX+IMGRzeYUNytztrYznboIkQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
-      vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0
+      vite: ^7.3.1
       vue: ^3.2.25
 
   '@vitest/coverage-istanbul@4.0.18':
     resolution: {integrity: sha512-0OhjP30owEDihYTZGWuq20rNtV1RjjJs1Mv4MaZIKcFBmiLUXX7HJLX4fU7wE+Mrc3lQxI2HKq6WrSXi5FGuCQ==}
     peerDependencies:
-      vitest: 4.0.18
+      vitest: ^4.0.18
 
   '@vitest/coverage-v8@2.1.9':
     resolution: {integrity: sha512-Z2cOr0ksM00MpEfyVE8KXIYPEcBFxdbLSs56L8PO0QQMxt/6bDj45uQfxoc96v05KW3clk7vvgP0qfDit9DmfQ==}
     peerDependencies:
       '@vitest/browser': 2.1.9
-      vitest: 2.1.9
+      vitest: ^4.0.18
     peerDependenciesMeta:
       '@vitest/browser':
         optional: true
@@ -11282,7 +11301,7 @@ packages:
     resolution: {integrity: sha512-7i+N2i0+ME+2JFZhfuz7Tg/FqKtilHjGyGvoHYQ6iLV0zahbsJ9sljC9OcFcPDbhYKCet+sG8SsVqlyGvPflZg==}
     peerDependencies:
       '@vitest/browser': 4.0.18
-      vitest: 4.0.18
+      vitest: ^4.0.18
     peerDependenciesMeta:
       '@vitest/browser':
         optional: true
@@ -11297,7 +11316,7 @@ packages:
     resolution: {integrity: sha512-HhVd0MDnzzsgevnOWCBj5Otnzobjy5wLBe4EdeeFGv8luMsGcYqDuFRMcttKWZA5vVO8RFjexVovXvAM4JoJDQ==}
     peerDependencies:
       msw: ^2.4.9
-      vite: ^6.0.0 || ^7.0.0-0
+      vite: ^7.3.1
     peerDependenciesMeta:
       msw:
         optional: true
@@ -11325,7 +11344,7 @@ packages:
   '@vitest/ui@4.0.18':
     resolution: {integrity: sha512-CGJ25bc8fRi8Lod/3GHSvXRKi7nBo3kxh0ApW4yCjmrWmRmlT53B5E08XRSZRliygG0aVNxLrBEqPYdz/KcCtQ==}
     peerDependencies:
-      vitest: 4.0.18
+      vitest: ^4.0.18
 
   '@vitest/utils@3.2.4':
     resolution: {integrity: sha512-fB2V0JFrQSMsCo9HiSq3Ezpdv4iYaXRG1Sx8edX3MwxfyNn83mKiGzOcH+Fkxt4MHxr3y42fQi1oeAInqgX2QA==}
@@ -11869,9 +11888,6 @@ packages:
   axe-core@4.11.1:
     resolution: {integrity: sha512-BASOg+YwO2C+346x3LZOeoovTIoTrRqEsqMa6fmfAV0P+U9mFr9NsyOEpiYvFjbc64NMrSswhV50WdXzdb/Z5A==}
     engines: {node: '>=4'}
-
-  axios@1.13.6:
-    resolution: {integrity: sha512-ChTCHMouEe2kn713WHbQGcuYrr6fXTBiu460OTwWrWob16g1bXn4vtz07Ope7ewMozJAnEquLk5lWQWtBig9DQ==}
 
   b4a@1.8.0:
     resolution: {integrity: sha512-qRuSmNSkGQaHwNbM7J78Wwy+ghLEYF1zNrSeMxj4Kgw6y33O3mXcQ6Ie9fRvfU/YnxWkOchPXbaLb73TkIsfdg==}
@@ -12808,7 +12824,7 @@ packages:
     resolution: {integrity: sha512-kcZ6+W5QzcJ3P1Mt+83OUv/oHFqZHIx8DuxG6eZ5RGMERoLqp4BuGjhHLYGK+Kf5XVkQvqBSmAy/nGWN3qDgEA==}
     engines: {node: '>=14'}
     peerDependencies:
-      typescript: '>=4.9.5'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -12817,7 +12833,7 @@ packages:
     resolution: {integrity: sha512-hr4ihw+DBqcvrsEDioRO31Z17x71pUYoNe/4h6Z0wB72p7MU7/9gH8Q3s12NFhHPfYBBOV3qyfUxmr/Yn3shnQ==}
     engines: {node: '>=14'}
     peerDependencies:
-      typescript: '>=4.9.5'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -13800,13 +13816,13 @@ packages:
     resolution: {integrity: sha512-82GZUjRS0p/jganf6q1rEO25VSoHH0hKPCTrgillPjdI/3bgBhAE1QzHrHTizjpRvy6pGAvKjDJtk2pF9NDq8w==}
     hasBin: true
     peerDependencies:
-      eslint: '>=7.0.0'
+      eslint: ^9.39.2
 
   eslint-config-prettier@8.10.2:
     resolution: {integrity: sha512-/IGJ6+Dka158JnP5n5YFMOszjDWrXggGz1LaK/guZq9vZTmniaKlHcsscvkAhn9y4U+BU3JuUdYvtAMcv30y4A==}
     hasBin: true
     peerDependencies:
-      eslint: '>=7.0.0'
+      eslint: ^9.39.2
 
   eslint-import-resolver-node@0.3.9:
     resolution: {integrity: sha512-WFj2isz22JahUv+B788TlO3N6zL3nNJGU8CcZbPZvVEkBPaJdCV4vy5wyghty5ROFbCRnm132v8BScu5/1BQ8g==}
@@ -13836,21 +13852,21 @@ packages:
     resolution: {integrity: sha512-0jkOl0hfojIHHmEHgmNdqv4fmh7300NdpA9FFpF7zaoLvB/QeXOGNLIo86oAveJFrfB1p05kC8hpEMHM8DwWVQ==}
     engines: {node: '>=6.5.0'}
     peerDependencies:
-      eslint: '>=4.19.1'
+      eslint: ^9.39.2
 
   eslint-plugin-ft-flow@2.0.3:
     resolution: {integrity: sha512-Vbsd/b+LYA99jUbsL6viEUWShFaYQt2YQs3QN3f+aeszOhh2sgdcU0mjzDyD4yyBvMc8qy2uwvBBWfMzEX06tg==}
     engines: {node: '>=12.22.0'}
     peerDependencies:
       '@babel/eslint-parser': ^7.12.0
-      eslint: ^8.1.0
+      eslint: ^9.39.2
 
   eslint-plugin-import@2.32.0:
     resolution: {integrity: sha512-whOE1HFo/qJDyX4SnXzP4N6zOWn79WhnCUY/iDR0mPfQZO8wcYE4JClzI2oZrhBnnMUCBCHZhO6VQyoBU95mZA==}
     engines: {node: '>=4'}
     peerDependencies:
       '@typescript-eslint/parser': '*'
-      eslint: ^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9
+      eslint: ^9.39.2
     peerDependenciesMeta:
       '@typescript-eslint/parser':
         optional: true
@@ -13860,9 +13876,9 @@ packages:
     engines: {node: ^20.12.0 || ^22.0.0 || >=24.0.0}
     peerDependencies:
       '@typescript-eslint/eslint-plugin': ^8.0.0
-      eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
+      eslint: ^9.39.2
       jest: '*'
-      typescript: '>=4.8.4 <6.0.0'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       '@typescript-eslint/eslint-plugin':
         optional: true
@@ -13875,25 +13891,25 @@ packages:
     resolution: {integrity: sha512-4Zvx99Q7d1uggYBUX/AIjvoyqXhluGbbKrRmG8SQTLprPFg6fa293tVJH1o1GQwNe3lUydd8ZHzn37OaSncgSQ==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
     peerDependencies:
-      eslint: ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
+      eslint: ^9.39.2
 
   eslint-plugin-playwright@2.9.0:
     resolution: {integrity: sha512-k3xrG6YzrallWNFMoGUjMNeu3SFFKXN79KJQBD2PkM4PasJegqV2Up+mPY5od2UmPKQGT+MeIhCmWH8r5eYuQQ==}
     engines: {node: '>=16.9.0'}
     peerDependencies:
-      eslint: '>=8.40.0'
+      eslint: ^9.39.2
 
   eslint-plugin-react-hooks@5.2.0:
     resolution: {integrity: sha512-+f15FfK64YQwZdJNELETdn5ibXEUQmW1DZL6KXhNnc2heoy/sg9VJJeT7n8TlMWouzWqSWavFkIhHyIbIAEapg==}
     engines: {node: '>=10'}
     peerDependencies:
-      eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0
+      eslint: ^9.39.2
 
   eslint-plugin-react-hooks@7.0.1:
     resolution: {integrity: sha512-O0d0m04evaNzEPoSW+59Mezf8Qt0InfgGIBJnpC0h3NH/WjUAR7BIKUfysC6todmtiZ/A0oUVS8Gce0WhBrHsA==}
     engines: {node: '>=18'}
     peerDependencies:
-      eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0
+      eslint: ^9.39.2
 
   eslint-plugin-react-native-globals@0.1.2:
     resolution: {integrity: sha512-9aEPf1JEpiTjcFAmmyw8eiIXmcNZOqaZyHO77wgm0/dWfT/oxC1SrIq8ET38pMxHYrcB6Uew+TzUVsBeczF88g==}
@@ -13901,28 +13917,28 @@ packages:
   eslint-plugin-react-native@4.1.0:
     resolution: {integrity: sha512-QLo7rzTBOl43FvVqDdq5Ql9IoElIuTdjrz9SKAXCvULvBoRZ44JGSkx9z4999ZusCsb4rK3gjS8gOGyeYqZv2Q==}
     peerDependencies:
-      eslint: ^3.17.0 || ^4 || ^5 || ^6 || ^7 || ^8
+      eslint: ^9.39.2
 
   eslint-plugin-react-refresh@0.4.26:
     resolution: {integrity: sha512-1RETEylht2O6FM/MvgnyvT+8K21wLqDNg4qD51Zj3guhjt433XbnnkVttHMyaVyAFD03QSV4LPS5iE3VQmO7XQ==}
     peerDependencies:
-      eslint: '>=8.40'
+      eslint: ^9.39.2
 
   eslint-plugin-react-refresh@0.5.2:
     resolution: {integrity: sha512-hmgTH57GfzoTFjVN0yBwTggnsVUF2tcqi7RJZHqi9lIezSs4eFyAMktA68YD4r5kNw1mxyY4dmkyoFDb3FIqrA==}
     peerDependencies:
-      eslint: ^9 || ^10
+      eslint: ^9.39.2
 
   eslint-plugin-react@7.37.5:
     resolution: {integrity: sha512-Qteup0SqU15kdocexFNAJMvCJEfa2xUKNV4CC1xsVMrIIqEy3SQ/rqyxCWNzfrd3/ldy6HMlD2e0JDVpDg2qIA==}
     engines: {node: '>=4'}
     peerDependencies:
-      eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7
+      eslint: ^9.39.2
 
   eslint-plugin-storybook@10.2.15:
     resolution: {integrity: sha512-hGOLOaXKTSc/ByJ/borOWTQt3vsog99YFnXlUHAFZzJzeLPS6TAUHOlbll0kYePcURsEl9FePryyt04tX+/9Ig==}
     peerDependencies:
-      eslint: '>=8'
+      eslint: ^9.39.2
       storybook: ^10.2.15
 
   eslint-scope@5.1.1:
@@ -16060,7 +16076,7 @@ packages:
     resolution: {integrity: sha512-YI5cXCZA806H+7IEqU3Mw8LG2MeEdoI5eKKLmGFJLCFBI0J/M5u9v714xwWuCw7SM5CjAjRtd801zFOU3kyUTg==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
-      jotai: '>=2.14.0'
+      jotai: ^2.17.0
       react: ^19.2.4
 
   jotai@2.18.0:
@@ -17368,7 +17384,7 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
-      typescript: '>= 4.8.x'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -17728,7 +17744,7 @@ packages:
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
-      zod: ^3.25 || ^4.0
+      zod: ^4.3.6
     peerDependenciesMeta:
       ws:
         optional: true
@@ -18722,7 +18738,7 @@ packages:
     hasBin: true
     peerDependencies:
       better-sqlite3: '>=9.0.0'
-      typescript: '>=5.4.0'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       better-sqlite3:
         optional: true
@@ -18735,7 +18751,7 @@ packages:
     hasBin: true
     peerDependencies:
       better-sqlite3: '>=9.0.0'
-      typescript: '>=5.4.0'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       better-sqlite3:
         optional: true
@@ -18891,9 +18907,6 @@ packages:
     resolution: {integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==}
     engines: {node: '>= 0.10'}
 
-  proxy-from-env@1.1.0:
-    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
-
   psl@1.15.0:
     resolution: {integrity: sha512-JZd3gMVBAVQkSs6HdNZo9Sdo0LNcQeMNP3CozBJb3JYC/QUYZTnKxP+f8oWRX4rHP5EurWxqAHTSwUCjlNKa1w==}
 
@@ -19041,7 +19054,7 @@ packages:
   react-docgen-typescript@2.4.0:
     resolution: {integrity: sha512-ZtAp5XTO5HRzQctjPU0ybY0RRCQO19X/8fxn3w7y2VVTUbGHDKULPTL4ky3vB05euSgG5NpALhEhDPvQ56wvXg==}
     peerDependencies:
-      typescript: '>= 4.3.x'
+      typescript: ^5.9.3
 
   react-docgen@8.0.2:
     resolution: {integrity: sha512-+NRMYs2DyTP4/tqWz371Oo50JqmWltR1h2gcdgUMAWZJIAvrd0/SqlCfx7tpzpl/s36rzw6qH2MjoNrxtRNYhA==}
@@ -19084,7 +19097,7 @@ packages:
       react: ^19.2.4
       react-dom: '*'
       react-native: '*'
-      typescript: ^5
+      typescript: ^5.9.3
     peerDependenciesMeta:
       react-dom:
         optional: true
@@ -20323,7 +20336,7 @@ packages:
     resolution: {integrity: sha512-PbBlrMHdkeV2SV2er5v3jvMp1eOosR6v+Dc4h/sJHKHbnnGmwhf01AHwISQp9edEGipyS8lopJPpnEnWeua0mw==}
     hasBin: true
     peerDependencies:
-      prettier: ^2 || ^3
+      prettier: ^3.8.1
     peerDependenciesMeta:
       prettier:
         optional: true
@@ -20608,7 +20621,7 @@ packages:
   tailwindcss-animate@1.0.7:
     resolution: {integrity: sha512-bl6mpH3T7I3UFxuvDEXLxy/VuFxBk5bbzplh7tXI68mwMokNYd1t9qPBHlnyTwfa4JGC4zP516I1hYYtQ/vspA==}
     peerDependencies:
-      tailwindcss: '>=3.0.0 || insiders'
+      tailwindcss: ^4.1.18
 
   tailwindcss@4.1.18:
     resolution: {integrity: sha512-4+Z+0yiYyEtUVCScyfHCxOYP06L5Ne+JiHhY2IjR2KWMIWhJOYZKLSGZaP5HkZ8+bY0cxfzwDE5uOmzFXyIwxw==}
@@ -20904,7 +20917,7 @@ packages:
     resolution: {integrity: sha512-3TaVTaAv2gTiMB35i3FiGJaRfwb3Pyn/j3m/bfAvGe8FB7CF6u+LMYqYlDh7reQf7UNvoTvdfAqHGmPGOSsPmA==}
     engines: {node: '>=18.12'}
     peerDependencies:
-      typescript: '>=4.8.4'
+      typescript: ^5.9.3
 
   ts-dedent@2.2.0:
     resolution: {integrity: sha512-q5W7tVM71e2xjHZTlgfTDoPF/SmqKG5hddq9SzR49CH2hayqRKJtQ4mtRlSxKaJlR/+9rEM+mnBHf7I2/BQcpQ==}
@@ -20925,7 +20938,7 @@ packages:
       esbuild: '*'
       jest: ^29.0.0 || ^30.0.0
       jest-util: ^29.0.0 || ^30.0.0
-      typescript: '>=4.3 <6'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       '@babel/core':
         optional: true
@@ -20947,7 +20960,7 @@ packages:
       '@swc/core': '>=1.2.50'
       '@swc/wasm': '>=1.2.50'
       '@types/node': '*'
-      typescript: '>=2.7'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       '@swc/core':
         optional: true
@@ -20959,7 +20972,7 @@ packages:
     engines: {node: ^18 || >=20}
     hasBin: true
     peerDependencies:
-      typescript: ^5.0.0
+      typescript: ^5.9.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -20991,7 +21004,7 @@ packages:
       '@microsoft/api-extractor': ^7.36.0
       '@swc/core': ^1
       postcss: ^8.4.12
-      typescript: '>=4.5.0'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       '@microsoft/api-extractor':
         optional: true
@@ -21119,19 +21132,14 @@ packages:
     engines: {node: '>= 18', pnpm: '>= 10'}
     hasBin: true
     peerDependencies:
-      typescript: 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x || 5.8.x || 5.9.x
+      typescript: ^5.9.3
 
   typescript-eslint@8.56.1:
     resolution: {integrity: sha512-U4lM6pjmBX7J5wk4szltF7I1cGBHXZopnAXCMXb3+fZ3B/0Z3hq3wS/CCUB2NZBNAExK92mCU2tEohWuwVMsDQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.0.0'
-
-  typescript@5.8.2:
-    resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
-    engines: {node: '>=14.17'}
-    hasBin: true
+      eslint: ^9.39.2
+      typescript: ^5.9.3
 
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
@@ -21399,26 +21407,6 @@ packages:
   utrie@1.0.2:
     resolution: {integrity: sha512-1MLa5ouZiOmQzUbjbu9VmjLzn1QLXBhwpUa7kdLUQK+KQ5KA9I1vk5U4YHe/X2Ch7PYnJfWuWT+VbuxbGwljhw==}
 
-  uuid@11.1.0:
-    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
-    hasBin: true
-
-  uuid@13.0.0:
-    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
-    hasBin: true
-
-  uuid@7.0.3:
-    resolution: {integrity: sha512-DPSke0pXhTZgoF/d+WSt2QaKMCFSfx7QegxEWT+JOuHF5aWrKEn0G+ztjuJg/gG8/ItK+rbPCD/yNv8yyih6Cg==}
-    hasBin: true
-
-  uuid@8.3.2:
-    resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
-    hasBin: true
-
-  uuid@9.0.1:
-    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
-    hasBin: true
-
   v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
 
@@ -21429,7 +21417,7 @@ packages:
   valibot@1.2.0:
     resolution: {integrity: sha512-mm1rxUsmOxzrwnX5arGS+U4T25RdvpPjPN4yR0u9pUBov9+zGVtO84tif1eY4r6zWxVxu3KzIyknJy3rxfRZZg==}
     peerDependencies:
-      typescript: '>=5'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -21477,13 +21465,13 @@ packages:
     engines: {node: '>=16.11'}
     peerDependencies:
       '@biomejs/biome': '>=1.7'
-      eslint: '>=9.39.1'
+      eslint: ^9.39.2
       meow: ^13.2.0
       optionator: ^0.9.4
       oxlint: '>=1'
       stylelint: '>=16'
-      typescript: '*'
-      vite: '>=5.4.21'
+      typescript: ^5.9.3
+      vite: ^7.3.1
       vls: '*'
       vti: '*'
       vue-tsc: ~2.2.10 || ^3.0.0
@@ -21512,19 +21500,19 @@ packages:
   vite-plugin-istanbul@7.2.1:
     resolution: {integrity: sha512-DSPi4ulvYsjnP44sTI5oriNosbM0E6m3uoCxjdxboTtVzxSkFwcDy3/JnSYKebjr+ZToJwVLTms+2CM0rmbbzQ==}
     peerDependencies:
-      vite: '>=4 <=7'
+      vite: ^7.3.1
 
   vite-plugin-tauri@4.0.0:
     resolution: {integrity: sha512-V3ofH3Qp9PHm1oPlPvvNwnZvwX41BJ40S0TbkLt2pxIG1OfMklf7eosvECbxw/ehxzchj9shYSD5VrJSn/Bpxw==}
     engines: {node: '>=14.6.0'}
     peerDependencies:
       '@tauri-apps/cli': '>= 1'
-      vite: '>= 2'
+      vite: ^7.3.1
 
   vite-tsconfig-paths@6.1.1:
     resolution: {integrity: sha512-2cihq7zliibCCZ8P9cKJrQBkfgdvcFkOOc3Y02o3GWUDLgqjWsZudaoiuOwO/gzTzy17cS5F7ZPo4bsnS4DGkg==}
     peerDependencies:
-      vite: '*'
+      vite: ^7.3.1
 
   vite@7.3.1:
     resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
@@ -21569,7 +21557,7 @@ packages:
   vitest-axe@0.1.0:
     resolution: {integrity: sha512-jvtXxeQPg8R/2ANTY8QicA5pvvdRP4F0FsVUAHANJ46YCDASie/cuhlSzu0DGcLmZvGBSBNsNuK3HqfaeknyvA==}
     peerDependencies:
-      vitest: '>=0.16.0'
+      vitest: ^4.0.18
 
   vitest@4.0.18:
     resolution: {integrity: sha512-hOQuK7h0FGKgBAas7v0mSAsnvrIgAvWmRFjmzpJ7SwFHH3g1k2u37JtYwOwmEKhK6ZO3v9ggDBBm0La1LCK4uQ==}
@@ -21635,7 +21623,7 @@ packages:
   vue@3.5.29:
     resolution: {integrity: sha512-BZqN4Ze6mDQVNAni0IHeMJ5mwr8VAJ3MQC9FmprRhcBYENw+wOAAjRj8jfmN6FLl0j96OXbR+CjWhmAmM+QGnA==}
     peerDependencies:
-      typescript: '*'
+      typescript: ^5.9.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -22114,13 +22102,13 @@ packages:
   zod-to-json-schema@3.25.1:
     resolution: {integrity: sha512-pM/SU9d3YAggzi6MtR4h7ruuQlqKtad8e9S0fmxcMi+ueAK5Korys/aWcV9LIIHTVbj01NdzxcnXSN+O74ZIVA==}
     peerDependencies:
-      zod: ^3.25 || ^4
+      zod: ^4.3.6
 
   zod-validation-error@4.0.2:
     resolution: {integrity: sha512-Q6/nZLe6jxuU80qb/4uJ4t5v2VEZ44lzQjPDhYJNztRQ4wyWc6VF3D3Kb/fAuPetZQnhS3hnajCf9CsWesghLQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      zod: ^3.25.0 || ^4.0.0
+      zod: ^4.3.6
 
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
@@ -27110,7 +27098,7 @@ snapshots:
       resolve: 1.22.11
       semver: 7.5.4
       source-map: 0.6.1
-      typescript: 5.8.2
+      typescript: 5.9.3
     transitivePeerDependencies:
       - '@types/node'
     optional: true
@@ -31263,10 +31251,6 @@ snapshots:
 
   '@types/uuid@10.0.0': {}
 
-  '@types/uuid@11.0.0':
-    dependencies:
-      uuid: 13.0.0
-
   '@types/vscode@1.109.0': {}
 
   '@types/webextension-polyfill@0.12.4': {}
@@ -32307,14 +32291,6 @@ snapshots:
 
   axe-core@4.11.1: {}
 
-  axios@1.13.6:
-    dependencies:
-      follow-redirects: 1.15.11
-      form-data: 4.0.5
-      proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
-
   b4a@1.8.0: {}
 
   babel-dead-code-elimination@1.0.12:
@@ -32843,7 +32819,7 @@ snapshots:
       node-abort-controller: 3.1.1
       semver: 7.7.4
       tslib: 2.8.1
-      uuid: 11.1.0
+      uuid: nanoid@5.1.6
     transitivePeerDependencies:
       - supports-color
 
@@ -35864,7 +35840,7 @@ snapshots:
       https-proxy-agent: 7.0.6
       is-stream: 2.0.1
       node-fetch: 2.7.0(encoding@0.1.13)
-      uuid: 9.0.1
+      uuid: nanoid@5.1.6
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -37049,7 +37025,7 @@ snapshots:
       node-int64: 0.4.0
       opentracing: 0.14.7
       thriftrw: 3.11.4
-      uuid: 8.3.2
+      uuid: nanoid@5.1.6
       xorshift: 1.2.0
 
   javascript-stringify@2.1.0: {}
@@ -38972,7 +38948,7 @@ snapshots:
       roughjs: 4.6.6
       stylis: 4.3.6
       ts-dedent: 2.2.0
-      uuid: 11.1.0
+      uuid: nanoid@5.1.6
 
   meshline@3.3.1(three@0.182.0):
     dependencies:
@@ -41600,8 +41576,6 @@ snapshots:
       forwarded: 0.2.0
       ipaddr.js: 1.9.1
 
-  proxy-from-env@1.1.0: {}
-
   psl@1.15.0:
     dependencies:
       punycode: 2.3.1
@@ -43212,7 +43186,7 @@ snapshots:
   sockjs@0.3.24:
     dependencies:
       faye-websocket: 0.11.4
-      uuid: 8.3.2
+      uuid: nanoid@5.1.6
       websocket-driver: 0.7.4
 
   socks-proxy-agent@8.0.5:
@@ -44343,9 +44317,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  typescript@5.8.2:
-    optional: true
-
   typescript@5.9.3: {}
 
   ua-parser-js@1.0.41: {}
@@ -44628,16 +44599,6 @@ snapshots:
     dependencies:
       base64-arraybuffer: 1.0.2
     optional: true
-
-  uuid@11.1.0: {}
-
-  uuid@13.0.0: {}
-
-  uuid@7.0.3: {}
-
-  uuid@8.3.2: {}
-
-  uuid@9.0.1: {}
 
   v8-compile-cache-lib@3.0.1: {}
 
@@ -45449,7 +45410,7 @@ snapshots:
   xcode@3.0.1:
     dependencies:
       simple-plist: 1.3.1
-      uuid: 7.0.3
+      uuid: nanoid@5.1.6
 
   xdg-basedir@5.1.0: {}
 

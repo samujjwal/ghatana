@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/yappc-component-traceability",
+  "name": "@yappc/component-traceability",
   "version": "1.0.0",
   "description": "Component traceability management for YAPPC",
   "type": "module",

@@ -18,7 +18,7 @@
  */
 
 import { z } from 'zod';
-import type { Event } from '@ghatana/dcmaar-connectors';
+import type { Event } from '@dcmaar/connectors';
 
 // ============================================================================
 // Core Process Types

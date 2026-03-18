@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
 import notificationService from './src/services/notifications';
-import { RoleContext, ROLE_CONFIG } from '@ghatana/dcmaar-dashboard-core';
+import { RoleContext, ROLE_CONFIG } from '@dcmaar/dashboard-core';
 
 const queryClient = new QueryClient({
   defaultOptions: {

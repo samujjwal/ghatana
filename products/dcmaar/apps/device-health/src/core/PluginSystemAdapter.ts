@@ -11,7 +11,7 @@ import {
   IDataCollector,
   INotification,
   IStorage,
-} from '@ghatana/dcmaar-plugin-abstractions';
+} from '@dcmaar/plugin-abstractions';
 
 /**
  * Metric data structure from a monitor plugin

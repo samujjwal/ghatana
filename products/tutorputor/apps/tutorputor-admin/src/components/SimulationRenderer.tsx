@@ -12,7 +12,7 @@
 
 import React, { useState } from 'react';
 import { Stage, Layer } from 'react-konva';
-import { KonvaEntityRenderer, type PhysicsEntity } from '@ghatana/tutorputor-physics-simulation';
+import { KonvaEntityRenderer, type PhysicsEntity } from '@tutorputor/physics-simulation';
 
 interface SimulationDefinition {
     id: string;

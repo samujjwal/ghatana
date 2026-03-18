@@ -15,7 +15,7 @@ import type {
   SubscriptionTier,
   BillingInterval,
   SubscriptionStatus,
-} from '@ghatana/tutorputor-contracts/v1/types';
+} from '@tutorputor/contracts/v1/types';
 
 /**
  * Stripe customer mapping.

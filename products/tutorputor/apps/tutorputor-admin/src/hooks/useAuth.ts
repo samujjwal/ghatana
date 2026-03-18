@@ -1,6 +1,6 @@
 import { atom, useAtom } from "jotai";
 import { useEffect, useState } from "react";
-import type { UserSummary, TenantId } from "@ghatana/tutorputor-contracts/v1/types";
+import type { UserSummary, TenantId } from "@tutorputor/contracts/v1/types";
 
 interface AuthState {
   user: UserSummary | null;

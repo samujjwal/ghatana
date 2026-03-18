@@ -16,7 +16,7 @@ plugins {
 }
 
 group = "com.ghatana.appplatform"
-version = "0.1.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 description = "Client onboarding: KYC workflow, document AI verification, video KYC, World-Check integration"
 
 java {

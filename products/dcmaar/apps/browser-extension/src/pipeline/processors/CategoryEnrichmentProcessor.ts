@@ -7,7 +7,7 @@
  * @module pipeline/processors/CategoryEnrichmentProcessor
  */
 
-import { BaseEventProcessor } from '@ghatana/dcmaar-browser-extension-core';
+import { BaseEventProcessor } from '@dcmaar/browser-extension-core';
 import { WebsiteCategory } from '../../blocker/WebsiteBlocker';
 import type { GuardianEvent, EnrichedEvent, TabActivityEvent, ContentScriptEvent } from '../types';
 

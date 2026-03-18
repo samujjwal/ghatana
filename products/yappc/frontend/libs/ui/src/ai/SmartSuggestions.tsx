@@ -24,7 +24,7 @@
  */
 
 import { Sparkles as AutoAwesomeIcon, RefreshCw as RefreshIcon, X as CloseIcon } from 'lucide-react';
-import { Box, Typography, Spinner as CircularProgress, Surface as Paper, IconButton, Tooltip } from '@ghatana/ui';
+import { Box, Typography, Spinner as CircularProgress, Surface as Paper, IconButton, Tooltip } from '@ghatana/design-system';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 
 // fetchAllSuggestions moved into useSuggestions

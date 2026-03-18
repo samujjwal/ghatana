@@ -6,7 +6,7 @@
  * @doc.layer product
  * @doc.pattern Hook
  */
-import type { SimEntity, SimEntityId } from "@ghatana/tutorputor-contracts/v1/simulation";
+import type { SimEntity, SimEntityId } from "@tutorputor/contracts/v1/simulation";
 import type { RenderContext, RenderTheme, RendererRegistry, EntityAnimation } from "./types";
 /**
  * Create and manage a renderer registry.

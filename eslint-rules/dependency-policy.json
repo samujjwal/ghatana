@@ -1,0 +1,237 @@
+{
+  "$schema": "https://ghatana.io/schemas/dependency-policy.json",
+  "version": "1.0.0",
+  "description": "Dependency governance policy for Ghatana monorepo",
+  "enforcementLevel": "error",
+  
+  "productBoundaries": {
+    "yappc": {
+      "allowedImports": ["yappc", "platform", "shared-services"],
+      "disallowedImports": ["flashit", "tutorputor", "data-cloud", "dcmaar", "audio-video", "aep", "app-platform"]
+    },
+    "flashit": {
+      "allowedImports": ["flashit", "platform", "shared-services"],
+      "disallowedImports": ["yappc", "tutorputor", "data-cloud", "dcmaar", "audio-video", "aep", "app-platform"]
+    },
+    "tutorputor": {
+      "allowedImports": ["tutorputor", "platform", "shared-services"],
+      "disallowedImports": ["yappc", "flashit", "data-cloud", "dcmaar", "audio-video", "aep", "app-platform"]
+    },
+    "data-cloud": {
+      "allowedImports": ["data-cloud", "platform", "shared-services"],
+      "disallowedImports": ["yappc", "flashit", "tutorputor", "dcmaar", "audio-video", "aep", "app-platform"]
+    },
+    "dcmaar": {
+      "allowedImports": ["dcmaar", "platform", "shared-services"],
+      "disallowedImports": ["yappc", "flashit", "tutorputor", "data-cloud", "audio-video", "aep", "app-platform"]
+    },
+    "audio-video": {
+      "allowedImports": ["audio-video", "platform", "shared-services"],
+      "disallowedImports": ["yappc", "flashit", "tutorputor", "data-cloud", "dcmaar", "aep", "app-platform"]
+    },
+    "aep": {
+      "allowedImports": ["aep", "platform", "shared-services"],
+      "disallowedImports": ["yappc", "flashit", "tutorputor", "data-cloud", "dcmaar", "audio-video", "app-platform"]
+    },
+    "app-platform": {
+      "allowedImports": ["app-platform", "platform", "shared-services"],
+      "disallowedImports": ["yappc", "flashit", "tutorputor", "data-cloud", "dcmaar", "audio-video", "aep"]
+    }
+  },
+
+  "platformLayers": {
+    "layer0_foundation": {
+      "level": 0,
+      "description": "Foundation layer - no internal dependencies",
+      "packages": [
+        "@ghatana/tokens",
+        "@ghatana/theme",
+        "@ghatana/icons",
+        "@ghatana/types"
+      ],
+      "allowedDependencies": []
+    },
+    "layer1_base": {
+      "level": 1,
+      "description": "Base layer - depends on foundation only",
+      "packages": [
+        "@ghatana/platform-utils",
+        "@ghatana/http-client",
+        "@ghatana/config"
+      ],
+      "allowedDependencies": ["layer0_foundation"]
+    },
+    "layer2_capabilities": {
+      "level": 2,
+      "description": "Capability layer - depends on foundation and base",
+      "packages": [
+        "@ghatana/design-system",
+        "@ghatana/canvas",
+        "@ghatana/crdt",
+        "@ghatana/realtime",
+        "@ghatana/analytics",
+        "@ghatana/notifications"
+      ],
+      "allowedDependencies": ["layer0_foundation", "layer1_base"]
+    },
+    "layer3_integration": {
+      "level": 3,
+      "description": "Integration layer - depends on all lower layers",
+      "packages": [
+        "@ghatana/event-cloud",
+        "@ghatana/ai-integration",
+        "@ghatana/search"
+      ],
+      "allowedDependencies": ["layer0_foundation", "layer1_base", "layer2_capabilities"]
+    }
+  },
+
+  "bannedLibraries": {
+    "lodash": {
+      "reason": "Use native ES6+ or @ghatana/platform-utils",
+      "alternative": "@ghatana/platform-utils",
+      "severity": "error"
+    },
+    "lodash-es": {
+      "reason": "Use native ES6+ or @ghatana/platform-utils",
+      "alternative": "@ghatana/platform-utils",
+      "severity": "error"
+    },
+    "axios": {
+      "reason": "Use native fetch or @ghatana/http-client",
+      "alternative": "@ghatana/http-client",
+      "severity": "error"
+    },
+    "moment": {
+      "reason": "Use date-fns or native Intl.DateTimeFormat",
+      "alternative": "date-fns",
+      "severity": "error"
+    },
+    "jquery": {
+      "reason": "Use native DOM APIs or React refs",
+      "alternative": "native",
+      "severity": "error"
+    },
+    "request": {
+      "reason": "Deprecated library",
+      "alternative": "native fetch",
+      "severity": "error"
+    },
+    "request-promise": {
+      "reason": "Depends on deprecated request library",
+      "alternative": "native fetch",
+      "severity": "error"
+    },
+    "uuid": {
+      "reason": "Use crypto.randomUUID() or nanoid",
+      "alternative": "nanoid",
+      "severity": "error"
+    },
+    "classnames": {
+      "reason": "Use clsx or @ghatana/utils/cn",
+      "alternative": "clsx",
+      "severity": "error"
+    },
+    "underscore": {
+      "reason": "Use native ES6+ or @ghatana/platform-utils",
+      "alternative": "@ghatana/platform-utils",
+      "severity": "error"
+    }
+  },
+
+  "deprecatedPackages": {
+    "@ghatana/ui": {
+      "replacement": "@ghatana/design-system",
+      "migrationGuide": "/docs/migrations/ghatana-ui-to-design-system.md",
+      "sunsetDate": "2025-12-31",
+      "severity": "error"
+    },
+    "@ghatana/utils": {
+      "replacement": "@ghatana/platform-utils",
+      "migrationGuide": "/docs/migrations/utils-to-platform-utils.md",
+      "sunsetDate": "2025-12-31",
+      "severity": "error"
+    },
+    "@ghatana/yappc-ui": {
+      "replacement": "@yappc/ui",
+      "migrationGuide": "/docs/migrations/yappc-naming-consolidation.md",
+      "sunsetDate": "2025-06-30",
+      "severity": "error"
+    },
+    "@ghatana/yappc-ai": {
+      "replacement": "@yappc/ai",
+      "migrationGuide": "/docs/migrations/yappc-naming-consolidation.md",
+      "sunsetDate": "2025-06-30",
+      "severity": "error"
+    },
+    "@ghatana/yappc-canvas": {
+      "replacement": "@yappc/canvas",
+      "migrationGuide": "/docs/migrations/yappc-naming-consolidation.md",
+      "sunsetDate": "2025-06-30",
+      "severity": "error"
+    }
+  },
+
+  "approvedTechStack": {
+    "frontend": {
+      "framework": "react",
+      "stateManagement": ["jotai", "zustand"],
+      "styling": ["tailwindcss", "@ghatana/design-system"],
+      "query": "@tanstack/react-query",
+      "router": "react-router",
+      "forms": "react-hook-form",
+      "validation": "zod"
+    },
+    "backend": {
+      "java": {
+        "framework": "activej",
+        "http": "activej-http",
+        "json": "gson",
+        "database": ["postgresql", "redis"],
+        "messaging": "nats"
+      },
+      "typescript": {
+        "framework": "fastify",
+        "http": "@ghatana/http-server",
+        "database": "prisma",
+        "validation": "zod"
+      }
+    },
+    "testing": {
+      "unit": ["vitest", "jest"],
+      "e2e": "playwright",
+      "integration": "testcontainers"
+    }
+  },
+
+  "licensePolicy": {
+    "allowed": [
+      "MIT",
+      "Apache-2.0",
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "ISC",
+      "0BSD",
+      "CC0-1.0",
+      "Unlicense"
+    ],
+    "denied": [
+      "GPL-1.0",
+      "GPL-2.0",
+      "GPL-3.0",
+      "AGPL-1.0",
+      "AGPL-3.0",
+      "SSPL-1.0",
+      "LGPL-2.0",
+      "LGPL-2.1",
+      "LGPL-3.0",
+      "Proprietary"
+    ],
+    "requireReview": [
+      "CC-BY-*",
+      "ODC-*",
+      "PostgreSQL",
+      "Python-2.0"
+    ]
+  }
+}

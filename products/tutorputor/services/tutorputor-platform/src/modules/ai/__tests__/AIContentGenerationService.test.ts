@@ -8,8 +8,8 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AIContentGenerationService } from "../AIContentGenerationService";
-import type { AIProxyService } from "@ghatana/tutorputor-contracts/v1/services";
-import type { TutorResponsePayload } from "@ghatana/tutorputor-contracts/v1/types";
+import type { AIProxyService } from "@tutorputor/contracts/v1/services";
+import type { TutorResponsePayload } from "@tutorputor/contracts/v1/types";
 
 // Mock AI Proxy Service
 function createMockAIProxyService(): AIProxyService {

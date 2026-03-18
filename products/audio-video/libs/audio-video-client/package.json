@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/audio-video-product-client",
+  "name": "@audio-video/client",
   "version": "1.0.0",
   "description": "Unified service client for audio-video application",
   "main": "dist/index.js",
@@ -10,7 +10,9 @@
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -18,7 +20,7 @@
     }
   },
   "dependencies": {
-    "@ghatana/audio-video-product-types": "workspace:*"
+    "@audio-video/types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
@@ -31,7 +33,14 @@
     "url": "git+https://github.com/ghatana/audio-video.git",
     "directory": "libs/audio-video-client"
   },
-  "keywords": ["client", "grpc", "audio", "video", "multimodal", "ghatana"],
+  "keywords": [
+    "client",
+    "grpc",
+    "audio",
+    "video",
+    "multimodal",
+    "ghatana"
+  ],
   "author": "Ghatana Team",
   "license": "MIT"
 }

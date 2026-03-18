@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useDevices, useAlerts } from '@/hooks/useApi';
 import { formatDuration } from '@/utils/format';
-import { useCanSeeSections } from '@ghatana/dcmaar-dashboard-core';
+import { useCanSeeSections } from '@dcmaar/dashboard-core';
 import { useChildUsageStats } from '@/hooks/useChildUsageStats';
 
 const DashboardScreen: React.FC = () => {

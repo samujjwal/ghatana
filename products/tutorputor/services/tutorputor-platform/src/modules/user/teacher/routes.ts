@@ -5,7 +5,7 @@ import type {
   UserId,
   ClassroomId,
   ModuleId,
-} from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/types";
 
 /**
  * Teacher routes - classroom management and student progress tracking.

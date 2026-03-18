@@ -16,8 +16,8 @@
  * @see {@link BatteryMonitor}
  */
 
-import { IDataCollector } from '@ghatana/dcmaar-plugin-abstractions';
-import { IPlugin } from '@ghatana/dcmaar-types';
+import { IDataCollector } from '@dcmaar/plugin-abstractions';
+import { IPlugin } from '@dcmaar/types';
 
 /**
  * Configuration for device monitor plugins

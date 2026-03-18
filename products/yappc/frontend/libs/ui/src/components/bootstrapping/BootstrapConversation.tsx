@@ -25,15 +25,15 @@ import {
   ChevronUp,
 } from 'lucide-react';
 
-import { cn } from '@ghatana/ui';
-import { Button } from '@ghatana/ui';
-import { Badge } from '@ghatana/ui';
+import { cn } from '@ghatana/design-system';
+import { Button } from '@ghatana/design-system';
+import { Badge } from '@ghatana/design-system';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@ghatana/yappc-ui';
+} from '@yappc/ui';
 
 // Reuse existing chat component
 import { AIChatInterface } from '../chat/AIChatInterface';
@@ -44,7 +44,7 @@ import type {
   Question,
   InputMode,
   AgentStatus,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 import {
   currentPhaseAtom,
   conversationHistoryAtom,
@@ -54,7 +54,7 @@ import {
   agentStatusMessageAtom,
   inputModeAtom,
   confidenceScoreAtom,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 // =============================================================================
 // Types

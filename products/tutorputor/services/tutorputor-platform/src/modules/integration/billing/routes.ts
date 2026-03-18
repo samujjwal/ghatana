@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { CheckoutSessionId, MarketplaceListingId, ModuleId, TenantId, UserId } from "@ghatana/tutorputor-contracts/v1/types";
+import type { CheckoutSessionId, MarketplaceListingId, ModuleId, TenantId, UserId } from "@tutorputor/contracts/v1/types";
 import { getTenantId, getUserId, respondWithErrors } from "../../../core/http/requestContext.js";
 import { createBillingService } from "./service.js";
 

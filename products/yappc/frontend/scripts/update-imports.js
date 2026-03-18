@@ -78,9 +78,9 @@ function updatePackageJson() {
 
     // Update dependencies
     ['dependencies', 'devDependencies', 'peerDependencies'].forEach(depType => {
-      if (pkg[depType]?.['@ghatana/ui']) {
-        pkg[depType]['@ghatana/yappc-ui'] = pkg[depType]['@ghatana/ui'];
-        delete pkg[depType]['@ghatana/ui'];
+      if (pkg[depType]?.['@ghatana/design-system']) {
+        pkg[depType]['@yappc/ui'] = pkg[depType]['@ghatana/design-system'];
+        delete pkg[depType]['@ghatana/design-system'];
         updated = true;
       }
     });

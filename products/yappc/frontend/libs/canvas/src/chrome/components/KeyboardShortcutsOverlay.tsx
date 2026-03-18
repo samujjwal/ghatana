@@ -22,8 +22,8 @@ import {
   Typography,
   IconButton,
   InputAdornment,
-} from '@ghatana/ui';
-import { TextField } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
 import React, { useState, useMemo } from 'react';
 
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';

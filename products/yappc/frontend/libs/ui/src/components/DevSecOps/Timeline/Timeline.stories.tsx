@@ -5,7 +5,7 @@
  */
 
 /* eslint-disable storybook/no-renderer-packages */
-import { Box, Surface as Paper, Typography } from '@ghatana/ui';
+import { Box, Surface as Paper, Typography } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { Timeline } from './Timeline';

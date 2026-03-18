@@ -19,7 +19,7 @@
  *   PipelineRunner,
  *   ProcessingContext,
  *   globalRegistry,
- * } from '@ghatana/tutorputor-learning-kernel';
+ * } from '@tutorputor/learning-kernel';
  *
  * // Register plugins
  * globalRegistry.registerEvidenceProcessor(new CBMProcessor());

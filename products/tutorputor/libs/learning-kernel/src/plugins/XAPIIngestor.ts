@@ -21,7 +21,7 @@ import type {
     PluginMetadata,
     EvidenceEvent,
     RawEvent,
-} from '@ghatana/tutorputor-contracts/v1/plugin-interfaces';
+} from '@tutorputor/contracts/v1/plugin-interfaces';
 
 /**
  * Standard xAPI statement structure.

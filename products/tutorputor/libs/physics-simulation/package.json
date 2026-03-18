@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/tutorputor-physics-simulation",
+  "name": "@tutorputor/physics-simulation",
   "version": "1.0.0",
   "description": "Cross-product physics simulation library with Konva rendering, entity management, and serialization",
   "main": "./src/index.ts",

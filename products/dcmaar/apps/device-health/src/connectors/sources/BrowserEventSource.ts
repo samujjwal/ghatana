@@ -37,7 +37,7 @@
  */
 
 import browser from 'webextension-polyfill';
-import type { Event } from '@ghatana/dcmaar-connectors';
+import type { Event } from '@dcmaar/connectors';
 import { throttle, type ThrottledFunction } from '../../utils/throttle';
 
 /**

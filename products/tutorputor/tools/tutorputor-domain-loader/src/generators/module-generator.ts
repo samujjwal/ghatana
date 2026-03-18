@@ -13,8 +13,8 @@ const logger = createLogger('module-generator');
  */
 
 import type { TutorPrismaClient } from "../prisma-utils.js";
-import type { DomainConcept, ConceptModuleMapping, ConceptId } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
-import type { ModuleId } from "@ghatana/tutorputor-contracts/v1/types";
+import type { DomainConcept, ConceptModuleMapping, ConceptId } from "@tutorputor/contracts/v1/curriculum/types";
+import type { ModuleId } from "@tutorputor/contracts/v1/types";
 import { levelToDifficulty, domainToModuleDomain, generateSlug } from "../utils/mappers";
 
 /**

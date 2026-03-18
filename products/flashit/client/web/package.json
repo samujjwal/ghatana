@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/flashit-web",
+  "name": "@flashit/web",
   "version": "0.1.0",
   "description": "Flashit web application for capturing and reflecting on Moments",
   "private": true,
@@ -22,9 +22,8 @@
   },
   "dependencies": {
     "@ghatana/design-system": "workspace:*",
-    "@ghatana/flashit-shared": "workspace:*",
-    "@tanstack/react-query": "^5.90.12",
-    "axios": "^1.13.2",
+    "@flashit/shared": "workspace:*",
+    "@tanstack/react-query": "^5.90.20",
     "date-fns": "^4.1.0",
     "jotai": "^2.17.0",
     "lucide-react": "^0.563.0",

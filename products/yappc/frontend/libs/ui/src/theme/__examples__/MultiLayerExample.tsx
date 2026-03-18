@@ -5,7 +5,7 @@
  * to customize themes at different levels.
  */
 
-import { Button, Container, Typography, Box, TextField, Stack, Card, CardContent, Divider } from '@ghatana/ui';
+import { Button, Container, Typography, Box, TextField, Stack, Card, CardContent, Divider } from '@ghatana/design-system';
 import React, { useState } from 'react';
 
 import {

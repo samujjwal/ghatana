@@ -33,9 +33,9 @@ import {
   Badge,
   InteractiveList as List,
   Surface as Paper,
-} from '@ghatana/ui';
-import { TextField, MenuItem } from '@ghatana/ui';
-import { Accordion, AccordionSummary, AccordionDetails } from '@ghatana/yappc-ui';
+} from '@ghatana/design-system';
+import { TextField, MenuItem } from '@ghatana/design-system';
+import { Accordion, AccordionSummary, AccordionDetails } from '@yappc/ui';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 
 import {

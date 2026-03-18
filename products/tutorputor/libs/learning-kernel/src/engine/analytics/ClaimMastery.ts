@@ -17,7 +17,7 @@ import {
     getCBMScore,
     normalizeCBMScore,
     CANONICAL_EVIDENCE_WEIGHTS,
-} from '@ghatana/tutorputor-contracts/v1/learning-unit';
+} from '@tutorputor/contracts/v1/learning-unit';
 
 /**
  * Raw evidence record from telemetry

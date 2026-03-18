@@ -11,7 +11,7 @@
  * - Emit lifecycle events
  */
 import { EventEmitter } from 'eventemitter3';
-import { type IConnector } from '@ghatana/dcmaar-connectors';
+import { type IConnector } from '@dcmaar/connectors';
 import type { AgentConnectorConfig, SourceConfig, SinkConfig, BridgeMessage, ConnectorStatus } from './types';
 export declare class AgentConnectorManager extends EventEmitter {
     private connectorManager;

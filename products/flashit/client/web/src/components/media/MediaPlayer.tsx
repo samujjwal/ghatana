@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { useAudioPlayer, useVideoPlayer, formatTime, formatFileSize } from '@ghatana/flashit-shared';
+import { useAudioPlayer, useVideoPlayer, formatTime, formatFileSize } from '@flashit/shared';
 
 interface MediaPlayerProps {
   src: string;

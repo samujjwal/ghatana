@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Target, Lightbulb, AlertTriangle, Plus, X } from 'lucide-react';
-import type { Intent } from '@ghatana/tutorputor-contracts/v1/learning-unit';
+import type { Intent } from '@tutorputor/contracts/v1/learning-unit';
 
 interface IntentEditorProps {
     intent: Intent;

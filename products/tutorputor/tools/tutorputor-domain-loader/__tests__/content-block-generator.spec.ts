@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { generateContentBlocks } from "../src/generators/content-block-generator";
-import type { DomainConcept, ConceptId } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
+import type { DomainConcept, ConceptId } from "@tutorputor/contracts/v1/curriculum/types";
 import type { TutorPrismaClient } from "../src/prisma-utils";
 
 // =============================================================================

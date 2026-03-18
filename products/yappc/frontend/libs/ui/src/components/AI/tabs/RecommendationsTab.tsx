@@ -1,6 +1,6 @@
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import { ChevronDown as ExpandMoreIcon } from 'lucide-react';
-import { Accordion, AccordionDetails, AccordionSummary, Surface as Paper, Typography } from '@ghatana/ui';
+import { Accordion, AccordionDetails, AccordionSummary, Surface as Paper, Typography } from '@ghatana/design-system';
 import { Grid } from '../../Grid';
 import React from 'react';
 

@@ -12,7 +12,7 @@
 
 import { z } from 'zod';
 // TODO: Fix import issue with @ghatana/dcmaar-connectors - Vite can't resolve CommonJS exports
-// import { ConnectionOptionsSchema } from '@ghatana/dcmaar-connectors';
+// import { ConnectionOptionsSchema } from '@dcmaar/connectors';
 
 // Temporary inline schema until build issue is resolved
 const ConnectionOptionsSchema = z.object({

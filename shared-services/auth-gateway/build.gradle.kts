@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.ghatana.services"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 application {
     mainClass.set("com.ghatana.services.auth.AuthGatewayLauncher")
@@ -26,6 +26,9 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.log4j.slf4j.impl)
     
+    // Database connection pool
+    implementation(libs.hikaricp)
+
     // Rate limiting
     implementation(libs.guava)
     

@@ -42,7 +42,7 @@
  */
 
 import { openDB, type IDBPDatabase } from 'idb';
-import type { Event } from '@ghatana/dcmaar-connectors';
+import type { Event } from '@dcmaar/connectors';
 import { getCrypto, type EncryptedData, type EncryptionConfig } from '../../utils/encryption';
 
 /**

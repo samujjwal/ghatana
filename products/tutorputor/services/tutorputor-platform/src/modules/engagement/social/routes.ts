@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { TenantId, UserId } from "@ghatana/tutorputor-contracts";
+import type { TenantId, UserId } from "@tutorputor/contracts";
 import { StudyGroupServiceImpl } from "./study-groups";
 import { ForumServiceImpl } from "./forums";
 import { PeerTutoringServiceImpl } from "./peer-tutoring";

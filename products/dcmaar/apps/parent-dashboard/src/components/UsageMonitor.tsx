@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, memo } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { usageEventsAtom, addUsageEventAtom } from '../stores/eventsStore';
 import { websocketService, type UsageEvent } from '../services/websocket.service';
-import { useUsageOverview } from '@ghatana/dcmaar-dashboard-core';
+import { useUsageOverview } from '@dcmaar/dashboard-core';
 
 interface UsageMonitorProps {
   onEventReceived?: (event: UsageEvent) => void;

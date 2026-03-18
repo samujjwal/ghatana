@@ -4,7 +4,7 @@
  * Outputs events to console for debugging and development.
  * Supports pretty-printing and filtering options.
  */
-import { type IConnector } from '@ghatana/dcmaar-connectors';
+import { type IConnector } from '@dcmaar/connectors';
 import type { SinkAdapter } from '../types';
 /**
  * Sink adapter that outputs events to console

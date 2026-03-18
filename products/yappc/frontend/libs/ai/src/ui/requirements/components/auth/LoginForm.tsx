@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TextField, Button, Box, Alert, Link, Typography } from '@ghatana/ui';interface LoginFormProps {
+import { TextField, Button, Box, Alert, Link, Typography } from '@ghatana/design-system';interface LoginFormProps {
   onSwitchToRegister?: () => void
 }
 

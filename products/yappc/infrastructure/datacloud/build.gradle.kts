@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.ghatana.products.yappc"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 dependencies {
     // Data-Cloud Core (merged: domain, application, infrastructure, api, spi)

@@ -18,8 +18,8 @@ import type {
   SimulationDomain,
   CanvasConfig,
   PlaybackConfig,
-} from "@ghatana/tutorputor-contracts/v1/simulation";
-import type { UserId, TenantId } from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/simulation";
+import type { UserId, TenantId } from "@tutorputor/contracts/v1/types";
 
 /**
  * Create a mock manifest for testing.

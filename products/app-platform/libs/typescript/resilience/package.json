@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/resilience",
+  "name": "@app-platform/resilience",
   "version": "0.1.0",
   "description": "Resilience primitives for Node.js services: semaphore bulkhead, circuit breaker wrappers",
   "main": "dist/index.js",
@@ -16,7 +16,7 @@
     "bulkhead",
     "semaphore",
     "circuit-breaker",
-    "ghatana"
+    "@app-platform"
   ],
   "license": "UNLICENSED",
   "devDependencies": {

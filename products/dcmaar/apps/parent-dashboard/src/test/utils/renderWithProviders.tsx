@@ -2,7 +2,7 @@ import { type ReactElement, type ReactNode, useMemo } from 'react';
 import { MemoryRouter, type MemoryRouterProps } from 'react-router-dom';
 import { render, type RenderOptions, type RenderResult } from '@testing-library/react';
 import { Provider as JotaiProvider } from 'jotai';
-import { RoleContext, ROLE_CONFIG, type RoleDefinition, type UserRole } from '@ghatana/dcmaar-dashboard-core';
+import { RoleContext, ROLE_CONFIG, type RoleDefinition, type UserRole } from '@dcmaar/dashboard-core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 interface DashboardTestProvidersProps {

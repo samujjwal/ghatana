@@ -1,4 +1,4 @@
-import type { IDataCollector } from "@ghatana/dcmaar-plugin-abstractions";
+import type { IDataCollector } from "@dcmaar/plugin-abstractions";
 
 /**
  * Shared plugin ID constants so manifests and wiring stay in sync.

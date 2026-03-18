@@ -20,7 +20,7 @@ import type {
   RefineManifestRequest as ContractRefineRequest,
   SuggestParametersRequest as ContractSuggestRequest,
   SuggestParametersResult,
-} from "@ghatana/tutorputor-contracts/v1/simulation/types";
+} from "@tutorputor/contracts/v1/simulation/types";
 
 // Client-facing request types omit server-injected fields
 type GenerateManifestRequest = Omit<

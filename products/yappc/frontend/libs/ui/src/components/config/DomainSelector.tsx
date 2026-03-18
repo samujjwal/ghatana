@@ -11,7 +11,7 @@
 
 import React from 'react';
 
-import { Box, Typography, Button } from '@ghatana/ui';
+import { Box, Typography, Button } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 
 import { useTaskDomains } from '../../hooks/useConfig';

@@ -244,7 +244,7 @@ export type {
 // ============================================================================
 // All MUI component re-exports have been removed.
 // Use @ghatana/ui for platform-level Tailwind-native components:
-//   import { Box, Button, Card, Dialog, ... } from '@ghatana/ui';
+//   import { Box, Button, Card, Dialog, ... } from '@ghatana/design-system';
 //
 // For MUI-specific components still needed internally by @ghatana/yappc-ui,
 // import directly from '@mui/material' within this package's source.
@@ -277,9 +277,9 @@ export type {
  *
  * @example Flat Import Pattern (Legacy - Still Supported)
  * ```tsx
- * import { Button, Card } from '@ghatana/ui';
-import { TextField } from '@ghatana/ui';
-import { Form } from '@ghatana/yappc-ui';
+ * import { Button, Card } from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
+import { Form } from '@yappc/ui';
  *
  * function MyComponent() {
  *   return (

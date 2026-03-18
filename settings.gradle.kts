@@ -177,16 +177,7 @@ include(":products:software-org:engine:modules:integration:plugins")
 include(":products:software-org:engine:modules:integration:ci")
 include(":products:software-org:engine:modules:integration:jira")
 include(":products:software-org:engine:modules:integration:github")
-include(":products:software-org:libs:java:departments:engineering")
-include(":products:software-org:libs:java:departments:qa")
-include(":products:software-org:libs:java:departments:devops")
-include(":products:software-org:libs:java:departments:support")
-include(":products:software-org:libs:java:departments:product")
-include(":products:software-org:libs:java:departments:sales")
-include(":products:software-org:libs:java:departments:finance")
-include(":products:software-org:libs:java:departments:hr")
-include(":products:software-org:libs:java:departments:compliance")
-include(":products:software-org:libs:java:departments:marketing")
+include(":products:software-org:libs:java:departments")
 include(":products:software-org:launcher")
 
 // =============================================================================
@@ -231,9 +222,9 @@ include(":products:app-platform:service-template")
 // Shared Services — Cross-product microservices
 // =============================================================================
 
-// // include(":shared-services:ai-inference-service")
-// include(":shared-services:ai-registry")
-// include(":shared-services:auth-gateway")
-// include(":shared-services:feature-store-ingest")
-// include(":shared-services:auth-service")
-// include(":shared-services:user-profile-service")
+// include(":shared-services:ai-inference-service")   // disabled: build not stabilised yet
+include(":shared-services:ai-registry")
+include(":shared-services:auth-gateway")
+include(":shared-services:feature-store-ingest")
+include(":shared-services:auth-service")
+include(":shared-services:user-profile-service")

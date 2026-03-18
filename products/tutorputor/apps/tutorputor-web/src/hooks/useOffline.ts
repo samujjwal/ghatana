@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Module } from '@ghatana/tutorputor-contracts';
+import type { Module } from '@tutorputor/contracts';
 
 // Re-export types from @ghatana/state for convenience
 // In a real implementation, these would come from the state library

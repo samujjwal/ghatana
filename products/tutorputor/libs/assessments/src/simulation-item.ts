@@ -28,9 +28,9 @@ import type {
   SimulationResponse,
   SimulationGradingResult,
   createSimulationItemId,
-} from "@ghatana/tutorputor-contracts/v1/assessments";
-import type { SimulationManifest, SimulationDomain, SimEntityId } from "@ghatana/tutorputor-contracts/v1/simulation";
-import type { LearningObjective } from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/assessments";
+import type { SimulationManifest, SimulationDomain, SimEntityId } from "@tutorputor/contracts/v1/simulation";
+import type { LearningObjective } from "@tutorputor/contracts/v1/types";
 
 // =============================================================================
 // Validation

@@ -4,7 +4,7 @@
  * Comprehensive demonstrations of Alert molecule component
  */
 
-import { Stack, Box, Typography } from '@ghatana/ui';
+import { Stack, Box, Typography } from '@ghatana/design-system';
 import { useState } from 'react';
 
 // Import the package entry for this component folder so index.ts can re-export

@@ -23,7 +23,7 @@ import {
   Tooltip,
   IconButton,
   Divider,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import { Code as CodeIcon, Shield as SecurityIcon, Gauge as PerformanceIcon, ClipboardList as TaskIcon, LayoutDashboard as DashboardIcon, Info as InfoIcon } from 'lucide-react';
 
 import { useTaskDomains } from '../../hooks/useConfig';

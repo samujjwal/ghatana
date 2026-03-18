@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Box, Typography, Surface as Paper, Button, Chip, Alert, InteractiveList as List, ListItem, ListItemText } from '@ghatana/ui';
+import { Box, Typography, Surface as Paper, Button, Chip, Alert, InteractiveList as List, ListItem, ListItemText } from '@ghatana/design-system';
 import { UploadFile, Sparkles as AutoAwesome, TrendingUp } from 'lucide-react';
 
 /**

@@ -1,7 +1,7 @@
 import { apiUrl } from '../config/api';
 import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { PolicyForm } from './PolicyForm';
-import { usePoliciesData } from '@ghatana/dcmaar-dashboard-core';
+import { usePoliciesData } from '@dcmaar/dashboard-core';
 
 export interface Policy {
   id: string;

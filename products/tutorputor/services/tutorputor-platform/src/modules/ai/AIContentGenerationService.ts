@@ -10,12 +10,12 @@
  * @doc.pattern Service
  */
 
-import type { AIProxyService } from "@ghatana/tutorputor-contracts/v1/services";
+import type { AIProxyService } from "@tutorputor/contracts/v1/services";
 import type {
   TenantId,
   UserId,
   TutorResponsePayload,
-} from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/types";
 
 interface GeneratedConcept {
   name: string;

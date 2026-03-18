@@ -1,0 +1,52 @@
+name: SBOM Generation
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main]
+    release:
+        types: [published]
+
+jobs:
+    generate-sbom:
+        name: Generate CycloneDX SBOM
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            id-token: write # Required for attestation
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up JDK 21
+              uses: actions/setup-java@v4
+              with:
+                  java-version: "21"
+                  distribution: "temurin"
+
+            - name: Set up Gradle cache
+              uses: gradle/actions/setup-gradle@v3
+              with:
+                  cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+            - name: Generate SBOM
+              run: ./gradlew cyclonedxBom --no-daemon
+
+            - name: Upload SBOM artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: sbom-${{ github.sha }}
+                  path: "**/build/sbom/*.json"
+                  retention-days: 90
+                  if-no-files-found: warn
+
+            - name: Attest SBOM (release only)
+              if: github.event_name == 'release'
+              uses: actions/attest-sbom@v2
+              with:
+                  subject-name: ghatana-monorepo
+                  subject-digest: ${{ github.sha }}
+                  sbom-path: "build/sbom/bom.json"
+                  push-to-registry: false

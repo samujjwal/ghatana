@@ -1,4 +1,4 @@
-import { useWebSocketData, useWebSocket } from '@ghatana/yappc-crdt/websocket';
+import { useWebSocketData, useWebSocket } from '@yappc/crdt/websocket';
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { WebSocketSearchUtils } from './utils';

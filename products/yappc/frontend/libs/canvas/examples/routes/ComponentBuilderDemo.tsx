@@ -1,9 +1,9 @@
-import { Box, Typography, Surface as Paper } from '@ghatana/ui';
+import { Box, Typography, Surface as Paper } from '@ghatana/design-system';
 import React, { useState } from 'react';
 
-import { DraggableCanvas } from '@ghatana/yappc-ui';
+import { DraggableCanvas } from '@yappc/ui';
 
-import type { CanvasItem, ComponentType } from '@ghatana/yappc-ui';
+import type { CanvasItem, ComponentType } from '@yappc/ui';
 
 const ComponentBuilderDemo: React.FC = () => {
   const [items, setItems] = useState<CanvasItem[]>([

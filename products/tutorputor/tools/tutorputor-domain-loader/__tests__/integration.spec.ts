@@ -17,7 +17,7 @@ import { generateContentBlocks } from "../src/generators/content-block-generator
 import { generateManifestFromConcept, generateManifestsFromConcepts } from "../src/generators/manifest-generator";
 import { generateLearningPaths } from "../src/generators/learning-path-generator";
 import type { TutorPrismaClient } from "../src/prisma-utils";
-import type { DomainConcept, ConceptId } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
+import type { DomainConcept, ConceptId } from "@tutorputor/contracts/v1/curriculum/types";
 
 // =============================================================================
 // Sample Data

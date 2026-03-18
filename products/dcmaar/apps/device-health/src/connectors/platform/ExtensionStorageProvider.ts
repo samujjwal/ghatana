@@ -17,7 +17,7 @@
 import browser from 'webextension-polyfill';
 
 // TODO: Import from @ghatana/dcmaar-connectors when available
-// import type { StorageProvider, StorageSetOptions, StorageStats } from '@ghatana/dcmaar-connectors';
+// import type { StorageProvider, StorageSetOptions, StorageStats } from '@dcmaar/connectors';
 
 /**
  * Temporary storage types until @ghatana/dcmaar-connectors exports are available
@@ -83,7 +83,7 @@ interface StorageEntry<T = unknown> {
  *
  * **Usage**:
  * ```typescript
- * import { ConnectorManager } from '@ghatana/dcmaar-connectors';
+ * import { ConnectorManager } from '@dcmaar/connectors';
  * import { ExtensionStorageProvider } from './platform/ExtensionStorageProvider';
  *
  * const manager = new ConnectorManager({

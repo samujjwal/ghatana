@@ -3,13 +3,13 @@
  */
 
 
-import { Box, Typography } from '@ghatana/ui';
+import { Box, Typography } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { AITextCompletion } from './AITextCompletion';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import type { IAIService, CompletionResponse } from '@ghatana/yappc-ai/core';
+import type { IAIService, CompletionResponse } from '@yappc/ai/core';
 
 // Mock AI Service for Storybook
 const createMockAIService = (delay = 1000): IAIService => ({

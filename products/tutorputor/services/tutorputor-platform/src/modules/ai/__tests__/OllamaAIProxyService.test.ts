@@ -12,7 +12,7 @@ import type {
   TenantId,
   UserId,
   ModuleId,
-} from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/types";
 
 // Mock global fetch
 const mockFetch = vi.fn();

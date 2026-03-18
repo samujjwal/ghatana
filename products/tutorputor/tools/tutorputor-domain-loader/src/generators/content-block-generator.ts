@@ -14,7 +14,7 @@ const logger = createLogger('content-block-generator');
  */
 
 import type { TutorPrismaClient } from "../prisma-utils.js";
-import type { DomainConcept } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
+import type { DomainConcept } from "@tutorputor/contracts/v1/curriculum/types";
 
 // =============================================================================
 // Types

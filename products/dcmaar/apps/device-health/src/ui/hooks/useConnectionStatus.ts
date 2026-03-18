@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import browser from 'webextension-polyfill';
-import type { ConnectionStatus } from '@ghatana/dcmaar-shared-ui-core';
-import { formatUptime } from '@ghatana/dcmaar-shared-ui-core';
+import type { ConnectionStatus } from '@dcmaar/shared-ui-core';
+import { formatUptime } from '@dcmaar/shared-ui-core';
 
 /**
  * Robust connection status hook.

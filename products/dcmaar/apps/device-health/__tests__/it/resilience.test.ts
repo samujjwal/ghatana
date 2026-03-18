@@ -13,7 +13,7 @@ import {
   DeadLetterQueue,
   HealthChecker,
   HealthStatus,
-} from '@ghatana/dcmaar-connectors';
+} from '@dcmaar/connectors';
 
 describe.skip('Resilience Patterns', () => {
   describe('CircuitBreaker', () => {

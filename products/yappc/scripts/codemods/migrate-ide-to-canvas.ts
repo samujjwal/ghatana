@@ -17,36 +17,36 @@ import { join, extname, resolve } from 'path';
 // Import mapping: Old IDE imports -> New Canvas exports
 const IMPORT_MAPPINGS: Record<string, string> = {
   // Core IDE components
-  'IDEShell': '@ghatana/yappc-canvas',
-  'ProfessionalIDELayout': '@ghatana/yappc-canvas',
-  'IDEShellProps': '@ghatana/yappc-canvas',
-  'ProfessionalIDELayoutProps': '@ghatana/yappc-canvas',
+  'IDEShell': '@yappc/canvas',
+  'ProfessionalIDELayout': '@yappc/canvas',
+  'IDEShellProps': '@yappc/canvas',
+  'ProfessionalIDELayoutProps': '@yappc/canvas',
   
   // Editor components
-  'EditorPanel': '@ghatana/yappc-canvas',
-  'CodeEditor': '@ghatana/yappc-canvas',
-  'EditorPanelProps': '@ghatana/yappc-canvas',
-  'CodeEditorProps': '@ghatana/yappc-canvas',
+  'EditorPanel': '@yappc/canvas',
+  'CodeEditor': '@yappc/canvas',
+  'EditorPanelProps': '@yappc/canvas',
+  'CodeEditorProps': '@yappc/canvas',
   
   // File explorer
-  'FileExplorer': '@ghatana/yappc-canvas',
-  'FileTree': '@ghatana/yappc-canvas',
+  'FileExplorer': '@yappc/canvas',
+  'FileTree': '@yappc/canvas',
   
   // UI components
-  'ContextMenu': '@ghatana/yappc-canvas',
-  'TabBar': '@ghatana/yappc-canvas',
+  'ContextMenu': '@yappc/canvas',
+  'TabBar': '@yappc/canvas',
   
   // Search and operations
-  'AdvancedSearchPanel': '@ghatana/yappc-canvas',
-  'BulkOperationsToolbar': '@ghatana/yappc-canvas',
+  'AdvancedSearchPanel': '@yappc/canvas',
+  'BulkOperationsToolbar': '@yappc/canvas',
   
   // Collaboration
-  'CursorOverlay': '@ghatana/yappc-canvas',
-  'RealTimeCursorTracking': '@ghatana/yappc-canvas',
+  'CursorOverlay': '@yappc/canvas',
+  'RealTimeCursorTracking': '@yappc/canvas',
   
   // Utils
-  'KeyboardShortcutsManager': '@ghatana/yappc-canvas',
-  'LoadingStates': '@ghatana/yappc-canvas',
+  'KeyboardShortcutsManager': '@yappc/canvas',
+  'LoadingStates': '@yappc/canvas',
 };
 
 // File extensions to process
@@ -80,7 +80,7 @@ function processFile(filePath: string): MigrationResult {
     let modified = false;
 
     // Pattern 1: Direct import statements
-    // import { X } from '@ghatana/yappc-ide';
+    // import { X } from '@yappc/ide';
     const directImportRegex = /import\s+\{([^}]+)\}\s+from\s+['"]@ghatana\/yappc-ide['"];?/g;
     
     content = content.replace(directImportRegex, (match, imports) => {
@@ -93,38 +93,38 @@ function processFile(filePath: string): MigrationResult {
         return '';
       }
       
-      result.changes.push(`Migrated: ${match.trim()} -> from '@ghatana/yappc-canvas'`);
-      return `import { ${newImports.join(', ')} } from '@ghatana/yappc-canvas';`;
+      result.changes.push(`Migrated: ${match.trim()} -> from '@yappc/canvas'`);
+      return `import { ${newImports.join(', ')} } from '@yappc/canvas';`;
     });
 
     // Pattern 2: Import with alias
-    // import * as IDE from '@ghatana/yappc-ide';
+    // import * as IDE from '@yappc/ide';
     const aliasImportRegex = /import\s+\*\s+as\s+(\w+)\s+from\s+['"]@ghatana\/yappc-ide['"];?/g;
     
     content = content.replace(aliasImportRegex, (match, alias) => {
       modified = true;
-      result.changes.push(`Migrated namespace: ${match.trim()} -> from '@ghatana/yappc-canvas'`);
-      return `import * as ${alias} from '@ghatana/yappc-canvas';`;
+      result.changes.push(`Migrated namespace: ${match.trim()} -> from '@yappc/canvas'`);
+      return `import * as ${alias} from '@yappc/canvas';`;
     });
 
     // Pattern 3: Default import
-    // import IDE from '@ghatana/yappc-ide';
+    // import IDE from '@yappc/ide';
     const defaultImportRegex = /import\s+(\w+)\s+from\s+['"]@ghatana\/yappc-ide['"];?/g;
     
     content = content.replace(defaultImportRegex, (match, alias) => {
       modified = true;
-      result.changes.push(`Migrated default import: ${match.trim()} -> from '@ghatana/yappc-canvas'`);
-      return `import ${alias} from '@ghatana/yappc-canvas';`;
+      result.changes.push(`Migrated default import: ${match.trim()} -> from '@yappc/canvas'`);
+      return `import ${alias} from '@yappc/canvas';`;
     });
 
     // Pattern 4: Import with subpath
-    // import { X } from '@ghatana/yappc-ide/components';
+    // import { X } from '@yappc/ide/components';
     const subpathImportRegex = /from\s+['"]@ghatana\/yappc-ide\/([^'"]+)['"];?/g;
     
     content = content.replace(subpathImportRegex, (match, subpath) => {
       modified = true;
-      result.changes.push(`Migrated subpath: ${match.trim()} -> from '@ghatana/yappc-canvas/${subpath}'`);
-      return `from '@ghatana/yappc-canvas/${subpath}';`;
+      result.changes.push(`Migrated subpath: ${match.trim()} -> from '@yappc/canvas/${subpath}'`);
+      return `from '@yappc/canvas/${subpath}';`;
     });
 
     // Pattern 5: Dynamic imports
@@ -133,8 +133,8 @@ function processFile(filePath: string): MigrationResult {
     
     content = content.replace(dynamicImportRegex, (match) => {
       modified = true;
-      result.changes.push(`Migrated dynamic import: ${match} -> '@ghatana/yappc-canvas'`);
-      return `import('@ghatana/yappc-canvas')`;
+      result.changes.push(`Migrated dynamic import: ${match} -> '@yappc/canvas'`);
+      return `import('@yappc/canvas')`;
     });
 
     // Write changes if modified

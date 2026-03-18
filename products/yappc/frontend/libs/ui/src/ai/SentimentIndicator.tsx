@@ -24,9 +24,9 @@
  */
 
 import { SentimentVerySatisfied as HappyIcon, SentimentNeutral as NeutralIcon, SentimentVeryDissatisfied as SadIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon } from 'lucide-react';
-import { Box, Chip, Typography, LinearProgress, Surface as Paper, Tooltip, Stack, IconButton, Collapse } from '@ghatana/ui';
-import type { SentimentAnalyzer } from '@ghatana/yappc-ai/core';
-import { type SentimentResult } from '@ghatana/yappc-ai/core';
+import { Box, Chip, Typography, LinearProgress, Surface as Paper, Tooltip, Stack, IconButton, Collapse } from '@ghatana/design-system';
+import type { SentimentAnalyzer } from '@yappc/ai/core';
+import { type SentimentResult } from '@yappc/ai/core';
 import { resolveMuiColor } from '../utils/safePalette';
 import React, { useState, useEffect } from 'react';
 

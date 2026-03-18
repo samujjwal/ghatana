@@ -17,7 +17,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { Box, Surface as Paper, Typography, Button, IconButton, Tabs, Tab, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Chip, LinearProgress, Alert, Collapse, Tooltip } from '@ghatana/ui';
+import { Box, Surface as Paper, Typography, Button, IconButton, Tabs, Tab, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Chip, LinearProgress, Alert, Collapse, Tooltip } from '@ghatana/design-system';
 import { Code as CodeIcon, File as FileIcon, Plus as AddIcon, Pencil as EditIcon, Trash2 as DeleteIcon, Check as CheckIcon, X as RejectIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Sparkles as AIIcon, RefreshCw as RegenerateIcon, Copy as CopyIcon } from 'lucide-react';
 
 export interface CodeStepProps {

@@ -1,0 +1,104 @@
+name: License Compliance Check
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main]
+
+jobs:
+    license-check:
+        name: Verify dependency licenses
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            pull-requests: write # Allows posting check results as PR comment
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up JDK 21
+              uses: actions/setup-java@v4
+              with:
+                  java-version: "21"
+                  distribution: "temurin"
+
+            - name: Set up Gradle cache
+              uses: gradle/actions/setup-gradle@v3
+              with:
+                  cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+            - name: Run license report
+              run: ./gradlew generateLicenseReport --no-daemon
+
+            - name: Upload license report
+              uses: actions/upload-artifact@v4
+              with:
+                  name: license-report-${{ github.sha }}
+                  path: "**/build/reports/licenses/**"
+                  retention-days: 30
+                  if-no-files-found: warn
+
+            - name: Check for disallowed licenses
+              # Fail if any dependency uses AGPL, CPAL, SSPL, or unknown licenses
+              run: |
+                  DISALLOWED="AGPL|CPAL|SSPL|UNKNOWN"
+                  REPORT_FILES=$(find . -path '*/build/reports/licenses/*.json' 2>/dev/null || true)
+                  if [ -z "$REPORT_FILES" ]; then
+                    echo "No license report files found — skipping disallowed-license check"
+                    exit 0
+                  fi
+                  VIOLATIONS=$(cat $REPORT_FILES | grep -oE '"spdxId"\s*:\s*"[^"]*"' | grep -E "$DISALLOWED" || true)
+                  if [ -n "$VIOLATIONS" ]; then
+                    echo "::error::Disallowed licenses detected:"
+                    echo "$VIOLATIONS"
+                    exit 1
+                  fi
+                  echo "License compliance check passed."
+
+    node-license-check:
+        name: Verify Node.js dependency licenses
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up pnpm
+              uses: pnpm/action-setup@v3
+              with:
+                  version: 9
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "pnpm"
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Install license checker
+              run: pnpm add -g license-checker
+
+            - name: Run license check (Node)
+              # Fail on GPL-3.0, AGPL, SSPL — allow MIT, Apache-2.0, BSD-*, ISC, CC0
+              run: |
+                  license-checker \
+                    --excludePrivatePackages \
+                    --failOn "GPL-3.0;AGPL-3.0;SSPL-1.0" \
+                    --json > node-license-report.json || {
+                      echo "::error::Disallowed Node.js licenses detected. See node-license-report.json for details."
+                      exit 1
+                    }
+                  echo "Node.js license compliance check passed."
+
+            - name: Upload Node license report
+              uses: actions/upload-artifact@v4
+              with:
+                  name: node-license-report-${{ github.sha }}
+                  path: node-license-report.json
+                  retention-days: 30

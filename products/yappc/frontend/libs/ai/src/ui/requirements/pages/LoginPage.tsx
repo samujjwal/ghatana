@@ -1,4 +1,4 @@
-import { Container, Surface as Paper, Typography, Box } from '@ghatana/ui';import LoginForm from '../components/auth/LoginForm'
+import { Container, Surface as Paper, Typography, Box } from '@ghatana/design-system';import LoginForm from '../components/auth/LoginForm'
 
 const LoginPage = () => {
   return (

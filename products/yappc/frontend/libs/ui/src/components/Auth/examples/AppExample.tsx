@@ -215,7 +215,7 @@ export function initializeApp() {
  * ```tsx
  * import { createBrowserRouter } from 'react-router-dom';
  * import { App } from './App';
- * import { LoginPage, DashboardPage } from '@ghatana/yappc-ui';
+ * import { LoginPage, DashboardPage } from '@yappc/ui';
  * 
  * const customRouter = createBrowserRouter([
  *   { path: '/login', element: <LoginPage /> },
@@ -228,7 +228,7 @@ export function initializeApp() {
  * @example With Error Boundary
  * 
  * ```tsx
- * import { ErrorBoundary } from '@ghatana/ui';
+ * import { ErrorBoundary } from '@ghatana/design-system';
  * 
  * root.render(
  *   <ErrorBoundary>

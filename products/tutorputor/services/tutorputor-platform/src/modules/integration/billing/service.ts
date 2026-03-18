@@ -1,4 +1,4 @@
-import type { BillingService } from "@ghatana/tutorputor-contracts/v1/services";
+import type { BillingService } from "@tutorputor/contracts/v1/services";
 import type {
     CheckoutSession,
     CheckoutSessionId,
@@ -9,8 +9,8 @@ import type {
     PurchaseId,
     TenantId,
     UserId
-} from "@ghatana/tutorputor-contracts/v1/types";
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
+} from "@tutorputor/contracts/v1/types";
+import type { TutorPrismaClient } from "@tutorputor/db";
 
 export type HealthAwareBillingService = BillingService & {
     checkHealth: () => Promise<boolean>;

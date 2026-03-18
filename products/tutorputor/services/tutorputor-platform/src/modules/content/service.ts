@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 import type {
     ContentService,
     AIProxyService,
@@ -15,7 +15,7 @@ import type {
     ModuleId,
     TenantId,
     UserId,
-} from '@ghatana/tutorputor-contracts';
+} from '@tutorputor/contracts';
 import { ModalityValidator, PublishingError } from '../../utils/modality-validator';
 
 // Using looser typing for Prisma includes/payloads.

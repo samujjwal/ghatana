@@ -19,7 +19,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNodes } from '@xyflow/react';
 import type { Node } from '@xyflow/react';
-import type { IAIService } from '@ghatana/yappc-ai/core';
+import type { IAIService } from '@yappc/ai/core';
 
 /**
  * Vulnerability severity levels

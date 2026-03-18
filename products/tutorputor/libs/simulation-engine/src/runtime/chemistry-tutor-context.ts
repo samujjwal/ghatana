@@ -16,7 +16,7 @@ import type {
     SimEntity,
     SimulationStep,
     SimEntityId,
-} from '@ghatana/tutorputor-contracts/v1/simulation/types';
+} from '@tutorputor/contracts/v1/simulation/types';
 
 // =============================================================================
 // Types

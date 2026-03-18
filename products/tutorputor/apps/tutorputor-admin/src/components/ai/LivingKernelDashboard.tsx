@@ -26,8 +26,8 @@ import {
   aiServiceManager,
   type KernelIntelligence,
 } from "../../services/aiServiceManager";
-import { globalRegistry } from "@ghatana/tutorputor-learning-kernel";
-import { PluginMetadata } from "@ghatana/tutorputor-contracts/v1/plugin-interfaces";
+import { globalRegistry } from "@tutorputor/learning-kernel";
+import { PluginMetadata } from "@tutorputor/contracts/v1/plugin-interfaces";
 
 interface LivingKernelDashboardProps {
   className?: string;

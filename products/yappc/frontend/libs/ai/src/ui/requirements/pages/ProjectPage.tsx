@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { Box, Typography, Button, Grid, Card, CardContent, CardActions, Chip } from '@ghatana/ui';import { Plus as AddIcon } from 'lucide-react';const ProjectPage = () => {
+import { Box, Typography, Button, Grid, Card, CardContent, CardActions, Chip } from '@ghatana/design-system';import { Plus as AddIcon } from 'lucide-react';const ProjectPage = () => {
   const { projectId } = useParams<{ projectId: string }>()
   const navigate = useNavigate()
 

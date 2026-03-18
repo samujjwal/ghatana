@@ -1,5 +1,5 @@
 {
-    "name": "@ghatana/dcmaar-guardian-plugins",
+    "name": "@dcmaar/guardian-plugins",
     "version": "1.0.0",
     "description": "Guardian browser-extension plugins for the DCMAAR platform",
     "type": "module",
@@ -20,8 +20,8 @@
         "clean": "rm -rf dist"
     },
     "dependencies": {
-        "@ghatana/dcmaar-plugin-abstractions": "workspace:*",
-        "@ghatana/dcmaar-types": "workspace:*"
+        "@dcmaar/plugin-abstractions": "workspace:*",
+        "@dcmaar/types": "workspace:*"
     },
     "devDependencies": {
         "typescript": "^5.9.3"

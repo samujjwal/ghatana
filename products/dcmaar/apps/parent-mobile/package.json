@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-parent-mobile",
+  "name": "@dcmaar/parent-mobile",
   "version": "1.0.0",
   "private": true,
   "description": "Guardian Parent Mobile App - React Native",
@@ -17,14 +17,13 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",
-    "@ghatana/dcmaar-dashboard-core": "workspace:*",
+    "@dcmaar/dashboard-core": "workspace:*",
     "@notifee/react-native": "^9.1.8",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/bottom-tabs": "^7.12.0",
     "@react-navigation/native": "^7.1.28",
     "@react-navigation/native-stack": "^7.12.0",
     "@tanstack/react-query": "^5.90.20",
-    "axios": "^1.13.4",
     "date-fns": "^4.1.0",
     "jotai": "^2.17.0",
     "react": "^19.2.4",

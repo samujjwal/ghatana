@@ -11,7 +11,7 @@ import { Copy as ContentCopyIcon } from 'lucide-react';
 import { FileText as DescriptionIcon } from 'lucide-react';
 import { Download as DownloadIcon } from 'lucide-react';
 import { Printer as PrintIcon } from 'lucide-react';
-import { IconButton, Menu, MenuItem, Tooltip } from '@ghatana/ui';
+import { IconButton, Menu, MenuItem, Tooltip } from '@ghatana/design-system';
 import { ListItemIcon, ListItemText } from '@mui/material';
 import { useState } from 'react';
 

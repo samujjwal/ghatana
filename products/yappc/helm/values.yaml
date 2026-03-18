@@ -1,0 +1,251 @@
+# YAPPC Helm Chart Values
+# Default configuration for deploying YAPPC across environments
+
+# Global configuration shared across all services
+global:
+  environment: production
+  domain: yappc.io
+  imagePullPolicy: IfNotPresent
+  timezone: UTC
+
+# Namespace and naming
+namespace: yappc
+nameOverride: ""
+fullnameOverride: yappc
+
+# Image configuration
+image:
+  registry: docker.io
+  repository: ghatana/yappc
+  tag: "2026.3.1" # Overridden by CI/CD (e.g., git commit sha)
+  pullPolicy: IfNotPresent
+
+# Replica configuration
+replicaCount: 3
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+  annotations: {}
+  labels: {}
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+  hosts:
+    - host: yappc.io
+      paths:
+        - path: /
+          pathType: Prefix
+    - host: api.yappc.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: yappc-tls
+      hosts:
+        - yappc.io
+        - api.yappc.io
+
+# Pod configuration
+podAnnotations: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+# Resource limits and requests
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "2Gi"
+    cpu: "1000m"
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 2
+
+# Startup probe for slow-starting containers
+startupProbe:
+  httpGet:
+    path: /health/startup
+    port: http
+  initialDelaySeconds: 0
+  periodSeconds: 5
+  failureThreshold: 12 # 60 seconds total
+
+# Affinity rules for pod distribution
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - yappc
+          topologyKey: kubernetes.io/hostname
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 50
+        preference:
+          matchExpressions:
+            - key: node-role.kubernetes.io/compute
+              operator: In
+              values:
+                - "true"
+
+# Tolerations for workload placement
+tolerations: []
+
+# Node selector
+nodeSelector: {}
+
+# Priority class
+priorityClassName: high-priority
+
+# Environment variables
+env:
+  - name: LOG_LEVEL
+    value: "INFO"
+  - name: NODE_ENV
+    value: production
+  - name: JAVA_OPTS
+    value: "-Xmx1G -Xms512M -XX:+UseG1GC"
+
+# ConfigMap for application configuration
+configMap:
+  enabled: true
+  data: {}
+
+# Secrets (managed externally via sealed-secrets or similar)
+secrets:
+  enabled: false
+  data: {}
+
+# Volume configuration
+volumes:
+  - name: tmp
+    emptyDir:
+      sizeLimit: 1Gi
+  - name: cache
+    emptyDir:
+      sizeLimit: 500Mi
+
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+  - name: cache
+    mountPath: /var/cache
+
+# Persistence (if needed)
+persistence:
+  enabled: false
+  storageClassName: standard
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  mountPath: /data
+
+# Database configuration (managed externally, referenced here)
+database:
+  host: postgres-service.default.svc.cluster.local
+  port: 5432
+  name: yappc_db
+  username: yappc_user
+  # password: sourced from secret
+
+# Cache configuration (Redis)
+cache:
+  enabled: true
+  host: redis-service.default.svc.cluster.local
+  port: 6379
+
+# Observability and monitoring
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    path: /metrics
+  prometheus:
+    port: 8081
+
+# Network policies
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+
+# Pod Disruption Budget (for availability during disruptions)
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Service Account configuration
+serviceAccount:
+  create: true
+  annotations: {}
+  name: yappc
+  automountServiceAccountToken: true
+
+# RBAC Role and RoleBinding
+rbac:
+  create: true
+
+# Rollout strategy
+rollout:
+  strategy: RollingUpdate
+  maxUnavailable: 1
+  maxSurge: 1
+
+# Deployment hooks (lifecycle management)
+lifecycle:
+  preStop:
+    exec:
+      command: ["/bin/sleep", "15"]
+  postStart: null

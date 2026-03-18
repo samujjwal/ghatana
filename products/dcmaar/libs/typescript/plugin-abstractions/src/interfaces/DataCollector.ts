@@ -3,7 +3,7 @@
  * Defines the contract for data collection plugins
  */
 
-import { IPlugin } from '@ghatana/dcmaar-types';
+import { IPlugin } from '@dcmaar/types';
 
 export interface IDataCollector extends IPlugin {
   /**

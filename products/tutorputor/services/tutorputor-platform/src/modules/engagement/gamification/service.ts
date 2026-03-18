@@ -1,5 +1,5 @@
-import { type BadgeCategory } from "@ghatana/tutorputor-contracts/v1/types";
-import type { PrismaClient } from "@ghatana/tutorputor-db";
+import { type BadgeCategory } from "@tutorputor/contracts/v1/types";
+import type { PrismaClient } from "@tutorputor/db";
 import type {
     TenantId,
     UserId,
@@ -7,7 +7,7 @@ import type {
     Badge,
     BadgeId,
     Achievement
-} from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/types";
 
 /**
  * Badge creation input.

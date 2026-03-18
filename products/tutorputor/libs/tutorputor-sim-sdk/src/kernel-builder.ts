@@ -13,7 +13,7 @@ import type {
   SimKernelService,
   SimKeyframe,
   SimulationDomain,
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 import { BaseKernel, type KernelHooks, type KernelState } from "./base-kernel";
 
 /**

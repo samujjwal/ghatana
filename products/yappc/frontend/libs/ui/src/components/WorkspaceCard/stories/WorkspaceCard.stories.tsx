@@ -1,4 +1,4 @@
-import { StorybookProvider, storybookWorkspacesAtom } from '@ghatana/yappc-ui';
+import { StorybookProvider, storybookWorkspacesAtom } from '@yappc/ui';
 import { useAtom } from 'jotai';
 import React from 'react';
 import { action } from 'storybook/actions';

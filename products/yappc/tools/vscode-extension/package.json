@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/yappc-canvas-sync",
+  "name": "@yappc/canvas-sync",
   "displayName": "YAPPC Canvas Sync",
   "description": "VS Code extension for bidirectional sync between code and YAPPC canvas",
   "version": "1.0.0",

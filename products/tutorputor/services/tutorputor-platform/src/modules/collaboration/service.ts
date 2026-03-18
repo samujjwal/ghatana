@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 import type {
     CollaborationService,
     Thread,
@@ -18,7 +18,7 @@ import type {
     UserId,
     PaginationArgs,
     PaginatedResult,
-} from '@ghatana/tutorputor-contracts';
+} from '@tutorputor/contracts';
 
 // SharedNote is defined locally until contracts expose it.
 export type SharedNote = {

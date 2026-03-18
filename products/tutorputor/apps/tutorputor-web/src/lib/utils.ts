@@ -6,4 +6,4 @@
  *
  * @see @ghatana/tutorputor-ui-shared
  */
-export { cn } from '@ghatana/tutorputor-ui-shared';
+export { cn } from '@tutorputor/ui-shared';

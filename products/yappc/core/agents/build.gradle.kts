@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.ghatana.products.yappc"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 description = "YAPPC Agents - Unified SDLC agents and integration (merged: sdlc-agents + agent-integration)"
 

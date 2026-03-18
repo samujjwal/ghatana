@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { Container as GlobalContainer } from '@ghatana/ui';
+import { Container as GlobalContainer } from '@ghatana/design-system';
 
-import type { ContainerProps as GlobalContainerProps } from '@ghatana/yappc-ui';
+import type { ContainerProps as GlobalContainerProps } from '@yappc/ui';
 
 export type { GlobalContainerProps as ContainerProps };
 

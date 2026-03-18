@@ -5,7 +5,7 @@
  * which is backward compatible with the original ThemeProvider.
  */
 
-import { Button, Container, Typography, Box } from '@ghatana/ui';
+import { Button, Container, Typography, Box } from '@ghatana/design-system';
 import React from 'react';
 
 import { EnhancedThemeProvider, useThemeMode } from '../../index';

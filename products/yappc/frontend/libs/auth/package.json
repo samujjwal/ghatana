@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/yappc-auth",
+  "name": "@yappc/auth",
   "private": true,
   "version": "0.0.1",
   "type": "module",

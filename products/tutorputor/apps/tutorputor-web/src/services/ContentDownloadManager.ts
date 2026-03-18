@@ -10,7 +10,7 @@
  * @doc.pattern Service
  */
 
-import type { ModuleDetail, ModuleId } from "@ghatana/tutorputor-contracts/v1";
+import type { ModuleDetail, ModuleId } from "@tutorputor/contracts/v1";
 
 // Type aliases for backwards compatibility with existing code
 type Module = ModuleDetail;

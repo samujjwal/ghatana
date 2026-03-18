@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { cn } from '@ghatana/ui';
+import { cn } from '@ghatana/design-system';
 
 // ============================================================================
 // Types

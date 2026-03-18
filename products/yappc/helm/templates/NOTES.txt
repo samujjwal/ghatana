@@ -1,0 +1,64 @@
+1. YAPPC Application Deployment Complete!
+
+Deployed release: {{ .Release.Name }}
+Namespace: {{ .Values.namespace }}
+Version: {{ .Chart.AppVersion }}
+
+2. Get the application URL by running these commands:
+{{- if .Values.ingress.enabled }}
+   
+   INGRESS_HOST=$(kubectl get ingress {{ include "yappc.fullname" . }} -n {{ .Values.namespace }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+   echo "YAPPC Frontend: http://$INGRESS_HOST"
+   echo "YAPPC API: http://api.$INGRESS_HOST"
+   
+   # If using DNS with cert-manager:
+   echo "YAPPC Frontend: https://{{ (index .Values.ingress.hosts 0).host }}"
+{{- else }}
+   
+   # Forward pod traffic locally:
+   kubectl port-forward -n {{ .Values.namespace }} svc/{{ include "yappc.fullname" . }} 8080:{{ .Values.service.port }}
+   echo "YAPPC API available at: http://localhost:8080"
+   
+   # Frontend port:
+   kubectl port-forward -n {{ .Values.namespace }} svc/{{ include "yappc.fullname" . }} 3000:3000
+   echo "YAPPC Frontend available at: http://localhost:3000"
+{{- end }}
+
+3. Check pod status:
+   kubectl get pods -n {{ .Values.namespace }} -l "{{ include "yappc.selectorLabels" . }}"
+
+4. View application logs:
+   kubectl logs -n {{ .Values.namespace }} -l "{{ include "yappc.selectorLabels" . }}" -f
+
+5. Verify metrics collection (if Prometheus enabled):
+   kubectl port-forward -n {{ .Values.namespace }} svc/{{ include "yappc.fullname" . }} 8081:{{ .Values.monitoring.prometheus.port }}
+   curl http://localhost:8081/metrics
+
+6. Scale the deployment:
+   kubectl scale deployment {{ include "yappc.fullname" . }} -n {{ .Values.namespace }} --replicas={{ .Values.replicaCount }}
+
+7. Check resource usage:
+   kubectl top pods -n {{ .Values.namespace }} -l "{{ include "yappc.selectorLabels" . }}"
+
+8. Monitoring & Troubleshooting:
+   
+   # Check readiness:
+   kubectl get endpoints {{ include "yappc.fullname" . }} -n {{ .Values.namespace }}
+   
+   # Describe pod for events:
+   kubectl describe pod -n {{ .Values.namespace }} -l "{{ include "yappc.selectorLabels" . }}" | grep -A 20 Events
+   
+   # Check probe status:
+   kubectl get pods -n {{ .Values.namespace }} -l "{{ include "yappc.selectorLabels" . }}" -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.conditions[*].type}{"\n"}{end}'
+
+{{- if .Values.global.documentation }}
+9. Documentation:
+   {{- range .Values.global.documentation }}
+   - {{ . }}
+   {{- end }}
+{{- end }}
+
+For more information, run:
+  helm status {{ .Release.Name }} -n {{ .Values.namespace }}
+  helm get values {{ .Release.Name }} -n {{ .Values.namespace }}
+  helm get manifest {{ .Release.Name }} -n {{ .Values.namespace }}

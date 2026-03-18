@@ -7,7 +7,7 @@
  * @doc.pattern Service
  */
 
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
+import type { TutorPrismaClient } from "@tutorputor/db";
 import type {
   SimulationAuthorService,
   GenerateManifestRequest,
@@ -16,12 +16,12 @@ import type {
   SuggestParametersRequest,
   SuggestParametersResult,
   ManifestValidationResult,
-} from "@ghatana/tutorputor-contracts/v1/simulation/services";
+} from "@tutorputor/contracts/v1/simulation/services";
 import type {
   SimulationManifest,
   SimulationId,
   SimulationDomain,
-} from "@ghatana/tutorputor-contracts/v1/simulation/types";
+} from "@tutorputor/contracts/v1/simulation/types";
 import { getPromptPack } from "./prompt-packs";
 import { validateManifest } from "./validation";
 import {

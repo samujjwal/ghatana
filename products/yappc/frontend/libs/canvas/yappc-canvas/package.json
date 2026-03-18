@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/yappc-canvas-core",
+  "name": "@yappc/canvas-core",
   "version": "1.0.0",
   "description": "YAPPC Canvas Extensions - Low-code application development canvas",
   "type": "module",

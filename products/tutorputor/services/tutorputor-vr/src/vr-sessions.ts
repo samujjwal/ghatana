@@ -13,7 +13,7 @@ import type {
   UserId,
   PaginatedResult,
   PaginationArgs,
-} from '@ghatana/tutorputor-contracts/v1';
+} from '@tutorputor/contracts/v1';
 import type {
   VRSession,
   VRSessionId,
@@ -23,7 +23,7 @@ import type {
   VRPerformanceMetrics,
   StartVRSessionRequest,
   UpdateVRSessionRequest,
-} from '@ghatana/tutorputor-contracts/v1';
+} from '@tutorputor/contracts/v1';
 
 export class VRSessionServiceImpl implements VRSessionService {
   constructor(private prisma: PrismaClient) {}

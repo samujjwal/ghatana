@@ -13,12 +13,12 @@ import type { FastifyInstance } from "fastify";
 import {
   createSimulationAuthorService,
   type SimAuthorConfig,
-} from "@ghatana/tutorputor-simulation-engine";
+} from "@tutorputor/simulation-engine";
 import type {
   GenerateManifestRequest,
   RefineManifestRequest,
   SuggestParametersRequest,
-} from "@ghatana/tutorputor-contracts/v1/simulation/types";
+} from "@tutorputor/contracts/v1/simulation/types";
 import { getTenantId, getUserId } from "../../utils/request-helpers.js";
 
 export async function simulationAuthoringRoutes(app: FastifyInstance) {

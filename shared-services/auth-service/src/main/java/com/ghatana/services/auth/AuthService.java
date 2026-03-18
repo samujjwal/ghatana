@@ -3,9 +3,7 @@ package com.ghatana.services.auth;
 import com.ghatana.platform.security.jwt.JwtTokenProvider;
 import com.ghatana.platform.security.model.User;
 import com.ghatana.platform.security.oauth2.OAuth2Config;
-import com.ghatana.platform.security.oauth2.OAuth2Exception;
 import com.ghatana.platform.security.oauth2.OAuth2Provider;
-import com.ghatana.platform.security.oauth2.OidcSession;
 import com.ghatana.platform.security.oauth2.OidcSessionManager;
 import com.ghatana.platform.security.oauth2.TokenIntrospector;
 import io.activej.eventloop.Eventloop;
@@ -17,12 +15,10 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static io.activej.http.HttpMethod.*;
 
@@ -151,14 +147,14 @@ public class AuthService extends HttpServerLauncher {
             //   5. Redirect the browser to the product with the session cookie
             //      and a `token` query param the UI can store.
             .with(GET, "/auth/callback", request -> {
-                String queryString = request.getUrl().getQuery();
-                String code  = getQueryParam(queryString, "code");
-                String state = getQueryParam(queryString, "state");
-                String error = getQueryParam(queryString, "error");
+                String code  = request.getQueryParameter("code");
+                String state = request.getQueryParameter("state");
+                String error = request.getQueryParameter("error");
+                String postLoginRedirectParam = request.getQueryParameter("post_login_redirect");
 
                 // IdP reported an error (user denied, etc.)
                 if (error != null && !error.isEmpty()) {
-                    String desc = getQueryParam(queryString, "error_description");
+                    String desc = request.getQueryParameter("error_description");
                     log.warn("OIDC callback error: {} — {}", error, desc);
                     return HttpResponse.ofCode(400)
                             .withJson(String.format(
@@ -202,7 +198,7 @@ public class AuthService extends HttpServerLauncher {
                         String platformToken = platformJwtProvider.createToken(
                             user.getUserId(),
                             user.getRoles().stream()
-                                    .map(r -> r instanceof Enum ? ((Enum<?>) r).name() : r.toString())
+                                    .map(Object::toString)
                                     .collect(java.util.stream.Collectors.toList()),
                             Map.of(
                                 "email",      user.getEmail() == null ? "" : user.getEmail(),
@@ -217,7 +213,7 @@ public class AuthService extends HttpServerLauncher {
                         // Determine where to send the browser.
                         // Products may pass a `post_login_redirect` query param before starting
                         // the OIDC flow; fall back to the root dashboard.
-                        String postLoginRedirect = getQueryParam(queryString, "post_login_redirect");
+                        String postLoginRedirect = postLoginRedirectParam;
                         if (postLoginRedirect == null || postLoginRedirect.isBlank()) {
                             postLoginRedirect = System.getenv().getOrDefault(
                                 "POST_LOGIN_REDIRECT_URL", "http://localhost:3000/dashboard");
@@ -231,7 +227,7 @@ public class AuthService extends HttpServerLauncher {
                                     String.format("ghatana_session=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600",
                                         sessionId))
                                 .build();
-                    } catch (OAuth2Exception e) {
+                    } catch (Exception e) {
                         log.warn("OIDC callback authentication failed: {}", e.getMessage());
                         return HttpResponse.ofCode(401)
                                 .withJson(String.format("{\"error\":\"authentication_failed\",\"detail\":\"%s\"}",
@@ -293,14 +289,14 @@ public class AuthService extends HttpServerLauncher {
                             .build());
                 }
 
-                Optional<OidcSession> sessionOpt = sessionManager.getSession(sessionId);
+                var sessionOpt = sessionManager.getSession(sessionId);
                 if (sessionOpt.isEmpty()) {
                     return Promise.of(HttpResponse.ofCode(401)
                             .withJson("{\"error\":\"Session expired or not found\"}")
                             .build());
                 }
 
-                OidcSession session = sessionOpt.get();
+                var session = sessionOpt.get();
                 User user = session.getUser();
                 String json = String.format(
                     "{\"userId\":\"%s\",\"email\":\"%s\",\"authenticated\":true,\"sessionId\":\"%s\"}",
@@ -361,25 +357,6 @@ public class AuthService extends HttpServerLauncher {
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
-    /** Extract a single query parameter from a raw query string. */
-    private static String getQueryParam(String queryString, String name) {
-        if (queryString == null || queryString.isEmpty()) return null;
-        for (String pair : queryString.split("&")) {
-            int eq = pair.indexOf('=');
-            if (eq < 0) continue;
-            String key = decode(pair.substring(0, eq));
-            if (name.equals(key)) {
-                return decode(pair.substring(eq + 1));
-            }
-        }
-        return null;
-    }
-
-    private static String decode(String s) {
-        try { return URLDecoder.decode(s, StandardCharsets.UTF_8); }
-        catch (Exception e) { return s; }
-    }
-
     /** Extract a named cookie value from a raw Cookie header string. */
     private static String extractCookieValue(String cookieHeader, String cookieName) {
         if (cookieHeader == null) return null;
@@ -415,198 +392,6 @@ public class AuthService extends HttpServerLauncher {
     }
 
     /** Simple JSON field extractor (avoids adding a JSON library dependency). */
-    private static String extractJsonField(String json, String field) {
-        if (json == null) return null;
-        String key = "\"" + field + "\"";
-        int idx = json.indexOf(key);
-        if (idx < 0) return null;
-        int colon = json.indexOf(':', idx + key.length());
-        if (colon < 0) return null;
-        int start = json.indexOf('"', colon + 1);
-        if (start < 0) return null;
-        int end = json.indexOf('"', start + 1);
-        if (end < 0) return null;
-        return json.substring(start + 1, end);
-    }
-}
-
-
-/**
- * Production-grade Authentication Service
- * 
- * Centralized OAuth2/OIDC authentication service for all products.
- * 
- * Features:
- * - OAuth2 / OIDC authentication
- * - Token introspection and validation
- * - Session management with caching
- * - Multi-tenant support
- * - High-performance async architecture
- * 
- * Endpoints:
- * - POST /auth/login - Start OAuth2 flow (returns authorization URL)
- * - POST /auth/token/introspect - Validate access token
- * - POST /auth/logout - Invalidate session
- * - GET /health - Health check
- * 
- * @author Ghatana Platform Team
- * @version 1.0.0
- */
-public class AuthService extends HttpServerLauncher {
-
-    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
-    
-    @Provides
-    OAuth2Config oauth2Config() {
-        Map<String, String> properties = Map.of(
-            "oauth2.client-id", System.getenv().getOrDefault("OAUTH2_CLIENT_ID", "ghatana"),
-            "oauth2.client-secret", System.getenv().getOrDefault("OAUTH2_CLIENT_SECRET", ""),
-            "oauth2.discovery-uri", System.getenv().getOrDefault("OAUTH2_DISCOVERY_URI", ""),
-            "oauth2.redirect-uri", System.getenv().getOrDefault("OAUTH2_REDIRECT_URI", "http://localhost:8080/auth/callback"),
-            "oauth2.scopes", System.getenv().getOrDefault("OAUTH2_SCOPES", "openid,profile,email")
-        );
-        
-        return OAuth2Config.fromProperties(properties);
-    }
-    
-    @Provides
-    OAuth2Provider oauth2Provider(OAuth2Config config) {
-        return new OAuth2Provider(config);
-    }
-    
-    @Provides
-    TokenIntrospector tokenIntrospector(OAuth2Config config) {
-        return new TokenIntrospector(config);
-    }
-    
-    @Provides
-    OidcSessionManager sessionManager() {
-        int ttlMinutes = Integer.parseInt(System.getenv().getOrDefault("SESSION_TTL_MINUTES", "60"));
-        return new OidcSessionManager(Duration.ofMinutes(ttlMinutes));
-    }
-    
-    @Provides
-    Eventloop eventloop() {
-        return Eventloop.builder()
-                .withThreadName("auth-service")
-                .build();
-    }
-    
-    @Provides
-    AsyncServlet servlet(
-            Eventloop eventloop,
-            OAuth2Provider oauth2Provider,
-            TokenIntrospector tokenIntrospector,
-            OidcSessionManager sessionManager
-    ) {
-        return RoutingServlet.builder(eventloop)
-            // Authentication - generate authorization URL
-            .with(POST, "/auth/login", request -> {
-                String nonce = java.util.UUID.randomUUID().toString();
-                OAuth2Provider.AuthResponse authResponse = oauth2Provider.generateAuthorizationUrl("openid profile email", nonce);
-                String json = String.format(
-                    "{\"authorizationUrl\":\"%s\",\"state\":\"%s\",\"nonce\":\"%s\"}",
-                    authResponse.getAuthorizationUrl(),
-                    authResponse.getState(),
-                    authResponse.getNonce());
-                return HttpResponse.ok200().withJson(json).build().toPromise();
-            })
-            // Token introspection
-            .with(POST, "/auth/token/introspect", request -> {
-                // Prefer Authorization header to avoid unnecessary body load
-                String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-                if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                    String token = authHeader.substring(7);
-                    if (token.isEmpty()) {
-                        return Promise.of(HttpResponse.ofCode(400)
-                                .withJson("{\"active\":false,\"error\":\"No token provided\"}")
-                                .build());
-                    }
-                    return tokenIntrospector.introspect(token)
-                        .map(user -> HttpResponse.ok200()
-                            .withJson(String.format("{\"active\":true,\"subject\":\"%s\"}", user.getUserId()))
-                            .build())
-                        .then(
-                            Promise::of,
-                            error -> Promise.of(HttpResponse.ofCode(401)
-                                .withJson("{\"active\":false}")
-                                .build())
-                        );
-                }
-                // Fallback: extract token from body (expects {"token":"..."}) — load body asynchronously
-                return request.loadBody().then(byteBuf -> {
-                    String body = byteBuf.getString(java.nio.charset.StandardCharsets.UTF_8);
-                    String token = extractJsonField(body, "token");
-                    if (token == null || token.isEmpty()) {
-                        return Promise.of(HttpResponse.ofCode(400)
-                                .withJson("{\"active\":false,\"error\":\"No token provided\"}")
-                                .build());
-                    }
-                    return tokenIntrospector.introspect(token)
-                        .map(user -> HttpResponse.ok200()
-                            .withJson(String.format("{\"active\":true,\"subject\":\"%s\"}", user.getUserId()))
-                            .build())
-                        .then(
-                            Promise::of,
-                            error -> Promise.of(HttpResponse.ofCode(401)
-                                .withJson("{\"active\":false}")
-                                .build())
-                        );
-                });
-            })
-            // Session logout
-            .with(POST, "/auth/logout", request -> {
-                // Prefer X-Session-Id header to avoid unnecessary body load
-                String sessionId = request.getHeader(HttpHeaders.of("X-Session-Id"));
-                if (sessionId != null && !sessionId.isEmpty()) {
-                    sessionManager.invalidateSession(sessionId);
-                    log.info("Session invalidated: {}", sessionId);
-                    return HttpResponse.ok200()
-                        .withJson("{\"status\":\"logged_out\"}")
-                        .build()
-                        .toPromise();
-                }
-                // Fallback: extract session ID from request body — load body asynchronously
-                return request.loadBody().then(byteBuf -> {
-                    String body = byteBuf.getString(java.nio.charset.StandardCharsets.UTF_8);
-                    String sid = extractJsonField(body, "sessionId");
-                    if (sid != null && !sid.isEmpty()) {
-                        sessionManager.invalidateSession(sid);
-                        log.info("Session invalidated: {}", sid);
-                    }
-                    return Promise.of(HttpResponse.ok200()
-                        .withJson("{\"status\":\"logged_out\"}")
-                        .build());
-                });
-            })
-            // Health check
-            .with(GET, "/health", request ->
-                HttpResponse.ok200()
-                    .withJson("{\"status\":\"UP\",\"service\":\"auth-service\",\"version\":\"1.0.0\"}")
-                    .build()
-                    .toPromise()
-            )
-            // Metrics endpoint
-            .with(GET, "/metrics", request ->
-                HttpResponse.ok200()
-                    .withJson(String.format("{\"active_sessions\":%d}",
-                        sessionManager.getActiveSessionCount()))
-                    .build()
-                    .toPromise()
-            )
-            .build();
-    }
-    
-    public static void main(String[] args) throws Exception {
-        log.info("Starting Authentication Service...");
-        Launcher launcher = new AuthService();
-        launcher.launch(args);
-    }
-
-    /**
-     * Simple JSON field extractor (avoids adding a JSON library dependency).
-     * Handles fields with string values in flat JSON objects.
-     */
     private static String extractJsonField(String json, String field) {
         if (json == null) return null;
         String key = "\"" + field + "\"";

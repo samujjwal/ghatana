@@ -13,7 +13,7 @@ const logger = createLogger('manifest-generator');
  * @doc.pattern Generator
  */
 
-import type { DomainConcept, SimulationRequirement } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
+import type { DomainConcept, SimulationRequirement } from "@tutorputor/contracts/v1/curriculum/types";
 import type {
     SimulationManifest,
     SimulationId,
@@ -23,8 +23,8 @@ import type {
     SimulationStep,
     SimulationDomain,
     DomainMetadata,
-} from "@ghatana/tutorputor-contracts/v1/simulation/types";
-import type { UserId, TenantId } from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/simulation/types";
+import type { UserId, TenantId } from "@tutorputor/contracts/v1/types";
 
 // =============================================================================
 // Types

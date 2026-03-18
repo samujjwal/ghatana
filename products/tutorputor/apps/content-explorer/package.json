@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/content-explorer",
+  "name": "@tutorputor/content-explorer",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,8 +15,8 @@
   "dependencies": {
     "@ghatana/design-system": "workspace:*",
     "@ghatana/theme": "workspace:*",
-    "@ghatana/tutorputor-ui-shared": "workspace:*",
-    "@ghatana/tutorputor-contracts": "workspace:*",
+    "@tutorputor/ui-shared": "workspace:*",
+    "@tutorputor/contracts": "workspace:*",
     "@tanstack/react-query": "^5.90.20",
     "clsx": "^2.1.1",
     "jotai": "^2.17.0",

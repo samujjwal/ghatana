@@ -10,7 +10,7 @@
  * @doc.pattern Seed
  */
 
-import type { LearningUnit, Claim, Evidence, Task, Intent, AssessmentConfig, CredentialConfig, TelemetryConfig, Artifact } from '@ghatana/tutorputor-contracts/v1/learning-unit';
+import type { LearningUnit, Claim, Evidence, Task, Intent, AssessmentConfig, CredentialConfig, TelemetryConfig, Artifact } from '@tutorputor/contracts/v1/learning-unit';
 
 // ============================================================================
 // Physics Learning Units

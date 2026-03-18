@@ -24,17 +24,17 @@ import {
 } from 'lucide-react';
 import { useAtomValue } from 'jotai';
 
-import { cn } from '@ghatana/ui';
-import { Tooltip } from '@ghatana/ui';
-import { TooltipContent, TooltipTrigger } from '@ghatana/yappc-ui';
+import { cn } from '@ghatana/design-system';
+import { Tooltip } from '@ghatana/design-system';
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 
-import type { BootstrapPhase } from '@ghatana/yappc-canvas';
+import type { BootstrapPhase } from '@yappc/canvas';
 import {
   currentPhaseAtom,
   confidenceScoreAtom,
   questionsAnsweredAtom,
   totalQuestionsAtom,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 // =============================================================================
 // Types

@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Surface as Paper, Box, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, InteractiveList as List, ListItem, ListItemText, ListItemButton, Divider, Alert, Stack, FormControl, InputLabel, Select, Badge, Accordion, AccordionSummary, AccordionDetails, LinearProgress } from '@ghatana/ui';
+import { Surface as Paper, Box, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, InteractiveList as List, ListItem, ListItemText, ListItemButton, Divider, Alert, Stack, FormControl, InputLabel, Select, Badge, Accordion, AccordionSummary, AccordionDetails, LinearProgress } from '@ghatana/design-system';
 import { Check, Check as ApproveIcon, X as RejectIcon, MessageSquare as CommentIcon, Plus as AddIcon, Trash2 as DeleteIcon, Code as CodeIcon, AlertTriangle as WarningIcon, AlertCircle as ErrorIcon, Info as InfoIcon, Shield as SecurityIcon, Bug as BugIcon, ChevronDown as ExpandMoreIcon, BarChart3 as AnalysisIcon } from 'lucide-react';
 import {
     useReviewMode,

@@ -4,7 +4,7 @@
  * Demonstrates JSON-to-React rendering capabilities
  */
 
-import { Box, Typography } from '@ghatana/ui';
+import { Box, Typography } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { ComponentRenderer } from './ComponentRenderer';

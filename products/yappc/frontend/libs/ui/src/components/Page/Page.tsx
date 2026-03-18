@@ -1,4 +1,4 @@
-import { Box, Typography, Breadcrumb as Breadcrumbs, Link } from '@ghatana/ui';
+import { Box, Typography, Breadcrumb as Breadcrumbs, Link } from '@ghatana/design-system';
 import React from 'react';
 
 import { spacing } from '../../tokens';

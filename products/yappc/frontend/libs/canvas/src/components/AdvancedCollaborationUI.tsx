@@ -29,9 +29,9 @@ import {
   FormControlLabel,
   Surface as Paper,
   InteractiveList as List,
-} from '@ghatana/ui';
-import { MenuItem } from '@ghatana/ui';
-import { Accordion, AccordionSummary, AccordionDetails } from '@ghatana/yappc-ui';
+} from '@ghatana/design-system';
+import { MenuItem } from '@ghatana/design-system';
+import { Accordion, AccordionSummary, AccordionDetails } from '@yappc/ui';
 import { formatDistanceToNow } from 'date-fns';
 import React, { useState, useCallback } from 'react';
 

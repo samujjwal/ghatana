@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@ghatana/ui';import { Plus as AddIcon } from 'lucide-react';const WorkspacePage = () => {
+import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@ghatana/design-system';import { Plus as AddIcon } from 'lucide-react';const WorkspacePage = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>()
   const navigate = useNavigate()
 

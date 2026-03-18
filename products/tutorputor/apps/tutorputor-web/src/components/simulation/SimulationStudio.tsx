@@ -13,7 +13,7 @@ import type {
   SimKeyframe,
   SimEntityBase,
   SimulationDomain,
-} from '@ghatana/tutorputor-contracts/v1/simulation';
+} from '@tutorputor/contracts/v1/simulation';
 import { SimulationCanvas } from './SimulationCanvas';
 import { SimulationPlayer } from './SimulationPlayer';
 

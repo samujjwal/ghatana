@@ -15,7 +15,7 @@ import React, {
   useRef,
   type MouseEvent,
 } from 'react';
-import { Card } from '@ghatana/dcmaar-shared-ui-tailwind';
+import { Card } from '@dcmaar/shared-ui-tailwind';
 import type { ProcessedMetrics } from '../../../analytics/AnalyticsPipeline';
 import {
   getMetricGlossaryEntry,

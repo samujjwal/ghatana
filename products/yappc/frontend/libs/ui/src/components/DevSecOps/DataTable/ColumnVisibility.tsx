@@ -7,7 +7,7 @@
  */
 
 import { Columns as ViewColumnIcon } from 'lucide-react';
-import { IconButton, Menu, MenuItem, Checkbox, FormControlLabel, Typography, Divider, Box } from '@ghatana/ui';
+import { IconButton, Menu, MenuItem, Checkbox, FormControlLabel, Typography, Divider, Box } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import type { DataTableColumn } from './types';

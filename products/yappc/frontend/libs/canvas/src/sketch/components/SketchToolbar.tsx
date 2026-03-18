@@ -15,8 +15,8 @@ import {
   Tooltip,
   Divider,
   Surface as Paper,
-} from '@ghatana/ui';
-import { ToggleButtonGroup } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { ToggleButtonGroup } from '@ghatana/design-system';
 import React from 'react';
 
 import type { SketchTool } from '../types';

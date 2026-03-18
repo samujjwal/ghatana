@@ -5,7 +5,7 @@
  */
 
 
-import { Stack, Box, Typography, Grid } from '@ghatana/ui';
+import { Stack, Box, Typography, Grid } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { Select, SelectProps } from './Select.enhanced';

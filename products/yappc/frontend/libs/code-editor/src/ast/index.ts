@@ -7,7 +7,7 @@
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
- * import { ComponentParser } from '@ghatana/yappc-code-editor/ast';
+ * import { ComponentParser } from '@yappc/code-editor/ast';
  *
  * const parser = new ComponentParser();
  * const metadata = parser.parse(componentCode);

@@ -7,8 +7,8 @@
  * @doc.pattern Routes
  */
 import type { FastifyInstance } from "fastify";
-import type { AIProxyService } from "@ghatana/tutorputor-contracts/v1/services";
-import type { ModuleId } from "@ghatana/tutorputor-contracts/v1/types";
+import type { AIProxyService } from "@tutorputor/contracts/v1/services";
+import type { ModuleId } from "@tutorputor/contracts/v1/types";
 import { AIContentGenerationService } from "./AIContentGenerationService.js";
 import {
   getTenantId,

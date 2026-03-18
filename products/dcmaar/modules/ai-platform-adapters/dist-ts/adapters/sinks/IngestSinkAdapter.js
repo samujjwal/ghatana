@@ -5,7 +5,7 @@
  * This is the primary bridge between the TypeScript connector layer
  * and the native Rust processing pipeline.
  */
-import { BaseConnector } from '@ghatana/dcmaar-connectors';
+import { BaseConnector } from '@dcmaar/connectors';
 import { Logger } from '../../utils/logger';
 import { createNativeBridge, getLastBridgeError, parseBridgeStats, } from '../../native/bridge';
 /**

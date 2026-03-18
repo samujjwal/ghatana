@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-agent-types",
+  "name": "@dcmaar/agent-types",
   "version": "0.1.0",
   "description": "Shared TypeScript types for DCMAAR agent applications",
   "main": "dist/index.js",

@@ -7,7 +7,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { InstitutionAdminServiceImpl } from './service';
-import type { TenantId, UserId } from '@ghatana/tutorputor-contracts';
+import type { TenantId, UserId } from '@tutorputor/contracts';
 
 export const adminRoutes: FastifyPluginAsync = async (app) => {
     const adminService = new InstitutionAdminServiceImpl(app.prisma);

@@ -13,7 +13,7 @@
  *   addFlow,
  *   analyzeThreatModel,
  *   exportThreatModel,
- * } from '@ghatana/yappc-canvas/devsecops/threat-modeling';
+ * } from '@yappc/canvas/devsecops/threat-modeling';
  * 
  * // Create model
  * const model = createThreatModel({ enableSTRIDE: true });

@@ -15,7 +15,7 @@ plugins {
 }
 
 group = "com.ghatana.appplatform"
-version = "0.1.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 description = "W-01: Workflow orchestration — FSM runtime, wait-correlation, SLA tracking, versioned definitions"
 
 java {

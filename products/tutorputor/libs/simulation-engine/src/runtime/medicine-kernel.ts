@@ -12,7 +12,7 @@ import type {
   SimulationRunRequest,
   SimulationRunResult,
   MedicineConfig
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 import type {
   SimulationManifest,
   SimKeyframe,
@@ -21,7 +21,7 @@ import type {
   MedCompartmentEntity,
   MedDoseEntity,
   MedInfectionAgentEntity
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 
 /**
  * PK compartment state.

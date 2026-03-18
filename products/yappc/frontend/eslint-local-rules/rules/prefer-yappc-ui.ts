@@ -104,7 +104,7 @@ const rule: Rule.RuleModule = {
           ? node.source.value
           : '';
         
-        if (source === '@ghatana/ui' || source.startsWith('@ghatana/yappc-shared-ui-core/')) {
+        if (source === '@ghatana/design-system' || source.startsWith('@ghatana/yappc-shared-ui-core/')) {
           node.specifiers.forEach((specifier) => {
             if (specifier.type === 'ImportSpecifier') {
               const importedName = specifier.imported.type === 'Identifier'

@@ -27,8 +27,8 @@ import {
   Wand2,
 } from 'lucide-react';
 
-import { cn } from '@ghatana/ui';
-import { Badge } from '@ghatana/ui';
+import { cn } from '@ghatana/design-system';
+import { Badge } from '@ghatana/design-system';
 
 // =============================================================================
 // Types

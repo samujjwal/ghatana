@@ -19,7 +19,7 @@ import type {
     Task,
     Artifact,
     PredictionTask,
-} from '@ghatana/tutorputor-contracts/v1/learning-unit';
+} from '@tutorputor/contracts/v1/learning-unit';
 
 /**
  * Publishing gates - all must pass for publish to succeed

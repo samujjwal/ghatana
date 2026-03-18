@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Surface as Paper, Box, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, InteractiveList as List, ListItem, ListItemText, Divider, Tab, Tabs, Alert, Stack, FormControl, FormControlLabel, Checkbox, InputLabel, Select } from '@ghatana/ui';
+import { Surface as Paper, Box, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, InteractiveList as List, ListItem, ListItemText, Divider, Tab, Tabs, Alert, Stack, FormControl, FormControlLabel, Checkbox, InputLabel, Select } from '@ghatana/design-system';
 import { Plus as AddIcon, Pencil as EditIcon, Trash2 as DeleteIcon, Link as LinkIcon, Grid3x3 as TableIcon, BarChart3 as FactIcon, Tag as DimensionIcon, Code as CodeIcon, Check as CheckIcon, AlertTriangle as WarningIcon, Download as ExportIcon, Wand2 as AutoLayoutIcon } from 'lucide-react';
 import {
     useDataWarehouse,

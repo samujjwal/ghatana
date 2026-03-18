@@ -21,7 +21,7 @@ import type {
   GenerateManifestRequest,
   GenerateManifestResult,
   RefineManifestRequest,
-} from "@ghatana/tutorputor-contracts/v1/simulation/types";
+} from "@tutorputor/contracts/v1/simulation/types";
 
 // =============================================================================
 // Client Types (derived from contracts)

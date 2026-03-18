@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Send, Bot, User, X, Check } from 'lucide-react';
 
-import type { SimulationManifest } from '@ghatana/tutorputor-contracts/v1/simulation';
+import type { SimulationManifest } from '@tutorputor/contracts/v1/simulation';
 
 interface Message {
     id: string;

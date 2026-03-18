@@ -18,7 +18,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Box, Chip, Surface as Paper, Typography, IconButton, Tooltip, Avatar, InteractiveList as List, ListItem, ListItemIcon as ListItemAvatar, ListItemText, ListItemText as ListItemSecondaryAction, Collapse, Divider, Badge, LinearProgress } from '@ghatana/ui';
+import { Box, Chip, Surface as Paper, Typography, IconButton, Tooltip, Avatar, InteractiveList as List, ListItem, ListItemIcon as ListItemAvatar, ListItemText, ListItemText as ListItemSecondaryAction, Collapse, Divider, Badge, LinearProgress } from '@ghatana/design-system';
 import { Check as AcceptIcon, X as DismissIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, User as AssigneeIcon, Label as TagIcon, Flag as PriorityIcon, ArrowRight as ActionIcon, Copy as SimilarIcon, Lightbulb as SuggestionIcon, ThumbsUp as FeedbackUpIcon, ThumbsDown as FeedbackDownIcon } from 'lucide-react';
 
 import type { Recommendation, RecommendationType } from '@yappc/core/types';

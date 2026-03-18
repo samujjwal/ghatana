@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { Box, Chip, Tooltip, Typography, Stack, LinearProgress } from '@ghatana/ui';
+import { Box, Chip, Tooltip, Typography, Stack, LinearProgress } from '@ghatana/design-system';
 import { TrendingUp, TrendingDown, MoveRight as TrendingFlat, Brain as Psychology, AlertTriangle as Warning } from 'lucide-react';
 
 /**

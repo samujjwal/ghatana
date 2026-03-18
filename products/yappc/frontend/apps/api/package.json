@@ -1,5 +1,5 @@
 {
-    "name": "@ghatana/yappc-api-app",
+    "name": "@yappc/api-app",
     "version": "0.0.0",
     "private": true,
     "type": "module",

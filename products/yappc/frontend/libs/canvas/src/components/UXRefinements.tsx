@@ -23,7 +23,7 @@ import {
   Tab,
   Tabs,
   Spinner as CircularProgress,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
   TextField,
   Snackbar,
@@ -34,7 +34,7 @@ import {
   Collapse,
   Backdrop,
   MenuItem,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 // UX Configuration interfaces

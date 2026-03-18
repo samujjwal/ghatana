@@ -23,7 +23,7 @@ import {
   HealthChecker,
   createMemoryHealthCheck,
   createEventLoopHealthCheck,
-} from '@ghatana/dcmaar-connectors';
+} from '@dcmaar/connectors';
 
 class TypeScriptAgent {
   private connectorManager: ConnectorManager;

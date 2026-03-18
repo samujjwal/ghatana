@@ -1,4 +1,4 @@
-import { Box, Stack, Typography } from '@ghatana/ui';
+import { Box, Stack, Typography } from '@ghatana/design-system';
 import React from 'react';
 
 import { GateWidget, type GateStatus } from './GateWidget';

@@ -12,7 +12,7 @@ import type {
   SimulationRunRequest,
   SimulationRunResult,
   ChemistryConfig
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 import type {
   SimulationManifest,
   SimKeyframe,
@@ -22,7 +22,7 @@ import type {
   ChemBondEntity,
   ChemMoleculeEntity,
   ChemEnergyProfileEntity
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 
 /**
  * Element properties for validation and rendering.

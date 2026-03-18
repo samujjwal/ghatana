@@ -1,8 +1,8 @@
-import type { ExtensionPluginManifest } from "@ghatana/dcmaar-types";
+import type { ExtensionPluginManifest } from "@dcmaar/types";
 import {
     GUARDIAN_USAGE_COLLECTOR_PLUGIN_ID,
     GUARDIAN_POLICY_EVALUATOR_PLUGIN_ID,
-} from "@ghatana/dcmaar-guardian-plugins";
+} from "@dcmaar/guardian-plugins";
 
 /**
  * Guardian Extension Plugin Manifest

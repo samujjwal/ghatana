@@ -25,7 +25,7 @@ import type { OnMount, Monaco } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import * as Y from 'yjs';
 
-import type { CodeEditorConfig } from '@ghatana/yappc-code-editor';
+import type { CodeEditorConfig } from '@yappc/code-editor';
 
 /**
  * Collaborative cursor position

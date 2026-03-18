@@ -1,5 +1,5 @@
 {
-    "name": "@ghatana/yappc-crdt",
+    "name": "@yappc/crdt",
     "version": "0.1.0",
     "description": "CRDT (Conflict-free Replicated Data Types) library for real-time collaboration in YAPPC",
     "type": "module",

@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type {
   TenantId,
   UserId,
-} from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/types";
 import { GamificationService } from "./service";
 
 /**

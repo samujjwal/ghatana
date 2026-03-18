@@ -14,8 +14,8 @@ import {
   createKernel,
   defineKernelPlugin,
   pluginRegistry,
-} from '@ghatana/tutorputor-sim-sdk';
-import type { SimEntityBase } from '@ghatana/tutorputor-contracts/v1/simulation';
+} from '@tutorputor/sim-sdk';
+import type { SimEntityBase } from '@tutorputor/contracts/v1/simulation';
 
 // ============================================
 // 1. Define the custom state interface

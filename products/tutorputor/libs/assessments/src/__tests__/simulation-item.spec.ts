@@ -20,7 +20,7 @@ import {
   calculateManipulationScore,
   applyCBMScoring,
 } from "../simulation-item";
-import type { SimulationAssessmentItem } from "@ghatana/tutorputor-contracts/v1/assessments";
+import type { SimulationAssessmentItem } from "@tutorputor/contracts/v1/assessments";
 
 describe("validateSimulationItem", () => {
   it("should return valid for a complete item", () => {

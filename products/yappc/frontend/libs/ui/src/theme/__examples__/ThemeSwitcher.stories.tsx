@@ -4,7 +4,7 @@
  * Interactive theme switching demonstration
  */
 
-import { Box, Button, Card, CardContent, Typography, Stack, TextField, Switch, FormControlLabel, Chip, Surface as Paper } from '@ghatana/ui';
+import { Box, Button, Card, CardContent, Typography, Stack, TextField, Switch, FormControlLabel, Chip, Surface as Paper } from '@ghatana/design-system';
 import React, { useState } from 'react';
 
 import {

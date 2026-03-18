@@ -1,4 +1,4 @@
-import { StorybookProvider } from '@ghatana/yappc-ui';
+import { StorybookProvider } from '@yappc/ui';
 import React from 'react';
 
 import { Button } from '../../Button';

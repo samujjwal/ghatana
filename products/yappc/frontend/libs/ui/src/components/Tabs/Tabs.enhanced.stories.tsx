@@ -10,7 +10,7 @@ import { MessageSquare as MessageIcon } from 'lucide-react';
 import { Bell as NotificationsIcon } from 'lucide-react';
 import { User as PersonIcon } from 'lucide-react';
 import { Settings as SettingsIcon } from 'lucide-react';
-import { Stack, Box, Typography, Card, CardContent } from '@ghatana/ui';
+import { Stack, Box, Typography, Card, CardContent } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { Tabs, Tab, TabPanel } from './Tabs.enhanced';

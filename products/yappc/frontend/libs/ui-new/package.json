@@ -11,12 +11,15 @@
     "./notifications": "./src/notifications/index.ts"
   },
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ghatana/yappc-ui": "workspace:*",
-    "@ghatana/yappc-chat": "workspace:*",
-    "@ghatana/yappc-notifications": "workspace:*"
+    "@ghatana/design-system": "workspace:*",
+    "@yappc/chat": "workspace:*",
+    "@yappc/notifications": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.2.4",

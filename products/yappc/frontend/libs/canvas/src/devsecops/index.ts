@@ -15,7 +15,7 @@
  *   completeStep,
  *   requestApproval,
  *   processApproval
- * } from '@ghatana/yappc-canvas/devsecops';
+ * } from '@yappc/canvas/devsecops';
  * 
  * // Parse a playbook
  * const runbook = parseAnsiblePlaybook(yamlContent);

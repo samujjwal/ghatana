@@ -22,7 +22,7 @@ import {
   Button,
   IconButton,
   Typography,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 import React, { useEffect, useState } from 'react';
 

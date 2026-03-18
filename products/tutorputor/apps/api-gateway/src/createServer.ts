@@ -1,5 +1,5 @@
 import fastify, { type FastifyInstance } from "fastify";
-import { setupPlatform } from "@ghatana/tutorputor-platform";
+import { setupPlatform } from "@tutorputor/platform";
 
 export async function createServer(): Promise<FastifyInstance> {
   const app = fastify({

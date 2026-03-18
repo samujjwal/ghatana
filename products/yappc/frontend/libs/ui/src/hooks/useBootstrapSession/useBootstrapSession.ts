@@ -21,7 +21,7 @@ import type {
   ConversationTurn,
   CanvasNode,
   ValidationReport,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 import {
   bootstrapSessionAtom,
   sessionIdAtom,
@@ -35,7 +35,7 @@ import {
   agentStatusAtom,
   sessionAutoSaveAtom,
   lastSavedAtAtom,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 // GraphQL operations would be imported from @ghatana/yappc-api
 // import {

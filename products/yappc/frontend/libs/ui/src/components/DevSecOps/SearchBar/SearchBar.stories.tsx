@@ -4,7 +4,7 @@
  * @module DevSecOps/SearchBar/stories
  */
 
-import { Box, Surface as Paper, Typography, InteractiveList as List, ListItem, ListItemText } from '@ghatana/ui';
+import { Box, Surface as Paper, Typography, InteractiveList as List, ListItem, ListItemText } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { SearchBar } from './SearchBar';

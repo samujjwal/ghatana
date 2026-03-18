@@ -12,7 +12,7 @@
 
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '@ghatana/yappc-canvas';
+import { useAuth } from '@yappc/canvas';
 import { RegisterForm } from '../RegisterForm';
 import { useToast } from '../../Toast';
 import { Page } from '../../Page/Page';

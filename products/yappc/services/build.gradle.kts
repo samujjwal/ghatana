@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.ghatana.products.yappc"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 description = "YAPPC Services - Unified services module (merged: ai, api, domain, infrastructure, lifecycle, scaffold)"
 

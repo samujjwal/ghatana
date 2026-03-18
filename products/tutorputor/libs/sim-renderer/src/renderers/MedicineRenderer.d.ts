@@ -6,7 +6,7 @@
  * @doc.layer product
  * @doc.pattern Renderer
  */
-import type { MedCompartmentEntity, MedDoseEntity, MedInfectionAgentEntity } from "@ghatana/tutorputor-contracts/v1/simulation";
+import type { MedCompartmentEntity, MedDoseEntity, MedInfectionAgentEntity } from "@tutorputor/contracts/v1/simulation";
 import type { EntityRenderer } from "../types";
 /**
  * Renderer for pharmacokinetic compartments.

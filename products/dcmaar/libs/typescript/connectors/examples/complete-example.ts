@@ -24,7 +24,7 @@ import {
   HealthChecker,
   createMemoryHealthCheck,
   createEventLoopHealthCheck,
-} from '@ghatana/dcmaar-connectors';
+} from '@dcmaar/connectors';
 
 async function main() {
   console.log('🚀 Starting DCMAAR Connectors Example\n');

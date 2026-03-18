@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/yappc-ai",
+  "name": "@yappc/ai-legacy",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@yappc/core": "workspace:*",
-    "@ghatana/yappc-ui": "workspace:*"
+    "@yappc/ui-legacy": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.2.4"

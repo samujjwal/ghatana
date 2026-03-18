@@ -7,7 +7,7 @@
  * @doc.pattern Configuration
  */
 
-import type { SimulationDomain } from "@ghatana/tutorputor-contracts/v1/simulation";
+import type { SimulationDomain } from "@tutorputor/contracts/v1/simulation";
 
 /**
  * Prompt pack for a specific domain.

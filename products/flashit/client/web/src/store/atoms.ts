@@ -5,7 +5,7 @@
 
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-import type { User, Sphere as BaseSphere, Moment as BaseMoment, SphereRole } from '@ghatana/flashit-shared';
+import type { User, Sphere as BaseSphere, Moment as BaseMoment, SphereRole } from '@flashit/shared';
 
 // Extended types for web app (includes relations and computed fields)
 export type { User };

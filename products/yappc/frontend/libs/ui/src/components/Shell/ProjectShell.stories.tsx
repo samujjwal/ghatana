@@ -1,5 +1,5 @@
 import { Settings as SettingsIcon, Hammer as BuildIcon, BarChart3 as AssessmentIcon, Rocket as DeployIcon, Monitor as MonitorIcon, Folder as FolderIcon, Plus as AddIcon, RefreshCw as RefreshIcon } from 'lucide-react';
-import { Box, Typography } from '@ghatana/ui';
+import { Box, Typography } from '@ghatana/design-system';
 
 import { ProjectShell } from './ProjectShell';
 

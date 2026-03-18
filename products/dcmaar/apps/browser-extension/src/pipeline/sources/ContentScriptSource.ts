@@ -7,7 +7,7 @@
  * @module pipeline/sources/ContentScriptSource
  */
 
-import { BaseEventSource } from '@ghatana/dcmaar-browser-extension-core';
+import { BaseEventSource } from '@dcmaar/browser-extension-core';
 import type { ContentScriptEvent, PageMetadata, InteractionData, MediaTrackingData, DOMAnalysisData } from '../types';
 
 /**

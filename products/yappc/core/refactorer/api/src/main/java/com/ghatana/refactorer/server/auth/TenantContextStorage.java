@@ -1,61 +1,63 @@
 package com.ghatana.refactorer.server.auth;
 
+import com.ghatana.platform.governance.security.TenantContext;
+
 /**
- * Thread-local storage for tenant context. This provides a way to access the current tenant ID
-
- * without passing it explicitly through all layers of the application.
-
+ * Thin façade that delegates to the canonical
+ * {@link TenantContext} from {@code platform:java:governance}.
  *
-
- * <p>The tenant ID is set by the TenantContextFilter early in the request pipeline and cleared
-
- * after the request is processed.
-
+ * <p><strong>Deprecated — use {@link TenantContext} directly.</strong>
+ * This class exists only for backward compatibility during the migration from the
+ * product-local ThreadLocal re-implementation to the canonical platform class.
+ * All callers in this package should be migrated to import
+ * {@code com.ghatana.platform.governance.security.TenantContext} instead.
  *
-
+ * <h2>Migration</h2>
+ * Replace every occurrence of:
+ * <pre>
+ *   TenantContextStorage.getCurrentTenantId()  →  TenantContext.getCurrentTenantId()
+ *   TenantContextStorage.setCurrentTenantId(x) →  TenantContext.setCurrentTenantId(x)
+ *   TenantContextStorage.clear()               →  TenantContext.clear()
+ * </pre>
+ *
  * @doc.type class
-
- * @doc.purpose Provide thread-local access to the current tenant identity for downstream services.
-
+ * @doc.purpose Deprecated delegate to canonical TenantContext; prevents divergence
  * @doc.layer product
-
- * @doc.pattern Context Holder
-
+ * @doc.pattern Context Holder, Facade (deprecated)
+ * @deprecated Use {@link TenantContext} directly.
  */
-
+@Deprecated(since = "2026-Q2", forRemoval = true)
 public final class TenantContextStorage {
-    private static final ThreadLocal<String> CURRENT_TENANT_ID = new ThreadLocal<>();
 
     private TenantContextStorage() {
-        // Utility class - all methods are static
+        // Utility class — all methods are static
     }
 
     /**
-     * Gets the current tenant ID for this thread.
-     *
-     * @return The current tenant ID, or "default-tenant" if not set
+     * @deprecated Use {@link TenantContext#getCurrentTenantId()} directly.
      */
+    @Deprecated(since = "2026-Q2", forRemoval = true)
     public static String getCurrentTenantId() {
-        String tenantId = CURRENT_TENANT_ID.get();
-        return tenantId != null ? tenantId : "default-tenant";
+        return TenantContext.getCurrentTenantId();
     }
 
     /**
-     * Sets the current tenant ID for this thread.
-     *
-     * @param tenantId The tenant ID to set (must not be null)
+     * @deprecated Use {@link TenantContext#setCurrentTenantId(String)} directly.
      */
+    @Deprecated(since = "2026-Q2", forRemoval = true)
     public static void setCurrentTenantId(String tenantId) {
         if (tenantId == null) {
             throw new IllegalArgumentException("Tenant ID must not be null");
         }
-        CURRENT_TENANT_ID.set(tenantId);
+        TenantContext.setCurrentTenantId(tenantId);
     }
 
     /**
-     * Clears the current tenant context. Should be called at the end of request processing.
+     * @deprecated Use {@link TenantContext#clear()} directly.
      */
+    @Deprecated(since = "2026-Q2", forRemoval = true)
     public static void clear() {
-        CURRENT_TENANT_ID.remove();
+        TenantContext.clear();
     }
 }
+

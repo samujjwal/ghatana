@@ -31,15 +31,15 @@
     "baseUrl": ".",
     "paths": {
       // Library packages
-      "@ghatana/yappc-ui": ["libs/ui/src"],
-      "@ghatana/yappc-ui/*": ["libs/ui/src/*"],
+      "@yappc/ui": ["libs/ui/src"],
+      "@yappc/ui/*": ["libs/ui/src/*"],
 
-      "@ghatana/yappc-ai": ["libs/ai/src"],
-      "@ghatana/yappc-ai/*": ["libs/ai/src/*"],
+      "@yappc/ai": ["libs/ai/src"],
+      "@yappc/ai/*": ["libs/ai/src/*"],
       "@ghatana/yappc-ai-requirements-service": ["libs/ai-requirements-service/src"],
       "@ghatana/yappc-ai-requirements-service/*": ["libs/ai-requirements-service/src/*"],
-      "@ghatana/yappc-canvas": ["libs/canvas/src"],
-      "@ghatana/yappc-canvas/*": ["libs/canvas/src/*"],
+      "@yappc/canvas": ["libs/canvas/src"],
+      "@yappc/canvas/*": ["libs/canvas/src/*"],
       "@ghatana/yappc-crdt": ["libs/crdt/src"],
       "@ghatana/yappc-crdt/*": ["libs/crdt/src/*"],
       "@ghatana/yappc-collab": ["libs/collab/src"],
@@ -90,8 +90,8 @@
       // Legacy/compatibility aliases
       "@ghatana/types": ["libs/types/src"],
       "@ghatana/types/*": ["libs/types/src/*"],
-      "@ghatana/ui": ["../../../libs/typescript/ui/src"],
-      "@ghatana/ui/*": ["../../../libs/typescript/ui/src/*"],
+      "@ghatana/design-system": ["../../../libs/typescript/ui/src"],
+      "@ghatana/design-system/*": ["../../../libs/typescript/ui/src/*"],
       "@ghatana/canvas": ["libs/canvas/src"],
       "@ghatana/canvas/*": ["libs/canvas/src/*"],
       // React Flow compatibility

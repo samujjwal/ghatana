@@ -107,7 +107,7 @@ import {
   updateStoryStatusAction,
   moveStoryToSprintAction,
   toggleFeatureFlagAction,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 // =============================================================================
 // Sprint Hooks

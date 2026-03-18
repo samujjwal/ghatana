@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import { TenantId } from "@ghatana/tutorputor-contracts/v1";
+import { TenantId } from "@tutorputor/contracts/v1";
 import { getTenantId, requireRole, respondWithErrors } from "../../core/http/requestContext.js";
 import { createTenantService, type DomainPack } from "./service.js";
 import { randomUUID } from "node:crypto";

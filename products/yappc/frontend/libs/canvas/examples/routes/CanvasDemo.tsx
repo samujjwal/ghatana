@@ -1,4 +1,4 @@
-import { Box } from '@ghatana/ui';
+import { Box } from '@ghatana/design-system';
 import { ReactFlowProvider } from '@xyflow/react';
 import {
   OnboardingTour,
@@ -6,7 +6,7 @@ import {
   AccessibilityDashboard,
   ContextualHelp,
   ShortcutHelper,
-} from '@ghatana/yappc-ui';
+} from '@yappc/ui';
 
 import React, { useState } from 'react';
 

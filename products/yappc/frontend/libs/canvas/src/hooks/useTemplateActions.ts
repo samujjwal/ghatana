@@ -13,7 +13,7 @@ import { journeyTemplates, type JourneyTemplate, type JourneyNode } from '../tem
 import type { PersonaNodeData } from '../components/PersonaNodes';
 import { createAICodeGenerationService } from '../integration/aiCodeGeneration';
 import { createDevSecOpsCanvasIntegration } from '../integration/devSecOpsIntegration';
-import type { IAIService } from '@ghatana/yappc-ai/core';
+import type { IAIService } from '@yappc/ai/core';
 
 /**
  *

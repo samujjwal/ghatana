@@ -1,4 +1,4 @@
-import type { ExtensionPluginManifest } from "@ghatana/dcmaar-types";
+import type { ExtensionPluginManifest } from "@dcmaar/types";
 
 /**
  * Device Health Extension Plugin Manifest

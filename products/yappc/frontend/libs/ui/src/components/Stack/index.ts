@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { Stack as GlobalStack } from '@ghatana/ui';
+import { Stack as GlobalStack } from '@ghatana/design-system';
 
-import type { StackProps as GlobalStackProps, StackGap } from '@ghatana/yappc-ui';
+import type { StackProps as GlobalStackProps, StackGap } from '@yappc/ui';
 
 export type { GlobalStackProps as StackProps };
 

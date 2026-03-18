@@ -14,7 +14,7 @@ import type {
     ChemMoleculeEntity,
     ChemReactionArrowEntity,
     SimEntityId,
-} from '@ghatana/tutorputor-contracts/v1/simulation';
+} from '@tutorputor/contracts/v1/simulation';
 import { StoryCanvas } from './StoryCanvas';
 
 const meta: Meta<typeof StoryCanvas> = {

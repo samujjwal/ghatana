@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { PrismaClient } from "@ghatana/tutorputor-db";
+import { PrismaClient } from "@tutorputor/db";
 import Redis from "ioredis";
 import jwt from "@fastify/jwt";
 import helmet from "@fastify/helmet";

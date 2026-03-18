@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.ghatana.aep"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 description = "AEP Platform - Core domain logic and orchestration"
 

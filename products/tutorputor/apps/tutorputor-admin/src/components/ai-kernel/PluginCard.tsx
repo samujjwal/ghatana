@@ -1,5 +1,5 @@
 import { Card, Badge, Button } from '@ghatana/design-system';
-import { PluginMetadata } from '@ghatana/tutorputor-contracts/v1/plugin-interfaces';
+import { PluginMetadata } from '@tutorputor/contracts/v1/plugin-interfaces';
 
 interface PluginCardProps {
     metadata: PluginMetadata;

@@ -1,4 +1,4 @@
-import type { ExtensionPluginManifest } from "@ghatana/dcmaar-types";
+import type { ExtensionPluginManifest } from "@dcmaar/types";
 import { guardianOnlyProfile } from "./guardianOnlyProfile";
 import { deviceHealthOnlyProfile } from "./deviceHealthOnlyProfile";
 

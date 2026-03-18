@@ -16,8 +16,8 @@
  * @doc.layer components
  */
 
-import { Box, Menu } from '@ghatana/ui';
-import { MenuItem } from '@ghatana/ui';
+import { Box, Menu } from '@ghatana/design-system';
+import { MenuItem } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 import React, { useState } from 'react';
 

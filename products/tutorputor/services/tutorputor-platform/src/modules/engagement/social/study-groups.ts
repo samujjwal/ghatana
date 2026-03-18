@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 import type { Redis } from 'ioredis';
 import type {
     StudyGroupService,
@@ -14,7 +14,7 @@ import type {
     ModuleId,
     PaginationArgs,
     PaginatedResult,
-} from '@ghatana/tutorputor-contracts';
+} from '@tutorputor/contracts';
 
 import type {
     StudyGroup,
@@ -26,7 +26,7 @@ import type {
     StudySession,
     StudySessionType,
     SessionRsvp,
-} from '@ghatana/tutorputor-contracts/v1/social';
+} from '@tutorputor/contracts/v1/social';
 import { nanoid } from 'nanoid';
 
 /**

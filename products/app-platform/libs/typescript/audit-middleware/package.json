@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/audit-middleware",
+  "name": "@app-platform/audit-middleware",
   "version": "0.1.0",
   "description": "Fastify plugin for automatic K-07 audit trail logging on mutating HTTP requests",
   "main": "dist/index.js",

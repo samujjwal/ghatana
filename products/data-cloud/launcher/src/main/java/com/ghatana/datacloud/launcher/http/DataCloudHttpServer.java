@@ -1908,10 +1908,13 @@ public class DataCloudHttpServer {
                     "optimized",       result.isOptimized(),
                     "timestamp",       Instant.now().toString()
                 )))
-                .then(Promise::of, e -> {
-                    log.error("[DC-9] analytics query failed: {}", e.getMessage(), e);
-                    return Promise.of(errorResponse(500, "Query execution failed: " + e.getMessage()));
-                });
+                .then(
+                    response -> Promise.of(response),  // success: return the response
+                    e -> {  // error: return error response
+                        log.error("[DC-9] analytics query failed: {}", e.getMessage(), e);
+                        return Promise.of(errorResponse(500, "Query execution failed: " + e.getMessage()));
+                    }
+                );
         } catch (Exception e) {
             log.error("[DC-9] analytics query request parse error: {}", e.getMessage(), e);
             return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
@@ -1953,10 +1956,13 @@ public class DataCloudHttpServer {
                     "timestamp",       Instant.now().toString()
                 ));
             })
-            .then(Promise::of, e -> {
-                log.error("[DC-9] analytics getResult failed queryId={}: {}", queryId, e.getMessage(), e);
-                return Promise.of(errorResponse(500, "Failed to retrieve result: " + e.getMessage()));
-            });
+            .then(
+                response -> Promise.of(response),
+                e -> {
+                    log.error("[DC-9] analytics getResult failed queryId={}: {}", queryId, e.getMessage(), e);
+                    return Promise.of(errorResponse(500, "Failed to retrieve result: " + e.getMessage()));
+                }
+            );
     }
 
     /**
@@ -1992,10 +1998,13 @@ public class DataCloudHttpServer {
                     "timestamp",     Instant.now().toString()
                 ));
             })
-            .then(Promise::of, e -> {
-                log.error("[DC-9] analytics getPlan failed queryId={}: {}", queryId, e.getMessage(), e);
-                return Promise.of(errorResponse(500, "Failed to retrieve query plan: " + e.getMessage()));
-            });
+            .then(
+                response -> Promise.of(response),
+                e -> {
+                    log.error("[DC-9] analytics getPlan failed queryId={}: {}", queryId, e.getMessage(), e);
+                    return Promise.of(errorResponse(500, "Failed to retrieve query plan: " + e.getMessage()));
+                }
+            );
     }
 
     /**
@@ -2020,46 +2029,51 @@ public class DataCloudHttpServer {
         }
         String tenantId = resolveTenantId(request);
         return request.loadBody()
-            .then(buf -> {
-                try {
-                    String bodyStr       = buf.getString(StandardCharsets.UTF_8);
-                    Map<String, Object> payload = objectMapper.readValue(bodyStr, Map.class);
-                    String queryText = (String) payload.get("query");
-                    if (queryText == null || queryText.isBlank()) {
-                        return Promise.of(errorResponse(400, "Missing required field: 'query'"));
+            .then(
+                buf -> {
+                    try {
+                        String bodyStr       = buf.getString(StandardCharsets.UTF_8);
+                        Map<String, Object> payload = objectMapper.readValue(bodyStr, Map.class);
+                        String queryText = (String) payload.get("query");
+                        if (queryText == null || queryText.isBlank()) {
+                            return Promise.of(errorResponse(400, "Missing required field: 'query'"));
+                        }
+                        String upperQuery = queryText.toUpperCase();
+                        if (!upperQuery.contains("GROUP BY") && !upperQuery.contains("COUNT(")
+                                && !upperQuery.contains("SUM(") && !upperQuery.contains("AVG(")) {
+                            return Promise.of(errorResponse(400,
+                                "Aggregate endpoint requires a query with GROUP BY, COUNT, SUM, or AVG"));
+                        }
+                        Map<String, Object> params = payload.containsKey("parameters")
+                            ? (Map<String, Object>) payload.get("parameters")
+                            : Map.of();
+                        return analyticsEngine.submitQuery(tenantId, queryText, params)
+                            .map(result -> jsonResponse(Map.of(
+                                "queryId",         result.getQueryId(),
+                                "queryType",       result.getQueryType(),
+                                "rowCount",        result.getRowCount(),
+                                "rows",            result.getRows(),
+                                "executionTimeMs", result.getExecutionTimeMs(),
+                                "optimized",       result.isOptimized(),
+                                "timestamp",       Instant.now().toString()
+                            )))
+                            .then(
+                                response -> Promise.of(response),
+                                e -> {
+                                    log.error("[DC-9] analytics aggregate failed: {}", e.getMessage(), e);
+                                    return Promise.of(errorResponse(500, "Aggregate query failed: " + e.getMessage()));
+                                }
+                            );
+                    } catch (Exception e) {
+                        log.error("[DC-9] analytics aggregate request parse error: {}", e.getMessage(), e);
+                        return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
                     }
-                    String upperQuery = queryText.toUpperCase();
-                    if (!upperQuery.contains("GROUP BY") && !upperQuery.contains("COUNT(")
-                            && !upperQuery.contains("SUM(") && !upperQuery.contains("AVG(")) {
-                        return Promise.of(errorResponse(400,
-                            "Aggregate endpoint requires a query with GROUP BY, COUNT, SUM, or AVG"));
-                    }
-                    Map<String, Object> params = payload.containsKey("parameters")
-                        ? (Map<String, Object>) payload.get("parameters")
-                        : Map.of();
-                    return analyticsEngine.submitQuery(tenantId, queryText, params)
-                        .map(result -> jsonResponse(Map.of(
-                            "queryId",         result.getQueryId(),
-                            "queryType",       result.getQueryType(),
-                            "rowCount",        result.getRowCount(),
-                            "rows",            result.getRows(),
-                            "executionTimeMs", result.getExecutionTimeMs(),
-                            "optimized",       result.isOptimized(),
-                            "timestamp",       Instant.now().toString()
-                        )))
-                        .then(Promise::of, e -> {
-                            log.error("[DC-9] analytics aggregate failed: {}", e.getMessage(), e);
-                            return Promise.of(errorResponse(500, "Aggregate query failed: " + e.getMessage()));
-                        });
-                } catch (Exception e) {
-                    log.error("[DC-9] analytics aggregate request parse error: {}", e.getMessage(), e);
-                    return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+                },
+                e -> {
+                    log.error("[DC-9] analytics aggregate body load error: {}", e.getMessage(), e);
+                    return Promise.of(errorResponse(400, "Failed to read request body: " + e.getMessage()));
                 }
-            })
-            .then(Promise::of, e -> {
-                log.error("[DC-9] analytics aggregate body load error: {}", e.getMessage(), e);
-                return Promise.of(errorResponse(400, "Failed to read request body: " + e.getMessage()));
-            });
+            );
     }
 
     // ==================== Report Endpoints (DC-10) ====================

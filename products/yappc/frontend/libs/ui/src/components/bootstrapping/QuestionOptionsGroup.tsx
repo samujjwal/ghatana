@@ -23,10 +23,10 @@ import {
   Lightbulb,
 } from 'lucide-react';
 
-import { cn } from '@ghatana/ui';
-import { Button } from '@ghatana/ui';
-import { Textarea } from '@ghatana/yappc-ui';
-import { Badge } from '@ghatana/ui';
+import { cn } from '@ghatana/design-system';
+import { Button } from '@ghatana/design-system';
+import { Textarea } from '@yappc/ui';
+import { Badge } from '@ghatana/design-system';
 
 // =============================================================================
 // Types

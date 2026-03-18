@@ -18,7 +18,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Alert, AlertTitle, Box, Button, Collapse, IconButton, LinearProgress, Stack, Typography, Chip, Surface as Paper } from '@ghatana/ui';
+import { Alert, AlertTitle, Box, Button, Collapse, IconButton, LinearProgress, Stack, Typography, Chip, Surface as Paper } from '@ghatana/design-system';
 import { X as CloseIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Check as AcknowledgeIcon, TrendingUp as SpikeIcon, TrendingDown as DropIcon, ShowChart as TrendIcon, AlertCircle as OutlierIcon, Report as BreachIcon } from 'lucide-react';
 
 import type { AnomalyAlert, AnomalySeverity, AnomalyType } from '@yappc/core/types';

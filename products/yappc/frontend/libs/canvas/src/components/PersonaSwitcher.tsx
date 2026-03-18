@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Box, ToggleButtonGroup, ToggleButton, Tooltip, Surface as Paper } from '@ghatana/ui';
+import { Box, ToggleButtonGroup, ToggleButton, Tooltip, Surface as Paper } from '@ghatana/design-system';
 import type { PersonaType } from '../types/persona';
 import { getAvailablePersonas, getPersonaConfig } from '../config/personaConfigs';
 

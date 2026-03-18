@@ -16,7 +16,7 @@ import {
   ConnectorManager,
   type IConnector,
   type Event,
-} from '@ghatana/dcmaar-connectors';
+} from '@dcmaar/connectors';
 import type {
   AgentConnectorConfig,
   SourceConfig,

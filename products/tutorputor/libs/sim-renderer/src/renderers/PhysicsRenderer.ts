@@ -12,7 +12,7 @@ import type {
     PhysicsSpringEntity,
     PhysicsVectorEntity,
     PhysicsParticleEntity,
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 import type { EntityRenderer, RenderContext } from "../types";
 import {
     drawRect,

@@ -5,7 +5,7 @@ import { createPathwaysService } from "./pathways-service";
 import { createAssessmentService } from "./assessment-service";
 import { createAnalyticsService } from "./analytics-service";
 import learningRoutes from "./routes";
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
+import type { TutorPrismaClient } from "@tutorputor/db";
 import type { Redis } from "ioredis";
 
 /**

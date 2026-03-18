@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { TenantId, UserId } from "@ghatana/tutorputor-contracts/v1/types";
+import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
 
 /**
  * LTI integration routes - LMS interoperability.

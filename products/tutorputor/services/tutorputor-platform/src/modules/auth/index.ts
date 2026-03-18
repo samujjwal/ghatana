@@ -1,8 +1,8 @@
 import type { FastifyPluginAsync } from "fastify";
-import { TenantId } from "@ghatana/tutorputor-contracts/v1";
+import { TenantId } from "@tutorputor/contracts/v1";
 import { createSsoService } from "./service.js";
 import { getTenantId } from "../../core/http/requestContext.js";
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
+import type { TutorPrismaClient } from "@tutorputor/db";
 
 /**
  * Authentication module (OIDC/SSO).

@@ -6,8 +6,8 @@ import {
   IconButton,
   Stack,
   Tooltip,
-} from '@ghatana/ui';
-import { Breadcrumbs, Link } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { Breadcrumbs, Link } from '@ghatana/design-system';
 import React from 'react';
 
 import { useCanvasPortal } from '../hooks/useCanvasPortal';

@@ -17,7 +17,7 @@ import React, { useCallback, useState } from 'react';
 import { ReactFlow, ReactFlowProvider, Panel } from '@xyflow/react';
 import { Background } from '@reactflow/background';
 import { Controls } from '@reactflow/controls';
-import { Box, Typography } from '@ghatana/ui';
+import { Box, Typography } from '@ghatana/design-system';
 import { GroupingToolbar } from '../components/GroupingToolbar';
 import { NodeGroup } from '../components/NodeGroup';
 import { useNodeGrouping } from '../hooks/useNodeGrouping';
@@ -216,7 +216,7 @@ export const GroupingWorkflowExample: React.FC = () => {
  * Example usage in a route:
  * 
  * ```tsx
- * import { GroupingWorkflowExample } from '@ghatana/yappc-canvas/examples/GroupingWorkflow.example';
+ * import { GroupingWorkflowExample } from '@yappc/canvas/examples/GroupingWorkflow.example';
  * 
  * export default function GroupingDemo() {
  *   return <GroupingWorkflowExample />;

@@ -10,7 +10,7 @@ import { Lightbulb as LightbulbIcon } from 'lucide-react';
 import { Play as PlayIcon } from 'lucide-react';
 import { Gauge as SpeedIcon } from 'lucide-react';
 import { TrendingUp as TrendingUpIcon } from 'lucide-react';
-import { Box, Button, Card, CardActions, CardContent, Chip, LinearProgress, InteractiveList as List, ListItem, ListItemText, Typography } from '@ghatana/ui';
+import { Box, Button, Card, CardActions, CardContent, Chip, LinearProgress, InteractiveList as List, ListItem, ListItemText, Typography } from '@ghatana/design-system';
 import { resolveMuiColor } from '../../utils/safePalette';
 import React from 'react';
 

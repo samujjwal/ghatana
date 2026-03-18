@@ -11,7 +11,7 @@
  */
 
 import React, { useCallback, useMemo } from 'react';
-import { Box, Button, ToggleButtonGroup as ButtonGroup, Tooltip, Menu, MenuItem, Divider, Typography } from '@ghatana/ui';
+import { Box, Button, ToggleButtonGroup as ButtonGroup, Tooltip, Menu, MenuItem, Divider, Typography } from '@ghatana/design-system';
 import { Group as GroupIcon, GitFork as UngroupIcon, Circle as StatusIcon } from 'lucide-react';
 import type { Node } from '@xyflow/react';
 import type { GroupStatus } from '../components/NodeGroup';

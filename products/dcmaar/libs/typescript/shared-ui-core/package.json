@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-shared-ui-core",
+  "name": "@dcmaar/shared-ui-core",
   "version": "1.0.0",
   "description": "Core shared UI utilities and components for DCMAAR apps",
   "type": "module",

@@ -31,11 +31,11 @@
  * @module app/background/pipeline/EventPipeline
  */
 
-import type { Event } from '@ghatana/dcmaar-connectors';
+import type { Event } from '@dcmaar/connectors';
 
 // TODO: Import from @ghatana/dcmaar-connectors when available
-// import { ProcessorRegistry } from '@ghatana/dcmaar-connectors';
-// import type { Processor, ProcessorConfig, ProcessorContext } from '@ghatana/dcmaar-connectors';
+// import { ProcessorRegistry } from '@dcmaar/connectors';
+// import type { Processor, ProcessorConfig, ProcessorContext } from '@dcmaar/connectors';
 
 /**
  * Temporary processor types until @ghatana/dcmaar-connectors exports are available

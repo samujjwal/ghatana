@@ -9,7 +9,7 @@
 
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserMessageRouter } from '@ghatana/dcmaar-browser-extension-core';
+import { BrowserMessageRouter } from '@dcmaar/browser-extension-core';
 import browser from 'webextension-polyfill';
 import '../styles/globals.css';
 import { StatusBadge, MonitoringStatus } from '../components/shared/StatusBadge';

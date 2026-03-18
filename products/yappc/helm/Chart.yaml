@@ -1,0 +1,21 @@
+apiVersion: v2
+name: yappc
+description: YAPPC - Autonomous Programming Pair Companion
+type: application
+version: 1.0.0
+appVersion: "2026.3.1"
+keywords:
+  - yappc
+  - llm
+  - agents
+  - platform
+  - automation
+home: https://yappc.io
+sources:
+  - https://github.com/ghatana/ghatana/tree/main/products/yappc
+maintainers:
+  - name: Ghatana Platform Team
+    email: platform@ghatana.ai
+  - name: YAPPC Engineering
+    email: yappc-eng@ghatana.ai
+dependencies: []

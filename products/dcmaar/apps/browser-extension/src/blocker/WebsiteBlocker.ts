@@ -10,7 +10,7 @@
  */
 
 import browser from "webextension-polyfill";
-import { BrowserStorageAdapter } from "@ghatana/dcmaar-browser-extension-core";
+import { BrowserStorageAdapter } from "@dcmaar/browser-extension-core";
 
 /**
  * Website categories for filtering

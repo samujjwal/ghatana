@@ -9,7 +9,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { BrowserMessageRouter } from '@ghatana/dcmaar-browser-extension-core';
+import { BrowserMessageRouter } from '@dcmaar/browser-extension-core';
 import browser from 'webextension-polyfill';
 import { ActionButton } from '../shared/ActionButton';
 import { DomainPolicyRow } from '../shared/DomainRow';

@@ -6,7 +6,7 @@
  * @doc.layer product
  * @doc.pattern Schema
  */
-import type { SimEntity, SimEntityBase, SimEntityId, SimulationDomain, EasingFunction, DiscreteNodeEntity, DiscreteEdgeEntity, DiscretePointerEntity, PhysicsBodyEntity, PhysicsSpringEntity, PhysicsVectorEntity, PhysicsParticleEntity, ChemAtomEntity, ChemBondEntity, ChemMoleculeEntity, ChemReactionArrowEntity, ChemEnergyProfileEntity, BioCellEntity, BioOrganelleEntity, BioCompartmentEntity, BioEnzymeEntity, BioSignalEntity, BioGeneEntity, MedCompartmentEntity, MedDoseEntity, MedInfectionAgentEntity } from "@ghatana/tutorputor-contracts/v1/simulation";
+import type { SimEntity, SimEntityBase, SimEntityId, SimulationDomain, EasingFunction, DiscreteNodeEntity, DiscreteEdgeEntity, DiscretePointerEntity, PhysicsBodyEntity, PhysicsSpringEntity, PhysicsVectorEntity, PhysicsParticleEntity, ChemAtomEntity, ChemBondEntity, ChemMoleculeEntity, ChemReactionArrowEntity, ChemEnergyProfileEntity, BioCellEntity, BioOrganelleEntity, BioCompartmentEntity, BioEnzymeEntity, BioSignalEntity, BioGeneEntity, MedCompartmentEntity, MedDoseEntity, MedInfectionAgentEntity } from "@tutorputor/contracts/v1/simulation";
 /**
  * Rendering context passed to all renderers.
  */

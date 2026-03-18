@@ -13,9 +13,9 @@ import {
   ListItemText,
   Surface as Paper,
   InteractiveList as List,
-} from '@ghatana/ui';
-import { ListItemAvatar, Fade } from '@ghatana/ui';
-import { Popover, useTheme, resolveMuiColor } from '@ghatana/yappc-ui';
+} from '@ghatana/design-system';
+import { ListItemAvatar, Fade } from '@ghatana/design-system';
+import { Popover, useTheme, resolveMuiColor } from '@yappc/ui';
 import React, { useState, useEffect } from 'react';
 
 import { useCollaboration } from '../hooks/useCollaboration';

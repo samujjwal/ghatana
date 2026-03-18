@@ -18,7 +18,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Surface as Paper, Typography, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel, IconButton, InteractiveList as List, ListItem, ListItemText, ListItemButton, Chip, Alert, Divider, Collapse, Tooltip, Stack, Card, CardContent } from '@ghatana/ui';
+import { Box, Surface as Paper, Typography, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel, IconButton, InteractiveList as List, ListItem, ListItemText, ListItemButton, Chip, Alert, Divider, Collapse, Tooltip, Stack, Card, CardContent } from '@ghatana/design-system';
 import { Plus as AddIcon, Settings as SettingsIcon, Trash2 as DeleteIcon, Download as DownloadIcon, Share2 as ShareIcon, Link as LinkIcon, Pointer as TouchpointIcon, Eye as VisibilityIcon, ArrowUpDown as InteractionIcon, Activity as FlowIcon, ChevronDown as ExpandMore, ChevronUp as ExpandLess, User as PersonIcon, Headset as SupportIcon, Building as BusinessIcon, Hammer as BuildIcon } from 'lucide-react';
 import type { Node } from '@xyflow/react';
 import { useServiceBlueprint } from '../hooks/useServiceBlueprint';

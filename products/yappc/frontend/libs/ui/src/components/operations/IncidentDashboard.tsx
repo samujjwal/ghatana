@@ -50,12 +50,12 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow, format, differenceInMinutes } from 'date-fns';
 
-import { cn } from '@ghatana/ui';
-import { Button } from '@ghatana/ui';
-import { Input } from '@ghatana/ui';
-import { Badge } from '@ghatana/ui';
-import { Avatar } from '@ghatana/ui';
-import { AvatarFallback, AvatarImage } from '@ghatana/yappc-ui';
+import { cn } from '@ghatana/design-system';
+import { Button } from '@ghatana/design-system';
+import { Input } from '@ghatana/design-system';
+import { Badge } from '@ghatana/design-system';
+import { Avatar } from '@ghatana/design-system';
+import { AvatarFallback, AvatarImage } from '@yappc/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,21 +63,21 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
-} from '@ghatana/yappc-ui';
-import { Tooltip } from '@ghatana/ui';
-import { TooltipContent, TooltipTrigger } from '@ghatana/yappc-ui';
-import { Card, CardContent, CardHeader } from '@ghatana/ui';
-import { CardTitle } from '@ghatana/yappc-ui';
-import { ScrollArea } from '@ghatana/yappc-ui';
-import { Progress } from '@ghatana/ui';
-import { Tabs } from '@ghatana/ui';
-import { TabsContent, TabsList, TabsTrigger } from '@ghatana/yappc-ui';
+} from '@yappc/ui';
+import { Tooltip } from '@ghatana/design-system';
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { CardTitle } from '@yappc/ui';
+import { ScrollArea } from '@yappc/ui';
+import { Progress } from '@ghatana/design-system';
+import { Tabs } from '@ghatana/design-system';
+import { TabsContent, TabsList, TabsTrigger } from '@yappc/ui';
 
 import {
   incidentsAtom,
   alertsAtom,
   activeIncidentAtom,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 // =============================================================================
 // Types

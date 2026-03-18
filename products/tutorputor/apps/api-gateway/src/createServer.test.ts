@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { createServer } from "./createServer";
-import { setupPlatform } from "@ghatana/tutorputor-platform";
+import { setupPlatform } from "@tutorputor/platform";
 
 vi.mock("@ghatana/tutorputor-platform", () => ({
   setupPlatform: vi.fn(async () => undefined),

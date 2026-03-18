@@ -13,7 +13,7 @@ import type {
   SimEntity,
   SimulationStep,
   SimEntityId
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 
 /**
  * Validation error structure.

@@ -5,7 +5,7 @@
  */
 
 import { Filter as FilterListIcon } from 'lucide-react';
-import { Box, Button, Surface as Paper, Typography, InteractiveList as List, ListItem, ListItemText } from '@ghatana/ui';
+import { Box, Button, Surface as Paper, Typography, InteractiveList as List, ListItem, ListItemText } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { FilterPanel } from './FilterPanel';

@@ -6,7 +6,7 @@
  */
 
 import { Queue } from "bullmq";
-import type { PrismaClient } from "@ghatana/tutorputor-db";
+import type { PrismaClient } from "@tutorputor/db";
 import type {
   ContentStudioService,
   CreateExperienceRequest,
@@ -15,7 +15,7 @@ import type {
   ExperienceValidationResult,
   LearningExperience,
   LearningClaim,
-} from "@ghatana/tutorputor-contracts/v1";
+} from "@tutorputor/contracts/v1";
 
 export type { ContentStudioService };
 

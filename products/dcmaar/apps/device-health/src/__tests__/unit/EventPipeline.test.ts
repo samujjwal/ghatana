@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { EventPipeline } from '../../app/background/pipeline/EventPipeline';
-import type { Event } from '@ghatana/dcmaar-connectors';
+import type { Event } from '@dcmaar/connectors';
 
 describe('EventPipeline', () => {
   let pipeline: EventPipeline;

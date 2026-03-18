@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-browser-extension-ui",
+  "name": "@dcmaar/browser-extension-ui",
   "version": "1.0.0",
   "description": "Reusable UI components for browser extensions",
   "type": "module",
@@ -31,7 +31,7 @@
   "author": "DCMAAR Team",
   "license": "MIT",
   "dependencies": {
-    "@ghatana/dcmaar-browser-extension-core": "workspace:*"
+    "@dcmaar/browser-extension-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.2.0",

@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/tutorputor-ui-shared",
+  "name": "@tutorputor/ui-shared",
   "version": "1.0.0",
   "type": "module",
   "description": "Shared UI utilities and providers for Tutorputor admin and web apps",

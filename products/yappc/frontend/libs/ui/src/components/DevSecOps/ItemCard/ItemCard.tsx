@@ -7,7 +7,7 @@
  * @module DevSecOps/ItemCard
  */
 
-import { Avatar, AvatarGroup, Box, Card, CardContent, Chip, LinearProgress, Typography } from '@ghatana/ui';
+import { Avatar, AvatarGroup, Box, Card, CardContent, Chip, LinearProgress, Typography } from '@ghatana/design-system';
 import { GitBranch as AccountTreeIcon } from 'lucide-react';
 
 import type { ItemCardProps } from './types';

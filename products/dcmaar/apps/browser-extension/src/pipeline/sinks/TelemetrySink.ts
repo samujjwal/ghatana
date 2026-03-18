@@ -7,7 +7,7 @@
  * @module pipeline/sinks/TelemetrySink
  */
 
-import { BaseEventSink } from '@ghatana/dcmaar-browser-extension-core';
+import { BaseEventSink } from '@dcmaar/browser-extension-core';
 
 /**
  * Guardian event envelope (matches backend GuardianEvent contract).

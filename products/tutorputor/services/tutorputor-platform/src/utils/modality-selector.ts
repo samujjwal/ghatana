@@ -14,7 +14,7 @@
  * @doc.pattern Utility
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 
 export type ModalityType = 'example' | 'simulation' | 'animation';
 

@@ -6,7 +6,7 @@ description = "Software-Org Product - Agentic software organization simulation"
 
 subprojects {
     group = "com.ghatana.softwareorg"
-    version = "1.0.0-SNAPSHOT"
+    version = "2026.3.1-SNAPSHOT"
 }
 
 // Root project aggregates all software-org modules
@@ -18,17 +18,8 @@ dependencies {
     // "api"(project(":products:software-org:libs:java:workflows"))
     // "api"(project(":products:software-org:libs:java:testing"))
 
-    // All department modules
-    "api"(project(":products:software-org:libs:java:departments:engineering"))
-    "api"(project(":products:software-org:libs:java:departments:qa"))
-    "api"(project(":products:software-org:libs:java:departments:devops"))
-    "api"(project(":products:software-org:libs:java:departments:support"))
-    "api"(project(":products:software-org:libs:java:departments:product"))
-    "api"(project(":products:software-org:libs:java:departments:sales"))
-    "api"(project(":products:software-org:libs:java:departments:finance"))
-    "api"(project(":products:software-org:libs:java:departments:hr"))
-    "api"(project(":products:software-org:libs:java:departments:compliance"))
-    "api"(project(":products:software-org:libs:java:departments:marketing"))
+    // Consolidated departments module (all 10 departments in one module)
+    "api"(project(":products:software-org:libs:java:departments"))
 
     // Virtual-Org framework — flows transitively via domain-model → departments.
     // software-org IS-A virtual-org extension (subclasses Department, AbstractOrganization).
@@ -42,17 +33,8 @@ dependencies {
     // Make framework and department modules available on the aggregate product classpath
     // Framework used by many tests and by product code
     
-    // Department modules (tests reference department classes directly)
-    "testImplementation"(project(":products:software-org:libs:java:departments:engineering"))
-    "testImplementation"(project(":products:software-org:libs:java:departments:qa"))
-    "testImplementation"(project(":products:software-org:libs:java:departments:devops"))
-    "testImplementation"(project(":products:software-org:libs:java:departments:support"))
-    "testImplementation"(project(":products:software-org:libs:java:departments:product"))
-    "testImplementation"(project(":products:software-org:libs:java:departments:sales"))
-    "testImplementation"(project(":products:software-org:libs:java:departments:finance"))
-    "testImplementation"(project(":products:software-org:libs:java:departments:hr"))
-    "testImplementation"(project(":products:software-org:libs:java:departments:compliance"))
-    "testImplementation"(project(":products:software-org:libs:java:departments:marketing"))
+    // Consolidated departments module (tests reference department classes directly)
+    "testImplementation"(project(":products:software-org:libs:java:departments"))
 
     implementation(project(":platform:java:domain"))
 

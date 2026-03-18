@@ -9,7 +9,7 @@
 
 import { TrendingDown as TrendingDownIcon } from 'lucide-react';
 import { TrendingUp as TrendingUpIcon } from 'lucide-react';
-import { Box, Card, CardContent, LinearProgress, Typography } from '@ghatana/ui';
+import { Box, Card, CardContent, LinearProgress, Typography } from '@ghatana/design-system';
 
 import type { KPICardProps } from './types';
 import type React from 'react';

@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SimEntity, SimEntityId, SimulationDomain } from "@ghatana/tutorputor-contracts/v1/simulation";
+import type { SimEntity, SimEntityId, SimulationDomain } from "@tutorputor/contracts/v1/simulation";
 import type {
     EntityRenderer,
     RenderContext,

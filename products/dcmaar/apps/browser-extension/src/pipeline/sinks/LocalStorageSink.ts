@@ -7,7 +7,7 @@
  * @module pipeline/sinks/LocalStorageSink
  */
 
-import { BaseEventSink, BrowserStorageAdapter } from '@ghatana/dcmaar-browser-extension-core';
+import { BaseEventSink, BrowserStorageAdapter } from '@dcmaar/browser-extension-core';
 import type { PolicyEvaluatedEvent, DailyUsage, DomainUsage, TabActivityEvent, ContentScriptEvent } from '../types';
 
 /**

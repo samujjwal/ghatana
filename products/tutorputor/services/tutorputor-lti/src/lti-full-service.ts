@@ -29,7 +29,7 @@ import type {
   PaginationArgs,
   PaginatedResult,
   ClassroomId,
-} from '@ghatana/tutorputor-contracts/v1/types';
+} from '@tutorputor/contracts/v1/types';
 
 import type {
   LtiPlatformService,
@@ -37,7 +37,7 @@ import type {
   LtiDeepLinkingService,
   LtiGradeService,
   LtiRosterService,
-} from '@ghatana/tutorputor-contracts/v1/services';
+} from '@tutorputor/contracts/v1/services';
 
 import type {
   LtiIdTokenClaims,

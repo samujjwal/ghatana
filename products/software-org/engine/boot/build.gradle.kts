@@ -47,17 +47,8 @@ dependencies {
     // ActiveJ runtime (includes DI framework)
     implementation(project(":platform:java:runtime"))
 
-    // Department implementations
-    runtimeOnly(project(":products:software-org:libs:java:departments:engineering"))
-    runtimeOnly(project(":products:software-org:libs:java:departments:qa"))
-    runtimeOnly(project(":products:software-org:libs:java:departments:devops"))
-    runtimeOnly(project(":products:software-org:libs:java:departments:support"))
-    runtimeOnly(project(":products:software-org:libs:java:departments:sales"))
-    runtimeOnly(project(":products:software-org:libs:java:departments:marketing"))
-    runtimeOnly(project(":products:software-org:libs:java:departments:product"))
-    runtimeOnly(project(":products:software-org:libs:java:departments:finance"))
-    runtimeOnly(project(":products:software-org:libs:java:departments:hr"))
-    runtimeOnly(project(":products:software-org:libs:java:departments:compliance"))
+    // Consolidated departments module (all 10 departments)
+    runtimeOnly(project(":products:software-org:libs:java:departments"))
 
     // Integration plugins
     runtimeOnly(project(":products:software-org:engine:modules:integration"))

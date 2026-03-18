@@ -35,8 +35,8 @@ import {
   DialogContent,
   DialogActions,
   Typography,
-} from '@ghatana/ui';
-import { TextField } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
 import { useReleaseTrain } from '../hooks/useReleaseTrain';
 import type {
     FeatureStatus,

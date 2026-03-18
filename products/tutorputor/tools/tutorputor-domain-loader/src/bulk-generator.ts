@@ -7,9 +7,9 @@
  * @doc.pattern Service
  */
 
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
-import type { DomainConcept } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
-import type { SimulationManifest } from "@ghatana/tutorputor-contracts/v1/simulation/types";
+import type { TutorPrismaClient } from "@tutorputor/db";
+import type { DomainConcept } from "@tutorputor/contracts/v1/curriculum/types";
+import type { SimulationManifest } from "@tutorputor/contracts/v1/simulation/types";
 import { generateManifestFromConcept, type ManifestGeneratorOptions } from "./generators/manifest-generator.js";
 
 /**

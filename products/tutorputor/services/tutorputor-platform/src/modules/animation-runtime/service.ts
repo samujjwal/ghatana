@@ -11,7 +11,7 @@ import {
   lerp,
   lerpColor,
   clamp,
-} from "@ghatana/tutorputor-sim-renderer";
+} from "@tutorputor/sim-renderer";
 
 type FrameRequestCallback = (timestamp: number) => void;
 

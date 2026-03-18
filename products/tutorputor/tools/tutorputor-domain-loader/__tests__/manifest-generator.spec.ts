@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from "vitest";
 import { generateManifestFromConcept, generateManifestsFromConcepts } from "../src/generators/manifest-generator";
-import type { DomainConcept, ConceptId } from "@ghatana/tutorputor-contracts/v1/curriculum/types";
+import type { DomainConcept, ConceptId } from "@tutorputor/contracts/v1/curriculum/types";
 
 // =============================================================================
 // Mock Data

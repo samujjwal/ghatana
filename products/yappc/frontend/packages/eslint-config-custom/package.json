@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/yappc-eslint-config-custom",
+  "name": "@yappc/eslint-config-custom",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

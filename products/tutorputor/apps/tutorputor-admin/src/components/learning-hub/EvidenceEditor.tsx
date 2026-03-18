@@ -1,6 +1,6 @@
 import React from 'react';
 import { Eye, Plus, Trash2, Link, List } from 'lucide-react';
-import type { Evidence, Claim } from '@ghatana/tutorputor-contracts/v1/learning-unit';
+import type { Evidence, Claim } from '@tutorputor/contracts/v1/learning-unit';
 
 interface EvidenceEditorProps {
     evidence: Evidence[];

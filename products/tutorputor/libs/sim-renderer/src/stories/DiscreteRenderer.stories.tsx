@@ -8,7 +8,7 @@
  */
 
 import type { Meta, StoryObj } from '@storybook/react';
-import type { DiscreteNodeEntity, DiscreteEdgeEntity, DiscretePointerEntity, SimEntityId } from '@ghatana/tutorputor-contracts/v1/simulation';
+import type { DiscreteNodeEntity, DiscreteEdgeEntity, DiscretePointerEntity, SimEntityId } from '@tutorputor/contracts/v1/simulation';
 import { StoryCanvas } from './StoryCanvas';
 
 const meta: Meta<typeof StoryCanvas> = {

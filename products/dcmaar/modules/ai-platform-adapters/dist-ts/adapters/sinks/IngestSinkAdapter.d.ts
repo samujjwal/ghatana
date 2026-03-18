@@ -5,7 +5,7 @@
  * This is the primary bridge between the TypeScript connector layer
  * and the native Rust processing pipeline.
  */
-import { type IConnector } from '@ghatana/dcmaar-connectors';
+import { type IConnector } from '@dcmaar/connectors';
 import type { SinkAdapter } from '../types';
 /**
  * Sink adapter that routes events to Rust IngestService

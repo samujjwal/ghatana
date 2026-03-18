@@ -13,7 +13,7 @@ import type {
   UserId,
   PaginatedResult,
   PaginationArgs,
-} from '@ghatana/tutorputor-contracts/v1';
+} from '@tutorputor/contracts/v1';
 import type {
   VRLab,
   VRLabId,
@@ -25,7 +25,7 @@ import type {
   UpdateVRLabRequest,
   CreateVRSceneRequest,
   VRLabListParams,
-} from '@ghatana/tutorputor-contracts/v1';
+} from '@tutorputor/contracts/v1';
 
 export class VRLabServiceImpl implements VRLabService {
   constructor(private prisma: PrismaClient) {}

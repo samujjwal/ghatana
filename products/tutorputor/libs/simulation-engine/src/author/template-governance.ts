@@ -7,8 +7,8 @@
  * @doc.pattern Service
  */
 
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
-import type { SimulationTemplate } from "@ghatana/tutorputor-contracts/v1/simulation/types";
+import type { TutorPrismaClient } from "@tutorputor/db";
+import type { SimulationTemplate } from "@tutorputor/contracts/v1/simulation/types";
 
 /**
  * Template review status.

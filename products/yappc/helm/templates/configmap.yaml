@@ -1,0 +1,80 @@
+{{- if .Values.configMap.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "yappc.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "yappc.labels" . | nindent 4 }}
+data:
+  {{- with .Values.configMap.data }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+  
+  # Application configuration
+  APPLICATION_NAME: "yappc"
+  APPLICATION_VERSION: "{{ .Chart.AppVersion }}"
+  APPLICATION_ENV: "{{ .Values.global.environment }}"
+  LOG_LEVEL: "{{ .Values.logLevel }}"
+  {{- if .Values.nodeEnv }}
+  NODE_ENV: "{{ .Values.nodeEnv }}"
+  {{- end }}
+  
+  # DatabaseConfiguration
+  DATABASE_TYPE: "{{ .Values.database.type }}"
+  DATABASE_SSL_ENABLED: "{{ .Values.database.sslEnabled }}"
+  DATABASE_MAX_POOL_SIZE: "{{ .Values.database.maxPoolSize }}"
+  
+  # Cache Configuration
+  {{- if .Values.cache.enabled }}
+  CACHE_ENABLED: "true"
+  CACHE_TYPE: "{{ .Values.cache.type }}"
+  CACHE_TTL: "{{ .Values.cache.ttl }}"
+  {{- else }}
+  CACHE_ENABLED: "false"
+  {{- end }}
+  
+  # Feature Flags
+  {{- with .Values.featureFlags }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+
+{{- if .Values.configMap.files }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "yappc.fullname" . }}-files
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "yappc.labels" . | nindent 4 }}
+data:
+  {{- with .Values.configMap.files }}
+  {{- range $key, $value := . }}
+  {{ $key }}: |
+    {{- $value | nindent 4 }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- if or .Values.database.password .Values.secrets }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "yappc.fullname" . }}-db
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "yappc.labels" . | nindent 4 }}
+type: Opaque
+data:
+  {{- if .Values.database.password }}
+  password: {{ .Values.database.password | b64enc }}
+  {{- end }}
+  {{- if .Values.database.user }}
+  username: {{ .Values.database.username | b64enc }}
+  {{- end }}
+  {{- with .Values.secrets }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+{{- end }}

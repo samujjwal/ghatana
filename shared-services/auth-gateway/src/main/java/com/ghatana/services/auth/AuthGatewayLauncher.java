@@ -79,11 +79,32 @@ public class AuthGatewayLauncher extends Launcher {
 
     @Provides
     CredentialStore credentialStore() {
-        // TODO: Replace with JdbcCredentialStore backed by a real database
-        //       for production deployments.
-        InMemoryCredentialStore store = new InMemoryCredentialStore();
+        boolean useJdbc = Boolean.parseBoolean(
+                System.getenv().getOrDefault("USE_JDBC_CREDENTIALS", "false"));
 
-        // Seed admin user from environment variables (for bootstrapping)
+        if (useJdbc) {
+            // Production path: JDBC-backed store requires AUTH_DB_URL
+            String jdbcUrl = System.getenv("AUTH_DB_URL");
+            if (jdbcUrl == null || jdbcUrl.isBlank()) {
+                throw new IllegalStateException(
+                        "USE_JDBC_CREDENTIALS=true but AUTH_DB_URL is not set");
+            }
+            com.zaxxer.hikari.HikariConfig cfg = new com.zaxxer.hikari.HikariConfig();
+            cfg.setJdbcUrl(jdbcUrl);
+            cfg.setUsername(System.getenv().getOrDefault("AUTH_DB_USER", ""));
+            cfg.setPassword(System.getenv().getOrDefault("AUTH_DB_PASSWORD", ""));
+            cfg.setPoolName("auth-credential-pool");
+            cfg.setMinimumIdle(2);
+            cfg.setMaximumPoolSize(10);
+            JdbcCredentialStore store = new JdbcCredentialStore(new com.zaxxer.hikari.HikariDataSource(cfg));
+            store.ensureSchema();
+            LOGGER.info("Using JdbcCredentialStore (AUTH_DB_URL configured)");
+            return store;
+        }
+
+        // Development / bootstrap path: in-memory store seeded from env vars
+        LOGGER.warn("USE_JDBC_CREDENTIALS is false — using InMemoryCredentialStore (NOT for production)");
+        InMemoryCredentialStore store = new InMemoryCredentialStore();
         String adminUser = System.getenv().getOrDefault("ADMIN_USERNAME", "admin");
         String adminPassword = System.getenv("ADMIN_PASSWORD");
         String adminTenant = System.getenv().getOrDefault("ADMIN_TENANT", "default");

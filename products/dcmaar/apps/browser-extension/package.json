@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-browser-extension",
+  "name": "@dcmaar/browser-extension",
   "version": "1.0.0",
   "description": "Guardian - Browser performance monitoring extension built with @ghatana/yappc-browser-extension-core",
   "type": "module",
@@ -15,10 +15,10 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@ghatana/dcmaar-browser-extension-core": "workspace:*",
-    "@ghatana/dcmaar-types": "workspace:*",
-    "@ghatana/dcmaar-plugin-abstractions": "workspace:*",
-    "@ghatana/dcmaar-guardian-plugins": "workspace:*",
+    "@dcmaar/browser-extension-core": "workspace:*",
+    "@dcmaar/types": "workspace:*",
+    "@dcmaar/plugin-abstractions": "workspace:*",
+    "@dcmaar/guardian-plugins": "workspace:*",
     "@ghatana/charts": "workspace:*",
     "eventemitter3": "^5.0.4",
     "lucide-react": "^0.563.0",

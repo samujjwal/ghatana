@@ -1,4 +1,4 @@
-import { InteractiveList as List, ListItem, ListItemButton, ListItemIcon, ListItemText, Chip, Divider, Box } from '@ghatana/ui';
+import { InteractiveList as List, ListItem, ListItemButton, ListItemIcon, ListItemText, Chip, Divider, Box } from '@ghatana/design-system';
 import React from 'react';
 
 import { SUGGESTION_LABELS } from './SmartSuggestions/utils';

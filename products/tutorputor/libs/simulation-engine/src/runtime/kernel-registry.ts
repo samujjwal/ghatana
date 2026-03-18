@@ -16,7 +16,7 @@ import type {
   EconomicsConfig,
   BiologyConfig,
   MedicineConfig,
-} from '@ghatana/tutorputor-contracts/v1/simulation';
+} from '@tutorputor/contracts/v1/simulation';
 
 import { createDiscreteKernel } from './discrete-kernel';
 import { createPhysicsKernel } from './physics-kernel';

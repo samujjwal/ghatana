@@ -32,7 +32,7 @@ import {
   Timeline,
   SearchBar,
   FilterPanel,
-} from '@ghatana/yappc-ui';
+} from '@yappc/ui';
 import type { Item, ItemFilter } from '@yappc/core/types/devsecops';
 import { Badge, KpiCard } from '@/components/ui';
 

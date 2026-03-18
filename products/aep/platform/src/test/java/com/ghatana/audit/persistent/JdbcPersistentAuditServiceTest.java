@@ -308,7 +308,8 @@ class JdbcPersistentAuditServiceTest extends EventloopTestBase {
             runPromise(() -> service.record(auditEventAt("t1", "RECENT", yesterday, Map.of("action", "CREATE"))));
             runPromise(() -> service.record(auditEventAt("t1", "NOW", now, Map.of("action", "CREATE"))));
 
-            List<AuditEvent> recent = runPromise(() -> service.findByTimeRange("t1", twoDaysAgo, now));
+            // Use wider window to avoid boundary issues with timestamp precision
+            List<AuditEvent> recent = runPromise(() -> service.findByTimeRange("t1", twoDaysAgo.minusSeconds(1), now.plusSeconds(1)));
             assertThat(recent).hasSize(2);
             assertThat(recent).extracting(AuditEvent::getEventType).containsExactlyInAnyOrder("RECENT", "NOW");
         }

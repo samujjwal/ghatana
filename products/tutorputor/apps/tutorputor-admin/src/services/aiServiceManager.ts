@@ -11,7 +11,7 @@
  */
 
 import { contentStudioApi } from "./contentStudioApi";
-import { globalRegistry } from "@ghatana/tutorputor-learning-kernel";
+import { globalRegistry } from "@tutorputor/learning-kernel";
 
 // AI Service Configuration
 interface AIServiceConfig {

@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.ghatana.appplatform"
-version = "0.1.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 description = "Finance kernel API gateway: JWT validation, routing, tenant extraction"
 
 java {

@@ -7,4 +7,4 @@
  * @package @yappc/ui
  */
 
-export * from '@ghatana/yappc-ui';
+export * from '@yappc/ui';

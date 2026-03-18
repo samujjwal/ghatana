@@ -15,7 +15,7 @@ export type { BasicCanvasExampleProps } from './basic/BasicCanvasExample';
 // Development guard - warn if imported in production
 if (process.env.NODE_ENV === 'production') {
   console.warn(
-    '@ghatana/yappc-canvas/examples: Examples should not be imported in production builds. ' +
+    '@yappc/canvas/examples: Examples should not be imported in production builds. ' +
       'Use conditional imports or build-time exclusions.'
   );
 }

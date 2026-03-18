@@ -27,8 +27,8 @@ vi.mock('ioredis', () => {
 });
 
 import { createRuntimeService } from '../service';
-import type { SimulationManifest, SimKeyframe, SimEntity } from '@ghatana/tutorputor-contracts/v1/simulation/types';
-import type { SimRuntimeService } from '@ghatana/tutorputor-contracts/v1/simulation/services';
+import type { SimulationManifest, SimKeyframe, SimEntity } from '@tutorputor/contracts/v1/simulation/types';
+import type { SimRuntimeService } from '@tutorputor/contracts/v1/simulation/services';
 
 /**
  * Create a test manifest with steps and keyframes

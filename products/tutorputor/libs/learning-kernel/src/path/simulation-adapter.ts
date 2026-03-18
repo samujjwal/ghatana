@@ -15,7 +15,7 @@ import type {
   SimulationDomain,
   SimulationStep,
   SimEntity,
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 import type {
   SimulationLearningStep,
   SimulationSkill,
@@ -23,8 +23,8 @@ import type {
   SimulationCompletionCriteria,
   LearningPathStepId,
   SkillId,
-} from "@ghatana/tutorputor-contracts/v1/learning-path";
-import type { Difficulty } from "@ghatana/tutorputor-contracts/v1";
+} from "@tutorputor/contracts/v1/learning-path";
+import type { Difficulty } from "@tutorputor/contracts/v1";
 
 // =============================================================================
 // Domain-to-Skills Mapping

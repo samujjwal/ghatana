@@ -10,7 +10,7 @@
  * @doc.pattern Utility
  */
 
-import type { TenantId, UserId } from "@ghatana/tutorputor-contracts/v1/types";
+import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
 
 /**
  * Extract the tenant ID from request headers with a typed result.

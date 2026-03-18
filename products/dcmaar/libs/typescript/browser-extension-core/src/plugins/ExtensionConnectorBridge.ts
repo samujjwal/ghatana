@@ -10,11 +10,11 @@ import type {
     ConnectionOptions,
     Event,
     IConnector,
-} from "@ghatana/dcmaar-connectors";
-import { createConnector } from "@ghatana/dcmaar-connectors";
+} from "@dcmaar/connectors";
+import { createConnector } from "@dcmaar/connectors";
 import type {
     ExtensionConnectorProfile,
-} from "@ghatana/dcmaar-types";
+} from "@dcmaar/types";
 
 /**
  * Options for constructing an ExtensionConnectorBridge.

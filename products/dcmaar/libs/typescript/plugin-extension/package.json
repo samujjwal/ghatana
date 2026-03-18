@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/dcmaar-plugin-extension",
+  "name": "@dcmaar/plugin-extension",
   "version": "0.1.0",
   "description": "Device monitoring plugin implementations for DCMAAR framework",
   "main": "dist/index.js",
@@ -27,20 +27,20 @@
   "author": "DCMAAR Team",
   "license": "MIT",
   "peerDependencies": {
-    "@ghatana/dcmaar-types": "workspace:*",
-    "@ghatana/dcmaar-plugin-abstractions": "workspace:*"
+    "@dcmaar/types": "workspace:*",
+    "@dcmaar/plugin-abstractions": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "@ghatana/dcmaar-types": {
+    "@dcmaar/types": {
       "optional": false
     },
-    "@ghatana/dcmaar-plugin-abstractions": {
+    "@dcmaar/plugin-abstractions": {
       "optional": false
     }
   },
   "devDependencies": {
-    "@ghatana/dcmaar-types": "workspace:*",
-    "@ghatana/dcmaar-plugin-abstractions": "workspace:*",
+    "@dcmaar/types": "workspace:*",
+    "@dcmaar/plugin-abstractions": "workspace:*",
     "@types/node": "^25.2.0",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",

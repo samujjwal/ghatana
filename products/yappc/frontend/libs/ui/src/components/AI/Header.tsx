@@ -1,6 +1,6 @@
 import { Brain as PsychologyIcon } from 'lucide-react';
 import { RefreshCw as RefreshIcon } from 'lucide-react';
-import { Box, IconButton, Tooltip, Typography, Spinner as CircularProgress } from '@ghatana/ui';
+import { Box, IconButton, Tooltip, Typography, Spinner as CircularProgress } from '@ghatana/design-system';
 import React from 'react';
 
 import { wrapForTooltip } from '../../utils/accessibility';

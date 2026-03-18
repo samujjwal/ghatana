@@ -1,5 +1,5 @@
 import { Home as HomeIcon, Settings as SettingsIcon, User as PersonIcon, Bell as NotificationsIcon, Mail as EmailIcon, HelpCircle as HelpIcon } from 'lucide-react';
-import { Box, Typography, InteractiveList as List, ListItem, ListItemText, Divider } from '@ghatana/ui';
+import { Box, Typography, InteractiveList as List, ListItem, ListItemText, Divider } from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { InteractionDrawer } from './Drawer';

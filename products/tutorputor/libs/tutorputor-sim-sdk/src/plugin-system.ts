@@ -7,7 +7,7 @@
  * @doc.pattern Plugin
  */
 
-import type { SimKernelService, SimulationDomain } from '@ghatana/tutorputor-contracts/v1/simulation';
+import type { SimKernelService, SimulationDomain } from '@tutorputor/contracts/v1/simulation';
 
 /**
  * Plugin metadata.

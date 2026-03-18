@@ -1,4 +1,4 @@
-import { ThemeProvider } from '@ghatana/yappc-ui';
+import { ThemeProvider } from '@yappc/ui';
 import { Provider, useAtom } from 'jotai';
 import React from 'react';
 

@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import type { SimulationState } from '@ghatana/tutorputor-contracts/v1/simulation';
+import type { SimulationState } from '@tutorputor/contracts/v1/simulation';
 
 /**
  * Player props.

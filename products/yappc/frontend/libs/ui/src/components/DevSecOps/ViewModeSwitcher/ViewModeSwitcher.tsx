@@ -11,7 +11,7 @@ import { Grid3x3 as GridViewIcon } from 'lucide-react';
 import { Table as TableChartIcon } from 'lucide-react';
 import { Activity as TimelineIcon } from 'lucide-react';
 import { Kanban as ViewKanbanIcon } from 'lucide-react';
-import { Box, ToggleButton, ToggleButtonGroup, Tooltip } from '@ghatana/ui';
+import { Box, ToggleButton, ToggleButtonGroup, Tooltip } from '@ghatana/design-system';
 
 
 import type { ViewModeSwitcherProps, ViewModeMetadata } from './types';

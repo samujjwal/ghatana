@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import { FlashitApiClient } from '@ghatana/flashit-shared';
+import { FlashitApiClient } from '@flashit/shared';
 import { useSetAtom } from 'jotai';
 import { mobileAtoms } from '../state/localAtoms';
 import { useNavigation } from '@react-navigation/native';

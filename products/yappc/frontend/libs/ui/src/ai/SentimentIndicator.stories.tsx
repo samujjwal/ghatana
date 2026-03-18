@@ -2,8 +2,8 @@
  * Storybook Stories for SentimentIndicator Component
  */
 
-import { Box, Typography, TextField, Stack } from '@ghatana/ui';
-import { SentimentAnalyzer, type SentimentResult } from '@ghatana/yappc-ai/core';
+import { Box, Typography, TextField, Stack } from '@ghatana/design-system';
+import { SentimentAnalyzer, type SentimentResult } from '@yappc/ai/core';
 import { useState } from 'react';
 
 import { SentimentIndicator } from './SentimentIndicator';

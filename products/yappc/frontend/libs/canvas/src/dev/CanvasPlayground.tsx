@@ -17,10 +17,10 @@
  */
 
 import React, { useCallback } from 'react';
-import { Box } from '@ghatana/ui';
-import { Button } from '@ghatana/ui';
-import { Stack } from '@ghatana/ui';
-import { Typography } from '@ghatana/ui';
+import { Box } from '@ghatana/design-system';
+import { Button } from '@ghatana/design-system';
+import { Stack } from '@ghatana/design-system';
+import { Typography } from '@ghatana/design-system';
 import { Paintbrush as BrushIcon } from 'lucide-react';
 import { PenTool as GestureIcon } from 'lucide-react';
 import { GitBranch as AccountTreeIcon } from 'lucide-react';

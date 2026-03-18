@@ -19,13 +19,13 @@
  * Example Usage:
  * ```typescript
  * // React Flow mocks in unit tests
- * import { mockReactFlowHooks, createMockNode } from '@ghatana/yappc-canvas/testing';
+ * import { mockReactFlowHooks, createMockNode } from '@yappc/canvas/testing';
  *
  * mockReactFlowHooks();
  * const node = createMockNode({ type: 'custom', data: { label: 'Test' } });
  *
  * // Playwright helpers in E2E tests
- * import { getStoryUrl, waitForCanvasReady } from '@ghatana/yappc-canvas/testing';
+ * import { getStoryUrl, waitForCanvasReady } from '@yappc/canvas/testing';
  *
  * await page.goto(getStoryUrl('Canvas', 'Default'));
  * await waitForCanvasReady(page);

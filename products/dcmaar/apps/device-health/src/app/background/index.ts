@@ -11,7 +11,7 @@ import {
   InMemoryStoragePlugin,
   LocalStoragePlugin,
   RemoteStoragePlugin,
-} from '@ghatana/dcmaar-plugin-abstractions';
+} from '@dcmaar/plugin-abstractions';
 import browser, { type Runtime } from 'webextension-polyfill';
 
 import { initializePluginHandler } from '../../background/plugin-handler';
@@ -21,7 +21,7 @@ import { SystemMetricsCollector } from '../../browser/metrics/SystemMetricsColle
 import { PluginSystemAdapter } from '../../core/PluginSystemAdapter';
 import {
   ExtensionPluginHost,
-} from '@ghatana/dcmaar-browser-extension-core';
+} from '@dcmaar/browser-extension-core';
 import deviceHealthPluginManifest from '../../config/device-health-plugin-manifest';
 import { registerDeviceHealthPlugins } from '../../plugins/deviceHealthPlugins';
 

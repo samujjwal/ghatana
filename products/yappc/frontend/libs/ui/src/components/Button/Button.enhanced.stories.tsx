@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { Stack, Box, Typography } from '@ghatana/ui';
+import { Stack, Box, Typography } from '@ghatana/design-system';
 
 // Use the folder entry so we pick up the correct implementation re-export
 // (Button.tailwind) via the component index.

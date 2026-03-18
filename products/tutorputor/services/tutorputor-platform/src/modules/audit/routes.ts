@@ -7,7 +7,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { AuditServiceImpl } from './service';
-import type { TenantId, UserId } from '@ghatana/tutorputor-contracts';
+import type { TenantId, UserId } from '@tutorputor/contracts';
 
 export const auditRoutes: FastifyPluginAsync = async (app) => {
     const auditService = new AuditServiceImpl(app.prisma);

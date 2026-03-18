@@ -6,7 +6,7 @@ import { wsConnectedAtom } from '../stores/eventsStore';
 import { authService } from '../services/auth.service';
 import { websocketService } from '../services/websocket.service';
 import { lazyWithRetry } from '../utils/lazyLoad';
-import { useCanSeeSections, useRole, SectionGuard, DashboardUtils } from '@ghatana/dcmaar-dashboard-core';
+import { useCanSeeSections, useRole, SectionGuard, DashboardUtils } from '@dcmaar/dashboard-core';
 import { ChildRequests } from '../components/ChildRequests';
 
 // Lazy load heavy dashboard components

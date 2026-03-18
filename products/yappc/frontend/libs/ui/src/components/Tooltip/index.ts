@@ -1,6 +1,6 @@
-import { Tooltip as GlobalTooltip } from '@ghatana/ui';
+import { Tooltip as GlobalTooltip } from '@ghatana/design-system';
 
-export type { TooltipProps, TooltipPlacement } from '@ghatana/yappc-ui';
+export type { TooltipProps, TooltipPlacement } from '@yappc/ui';
 
 export const Tooltip = GlobalTooltip;
 

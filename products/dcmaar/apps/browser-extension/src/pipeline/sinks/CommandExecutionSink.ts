@@ -10,7 +10,7 @@
  * @module pipeline/sinks/CommandExecutionSink
  */
 
-import { BaseEventSink } from '@ghatana/dcmaar-browser-extension-core';
+import { BaseEventSink } from '@dcmaar/browser-extension-core';
 import type { GuardianCommand } from '../sources/CommandSyncSource';
 
 /**

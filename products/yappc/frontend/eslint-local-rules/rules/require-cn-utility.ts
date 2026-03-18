@@ -60,7 +60,7 @@ const rule: Rule.RuleModule = {
       ImportDeclaration(node: ImportDeclarationNode) {
         // Check if cn is imported from design system
         if (
-          node.source.value === '@ghatana/ui' ||
+          node.source.value === '@ghatana/design-system' ||
           node.source.value === '@ghatana/yappc-shared-ui-core/utils/cn' ||
           node.source.value === '@ghatana/yappc-shared-ui-core/utils'
         ) {

@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Extracts frames from video files using FFmpeg.
- * 
+ *
  * <p>Supports various video formats and provides options for:
  * <ul>
  *   <li>Frame rate control (extract every Nth frame)</li>
@@ -23,17 +23,27 @@ import java.util.concurrent.TimeUnit;
  *   <li>Resolution control</li>
  *   <li>Format conversion (JPEG, PNG)</li>
  * </ul>
- * 
+ *
+ * <p><strong>Security:</strong> {@code ProcessBuilder} is used directly (no shell), so shell
+ * injection is impossible by construction. Path inputs are normalised and validated to be
+ * canonical absolute paths, preventing path-traversal attacks. The output format is
+ * restricted to an allow-list of image extensions.
+ *
  * @doc.type class
- * @doc.purpose Video frame extraction using FFmpeg
- * @doc.layer infrastructure
+ * @doc.purpose Video frame extraction using FFmpeg with input validation
+ * @doc.layer product
+ * @doc.pattern Service
  */
 public class VideoFrameExtractor {
 
     private static final Logger LOG = LoggerFactory.getLogger(VideoFrameExtractor.class);
-    
+
     private static final String FFMPEG_COMMAND = "ffmpeg";
     private static final int DEFAULT_TIMEOUT_SECONDS = 300;
+
+    /** Allow-listed image formats that may be used as output extensions. */
+    private static final java.util.Set<String> ALLOWED_FORMATS =
+        java.util.Set.of("jpg", "jpeg", "png", "bmp", "tiff");
 
     /**
      * Configuration for frame extraction.
@@ -84,7 +94,11 @@ public class VideoFrameExtractor {
             }
 
             public Builder format(String format) {
-                this.format = format;
+                if (format == null || !ALLOWED_FORMATS.contains(format.toLowerCase(java.util.Locale.ROOT))) {
+                    throw new IllegalArgumentException(
+                        "Unsupported output format '%s'. Allowed: %s".formatted(format, ALLOWED_FORMATS));
+                }
+                this.format = format.toLowerCase(java.util.Locale.ROOT);
                 return this;
             }
 
@@ -134,19 +148,27 @@ public class VideoFrameExtractor {
      * @return List of extracted frames
      * @throws IOException If extraction fails
      */
-    public List<ExtractedFrame> extractFrames(Path videoPath, Path outputDir, ExtractionConfig config) 
+    public List<ExtractedFrame> extractFrames(Path videoPath, Path outputDir, ExtractionConfig config)
             throws IOException {
-        
-        if (!Files.exists(videoPath)) {
-            throw new IOException("Video file not found: " + videoPath);
+
+        // Normalise to absolute canonical paths to prevent path-traversal attacks.
+        // toRealPath() resolves symlinks and ".." components.  It also verifies the
+        // file actually exists for videoPath.
+        Path canonicalVideo;
+        try {
+            canonicalVideo = videoPath.toRealPath();
+        } catch (IOException e) {
+            throw new IOException("Video file not found or inaccessible: " + videoPath, e);
         }
 
-        Files.createDirectories(outputDir);
+        Path canonicalOutput = outputDir.toAbsolutePath().normalize();
 
-        List<String> command = buildFFmpegCommand(videoPath, outputDir, config);
+        List<String> command = buildFFmpegCommand(canonicalVideo, canonicalOutput, config);
         
-        LOG.info("Extracting frames from video: {} with fps={}, maxFrames={}", 
-            videoPath.getFileName(), config.getFps(), config.getMaxFrames());
+        Files.createDirectories(canonicalOutput);
+
+        LOG.info("Extracting frames from video: {} with fps={}, maxFrames={}",
+            canonicalVideo.getFileName(), config.getFps(), config.getMaxFrames());
 
         try {
             Process process = new ProcessBuilder(command)
@@ -185,7 +207,7 @@ public class VideoFrameExtractor {
             throw new IOException("Frame extraction interrupted", e);
         }
 
-        return collectExtractedFrames(outputDir, config);
+        return collectExtractedFrames(canonicalOutput, config);
     }
 
     /**

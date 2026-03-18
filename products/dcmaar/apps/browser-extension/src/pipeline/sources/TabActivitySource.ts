@@ -8,7 +8,7 @@
  * @module pipeline/sources/TabActivitySource
  */
 
-import { BaseEventSource } from '@ghatana/dcmaar-browser-extension-core';
+import { BaseEventSource } from '@dcmaar/browser-extension-core';
 import type { TabActivityEvent } from '../types';
 
 /**

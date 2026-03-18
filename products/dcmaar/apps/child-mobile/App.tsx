@@ -5,13 +5,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './navigation/AppNavigator';
 // @ts-expect-error - TypeScript module resolution issue, but Metro handles this correctly
 import notificationService from './services/notifications';
-import { RoleContext, ROLE_CONFIG } from '@ghatana/dcmaar-dashboard-core';
+import { RoleContext, ROLE_CONFIG } from '@dcmaar/dashboard-core';
 import {
   startEventSync,
   stopEventSync,
   startPolicyNotifications,
   stopPolicyNotifications,
-} from '@ghatana/dcmaar-agent-react-native/agent';
+} from '@dcmaar/agent-react-native/agent';
 
 const queryClient = new QueryClient({
   defaultOptions: {

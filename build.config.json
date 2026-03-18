@@ -1,0 +1,68 @@
+{
+  "name": "Ghatana Platform Monorepo Build Config",
+  "version": "1.0.0",
+  "description": "Shared build configuration for consistent builds across products",
+  
+  "build": {
+    "vite": {
+      "target": "es2022",
+      "minify": "esbuild",
+      "sourcemap": true,
+      "rollupOptions": {
+        "output": {
+          "manualChunks": {
+            "vendor": ["react", "react-dom"],
+            "ui": ["@ghatana/design-system"],
+            "state": ["jotai", "zustand"],
+            "query": ["@tanstack/react-query"]
+          }
+        }
+      }
+    },
+    
+    "typescript": {
+      "target": "ES2022",
+      "module": "ESNext",
+      "moduleResolution": "bundler",
+      "strict": true,
+      "noUnusedLocals": true,
+      "noUnusedParameters": true,
+      "noImplicitReturns": true,
+      "noFallthroughCasesInSwitch": true,
+      "skipLibCheck": true,
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true,
+      "forceConsistentCasingInFileNames": true,
+      "resolveJsonModule": true,
+      "isolatedModules": true,
+      "declaration": true,
+      "declarationMap": true
+    }
+  },
+
+  "optimization": {
+    "bundleAnalysis": {
+      "enabled": true,
+      "open": false,
+      "gzipSize": true,
+      "brotliSize": true
+    },
+    
+    "caching": {
+      "turbo": {
+        "enabled": true,
+        "team": "ghatana",
+        "apiUrl": "https://api.vercel.com"
+      },
+      "vite": {
+        "force": false,
+        "cacheDir": "node_modules/.vite"
+      }
+    },
+
+    "parallelization": {
+      "maxWorkers": 4,
+      "workerIdleMemoryLimit": "2048MB"
+    }
+  }
+}

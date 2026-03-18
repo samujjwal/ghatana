@@ -14,7 +14,7 @@ import type {
   CurriculumLevel,
   ChemistryJSONStructure,
   RawConceptJSON,
-} from "@ghatana/tutorputor-contracts/v1/curriculum/types";
+} from "@tutorputor/contracts/v1/curriculum/types";
 import { parseRawConcept } from "./physics-parser";
 import { mapLevelString } from "../utils/mappers";
 

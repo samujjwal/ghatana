@@ -5,7 +5,7 @@
  * Implements the DCMAAR bridge protocol v1 for cross-application telemetry.
  */
 
-import { BaseConnector, type IConnector } from '@ghatana/dcmaar-connectors';
+import { BaseConnector, type IConnector } from '@dcmaar/connectors';
 import type { SourceAdapter } from '../types';
 import { Logger } from '../../utils/logger';
 import { WebSocketServer, type WebSocket } from 'ws';

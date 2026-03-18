@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/tutorputor-ai-proxy",
+  "name": "@tutorputor/ai-proxy",
   "version": "0.1.0",
   "private": true,
   "description": "TutorPutor AI Proxy Service - handles tutor queries with RAG and LLM integration",
@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@prisma/client": "^7.3.0",
-    "@ghatana/tutorputor-contracts": "workspace:*",
-    "@ghatana/tutorputor-db": "workspace:*",
+    "@tutorputor/contracts": "workspace:*",
+    "@tutorputor/db": "workspace:*",
     "fastify": "^5.7.4",
     "openai": "^6.17.0"
   },

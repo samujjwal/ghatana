@@ -16,7 +16,7 @@
  * @doc.layer components
  */
 
-import { Box, Button, Typography, Spinner as CircularProgress, Alert, AlertTitle } from '@ghatana/ui';
+import { Box, Button, Typography, Spinner as CircularProgress, Alert, AlertTitle } from '@ghatana/design-system';
 import { CloudOff as ConnectionIcon, Save as SaveIcon, Lock as LockIcon, ZoomIn as ZoomIcon, SearchX as SearchIcon, RefreshCw as RefreshIcon, AlertTriangle as WarningIcon } from 'lucide-react';
 import React from 'react';
 

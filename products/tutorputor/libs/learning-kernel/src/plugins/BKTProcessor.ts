@@ -23,7 +23,7 @@ import type {
     EvidenceEvent,
     ProcessingResult,
     ProcessingContext,
-} from '@ghatana/tutorputor-contracts/v1/plugin-interfaces';
+} from '@tutorputor/contracts/v1/plugin-interfaces';
 
 // ============================================================================
 // Types

@@ -7,7 +7,7 @@
  */
 
 import { Check as CheckIcon, CloudCheck as SavedIcon, Cloud as SavingIcon, AlertCircle as ErrorIcon, Clock as PendingIcon } from 'lucide-react';
-import { Typography, Spinner as CircularProgress, Toast as Snackbar, Alert, Stack, Chip } from '@ghatana/ui';
+import { Typography, Spinner as CircularProgress, Toast as Snackbar, Alert, Stack, Chip } from '@ghatana/design-system';
 import React from 'react';
 
 import type { AutosaveState } from '../history/historyManager';

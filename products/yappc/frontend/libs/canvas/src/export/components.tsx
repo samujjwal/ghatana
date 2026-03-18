@@ -27,8 +27,8 @@ import {
   ListItemText,
   Menu,
   InteractiveList as List,
-} from '@ghatana/ui';
-import { TextField, ListItemSecondaryAction, MenuItem } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { TextField, ListItemSecondaryAction, MenuItem } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
 
 import { useExport, useShareLinks, useSecurityAudit } from './hooks';

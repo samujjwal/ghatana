@@ -19,7 +19,7 @@ import type {
   SimulationDomain,
   SimStepId,
   SimEntityId,
-} from "@ghatana/tutorputor-contracts/v1/simulation/types";
+} from "@tutorputor/contracts/v1/simulation/types";
 
 // =============================================================================
 // Local Types (avoiding external contract dependencies) -> Replaced with Contracts

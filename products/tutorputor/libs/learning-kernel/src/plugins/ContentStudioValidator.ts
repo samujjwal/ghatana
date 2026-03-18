@@ -16,14 +16,14 @@ import type {
     PluginMetadata,
     ValidationResult,
     ValidationIssue,
-} from '@ghatana/tutorputor-contracts/v1/plugin-interfaces';
+} from '@tutorputor/contracts/v1/plugin-interfaces';
 import type {
     LearningExperience,
     LearningClaim,
     ValidationPillar,
     GradeAdaptation,
-} from '@ghatana/tutorputor-contracts/v1/content-studio';
-import type { BloomLevel } from '@ghatana/tutorputor-contracts/v1/learning-unit';
+} from '@tutorputor/contracts/v1/content-studio';
+import type { BloomLevel } from '@tutorputor/contracts/v1/learning-unit';
 
 /**
  * Validation rule definition for Content Studio.

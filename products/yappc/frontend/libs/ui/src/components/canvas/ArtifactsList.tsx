@@ -35,19 +35,19 @@ import {
   FileArchive,
 } from 'lucide-react';
 
-import { cn } from '@ghatana/ui';
-import { Button } from '@ghatana/ui';
-import { Input } from '@ghatana/ui';
-import { Badge } from '@ghatana/ui';
+import { cn } from '@ghatana/design-system';
+import { Button } from '@ghatana/design-system';
+import { Input } from '@ghatana/design-system';
+import { Badge } from '@ghatana/design-system';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
-} from '@ghatana/yappc-ui';
-import { Tooltip } from '@ghatana/ui';
-import { TooltipContent, TooltipTrigger } from '@ghatana/yappc-ui';
+} from '@yappc/ui';
+import { Tooltip } from '@ghatana/design-system';
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 
 // =============================================================================
 // Types

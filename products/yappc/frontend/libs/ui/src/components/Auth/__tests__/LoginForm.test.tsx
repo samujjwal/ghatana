@@ -12,7 +12,7 @@ import { LoginForm } from '../LoginForm';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock the useAuth hook
-vi.mock('@ghatana/yappc-canvas', () => ({
+vi.mock('@yappc/canvas', () => ({
   useAuth: () => ({
     login: vi.fn(),
     isLoading: false,
@@ -149,7 +149,7 @@ describe('LoginForm', () => {
     });
 
     it('should disable submit button when loading', () => {
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         login: vi.fn(),
         isLoading: true,
@@ -166,7 +166,7 @@ describe('LoginForm', () => {
   describe('Form Submission', () => {
     it('should call login with correct credentials', async () => {
       const mockLogin = vi.fn().mockResolvedValue({});
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         login: mockLogin,
         isLoading: false,
@@ -187,7 +187,7 @@ describe('LoginForm', () => {
 
     it('should call login with rememberMe when checked', async () => {
       const mockLogin = vi.fn().mockResolvedValue({});
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         login: mockLogin,
         isLoading: false,
@@ -210,7 +210,7 @@ describe('LoginForm', () => {
     it('should call onSuccess callback on successful login', async () => {
       const mockLogin = vi.fn().mockResolvedValue({});
       const mockOnSuccess = vi.fn();
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         login: mockLogin,
         isLoading: false,
@@ -233,7 +233,7 @@ describe('LoginForm', () => {
       const mockError = new Error('Invalid credentials');
       const mockLogin = vi.fn().mockRejectedValue(mockError);
       const mockOnError = vi.fn();
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         login: mockLogin,
         isLoading: false,
@@ -254,7 +254,7 @@ describe('LoginForm', () => {
 
     it('should not submit with invalid email', async () => {
       const mockLogin = vi.fn();
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         login: mockLogin,
         isLoading: false,
@@ -341,7 +341,7 @@ describe('LoginForm', () => {
 
   describe('Error Display', () => {
     it('should display authentication error', () => {
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         login: vi.fn(),
         isLoading: false,

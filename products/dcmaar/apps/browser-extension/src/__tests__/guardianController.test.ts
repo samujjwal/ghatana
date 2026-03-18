@@ -28,7 +28,7 @@ vi.mock('webextension-polyfill', () => {
   };
 });
 
-import { UnifiedBrowserEventCapture } from '@ghatana/dcmaar-browser-extension-core';
+import { UnifiedBrowserEventCapture } from '@dcmaar/browser-extension-core';
 import { WebsiteCategory } from '../blocker/WebsiteBlocker';
 import { GuardianController } from '../controller/GuardianController';
 

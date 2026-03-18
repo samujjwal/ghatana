@@ -7,7 +7,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { ComplianceServiceImpl } from './service';
-import type { TenantId, UserId } from '@ghatana/tutorputor-contracts';
+import type { TenantId, UserId } from '@tutorputor/contracts';
 
 export const complianceRoutes: FastifyPluginAsync = async (app) => {
     const complianceService = new ComplianceServiceImpl(app.prisma);

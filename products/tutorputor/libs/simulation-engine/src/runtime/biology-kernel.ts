@@ -12,7 +12,7 @@ import type {
   SimulationRunRequest,
   SimulationRunResult,
   BiologyConfig
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 import type {
   SimulationManifest,
   SimKeyframe,
@@ -23,7 +23,7 @@ import type {
   BioCompartmentEntity,
   BioEnzymeEntity,
   BioGeneEntity
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 
 /**
  * Compartment state for concentration tracking.

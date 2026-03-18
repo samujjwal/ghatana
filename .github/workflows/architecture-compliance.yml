@@ -1,0 +1,85 @@
+name: Architecture Compliance
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  architecture-check:
+    name: Architecture Compliance Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check package naming conventions
+        run: node scripts/check-architecture-compliance.js
+        id: arch-check
+        continue-on-error: true
+
+      - name: Check for banned libraries
+        run: |
+          if grep -r "lodash\|axios\|moment\|jquery\|request-promise" --include="package.json" .; then
+            echo "❌ Banned libraries found! See dependency-policy.json for alternatives."
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Check for deprecated packages
+        run: |
+          if grep -r "@ghatana/yappc-ui\|@ghatana/yappc-ai\|@ghatana/yappc-canvas\|@ghatana/ui" --include="package.json" .; then
+            echo "❌ Deprecated packages found! Run migration codemods."
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Check for duplicate package names
+        run: node scripts/check-duplicate-package-names.sh
+
+      - name: License policy check
+        run: node scripts/check-license-policy.sh
+
+      - name: Post PR comment on violations
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚨 **Architecture Compliance Violations Detected**
+
+              This PR violates monorepo architecture policies:
+
+              - Cross-product dependencies
+              - Banned libraries (lodash, axios, moment, etc.)
+              - Deprecated packages (@ghatana/ui, @ghatana/yappc-*)
+              - Naming convention violations
+
+              **Action Required:**
+              1. Run \`node scripts/codemods/migrate-yappc-packages.js\` for naming fixes
+              2. Review \`eslint-rules/dependency-policy.json\` for alternatives
+              3. Consult \`V5_AUTONOMOUS_MONOREPO_AUDIT_COMPLETE.md\` for guidance`
+            })
+
+      - name: Final status
+        if: steps.arch-check.outcome == 'failure'
+        run: |
+          echo "❌ Architecture compliance check failed"
+          exit 1

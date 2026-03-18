@@ -1,5 +1,7 @@
 package com.ghatana.datacloud.observability;
 
+import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.SimpleMetricsCollector;
 import io.micrometer.core.instrument.*;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
@@ -46,8 +48,8 @@ import java.util.function.Supplier;
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
- * DataCloudMetrics metrics = DataCloudMetrics.create(meterRegistry);
- * 
+ * DataCloudMetrics metrics = DataCloudMetrics.create(metricsCollector);
+ *
  * // Record operation
  * Timer.Sample sample = metrics.startTimer();
  * try {
@@ -59,7 +61,7 @@ import java.util.function.Supplier;
  * }
  * }</pre>
  *
- * @see MeterRegistry
+ * @see MetricsCollector
  * @doc.type class
  * @doc.purpose Metrics collection for Data-Cloud
  * @doc.layer observability
@@ -161,25 +163,40 @@ public class DataCloudMetrics {
     // Plugin health trackers
     private final Map<String, PluginHealthStatus> pluginHealth;
     
-    private DataCloudMetrics(MeterRegistry registry) {
-        this.registry = Objects.requireNonNull(registry, "registry is required");
+    private DataCloudMetrics(MetricsCollector metricsCollector) {
+        Objects.requireNonNull(metricsCollector, "metricsCollector is required");
+        this.registry = metricsCollector.getMeterRegistry();
         this.counters = new ConcurrentHashMap<>();
         this.timers = new ConcurrentHashMap<>();
         this.gaugeValues = new ConcurrentHashMap<>();
         this.pluginHealth = new ConcurrentHashMap<>();
-        
+
         // Register global gauges
         registerGlobalGauges();
     }
-    
+
     /**
-     * Create metrics collector with registry.
+     * Create metrics collector backed by the platform MetricsCollector facade.
      *
-     * @param registry the meter registry
+     * @param metricsCollector the platform metrics collector
      * @return metrics instance
      */
+    public static DataCloudMetrics create(MetricsCollector metricsCollector) {
+        return new DataCloudMetrics(metricsCollector);
+    }
+
+    /**
+     * Create metrics collector with a raw MeterRegistry.
+     *
+     * @param registry the Micrometer meter registry
+     * @return metrics instance
+     * @deprecated Prefer {@link #create(MetricsCollector)}. This overload exists for
+     *             backward compatibility and will be removed in a future release.
+     */
+    @Deprecated
     public static DataCloudMetrics create(MeterRegistry registry) {
-        return new DataCloudMetrics(registry);
+        Objects.requireNonNull(registry, "registry is required");
+        return create(new SimpleMetricsCollector(registry));
     }
     
     // ==================== Operation Metrics ====================

@@ -34,9 +34,9 @@ import {
   Alert,
   Surface as Paper,
   Spinner as CircularProgress,
-} from '@ghatana/ui';
-import { TextField } from '@ghatana/ui';
-import { useMuiTheme as useTheme } from '@ghatana/yappc-ui';
+} from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
+import { useMuiTheme as useTheme } from '@yappc/ui';
 import { useAIBrainstorming } from '../hooks/useAIBrainstorming';
 import { Bot as AIIcon, FileText as RequirementIcon, GitBranch as FlowIcon, Users as StakeholderIcon, HardDrive as DatabaseIcon, Plug as ApiIcon, Cloud as CloudIcon, Code as CodeIcon, Functions as FunctionIcon, Bug as TestIcon, Smartphone as UIIcon, Paintbrush as DesignIcon, Play as RunIcon, Check as CheckIcon, AlertCircle as ErrorIcon, Clock as PendingIcon } from 'lucide-react';
 

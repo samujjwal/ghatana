@@ -14,8 +14,8 @@ import type {
     SimulationManifest,
     SimKeyframe,
     SimulationId,
-} from '@ghatana/tutorputor-contracts/v1/simulation/types';
-import type { TenantId } from '@ghatana/tutorputor-contracts/v1/types';
+} from '@tutorputor/contracts/v1/simulation/types';
+import type { TenantId } from '@tutorputor/contracts/v1/types';
 
 // =============================================================================
 // Types

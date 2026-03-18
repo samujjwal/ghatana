@@ -13,7 +13,7 @@
  */
 
 import { FolderOpen as TemplateIcon, Compare as CompareIcon, Undo2 as UndoIcon, Redo2 as RedoIcon } from 'lucide-react';
-import { Box, AppBar, Toolbar, Typography, Button, Stack, IconButton } from '@ghatana/ui';
+import { Box, AppBar, Toolbar, Typography, Button, Stack, IconButton } from '@ghatana/design-system';
 
 // Import canvas utilities and UI components
 import {

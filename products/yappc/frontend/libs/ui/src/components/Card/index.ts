@@ -5,14 +5,14 @@ import {
   CardContent as GlobalCardContent,
   CardActions as GlobalCardActions,
   CardMedia as GlobalCardMedia,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import type {
   CardProps as GlobalCardProps,
   CardHeaderProps as GlobalCardHeaderProps,
   CardContentProps as GlobalCardContentProps,
   CardActionsProps as GlobalCardActionsProps,
   CardMediaProps as GlobalCardMediaProps,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 export interface CardProps extends Omit<GlobalCardProps, 'variant'> {
   variant?: 'elevation' | 'outlined' | 'subtle';

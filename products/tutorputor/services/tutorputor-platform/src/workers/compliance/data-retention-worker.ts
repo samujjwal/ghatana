@@ -11,7 +11,7 @@
  * @doc.pattern ScheduledWorker
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 
 // =============================================================================
 // Types

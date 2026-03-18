@@ -11,7 +11,7 @@
  * 3. Once all files are migrated, remove @mui/material from package.json
  */
 import * as React from 'react';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 
 // ── Box ──────────────────────────────────────────────────────────────────
 
@@ -273,8 +273,8 @@ export function Button({
   const variantClass = variant === 'contained'
     ? 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500'
     : variant === 'outlined'
-    ? 'border border-primary-600 text-primary-600 hover:bg-primary-50 focus:ring-primary-500'
-    : 'text-primary-600 hover:bg-primary-50 focus:ring-primary-500';
+      ? 'border border-primary-600 text-primary-600 hover:bg-primary-50 focus:ring-primary-500'
+      : 'text-primary-600 hover:bg-primary-50 focus:ring-primary-500';
   return (
     <button
       className={cn(base, variantClass, BTN_SIZE[size], fullWidth && 'w-full', disabled && 'opacity-50 cursor-not-allowed', className)}

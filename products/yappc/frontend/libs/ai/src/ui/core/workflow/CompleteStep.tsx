@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { Box, Surface as Paper, Typography, Button, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Alert, Chip, Divider, Grid, Card, CardContent, CardActions } from '@ghatana/ui';
+import { Box, Surface as Paper, Typography, Button, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Alert, Chip, Divider, Grid, Card, CardContent, CardActions } from '@ghatana/design-system';
 import { CheckCircle as CompleteIcon, Celebration as CelebrationIcon, Code as CodeIcon, Bug as TestIcon, CloudCheck as DeployIcon, BarChart3 as StatsIcon, RefreshCw as NewWorkflowIcon, Eye as ViewIcon, Download as DownloadIcon, Share2 as ShareIcon, Activity as TimelineIcon } from 'lucide-react';
 
 export interface CompleteStepProps {

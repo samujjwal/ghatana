@@ -1,5 +1,5 @@
 {
-    "name": "@ghatana/tutorputor-domain-loader",
+    "name": "@tutorputor/domain-loader",
     "version": "0.1.0",
     "description": "Domain content loader for physics, chemistry, and other curriculum content",
     "private": true,
@@ -18,8 +18,8 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@ghatana/tutorputor-contracts": "workspace:*",
-        "@ghatana/tutorputor-db": "workspace:*",
+        "@tutorputor/contracts": "workspace:*",
+        "@tutorputor/db": "workspace:*",
         "@prisma/client": "7.3.0",
         "@prisma/adapter-libsql": "^7.3.0",
         "@libsql/client": "^0.17.0",

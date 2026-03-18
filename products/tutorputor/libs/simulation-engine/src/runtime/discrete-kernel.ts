@@ -11,7 +11,7 @@ import type {
   DiscreteKernel as IDiscreteKernel,
   SimulationRunRequest,
   SimulationRunResult
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 import type {
   SimulationManifest,
   SimKeyframe,
@@ -19,7 +19,7 @@ import type {
   SimAction,
   SimEntityId,
   EasingFunction
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 import { interpolate, interpolatePoint, getEasingFunction } from "./easing";
 
 /**

@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import type { SimulationManifest, SimEntity, SimAction } from '@ghatana/tutorputor-contracts/v1/simulation/types';
+import type { SimulationManifest, SimEntity, SimAction } from '@tutorputor/contracts/v1/simulation/types';
 
 // Mock AI service for testing
 const mockAIService = {

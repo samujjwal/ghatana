@@ -4,7 +4,7 @@
  * Interactive demonstration of the DraggableComponent refactored to use design system patterns
  */
 
-import { Box, Typography, Surface as Paper, Stack, Chip } from '@ghatana/ui';
+import { Box, Typography, Surface as Paper, Stack, Chip } from '@ghatana/design-system';
 import React, { useState } from 'react';
 
 import { DraggableCanvas } from '../components/canvas';

@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Surface as Paper, Box, Typography, IconButton, Button, Tooltip, Divider, InteractiveList as List, ListItem, ListItemIcon, ListItemText, ListItemButton, Collapse, TextField, Slider, ToggleButton, ToggleButtonGroup, Chip } from '@ghatana/ui';
+import { Surface as Paper, Box, Typography, IconButton, Button, Tooltip, Divider, InteractiveList as List, ListItem, ListItemIcon, ListItemText, ListItemButton, Collapse, TextField, Slider, ToggleButton, ToggleButtonGroup, Chip } from '@ghatana/design-system';
 import { X as CloseIcon, ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon, Undo2 as UndoIcon, Redo2 as RedoIcon, Save as SaveIcon, Grid3x3 as GridIcon, Link as LinkIcon, ChevronDown as ExpandIcon, ChevronUp as CollapseIcon, UserCircle as AvatarIcon, Type as TextFieldIcon, SquareCheck as CheckBoxIcon, CircleDot as RadioIcon, Image as ImageIcon, RectangleHorizontal as ButtonIcon, List as ListIcon, Columns as ColumnIcon } from 'lucide-react';
 import type { Node } from '@xyflow/react';
 

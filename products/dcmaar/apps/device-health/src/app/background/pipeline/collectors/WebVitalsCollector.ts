@@ -8,7 +8,7 @@
  * @since 2.0.0
  */
 
-import type { Event } from '@ghatana/dcmaar-connectors';
+import type { Event } from '@dcmaar/connectors';
 import type { ProcessCollector } from '../ProcessManager';
 import type { ProcessExecutionContext, DataSource } from '../../contracts/process';
 import type { WebVitalsSnapshot, LCPMetric, INPMetric, CLSMetric } from '../../contracts/oob-analytics';

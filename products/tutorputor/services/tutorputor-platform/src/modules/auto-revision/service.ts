@@ -5,7 +5,7 @@
  * and A/B experiment lifecycle management.
  */
 
-import type { PrismaClient } from '@ghatana/tutorputor-db';
+import type { PrismaClient } from '@tutorputor/db';
 
 export interface DriftSignal {
     type: 'engagement_drop' | 'high_abort_rate' | 'low_completion' | 'low_mastery' | 'negative_feedback';

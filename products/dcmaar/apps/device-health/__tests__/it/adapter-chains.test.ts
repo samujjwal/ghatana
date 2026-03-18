@@ -11,7 +11,7 @@ import {
   WebSocketConnector,
   type HttpConnectorConfig,
   type WebSocketConnectorConfig,
-} from '@ghatana/dcmaar-connectors';
+} from '@dcmaar/connectors';
 
 describe.skip('Connector Chains', () => {
   describe('HTTP Connector Data Flow', () => {

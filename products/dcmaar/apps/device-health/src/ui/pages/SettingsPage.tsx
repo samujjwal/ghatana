@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import browser from 'webextension-polyfill';
-import { Card, Toggle, Select, Button, Badge } from '@ghatana/dcmaar-shared-ui-tailwind';
+import { Card, Toggle, Select, Button, Badge } from '@dcmaar/shared-ui-tailwind';
 import { DataRetentionSettings } from '../components/settings/DataRetentionSettings';
 
 type Theme = 'light' | 'dark' | 'auto';

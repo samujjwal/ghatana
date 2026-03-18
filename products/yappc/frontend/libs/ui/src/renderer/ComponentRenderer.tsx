@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { Box } from '@ghatana/ui';
+import { Box } from '@ghatana/design-system';
 import React from 'react';
 
 // Import atoms

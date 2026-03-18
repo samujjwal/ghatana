@@ -12,7 +12,7 @@ import { RegisterForm } from '../RegisterForm';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock the useAuth hook
-vi.mock('@ghatana/yappc-canvas', () => ({
+vi.mock('@yappc/canvas', () => ({
   useAuth: () => ({
     register: vi.fn(),
     login: vi.fn(),
@@ -230,7 +230,7 @@ describe('RegisterForm', () => {
   describe('Form Submission', () => {
     it('should call register with correct data', async () => {
       const mockRegister = vi.fn().mockResolvedValue({});
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         register: mockRegister,
         login: vi.fn(),
@@ -259,7 +259,7 @@ describe('RegisterForm', () => {
     it('should auto-login after successful registration', async () => {
       const mockRegister = vi.fn().mockResolvedValue({});
       const mockLogin = vi.fn().mockResolvedValue({});
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         register: mockRegister,
         login: mockLogin,
@@ -286,7 +286,7 @@ describe('RegisterForm', () => {
     it('should call onSuccess callback on successful registration', async () => {
       const mockRegister = vi.fn().mockResolvedValue({});
       const mockOnSuccess = vi.fn();
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         register: mockRegister,
         login: vi.fn().mockResolvedValue({}),
@@ -312,7 +312,7 @@ describe('RegisterForm', () => {
       const mockError = new Error('Email already exists');
       const mockRegister = vi.fn().mockRejectedValue(mockError);
       const mockOnError = vi.fn();
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         register: mockRegister,
         login: vi.fn(),
@@ -336,7 +336,7 @@ describe('RegisterForm', () => {
 
     it('should not submit with weak password', async () => {
       const mockRegister = vi.fn();
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         register: mockRegister,
         login: vi.fn(),
@@ -424,7 +424,7 @@ describe('RegisterForm', () => {
 
   describe('Error Display', () => {
     it('should display authentication error', () => {
-      const { useAuth } = require('@ghatana/yappc-canvas');
+      const { useAuth } = require('@yappc/canvas');
       useAuth.mockReturnValue({
         register: vi.fn(),
         login: vi.fn(),

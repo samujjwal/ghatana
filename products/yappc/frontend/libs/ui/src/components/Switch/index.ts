@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { Switch as GlobalSwitch } from '@ghatana/ui';
+import { Switch as GlobalSwitch } from '@ghatana/design-system';
 
-import type { SwitchProps as GlobalSwitchProps } from '@ghatana/yappc-ui';
+import type { SwitchProps as GlobalSwitchProps } from '@yappc/ui';
 
 export type { GlobalSwitchProps as SwitchProps };
 

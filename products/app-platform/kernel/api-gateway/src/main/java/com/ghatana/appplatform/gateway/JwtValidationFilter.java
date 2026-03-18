@@ -15,9 +15,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * {@link FilterChain.Filter} that validates RS256-signed JWTs on every request.
@@ -31,11 +35,17 @@ import java.util.Objects;
  *   <li>Check not-before ({@code nbf}) — reject tokens not yet valid.</li>
  *   <li>Check issuer ({@code iss}) — reject tokens from untrusted issuers.</li>
  *   <li>Check audience ({@code aud}) — reject tokens not intended for this service.</li>
+ *   <li>Check JWT ID ({@code jti}) — reject replayed tokens via an in-memory replay cache.</li>
  *   <li>Forward to the next filter/servlet on success; return 401 on failure.</li>
  * </ol>
  *
  * <p>The filter is stateless — the signing key is fetched on every call so
  * hot-reloaded keys take effect immediately.
+ *
+ * <h2>Replay-cache implementation</h2>
+ * <p>Seen {@code jti} values are stored in a {@link ConcurrentHashMap} keyed by jti, with the
+ * token's {@code exp} time as the value. A periodic sweep (triggered on every 1000th request)
+ * removes entries whose {@code exp} has passed, keeping the cache bounded.
  *
  * @doc.type class
  * @doc.purpose RS256 JWT validation FilterChain.Filter for the finance API gateway (K-11)
@@ -48,6 +58,13 @@ public final class JwtValidationFilter implements FilterChain.Filter {
 
     private static final String AUTH_HEADER   = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
+
+    /** Minimum frequency of replay-cache sweep: every N requests. */
+    private static final int SWEEP_INTERVAL = 1_000;
+
+    /** jti → expiry-instant cache. ConcurrentHashMap is safe for concurrent event-loop requests. */
+    private final ConcurrentHashMap<String, Instant> jtiCache = new ConcurrentHashMap<>();
+    private volatile long requestCount = 0;
 
     private final SigningKeyProvider signingKeyProvider;
     private final String requiredIssuer;
@@ -125,11 +142,44 @@ public final class JwtValidationFilter implements FilterChain.Filter {
                 return Promise.of(HttpResponse.ofCode(401).build());
             }
 
+            // Validate JWT ID (jti) — reject replayed tokens
+            String jti = claims.getJWTID();
+            if (jti == null || jti.isBlank()) {
+                log.warn("JWT missing jti claim — rejecting to prevent replay");
+                return Promise.of(HttpResponse.ofCode(401).build());
+            }
+            Instant expiryInstant = expiry.toInstant();
+            if (jtiCache.putIfAbsent(jti, expiryInstant) != null) {
+                log.warn("JWT replay detected: jti={}", jti);
+                return Promise.of(HttpResponse.ofCode(401).build());
+            }
+
+            // Periodically sweep expired entries to keep the cache bounded
+            if (++requestCount % SWEEP_INTERVAL == 0) {
+                sweepExpiredJti();
+            }
+
         } catch (ParseException | com.nimbusds.jose.JOSEException e) {
             log.debug("JWT parse/verify error: {}", e.getMessage());
             return Promise.of(HttpResponse.ofCode(401).build());
         }
 
         return next.serve(request);
+    }
+
+    /** Removes jti cache entries whose token expiry has already passed. */
+    private void sweepExpiredJti() {
+        Instant now = Instant.now();
+        Iterator<Map.Entry<String, Instant>> it = jtiCache.entrySet().iterator();
+        int removed = 0;
+        while (it.hasNext()) {
+            if (it.next().getValue().isBefore(now)) {
+                it.remove();
+                removed++;
+            }
+        }
+        if (removed > 0) {
+            log.debug("Swept {} expired jti entries from replay cache", removed);
+        }
     }
 }

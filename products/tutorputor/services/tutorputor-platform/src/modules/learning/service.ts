@@ -11,7 +11,7 @@
  * @doc.pattern Service
  */
 
-import type { LearningService } from "@ghatana/tutorputor-contracts/v1/services";
+import type { LearningService } from "@tutorputor/contracts/v1/services";
 import type {
   DashboardSummary,
   Enrollment,
@@ -19,8 +19,8 @@ import type {
   ModuleId,
   TenantId,
   UserId,
-} from "@ghatana/tutorputor-contracts/v1/types";
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
+} from "@tutorputor/contracts/v1/types";
+import type { TutorPrismaClient } from "@tutorputor/db";
 
 // =============================================================================
 // Types

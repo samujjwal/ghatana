@@ -15,7 +15,7 @@ import { Card, Button } from "@ghatana/design-system";
 import type {
   SimulationManifest,
   SimKeyframe,
-} from "@ghatana/tutorputor-contracts/v1/simulation/types";
+} from "@tutorputor/contracts/v1/simulation/types";
 
 // =============================================================================
 // Assessment-Specific Types

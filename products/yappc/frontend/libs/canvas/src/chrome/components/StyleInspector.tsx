@@ -6,7 +6,7 @@
  */
 
 import { Bold as BoldIcon, Italic as ItalicIcon, Underline as UnderlineIcon, PaintBucket as FillIcon, PenLine as BorderIcon } from 'lucide-react';
-import { Box, Typography, Slider, Button, Tooltip, TextField, Select, MenuItem, FormControl, InputLabel, Divider, IconButton } from '@ghatana/ui';
+import { Box, Typography, Slider, Button, Tooltip, TextField, Select, MenuItem, FormControl, InputLabel, Divider, IconButton } from '@ghatana/design-system';
 import React, { useMemo, useState } from 'react';
 
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';

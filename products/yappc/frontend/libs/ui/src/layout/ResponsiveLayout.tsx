@@ -1,5 +1,5 @@
-import { Box } from '@ghatana/ui';
-import { useGlobalStateValue } from '@ghatana/yappc-ui';
+import { Box } from '@ghatana/design-system';
+import { useGlobalStateValue } from '@yappc/ui';
 import React from 'react';
 
 /**

@@ -8,14 +8,16 @@
  */
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.cyclonedx.gradle.CycloneDxTask
 
 plugins {
     id("java-platform")
     id("idea")
+    id("org.cyclonedx.bom") version "1.10.0"
 }
 
 group = "com.ghatana"
-version = "1.0.0-SNAPSHOT"
+version = "2026.3.1-SNAPSHOT"
 
 // =============================================================================
 // Repository Configuration
@@ -24,7 +26,11 @@ version = "1.0.0-SNAPSHOT"
 allprojects {
     repositories {
         mavenCentral()
-        mavenLocal()
+        // mavenLocal() is only enabled for local platform library development.
+        // Activate with: ./gradlew <task> -PlocalBuild=true
+        if (findProperty("localBuild") == "true") {
+            mavenLocal()
+        }
     }
 }
 
@@ -177,4 +183,19 @@ tasks.register("buildAll") {
     group = "build"
     description = "Build entire monorepo"
     dependsOn("buildPlatform", "buildProducts")
+}
+
+// =============================================================================
+// SBOM Generation (CycloneDX)
+// =============================================================================
+
+tasks.withType<CycloneDxTask>().configureEach {
+    includeConfigs.set(listOf("runtimeClasspath", "compileClasspath"))
+    skipConfigs.set(listOf("testRuntimeClasspath", "testCompileClasspath"))
+    schemaVersion.set("1.5")
+    destination.set(project.file("build/sbom"))
+    outputName.set("bom")
+    outputFormat.set("json")
+    includeLicenseText.set(false)
+    includeMetadataResolution.set(true)
 }

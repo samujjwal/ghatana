@@ -8,7 +8,7 @@
  */
 
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import type { SimKeyframe, SimEntityBase, SimVisualStyle } from '@ghatana/tutorputor-contracts/v1/simulation';
+import type { SimKeyframe, SimEntityBase, SimVisualStyle } from '@tutorputor/contracts/v1/simulation';
 
 /**
  * Canvas props.

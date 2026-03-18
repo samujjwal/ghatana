@@ -9,7 +9,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { Card } from '@ghatana/dcmaar-shared-ui-tailwind';
+import { Card } from '@dcmaar/shared-ui-tailwind';
 import type { ProcessedMetrics } from '../../../analytics/AnalyticsPipeline';
 import { getTopActions, hasPlaybook } from '../../../analytics/guidance/ActionPlaybooks';
 import { useGuidance } from '../../context/GuidanceContext';

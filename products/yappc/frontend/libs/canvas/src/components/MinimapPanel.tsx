@@ -18,7 +18,7 @@ import {
   IconButton,
   Tooltip,
   Surface as Paper,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import { useRef, useEffect, useCallback, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import type { JSX } from 'react';
 

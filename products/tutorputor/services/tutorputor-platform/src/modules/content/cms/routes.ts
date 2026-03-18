@@ -13,13 +13,13 @@
  */
 
 import type { FastifyInstance, FastifyReply } from "fastify";
-import type { CMSService } from "@ghatana/tutorputor-contracts/v1/services";
+import type { CMSService } from "@tutorputor/contracts/v1/services";
 import type {
   ModuleDraftInput,
   ModuleDraftPatch,
   ModuleId,
   ModuleSummary,
-} from "@ghatana/tutorputor-contracts/v1/types";
+} from "@tutorputor/contracts/v1/types";
 import {
   getTenantId,
   getUserId,

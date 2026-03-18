@@ -14,7 +14,7 @@
  */
 
 import { Job, Queue } from 'bullmq';
-import { PrismaClient } from '@ghatana/tutorputor-db';
+import { PrismaClient } from '@tutorputor/db';
 import { Logger } from 'pino';
 import { RealContentGenerationClient } from '../grpc/RealContentGenerationClient';
 import * as crypto from 'crypto';

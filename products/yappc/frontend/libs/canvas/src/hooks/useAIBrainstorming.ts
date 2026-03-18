@@ -20,7 +20,7 @@ import { useState, useCallback } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import type { Node, Edge } from '@xyflow/react';
 import { AICodeGenerationService } from '../integration/aiCodeGeneration';
-import type { IAIService } from '@ghatana/yappc-ai/core';
+import type { IAIService } from '@yappc/ai/core';
 
 /**
  * Node type suggestions from AI

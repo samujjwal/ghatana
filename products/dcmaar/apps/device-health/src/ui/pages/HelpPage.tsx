@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Badge } from '@ghatana/dcmaar-shared-ui-tailwind';
+import { Card, Badge } from '@dcmaar/shared-ui-tailwind';
 
 interface FAQItem {
     question: string;

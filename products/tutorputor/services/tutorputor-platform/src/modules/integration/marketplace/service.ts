@@ -1,4 +1,4 @@
-import type { MarketplaceService } from "@ghatana/tutorputor-contracts/v1/services";
+import type { MarketplaceService } from "@tutorputor/contracts/v1/services";
 import type {
     MarketplaceListing,
     MarketplaceListingId,
@@ -9,8 +9,8 @@ import type {
     SimulationTemplateStatus,
     SimulationTemplateDifficulty,
     SimulationTemplateLicense
-} from "@ghatana/tutorputor-contracts/v1/types";
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
+} from "@tutorputor/contracts/v1/types";
+import type { TutorPrismaClient } from "@tutorputor/db";
 
 type TemplateSortField =
     | "popularity"

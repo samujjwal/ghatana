@@ -24,7 +24,7 @@ import {
   onCallScheduleAtom,
   serviceHealthAtom,
   metricsAtom,
-} from '@ghatana/yappc-canvas';
+} from '@yappc/canvas';
 
 import {
   GET_INCIDENT,

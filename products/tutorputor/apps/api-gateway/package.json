@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/tutorputor-api-gateway",
+  "name": "@tutorputor/api-gateway",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -21,9 +21,9 @@
     "@opentelemetry/resources": "^2.5.0",
     "@opentelemetry/sdk-node": "^0.211.0",
     "@opentelemetry/semantic-conventions": "^1.39.0",
-    "@ghatana/tutorputor-contracts": "workspace:*",
-    "@ghatana/tutorputor-db": "workspace:*",
-    "@ghatana/tutorputor-platform": "workspace:*",
+    "@tutorputor/contracts": "workspace:*",
+    "@tutorputor/db": "workspace:*",
+    "@tutorputor/platform": "workspace:*",
     "fastify": "^5.7.4",
     "prom-client": "^15.1.3"
   },

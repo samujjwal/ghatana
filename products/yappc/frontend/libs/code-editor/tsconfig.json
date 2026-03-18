@@ -23,8 +23,8 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@ghatana/yappc-ui": ["../ui/src/index.ts"],
-      "@ghatana/yappc-ui/*": ["../ui/src/*"]
+      "@yappc/ui": ["../ui/src/index.ts"],
+      "@yappc/ui/*": ["../ui/src/*"]
     }
   },
   "include": ["src/**/*"],

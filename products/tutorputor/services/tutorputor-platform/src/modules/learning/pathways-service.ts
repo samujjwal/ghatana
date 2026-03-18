@@ -10,7 +10,7 @@
  * @doc.pattern Service
  */
 
-import type { PathwaysService } from "@ghatana/tutorputor-contracts/v1/services";
+import type { PathwaysService } from "@tutorputor/contracts/v1/services";
 import type {
   LearningPath,
   LearningPathNode,
@@ -22,8 +22,8 @@ import type {
   PathwayConstraints,
   TenantId,
   UserId,
-} from "@ghatana/tutorputor-contracts/v1/types";
-import type { TutorPrismaClient } from "@ghatana/tutorputor-db";
+} from "@tutorputor/contracts/v1/types";
+import type { TutorPrismaClient } from "@tutorputor/db";
 
 import { aiClient } from "../../clients/ai-client";
 

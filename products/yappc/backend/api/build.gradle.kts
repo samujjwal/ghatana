@@ -54,6 +54,7 @@ dependencies {
     implementation(project(":platform:java:security"))
     implementation(project(":platform:java:agent-framework"))
     implementation(project(":platform:java:agent-memory"))
+    implementation(project(":platform:java:agent-registry"))
     
     // AEP Platform Libraries
     implementation(project(":products:aep:platform"))

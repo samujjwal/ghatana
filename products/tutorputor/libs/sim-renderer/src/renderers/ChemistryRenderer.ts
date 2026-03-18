@@ -13,7 +13,7 @@ import type {
     ChemMoleculeEntity,
     ChemReactionArrowEntity,
     ChemEnergyProfileEntity,
-} from "@ghatana/tutorputor-contracts/v1/simulation";
+} from "@tutorputor/contracts/v1/simulation";
 import type { EntityRenderer, RenderContext } from "../types";
 import {
     drawCircle,

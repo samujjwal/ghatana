@@ -234,7 +234,7 @@
          Standard Java serialization is not used for these entities.
     ====================================================================== -->
     <Match>
-        <Bug pattern="SE_BAD_FIELD" />
+        <Bug pattern="SE_BAD_FIELD,SE_BAD_FIELD_STORE" />
         <Package name="~com\.ghatana\.datacloud\b.*" />
     </Match>
 

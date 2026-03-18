@@ -10,7 +10,7 @@ import {
 import type {
     ExtensionPluginManifest,
     ExtensionPluginDescriptor,
-} from "@ghatana/dcmaar-types";
+} from "@dcmaar/types";
 
 // Stub @ghatana/dcmaar-plugin-abstractions with a minimal in-memory implementation
 class FakePluginManager {

@@ -11,7 +11,7 @@
  */
 
 import { useState, type FormEvent } from 'react';
-import { useAuth } from '@ghatana/yappc-canvas';
+import { useAuth } from '@yappc/canvas';
 
 // ============================================================================
 // Types

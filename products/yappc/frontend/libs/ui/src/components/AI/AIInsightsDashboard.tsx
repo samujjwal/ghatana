@@ -5,7 +5,7 @@
  * and optimization recommendations with actionable insights.
  */
 
-import { Alert, Badge, Box, Tab, Tabs, Typography } from '@ghatana/ui';
+import { Alert, Badge, Box, Tab, Tabs, Typography } from '@ghatana/design-system';
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { Header } from './Header';

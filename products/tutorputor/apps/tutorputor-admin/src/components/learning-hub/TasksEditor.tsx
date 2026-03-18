@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckSquare, Plus, Trash2, Link, Settings } from 'lucide-react';
-import type { Task, Claim, Evidence } from '@ghatana/tutorputor-contracts/v1/learning-unit';
+import type { Task, Claim, Evidence } from '@tutorputor/contracts/v1/learning-unit';
 
 interface TasksEditorProps {
     tasks: Task[];

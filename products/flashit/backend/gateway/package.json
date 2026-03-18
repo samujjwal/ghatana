@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/flashit-web-api",
+  "name": "@flashit/web-api",
   "version": "0.1.0",
   "description": "Flashit Fastify API for capture, search, and reflection",
   "private": true,

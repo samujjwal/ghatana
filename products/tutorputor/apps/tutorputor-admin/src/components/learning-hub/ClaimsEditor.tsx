@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle, Plus, Trash2, ArrowUp } from 'lucide-react';
-import type { Claim } from '@ghatana/tutorputor-contracts/v1/learning-unit';
+import type { Claim } from '@tutorputor/contracts/v1/learning-unit';
 
 interface ClaimsEditorProps {
     claims: Claim[];
