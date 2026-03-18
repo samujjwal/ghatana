@@ -56,10 +56,12 @@ API Gateway / NestJS API App
   ConsentModule
   AuditModule
   AdminModule
-  TelemedicineModule (Phase 2)
   DataInputModule
-  BillingModule (Phase 2)
-  FamilyModule (Phase 2)
+  FamilyModule
+  BillingModule
+  ReferralModule
+  ImagingModule
+  TelemedicineModule (Phase 2)
     |
     +--> PostgreSQL
     +--> Ceph / RADOS Gateway
@@ -82,7 +84,7 @@ Worker App
 
 ### 3.1 Client applications
 
-- web app for patient, provider, admin, and later caregiver flows
+- web app for patient, provider, admin, and caregiver flows
 - mobile app for patient-first experiences
 - desktop app shell for high-usage provider/admin and assisted-registration workflows
 - all client apps consume shared route contracts and shared validation schemas
@@ -138,6 +140,7 @@ Every request that touches patient data must evaluate:
 - patient relationship
 - consent or delegated grant
 - facility scope where relevant
+- offline replay provenance and conflict policy where queued writes are supported
 
 ---
 

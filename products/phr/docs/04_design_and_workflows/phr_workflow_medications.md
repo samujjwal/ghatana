@@ -25,7 +25,7 @@ Support safe viewing and entry of active and historical medication requests.
 
 - patient
 - provider
-- caregiver in later delegated read flows
+- caregiver in delegated read and adherence-support flows
 
 ---
 
@@ -91,6 +91,7 @@ APIs:
 Core MVP:
 
 - optional patient notification for new medication request
+- caregiver reminder and adherence actions when the active grant explicitly includes medication support
 
 Phase 2:
 
@@ -166,4 +167,5 @@ Medication reminders work offline on mobile:
 - Local notifications fire on schedule regardless of connectivity
 - Adherence responses (taken / skipped / delayed) stored locally
 - Synced to server when connectivity returns
+- Caregiver-managed adherence responses are allowed only for dependents covered by an active medication-support grant
 - Provider dashboard shows adherence patterns (Phase 2)

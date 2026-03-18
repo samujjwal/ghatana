@@ -2,7 +2,7 @@ plugins {
     id("java-library")
     id("application")
     id("jacoco")
-    // id("com.diffplug.spotless") version "6.25.0" - temporarily disabled
+    id("com.diffplug.spotless")
 }
 
 group = "com.ghatana.products.yappc"
@@ -149,8 +149,9 @@ tasks.test {
     systemProperty("io.activej.eventloop.gracefulShutdownMillis", "100")
 }
 
-/*
-// Spotless configuration for code formatting - temporarily disabled
+// Spotless code formatting configuration
+// Run `./gradlew :products:yappc:backend:api:spotlessApply` to auto-format.
+// `spotlessCheck` is enforced in CI.
 spotless {
     java {
         target("src/**/*.java")
@@ -159,7 +160,7 @@ spotless {
         removeUnusedImports()
         trimTrailingWhitespace()
         endWithNewline()
-        
+
         // Custom license header
         licenseHeader("""
             /*
@@ -169,9 +170,8 @@ spotless {
         """.trimIndent())
     }
 }
-*/
 
-// Disabled for now - formatting issues
+// Disabled: auto-apply before compile is too aggressive; use spotlessApply manually.
 // tasks.named("compileJava") {
 //     dependsOn("spotlessApply")
 // }

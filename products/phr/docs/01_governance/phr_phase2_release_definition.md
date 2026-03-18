@@ -20,11 +20,13 @@ Phase 2 expands Core MVP into an operationally richer patient and provider exper
 
 - telemedicine consultation workflows (video + audio, adaptive bitrate for Nepal's variable bandwidth)
 - claims and claim tracking (openIMIS FHIR Claim format, end-to-end submission lifecycle)
-- caregiver/dependent access flows (culturally appropriate for Nepal's joint-family caregiving model)
-- offline-first user experience (critical for rural Nepal where 37% of population lacks reliable internet)
-- payment integration via Nepal digital wallets (Khalti, eSewa)
+- family health hub analytics and multi-profile household administration layered on top of the MVP caregiver baseline
+- advanced offline automation, richer merge tooling, and long-duration disconnected operation layered on top of the MVP sync baseline
+- payment refunds, subscriptions, and reconciliation automation layered on top of MVP bill-pay flows
 - richer reminder and notification handling (SMS + push + voice reminders for low-literacy users)
-- referral management baseline (cross-facility patient transfer tracking)
+- claims reimbursement and denial-management workflows
+- advanced referral coordination and specialist feedback loops
+- advanced imaging comparison and diagnostics workflows
 
 Phase 2 assumes Core MVP platform, identity, consent, clinical, document, and scheduling foundations already exist.
 
@@ -53,37 +55,39 @@ Phase 2 assumes Core MVP platform, identity, consent, clinical, document, and sc
 - claim status retrieval
 - attachment linkage to claims
 
-### 2.3 Family and caregiver
+### 2.3 Family and caregiver expansion
 
-- dependent list (children, elderly parents, disabled family members)
-- dependent summary (delegated read access to dependent's health records)
-- caregiver-scoped access checks (time-bounded, revocable, audited)
-- delegated scheduling and record viewing
-- emergency override access (when patient is incapacitated, with post-hoc audit trail)
-- caregiver notification mirroring (receive medication and appointment reminders for dependents)
+- family account and household administration model
+- shared family health hub and family-wide analytics
+- family plan pricing and subscription packaging
+- cross-timezone NRN caregiver notification model
+- pediatric and elderly-care dashboards beyond the MVP dependent summary
 
 > **Nepal cultural context:** In Nepal's joint-family system, healthcare decisions are often made collectively. The caregiver model must support multiple caregivers per patient (e.g., spouse + adult child), with each having independently scoped and revocable access grants. This aligns with the UK NHS App's proxy access model but adapted for Nepal's family dynamics.
 
-### 2.4 Experience and resilience
+### 2.4 Experience and resilience expansion
 
-- offline read/write policy for selected patient features (cached records, queued data entry)
-- sync status and conflict handling (last-write-wins with manual conflict resolution for clinical data)
+- offline support extended to longer disconnected windows, larger queue volumes, and richer retry orchestration
+- advanced sync diagnostics, operator tooling, and replay/recovery support
 - richer reminder and notification handling (SMS, push, voice call reminders)
 - data freshness indicators ("Last synced X minutes ago" visible to user)
 - background sync with exponential backoff on repeated failures
 - encrypted local storage (SQLite with AES-256 encryption on mobile)
 
-### 2.5 Payment and financial
+Core MVP already includes delegated caregiver access, generalized offline queueing and conflict handling for approved flows, payment initiation and receipts, referral creation/tracking, and imaging-viewer baseline. Phase 2 expands those foundations rather than introducing them for the first time.
 
-- Khalti and eSewa digital wallet integration for premium subscriptions
-- payment verification and receipt generation
+### 2.5 Payment and financial expansion
+
+- claim-linked reimbursement management
+- refund workflows and settlement exceptions
 - subscription management (upgrade/downgrade/cancel)
+- automated reconciliation and finance operations views
 
-### 2.6 Referral baseline
+### 2.6 Referral and imaging expansion
 
-- referral creation by primary provider
-- referral status tracking
-- cross-facility data sharing via FHIR referral resources
+- specialist feedback loops and referral outcome exchange
+- referral work-queue orchestration across facilities
+- comparative imaging review and advanced diagnostics collaboration
 
 ---
 
@@ -93,7 +97,7 @@ Phase 2 assumes Core MVP platform, identity, consent, clinical, document, and sc
 
 - `TelemedicineModule`
 - `BillingModule`
-- `FamilyModule`
+- `ClaimsModule` expansion within `BillingModule`
 - `NotificationModule` expansion
 
 ### 3.2 Resources and app tables
@@ -108,12 +112,14 @@ Phase 2 assumes Core MVP platform, identity, consent, clinical, document, and sc
 - `TranscriptAsset`
 - `RecordingAsset`
 - `ClaimSubmissionAttempt`
+- `SubscriptionPlan`
+- `RefundRequest`
 
 ### 3.3 UI surfaces
 
 - patient claims
-- caregiver dependents list
-- caregiver dependent summary
+- family health hub
+- claims and reimbursement workbench
 - telemedicine consultation room
 
 ---
@@ -157,11 +163,11 @@ Phase 2 assumes Core MVP platform, identity, consent, clinical, document, and sc
 - session reconnect works within 2-minute window after network interruption
 - claims can be created, submitted to openIMIS, and status retrieved reliably
 - duplicate claim submission is prevented (idempotency key enforcement)
-- caregiver access remains scoped by active grant and revocation is immediate
-- emergency override access generates prominent audit trail and post-hoc notification to patient
-- offline mode shows cached data with clear freshness indicators
-- sync resolves conflicts deterministically with user-visible conflict resolution for clinical data
-- payment flow completes end-to-end with receipt generation
+- caregiver family-hub features remain scoped by active grants and subscription entitlements
+- offline recovery tooling can replay queued operations after multi-day disconnection
+- claim reimbursement and denial workflows complete end-to-end
+- refund and subscription-management flows complete end-to-end
+- advanced referral and specialist feedback loop completes across facilities
 
 ### 5.2 Quality
 
@@ -169,8 +175,8 @@ Phase 2 assumes Core MVP platform, identity, consent, clinical, document, and sc
 - duplicate submission protections exist for claims and telemedicine joins
 - accessibility covers captions, transcripts, large text, and high contrast
 - telemedicine works on 3G connection with adaptive quality
-- offline sync tested with 72-hour offline period followed by reconnection
-- caregiver workflows tested with multiple concurrent caregivers per patient
+- offline recovery tested with 7-day disconnected windows and replay of large queue volumes
+- household and caregiver workflows tested with multiple concurrent caregivers per patient
 
 ### 5.3 Security
 

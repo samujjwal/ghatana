@@ -10,3 +10,5 @@ Files:
 - `phr_service_integration_testcases.md` — Module and persistence tests including cross-tenant isolation, consent cache, circuit breaker integration, document integrity, and FCHV registration
 - `phr_ui_e2e_testcases.md` — User-facing E2E scenarios including Emergency QR UI, FCHV flows, offline mode, Nepali locale, WCAG 2.2 AA audit, and browser compatibility matrix
 - `phr_nonfunctional_and_compliance_testcases.md` — Quality, security, and compliance tests including OWASP Top 10 suite, DPIA validation, pen test requirements, load/stress specs, data retention, Nepali ASR accuracy, and breach notification
+- `phr_test_automation_mapping.md` — Planned suite paths and owners for every testcase family
+- `phr_seed_data_and_test_fixture_plan.md` — Shared fixture tenants, actor seeds, external stubs, and deterministic reset rules

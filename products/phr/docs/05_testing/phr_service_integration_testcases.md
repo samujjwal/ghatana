@@ -40,7 +40,7 @@ This document defines module-level, persistence-level, and external-integration 
 
 | Test ID   | Phase   | Scope                        | Scenario                                      | Expected result                                        |
 | --------- | ------- | ---------------------------- | --------------------------------------------- | ------------------------------------------------------ |
-| `SVC-013` | Phase 2 | caregiver policy layer       | caregiver reads out-of-scope dependent record | access denied and audited                              |
+| `SVC-013` | MVP     | caregiver policy layer       | caregiver reads out-of-scope dependent record | access denied and audited                              |
 | `SVC-014` | Phase 2 | telemedicine session service | create/join/end session                       | participant and session state transitions remain valid |
 | `SVC-015` | Phase 2 | claim submission integration | claim submit with retryable upstream failure  | `ClaimSubmissionAttempt` persisted and retry-safe      |
 
@@ -132,6 +132,9 @@ Every service/integration test must assert:
 | `SVC-035` | MVP   | document integrity | Hash mismatch detected       | Document quarantined, alert emitted         |
 | `SVC-036` | MVP   | virus scan         | Upload with EICAR test file  | File rejected, quarantined, user notified   |
 | `SVC-037` | MVP   | virus scan         | Scan timeout                 | File remains in quarantine, retry scheduled |
+| `SVC-038` | MVP   | payment service    | payment callback replayed    | confirmation remains idempotent and receipt single-issued |
+| `SVC-039` | MVP   | referral service   | cross-facility referral created | status history persisted and receiving facility notified |
+| `SVC-040` | MVP   | imaging access     | imaging viewer request       | signed viewer/download URL created with audit event |
 
 ---
 

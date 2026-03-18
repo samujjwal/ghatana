@@ -60,6 +60,7 @@ However, the active documents also rely on several **app-owned operational table
 | `ReviewQueueItem`      | human review queue for low-confidence OCR/ASR outputs                 | `DataInputModule`    |
 | `ReminderPlan`         | appointment and medication reminder scheduling                        | `NotificationModule` |
 | `NotificationDelivery` | delivery attempt/result tracking                                      | `NotificationModule` |
+| `ExportJob`            | export request lifecycle, artifact expiry, and audit-friendly status  | `InteroperabilityModule` |
 | `FeatureFlag`          | controlled rollout and release gating                                 | `AdminModule`        |
 
 ### 2.2 Recommended Core MVP model notes
@@ -246,4 +247,4 @@ Fields:
 ## 7. Final recommendation
 
 Treat the starter Prisma schema as a **FHIR capability baseline**, not the final implementation schema.
-Core MVP needs a small but important set of operational tables before development starts in earnest.
+Core MVP needs a small but important set of operational tables before development starts in earnest, including export lifecycle support for the committed portability surface.

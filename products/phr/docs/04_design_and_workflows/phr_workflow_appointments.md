@@ -25,7 +25,7 @@ Allow patients or authorized staff to book and view appointments while protectin
 
 - patient
 - provider staff
-- caregiver in later delegated scope
+- caregiver in delegated MVP scope
 
 ---
 
@@ -33,6 +33,7 @@ Allow patients or authorized staff to book and view appointments while protectin
 
 - patient appointment list
 - patient booking screen
+- caregiver dependent summary and dependent appointment actions
 - provider calendar
 
 APIs:
@@ -119,11 +120,12 @@ APIs:
 
 ## 11. Offline Appointment Viewing (Added in v2.0)
 
-Mobile app caches upcoming appointments for offline access:
+Mobile app caches upcoming appointments for approved patient and caregiver views:
 
 - Next 30 days of appointments cached locally (encrypted)
 - Cache refreshes on each successful sync
 - Offline display shows: appointment date, time, provider name, facility, reason
+- Caregiver sees only dependent appointments covered by the active delegation scope
 - **No offline booking allowed** (requires real-time slot validation)
 - If appointment passes while offline → shown as "Past" with "Sync to update" note
 

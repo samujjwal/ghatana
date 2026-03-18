@@ -6,12 +6,18 @@ import io.activej.inject.Injector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Registers legacy backend routes into the unified YAPPC service router.
+/**
+ * Registers legacy backend routes into the unified YAPPC service router.
+ *
+ * @deprecated Routing is now fully handled by {@code ApiApplication}'s ActiveJ DI {@code
+ *     @Provides} methods. This class is retained for API compatibility only and may be removed in a
+ *     future release.
  * @doc.type class
- * @doc.purpose Handles legacy route registrar operations
+ * @doc.purpose Legacy route registration bridge (deprecated)
  * @doc.layer product
  * @doc.pattern ValueObject
-*/
+ */
+@Deprecated(forRemoval = true)
 public final class LegacyRouteRegistrar {
   private static final Logger LOG = LoggerFactory.getLogger(LegacyRouteRegistrar.class);
 

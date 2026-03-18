@@ -8,6 +8,8 @@ import com.ghatana.yappc.api.controller.ConfigController;
 import com.ghatana.yappc.api.service.ConfigLoader;
 import com.ghatana.yappc.api.service.ConfigService;
 import java.nio.file.Paths;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Simple test to verify config system instantiation. 
  * @doc.type class
@@ -16,31 +18,32 @@ import java.nio.file.Paths;
  * @doc.pattern ValueObject
 */
 public class ConfigTestSimple {
+  private static final Logger logger = LoggerFactory.getLogger(ConfigTestSimple.class);
+
   public static void main(String[] args) {
-    System.out.println("Testing ConfigController instantiation...");
+    logger.info("Testing ConfigController instantiation...");
 
     try {
       // Create config path
       var configPath = Paths.get("config").toAbsolutePath();
-      System.out.println("Config path: " + configPath);
+      logger.info("Config path: {}", configPath);
 
       // Create config loader
       ConfigLoader configLoader = new ConfigLoader(configPath);
-      System.out.println("✅ ConfigLoader created");
+      logger.info("ConfigLoader created");
 
       // Create config service
       ConfigService configService = new ConfigService(configLoader);
-      System.out.println("✅ ConfigService created");
+      logger.info("ConfigService created");
 
       // Create config controller
       ConfigController configController = new ConfigController(configService);
-      System.out.println("✅ ConfigController created");
+      logger.info("ConfigController created");
 
-      System.out.println("🎉 All config components instantiated successfully!");
+      logger.info("All config components instantiated successfully!");
 
     } catch (Exception e) {
-      System.err.println("❌ Error during instantiation: " + e.getMessage());
-      e.printStackTrace();
+      logger.error("Error during instantiation: {}", e.getMessage(), e);
     }
   }
 }

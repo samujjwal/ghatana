@@ -24,7 +24,7 @@ import type {
   DatabaseNode,
   UIButton} from './component-registry';
 
-describe.skip('Phase 8: Component Schema Registry', () => {
+describe('Phase 8: Component Schema Registry', () => {
   beforeEach(() => {
     // Reset registry state if needed
   });
@@ -431,7 +431,7 @@ describe.skip('Phase 8: Component Schema Registry', () => {
     });
 
     test('should handle circular references in validation', () => {
-      const circularData: any = {
+      const circularData: Record<string, unknown> = {
         id: 'circular',
         type: 'process',
         position: { x: 0, y: 0 },

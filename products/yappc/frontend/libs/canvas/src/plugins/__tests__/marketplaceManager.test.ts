@@ -9,7 +9,7 @@ import type {
   SecurityVerification,
 } from '../marketplaceTypes';
 
-describe.skip('MarketplaceManager', () => {
+describe('MarketplaceManager', () => {
   let manager: MarketplaceManager;
   let fetchMock: ReturnType<typeof vi.fn>;
 

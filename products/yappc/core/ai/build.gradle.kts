@@ -20,6 +20,7 @@ dependencies {
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:security"))
+    implementation(project(":platform:java:governance"))
     implementation(project(":platform:java:domain"))
     
     // Domain models

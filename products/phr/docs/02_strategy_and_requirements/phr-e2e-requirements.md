@@ -59,6 +59,11 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 - Insurance eligibility checking
 - OCR-assisted document digitization and review
 - Voice-assisted patient and provider data entry
+- Caregiver/dependent delegated access and management baseline
+- Offline-capable approved reads and queued writes with sync/conflict visibility
+- Referral creation and referral-status tracking baseline
+- Imaging viewer baseline for radiology studies and reports
+- Patient billing and payment flows with digital-wallet support and receipts
 - Mobile app (iOS, Android), Web app (provider, admin, patient portals), and Desktop app shell
 - FHIR API for external system integration
 
@@ -66,8 +71,8 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 
 - Telemedicine consultation (video, audio, transcription)
 - Insurance claim submission and tracking
-- Caregiver/family profile management
-- Offline-first capability with sync
+- Family hub analytics, subscription-family packaging, and richer household administration
+- Longer-duration offline automation and advanced recovery tooling
 
 ### Out of Scope (Phase 1-2)
 
@@ -105,9 +110,9 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 - **REQ-PATIENT-004:** Receive medication reminders (customizable frequency)
 - **REQ-PATIENT-005:** Schedule and attend telemedicine appointments (Phase 2)
 - **REQ-PATIENT-006:** Track health metrics (vitals, lab results, trends)
-- **REQ-PATIENT-007:** Manage family member records (with consent) (Phase 2)
+- **REQ-PATIENT-007:** Manage dependent records and delegated caregiver access (with consent)
 - **REQ-PATIENT-008:** Export health data (FHIR, PDF, CSV formats)
-- **REQ-PATIENT-009:** Access records offline (Phase 2)
+- **REQ-PATIENT-009:** Access approved record views offline, queue approved writes, and resolve sync conflicts with clear visibility
 - **REQ-PATIENT-010:** Use voice/audio for data entry and queries
 
 ### Secondary Needs
@@ -116,7 +121,7 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 - **REQ-PATIENT-012:** View insurance claim status (Phase 2)
 - **REQ-PATIENT-013:** Compare healthcare costs across providers
 - **REQ-PATIENT-014:** Receive health alerts (abnormal results, medication interactions)
-- **REQ-PATIENT-015:** Manage caregiver access (permissions) (Phase 2)
+- **REQ-PATIENT-015:** Manage caregiver access (permissions)
 - **REQ-PATIENT-016:** Create emergency medical information summary
 - **REQ-PATIENT-017:** Search medical records by date, provider, condition
 - **REQ-PATIENT-018:** Share specific records with selected providers
@@ -380,13 +385,13 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 - **REQ-LAB-013:** Link to education content (what does this result mean?)
 - **REQ-LAB-014:** Provide links to reliable health information resources
 
-### Imaging & Radiology (Phase 2)
+### Imaging & Radiology (MVP baseline)
 
 - **REQ-IMG-001:** Store imaging metadata (type, date, facility, provider)
 - **REQ-IMG-002:** DICOM viewer for X-rays, CT, MRI, ultrasound
 - **REQ-IMG-003:** Zoom, rotate, pan capabilities in DICOM viewer
 - **REQ-IMG-004:** Display radiology report with images
-- **REQ-IMG-005:** Before/after comparison of imaging studies
+- **REQ-IMG-005:** Before/after comparison of imaging studies (Phase 2)
 - **REQ-IMG-006:** Secure download of images for second opinion
 
 ---
@@ -530,7 +535,7 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 - **REQ-INS-018:** Re-submit rejected claims with corrections
 - **REQ-INS-019:** Appeal claim denials (with documentation)
 
-### Billing Management (Phase 2)
+### Billing Management (MVP baseline)
 
 - **REQ-INS-020:** Store medical bills from providers
 - **REQ-INS-021:** Display itemized bill (procedure, cost, insurance covered, out-of-pocket)
@@ -606,9 +611,9 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 
 ---
 
-## 3.11 Referral Management (Phase 2)
+## 3.11 Referral Management (MVP baseline)
 
-### Referral Creation (Phase 2)
+### Referral Creation (MVP baseline)
 
 - **REQ-REF-001:** Create referral to specialist from primary doctor
 - **REQ-REF-002:** Include patient medical summary in referral
@@ -616,7 +621,7 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 - **REQ-REF-004:** Recommend specialist type or specific doctor
 - **REQ-REF-005:** Send referral electronically to specialist facility
 
-### Referral Tracking (Phase 2)
+### Referral Tracking (MVP baseline)
 
 - **REQ-REF-006:** Track referral status (accepted, scheduled, completed)
 - **REQ-REF-007:** Display specialist appointment scheduled via referral
@@ -640,7 +645,7 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 
 ## 3.13 Family & Caregiver Management
 
-### Multi-User Family Profiles (Phase 2)
+### Multi-User Family Profiles (MVP baseline)
 
 - **REQ-FAMILY-001:** Create family account (primary user + dependents)
 - **REQ-FAMILY-002:** Add family members (children, spouse, parents)
@@ -649,7 +654,7 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 - **REQ-FAMILY-005:** Dependent minors added by legal guardian
 - **REQ-FAMILY-006:** Display family tree (relationships)
 
-### Caregiver Access & Permissions (Phase 2)
+### Caregiver Access & Permissions (MVP baseline)
 
 - **REQ-FAMILY-007:** Assign caregiver role to family member
 - **REQ-FAMILY-008:** Configure caregiver permissions (read-only, edit, etc.)
@@ -660,7 +665,7 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 - **REQ-FAMILY-013:** Caregiver receives medication reminders (can log doses)
 - **REQ-FAMILY-014:** Caregiver receives health alerts
 
-### Caregiver Dashboard (Phase 2)
+### Caregiver Dashboard (MVP baseline)
 
 - **REQ-FAMILY-015:** View health status of assigned dependents
 - **REQ-FAMILY-016:** Track medication adherence for dependent
@@ -892,16 +897,16 @@ A patient-centric Personal Health Record (PHR) system for Nepal that:
 
 ---
 
-## 5.5 Payment Integration (Phase 2)
+## 5.5 Payment Integration (MVP baseline)
 
-### Digital Payment (Phase 2)
+### Digital Payment (MVP baseline)
 
 - **REQ-INT-PAY-001:** Khalti integration (Nepal's largest digital wallet)
 - **REQ-INT-PAY-002:** eSewa integration (alternative payment)
 - **REQ-INT-PAY-003:** Mobile wallet payments
 - **REQ-INT-PAY-004:** Payment verification and confirmation
-- **REQ-INT-PAY-005:** Refund handling
-- **REQ-INT-PAY-006:** Subscription billing integration
+- **REQ-INT-PAY-005:** Refund handling (Phase 2)
+- **REQ-INT-PAY-006:** Subscription billing integration (Phase 2)
 
 ---
 
@@ -1381,7 +1386,7 @@ Sincerely,
 - **REQ-SEC-PRIVACY-002:** Explicit consent for data processing
 - **REQ-SEC-PRIVACY-003:** Right to access (provide copy of personal data)
 - **REQ-SEC-PRIVACY-004:** Right to rectification (correct inaccurate data)
-- **REQ-SEC-PRIVACY-005:** Right to erasure (delete account and data)
+- **REQ-SEC-PRIVACY-005:** Right to erasure handled through policy-driven deletion or anonymization with legal and retention exceptions
 - **REQ-SEC-PRIVACY-006:** Privacy policy in Nepali and English
 - **REQ-SEC-PRIVACY-007:** Privacy impact assessment (PIA)
 
@@ -1408,7 +1413,7 @@ Sincerely,
 - **Medications:** Current meds, reminders, adherence tracking
 - **Appointments:** Schedule, view upcoming, check-in
 - **Insurance:** Coverage and eligibility baseline; claim status in Phase 2
-- **Profile:** Edit details and emergency contacts; caregiver access in Phase 2
+- **Profile:** Edit details and emergency contacts; caregiver access controls are part of MVP
 - **Settings:** Notifications, language, privacy, logout
 
 **UI/UX Principles:**
@@ -1881,7 +1886,7 @@ Confirmation email sent
   ↓
 Patient confirms deletion in email link
   ↓
-All personal data deleted (audit logs retained)
+Policy-driven deletion/anonymization workflow executes with legal-hold and retention checks (audit logs retained)
   ↓
 Account marked as deleted
 ```
@@ -2237,8 +2242,9 @@ First responders can access emergency summary via QR code
 - Insurance claims
 - Custom ASR model
 - Wearable integration
-- Caregiver/family profiles
-- Offline sync
+- Claims reimbursement workflows
+- Family hub analytics and subscription-family packaging
+- Advanced offline recovery tooling
 - AI insights
 - Advanced analytics
 
@@ -2250,14 +2256,14 @@ First responders can access emergency summary via QR code
 
 **Add:**
 
-- Offline-first capability
-- Caregiver/family profiles
+- Caregiver/dependent portal baseline
+- Offline sync and conflict handling baseline
 - Medication refill integration
 - Lab integration
-- Imaging (DICOM viewer)
-- Referral management
+- Imaging viewer baseline
+- Referral management baseline
 - Advanced notifications
-- Payment integration
+- Payment integration baseline
 - Health literacy features
 - Accessibility hardening and extended UX coverage (WCAG 2.2 AA baseline)
 - Maithili, Newari language support
@@ -2308,7 +2314,7 @@ First responders can access emergency summary via QR code
 | --------------------- | ----- | ------------------------------------------------------------- | ------------- |
 | **P0 — Critical**     | 80    | Auth, FHIR, encryption, audit logs, registration              | MVP (Month 6) |
 | **P1 — High**         | 70    | Medical records, medications, appointments, telemedicine, ASR | MVP + Phase 2 |
-| **P2 — Medium**       | 60    | Offline sync, caregiver, analytics, integrations              | Phase 2       |
+| **P2 — Medium**       | 60    | claims, advanced family analytics, advanced offline tooling, integrations | Phase 2       |
 | **P3 — Low**          | 50    | AI insights, advanced features, marketplace                   | Phase 3+      |
 | **P4 — Nice-to-Have** | 40    | Customization, advanced personalization                       | Phase 4+      |
 
@@ -2331,7 +2337,7 @@ Every requirement category maps to one or more international standards. This cro
 | **Voice input (ASR)**     | —                                     | —                                           | India (eSanjeevani voice), WHO SMART (low-literacy)           | Vosk + Whisper; 85%+ accuracy target for medical Nepali     |
 | **Emergency access**      | —                                     | —                                           | Australia MHR (emergency function), Estonia (break-the-glass) | Emergency QR card with privacy-preserving summary           |
 | **Telemedicine**          | Nepal Telemedicine Guidelines (draft) | —                                           | India eSanjeevani (150M+ consults), UK NHS (video consult)    | Audio-only fallback for 2G/EDGE networks                    |
-| **Caregiver/family**      | —                                     | FHIR R4 RelatedPerson                       | UK NHS (Proxy access), India ABDM (Aadhaar-linked family)     | NRN diaspora health corridor (cross-timezone support)       |
+| **Caregiver/family**      | —                                     | FHIR R4 RelatedPerson                       | UK NHS (Proxy access), India ABDM (Aadhaar-linked family)     | Delegated caregiver baseline in MVP; NRN corridor expands later |
 
 # 14. Critical New Requirements (Added in v2.0)
 
@@ -2348,13 +2354,13 @@ These requirements address gaps identified during global PHR analysis and are no
 
 **Global precedent:** Australia My Health Record emergency access, India ABHA health card.
 
-## 14.2 FCHV Digital Health Bridge (P2 — Phase 2)
+## 14.2 FCHV Digital Health Bridge (MVP pilot)
 
 | ID             | Requirement                                                                                           | Acceptance Criteria                                               |
 | -------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | `REQ-FCHV-001` | System shall provide a simplified registration flow for FCHVs to register patients during home visits | Icon-based navigation, voice input, QR-based patient registration |
-| `REQ-FCHV-002` | FCHV flow shall capture basic health data (vitals, symptoms, medication adherence)                    | Data is stored locally and synced when connectivity available     |
-| `REQ-FCHV-003` | FCHV role shall have restricted access (cannot view full medical history)                             | FCHV sees only data they collected + aggregate health status      |
+| `REQ-FCHV-002` | FCHV flow shall capture approved basic health data (vitals, symptoms, medication adherence) in scoped MVP flows | Data is stored locally with encryption and synced when connectivity available |
+| `REQ-FCHV-003` | FCHV role shall have restricted access (cannot view full medical history)                             | FCHV sees only data they collected + scoped aggregate health status |
 
 **Global precedent:** Rwanda CHW tablet program (55,000 CHWs), Kenya community health digitization.
 

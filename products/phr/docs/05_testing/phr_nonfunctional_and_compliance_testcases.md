@@ -56,7 +56,7 @@ This document defines quality, security, accessibility, operational, and complia
 | `NFR-012` | MVP     | reminder reliability | reminder planning after appointment create | reminder plan is persisted and retriable      |
 | `NFR-013` | MVP     | backup restore       | restore latest backup into test env        | restored system is usable and verified        |
 | `NFR-014` | MVP     | observability        | induce dependency failure                  | alerting and logs point to failing dependency |
-| `NFR-015` | Phase 2 | offline sync         | conflicting offline edits                  | conflict rule is deterministic and visible    |
+| `NFR-015` | MVP     | offline sync         | conflicting offline edits on approved queued-write surfaces | conflict rule is deterministic and visible    |
 
 ---
 

@@ -22,6 +22,8 @@ Deliver the Core MVP insurance baseline:
 - coverage summary
 - eligibility verification
 
+Patient billing and wallet-payment behavior are Core MVP, but they are governed by the BillingModule contracts and payment screens rather than this insurance-specific workflow.
+
 Claims remain Phase 2.
 
 ---

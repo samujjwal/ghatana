@@ -61,12 +61,21 @@ public final class PipelineDefinitionLoader {
    *                   {@code YAMLFactory}-backed mapper is created internally)
    */
   public PipelineDefinitionLoader(ObjectMapper jsonMapper) {
+    this(jsonMapper, resolveDirectory());
+  }
+
+  /**
+   * Package-private constructor for testing — accepts an explicit directory.
+   *
+   * @param jsonMapper base ObjectMapper
+   * @param pipelineDir the directory to scan (may be {@code null} for empty registry)
+   */
+  PipelineDefinitionLoader(ObjectMapper jsonMapper, Path pipelineDir) {
     Objects.requireNonNull(jsonMapper, "jsonMapper");
     this.yaml = new ObjectMapper(new YAMLFactory())
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     Map<String, PipelineDefinition> loaded = new LinkedHashMap<>();
-    Path pipelineDir = resolveDirectory();
     if (pipelineDir == null) {
       logger.warn("PipelineDefinitionLoader: no pipeline directory found — "
           + "set YAPPC_PIPELINE_DIR or place YAMLs in config/pipelines/. "

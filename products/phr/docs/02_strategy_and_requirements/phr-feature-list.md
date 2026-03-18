@@ -16,7 +16,7 @@
 
 > Scope note:
 > Core MVP covers patient profile, records, medications, appointments, documents, consent, audit, and insurance coverage/eligibility.
-> OCR/voice input and mobile/web/desktop delivery are Core MVP commitments. Telemedicine, claims, caregiver/family flows, and offline sync are Phase 2 / MVP+ items in the current rollout.
+> OCR/voice input, caregiver/dependent flows, generalized offline sync for approved workflows, payment flows, referrals, imaging viewer, and mobile/web/desktop delivery are Core MVP commitments. Telemedicine and claims remain Phase 2 items in the current rollout.
 
 ---
 
@@ -576,7 +576,7 @@
 
 ---
 
-## 11. Caregiver & Family Features (Phase 2)
+## 11. Caregiver & Family Features (MVP baseline)
 
 ### 11.1 Multi-User Family Profiles
 
@@ -635,9 +635,14 @@
 - Medical record import/upload capability
 - Medication and prescription tracking
 - Lab test result storage
+- Caregiver/dependent delegated access
+- Offline sync for approved MVP workflows
 - Appointment scheduling and reminders
 - Document upload and retrieval
 - Insurance eligibility checking
+- Billing and digital payment flows
+- Referral tracking baseline
+- Imaging viewer baseline
 - Consent and access control
 - Authentication and access control
 - Basic security features (encryption, audit logs)
@@ -650,8 +655,8 @@
 - Audio transcription (basic)
 - Insurance claim submission
 - Health analytics dashboard
-- Caregiver/family profiles
-- Offline capability
+- Family health hub analytics
+- Advanced offline automation and recovery tooling
 - FHIR API integration
 - Advanced search and filters
 
@@ -803,12 +808,12 @@ How Nepal PHR features compare to proven global systems:
 | **Patient-owned records**   | ✅ Core       | ✅             | ✅               | ✅             | ✅             | ⚠️ Facility-owned |
 | **FHIR R4 native**          | ✅ Day 1      | ✅             | ⚠️ Transitioning | ⚠️ Partial     | ⚠️ Partial     | ⚠️ Façade         |
 | **Medical voice input**     | ✅ Nepali ASR | ❌             | ❌               | ❌             | ❌             | ❌                |
-| **Offline-first**           | ✅ Phase 2    | ❌             | ❌               | ❌             | ❌             | ✅                |
+| **Offline-first**           | ✅ MVP        | ❌             | ❌               | ❌             | ❌             | ✅                |
 | **Emergency QR**            | ✅ MVP        | ⚠️ ABHA card   | ⚠️ Break-glass   | ✅             | ❌             | ❌                |
 | **Insurance integration**   | ✅ openIMIS   | ✅ PMJAY       | ✅ EHIS          | ✅ Medicare    | ✅ NHS         | ⚠️ CBHI           |
 | **Community health worker** | ✅ FCHV       | ⚠️ ASHA        | ❌               | ❌             | ❌             | ✅ CHW            |
 | **Telemedicine**            | ✅ Phase 2    | ✅ eSanjeevani | ❌               | ❌             | ✅             | ❌                |
-| **Caregiver delegation**    | ✅ Phase 2    | ⚠️ Limited     | ❌               | ✅             | ✅ Proxy       | ❌                |
+| **Caregiver delegation**    | ✅ MVP        | ⚠️ Limited     | ❌               | ✅             | ✅ Proxy       | ❌                |
 | **Data sovereignty**        | ✅ Nepal-only | ✅ India-only  | ✅ Estonia       | ✅ Australia   | ✅ UK          | ✅ Rwanda         |
 | **Open-source stack**       | ✅ 100%       | ⚠️ Partial     | ⚠️ X-Road OSS    | ❌ Proprietary | ❌ Proprietary | ✅ 100%           |
 
@@ -819,7 +824,7 @@ How Nepal PHR features compare to proven global systems:
 1. **All features must be FHIR-compatible** for SIL-Nepal certification
 2. **Data must remain on-premise** (within Nepal borders) — no cloud exports
 3. **Security audit required** before Phase 3 launch — ensure OWASP Top 10 + DPIA + SAST/DAST pipeline
-4. **Offline sync architecture** should be planned from MVP, with user-facing offline capability landing in Phase 2
+4. **Offline sync architecture** must ship in MVP for approved patient, caregiver, provider-assisted, and FCHV workflows, with more advanced recovery tooling landing in Phase 2
 5. **Nepali language support** is non-negotiable (MVP requirement)
 6. **Custom ASR development** begins Month 7, delivery Month 15+
 7. **Telemedicine video** can use Jitsi (Apache 2.0, self-hosted) for Phase 2

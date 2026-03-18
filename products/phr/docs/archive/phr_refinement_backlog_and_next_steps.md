@@ -8,9 +8,17 @@
 
 This document records the next refinement pass needed after the current doc reorganization and formalization work.
 
+Archive note:
+
+- this document is retained for historical planning context
+- active scope, MVP decisions, and governance interpretation now live in the active docs tree, especially the release definitions, traceability matrix, retention and deletion policy, route contract pack, and QA plans
+- statements below that describe missing artifacts or undecided MVP scope should be read as pre-resolution backlog context unless explicitly updated in Section 1.1 or later annotations
+
 ---
 
 ## 1. Review summary
+
+The review summary below captures the state before the execution-preparation wave and later MVP harmonization decisions were fully propagated.
 
 The active PHR docs are now logically organized and materially stronger than the earlier flat set. The structure is good enough to support implementation planning, but a few areas still need tightening before development starts at full speed.
 
@@ -22,7 +30,7 @@ Current strengths:
 - global best practices (India ABDM, Estonia X-Road, Australia MHR, UK NHS) are now referenced
 - security exit criteria are hardened with OWASP, SAST/DAST, pen-test requirements
 - risk registers added to both release definitions
-- Nepal-specific innovations documented (FCHV bridge, NRN corridor, Nepali ASR)
+- Nepal-specific innovations documented, including the FCHV bridge that was later confirmed as an MVP pilot alongside export baseline and degraded offline read behavior
 
 Main remaining weaknesses:
 
@@ -37,6 +45,40 @@ Main remaining weaknesses:
 - CI/CD pipeline specification is absent
 - infrastructure cost model and sizing estimates are missing
 - data classification framework not applied to all tables
+
+---
+
+## 1.1 Implementation update — 2026-03-17
+
+The execution-preparation document wave described in this backlog has now been created.
+
+Artifacts added in this pass:
+
+- implementation delivery plans for backend, frontend, and QA
+- implementation status board
+- Core MVP Prisma draft overlay
+- Core MVP OpenAPI DTO drafts and OpenAPI backlog tracker
+- testcase-to-suite automation mapping and fixture plan
+- ConsentService interface spec
+- multi-tenancy enforcement spec
+- secrets management playbook
+- data classification matrix, retention and deletion policy, and DPIA template
+- incident response, audit preparation, CI/CD, DR, monitoring, sizing, and capacity docs
+- global data flow and module interconnection diagrams
+
+Subsequent harmonization after this document's original backlog pass also confirmed:
+
+- FCHV as an MVP pilot scope rather than a deferred-only concept
+- patient export as a concrete MVP portability surface
+- degraded read-only offline behavior for approved MVP patient surfaces, with scoped offline queueing for FCHV workflows
+- policy-driven retention, deletion, anonymization, and legal-hold handling rather than fixed simplistic purge assumptions
+
+As of this update, the remaining work is no longer missing-document creation. The remaining work is:
+
+- architecture and security approval of the new blocking specs
+- promotion of DTO drafts into shared schemas and generated OpenAPI artifacts
+- creation of the planned code and test directories referenced by the delivery plans
+- execution of the staging, security, and recovery gates defined by the new runbooks
 
 ---
 
@@ -82,7 +124,7 @@ Main remaining weaknesses:
 - expand workflow packs to include field-level forms and validation tables
 - add a dedicated dashboard workflow pack
 - add a dedicated provider patient-summary workflow pack
-- add export/import workflow packs if those APIs remain in MVP
+- add export workflow pack coverage for the committed MVP portability routes; keep import workflow planning optional or Phase 2
 - enrich telemedicine pack with DTOs, media-state diagrams, and retention rules
 - add error-handling sequences for each workflow (not just happy paths)
 - add bulk operation workflows (import 1000 historical records, batch OCR)
@@ -108,7 +150,7 @@ Main remaining weaknesses:
 ### 2.6 Security and compliance (priority: critical — NEW)
 
 - create Data Protection Impact Assessment (DPIA) template per Privacy Act 2075
-- define audit log retention and purging strategy (minimum 1 year, recommended 3 years for healthcare)
+- define policy-driven retention, deletion, anonymization, and legal-hold strategy for audit and patient-linked data
 - create incident response playbook (detection → containment → eradication → recovery → lessons learned)
 - define breach notification templates (72-hour MoHP notification, patient notification)
 - add SAST tool selection and CI integration plan (SonarQube, Semgrep, or equivalent)
@@ -137,9 +179,9 @@ Main remaining weaknesses:
 
 Create implementation-owned companion docs:
 
-- `backend_delivery_plan.md`
-- `frontend_delivery_plan.md`
-- `qa_delivery_plan.md`
+- `phr_backend_delivery_plan.md` ✅
+- `phr_frontend_delivery_plan.md` ✅
+- `phr_qa_delivery_plan.md` ✅
 
 Each should consume the active source-of-truth docs instead of redefining scope.
 
@@ -150,11 +192,20 @@ Generate concrete Prisma draft files from:
 - `03_architecture/phr_core_schema_delta_spec.md`
 - `03_architecture/phr_fhir_complete_starter_schema.prisma`
 
+Status:
+
+- `03_architecture/phr_core_mvp_draft_schema.prisma` ✅
+
 ### Step 3
 
 Create endpoint-by-endpoint OpenAPI-first DTO drafts for every Core MVP route in:
 
 - `04_design_and_workflows/phr_mvp_route_contract_pack.md`
+
+Status:
+
+- `04_design_and_workflows/phr_core_openapi_dto_drafts.md` ✅
+- `04_design_and_workflows/phr_core_openapi_backlog.md` ✅
 
 ### Step 4
 
@@ -167,6 +218,12 @@ Create execution-ready test plans by mapping:
 
 to actual codebase suites and ownership.
 
+Status:
+
+- `05_testing/phr_test_automation_mapping.md` ✅
+- `05_testing/phr_seed_data_and_test_fixture_plan.md` ✅
+- `01_governance/phr_qa_delivery_plan.md` ✅
+
 ### Step 5
 
 Add an `implementation status board` doc that shows, for each Core MVP capability:
@@ -178,45 +235,54 @@ Add an `implementation status board` doc that shows, for each Core MVP capabilit
 - tests ready
 - blocked by dependency
 
+Status:
+
+- `01_governance/phr_implementation_status_board.md` ✅
+
 ---
 
-## 4. Recommended next docs to create
+## 4. Historical planned docs to create
+
+All documents listed below were planned in this backlog and were later created. This section is retained to show the original refinement intent.
 
 ### Implementation delivery
 
-- `phr_backend_delivery_plan.md`
-- `phr_frontend_delivery_plan.md`
-- `phr_qa_delivery_plan.md`
-- `phr_implementation_status_board.md`
-- `phr_core_openapi_backlog.md`
-- `phr_seed_data_and_test_fixture_plan.md`
+- `phr_backend_delivery_plan.md` ✅
+- `phr_frontend_delivery_plan.md` ✅
+- `phr_qa_delivery_plan.md` ✅
+- `phr_implementation_status_board.md` ✅
+- `phr_core_openapi_backlog.md` ✅
+- `phr_seed_data_and_test_fixture_plan.md` ✅
 
 ### Security and compliance (NEW)
 
-- `phr_data_protection_impact_assessment.md` (DPIA per Privacy Act 2075)
-- `phr_data_classification_matrix.md` (PII/PHI/operational/public per table/column)
-- `phr_incident_response_playbook.md` (detection through lessons learned)
-- `phr_security_audit_preparation_checklist.md` (pre-audit readiness)
-- `phr_secrets_management_playbook.md` (vault/env config per environment)
+- `phr_data_protection_impact_assessment.md` (DPIA per Privacy Act 2075) ✅
+- `phr_data_classification_matrix.md` (PII/PHI/operational/public per table/column) ✅
+- `phr_retention_and_deletion_policy.md` (policy-driven retention, deletion, anonymization, legal hold) ✅
+- `phr_incident_response_playbook.md` (detection through lessons learned) ✅
+- `phr_security_audit_preparation_checklist.md` (pre-audit readiness) ✅
+- `phr_secrets_management_playbook.md` (vault/env config per environment) ✅
 
 ### Operations (NEW)
 
-- `phr_infrastructure_sizing_and_cost_model.md`
-- `phr_ci_cd_pipeline_specification.md`
-- `phr_disaster_recovery_plan.md`
-- `phr_monitoring_and_alerting_runbook.md`
-- `phr_capacity_planning_model.md`
+- `phr_infrastructure_sizing_and_cost_model.md` ✅
+- `phr_ci_cd_pipeline_specification.md` ✅
+- `phr_disaster_recovery_plan.md` ✅
+- `phr_monitoring_and_alerting_runbook.md` ✅
+- `phr_capacity_planning_model.md` ✅
 
 ### Architecture (NEW)
 
-- `phr_consent_service_interface_spec.md` (ConsentService::checkAccess contract)
-- `phr_multi_tenancy_enforcement_spec.md` (RLS or application-level filtering decision)
-- `phr_global_data_flow_diagram.md` (end-to-end data pipeline visualization)
-- `phr_module_interconnection_graph.md` (dependency DAG for all NestJS modules)
+- `phr_consent_service_interface_spec.md` (ConsentService::checkAccess contract) ✅
+- `phr_multi_tenancy_enforcement_spec.md` (RLS or application-level filtering decision) ✅
+- `phr_global_data_flow_diagram.md` (end-to-end data pipeline visualization) ✅
+- `phr_module_interconnection_graph.md` (dependency DAG for all NestJS modules) ✅
 
 ---
 
-## 5. Exit condition for the current documentation phase
+## 5. Historical exit condition for the documentation phase
+
+Most artifact-creation items below were satisfied by the execution-preparation wave. Remaining gaps are primarily approval, implementation, and operational rollout tasks tracked in active governance documents.
 
 This documentation phase is complete when:
 
@@ -231,7 +297,7 @@ This documentation phase is complete when:
 - **CI/CD pipeline is operational** (blocks continuous delivery)
 - **secrets management is configured** (blocks staging/production deployment)
 
-Until then, treat the current set as **implementation planning complete, execution preparation still in progress**.
+Until then, treat the current set as **implementation planning complete, execution preparation still in progress**. For current status, prefer the active implementation status board and active governance docs.
 
 ---
 

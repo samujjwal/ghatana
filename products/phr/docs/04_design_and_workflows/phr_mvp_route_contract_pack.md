@@ -38,8 +38,8 @@ This is designed for a **REST-first modular NestJS application** with:
 
 Scope note:
 
-- Sections 2-9, 10.1-10.2, 11, and 13 describe the current core MVP contract surface.
-- Sections 10.3-10.4 are planned Phase 2 extension contracts.
+- Sections 2-9, 10.1-10.8, 10A-10B, 11, 13, and 17 describe the current core MVP contract surface.
+- Claims remain documented here as the committed Phase 2 extension inside Sections 10.7-10.8.
 - Telemedicine session contracts are intentionally excluded until the dedicated `TelemedicineModule` call-room surface is specified.
 
 ---
@@ -1809,7 +1809,8 @@ type ApplyTranscriptionResponse = {
 # 10. Insurance and billing contracts
 
 > Coverage summary and eligibility checks are part of the core MVP insurance baseline.
-> Claim submission and claim status are planned Phase 2 contracts.
+> Patient billing and payment contracts are part of the core MVP financial baseline.
+> Claim submission and claim status remain planned Phase 2 contracts.
 
 ## 10.1 Get coverage
 
@@ -1875,7 +1876,251 @@ App request now, later can map to `CoverageEligibilityRequest` / `CoverageEligib
 
 ---
 
-## 10.3 Create claim
+## 10.3 List patient bills
+
+### Contract
+
+- **Method:** `GET`
+- **Route:** `/api/v1/patients/:id/bills`
+- **Module:** `BillingModule`
+
+### Purpose
+
+Return open and historical invoices with payment status for the patient billing surface.
+
+### Query DTO
+
+```ts
+type PatientBillListQuery = {
+  status?: "open" | "partially_paid" | "paid" | "void";
+  dueOnly?: boolean;
+  page?: number;
+  pageSize?: number;
+};
+```
+
+### Response DTO
+
+```ts
+type PatientBillListResponse = {
+  success: true;
+  data: {
+    items: Array<{
+      invoiceId: string;
+      description: string;
+      currency: "NPR";
+      totalAmount: number;
+      outstandingAmount: number;
+      dueDate?: string;
+      status: "open" | "partially_paid" | "paid" | "void";
+      latestPaymentId?: string;
+      receiptAvailable: boolean;
+    }>;
+    pagination: {
+      page: number;
+      pageSize: number;
+      total: number;
+    };
+  };
+};
+```
+
+### Permissions
+
+- patient self
+- caregiver with active billing scope
+- provider/admin billing staff if allowed by tenant policy
+
+### Prisma touchpoints
+
+- `Invoice`
+- `PaymentNotice`
+- `PaymentReconciliation`
+- `AuditLog`
+
+### FHIR mapping
+
+Maps primarily to `Invoice`; payment state is projected from `PaymentNotice` until a fuller financial-resource mapping is required.
+
+### Tests
+
+- open-only filter
+- caregiver scope filtering
+- void invoice hidden or shown per policy
+- bill read audited
+
+---
+
+## 10.4 Create payment
+
+### Contract
+
+- **Method:** `POST`
+- **Route:** `/api/v1/payments`
+- **Module:** `BillingModule`
+
+### Request DTO
+
+```ts
+type CreatePaymentRequest = {
+  patientId: string;
+  invoiceId: string;
+  amount: number;
+  currency?: "NPR";
+  method: "ESEWA" | "KHALTI" | "FONEPAY" | "CASH_DESK" | "BANK_TRANSFER";
+  returnUrl?: string;
+  idempotencyKey: string;
+};
+```
+
+### Response DTO
+
+```ts
+type CreatePaymentResponse = {
+  success: true;
+  data: {
+    paymentId: string;
+    status: "PENDING_REDIRECT" | "PENDING_CONFIRMATION";
+    method: "ESEWA" | "KHALTI" | "FONEPAY" | "CASH_DESK" | "BANK_TRANSFER";
+    invoiceId: string;
+    redirectUrl?: string;
+    expiresAt?: string;
+  };
+};
+```
+
+### Permissions
+
+- patient self
+- caregiver with active billing/payment scope
+- provider/admin billing staff where desk collection is permitted
+
+### Prisma touchpoints
+
+- `Invoice`
+- `PaymentNotice`
+- `PaymentReconciliation`
+- `AuditLog`
+
+### FHIR mapping
+
+`Invoice` remains the billing anchor; payment initiation is handled by an app billing abstraction with reconciliation back to financial records.
+
+### Tests
+
+- valid wallet payment intent
+- invalid amount against invoice outstanding balance
+- duplicate idempotency key replay
+- denied payment without billing scope
+
+---
+
+## 10.5 Confirm payment
+
+### Contract
+
+- **Method:** `POST`
+- **Route:** `/api/v1/payments/:id/confirm`
+- **Module:** `BillingModule`
+
+### Request DTO
+
+```ts
+type ConfirmPaymentRequest = {
+  gatewayTransactionId?: string;
+  payerConfirmationCode?: string;
+  callbackSource: "PATIENT_REDIRECT" | "GATEWAY_WEBHOOK" | "STAFF_DESK";
+  confirmedAt?: string;
+  signature?: string;
+};
+```
+
+### Response DTO
+
+```ts
+type ConfirmPaymentResponse = {
+  success: true;
+  data: {
+    paymentId: string;
+    invoiceId: string;
+    status: "CONFIRMED" | "SETTLED" | "FAILED";
+    confirmedAt?: string;
+    receiptId?: string;
+    receiptUrl?: string;
+  };
+};
+```
+
+### Permissions
+
+- patient or caregiver confirming their own redirected payment
+- signed gateway callback for asynchronous wallet confirmation
+- provider/admin billing staff for verified desk payment workflows
+
+### Prisma touchpoints
+
+- `PaymentNotice`
+- `PaymentReconciliation`
+- `Invoice`
+- `AuditLog`
+
+### Tests
+
+- successful wallet confirmation
+- webhook signature validation
+- idempotent repeated confirmation
+- receipt generation on settlement
+
+---
+
+## 10.6 Get payment status
+
+### Contract
+
+- **Method:** `GET`
+- **Route:** `/api/v1/payments/:id`
+- **Module:** `BillingModule`
+
+### Response DTO
+
+```ts
+type PaymentStatusResponse = {
+  success: true;
+  data: {
+    paymentId: string;
+    invoiceId: string;
+    method: "ESEWA" | "KHALTI" | "FONEPAY" | "CASH_DESK" | "BANK_TRANSFER";
+    status: "PENDING_REDIRECT" | "PENDING_CONFIRMATION" | "CONFIRMED" | "SETTLED" | "FAILED";
+    amount: number;
+    currency: "NPR";
+    receiptUrl?: string;
+    lastUpdatedAt: string;
+  };
+};
+```
+
+### Permissions
+
+- patient self
+- caregiver with active billing scope
+- provider/admin billing staff per tenant policy
+
+### Prisma touchpoints
+
+- `PaymentNotice`
+- `PaymentReconciliation`
+- `Invoice`
+
+### Tests
+
+- pending payment state visible
+- caregiver status read with scoped grant
+- failed payment reason redacted by policy
+- settled payment shows receipt link
+
+---
+
+## 10.7 Create claim
 
 ### Contract
 
@@ -1918,7 +2163,7 @@ Maps to `Claim`.
 
 ---
 
-## 10.4 Get claim status
+## 10.8 Get claim status
 
 ### Contract
 
@@ -1941,6 +2186,258 @@ Maps to `Claim` + `ClaimResponse`.
 - patient self access
 - provider/staff access
 - status transitions visible
+
+---
+
+# 10A. Referral contracts
+
+> Referral creation and tracking are part of the core MVP care-coordination baseline.
+> Advanced multi-hop referral routing and marketplace behavior remain Phase 2.
+
+## 10A.1 Create referral
+
+### Contract
+
+- **Method:** `POST`
+- **Route:** `/api/v1/referrals`
+- **Module:** `ReferralModule`
+
+### Request DTO
+
+```ts
+type CreateReferralRequest = {
+  patientId: string;
+  receivingOrganizationId: string;
+  specialtyCode?: string;
+  priority: "routine" | "urgent";
+  reason: string;
+  summaryDocumentId?: string;
+  requestedServiceDate?: string;
+};
+```
+
+### Permissions
+
+- authorized provider only
+
+### Prisma touchpoints
+
+- `ServiceRequest`
+- `DocumentReference`
+- referral status event tables
+- `AuditLog`
+
+### FHIR mapping
+
+Maps primarily to `ServiceRequest` with supporting medical-summary document linkage.
+
+### Tests
+
+- valid referral creation
+- missing receiving organization
+- summary attachment ownership validation
+- audit written for referral issuance
+
+---
+
+## 10A.2 List patient referrals
+
+### Contract
+
+- **Method:** `GET`
+- **Route:** `/api/v1/patients/:id/referrals`
+- **Module:** `ReferralModule`
+
+### Query DTO
+
+```ts
+type PatientReferralListQuery = {
+  status?: "draft" | "sent" | "accepted" | "booked" | "closed";
+  page?: number;
+  pageSize?: number;
+};
+```
+
+### Permissions
+
+- patient self
+- caregiver with active referral/read scope
+- provider with patient relationship
+
+### Prisma touchpoints
+
+- `ServiceRequest`
+- referral status event tables
+- `AuditLog`
+
+### Tests
+
+- patient referral list
+- caregiver scoped visibility
+- provider relationship enforcement
+- status filter behavior
+
+---
+
+## 10A.3 Get referral detail
+
+### Contract
+
+- **Method:** `GET`
+- **Route:** `/api/v1/referrals/:id`
+- **Module:** `ReferralModule`
+
+### Response DTO
+
+```ts
+type ReferralDetailResponse = {
+  success: true;
+  data: {
+    referralId: string;
+    patientId: string;
+    priority: "routine" | "urgent";
+    status: "draft" | "sent" | "accepted" | "booked" | "closed";
+    reason: string;
+    receivingOrganization: {
+      id: string;
+      name: string;
+    };
+    statusTimeline: Array<{
+      status: string;
+      at: string;
+      note?: string;
+    }>;
+    summaryDocumentId?: string;
+  };
+};
+```
+
+### Permissions
+
+- patient self
+- caregiver with active referral/read scope
+- creating or receiving provider under policy
+
+### Prisma touchpoints
+
+- `ServiceRequest`
+- `DocumentReference`
+- referral status event tables
+
+### Tests
+
+- detail found
+- summary document access honors consent
+- status timeline ordering
+- unauthorized actor denied
+
+---
+
+# 10B. Imaging contracts
+
+> Imaging viewer and secure download are part of the core MVP imaging baseline.
+> Comparative imaging analysis and advanced workstation tooling remain Phase 2.
+
+## 10B.1 Get imaging study
+
+### Contract
+
+- **Method:** `GET`
+- **Route:** `/api/v1/imaging-studies/:id`
+- **Module:** `ImagingModule`
+
+### Response DTO
+
+```ts
+type ImagingStudyDetailResponse = {
+  success: true;
+  data: {
+    imagingStudyId: string;
+    patientId: string;
+    modality: string;
+    performedAt?: string;
+    bodySite?: string;
+    viewerUrl?: string;
+    report: {
+      diagnosticReportId?: string;
+      conclusion?: string;
+      issuedAt?: string;
+    };
+    series: Array<{
+      uid: string;
+      instanceCount: number;
+      description?: string;
+    }>;
+  };
+};
+```
+
+### Permissions
+
+- patient self
+- caregiver with active imaging/read scope
+- provider with patient relationship
+
+### Prisma touchpoints
+
+- `ImagingStudy`
+- `DiagnosticReport`
+- `StoredObject`
+- `AuditLog`
+
+### FHIR mapping
+
+Maps to `ImagingStudy` and linked `DiagnosticReport`.
+
+### Tests
+
+- study metadata returned
+- signed viewer link issuance
+- caregiver scoped visibility
+- audit on sensitive imaging access
+
+---
+
+## 10B.2 Download imaging study artifact
+
+### Contract
+
+- **Method:** `GET`
+- **Route:** `/api/v1/imaging-studies/:id/download`
+- **Module:** `ImagingModule`
+
+### Response DTO
+
+```ts
+type ImagingStudyDownloadResponse = {
+  success: true;
+  data: {
+    imagingStudyId: string;
+    downloadUrl: string;
+    expiresAt: string;
+    contentType: string;
+  };
+};
+```
+
+### Permissions
+
+- patient self
+- caregiver with active imaging/download scope
+- provider with patient relationship
+
+### Prisma touchpoints
+
+- `ImagingStudy`
+- `StoredObject`
+- `AuditLog`
+
+### Tests
+
+- signed download URL generated
+- expired URL regeneration
+- unauthorized download blocked
+- download action audited
 
 ---
 
@@ -2054,6 +2551,112 @@ type RevokeAccessGrantRequest = {
 - already expired/revoked
 - unauthorized revoke
 - downstream access removed
+
+---
+
+## 11.4 List caregiver dependents
+
+### Contract
+
+- **Method:** `GET`
+- **Route:** `/api/v1/caregivers/me/dependents`
+- **Module:** `FamilyModule`
+
+### Purpose
+
+Return the active dependent list the logged-in caregiver may act on.
+
+### Response DTO
+
+```ts
+type CaregiverDependentsResponse = {
+  success: true;
+  data: {
+    items: Array<{
+      dependentId: string;
+      fullName: string;
+      relationshipLabel: string;
+      grantId: string;
+      grantExpiresAt?: string;
+      allowedScopes: Array<"summary" | "appointments" | "medications" | "documents" | "billing">;
+    }>;
+  };
+};
+```
+
+### Permissions
+
+- caregiver only
+
+### Prisma touchpoints
+
+- `RelatedPerson`
+- `ConsentGrant`
+- `AuditLog`
+
+### FHIR mapping
+
+Uses `RelatedPerson` semantics with app-layer delegated scope projection.
+
+### Tests
+
+- active dependent list
+- revoked or expired grant filtered out
+- allowed scopes projection
+- caregiver actor only
+
+---
+
+## 11.5 Get caregiver dependent summary
+
+### Contract
+
+- **Method:** `GET`
+- **Route:** `/api/v1/caregivers/me/dependents/:id/summary`
+- **Module:** `FamilyModule`
+
+### Purpose
+
+Return a caregiver-safe dependent summary with only the fields covered by the active grant.
+
+### Response DTO
+
+```ts
+type CaregiverDependentSummaryResponse = {
+  success: true;
+  data: {
+    dependentId: string;
+    fullName: string;
+    allowedScopes: Array<"summary" | "appointments" | "medications" | "documents" | "billing">;
+    summaryCards: {
+      upcomingAppointments?: Array<{ id: string; startsAt: string; location?: string }>;
+      medications?: Array<{ id: string; display: string; dosageInstruction?: string }>;
+      billing?: Array<{ invoiceId: string; outstandingAmount: number; currency: "NPR" }>;
+    };
+    syncState?: "LIVE" | "OFFLINE" | "PENDING_SYNC";
+  };
+};
+```
+
+### Permissions
+
+- caregiver only with active dependent grant
+
+### Prisma touchpoints
+
+- `Patient`
+- `Appointment`
+- `MedicationRequest`
+- `Invoice`
+- `ConsentGrant`
+- `AuditLog`
+
+### Tests
+
+- allowed vs hidden summary cards
+- expired grant denied
+- offline sync state present for approved flows
+- dependent summary access audited
 
 ---
 
@@ -2210,7 +2813,7 @@ The clean next artifact is a **frontend route and component map**:
 
 ---
 
-# 17. Emergency QR API Contract (Added in v2.0)
+# 17. Emergency QR and Export API Contracts (Added in v2.0)
 
 ## 17.1 Get Emergency QR
 
@@ -2247,6 +2850,102 @@ type EmergencyQrResponse = {
 
 - QR payload MUST NOT contain NID, full name, or address
 - QR payload is regenerated on any change to allergies, meds, blood type, or emergency contacts
+
+## 17.2 Request patient export
+
+### Contract
+
+- **Method:** `POST`
+- **Route:** `/api/v1/patients/:id/exports`
+- **Module:** `InteroperabilityModule`
+
+### Request DTO
+
+```ts
+type CreatePatientExportRequest = {
+  format: "FHIR_BUNDLE_JSON" | "PDF_SUMMARY";
+  scope?: Array<"profile" | "timeline" | "documents" | "medications" | "observations" | "coverage">;
+  language?: "ne" | "en";
+  includeAuditTrail?: boolean;
+};
+```
+
+### Response DTO
+
+```ts
+type CreatePatientExportResponse = {
+  success: true;
+  data: {
+    exportId: string;
+    status: "QUEUED" | "PROCESSING";
+    format: "FHIR_BUNDLE_JSON" | "PDF_SUMMARY";
+    requestedAt: string;
+    expiresAt?: string;
+  };
+};
+```
+
+### Permissions
+
+- Patient: own export only
+- Provider or caregiver: only with active grant that includes export scope
+- Admin: no implicit patient export permission
+
+### Operational notes
+
+- export creation MUST emit audit evidence
+- generated artifacts MUST be encrypted at rest and time-limited
+- request acceptance is asynchronous even when small exports complete quickly
+
+### Tests
+
+- successful self-service export request
+- denied export request without scope
+- invalid format rejected
+- audit event emitted on request
+
+## 17.3 Get export status and artifact
+
+### Contract
+
+- **Method:** `GET`
+- **Route:** `/api/v1/patients/:id/exports/:exportId`
+- **Module:** `InteroperabilityModule`
+
+### Response DTO
+
+```ts
+type PatientExportStatusResponse = {
+  success: true;
+  data: {
+    exportId: string;
+    status: "QUEUED" | "PROCESSING" | "READY" | "EXPIRED" | "FAILED";
+    format: "FHIR_BUNDLE_JSON" | "PDF_SUMMARY";
+    requestedAt: string;
+    completedAt?: string;
+    expiresAt?: string;
+    downloadUrl?: string;
+    failureCode?: string;
+  };
+};
+```
+
+### Permissions
+
+- same actor and scope rules as export creation
+
+### Privacy and retention notes
+
+- `downloadUrl` MUST be omitted unless artifact status is `READY`
+- expired artifacts MUST NOT be reactivated; a new export request is required
+- metadata retention follows policy, while artifact retention is intentionally short-lived
+
+### Tests
+
+- queued export returns processing state
+- ready export returns download URL and expiry timestamp
+- expired export returns expired state without download URL
+- foreign-tenant export lookup is denied
 
 ---
 

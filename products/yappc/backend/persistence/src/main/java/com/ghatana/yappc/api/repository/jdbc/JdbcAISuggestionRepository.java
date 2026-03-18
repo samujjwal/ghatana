@@ -203,7 +203,7 @@ public class JdbcAISuggestionRepository implements AISuggestionRepository {
                          if (statusStr != null) {
                              try {
                                  result.put(SuggestionStatus.valueOf(statusStr), rs.getLong("cnt"));
-                             } catch (IllegalArgumentException ignored) {}
+                             } catch (IllegalArgumentException e) { logger.warn("Unknown suggestion status '{}' in count query, skipping row", statusStr); }
                          }
                     }
                 }
@@ -229,7 +229,7 @@ public class JdbcAISuggestionRepository implements AISuggestionRepository {
                          if (typeStr != null) {
                              try {
                                  result.put(SuggestionType.valueOf(typeStr), rs.getLong("cnt"));
-                             } catch (IllegalArgumentException ignored) {}
+                             } catch (IllegalArgumentException e) { logger.warn("Unknown suggestion type '{}' in count query, skipping row", typeStr); }
                          }
                     }
                 }

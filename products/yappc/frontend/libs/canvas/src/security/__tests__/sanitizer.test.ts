@@ -13,7 +13,7 @@ import {
 
   ExportSanitizer} from '../sanitizer';
 
-describe.skip('ExportSanitizer', () => {
+describe('ExportSanitizer', () => {
   describe('Node Sanitization', () => {
     let sanitizer: ExportSanitizer;
 

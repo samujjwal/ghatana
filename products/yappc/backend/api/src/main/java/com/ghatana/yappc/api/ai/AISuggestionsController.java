@@ -44,7 +44,8 @@ public class AISuggestionsController {
     this.aiSuggestionService = aiSuggestionService;
     this.configService = configService;
     this.aepService = aepService;
-    this.blockingExecutor = Executors.newFixedThreadPool(2);
+    int poolSize = Integer.parseInt(System.getProperty("yappc.ai.executor.threads", "2"));
+    this.blockingExecutor = Executors.newFixedThreadPool(poolSize);
   }
 
   /** Generate new AI suggestion. POST /api/ai/suggestions/generate */

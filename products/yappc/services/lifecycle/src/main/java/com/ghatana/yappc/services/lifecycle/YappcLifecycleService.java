@@ -10,6 +10,7 @@ import com.ghatana.audit.AuditLogger;
 import com.ghatana.core.activej.launcher.UnifiedApplicationLauncher;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.governance.security.ApiKeyAuthFilter;
+import com.ghatana.platform.governance.security.RateLimitFilter;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.SimpleMetricsCollector;
 import com.ghatana.yappc.api.GenerationApiController;
@@ -210,7 +211,9 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         com.ghatana.yappc.services.lifecycle.config.ConfigWatchService configWatcher =
                 injector.getInstance(com.ghatana.yappc.services.lifecycle.config.ConfigWatchService.class);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try { configWatcher.close(); } catch (Exception ignored) {}
+            try { configWatcher.close(); } catch (Exception e) {
+                logger.warn("ConfigWatchService failed to close cleanly during JVM shutdown", e);
+            }
         }, "config-watch-shutdown"));
 
         // ── Auth filter (Security 4.3) ────────────────────────────────────
@@ -220,12 +223,18 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         Set<String> allowedKeys = new HashSet<>(Arrays.asList(apiKeyEnv.split(",")));
         ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(allowedKeys);
 
+        // ── Rate limiting (Security: 100 req/60 s per client IP) ─────────
+        // Configurable via YAPPC_RATE_LIMIT_MAX (requests) and YAPPC_RATE_LIMIT_WINDOW (seconds).
+        int rateLimitMax = Integer.parseInt(System.getenv().getOrDefault("YAPPC_RATE_LIMIT_MAX", "100"));
+        long rateLimitWindow = Long.parseLong(System.getenv().getOrDefault("YAPPC_RATE_LIMIT_WINDOW", "60"));
+        RateLimitFilter rateLimitFilter = new RateLimitFilter(rateLimitMax, rateLimitWindow);
+
         // ── Build authenticated API servlet with all lifecycle routes ─────
         AsyncServlet apiServlet = buildApiServlet(eventloop,
                 intentController, shapeController, generationController,
                 validationController, advancePhaseUseCase, aepPublisher,
                 humanApprovalService, workflowService);
-        AsyncServlet securedApiServlet = authFilter.secure(apiServlet);
+        AsyncServlet securedApiServlet = authFilter.secure(rateLimitFilter.wrap(apiServlet));
 
         // ── Outer router: /health public, everything else auth-gated ─────
         var router = RoutingServlet.builder(eventloop)

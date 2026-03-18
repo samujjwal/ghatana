@@ -205,7 +205,7 @@ public class JdbcCodeReviewRepository implements CodeReviewRepository {
         review.setAuthorId(rs.getString("author_id"));
         review.setTitle(rs.getString("title"));
         review.setDescription(rs.getString("description"));
-        try { review.setStatus(ReviewStatus.valueOf(rs.getString("status"))); } catch (Exception ignored) {}
+        try { review.setStatus(ReviewStatus.valueOf(rs.getString("status"))); } catch (Exception e) { logger.warn("Unknown review status value '{}', defaulting to null", rs.getString("status")); }
         review.setPullRequestNumber(rs.getInt("pr_number"));
         review.setPullRequestUrl(rs.getString("repo_url"));
         String reviewersJson = rs.getString("reviewers");

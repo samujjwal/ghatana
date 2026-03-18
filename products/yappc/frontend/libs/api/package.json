@@ -4,6 +4,11 @@
     "version": "0.0.0",
     "type": "module",
     "exports": {
+        ".": "./src/index.ts",
+        "./auth": "./src/auth/authService.ts",
+        "./ai": "./src/ai/index.ts",
+        "./graphql": "./src/graphql/client.ts",
+        "./hooks": "./src/hooks/index.ts",
         "./devsecops/client": "./src/devsecops/client.ts",
         "./devsecops/cache": "./src/devsecops/cache.ts",
         "./devsecops/integrations": "./src/devsecops/integrations.ts",

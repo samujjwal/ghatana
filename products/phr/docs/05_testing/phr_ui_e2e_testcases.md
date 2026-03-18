@@ -38,14 +38,14 @@ This document defines user-visible end-to-end scenarios for web, mobile, and des
 
 ---
 
-## 2. Phase 2 UI scenarios
+## 2. Additional MVP and Phase 2 UI scenarios
 
 | Test ID  | Phase   | Surface              | Scenario                                    | Expected result                                     |
 | -------- | ------- | -------------------- | ------------------------------------------- | --------------------------------------------------- |
 | `UI-013` | Phase 2 | telemedicine room    | create/join/end consult                     | session state changes are visible and stable        |
-| `UI-014` | Phase 2 | caregiver dependents | caregiver opens delegated dependent summary | only granted data is visible                        |
-| `UI-015` | Phase 2 | offline patient app  | lose connectivity on supported screen       | offline banner and degraded capability rules appear |
-| `UI-016` | Phase 2 | claims               | create claim and view status                | status list and detail remain coherent              |
+| `UI-014` | MVP     | caregiver dependents | caregiver opens delegated dependent summary | only granted data is visible                        |
+| `UI-015` | MVP     | offline patient app  | queue approved write while offline          | pending-sync state, conflict messaging, and replay behavior appear |
+| `UI-016` | MVP     | referrals            | provider creates referral and patient tracks it | referral list and status detail remain coherent   |
 
 ---
 
@@ -123,6 +123,9 @@ This document defines user-visible end-to-end scenarios for web, mobile, and des
 | `UI-042` | MVP   | all screens       | Color contrast check            | 4.5:1 text, 3:1 UI components                |
 | `UI-043` | MVP   | all interactive   | Touch target size audit         | Minimum 44×44px (48×48px for FCHV)           |
 | `UI-044` | MVP   | patient dashboard | VoiceOver/NVDA full workflow    | Patient can navigate dashboard without sight |
+| `UI-045` | MVP   | payments          | patient pays outstanding bill   | pending, success, and receipt states render correctly |
+| `UI-046` | MVP   | imaging viewer    | patient opens imaging study     | viewer, report panel, and secure download controls load |
+| `UI-047` | Phase 2 | claims           | create claim and view status    | status list and detail remain coherent              |
 
 ---
 

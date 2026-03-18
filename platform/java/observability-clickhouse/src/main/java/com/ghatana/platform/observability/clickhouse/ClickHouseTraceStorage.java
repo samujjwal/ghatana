@@ -12,6 +12,8 @@ import java.sql.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -221,12 +223,15 @@ public class ClickHouseTraceStorage implements TraceStorage {
     private final ObjectMapper objectMapper;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final SpanBuffer spanBuffer;
+    private final Executor blockingExecutor;
     
     private ClickHouseTraceStorage(Builder builder) {
         this.config = Objects.requireNonNull(builder.cfg, "Config cannot be null");
         this.client = ClickHouseClient.newInstance();
         this.objectMapper = JsonUtils.getDefaultMapper();
         this.spanBuffer = new SpanBuffer(config.getBatchSize(), config.getFlushInterval());
+        this.blockingExecutor = Executors.newFixedThreadPool(2,
+            r -> { Thread t = new Thread(r, "clickhouse-io"); t.setDaemon(true); return t; });
         
         logger.info("ClickHouseTraceStorage initialized with config: {}", config);
     }
@@ -350,16 +355,16 @@ public class ClickHouseTraceStorage implements TraceStorage {
             return Promise.of(false);
         }
         
-        try {
-            // Check ClickHouse connectivity
-            logger.debug("Checking ClickHouse health");
-            // Note: Full JDBC health check in next phase
-            // For now, return true if not closed
-            return Promise.of(true);
-        } catch (Exception ex) {
-            logger.warn("Health check failed", ex);
-            return Promise.of(false);
-        }
+        return Promise.ofBlocking(blockingExecutor, () -> {
+            try (Connection conn = getConnection();
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery("SELECT 1")) {
+                return rs.next();
+            } catch (SQLException ex) {
+                logger.warn("ClickHouse health check failed: {}", ex.getMessage());
+                return false;
+            }
+        });
     }
     
     @Override
@@ -412,14 +417,17 @@ public class ClickHouseTraceStorage implements TraceStorage {
             return Promise.complete();
         }
         
-        try {
-            logger.debug("Flushing {} spans to ClickHouse", spans.size());
-            insertSpans(spans);
-            return Promise.complete();
-        } catch (Exception ex) {
-            logger.error("Error flushing span buffer", ex);
-            return Promise.ofException(ex);
-        }
+        final List<SpanData> toInsert = spans;
+        return Promise.ofBlocking(blockingExecutor, () -> {
+            try {
+                logger.debug("Flushing {} spans to ClickHouse", toInsert.size());
+                insertSpans(toInsert);
+            } catch (Exception ex) {
+                logger.error("Error flushing span buffer", ex);
+                throw ex;
+            }
+            return null;
+        });
     }
     
     /**
@@ -492,47 +500,40 @@ public class ClickHouseTraceStorage implements TraceStorage {
     }
     
     /**
-     * Inserts spans into ClickHouse using batch insert.
+     * Inserts spans into ClickHouse using a JDBC PreparedStatement batch for SQL-injection safety.
      */
-    private void insertSpans(List<SpanData> spans) throws SQLException, Exception {
+    private void insertSpans(List<SpanData> spans) throws Exception {
         if (spans.isEmpty()) {
             return;
         }
-        
-        StringBuilder sql = new StringBuilder(
+
+        final String sql =
             "INSERT INTO observability.spans " +
             "(traceId, spanId, parentSpanId, serviceName, operationName, spanName, " +
             "startTime, endTime, durationNs, status, statusMessage, tags, logs, timestamp) " +
-            "VALUES "
-        );
-        
-        for (int i = 0; i < spans.size(); i++) {
-            if (i > 0) {
-                sql.append(", ");
-            }
-            
-            SpanData span = spans.get(i);
-            long durationNs = (span.endTime().toEpochMilli() - span.startTime().toEpochMilli()) * 1_000_000;
-            
-            sql.append("('")
-                    .append(escapeString(span.traceId())).append("', '")
-                    .append(escapeString(span.spanId())).append("', ")
-                    .append(span.parentSpanId() != null ? "'" + escapeString(span.parentSpanId()) + "'" : "NULL").append(", '")
-                    .append(escapeString(span.serviceName())).append("', '")
-                    .append(escapeString(span.operationName())).append("', ")
-                    .append(span.name() != null ? "'" + escapeString(span.name()) + "'" : "NULL").append(", ")
-                    .append("fromUnixTimestamp64Milli(").append(span.startTime().toEpochMilli()).append("), ")
-                    .append("fromUnixTimestamp64Milli(").append(span.endTime().toEpochMilli()).append("), ")
-                    .append(durationNs).append(", '")
-                    .append(escapeString(span.status())).append("', ")
-                    .append(span.statusMessage() != null ? "'" + escapeString(span.statusMessage()) + "'" : "NULL").append(", '")
-                    .append(escapeString(span.tags() != null ? objectMapper.writeValueAsString(span.tags()) : "{}")).append("', '")
-                    .append(escapeString(span.logs() != null ? objectMapper.writeValueAsString(span.logs()) : "{}")).append("', now())");
-        }
-        
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())";
+
         try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate(sql.toString());
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            for (SpanData span : spans) {
+                long durationNs = span.durationMs() * 1_000_000L;
+                ps.setString(1, span.traceId());
+                ps.setString(2, span.spanId());
+                ps.setString(3, span.parentSpanId());        // null → SQL NULL
+                ps.setString(4, span.serviceName());
+                ps.setString(5, span.operationName());
+                ps.setString(6, span.name());
+                ps.setTimestamp(7, Timestamp.from(span.startTime()));
+                ps.setTimestamp(8, Timestamp.from(span.endTime()));
+                ps.setLong(9, durationNs);
+                ps.setString(10, span.status());
+                ps.setString(11, span.statusMessage());
+                ps.setString(12, span.tags() != null ? objectMapper.writeValueAsString(span.tags()) : "{}");
+                ps.setString(13, span.logs() != null ? objectMapper.writeValueAsString(span.logs()) : "{}");
+                ps.addBatch();
+            }
+            ps.executeBatch();
             logger.debug("Inserted {} spans into ClickHouse", spans.size());
         }
     }

@@ -120,8 +120,12 @@ These power the first complete patient/provider workflow.
 | Appointment       | Appointment                      | AppointmentModule | book, reschedule, upcoming appointments                | Required                      |
 | DocumentReference | DocumentReference + StoredObject | DocumentModule    | uploads, scanned records, reports                      | Required                      |
 | Coverage          | Coverage                         | InsuranceModule   | insurance summary, eligibility context                 | Required if insurance in MVP  |
-| Claim             | Claim                            | BillingModule     | claim submit/track                                     | Optional MVP / preferred MVP+ |
-| ClaimResponse     | ClaimResponse                    | BillingModule     | claim status                                           | Optional MVP / preferred MVP+ |
+| RelatedPerson     | RelatedPerson                    | FamilyModule      | caregiver dependents, delegated summary                | Required for caregiver MVP    |
+| ServiceRequest    | ServiceRequest                   | ReferralModule    | referral create and tracking                           | Required for referral MVP     |
+| DiagnosticReport  | DiagnosticReport                 | ImagingModule     | radiology report detail                                | Required for imaging MVP      |
+| ImagingStudy      | ImagingStudy                     | ImagingModule     | imaging viewer and secure download                     | Required for imaging MVP      |
+| Invoice           | Invoice                          | BillingModule     | bills and balances                                     | Required for payment MVP      |
+| PaymentNotice     | PaymentNotice                    | BillingModule     | payment initiation and receipts                        | Required for payment MVP      |
 
 ### L1 patient app screens
 
@@ -135,7 +139,12 @@ These power the first complete patient/provider workflow.
 - appointment booking
 - documents
 - insurance summary
+- patient payments
+- patient referrals
+- patient imaging viewer
 - share / consent
+- caregiver dependents list
+- caregiver dependent summary
 
 ### L1 provider app screens
 
@@ -159,8 +168,8 @@ These improve real-world operational completeness.
 | Procedure          | Procedure                         | ProcedureModule                         | surgical/procedure history            | Common but not strictly day-one                 |
 | Immunization       | Immunization                      | ImmunizationModule                      | vaccine history, schedule             | Strong patient value, especially family use     |
 | DiagnosticReport   | DiagnosticReport                  | Observation/Document/Diagnostics module | lab report detail, result packages    | Needed once external labs deepen                |
-| ServiceRequest     | ServiceRequest                    | Interop / Diagnostics module            | lab orders, referral-related requests | Useful once order workflows appear              |
-| RelatedPerson      | RelatedPerson or caregiver tables | FamilyModule                            | caregiver access, family management   | Important but can follow core patient launch    |
+| ServiceRequest     | ServiceRequest                    | Interop / Diagnostics module            | advanced referral workflows, lab orders | Baseline referral now lands in MVP; richer orchestration follows |
+| RelatedPerson      | RelatedPerson or caregiver tables | FamilyModule                            | family administration and advanced caregiver management | Baseline caregiver portal now lands in MVP      |
 | CarePlan           | CarePlan                          | CarePlanModule or later care domain     | chronic care plan                     | Better after conditions/medications stabilize   |
 | Goal               | Goal                              | CarePlan / Wellness module              | patient goal tracking                 | valuable, not day-one                           |
 | Schedule           | app schedule tables               | AppointmentModule                       | provider schedules                    | needed for richer scheduling                    |
@@ -238,7 +247,8 @@ Examples:
 - ResearchStudy
 - ResearchSubject
 - MolecularSequence
-- ImagingStudy
+- Claim
+- ClaimResponse
 - Specimen
 - Questionnaire
 - QuestionnaireResponse

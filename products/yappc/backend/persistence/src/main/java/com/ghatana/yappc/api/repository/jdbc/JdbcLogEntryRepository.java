@@ -305,7 +305,7 @@ public class JdbcLogEntryRepository implements LogEntryRepository {
         entry.setProjectId(rs.getString("project_id"));
         entry.setService(rs.getString("service"));
         entry.setInstance(rs.getString("instance"));
-        try { entry.setLevel(LogLevel.valueOf(rs.getString("level"))); } catch (Exception ignored) {}
+        try { entry.setLevel(LogLevel.valueOf(rs.getString("level"))); } catch (Exception e) { logger.warn("Unknown log level value '{}', defaulting to null", rs.getString("level")); }
         entry.setMessage(rs.getString("message"));
         entry.setLogger(rs.getString("logger"));
         entry.setThread(rs.getString("thread"));

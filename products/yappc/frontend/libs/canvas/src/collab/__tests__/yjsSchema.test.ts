@@ -100,7 +100,7 @@ describe('Yjs Schema - Node Validation', () => {
   });
   
   it('should reject node without id', () => {
-    const node: any = {
+    const node: Partial<YjsNode> = {
       type: 'default',
       position: { x: 100, y: 100 },
       data: {}
@@ -111,7 +111,7 @@ describe('Yjs Schema - Node Validation', () => {
   });
   
   it('should reject node without type', () => {
-    const node: any = {
+    const node: Partial<YjsNode> = {
       id: 'node1',
       position: { x: 100, y: 100 },
       data: {}
@@ -122,7 +122,7 @@ describe('Yjs Schema - Node Validation', () => {
   });
   
   it('should reject node without position', () => {
-    const node: any = {
+    const node: Partial<YjsNode> = {
       id: 'node1',
       type: 'default',
       data: {}
@@ -184,7 +184,7 @@ describe('Yjs Schema - Edge Validation', () => {
   });
   
   it('should reject edge without id', () => {
-    const edge: any = {
+    const edge: Partial<YjsEdge> = {
       source: 'node1',
       target: 'node2'
     };
@@ -194,7 +194,7 @@ describe('Yjs Schema - Edge Validation', () => {
   });
   
   it('should reject edge without source', () => {
-    const edge: any = {
+    const edge: Partial<YjsEdge> = {
       id: 'edge1',
       target: 'node2'
     };
@@ -204,7 +204,7 @@ describe('Yjs Schema - Edge Validation', () => {
   });
   
   it('should reject edge without target', () => {
-    const edge: any = {
+    const edge: Partial<YjsEdge> = {
       id: 'edge1',
       source: 'node1'
     };
@@ -241,7 +241,7 @@ describe('Yjs Schema - Attachment Validation', () => {
   });
   
   it('should reject attachment without id', () => {
-    const attachment: any = {
+    const attachment: Partial<YjsAttachment> = {
       name: 'document.pdf',
       url: 'https://storage.example.com/att1',
       size: 1024
@@ -252,7 +252,7 @@ describe('Yjs Schema - Attachment Validation', () => {
   });
   
   it('should reject attachment without URL', () => {
-    const attachment: any = {
+    const attachment: Partial<YjsAttachment> = {
       id: 'att1',
       name: 'document.pdf',
       size: 1024
@@ -263,7 +263,7 @@ describe('Yjs Schema - Attachment Validation', () => {
   });
   
   it('should reject embedded binary data', () => {
-    const attachment: any = {
+    const attachment: Partial<YjsAttachment> & { data?: unknown } = {
       id: 'att1',
       name: 'document.pdf',
       url: 'https://storage.example.com/att1',

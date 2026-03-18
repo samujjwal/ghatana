@@ -322,7 +322,7 @@ Nepal's **Privacy Act 2075 (2018)** established the legal framework that applies
 | **Consent**                | Explicit, informed consent for processing              | Granular consent for each data use (provider access, analytics, research) |
 | **Right to Access**        | Patient can request own data copy                      | Provide data export in FHIR JSON + PDF format                             |
 | **Right to Rectification** | Patient can correct inaccurate data                    | Edit capability for all patient-entered data                              |
-| **Right to Erasure**       | Patient can request data deletion (with exceptions)    | Support data deletion (retain only audit logs)                            |
+| **Right to Erasure**       | Patient can request data deletion (with exceptions)    | Support policy-driven deletion or anonymization while retaining legally required evidence such as audit logs |
 | **Data Retention**         | Retain only as long as necessary                       | Define retention periods per data type (e.g., 7 years for claims per HIB) |
 | **Breach Notification**    | Notify affected parties within 72 hours                | Incident response plan; notification templates ready                      |
 | **Data Transfer**          | Cannot transfer outside Nepal without explicit consent | Enforce geographic restriction                                            |
@@ -567,8 +567,8 @@ Acquisition without retention is a leaky bucket. The following retention program
 | **EMR Interoperability**  | ⚠️ (Limited)              | ❌                    | ✅ (FHIR-native)    |
 | **Voice/ASR**             | ❌                        | ❌                    | ✅ (Innovation)     |
 | **Insurance Integration** | ⚠️ (Partial)              | ❌                    | ✅ (Full openIMIS)  |
-| **Offline Capability**    | ❌                        | ❌                    | ✅ (Phase 2)        |
-| **Caregiver Support**     | ❌                        | ❌                    | ✅ (Phase 2)        |
+| **Offline Capability**    | ❌                        | ❌                    | ✅ (MVP)            |
+| **Caregiver Support**     | ❌                        | ❌                    | ✅ (MVP)            |
 | **Data Sovereignty**      | ⚠️ (Issues)               | ✅ (On-premise)       | ✅ (Data-native)    |
 | **Regulatory Compliance** | ⚠️ (Partial)              | ❌                    | ✅ (Directive 2081) |
 
@@ -2704,7 +2704,7 @@ To ensure legitimate healthcare providers can add data:
 | ------------------ | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
 | **COVID catalyst** | Downloads surged 10x during COVID for vaccine certificates; now retained for ongoing health management | Design for crisis-readiness (vaccination campaigns, disease outbreaks can drive rapid adoption in Nepal) |
 | **GP integration** | Direct appointment booking and prescription ordering with GP systems                                   | Integrate with Nepal's hospital OPD systems for appointment booking (not just record viewing)            |
-| **Proxy access**   | Family members can access records for children and dependents with verified authorization              | Model for Nepal's caregiver delegation (Phase 2) — time-bounded, auditable proxy access                  |
+| **Proxy access**   | Family members can access records for children and dependents with verified authorization              | Model for Nepal's caregiver delegation (MVP baseline) — time-bounded, auditable proxy access             |
 | **Accessibility**  | WCAG AA compliance; supports 20+ languages; screen reader optimized                                    | Nepal needs Nepali + English + consideration for Maithili, Newari, Tharu in future phases                |
 | **Notifications**  | NHS 111 symptom checker integration; health alerts and reminders                                       | Build health alert system early; medication and appointment reminders are highest-value notifications    |
 | **Identity**       | NHS Login (single identity across all health services)                                                 | Work toward single health identity integrated with Nepal's NID; Keycloak as bridge                       |

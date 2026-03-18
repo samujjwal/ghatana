@@ -40,6 +40,8 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
     private final JWSSigner signer;
     private final JWSVerifier verifier;
     private final long validityInMilliseconds;
+    /** Non-null when key rotation is enabled. When set, overrides {@link #signer}/{@link #verifier}. */
+    private final JwtKeyManager keyManager;
     
     /**
      * Creates a new JwtTokenProvider with the specified secret key and token validity.
@@ -53,9 +55,29 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
             this.signer = new MACSigner(keyBytes);
             this.verifier = new MACVerifier(keyBytes);
             this.validityInMilliseconds = validityInMilliseconds;
+            this.keyManager = null;
         } catch (JOSEException e) {
             throw new IllegalArgumentException("Invalid secret key", e);
         }
+    }
+
+    /**
+     * Creates a JwtTokenProvider backed by a {@link JwtKeyManager} for key rotation support.
+     *
+     * <p>Tokens signed via this constructor will carry a {@code kid} header identifying the
+     * signing key. Verification will try the key matching the {@code kid} first, then fall back
+     * to all active keys to support tokens issued before the last rotation.
+     *
+     * @param keyManager             the key manager providing signing and verification keys
+     * @param validityInMilliseconds the token validity period in milliseconds
+     */
+    public JwtTokenProvider(JwtKeyManager keyManager, long validityInMilliseconds) {
+        if (keyManager == null) throw new IllegalArgumentException("keyManager must not be null");
+        this.keyManager = keyManager;
+        this.validityInMilliseconds = validityInMilliseconds;
+        // These fields are unused when keyManager is set, but must be non-null for legacy paths
+        this.signer = null;
+        this.verifier = null;
     }
     
     /** {@inheritDoc} */
@@ -78,12 +100,18 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
                 }
             }
             
-            SignedJWT signedJWT = new SignedJWT(
-                new JWSHeader(JWSAlgorithm.HS256),
-                claimsBuilder.build()
-            );
-            
-            signedJWT.sign(signer);
+            final JWSHeader header;
+            final JWSSigner activeSigner;
+            if (keyManager != null) {
+                header = keyManager.currentHeader(); // includes kid
+                activeSigner = keyManager.currentSigner();
+            } else {
+                header = new JWSHeader(JWSAlgorithm.HS256);
+                activeSigner = signer;
+            }
+
+            SignedJWT signedJWT = new SignedJWT(header, claimsBuilder.build());
+            signedJWT.sign(activeSigner);
             return signedJWT.serialize();
             
         } catch (JOSEException e) {
@@ -97,9 +125,9 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
     public boolean validateToken(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
-            
-            // Verify the signature
-            if (!signedJWT.verify(verifier)) {
+
+            // Verify the signature — support key rotation by trying all active verifiers
+            if (!verifySignature(signedJWT)) {
                 logger.warn("Invalid JWT signature");
                 return false;
             }
@@ -138,7 +166,7 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
             
-            if (!signedJWT.verify(verifier)) {
+            if (!verifySignature(signedJWT)) {
                 return Optional.empty();
             }
             
@@ -164,7 +192,7 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
             
-            if (!signedJWT.verify(verifier)) {
+            if (!verifySignature(signedJWT)) {
                 return List.of();
             }
             
@@ -190,7 +218,7 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
     public Optional<Map<String, Object>> extractClaims(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
-            if (!signedJWT.verify(verifier)) {
+            if (!verifySignature(signedJWT)) {
                 return Optional.empty();
             }
             JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
@@ -211,4 +239,26 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
     public String createToken(User user) {
         return createToken(user.getUsername(), user.getRoles().stream().map(Role::name).collect(Collectors.toList()), null);
     }
+
+    // -----------------------------------------------------------------------
+    // Internal helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Verifies the JWS signature using either the single static verifier (legacy constructor)
+     * or the rotating key manager.  When the manager is active, the {@code kid} header is used
+     * to pick the candidate verifier; for tokens without a {@code kid} all active keys are tried.
+     */
+    private boolean verifySignature(SignedJWT signedJWT) throws JOSEException {
+        if (keyManager != null) {
+            String kid = signedJWT.getHeader().getKeyID();
+            List<JWSVerifier> candidates = keyManager.verifiersFor(kid);
+            for (JWSVerifier v : candidates) {
+                if (signedJWT.verify(v)) return true;
+            }
+            return false;
+        }
+        return signedJWT.verify(verifier);
+    }
 }
+

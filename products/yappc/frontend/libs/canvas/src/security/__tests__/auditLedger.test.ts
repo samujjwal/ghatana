@@ -18,7 +18,7 @@ import {
   type AuditExportOptions,
 } from '../auditLedger';
 
-describe.skip('Feature 2.34: Audit Trail Hardening', () => {
+describe('Feature 2.34: Audit Trail Hardening', () => {
   let ledger: AuditLedger;
   const testSigningKey = 'test-signing-key-12345';
 

@@ -25,7 +25,7 @@ Allow the patient to grant, inspect, and revoke access to their records in a way
 
 - patient
 - provider as recipient of access
-- caregiver in later delegated scope
+- caregiver as an active delegated-access recipient in MVP
 
 ---
 
@@ -125,6 +125,8 @@ Nepal has strong family-based caregiving. The consent model supports delegated a
 | Adult → spouse/family          | Configurable (default 1 year) | Patient-selected resources              | Patient explicit consent                          |
 | Adult → FCHV                   | Per visit (expires 48h)       | Vitals, medications, appointments       | Patient or proxy consent                          |
 | Elderly → designated caregiver | Ongoing (annual renewal)      | Full or patient-selected                | Patient + witness signature (digital or physical) |
+
+This delegation model is part of the Core MVP baseline and governs caregiver access to dependent summaries, appointments, medications, documents, referrals, imaging, and billing surfaces where the grant scope explicitly allows those actions.
 
 **Revocation:** All delegated consent is revocable instantly by the patient. For minors, the minor gains progressive consent rights at age 16 (reproductive health, mental health).
 

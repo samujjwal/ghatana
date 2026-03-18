@@ -1,4 +1,3 @@
-// All tests skipped - incomplete feature
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect } from 'vitest';
@@ -6,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { ThemeProvider } from '../../../theme/ThemeProvider';
 import { Card, CardContent, CardHeader, CardActions } from '../Card';
 
-describe.skip('Card Component', () => {
+describe('Card Component', () => {
   it('renders correctly with default props', () => {
     render(
       <ThemeProvider mode="light">

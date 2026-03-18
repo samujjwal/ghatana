@@ -12,7 +12,7 @@ import {
 
   SandboxedPreviewManager} from '../sandboxedPreview';
 
-describe.skip('SandboxedPreviewManager', () => {
+describe('SandboxedPreviewManager', () => {
   let manager: SandboxedPreviewManager;
   let container: HTMLElement;
 

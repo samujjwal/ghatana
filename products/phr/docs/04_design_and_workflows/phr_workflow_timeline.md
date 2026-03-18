@@ -25,7 +25,7 @@ Provide a single longitudinal read surface across encounters, observations, cond
 
 - patient
 - provider
-- delegated caregiver in later scoped flows
+- delegated caregiver in scoped MVP flows
 
 ---
 
@@ -139,7 +139,7 @@ Mobile app maintains a local timeline cache for offline viewing:
 - New records created offline are visible in the local cache immediately
 - On reconnection, local cache merges with server data (server authoritative for conflicts)
 
-**Cache scope:** Only the patient's own timeline is cached. Provider views are NOT cached offline.
+**Cache scope:** Patient self views and caregiver-dependent summary timelines may be cached when the active grant permits it. Provider views are NOT cached offline.
 
 ---
 

@@ -1,13 +1,10 @@
-// All tests skipped - incomplete feature
 import { render, screen, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 
-// Use the component folder entry so the runtime import resolves to the
-// tailwind implementation via index.ts
-import { Button } from '.';
+import { Button } from '..';
 
-describe.skip('Button', () => {
+describe('Button', () => {
   it('renders with text', () => {
     render(<Button>Click me</Button>);
     expect(screen.getByText('Click me')).toBeInTheDocument();

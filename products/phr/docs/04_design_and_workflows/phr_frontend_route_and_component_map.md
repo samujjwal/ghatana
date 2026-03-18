@@ -168,6 +168,7 @@ Telemedicine consultation room routes are intentionally excluded until dedicated
    │  ├─ /app/patient/input/voice
    │  ├─ /app/patient/insurance
    │  ├─ /app/patient/claims
+  │  ├─ /app/patient/export
    │  └─ /app/patient/access
    ├─ /app/patient/emergency-qr          (Added in v2.0)
    ├─ /app/fchv                           (Added in v2.0)
@@ -825,7 +826,85 @@ Voice-based data entry for patients. Allows recording symptoms, vitals, medicati
 
 ---
 
-## 9.11 `/app/patient/claims` (Phase 2)
+## 9.11 `/app/patient/payments`
+
+### Page shell
+
+- `PatientPaymentsPage`
+
+### Main components
+
+- `OutstandingBillsList`
+- `PaymentMethodCard`
+- `PaymentStatusBadge`
+- `ReceiptDrawer`
+
+### Queries
+
+- `usePatientBillsQuery(patientId)`
+- `usePaymentStatusQuery(paymentId)`
+
+### Mutations
+
+- `useCreatePaymentMutation()`
+- `useConfirmPaymentMutation()`
+
+### Atoms
+
+- `selectedInvoiceAtom`
+- `paymentDraftAtom`
+- `selectedReceiptAtom`
+
+---
+
+## 9.12 `/app/patient/referrals`
+
+### Page shell
+
+- `PatientReferralsPage`
+
+### Main components
+
+- `ReferralList`
+- `ReferralStatusTimeline`
+- `ReferralDetailDrawer`
+
+### Queries
+
+- `usePatientReferralsQuery(patientId)`
+
+### Atoms
+
+- `referralFilterAtom`
+- `selectedReferralAtom`
+
+---
+
+## 9.13 `/app/patient/imaging/:id`
+
+### Page shell
+
+- `PatientImagingStudyPage`
+
+### Main components
+
+- `ImagingStudyHeader`
+- `DicomViewerPane`
+- `RadiologyReportCard`
+- `SecureDownloadPanel`
+
+### Queries
+
+- `useImagingStudyQuery(imagingStudyId)`
+
+### Atoms
+
+- `viewerToolAtom`
+- `selectedSeriesAtom`
+
+---
+
+## 9.14 `/app/patient/claims` (Phase 2)
 
 ### Page shell
 
@@ -854,7 +933,7 @@ Voice-based data entry for patients. Allows recording symptoms, vitals, medicati
 
 ---
 
-## 9.12 `/app/patient/access`
+## 9.15 `/app/patient/access`
 
 ### Page shell
 
@@ -1142,7 +1221,7 @@ Voice-based data entry for patients. Allows recording symptoms, vitals, medicati
 
 ## 11. Caregiver area pages
 
-## 11.1 `/app/caregiver/dependents` (Phase 2)
+## 11.1 `/app/caregiver/dependents`
 
 ### Page shell
 
@@ -1164,7 +1243,7 @@ Voice-based data entry for patients. Allows recording symptoms, vitals, medicati
 
 ---
 
-## 11.2 `/app/caregiver/dependents/:id` (Phase 2)
+## 11.2 `/app/caregiver/dependents/:id`
 
 ### Page shell
 
@@ -1185,6 +1264,11 @@ Voice-based data entry for patients. Allows recording symptoms, vitals, medicati
 ### Guard
 
 - caregiver scope guard + grant validity checks
+
+### Behavior
+
+- show delegated sync state for offline-capable actions
+- hide fields outside active caregiver grant scope
 
 ---
 
@@ -1260,6 +1344,7 @@ src/routes/
       appointments/
       documents/
       insurance/
+      export/
       claims/
       access/
     provider/
@@ -1314,6 +1399,7 @@ Feature packages:
 - `features/appointment`
 - `features/document`
 - `features/insurance`
+- `features/export`
 - `features/consent`
 - `features/search`
 - `features/admin`
@@ -1331,6 +1417,7 @@ Use one hook file group per domain:
 - `appointment.queries.ts`
 - `document.queries.ts`
 - `insurance.queries.ts`
+- `export.queries.ts`
 - `claim.queries.ts`
 - `consent.queries.ts`
 - `audit.queries.ts`
@@ -1396,7 +1483,7 @@ Suggested metadata shape:
 ```ts
 type RouteAccessMeta = {
   requiresAuth: boolean;
-  allowedRoles?: Array<"PATIENT" | "PROVIDER" | "CAREGIVER" | "ADMIN">;
+  allowedRoles?: Array<"PATIENT" | "PROVIDER" | "CAREGIVER" | "ADMIN" | "FCHV">;
   requiresPatientGrant?: boolean;
   featureFlag?: string;
 };
@@ -1446,7 +1533,7 @@ This keeps the frontend route tree clean, aligns state correctly between Jotai a
 
 ---
 
-## 20. Emergency QR Route (Added in v2.0)
+## 20. Emergency QR and Export Routes (Added in v2.0)
 
 ### 20.1 `/app/patient/emergency-qr`
 
@@ -1467,6 +1554,26 @@ This keeps the frontend route tree clean, aligns state correctly between Jotai a
 **Guard:** Authenticated patient only. QR data is patient-scoped.
 
 **Empty state:** "Complete your profile (blood type, allergies, emergency contacts) to generate your Emergency QR card."
+
+### 20.2 `/app/patient/export`
+
+**Purpose:** Let patients request, monitor, and download time-limited portability artifacts.
+
+**Page components:**
+
+- `ExportFormatSelector` — choose `FHIR_BUNDLE_JSON` or `PDF_SUMMARY`
+- `ExportScopeChecklist` — select which record sections to include
+- `ExportStatusPanel` — shows queued, processing, ready, expired, or failed state
+- `ExportDownloadCard` — renders download CTA and expiry messaging
+
+**Data queries:**
+
+- `useCreatePatientExportMutation()` — requests an export job
+- `usePatientExportStatusQuery(patientId, exportId)` — polls export status
+
+**Guard:** Authenticated patient only unless an explicit export-scoped grant exists.
+
+**Empty state:** "No export has been requested yet. Choose a format to generate a portable copy of your record."
 
 ---
 
@@ -1501,7 +1608,7 @@ This keeps the frontend route tree clean, aligns state correctly between Jotai a
 - `VitalsEntryForm` — BP, pulse, temperature, weight, blood glucose (large input fields)
 - `VitalsHistoryMini` — last 3 readings for context
 
-**Offline:** Full offline capability. Data synced when connectivity returns.
+**Offline:** Scoped offline capture only for approved field workflows. Queued vitals sync when connectivity returns.
 
 ---
 
@@ -1509,7 +1616,7 @@ This keeps the frontend route tree clean, aligns state correctly between Jotai a
 
 All page shells include:
 
-- **`OfflineBanner`**: Amber bar at top — "You are offline. Changes will sync when connected."
+- **`OfflineBanner`**: Amber bar at top — patient routes show read-only degraded mode; FCHV routes show queued field-capture sync state.
 - **`SyncStatusBadge`**: Shows in navigation — pending upload count
 - **`StalenessIndicator`**: Per-data-section — "Last updated: {timestamp}"
 

@@ -30,7 +30,7 @@ For each screen/flow, it maps:
 Scope note:
 
 - Core MVP flows cover patient records, appointments, documents, coverage baseline, consent, admin audit, provider clinical workflows, and assisted OCR/voice entry.
-- Claims and caregiver flows are retained here as planned Phase 2 extensions so downstream teams can prepare stable contracts and IA early.
+- Claims remain documented as a planned Phase 2 extension, while caregiver flows are fully in-scope for MVP delivery.
 - Telemedicine consultation room screens are intentionally excluded until dedicated call-session contracts are added.
 
 This is intentionally scoped for a **modular NestJS platform**, not a distributed microservice estate.
@@ -59,6 +59,7 @@ Use this matrix to drive:
 - Provider
 - Caregiver
 - Admin
+- FCHV
 
 ## 2.2 API style
 
@@ -369,7 +370,61 @@ export function PatientRegistrationScreen() {
 
 ---
 
-## 3.13 Claim status (Phase 2)
+## 3.13 Payments
+
+| Field               | Value                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------- |
+| Screen              | Payments                                                                                |
+| User roles          | Patient, Caregiver (granted), Provider staff                                            |
+| Purpose             | View bills, pay outstanding balances, and retrieve receipts                             |
+| NestJS modules      | BillingModule, InsuranceModule, AuditModule                                             |
+| Suggested endpoints | `GET /api/v1/patients/:id/bills`, `POST /api/v1/payments`, `GET /api/v1/payments/:id`  |
+| Prisma models       | Invoice, PaymentNotice, PaymentReconciliation                                           |
+| FHIR resources      | Invoice, PaymentNotice                                                                  |
+| Validation          | payment initiation schema                                                               |
+| Permissions         | patient self or granted caregiver/staff under billing policy                            |
+| UI state            | outstanding bill selection, payment pending, success, failure, receipt ready            |
+| Main tests          | bill list load, payment initiation, confirmation, receipt retrieval, denied access      |
+
+---
+
+## 3.14 Referrals
+
+| Field               | Value                                                                                          |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| Screen              | Referrals                                                                                      |
+| User roles          | Patient, Provider, Caregiver (view only when granted)                                          |
+| Purpose             | Track created referrals, referral status, and specialist scheduling                            |
+| NestJS modules      | ReferralModule, EncounterModule, ConsentModule                                                 |
+| Suggested endpoints | `POST /api/v1/referrals`, `GET /api/v1/patients/:id/referrals`, `GET /api/v1/referrals/:id`   |
+| Prisma models       | ServiceRequest, ReferralStatusEvent, DocumentReference                                         |
+| FHIR resources      | ServiceRequest, DocumentReference                                                              |
+| Validation          | referral create/update schema                                                                  |
+| Permissions         | patient self, authorized provider, caregiver within explicit grant                             |
+| UI state            | referral list filters, status timeline, detail drawer                                          |
+| Main tests          | referral create, referral status update, patient visibility, specialist handoff error handling |
+
+---
+
+## 3.15 Imaging viewer
+
+| Field               | Value                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| Screen              | Imaging viewer                                                                             |
+| User roles          | Patient, Provider, Caregiver                                                               |
+| Purpose             | Open imaging studies, read radiology report, and securely download imaging artifacts       |
+| NestJS modules      | ImagingModule, DocumentModule, AuditModule                                                 |
+| Suggested endpoints | `GET /api/v1/imaging-studies/:id`, `GET /api/v1/imaging-studies/:id/download`              |
+| Prisma models       | ImagingStudy, DiagnosticReport, StoredObject                                               |
+| FHIR resources      | ImagingStudy, DiagnosticReport                                                             |
+| Validation          | viewer-access schema                                                                       |
+| Permissions         | same access model as the linked patient record                                             |
+| UI state            | study loading, viewer tool state, report panel, secure download gating                     |
+| Main tests          | study load, viewer controls, report display, secure download audit, access denial handling |
+
+---
+
+## 3.16 Claim status (Phase 2)
 
 | Field               | Value                                                                              |
 | ------------------- | ---------------------------------------------------------------------------------- |
@@ -387,7 +442,7 @@ export function PatientRegistrationScreen() {
 
 ---
 
-## 3.14 Sharing and access grants
+## 3.17 Sharing and access grants
 
 | Field               | Value                                                                                                            |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -405,7 +460,7 @@ export function PatientRegistrationScreen() {
 
 ---
 
-## 3.15 Document upload (multi-modal)
+## 3.18 Document upload (multi-modal)
 
 | Field               | Value                                                                                                                                                |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -424,7 +479,7 @@ export function PatientRegistrationScreen() {
 
 ---
 
-## 3.16 OCR review
+## 3.19 OCR review
 
 | Field               | Value                                                                                                                                                                                          |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -443,7 +498,7 @@ export function PatientRegistrationScreen() {
 
 ---
 
-## 3.17 Voice data entry (patient)
+## 3.20 Voice data entry (patient)
 
 | Field               | Value                                                                                                                                                                                                               |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -611,7 +666,7 @@ export function PatientRegistrationScreen() {
 
 # 5. Caregiver-facing screens
 
-## 5.1 Dependent list (Phase 2)
+## 5.1 Dependent list
 
 | Field               | Value                                                 |
 | ------------------- | ----------------------------------------------------- |
@@ -629,7 +684,7 @@ export function PatientRegistrationScreen() {
 
 ---
 
-## 5.2 Dependent summary (Phase 2)
+## 5.2 Dependent summary
 
 | Field               | Value                                                                       |
 | ------------------- | --------------------------------------------------------------------------- |
@@ -720,6 +775,7 @@ Can:
 - manage sharing/access grants
 - upload own documents
 - book appointments
+- request and download own export artifacts
 - view claims and coverage
 
 ## Provider
@@ -747,6 +803,15 @@ Can:
 - manage facility/platform config
 - view audit/admin operational views
 - must not gain unlimited clinical read access without explicit policy
+
+## FCHV
+
+Can:
+
+- register patients within scoped community workflows
+- view only own assisted registrations and follow-up tasks
+- capture approved field data with scoped offline queue behavior
+- must not gain unrestricted patient search or export access
 
 ---
 
@@ -799,6 +864,7 @@ Clinical entry screens must also include:
 ## Wave 4
 
 - insurance summary
+- export and portability
 - claims
 - sharing/access grants
 - audit viewer
@@ -834,7 +900,7 @@ The cleanest next artifact after this is a **route contract pack**:
 
 ---
 
-# 12. Emergency QR Screen (Added in v2.0)
+# 12. Emergency QR and Export Screens (Added in v2.0)
 
 | Field               | Value                                                                            |
 | ------------------- | -------------------------------------------------------------------------------- |
@@ -851,6 +917,26 @@ The cleanest next artifact after this is a **route contract pack**:
 | Main tests          | QR generation, QR refresh on data change, print PDF, incomplete profile guard    |
 | Data classification | C3 (Confidential) — QR payload is health data                                    |
 | WCAG                | AA — QR must have alt text, print button keyboard-accessible                     |
+
+---
+
+## 12.2 Patient Export and Portability
+
+| Field               | Value                                                                                    |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| Screen              | Patient export and portability                                                           |
+| User roles          | Patient                                                                                  |
+| Purpose             | Request, monitor, and download a portable copy of the patient record                     |
+| NestJS modules      | InteroperabilityModule, AuditModule                                                      |
+| Suggested endpoints | `POST /api/v1/patients/:id/exports`, `GET /api/v1/patients/:id/exports/:exportId`       |
+| Prisma models       | ExportJob, AuditLog                                                                      |
+| FHIR resources      | Bundle (export), Patient, Observation, MedicationRequest, DocumentReference, Coverage    |
+| Validation          | export format/scope schema                                                               |
+| Permissions         | Patient own data only unless explicit export-scoped grant exists                         |
+| UI state            | format selector, export status, download readiness, artifact expiry warning              |
+| Main tests          | export request, ready state polling, expiry handling, unauthorized export denial         |
+| Data classification | C3 (Confidential) — portability artifact exposes patient-linked health data              |
+| WCAG                | AA — download state, expiry messaging, and status changes must be screen-reader friendly |
 
 ---
 
@@ -884,8 +970,8 @@ The cleanest next artifact after this is a **route contract pack**:
 | Prisma models       | Patient (pending status)                                                |
 | Validation          | NID format, DOB, name (Nepali + English)                                |
 | Permissions         | FCHV role only                                                          |
-| UI state            | NID QR scanner, form, offline queue, confirmation                       |
-| Main tests          | Offline registration queue, NID scan, manual entry, duplicate detection |
+| UI state            | NID QR scanner, form, scoped offline queue, confirmation                |
+| Main tests          | Scoped offline registration queue, NID scan, manual entry, duplicate detection |
 | Data classification | C3 (Confidential) — PII data                                            |
 
 ---

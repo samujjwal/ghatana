@@ -14,7 +14,7 @@ import {
   DEVELOPMENT_VALIDATION_CONFIG,
 } from './validation-helpers';
 
-describe.skip('Phase 8: Validation Helpers - Basic Tests', () => {
+describe('Phase 8: Validation Helpers - Basic Tests', () => {
   const mockValidCanvas = {
     nodes: [
       createComponent('process'),

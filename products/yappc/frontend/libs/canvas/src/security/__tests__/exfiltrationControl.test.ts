@@ -10,7 +10,7 @@ import {
 
   ExfiltrationControl} from '../exfiltrationControl';
 
-describe.skip('ExfiltrationControl', () => {
+describe('ExfiltrationControl', () => {
   let control: ExfiltrationControl;
 
   beforeEach(() => {

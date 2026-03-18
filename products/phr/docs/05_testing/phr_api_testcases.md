@@ -47,19 +47,20 @@ This document defines contract-level API test cases for Core MVP and the committ
 | `API-024` | MVP   | `GET /api/v1/audit/logs`                      | authorized audit read                 | paged audit list returned                 |
 | `API-025` | MVP   | `POST /api/v1/documents/:id/ocr`              | trigger OCR                           | queued/processing state returned          |
 | `API-026` | MVP   | `POST /api/v1/ocr-results/:id/confirm`        | confirm OCR and create resources      | created resources + provenance            |
+| `API-027` | MVP   | `POST /api/v1/patients/:id/exports`           | request patient export                | export job accepted and queued            |
 | `API-028` | MVP   | `POST /api/v1/audio-input`                    | start transcription                   | transcription id + stream data returned   |
 
 ---
 
-## 2. Phase 2 extension API cases
+## 2. Additional MVP and Phase 2 extension API cases
 
 | Test ID   | Phase       | Endpoint                                      | Scenario                | Expected result                               |
 | --------- | ----------- | --------------------------------------------- | ----------------------- | --------------------------------------------- |
-| `API-027` | MVP/Phase 2 | export APIs                                   | export patient data     | requested export artifact generated or queued |
-| `API-029` | Phase 2     | `POST /api/v1/claims`                         | claim submit            | claim + submission attempt persisted          |
-| `API-030` | Phase 2     | caregiver delegated APIs                      | dependent summary read  | scoped dependent data only                    |
-| `API-031` | Phase 2     | `POST /api/v1/telemedicine/sessions/:id/join` | patient join            | valid join token/details                      |
-| `API-032` | Phase 2     | `POST /api/v1/telemedicine/sessions`          | provider create session | session metadata returned                     |
+| `API-029` | MVP   | `GET /api/v1/patients/:id/exports/:exportId`  | poll export status      | queued, ready, expired, or failed state returned |
+| `API-030` | Phase 2     | `POST /api/v1/claims`                         | claim submit            | claim + submission attempt persisted          |
+| `API-031` | MVP         | caregiver delegated APIs                      | dependent summary read  | scoped dependent data only                    |
+| `API-032` | Phase 2     | `POST /api/v1/telemedicine/sessions/:id/join` | patient join            | valid join token/details                      |
+| `API-033` | Phase 2     | `POST /api/v1/telemedicine/sessions`          | provider create session | session metadata returned                     |
 
 ---
 
@@ -78,11 +79,11 @@ This document defines contract-level API test cases for Core MVP and the committ
 
 | Test ID   | Phase | Endpoint                                | Scenario                   | Expected result                                      |
 | --------- | ----- | --------------------------------------- | -------------------------- | ---------------------------------------------------- |
-| `API-033` | MVP   | `GET /api/v1/patients/:id/emergency-qr` | patient requests own QR    | QR payload returned with blood type, allergies, meds |
-| `API-034` | MVP   | `GET /api/v1/patients/:id/emergency-qr` | QR with incomplete profile | 422 with missing fields list                         |
-| `API-035` | MVP   | `GET /api/v1/patients/:id/emergency-qr` | provider with active grant | QR payload returned                                  |
-| `API-036` | MVP   | `GET /api/v1/patients/:id/emergency-qr` | unauthorized actor         | 403                                                  |
-| `API-037` | MVP   | `GET /api/v1/patients/:id/emergency-qr` | QR payload privacy check   | Response MUST NOT contain NID, full name, or address |
+| `API-034` | MVP   | `GET /api/v1/patients/:id/emergency-qr` | patient requests own QR    | QR payload returned with blood type, allergies, meds |
+| `API-035` | MVP   | `GET /api/v1/patients/:id/emergency-qr` | QR with incomplete profile | 422 with missing fields list                         |
+| `API-036` | MVP   | `GET /api/v1/patients/:id/emergency-qr` | provider with active grant | QR payload returned                                  |
+| `API-037` | MVP   | `GET /api/v1/patients/:id/emergency-qr` | unauthorized actor         | 403                                                  |
+| `API-038` | MVP   | `GET /api/v1/patients/:id/emergency-qr` | QR payload privacy check   | Response MUST NOT contain NID, full name, or address |
 
 ---
 
@@ -90,10 +91,10 @@ This document defines contract-level API test cases for Core MVP and the committ
 
 | Test ID   | Phase | Endpoint                     | Scenario                     | Expected result                     |
 | --------- | ----- | ---------------------------- | ---------------------------- | ----------------------------------- |
-| `API-038` | MVP   | `POST /api/v1/fchv/patients` | FCHV registers patient       | Patient created in pending status   |
-| `API-039` | MVP   | `POST /api/v1/fchv/patients` | Duplicate NID                | 409 Conflict with duplicate warning |
-| `API-040` | MVP   | `GET /api/v1/fchv/patients`  | FCHV lists own registrations | Only FCHV's patients returned       |
-| `API-041` | MVP   | `GET /api/v1/fchv/patients`  | Non-FCHV role                | 403                                 |
+| `API-039` | MVP   | `POST /api/v1/fchv/patients` | FCHV registers patient       | Patient created in pending status   |
+| `API-040` | MVP   | `POST /api/v1/fchv/patients` | Duplicate NID                | 409 Conflict with duplicate warning |
+| `API-041` | MVP   | `GET /api/v1/fchv/patients`  | FCHV lists own registrations | Only FCHV's patients returned       |
+| `API-042` | MVP   | `GET /api/v1/fchv/patients`  | Non-FCHV role                | 403                                 |
 
 ---
 
@@ -101,9 +102,9 @@ This document defines contract-level API test cases for Core MVP and the committ
 
 | Test ID   | Phase | Endpoint                   | Scenario                 | Expected result                        |
 | --------- | ----- | -------------------------- | ------------------------ | -------------------------------------- |
-| `API-042` | MVP   | `POST /api/v1/auth/login`  | 11th request in 1 minute | 429 with `Retry-After` header          |
-| `API-043` | MVP   | `GET /api/v1/patients/:id` | 101st read in 1 minute   | 429 with `Retry-After` header          |
-| `API-044` | MVP   | any endpoint               | Normal request           | `X-RateLimit-Remaining` header present |
+| `API-043` | MVP   | `POST /api/v1/auth/login`  | 11th request in 1 minute | 429 with `Retry-After` header          |
+| `API-044` | MVP   | `GET /api/v1/patients/:id` | 101st read in 1 minute   | 429 with `Retry-After` header          |
+| `API-045` | MVP   | any endpoint               | Normal request           | `X-RateLimit-Remaining` header present |
 
 ---
 
@@ -111,9 +112,9 @@ This document defines contract-level API test cases for Core MVP and the committ
 
 | Test ID   | Phase | Endpoint                                   | Scenario                  | Expected result                                                   |
 | --------- | ----- | ------------------------------------------ | ------------------------- | ----------------------------------------------------------------- |
-| `API-045` | MVP   | `POST /api/v1/insurance/eligibility-check` | openIMIS circuit open     | 503 `UPSTREAM_UNAVAILABLE` with cached fallback data if available |
-| `API-046` | MVP   | `POST /api/v1/insurance/eligibility-check` | openIMIS timeout          | 503 `UPSTREAM_TIMEOUT`                                            |
-| `API-047` | MVP   | `POST /api/v1/insurance/eligibility-check` | openIMIS partial response | 200 with `UPSTREAM_DEGRADED` indicator                            |
+| `API-046` | MVP   | `POST /api/v1/insurance/eligibility-check` | openIMIS circuit open     | 503 `UPSTREAM_UNAVAILABLE` with cached fallback data if available |
+| `API-047` | MVP   | `POST /api/v1/insurance/eligibility-check` | openIMIS timeout          | 503 `UPSTREAM_TIMEOUT`                                            |
+| `API-048` | MVP   | `POST /api/v1/insurance/eligibility-check` | openIMIS partial response | 200 with `UPSTREAM_DEGRADED` indicator                            |
 
 ---
 
@@ -121,9 +122,9 @@ This document defines contract-level API test cases for Core MVP and the committ
 
 | Test ID   | Phase | Endpoint                            | Scenario                                     | Expected result                               |
 | --------- | ----- | ----------------------------------- | -------------------------------------------- | --------------------------------------------- |
-| `API-048` | MVP   | `GET /api/v1/patients/:id`          | Request with mismatched tenant header vs JWT | 403                                           |
-| `API-049` | MVP   | `GET /api/v1/patients/:id`          | Tenant A requests Tenant B's patient         | 404 (NOT 403 to avoid information disclosure) |
-| `API-050` | MVP   | `GET /api/v1/patients/:id/timeline` | Cross-tenant timeline read                   | 404                                           |
+| `API-049` | MVP   | `GET /api/v1/patients/:id`          | Request with mismatched tenant header vs JWT | 403                                           |
+| `API-050` | MVP   | `GET /api/v1/patients/:id`          | Tenant A requests Tenant B's patient         | 404 (NOT 403 to avoid information disclosure) |
+| `API-051` | MVP   | `GET /api/v1/patients/:id/timeline` | Cross-tenant timeline read                   | 404                                           |
 
 ---
 
@@ -131,13 +132,17 @@ This document defines contract-level API test cases for Core MVP and the committ
 
 | Test ID   | Phase | Endpoint                   | Scenario                            | Expected result                                        |
 | --------- | ----- | -------------------------- | ----------------------------------- | ------------------------------------------------------ |
-| `API-051` | MVP   | `POST /api/v1/patients`    | SQL injection in name field         | 400 validation error, no SQL execution                 |
-| `API-052` | MVP   | `POST /api/v1/patients`    | XSS payload in name field           | Input sanitized or rejected                            |
-| `API-053` | MVP   | any error response         | Internal error triggered            | No stack traces, DB columns, or file paths in response |
-| `API-054` | MVP   | `POST /api/v1/auth/login`  | Brute force (100 rapid attempts)    | Account locked after threshold                         |
-| `API-055` | MVP   | `GET /api/v1/patients/:id` | IDOR — patient A requests patient B | 403 or 404                                             |
-| `API-056` | MVP   | all endpoints              | Missing/expired JWT                 | 401 with generic message                               |
-| `API-057` | MVP   | all endpoints              | Tampered JWT signature              | 401                                                    |
+| `API-052` | MVP   | `POST /api/v1/patients`    | SQL injection in name field         | 400 validation error, no SQL execution                 |
+| `API-053` | MVP   | `POST /api/v1/patients`    | XSS payload in name field           | Input sanitized or rejected                            |
+| `API-054` | MVP   | any error response         | Internal error triggered            | No stack traces, DB columns, or file paths in response |
+| `API-055` | MVP   | `POST /api/v1/auth/login`  | Brute force (100 rapid attempts)    | Account locked after threshold                         |
+| `API-056` | MVP   | `GET /api/v1/patients/:id` | IDOR — patient A requests patient B | 403 or 404                                             |
+| `API-057` | MVP   | all endpoints              | Missing/expired JWT                 | 401 with generic message                               |
+| `API-058` | MVP   | all endpoints              | Tampered JWT signature              | 401                                                    |
+| `API-059` | MVP   | `POST /api/v1/payments`    | initiate digital payment            | payment intent created with pending state              |
+| `API-060` | MVP   | `POST /api/v1/payments/:id/confirm` | confirm gateway callback   | payment marked paid and receipt link returned          |
+| `API-061` | MVP   | `POST /api/v1/referrals`   | create referral                     | referral created with summary attachment metadata      |
+| `API-062` | MVP   | `GET /api/v1/imaging-studies/:id` | authorized imaging study read | study metadata, report, and viewer/download info returned |
 
 ---
 

@@ -11,7 +11,7 @@ import {
   type Vulnerability,
 } from '../dependencyHygiene';
 
-describe.skip('DependencyHygieneScanner', () => {
+describe('DependencyHygieneScanner', () => {
   let scanner: DependencyHygieneScanner;
 
   beforeEach(() => {

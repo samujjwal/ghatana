@@ -312,7 +312,7 @@ public class JdbcMetricRepository implements MetricRepository {
         m.setProjectId(rs.getString("project_id"));
         m.setName(rs.getString("name"));
         m.setDescription(rs.getString("description"));
-        try { m.setType(MetricType.valueOf(rs.getString("metric_type"))); } catch (Exception ignored) {}
+        try { m.setType(MetricType.valueOf(rs.getString("metric_type"))); } catch (Exception e) { logger.warn("Unknown metric type value '{}', defaulting to null", rs.getString("metric_type")); }
         m.setUnit(rs.getString("unit"));
         String tagsJson = rs.getString("tags");
         if (tagsJson != null) m.setTags(mapper.readValue(tagsJson, new TypeReference<Map<String, String>>() {}));

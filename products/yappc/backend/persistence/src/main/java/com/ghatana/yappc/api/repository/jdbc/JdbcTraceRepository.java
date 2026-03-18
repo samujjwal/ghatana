@@ -327,7 +327,7 @@ public class JdbcTraceRepository implements TraceRepository {
         t.setName(rs.getString("name"));
         t.setService(rs.getString("service"));
         t.setOperation(rs.getString("operation"));
-        try { t.setStatus(TraceStatus.valueOf(rs.getString("status"))); } catch (Exception ignored) {}
+        try { t.setStatus(TraceStatus.valueOf(rs.getString("status"))); } catch (Exception e) { logger.warn("Unknown trace status value '{}', defaulting to null", rs.getString("status")); }
         String spansJson = rs.getString("spans");
         if (spansJson != null) t.setSpans(mapper.readValue(spansJson, new TypeReference<List<Span>>() {}));
         Timestamp start = rs.getTimestamp("start_time");

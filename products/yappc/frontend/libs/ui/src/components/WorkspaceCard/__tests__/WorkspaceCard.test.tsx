@@ -1,4 +1,3 @@
-// All tests skipped - incomplete feature
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
@@ -6,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { ThemeProvider } from '../../../theme/ThemeProvider';
 import { WorkspaceCard } from '../WorkspaceCard';
 
-describe.skip('WorkspaceCard Component', () => {
+describe('WorkspaceCard Component', () => {
   const defaultProps = {
     id: 'workspace-1',
     name: 'Test Workspace',

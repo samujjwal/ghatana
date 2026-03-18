@@ -25,7 +25,7 @@ Support secure upload, storage, listing, preview, download, OCR extraction, and 
 
 - patient
 - provider
-- caregiver in delegated scope later
+- caregiver in active delegated scope
 
 ---
 
@@ -159,7 +159,8 @@ Mobile app caches recent documents for offline access:
 - Cache size limit: 200 MB per patient (configurable)
 - Cache entries expire after 7 days without connectivity
 - Offline-viewed documents show "Cached copy — last synced: {timestamp}" indicator
-- New uploads are queued locally and synced when online
+- New uploads from approved patient and caregiver flows are queued locally and synced when online
+- Malware scanning, checksum verification, and visibility enforcement complete only after the queued upload reaches the server
 
 ---
 

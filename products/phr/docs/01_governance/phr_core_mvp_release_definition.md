@@ -32,13 +32,20 @@ Core MVP delivers the first production-grade, patient-owned health record baseli
 - OCR-assisted document digitization and review (critical for Nepal's paper-heavy health ecosystem)
 - voice-assisted patient and provider data entry (Nepali ASR — accessibility differentiator)
 - patient-controlled sharing (consent-first model aligned with Estonia's X-Road data exchange principles)
+- patient data export baseline (FHIR JSON, PDF, and CSV outputs through approved portability flows)
 - insurance coverage and eligibility baseline (openIMIS/HIB integration)
+- caregiver and dependent access baseline with explicit delegated scopes and audit visibility
+- generalized offline read/write support for approved patient, caregiver, provider-assisted, and FCHV flows with conflict handling and freshness indicators
+- patient billing and payment baseline with Nepal digital-wallet support, receipts, and payment-status visibility
+- referral creation and tracking baseline for cross-facility care coordination
+- imaging viewer baseline for DICOM-compatible studies, report display, and secure download
+- FCHV-assisted registration and scoped field capture pilot for community health workflows
 - mobile, web, and desktop application delivery
 - auditability, security, and Nepal-only data handling (data sovereignty per Directive 2081)
 - emergency medical summary with QR code (inspired by Australia's My Health Record emergency access)
 - bilingual interface (Nepali and English) with health literacy–optimized content
 
-Core MVP does **not** include telemedicine call-room behavior, claims, caregiver portals, or offline sync as user-facing shipped features.
+Core MVP does **not** include telemedicine call-room behavior, insurance claim submission/tracking, or advanced family-hub analytics beyond the delegated caregiver baseline.
 
 > **Design principle — "Paper-to-Digital Bridge":** Nepal's healthcare system remains predominantly paper-based. Core MVP explicitly prioritizes OCR and voice as primary data entry channels alongside manual forms, recognizing that most patient data will originate from physical documents and verbal interactions. This mirrors India's ABDM strategy of enabling digital health records from paper prescriptions via DigiLocker integration.
 
@@ -50,6 +57,7 @@ Core MVP does **not** include telemedicine call-room behavior, claims, caregiver
 
 - sign in and session bootstrap (Keycloak OIDC with MFA for sensitive operations)
 - patient registration (with national ID/citizenship number verification where available)
+- FCHV-assisted registration with pending confirmation flow for scoped community-health use
 - patient profile view/edit
 - emergency contact capture
 - emergency medical summary with QR code for first responders
@@ -98,7 +106,21 @@ Core MVP does **not** include telemedicine call-room behavior, claims, caregiver
 - coverage summary
 - eligibility check
 
-### 2.8 Delivery channels
+### 2.8 Caregiver, referrals, imaging, and payment baseline
+
+- caregiver/dependent list and scoped dependent summary
+- caregiver-managed appointments, reminders, and medication adherence actions where grant scope allows
+- provider referral creation with medical-summary attachment and referral-status tracking
+- imaging study metadata, embedded viewer baseline, radiology report display, and secure download
+- bill presentation, payment initiation, payment confirmation, receipt generation, and payment-status visibility
+
+### 2.9 Data portability and resilience
+
+- patient export baseline for approved portability flows
+- offline cached reads, queued writes, and sync-status visibility for approved patient, caregiver, provider-assisted, and FCHV flows
+- deterministic sync conflict handling with manual review required for conflicting clinical writes
+
+### 2.10 Delivery channels
 
 - mobile apps
 - web app
@@ -111,11 +133,8 @@ Core MVP does **not** include telemedicine call-room behavior, claims, caregiver
 - telemedicine video/audio consultation room
 - telemedicine recording consent and transcript linkage
 - claim submission and claim status
-- caregiver/dependent portal
-- offline sync
-- payment flows
-- referrals
-- imaging viewer
+- advanced family health hub analytics and subscription-family packaging
+- advanced imaging comparison workflows
 
 These belong to the committed Phase 2 extension set unless reprioritized by formal change control.
 
@@ -138,7 +157,12 @@ These belong to the committed Phase 2 extension set unless reprioritized by form
 - `AppointmentModule`
 - `DocumentModule`
 - `DataInputModule`
+- `InteroperabilityModule`
 - `InsuranceModule`
+- `FamilyModule`
+- `BillingModule`
+- `ReferralModule`
+- `ImagingModule`
 - `AdminModule`
 
 ### 4.2 Active resources and tables
@@ -155,6 +179,13 @@ These belong to the committed Phase 2 extension set unless reprioritized by form
 - `MedicationRequest`
 - `Appointment`
 - `DocumentReference`
+- `RelatedPerson`
+- `ServiceRequest`
+- `DiagnosticReport`
+- `ImagingStudy`
+- `Invoice`
+- `PaymentNotice`
+- `PaymentReconciliation`
 - `OcrExtractionResult`
 - `AudioTranscription`
 - `InputProvenance`
@@ -178,7 +209,17 @@ These belong to the committed Phase 2 extension set unless reprioritized by form
 - patient OCR review
 - patient voice input
 - patient insurance
+- patient payments
+- patient referrals
+- patient imaging viewer
 - patient access grants
+- patient export/report
+- caregiver dependents list
+- caregiver dependent summary
+- FCHV dashboard
+- FCHV patient registration
+- FCHV patient list
+- FCHV vitals capture
 - provider dashboard
 - provider patient search
 - provider patient summary
@@ -201,9 +242,15 @@ These belong to the committed Phase 2 extension set unless reprioritized by form
 - appointment contracts
 - document contracts
 - OCR and transcription contracts
+- caregiver delegation contracts
+- referral contracts
+- imaging viewer contracts
+- billing and payment contracts
+- export and portability contracts
 - coverage and eligibility contracts
 - consent/sharing contracts
 - audit contracts
+- FCHV-assisted registration contracts
 
 ---
 
@@ -253,8 +300,10 @@ Core MVP is release-ready only when all of the following are true.
 - document upload and retrieval work with Ceph-backed storage (checksum verification on download)
 - OCR extraction and human review complete successfully for supported document types (lab reports, prescriptions, insurance cards)
 - patient and provider voice entry flows create reviewed clinical data with provenance
+- patient export generation succeeds with auditable, policy-scoped artifacts
 - eligibility checks return stable success/failure semantics with logged response
 - emergency medical summary is accessible via QR code without full authentication
+- approved MVP surfaces support cached reads, queued writes, sync-status visibility, and deterministic conflict handling where offline mutation is allowed
 - bilingual UI (Nepali and English) is functional for all shipped surfaces
 
 ### 6.2 Quality
@@ -292,7 +341,7 @@ Core MVP is release-ready only when all of the following are true.
 - Data Protection Impact Assessment (DPIA) completed and filed
 - privacy policy published in Nepali and English
 - consent management system operational with granular consent capture
-- audit log retention policy configured (minimum 1 year, recommended 3 years)
+- policy-driven retention and deletion rules configured with legal floors, legal-hold support, and auditable exceptions
 - data classification applied to all tables (PII, PHI, operational, public)
 - SIL-Nepal preliminary FHIR profile submission completed (full certification targeted for Phase 2)
 

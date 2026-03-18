@@ -6,6 +6,8 @@ package com.ghatana.yappc.api;
 
 import com.ghatana.yappc.api.service.ConfigLoader;
 import java.nio.file.Paths;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Simple test to verify config loading works. 
  * @doc.type class
@@ -14,57 +16,56 @@ import java.nio.file.Paths;
  * @doc.pattern Test
 */
 public class ConfigTest {
+  private static final Logger logger = LoggerFactory.getLogger(ConfigTest.class);
+
   public static void main(String[] args) {
-    System.out.println("Testing YAPPC Configuration Loading...");
+    logger.info("Testing YAPPC Configuration Loading...");
 
     // Initialize config loader
     ConfigLoader configLoader = new ConfigLoader(Paths.get("config").toAbsolutePath());
 
-    System.out.println("Config path: " + Paths.get("config").toAbsolutePath());
+    logger.info("Config path: {}", Paths.get("config").toAbsolutePath());
 
     // Test loading domains
     configLoader
         .loadDomains()
         .then(
             domains -> {
-              System.out.println("✅ Successfully loaded " + domains.size() + " domains:");
+              logger.info("Successfully loaded {} domains:", domains.size());
               for (var domain : domains) {
-                System.out.println("  - " + domain.name() + " (" + domain.order() + ")");
+                logger.info("  - {} ({})", domain.name(), domain.order());
               }
               return configLoader.loadWorkflows();
             })
         .then(
             workflows -> {
-              System.out.println("✅ Successfully loaded " + workflows.size() + " workflows:");
+              logger.info("Successfully loaded {} workflows:", workflows.size());
               for (var workflow : workflows) {
-                System.out.println("  - " + workflow.name());
+                logger.info("  - {}", workflow.name());
               }
               return configLoader.loadLifecycleConfig();
             })
         .then(
             lifecycle -> {
-              System.out.println(
-                  "✅ Successfully loaded lifecycle config with "
-                      + lifecycle.stages().size()
-                      + " stages");
+              logger.info(
+                  "Successfully loaded lifecycle config with {} stages",
+                  lifecycle.stages().size());
               return configLoader.loadAgentCapabilities();
             })
         .then(
             capabilities -> {
-              System.out.println(
-                  "✅ Successfully loaded agent capabilities with "
-                      + capabilities.capabilities().size()
-                      + " capabilities");
-              System.out.println("\n🎉 All configuration loaded successfully!");
+              logger.info(
+                  "Successfully loaded agent capabilities with {} capabilities",
+                  capabilities.capabilities().size());
+              logger.info("All configuration loaded successfully!");
               return null;
             })
         .whenComplete(
             (result, error) -> {
               if (error != null) {
-                System.err.println("❌ Configuration loading failed: " + error.getMessage());
-                error.printStackTrace();
+                logger.error("Configuration loading failed: {}", error.getMessage(), error);
               } else {
-                System.out.println("Configuration test completed successfully.");
+                logger.info("Configuration test completed successfully.");
               }
             });
   }

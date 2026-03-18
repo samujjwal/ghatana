@@ -11,7 +11,7 @@ import {
 
   AssetHandler} from '../assetHandler';
 
-describe.skip('AssetHandler', () => {
+describe('AssetHandler', () => {
   let handler: AssetHandler;
   let config: AssetHandlerConfig;
 

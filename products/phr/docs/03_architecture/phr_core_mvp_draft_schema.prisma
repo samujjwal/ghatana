@@ -1,0 +1,307 @@
+/// PHR Core MVP Prisma draft overlay.
+/// This file is a merge-ready draft for the app-owned operational tables that extend
+/// phr_fhir_complete_starter_schema.prisma. It intentionally uses scalar foreign keys so it can
+/// stand alone as a draft artifact before being merged into the full schema.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ActorType {
+  PATIENT
+  PROVIDER
+  CAREGIVER
+  ADMIN
+  FCHV
+}
+
+enum ActorStatus {
+  ACTIVE
+  DISABLED
+  PENDING
+  LOCKED
+}
+
+enum EncryptionState {
+  SERVER_SIDE
+  CLIENT_SIDE
+  ENVELOPE
+}
+
+enum InputSourceKind {
+  DOCUMENT_OCR
+  AUDIO_ASR
+  MANUAL_FORM
+  IMPORT
+}
+
+enum ExtractionJobStatus {
+  QUEUED
+  PROCESSING
+  NEEDS_REVIEW
+  CONFIRMED
+  FAILED
+}
+
+enum ReviewQueueStatus {
+  PENDING
+  CLAIMED
+  COMPLETED
+  REJECTED
+  ESCALATED
+}
+
+enum ReminderKind {
+  APPOINTMENT
+  MEDICATION
+}
+
+enum NotificationChannel {
+  SMS
+  EMAIL
+  PUSH
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  RETRYING
+  CANCELLED
+}
+
+enum FeatureFlagStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+}
+
+enum DataClassification {
+  C1
+  C2
+  C3
+  C4
+}
+
+enum OutboxStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+}
+
+model ActorProfile {
+  id               String      @id @default(uuid()) @db.Uuid
+  tenantId         String      @db.Uuid
+  externalSubject  String      @db.VarChar(255)
+  actorType        ActorType
+  patientId        String?     @db.Uuid
+  practitionerId   String?     @db.Uuid
+  organizationId   String?     @db.Uuid
+  status           ActorStatus @default(ACTIVE)
+  metadata         Json?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@unique([tenantId, externalSubject])
+  @@index([tenantId, actorType])
+  @@index([tenantId, patientId])
+}
+
+model StoredObject {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String           @db.Uuid
+  bucket            String
+  objectKey         String
+  contentType       String
+  sizeBytes         BigInt
+  checksumSha256    String           @db.VarChar(64)
+  storageClass      String?
+  encryptionState   EncryptionState  @default(ENVELOPE)
+  classification    DataClassification
+  createdByActorId  String           @db.Uuid
+  quarantineStatus  Boolean          @default(false)
+  malwareScanStatus String?
+  createdAt         DateTime         @default(now())
+
+  @@unique([bucket, objectKey])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, classification])
+}
+
+model DocumentVersion {
+  id                  String   @id @default(uuid()) @db.Uuid
+  tenantId            String   @db.Uuid
+  documentReferenceId String   @db.Uuid
+  storedObjectId      String   @db.Uuid
+  versionNo           Int
+  status              String
+  createdByActorId    String   @db.Uuid
+  createdAt           DateTime @default(now())
+
+  @@unique([documentReferenceId, versionNo])
+  @@index([tenantId, documentReferenceId])
+  @@index([tenantId, storedObjectId])
+}
+
+model EligibilityCheckLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  patientId       String   @db.Uuid
+  coverageId      String?  @db.Uuid
+  providerId      String?  @db.Uuid
+  serviceDate     DateTime?
+  requestPayload  Json
+  responsePayload Json?
+  outcome         String
+  latencyMs       Int?
+  checkedAt       DateTime @default(now())
+
+  @@index([tenantId, patientId, checkedAt])
+  @@index([tenantId, outcome, checkedAt])
+}
+
+model OcrExtractionResult {
+  id                 String              @id @default(uuid()) @db.Uuid
+  tenantId           String              @db.Uuid
+  documentVersionId  String              @db.Uuid
+  storedObjectId     String              @db.Uuid
+  status             ExtractionJobStatus @default(QUEUED)
+  providerName       String?
+  extractedPayload   Json?
+  confidenceOverall  Decimal?            @db.Decimal(5,4)
+  confidenceByField  Json?
+  reviewRequired     Boolean             @default(false)
+  failureReason      String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, documentVersionId])
+}
+
+model AudioTranscription {
+  id                 String              @id @default(uuid()) @db.Uuid
+  tenantId           String              @db.Uuid
+  patientId          String?             @db.Uuid
+  encounterId        String?             @db.Uuid
+  storedObjectId     String?             @db.Uuid
+  languageCode       String              @default("ne-NP")
+  status             ExtractionJobStatus @default(QUEUED)
+  transcriptText     String?
+  extractedEntities  Json?
+  confidenceOverall  Decimal?            @db.Decimal(5,4)
+  confidenceByField  Json?
+  reviewRequired     Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([tenantId, patientId, createdAt])
+  @@index([tenantId, status, createdAt])
+}
+
+model InputProvenance {
+  id                String          @id @default(uuid()) @db.Uuid
+  tenantId          String          @db.Uuid
+  sourceKind        InputSourceKind
+  sourceId          String          @db.Uuid
+  targetResource    String
+  targetResourceId  String          @db.Uuid
+  reviewerActorId   String?         @db.Uuid
+  confirmedAt       DateTime?
+  createdAt         DateTime        @default(now())
+
+  @@index([tenantId, sourceKind, sourceId])
+  @@index([tenantId, targetResource, targetResourceId])
+}
+
+model ReviewQueueItem {
+  id                 String            @id @default(uuid()) @db.Uuid
+  tenantId           String            @db.Uuid
+  sourceKind         InputSourceKind
+  sourceId           String            @db.Uuid
+  patientId          String?           @db.Uuid
+  assignedToActorId  String?           @db.Uuid
+  status             ReviewQueueStatus @default(PENDING)
+  reason             String
+  priority           Int               @default(3)
+  dueAt              DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([tenantId, status, priority, createdAt])
+  @@index([tenantId, patientId, status])
+}
+
+model ReminderPlan {
+  id                String        @id @default(uuid()) @db.Uuid
+  tenantId          String        @db.Uuid
+  patientId         String        @db.Uuid
+  appointmentId     String?       @db.Uuid
+  medicationRequestId String?     @db.Uuid
+  reminderKind      ReminderKind
+  scheduledFor      DateTime
+  channel           NotificationChannel
+  payload           Json
+  status            DeliveryStatus @default(PENDING)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([tenantId, patientId, scheduledFor])
+  @@index([tenantId, status, scheduledFor])
+}
+
+model NotificationDelivery {
+  id                String            @id @default(uuid()) @db.Uuid
+  tenantId          String            @db.Uuid
+  reminderPlanId    String?           @db.Uuid
+  patientId         String?           @db.Uuid
+  channel           NotificationChannel
+  destinationMasked String
+  providerMessageId String?
+  status            DeliveryStatus    @default(PENDING)
+  attemptNo         Int               @default(1)
+  failureReason     String?
+  sentAt            DateTime?
+  createdAt         DateTime          @default(now())
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, patientId, createdAt])
+}
+
+model FeatureFlag {
+  id             String            @id @default(uuid()) @db.Uuid
+  tenantId       String?           @db.Uuid
+  key            String
+  description    String
+  status         FeatureFlagStatus @default(DRAFT)
+  enabled        Boolean           @default(false)
+  targetRules    Json?
+  createdByActorId String?         @db.Uuid
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([tenantId, key])
+  @@index([status, key])
+}
+
+model OutboxEvent {
+  id               String       @id @default(uuid()) @db.Uuid
+  tenantId         String?      @db.Uuid
+  aggregateType    String
+  aggregateId      String
+  eventType        String
+  payload          Json
+  status           OutboxStatus @default(PENDING)
+  availableAt      DateTime     @default(now())
+  publishedAt      DateTime?
+  failureReason    String?
+  createdAt        DateTime     @default(now())
+
+  @@index([status, availableAt])
+  @@index([tenantId, aggregateType, aggregateId])
+}

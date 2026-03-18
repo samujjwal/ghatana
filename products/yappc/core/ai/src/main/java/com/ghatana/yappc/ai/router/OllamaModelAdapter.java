@@ -12,8 +12,9 @@ import java.time.Duration;
 import java.util.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.platform.core.util.JsonUtils;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.platform.governance.security.SsrfGuard;
 
 /**
  * Model adapter for Ollama local LLM service.
@@ -107,6 +108,7 @@ public final class OllamaModelAdapter implements ModelAdapter {
                 String jsonBody = objectMapper.writeValueAsString(requestBody);
                 
                 // Send HTTP request
+                SsrfGuard.validateEndpoint(config.getEndpoint());
                 HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(config.getEndpoint() + "/api/generate"))
                     .header("Content-Type", "application/json")
@@ -176,6 +178,7 @@ public final class OllamaModelAdapter implements ModelAdapter {
         return Promise.ofCallback(cb -> {
             try {
                 // Check if Ollama is running
+                SsrfGuard.validateEndpoint(config.getEndpoint());
                 HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(config.getEndpoint() + "/api/tags"))
                     .GET()

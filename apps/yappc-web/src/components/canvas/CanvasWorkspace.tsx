@@ -1,12 +1,12 @@
 /**
  * Canvas Workspace
- * 
+ *
  * Lean orchestrator component for the Canvas-First UX. All domain logic is
  * extracted to dedicated hooks (useCanvasHandlers, useCanvasDragDrop,
- * useCanvasZoom, useCanvasShortcuts, usePerformanceMetrics,
- * useCanvasAccessibility). This file wires hooks to the ReactFlow surface
- * and panels.
- * 
+ * useCanvasZoom, useCanvasShortcuts, useCanvasAccessibility). Surface
+ * rendering is delegated to CanvasReactFlowSurface; overlays to
+ * CanvasOverlays; panel config to useWorkspacePanels.
+ *
  * @doc.type component
  * @doc.purpose Canvas-first unified workspace orchestrator
  * @doc.layer product
@@ -15,30 +15,25 @@
 
 import React, { useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { Box, Button, IconButton, Toolbar, Tooltip, Spinner as CircularProgress, Typography, Divider, Menu, MenuItem } from '@ghatana/design-system';
-import { Plus as Add, Link as LinkIcon, Trash2 as TrashIcon, Copy as DuplicateIcon } from 'lucide-react';
+import { Box, Spinner as CircularProgress, Typography } from '@ghatana/design-system';
 import {
-    ReactFlowProvider, ReactFlow, Panel, Background, Controls, MiniMap,
+    ReactFlowProvider,
     type Node, type Edge, MarkerType, type ReactFlowInstance,
     applyNodeChanges, applyEdgeChanges,
     type NodeChange, type EdgeChange, type Connection,
 } from '@xyflow/react';
 import { useGateStatus, useNextBestTask, useDerivedPersona, useArtifacts } from '@/hooks/useLifecycleData';
 import { lifecycleAPI } from '@/services/lifecycle/api';
-import { TIMING } from '@/styles/design-tokens';
 import { LifecyclePhase } from '@/types/lifecycle';
 import { FOWStage } from '@/types/fow-stages';
 import {
-    NextBestTaskCard, SpatialZones, PersonaFilterToolbar, AIAssistantModal,
-    QuickCreateMenu, InspectorPanel, GhostNodes, ViewModeSelector, PresenceIndicator,
     type GateCriterion, type PersonaFilterData, type AISuggestion,
-    type ArtifactTemplate,
     activePersonaAtom, isAIModalOpenAtom, isProjectSwitcherOpenAtom, isInspectorOpenAtom,
     selectedArtifactAtom, selectedNodesAtom, quickCreateMenuPositionAtom, isCommandPaletteOpenAtom,
     nodesAtom, edgesAtom, suppressGeneratedSyncAtom,
     canvasInteractionModeAtom, sketchToolAtom, sketchColorAtom, sketchStrokeWidthAtom,
     canvasAnnouncementAtom, copiedNodesAtom,
-    cameraAtom, commandRegistryAtom, registerCommandsAtom,
+    cameraAtom,
     sortedCommandsAtom, prefersDarkModeAtom, visibleNodeIdsAtom,
 } from './workspace';
 import {
@@ -49,33 +44,23 @@ import { useCodeAssociationsBatch } from './hooks/useCodeAssociationsBatch';
 import { useNodePositions } from './hooks/useNodePositions';
 import { UnifiedLeftPanel } from './UnifiedLeftPanel';
 import { spatialIndexAPI } from './workspace/spatialIndexService';
-import { AlignmentGuides } from './AlignmentGuides';
-import { ProjectSwitcher } from './workspace/ProjectSwitcher';
+
 import { type ArtifactNodeData } from './nodes/ArtifactNode';
 import { type DependencyEdgeData } from './edges';
-import { ArtifactType } from '@/types/fow-stages';
-import { EnhancedSketchLayer } from './sketch/EnhancedSketchLayer';
-import { SketchToolbar } from './toolbar/SketchToolbar';
-import { DiagramToolbar } from './toolbar/DiagramToolbar';
-import { getZonePlacementPosition } from './workspace/SpatialZones';
 import { useComputedView, viewModeAtom, userIdAtom, userRoleAtom } from './hooks/useComputedView';
-import { AbstractionLevelNavigator } from './AbstractionLevelNavigator';
-import { PanelManager } from './panels/PanelManager';
 import { type WorkspacePanelConfig } from './panels/types';
-import { CommandPalette } from './tools/CommandPalette';
 import { useCanvasRegistry } from './registry';
-import { Map as MapIcon, User as PersonIcon, History as HistoryIcon, Gauge as SpeedIcon } from 'lucide-react';
-import { getNextLevel } from '../../types/abstractionLevel';
 import { CanvasErrorBoundary } from './CanvasErrorBoundary';
-import { AlignmentToolbar } from './toolbar/AlignmentToolbar';
 
 // Extracted hooks
 import { useCanvasHandlers } from './hooks/useCanvasHandlers';
 import { useCanvasDragDrop } from './hooks/useCanvasDragDrop';
 import { useCanvasZoom } from './hooks/useCanvasZoom';
 import { useCanvasShortcuts } from './hooks/useCanvasShortcuts';
-import { usePerformanceMetrics } from './hooks/usePerformanceMetrics';
 import { useCanvasAccessibility } from './hooks/useCanvasAccessibility';
+import { useWorkspacePanels } from './hooks/useWorkspacePanels';
+import { CanvasReactFlowSurface } from './CanvasReactFlowSurface';
+import { CanvasOverlays } from './CanvasOverlays';
 
 // ============================================================================
 // Types
@@ -88,35 +73,15 @@ export interface CanvasWorkspaceProps {
 }
 
 // ============================================================================
-// PerformanceMetricsPanel
-// ============================================================================
-
-/**
- * Self-contained panel that reads performance metrics internally.
- * Extracted from workspacePanels memo so that 60fps metric updates don't
- * invalidate the entire panel configuration array.
- */
-const PerformanceMetricsPanel: React.FC<{ nodeCount: number }> = ({ nodeCount }) => {
-    const metrics = usePerformanceMetrics(nodeCount);
-    return (
-        <Box className="p-4 font-mono">
-            <Typography as="span" className="text-xs text-gray-500 dark:text-gray-400 block">FPS: {metrics.fps}</Typography>
-            <Typography as="span" className="text-xs text-gray-500 dark:text-gray-400 block">Nodes: {metrics.nodeCount}</Typography>
-            <Typography as="span" className="text-xs text-gray-500 dark:text-gray-400 block">Render: {metrics.renderTimeMs}ms</Typography>
-        </Box>
-    );
-};
-
-// ============================================================================
 // Component
 // ============================================================================
 
 /**
  * CanvasWorkspace — lean orchestrator.
- * 
- * All mutations live in useCanvasHandlers, DnD in useCanvasDragDrop,
- * camera in useCanvasZoom, keyboard in useCanvasShortcuts, perf in
- * usePerformanceMetrics, a11y in useCanvasAccessibility.
+ *
+ * Data wiring only. Surface rendering is delegated to CanvasReactFlowSurface,
+ * overlays to CanvasOverlays, panel config to useWorkspacePanels, and all
+ * mutations/DnD/camera/keyboard/a11y to their respective hooks.
  */
 export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     projectId,
@@ -144,7 +109,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const sketchStrokeWidth = useAtomValue(sketchStrokeWidthAtom);
 
     // ReactFlow instance
-    const [reactFlowInstance, setReactFlowInstance] = React.useState<ReactFlowInstance | null>(null);
+    const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
     const setCamera = useSetAtom(cameraAtom);
     const prefersDark = useAtomValue(prefersDarkModeAtom);
     const minimapMaskColor = prefersDark ? 'rgba(17, 24, 39, 0.6)' : 'rgba(240, 242, 245, 0.6)';
@@ -253,7 +218,6 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     // Command registry (extensible command palette)
     const commandRegistry = useAtomValue(sortedCommandsAtom);
-    const registerCommands = useSetAtom(registerCommandsAtom);
 
     // Server data
     const { data: gateStatus } = useGateStatus(projectId, fowStage);
@@ -569,105 +533,17 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     );
 
     // ── Workspace Panels ───────────────────────────────────────────────
-    const workspacePanels: WorkspacePanelConfig[] = useMemo(() => [
-        {
-            id: 'navigation',
-            title: 'Navigation',
-            icon: <MapIcon />,
-            defaultPosition: { x: window.innerWidth - 320, y: 80 },
-            defaultWidth: 280,
-            defaultOpen: false,
-            description: 'View modes, presence, and abstraction level',
-            content: (
-                <Box className="p-2 flex flex-col gap-2">
-                    <PresenceIndicator users={[]} />
-                    <Divider />
-                    <ViewModeSelector showBadges compact={false} />
-                    <Divider />
-                    <AbstractionLevelNavigator
-                        currentLevel={zoom.currentAbstractionLevel}
-                        breadcrumbs={zoom.breadcrumbs}
-                        canDrillDown={zoom.canDrillDown}
-                        canZoomOut={zoom.canZoomOut}
-                        canGoBack={zoom.breadcrumbs.length > 1}
-                        onLevelChange={zoom.handleLevelChange}
-                        onDrillDown={() => {
-                            const next = getNextLevel(zoom.currentAbstractionLevel);
-                            if (next) zoom.handleLevelChange(next);
-                        }}
-                        onZoomOut={zoom.handleZoomOut}
-                        onGoBack={() => zoom.handleBreadcrumbClick(zoom.breadcrumbs.length - 2)}
-                        onBreadcrumbClick={zoom.handleBreadcrumbClick}
-                        onReset={() => zoom.handleLevelChange('system')}
-                    />
-                </Box>
-            ),
-        },
-        {
-            id: 'team-filter',
-            title: 'Team Filter',
-            icon: <PersonIcon />,
-            defaultPosition: { x: 20, y: 80 },
-            defaultWidth: 260,
-            defaultOpen: false,
-            description: 'Filter artifacts by persona/role',
-            content: (
-                <PersonaFilterToolbar
-                    personas={personaFilterData}
-                    activePersona={activePersona}
-                    onPersonaChange={setActivePersona}
-                />
-            ),
-        },
-        {
-            id: 'history',
-            title: 'History',
-            icon: <HistoryIcon />,
-            defaultPosition: { x: window.innerWidth - 360, y: 400 },
-            defaultWidth: 320,
-            defaultOpen: false,
-            description: 'Command history — undo/redo operations',
-            content: (
-                <Box className="p-4 flex flex-col gap-2">
-                    <Box className="flex gap-2">
-                        <Button
-                            variant="outlined"
-                            size="sm"
-                            onClick={() => undo()}
-                            disabled={!canUndo}
-                            className="flex-1"
-                        >Undo</Button>
-                        <Button
-                            variant="outlined"
-                            size="sm"
-                            onClick={() => redo()}
-                            disabled={!canRedo}
-                            className="flex-1"
-                        >Redo</Button>
-                    </Box>
-                    <Typography as="p" className="text-xs text-gray-500">
-                        {canUndo ? 'Changes available to undo.' : 'Nothing to undo.'}
-                    </Typography>
-                </Box>
-            ),
-        },
-        {
-            id: 'performance',
-            title: 'Performance',
-            icon: <SpeedIcon />,
-            defaultPosition: { x: 20, y: 400 },
-            defaultWidth: 280,
-            defaultOpen: false,
-            description: 'Canvas performance metrics',
-            content: <PerformanceMetricsPanel nodeCount={nodes.length} />,
-        },
-    ], [
-        zoom.currentAbstractionLevel, zoom.breadcrumbs, zoom.canDrillDown, zoom.canZoomOut,
-        zoom.handleLevelChange, zoom.handleBreadcrumbClick, zoom.handleZoomOut,
-        personaFilterData, activePersona, setActivePersona,
-        nodes.length,
-        canUndo, canRedo, undo, redo,
-    ]);
+    const workspacePanels: WorkspacePanelConfig[] = useWorkspacePanels({
+        zoom,
+        personaFilterData,
+        activePersona,
+        setActivePersona,
+        nodeCount: nodes.length,
+        canUndo,
+        canRedo,
+        undo,
+        redo,
+    });
 
     // ── Render ─────────────────────────────────────────────────────────
     // Loading guard — placed after all hooks to comply with Rules of Hooks
@@ -726,254 +602,66 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                     />
                 </CanvasErrorBoundary>
 
-                {/* Canvas Surface */}
-                <Box
-                    id="canvas-surface"
-                    ref={canvasSurfaceRef}
-                    className={`flex-1 relative ${dragDrop.isDragOver ? 'ring-2 ring-primary-400 ring-inset' : ''}`}
-                    onDoubleClick={handleCanvasDoubleClick}
-                    onDrop={interactionMode === 'navigate' ? dragDrop.handleCanvasDrop : undefined}
-                    onDragOver={interactionMode === 'navigate' ? dragDrop.handleCanvasDragOver : undefined}
-                    onDragLeave={interactionMode === 'navigate' ? dragDrop.handleCanvasDragLeave : undefined}
-                    tabIndex={0}
-                    aria-label="Canvas surface — use Tab to navigate nodes, arrow keys to move them"
-                >
-                        <ReactFlow
-                            nodes={styledNodes}
-                            edges={computedView.visibleEdges}
-                            nodeTypes={nodeTypes}
-                            edgeTypes={edgeTypes}
-                            onNodesChange={onNodesChange}
-                            onEdgesChange={onEdgesChange}
-                            onConnect={onConnect}
-                            onNodeClick={handleNodeClick}
-                            onNodeContextMenu={handleNodeContextMenu}
-                            onNodeDragStart={dragDrop.onNodeDragStart}
-                            onNodeDrag={dragDrop.onNodeDrag}
-                            onNodeDragStop={dragDrop.onNodeDragStop}
-                            onSelectionChange={({ nodes: sel }) => {
-                                setSelectedNodes(sel.map(n => n.id));
-                            }}
-                            onlyRenderVisibleElements
-                            nodesFocusable
-                            onMove={(_, vp) => setCamera({ ...vp, initialized: true })}
-                            onInit={(rf) => {
-                                setReactFlowInstance(rf);
-                                // Mark camera as initialized with the real viewport so
-                                // visibleNodeIdsAtom stops returning all nodes unconditionally.
-                                const vp = rf.getViewport();
-                                setCamera({ ...vp, initialized: true });
-                            }}
-                            fitView
-                            snapToGrid
-                            snapGrid={[16, 16]}
-                            minZoom={0.1}
-                            maxZoom={2}
-                            zoomOnPinch
-                            panOnDrag={interactionMode === 'navigate'}
-                            panOnScroll
-                            zoomOnScroll
-                            zoomActivationKeyCode="Meta"
-                            nodesDraggable={interactionMode === 'navigate'}
-                            nodesConnectable={interactionMode === 'navigate'}
-                            elementsSelectable={interactionMode === 'navigate'}
-                            selectNodesOnDrag={false}
-                            noDragClassName="nodrag"
-                            noWheelClassName="nowheel"
-                            className="dark:bg-gray-950"
-                            style={{
-                                opacity: interactionMode === 'sketch' ? 0.6 : 1,
-                                transition: 'opacity 200ms ease',
-                            }}
-                        >
-                            <SpatialZones currentPhase={currentPhase} onZoneClick={zoom.handleZoomToPhase} />
-
-                            <GhostNodes
-                                currentPhase={currentPhase}
-                                artifactCount={computedView.totalNodes}
-                                onCreateArtifact={handlers.handleGhostNodeCreate}
-                                onAISuggestion={() => setIsAIModalOpen(true)}
-                            />
-
-                            {/* Grid — dark-mode aware */}
-                            <Background
-                                color="var(--canvas-grid-color, #aaa)"
-                                gap={16}
-                                className="dark:[--canvas-grid-color:#444]"
-                            />
-
-                            <Controls
-                                style={{
-                                    margin: 16, display: 'flex', gap: 4, border: 'none',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: 12,
-                                    overflow: 'hidden',
-                                }}
-                                className="bg-white dark:bg-gray-800"
-                                showInteractive={false}
-                                aria-label="Zoom controls"
-                            />
-
-                            <MiniMap
-                                pannable
-                                zoomable
-                                nodeColor={(node) => {
-                                    const data = node.data as unknown as ArtifactNodeData;
-                                    if (data.status === 'blocked') return 'var(--color-error, #ef5350)';
-                                    if (data.status === 'complete') return 'var(--color-success, #66bb6a)';
-                                    if (data.status === 'in-progress') return 'var(--color-info, #42a5f5)';
-                                    return 'var(--color-muted, #e0e0e0)';
-                                }}
-                                maskColor={minimapMaskColor}
-                                className="dark:bg-gray-900/90"
-                                style={{
-                                    border: '1px solid rgba(0,0,0,0.05)', borderRadius: 16,
-                                    margin: 20, height: 120, width: 180,
-                                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                                }}
-                                aria-label="Minimap overview"
-                            />
-
-                            {/* Context-sensitive alignment toolbar — appears when ≥2 nodes selected */}
-                            <Panel position="top-center">
-                                <AlignmentToolbar />
-                            </Panel>
-                        </ReactFlow>
-
-                        <AlignmentGuides />
-
-                        {interactionMode === 'sketch' && (
-                            <Box className="absolute inset-0 pointer-events-auto z-[30]">
-                                <EnhancedSketchLayer
-                                    width={canvasSize.width}
-                                    height={canvasSize.height}
-                                    activeTool={sketchTool}
-                                    config={{ color: sketchColor, strokeWidth: sketchStrokeWidth, fill: 'transparent' }}
-                                />
-                            </Box>
-                        )}
-                    {interactionMode === 'sketch' && <SketchToolbar />}
-                    {interactionMode === 'diagram' && <DiagramToolbar />}
-                </Box>
+                <CanvasReactFlowSurface
+                    canvasSurfaceRef={canvasSurfaceRef}
+                    canvasSize={canvasSize}
+                    interactionMode={interactionMode}
+                    currentPhase={currentPhase}
+                    minimapMaskColor={minimapMaskColor}
+                    sketchTool={sketchTool}
+                    sketchColor={sketchColor}
+                    sketchStrokeWidth={sketchStrokeWidth}
+                    styledNodes={styledNodes}
+                    computedView={computedView}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    handleNodeClick={handleNodeClick}
+                    handleNodeContextMenu={handleNodeContextMenu}
+                    handleCanvasDoubleClick={handleCanvasDoubleClick}
+                    setSelectedNodes={setSelectedNodes}
+                    setReactFlowInstance={setReactFlowInstance}
+                    setCamera={setCamera}
+                    dragDrop={dragDrop}
+                    handleZoomToPhase={zoom.handleZoomToPhase}
+                    handleGhostNodeCreate={handlers.handleGhostNodeCreate}
+                    setIsAIModalOpen={setIsAIModalOpen}
+                />
             </Box>
 
-            {/* Overlays — wrapped in error boundaries */}
-            {nextTask && personaData && (
-                <CanvasErrorBoundary label="Next Best Task">
-                    <NextBestTaskCard
-                        persona={personaData.persona || 'Developer'}
-                        taskTitle={nextTask.title || 'No title'}
-                        taskDescription={nextTask.description}
-                        impact="Recommended for current phase"
-                        estimatedMinutes={nextTask.estimatedEffort}
-                        blocksCount={0}
-                        collaborators={[nextTask.persona]}
-                        onStartTask={handleStartTask}
-                        onSkip={() => { /* refetch next task */ }}
-                        priority={nextTask.priority}
-                    />
-                </CanvasErrorBoundary>
-            )}
-
-            <AIAssistantModal
-                open={isAIModalOpen}
-                onClose={() => setIsAIModalOpen(false)}
-                context={{
-                    selectedArtifacts: selectedNodes,
-                    currentPhase,
-                    persona: activePersona || personaData?.persona,
-                    blockers: gateCriteria.filter(g => g.status === 'blocked').map(g => g.id),
-                }}
-                onSubmit={handleAIQuery}
-            />
-
-            <QuickCreateMenu
-                open={quickCreateMenuPosition !== null}
-                anchorPosition={quickCreateMenuPosition}
+            <CanvasOverlays
+                nextTask={nextTask}
+                personaData={personaData}
+                handleStartTask={handleStartTask}
+                isAIModalOpen={isAIModalOpen}
+                setIsAIModalOpen={setIsAIModalOpen}
+                selectedNodes={selectedNodes}
                 currentPhase={currentPhase}
-                onClose={() => setQuickCreateMenuPosition(null)}
-                onCreate={handlers.handleCreateArtifact}
+                activePersona={activePersona}
+                gateCriteria={gateCriteria}
+                handleAIQuery={handleAIQuery}
+                quickCreateMenuPosition={quickCreateMenuPosition}
+                setQuickCreateMenuPosition={setQuickCreateMenuPosition}
+                isInspectorOpen={isInspectorOpen}
+                setIsInspectorOpen={setIsInspectorOpen}
+                selectedArtifact={selectedArtifact}
+                isProjectSwitcherOpen={isProjectSwitcherOpen}
+                setIsProjectSwitcherOpen={setIsProjectSwitcherOpen}
+                projectId={projectId}
+                workspacePanels={workspacePanels}
+                isCommandPaletteOpen={isCommandPaletteOpen}
+                setIsCommandPaletteOpen={setIsCommandPaletteOpen}
+                commandRegistry={commandRegistry}
+                zoom={zoom}
+                reactFlowInstance={reactFlowInstance}
+                setInteractionMode={setInteractionMode}
+                nodeContextMenu={nodeContextMenu}
+                setNodeContextMenu={setNodeContextMenu}
+                setSelectedNodes={setSelectedNodes}
+                handlers={handlers}
             />
-
-            <CanvasErrorBoundary label="Inspector Panel">
-                <InspectorPanel
-                    open={isInspectorOpen}
-                    artifact={selectedArtifact}
-                    onClose={() => setIsInspectorOpen(false)}
-                    onUpdate={handlers.handleUpdateArtifact}
-                    onAddBlocker={handlers.handleAddBlocker}
-                    onAddComment={handlers.handleAddComment}
-                    onLinkArtifact={handlers.handleLinkArtifact}
-                />
-            </CanvasErrorBoundary>
-
-            <ProjectSwitcher
-                open={isProjectSwitcherOpen}
-                onClose={() => setIsProjectSwitcherOpen(false)}
-                currentProjectId={projectId}
-            />
-
-            <PanelManager panels={workspacePanels} />
-
-            {/* Command Palette — fully wired */}
-            <CommandPalette
-                open={isCommandPaletteOpen}
-                onClose={() => setIsCommandPaletteOpen(false)}
-                actions={commandRegistry}
-                onNavigate={(path) => { /* router navigation */ }}
-                onModeChange={(mode) => setInteractionMode(mode as 'navigate' | 'sketch' | 'code' | 'diagram')}
-                onLevelChange={(level) => zoom.handleLevelChange(level)}
-                onTogglePanel={(panel) => { /* handled by PanelManager dock */ }}
-                onPhaseTransition={(dir) => dir === 'next' ? zoom.handleNextPhase() : zoom.handlePrevPhase()}
-                onValidate={() => { /* validation pipeline */ }}
-                onGenerate={() => { /* code generation */ }}
-                onExport={() => { /* export handler */ }}
-                onSave={() => { /* save handler */ }}
-                onFitView={zoom.handleFitView}
-                onZoomIn={() => reactFlowInstance?.zoomIn({ duration: 300 })}
-                onZoomOut={() => reactFlowInstance?.zoomOut({ duration: 300 })}
-                onShowHelp={() => { /* help modal */ }}
-                onShowShortcuts={() => { /* shortcuts reference */ }}
-            />
-
-            {/* Right-click context menu for nodes */}
-            {nodeContextMenu && (
-                <Menu
-                    open
-                    onClose={() => setNodeContextMenu(null)}
-                    anchorReference="anchorPosition"
-                    anchorPosition={{ top: nodeContextMenu.y, left: nodeContextMenu.x }}
-                >
-                    <MenuItem
-                        onClick={() => {
-                            setIsInspectorOpen(true);
-                            setNodeContextMenu(null);
-                        }}
-                    >
-                        Edit in Inspector
-                    </MenuItem>
-                    <MenuItem
-                        onClick={() => {
-                            handlers.handleCopyNodes?.();
-                            handlers.handlePasteNodes?.();
-                            setNodeContextMenu(null);
-                        }}
-                    >
-                        <DuplicateIcon size={14} className="mr-2" />
-                        Duplicate
-                    </MenuItem>
-                    <MenuItem
-                        onClick={() => {
-                            setSelectedNodes([nodeContextMenu.nodeId]);
-                            handlers.handleDeleteSelected();
-                            setNodeContextMenu(null);
-                        }}
-                        className="text-red-500 dark:text-red-400"
-                    >
-                        <TrashIcon size={14} className="mr-2" />
-                        Delete
-                    </MenuItem>
-                </Menu>
-            )}
         </Box>
         </ReactFlowProvider>
     );

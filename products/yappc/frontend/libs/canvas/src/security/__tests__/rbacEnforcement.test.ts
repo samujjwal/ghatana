@@ -11,7 +11,7 @@ import {
   type RedactionRule,
 } from '../rbacEnforcement';
 
-describe.skip('RBACEnforcer', () => {
+describe('RBACEnforcer', () => {
   let enforcer: RBACEnforcer;
 
   beforeEach(() => {

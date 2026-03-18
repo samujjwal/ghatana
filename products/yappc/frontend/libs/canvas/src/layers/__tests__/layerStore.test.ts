@@ -559,7 +559,7 @@ describe('layerStore', () => {
         selectedElements: ['element-1'],
       });
 
-      let appliedViewport: any = null;
+      let appliedViewport: { x: number; y: number; zoom: number } | null = null;
       const visibilityChanges: Record<string, boolean> = {};
       let appliedSelection: string[] | null = null;
 
