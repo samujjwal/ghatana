@@ -1,27 +1,17 @@
 /**
- * Component traceability service.
+ * @yappc/component-traceability — DEPRECATED
  *
- * <p><b>Purpose</b><br>
- * Manages component-to-requirement relationships and generates traceability reports.
+ * @deprecated Use `@yappc/ui/traceability` instead.
+ * This package is a compatibility shim and will be removed in a future release.
  *
- * @doc.type module
- * @doc.purpose Component traceability
- * @doc.layer product
- * @doc.pattern Service
+ * Migration: replace `@yappc/component-traceability` imports with `@yappc/ui/traceability`.
+ *
+ * @module component-traceability
  */
 
-import type {
-  ComponentRequirement,
-  RequirementComponent,
-  TraceabilityReport,
-  CoverageAnalysis,
-  TraceabilityLink,
-  TraceabilityOptions,
-  TraceabilityEvent,
-  TraceabilityEventListener,
-  TraceabilityMatrix,
-  GapAnalysis,
-} from './types';
+// Re-export everything from the canonical location in @yappc/ui
+export * from '@yappc/ui/traceability';
+
 
 /**
  * Component traceability manager.

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
+ */
 package com.ghatana.yappc.api.testing.dto;
 
 /**
@@ -8,8 +12,4 @@ package com.ghatana.yappc.api.testing.dto;
  * @doc.layer product
  * @doc.pattern ValueObject
  */
-public record TestStatistics(
-    int unitTests,
-    int integrationTests,
-    int totalLines
-) {}
+public record TestStatistics(int unitTests, int integrationTests, int totalLines) {}

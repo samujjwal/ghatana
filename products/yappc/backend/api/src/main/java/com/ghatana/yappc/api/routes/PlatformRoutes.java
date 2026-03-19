@@ -27,10 +27,10 @@ public final class PlatformRoutes {
   /**
    * Registers WebSocket and GraphQL routes on the given builder.
    *
-   * @param builder  the routing servlet builder to register routes on
-   * @param reactor  ActiveJ reactor for WebSocket servlet creation
-   * @param wsCtrl   WebSocket controller
-   * @param gqlCtrl  GraphQL controller
+   * @param builder the routing servlet builder to register routes on
+   * @param reactor ActiveJ reactor for WebSocket servlet creation
+   * @param wsCtrl WebSocket controller
+   * @param gqlCtrl GraphQL controller
    */
   public static void register(
       RoutingServlet.Builder builder,

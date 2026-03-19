@@ -29,12 +29,12 @@ import org.slf4j.LoggerFactory;
  * JDBC-backed implementation of {@link VersionRecord} for durable entity version persistence.
  *
  * <p><b>Purpose</b><br>
- * Provides cross-restart durability for entity version history by persisting to PostgreSQL.
- * Entity snapshots are stored as JSONB for flexible schema evolution.
+ * Provides cross-restart durability for entity version history by persisting to PostgreSQL. Entity
+ * snapshots are stored as JSONB for flexible schema evolution.
  *
  * <p><b>Async Strategy</b><br>
- * All database operations are wrapped in {@code Promise.ofBlocking} to avoid blocking the
- * ActiveJ event loop. A dedicated executor is used for JDBC calls.
+ * All database operations are wrapped in {@code Promise.ofBlocking} to avoid blocking the ActiveJ
+ * event loop. A dedicated executor is used for JDBC calls.
  *
  * <p><b>Multi-Tenancy</b><br>
  * Every query is scoped by {@code tenant_id} enforced at the SQL level.
@@ -49,11 +49,13 @@ public class JdbcVersionRecord implements VersionRecord {
   private static final Logger logger = LoggerFactory.getLogger(JdbcVersionRecord.class);
 
   private static final Executor JDBC_EXECUTOR =
-      Executors.newFixedThreadPool(4, r -> {
-        Thread t = new Thread(r, "yappc-version-jdbc");
-        t.setDaemon(true);
-        return t;
-      });
+      Executors.newFixedThreadPool(
+          4,
+          r -> {
+            Thread t = new Thread(r, "yappc-version-jdbc");
+            t.setDaemon(true);
+            return t;
+          });
 
   private final DataSource dataSource;
   private final ObjectMapper objectMapper;
@@ -78,47 +80,46 @@ public class JdbcVersionRecord implements VersionRecord {
     Objects.requireNonNull(entity, "Entity must not be null");
     Objects.requireNonNull(metadata, "Metadata must not be null");
 
-    return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
-      try (Connection conn = dataSource.getConnection()) {
-        // Determine next version number
-        int nextVersion = getNextVersionNumber(conn, tenantId, entity.getId());
+    return Promise.ofBlocking(
+        JDBC_EXECUTOR,
+        () -> {
+          try (Connection conn = dataSource.getConnection()) {
+            // Determine next version number
+            int nextVersion = getNextVersionNumber(conn, tenantId, entity.getId());
 
-        UUID versionId = UUID.randomUUID();
-        String snapshotJson = objectMapper.writeValueAsString(entity);
+            UUID versionId = UUID.randomUUID();
+            String snapshotJson = objectMapper.writeValueAsString(entity);
 
-        String sql = """
+            String sql =
+                """
             INSERT INTO entity_version_records
                 (id, tenant_id, entity_id, version_number, entity_snapshot, author, version_timestamp, reason, created_at)
             VALUES (?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?)
             """;
 
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-          ps.setObject(1, versionId);
-          ps.setString(2, tenantId);
-          ps.setObject(3, entity.getId());
-          ps.setInt(4, nextVersion);
-          ps.setString(5, snapshotJson);
-          ps.setString(6, metadata.author());
-          ps.setTimestamp(7, Timestamp.from(metadata.timestamp()));
-          ps.setString(8, metadata.reason());
-          ps.setTimestamp(9, Timestamp.from(Instant.now()));
-          ps.executeUpdate();
-        }
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+              ps.setObject(1, versionId);
+              ps.setString(2, tenantId);
+              ps.setObject(3, entity.getId());
+              ps.setInt(4, nextVersion);
+              ps.setString(5, snapshotJson);
+              ps.setString(6, metadata.author());
+              ps.setTimestamp(7, Timestamp.from(metadata.timestamp()));
+              ps.setString(8, metadata.reason());
+              ps.setTimestamp(9, Timestamp.from(Instant.now()));
+              ps.executeUpdate();
+            }
 
-        logger.debug(
-            "Saved entity version tenantId={} entityId={} version={}",
-            tenantId, entity.getId(), nextVersion);
+            logger.debug(
+                "Saved entity version tenantId={} entityId={} version={}",
+                tenantId,
+                entity.getId(),
+                nextVersion);
 
-        return new EntityVersion(
-            versionId,
-            tenantId,
-            entity.getId(),
-            entity,
-            nextVersion,
-            metadata,
-            Instant.now());
-      }
-    });
+            return new EntityVersion(
+                versionId, tenantId, entity.getId(), entity, nextVersion, metadata, Instant.now());
+          }
+        });
   }
 
   @Override
@@ -126,8 +127,11 @@ public class JdbcVersionRecord implements VersionRecord {
     Objects.requireNonNull(tenantId, "Tenant ID must not be null");
     Objects.requireNonNull(entityId, "Entity ID must not be null");
 
-    return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
-      String sql = """
+    return Promise.ofBlocking(
+        JDBC_EXECUTOR,
+        () -> {
+          String sql =
+              """
           SELECT id, tenant_id, entity_id, version_number, entity_snapshot,
                  author, version_timestamp, reason, created_at
           FROM entity_version_records
@@ -135,20 +139,20 @@ public class JdbcVersionRecord implements VersionRecord {
           ORDER BY version_number ASC
           """;
 
-      try (Connection conn = dataSource.getConnection();
-          PreparedStatement ps = conn.prepareStatement(sql)) {
-        ps.setString(1, tenantId);
-        ps.setObject(2, entityId);
+          try (Connection conn = dataSource.getConnection();
+              PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tenantId);
+            ps.setObject(2, entityId);
 
-        List<EntityVersion> versions = new ArrayList<>();
-        try (ResultSet rs = ps.executeQuery()) {
-          while (rs.next()) {
-            versions.add(mapRow(rs));
+            List<EntityVersion> versions = new ArrayList<>();
+            try (ResultSet rs = ps.executeQuery()) {
+              while (rs.next()) {
+                versions.add(mapRow(rs));
+              }
+            }
+            return versions;
           }
-        }
-        return versions;
-      }
-    });
+        });
   }
 
   @Override
@@ -158,33 +162,35 @@ public class JdbcVersionRecord implements VersionRecord {
     Objects.requireNonNull(versionNumber, "Version number must not be null");
 
     if (versionNumber < 1) {
-      return Promise.ofException(
-          new IllegalArgumentException("Version number must be >= 1"));
+      return Promise.ofException(new IllegalArgumentException("Version number must be >= 1"));
     }
 
-    return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
-      String sql = """
+    return Promise.ofBlocking(
+        JDBC_EXECUTOR,
+        () -> {
+          String sql =
+              """
           SELECT id, tenant_id, entity_id, version_number, entity_snapshot,
                  author, version_timestamp, reason, created_at
           FROM entity_version_records
           WHERE tenant_id = ? AND entity_id = ? AND version_number = ?
           """;
 
-      try (Connection conn = dataSource.getConnection();
-          PreparedStatement ps = conn.prepareStatement(sql)) {
-        ps.setString(1, tenantId);
-        ps.setObject(2, entityId);
-        ps.setInt(3, versionNumber);
+          try (Connection conn = dataSource.getConnection();
+              PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tenantId);
+            ps.setObject(2, entityId);
+            ps.setInt(3, versionNumber);
 
-        try (ResultSet rs = ps.executeQuery()) {
-          if (rs.next()) {
-            return mapRow(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+              if (rs.next()) {
+                return mapRow(rs);
+              }
+              throw new NoSuchElementException(
+                  "Version not found: " + versionNumber + " for entity " + entityId);
+            }
           }
-          throw new NoSuchElementException(
-              "Version not found: " + versionNumber + " for entity " + entityId);
-        }
-      }
-    });
+        });
   }
 
   @Override
@@ -192,8 +198,11 @@ public class JdbcVersionRecord implements VersionRecord {
     Objects.requireNonNull(tenantId, "Tenant ID must not be null");
     Objects.requireNonNull(entityId, "Entity ID must not be null");
 
-    return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
-      String sql = """
+    return Promise.ofBlocking(
+        JDBC_EXECUTOR,
+        () -> {
+          String sql =
+              """
           SELECT id, tenant_id, entity_id, version_number, entity_snapshot,
                  author, version_timestamp, reason, created_at
           FROM entity_version_records
@@ -202,19 +211,19 @@ public class JdbcVersionRecord implements VersionRecord {
           LIMIT 1
           """;
 
-      try (Connection conn = dataSource.getConnection();
-          PreparedStatement ps = conn.prepareStatement(sql)) {
-        ps.setString(1, tenantId);
-        ps.setObject(2, entityId);
+          try (Connection conn = dataSource.getConnection();
+              PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tenantId);
+            ps.setObject(2, entityId);
 
-        try (ResultSet rs = ps.executeQuery()) {
-          if (rs.next()) {
-            return mapRow(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+              if (rs.next()) {
+                return mapRow(rs);
+              }
+              throw new NoSuchElementException("No versions found for entity " + entityId);
+            }
           }
-          throw new NoSuchElementException("No versions found for entity " + entityId);
-        }
-      }
-    });
+        });
   }
 
   @Override
@@ -225,8 +234,11 @@ public class JdbcVersionRecord implements VersionRecord {
     Objects.requireNonNull(versionNumberFrom, "From version must not be null");
     Objects.requireNonNull(versionNumberTo, "To version must not be null");
 
-    return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
-      String sql = """
+    return Promise.ofBlocking(
+        JDBC_EXECUTOR,
+        () -> {
+          String sql =
+              """
           SELECT id, tenant_id, entity_id, version_number, entity_snapshot,
                  author, version_timestamp, reason, created_at
           FROM entity_version_records
@@ -234,36 +246,36 @@ public class JdbcVersionRecord implements VersionRecord {
           ORDER BY version_number ASC
           """;
 
-      try (Connection conn = dataSource.getConnection();
-          PreparedStatement ps = conn.prepareStatement(sql)) {
-        ps.setString(1, tenantId);
-        ps.setObject(2, entityId);
-        ps.setInt(3, versionNumberFrom);
-        ps.setInt(4, versionNumberTo);
+          try (Connection conn = dataSource.getConnection();
+              PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tenantId);
+            ps.setObject(2, entityId);
+            ps.setInt(3, versionNumberFrom);
+            ps.setInt(4, versionNumberTo);
 
-        EntityVersion fromVersion = null;
-        EntityVersion toVersion = null;
+            EntityVersion fromVersion = null;
+            EntityVersion toVersion = null;
 
-        try (ResultSet rs = ps.executeQuery()) {
-          while (rs.next()) {
-            EntityVersion ev = mapRow(rs);
-            if (ev.getVersionNumber().equals(versionNumberFrom)) {
-              fromVersion = ev;
-            } else if (ev.getVersionNumber().equals(versionNumberTo)) {
-              toVersion = ev;
+            try (ResultSet rs = ps.executeQuery()) {
+              while (rs.next()) {
+                EntityVersion ev = mapRow(rs);
+                if (ev.getVersionNumber().equals(versionNumberFrom)) {
+                  fromVersion = ev;
+                } else if (ev.getVersionNumber().equals(versionNumberTo)) {
+                  toVersion = ev;
+                }
+              }
             }
+
+            if (fromVersion == null || toVersion == null) {
+              throw new NoSuchElementException(
+                  "One or both versions not found for entity " + entityId);
+            }
+
+            return comparator.compare(
+                fromVersion.getEntitySnapshot(), toVersion.getEntitySnapshot());
           }
-        }
-
-        if (fromVersion == null || toVersion == null) {
-          throw new NoSuchElementException(
-              "One or both versions not found for entity " + entityId);
-        }
-
-        return comparator.compare(
-            fromVersion.getEntitySnapshot(), toVersion.getEntitySnapshot());
-      }
-    });
+        });
   }
 
   @Override
@@ -271,23 +283,26 @@ public class JdbcVersionRecord implements VersionRecord {
     Objects.requireNonNull(tenantId, "Tenant ID must not be null");
     Objects.requireNonNull(entityId, "Entity ID must not be null");
 
-    return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
-      String sql = """
+    return Promise.ofBlocking(
+        JDBC_EXECUTOR,
+        () -> {
+          String sql =
+              """
           SELECT COUNT(*) FROM entity_version_records
           WHERE tenant_id = ? AND entity_id = ?
           """;
 
-      try (Connection conn = dataSource.getConnection();
-          PreparedStatement ps = conn.prepareStatement(sql)) {
-        ps.setString(1, tenantId);
-        ps.setObject(2, entityId);
+          try (Connection conn = dataSource.getConnection();
+              PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tenantId);
+            ps.setObject(2, entityId);
 
-        try (ResultSet rs = ps.executeQuery()) {
-          rs.next();
-          return rs.getInt(1);
-        }
-      }
-    });
+            try (ResultSet rs = ps.executeQuery()) {
+              rs.next();
+              return rs.getInt(1);
+            }
+          }
+        });
   }
 
   @Override
@@ -295,22 +310,25 @@ public class JdbcVersionRecord implements VersionRecord {
     Objects.requireNonNull(tenantId, "Tenant ID must not be null");
     Objects.requireNonNull(entityId, "Entity ID must not be null");
 
-    return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
-      String sql = """
+    return Promise.ofBlocking(
+        JDBC_EXECUTOR,
+        () -> {
+          String sql =
+              """
           DELETE FROM entity_version_records
           WHERE tenant_id = ? AND entity_id = ?
           """;
 
-      try (Connection conn = dataSource.getConnection();
-          PreparedStatement ps = conn.prepareStatement(sql)) {
-        ps.setString(1, tenantId);
-        ps.setObject(2, entityId);
-        int deleted = ps.executeUpdate();
-        logger.debug(
-            "Deleted {} version records tenantId={} entityId={}", deleted, tenantId, entityId);
-        return deleted;
-      }
-    });
+          try (Connection conn = dataSource.getConnection();
+              PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tenantId);
+            ps.setObject(2, entityId);
+            int deleted = ps.executeUpdate();
+            logger.debug(
+                "Deleted {} version records tenantId={} entityId={}", deleted, tenantId, entityId);
+            return deleted;
+          }
+        });
   }
 
   // -------------------------------------------------------------------------
@@ -327,7 +345,8 @@ public class JdbcVersionRecord implements VersionRecord {
    */
   private int getNextVersionNumber(Connection conn, String tenantId, UUID entityId)
       throws SQLException {
-    String sql = """
+    String sql =
+        """
         SELECT COALESCE(MAX(version_number), 0) + 1
         FROM entity_version_records
         WHERE tenant_id = ? AND entity_id = ?

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
+ */
 package com.ghatana.yappc.api.testing.dto;
 
 import java.util.List;
@@ -11,9 +15,4 @@ import java.util.List;
  * @doc.pattern ValueObject
  */
 public record CoverageReport(
-    double overallCoverage,
-    List<CoverageGap> gaps,
-    int sourceFileCount,
-    int testFileCount
-) {}
-
+    double overallCoverage, List<CoverageGap> gaps, int sourceFileCount, int testFileCount) {}

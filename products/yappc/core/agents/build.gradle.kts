@@ -4,9 +4,9 @@ plugins {
 }
 
 group = "com.ghatana.products.yappc"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
-description = "YAPPC Agents - Unified SDLC agents and integration (merged: sdlc-agents + agent-integration)"
+description = "YAPPC Agents — aggregator module (system wiring, generators, evaluation flywheel, learning, examples)"
 
 java {
     toolchain {
@@ -15,43 +15,31 @@ java {
 }
 
 dependencies {
-    // Framework core (for FeatureFlags, Result, etc.)
-    implementation(project(":products:yappc:core:framework"))
+    // Sub-modules (transitively provide all platform/framework deps)
+    api(project(":products:yappc:core:agents:runtime"))
+    api(project(":products:yappc:core:agents:workflow"))
+    api(project(":products:yappc:core:agents:specialists"))
 
-    // Domain types and repository ports (LearnedPolicy, LearnedPolicyRepository)
+    // Direct platform deps used by learning/ and eval/ (not exposed by sub-modules as api)
     implementation(project(":products:yappc:backend:persistence"))
-
-    // AI module
-    implementation(project(":products:yappc:core:ai"))
-
-    // Agent framework from platform
-    implementation(project(":platform:java:agent-framework"))
-    implementation(project(":platform:java:agent-dispatch"))
-    implementation(project(":platform:java:agent-registry"))
     implementation(project(":platform:java:agent-memory"))
-    implementation(project(":platform:java:agent-learning"))
-    implementation(project(":platform:java:core"))
-    implementation(project(":platform:java:workflow"))
-    implementation(project(":platform:java:database"))
-    implementation(project(":platform:java:ai-integration"))
-    implementation(project(":platform:java:event-cloud"))
+    implementation(project(":platform:java:agent-dispatch"))
 
-    // ActiveJ for async operations
+    // ActiveJ (generators / examples use async directly)
     implementation(libs.activej.promise)
     implementation(libs.activej.eventloop)
-    implementation(libs.activej.http)
 
-    // Jackson
+    // Jackson (generators/eval config loading)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.dataformat.yaml)
 
-    // Utilities (from agent-integration)
-    implementation("org.apache.commons:commons-lang3:3.14.0")
-    implementation("com.google.guava:guava:33.0.0-jre")
+    // Utilities
+    implementation(libs.commons.lang3)
+    implementation(libs.guava)
 
     // Annotations
-    compileOnly("org.projectlombok:lombok:1.18.30")
-    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
 
     // Logging
     implementation(libs.slf4j.api)

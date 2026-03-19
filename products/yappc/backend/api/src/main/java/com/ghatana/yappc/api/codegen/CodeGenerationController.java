@@ -1,4 +1,10 @@
+/*
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
+ */
 package com.ghatana.yappc.api.codegen;
+
+import static io.activej.http.HttpMethod.POST;
 
 import com.ghatana.yappc.api.codegen.dto.CodeGenerationRequest;
 import com.ghatana.yappc.api.common.ApiResponse;
@@ -14,27 +20,25 @@ import io.activej.reactor.Reactor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.activej.http.HttpMethod.POST;
-
 /**
  * Code Generation Controller - AI-powered code generation from specifications.
  *
  * <p>Provides endpoints for:
  *
  * <ul>
- *   <li>Generating REST controllers from OpenAPI specs</li>
- *   <li>Generating GraphQL resolvers from schemas</li>
- *   <li>Generating JPA entities from database schemas</li>
- *   <li>Previewing generated code before committing</li>
+ *   <li>Generating REST controllers from OpenAPI specs
+ *   <li>Generating GraphQL resolvers from schemas
+ *   <li>Generating JPA entities from database schemas
+ *   <li>Previewing generated code before committing
  * </ul>
  *
  * <p>Features:
  *
  * <ul>
- *   <li>Multi-format input (OpenAPI, GraphQL, SQL, JSON Schema)</li>
- *   <li>Template-based generation with customization</li>
- *   <li>Code preview with syntax highlighting</li>
- *   <li>Validation before generation</li>
+ *   <li>Multi-format input (OpenAPI, GraphQL, SQL, JSON Schema)
+ *   <li>Template-based generation with customization
+ *   <li>Code preview with syntax highlighting
+ *   <li>Validation before generation
  * </ul>
  *
  * @doc.type class

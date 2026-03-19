@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
+ */
 package com.ghatana.yappc.api.testing;
 
 /**
@@ -8,9 +12,4 @@ package com.ghatana.yappc.api.testing;
  * @doc.layer product
  * @doc.pattern ValueObject
  */
-public record TestTemplate(
-    String id,
-    String name,
-    String framework,
-    String description
-) {}
+public record TestTemplate(String id, String name, String framework, String description) {}

@@ -1,13 +1,8 @@
 /*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC API Module - AEP Integration
+ * YAPPC API Module
  */
 package com.ghatana.yappc.api.aep;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,28 +13,30 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * YAPPC Event Routing Configuration - Loads and manages event-to-agent mappings.
  *
  * <p><b>Purpose</b><br>
- * Loads event routing configuration from event-routing.yaml and provides
- * topic-to-agent resolution for the YappcAgentEventRouter.
+ * Loads event routing configuration from event-routing.yaml and provides topic-to-agent resolution
+ * for the YappcAgentEventRouter.
  *
  * <p><b>Configuration Source</b><br>
  * Primary: products/yappc/config/agents/event-routing.yaml<br>
  * Fallback: Classpath resource /event-routing.yaml
  *
  * <p><b>Routing Resolution</b><br>
- * - Exact topic match: "test.failed" → debug-orchestrator
- * - Wildcard patterns: "deployment.*.failed" → rollback-coordinator-agent
- * - Default fallback: unknown topics route to products-officer
+ * - Exact topic match: "test.failed" → debug-orchestrator - Wildcard patterns:
+ * "deployment.*.failed" → rollback-coordinator-agent - Default fallback: unknown topics route to
+ * products-officer
  *
  * @see YappcAgentEventRouter
- *
  * @author Ghatana AI Platform
  * @since 2.0.0
-  *
  * @doc.type class
  * @doc.purpose yappc event routing config
  * @doc.layer product

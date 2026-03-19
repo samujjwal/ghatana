@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC API Module - AEP Integration
+ * YAPPC API Module
  */
 package com.ghatana.yappc.api.aep;
 
@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>The {@code :products:aep:platform} module is always on the YAPPC API compile classpath; no
  * class-loader tricks or reflection are needed. Because {@link AepEngine} implementations return
- * pre-resolved {@code Promise.of()} values, calling {@code .getResult()} is safe here — it
- * returns immediately without scheduling work on an event-loop.
+ * pre-resolved {@code Promise.of()} values, calling {@code .getResult()} is safe here — it returns
+ * immediately without scheduling work on an event-loop.
  *
  * @doc.type class
  * @doc.purpose In-process AEP client using direct typed API (no reflection)
@@ -91,7 +91,8 @@ public final class AepLibraryClient implements AepClient {
     if ("detect-patterns".equalsIgnoreCase(action)) {
       List<AepEngine.Event> events = toEvents(contextMap.get("events"));
       if (events.isEmpty()) {
-        events = List.of(new AepEngine.Event("action." + action, contextMap, Map.of(), Instant.now()));
+        events =
+            List.of(new AepEngine.Event("action." + action, contextMap, Map.of(), Instant.now()));
       }
       List<AepEngine.Anomaly> anomalies = engine.detectAnomalies(tenantId, events).getResult();
       if (anomalies == null) anomalies = List.of();
@@ -105,7 +106,8 @@ public final class AepLibraryClient implements AepClient {
       return writeJson(response);
     }
 
-    AepEngine.Event event = new AepEngine.Event("action." + action, contextMap, Map.of(), Instant.now());
+    AepEngine.Event event =
+        new AepEngine.Event("action." + action, contextMap, Map.of(), Instant.now());
     AepEngine.ProcessingResult result = engine.process(tenantId, event).getResult();
     boolean success = result != null && result.success();
     int detectionCount = result != null ? result.detections().size() : 0;

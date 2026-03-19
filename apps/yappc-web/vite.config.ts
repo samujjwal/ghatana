@@ -228,14 +228,14 @@ export default defineConfig({
       '@ghatana/canvas': path.resolve(__dirname, '../../libs/canvas/src'),
       '@ghatana/types': path.resolve(__dirname, '../../libs/types/src'),
       
-      // Capacitor shims for web builds
-      '@capacitor/haptics': path.resolve(__dirname, '../../libs/types/capacitor-shims.ts'),
-      '@capacitor/share': path.resolve(__dirname, '../../libs/types/capacitor-shims.ts'),
-      '@capacitor/network': path.resolve(__dirname, '../../libs/types/capacitor-shims.ts'),
-      '@capacitor/local-notifications': path.resolve(__dirname, '../../libs/types/capacitor-shims.ts'),
-      '@capacitor/camera': path.resolve(__dirname, '../../libs/types/capacitor-shims.ts'),
-      '@capacitor/filesystem': path.resolve(__dirname, '../../libs/types/capacitor-shims.ts'),
-      '@capacitor/core': path.resolve(__dirname, '../../libs/types/capacitor-shims.ts'),
+      // Capacitor shims for web builds (native-only packages → no-op stubs)
+      '@capacitor/haptics': path.resolve(__dirname, '../../domain/yappc/mobile/capacitor-shims.ts'),
+      '@capacitor/share': path.resolve(__dirname, '../../domain/yappc/mobile/capacitor-shims.ts'),
+      '@capacitor/network': path.resolve(__dirname, '../../domain/yappc/mobile/capacitor-shims.ts'),
+      '@capacitor/local-notifications': path.resolve(__dirname, '../../domain/yappc/mobile/capacitor-shims.ts'),
+      '@capacitor/camera': path.resolve(__dirname, '../../domain/yappc/mobile/capacitor-shims.ts'),
+      '@capacitor/filesystem': path.resolve(__dirname, '../../domain/yappc/mobile/capacitor-shims.ts'),
+      '@capacitor/core': path.resolve(__dirname, '../../domain/yappc/mobile/capacitor-shims.ts'),
       openai: path.resolve(__dirname, 'src/shims/openai.ts'),
       '@anthropic-ai/sdk': path.resolve(__dirname, 'src/shims/anthropic.ts'),
       'react-colorful': path.resolve(__dirname, 'src/shims/react-colorful.tsx'),

@@ -1,4 +1,3 @@
-// All tests skipped - incomplete feature
 /**
  * Integration Tests: Feature 2.15 - Stable IDs & Diffing
  *
@@ -47,7 +46,7 @@ import {
   type DiffResult,
   type DiffOptions,
   type JSONPatchOperation,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 import React, { useState, useCallback } from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 
@@ -427,7 +426,7 @@ const DiffManager: React.FC<DiffManagerProps> = ({
   );
 };
 
-describe.skip('Feature 2.15: Stable IDs & Diffing - Integration Tests', () => {
+describe('Feature 2.15: Stable IDs & Diffing - Integration Tests', () => {
   describe('ID Generation and Management', () => {
     it('should generate deterministic content-hash IDs', async () => {
       const user = userEvent.setup();

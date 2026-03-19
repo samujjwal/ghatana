@@ -4,9 +4,9 @@
  */
 package com.ghatana.yappc.api.audit;
 
-import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditQueryService;
+import com.ghatana.platform.audit.AuditService;
 import com.ghatana.yappc.api.audit.dto.*;
 import com.ghatana.yappc.api.common.ApiResponse;
 import com.ghatana.yappc.api.common.JsonUtils;
@@ -207,7 +207,8 @@ public class AuditController {
                       maybeEvent ->
                           maybeEvent
                               .map(event -> ApiResponse.ok(toResponse(event)))
-                              .orElseGet(() -> ApiResponse.notFound("Audit event not found: " + eventId)));
+                              .orElseGet(
+                                  () -> ApiResponse.notFound("Audit event not found: " + eventId)));
             })
         .then(response -> Promise.of(response), e -> Promise.of(ApiResponse.fromException(e)));
   }
@@ -332,45 +333,63 @@ public class AuditController {
    */
   public Promise<HttpResponse> queryAuditEventsV1(HttpRequest request) {
     return TenantContextExtractor.requireAuthenticated(request)
-        .then(ctx -> {
-          AuditQueryService queryService = asQueryService();
-          if (queryService == null) {
-            return Promise.of(ApiResponse.ok(Map.of("events", List.of(), "total", 0)));
-          }
+        .then(
+            ctx -> {
+              AuditQueryService queryService = asQueryService();
+              if (queryService == null) {
+                return Promise.of(ApiResponse.ok(Map.of("events", List.of(), "total", 0)));
+              }
 
-          String projectId = request.getQueryParameter("projectId");
-          String agentId   = request.getQueryParameter("agentId");
-          String fromParam = request.getQueryParameter("from");
-          String toParam   = request.getQueryParameter("to");
-          String type      = request.getQueryParameter("type");
-          int limit = parsePositiveInt(request.getQueryParameter("limit"), 50);
+              String projectId = request.getQueryParameter("projectId");
+              String agentId = request.getQueryParameter("agentId");
+              String fromParam = request.getQueryParameter("from");
+              String toParam = request.getQueryParameter("to");
+              String type = request.getQueryParameter("type");
+              int limit = parsePositiveInt(request.getQueryParameter("limit"), 50);
 
-          Instant from = fromParam != null ? Instant.parse(fromParam) : null;
-          Instant to   = toParam   != null ? Instant.parse(toParam)   : null;
+              Instant from = fromParam != null ? Instant.parse(fromParam) : null;
+              Instant to = toParam != null ? Instant.parse(toParam) : null;
 
-          logger.info("v1 audit query: tenant={} projectId={} agentId={} type={} from={} to={}",
-              ctx.tenantId(), projectId, agentId, type, from, to);
+              logger.info(
+                  "v1 audit query: tenant={} projectId={} agentId={} type={} from={} to={}",
+                  ctx.tenantId(),
+                  projectId,
+                  agentId,
+                  type,
+                  from,
+                  to);
 
-          return queryService.findByTenantId(ctx.tenantId())
-              .map(events -> {
-                List<AuditEventResponse> filtered = events.stream()
-                    .filter(e -> matchesProject(e, projectId))
-                    .filter(e -> matchesAgent(e, agentId))
-                    .filter(e -> matchesEventType(e, type))
-                    .filter(e -> from == null || (e.getTimestamp() != null && !e.getTimestamp().isBefore(from)))
-                    .filter(e -> to   == null || (e.getTimestamp() != null && !e.getTimestamp().isAfter(to)))
-                    .sorted(Comparator.comparing(
-                        com.ghatana.platform.audit.AuditEvent::getTimestamp,
-                        Comparator.nullsLast(Comparator.naturalOrder())).reversed())
-                    .limit(limit)
-                    .map(this::toResponse)
-                    .toList();
+              return queryService
+                  .findByTenantId(ctx.tenantId())
+                  .map(
+                      events -> {
+                        List<AuditEventResponse> filtered =
+                            events.stream()
+                                .filter(e -> matchesProject(e, projectId))
+                                .filter(e -> matchesAgent(e, agentId))
+                                .filter(e -> matchesEventType(e, type))
+                                .filter(
+                                    e ->
+                                        from == null
+                                            || (e.getTimestamp() != null
+                                                && !e.getTimestamp().isBefore(from)))
+                                .filter(
+                                    e ->
+                                        to == null
+                                            || (e.getTimestamp() != null
+                                                && !e.getTimestamp().isAfter(to)))
+                                .sorted(
+                                    Comparator.comparing(
+                                            com.ghatana.platform.audit.AuditEvent::getTimestamp,
+                                            Comparator.nullsLast(Comparator.naturalOrder()))
+                                        .reversed())
+                                .limit(limit)
+                                .map(this::toResponse)
+                                .toList();
 
-                return ApiResponse.ok(Map.of(
-                    "events", filtered,
-                    "total",  filtered.size()));
-              });
-        })
+                        return ApiResponse.ok(Map.of("events", filtered, "total", filtered.size()));
+                      });
+            })
         .then(response -> Promise.of(response), e -> Promise.of(ApiResponse.fromException(e)));
   }
 

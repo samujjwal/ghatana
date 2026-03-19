@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
  */
-
 package com.ghatana.yappc.api.testing.dto;
 
 /**
@@ -12,4 +12,5 @@ package com.ghatana.yappc.api.testing.dto;
  * @doc.layer product
  * @doc.pattern DTO
  */
-public record SASTStatistics(int totalFindings, int criticalFindings, int highFindings, int filesScanned) {}
+public record SASTStatistics(
+    int totalFindings, int criticalFindings, int highFindings, int filesScanned) {}

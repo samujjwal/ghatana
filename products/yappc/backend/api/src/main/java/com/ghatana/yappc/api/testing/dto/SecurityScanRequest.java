@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
  */
-
 package com.ghatana.yappc.api.testing.dto;
 
-/** Security Scan Request DTO.  *
+/**
+ * Security Scan Request DTO. *
+ *
  * @doc.type record
  * @doc.purpose security scan request
  * @doc.layer product

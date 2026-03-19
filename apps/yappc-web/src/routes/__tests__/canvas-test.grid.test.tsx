@@ -1,4 +1,3 @@
-// All tests skipped - incomplete feature
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
@@ -13,7 +12,7 @@ import {
   type GridConfig,
   type DistributionOptions,
   type AlignmentOptions,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 
 /**
  * Integration tests for grid/snapping in canvas-test route.
@@ -90,7 +89,7 @@ const createTestItem = (overrides: DeepPartial<BaseItem> = {}): BaseItem => {
   };
 };
 
-describe.skip('Grid & Snapping Integration Tests', () => {
+describe('Grid & Snapping Integration Tests', () => {
   describe('snapToGrid with BaseItem', () => {
     it('should snap element position to grid', () => {
       const item = createTestItem({ position: { x: 123, y: 67 } });

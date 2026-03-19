@@ -6,21 +6,19 @@ package com.ghatana.yappc.api.ai;
 
 import com.ghatana.yappc.api.aep.AepException;
 import com.ghatana.yappc.api.aep.AepService;
+import com.ghatana.yappc.api.ai.dto.GenerateSuggestionRequest;
 import com.ghatana.yappc.api.common.ApiResponse;
+import com.ghatana.yappc.api.common.JsonUtils;
 import com.ghatana.yappc.api.common.TenantContextExtractor;
 import com.ghatana.yappc.api.service.AISuggestionService;
 import com.ghatana.yappc.api.service.ConfigService;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.ghatana.yappc.api.ai.dto.GenerateSuggestionRequest;
-import com.ghatana.yappc.api.common.JsonUtils;
-
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simplified REST API Controller for AI Suggestions operations.
@@ -58,7 +56,8 @@ public class AISuggestionsController {
                         req -> {
                           String validationError = validateGenerateSuggestionRequest(req);
                           if (validationError != null) {
-                            return Promise.ofException(new JsonUtils.BadRequestException(validationError));
+                            return Promise.ofException(
+                                new JsonUtils.BadRequestException(validationError));
                           }
 
                           logger.info(
@@ -79,7 +78,8 @@ public class AISuggestionsController {
                                     eventPayload.put("suggestionId", response.id());
                                     eventPayload.put("targetEntityId", req.targetEntityId());
                                     eventPayload.put("targetEntityType", req.targetEntityType());
-                                    eventPayload.put("generatedAt", java.time.Instant.now().toString());
+                                    eventPayload.put(
+                                        "generatedAt", java.time.Instant.now().toString());
                                     publishAepEventNonCritical(
                                         "ai.suggestion.generated", eventPayload);
                                     return ApiResponse.created(response);
@@ -304,50 +304,61 @@ public class AISuggestionsController {
   }
 
   private void publishAepEventNonCritical(String eventType, java.util.Map<String, Object> payload) {
-    Promise.ofBlocking(blockingExecutor, () -> {
-      try {
-        String eventId = aepService.publishEvent(eventType, JsonUtils.toJson(payload));
-        logger.debug("Published AEP event {} with id {}", eventType, eventId);
-        return null;
-      } catch (AepException e) {
-        logger.warn("AEP event publishing failed for {} (continuing)", eventType, e);
-        return null;
-      } catch (Exception e) {
-        logger.warn("Failed to serialize AEP event payload for {} (continuing)", eventType, e);
-        return null;
-      }
-    }).whenException(e -> logger.warn("Background AEP event publishing failed", e));
+    Promise.ofBlocking(
+            blockingExecutor,
+            () -> {
+              try {
+                String eventId = aepService.publishEvent(eventType, JsonUtils.toJson(payload));
+                logger.debug("Published AEP event {} with id {}", eventType, eventId);
+                return null;
+              } catch (AepException e) {
+                logger.warn("AEP event publishing failed for {} (continuing)", eventType, e);
+                return null;
+              } catch (Exception e) {
+                logger.warn(
+                    "Failed to serialize AEP event payload for {} (continuing)", eventType, e);
+                return null;
+              }
+            })
+        .whenException(e -> logger.warn("Background AEP event publishing failed", e));
   }
 
   private void executeAepQueryNonCritical(String queryType, java.util.Map<String, Object> query) {
-    Promise.ofBlocking(blockingExecutor, () -> {
-      try {
-        String response = aepService.queryEvents(JsonUtils.toJson(query));
-        logger.debug("AEP query completed ({} bytes)", response.length());
-        return null;
-      } catch (AepException e) {
-        logger.warn("AEP query failed (continuing)", e);
-        return null;
-      } catch (Exception e) {
-        logger.warn("Failed to serialize AEP query payload (continuing)", e);
-        return null;
-      }
-    }).whenException(e -> logger.warn("Background AEP query execution failed", e));
+    Promise.ofBlocking(
+            blockingExecutor,
+            () -> {
+              try {
+                String response = aepService.queryEvents(JsonUtils.toJson(query));
+                logger.debug("AEP query completed ({} bytes)", response.length());
+                return null;
+              } catch (AepException e) {
+                logger.warn("AEP query failed (continuing)", e);
+                return null;
+              } catch (Exception e) {
+                logger.warn("Failed to serialize AEP query payload (continuing)", e);
+                return null;
+              }
+            })
+        .whenException(e -> logger.warn("Background AEP query execution failed", e));
   }
 
   private void executeAepActionNonCritical(String action, java.util.Map<String, Object> context) {
-    Promise.ofBlocking(blockingExecutor, () -> {
-      try {
-        String response = aepService.executeAction(action, JsonUtils.toJson(context));
-        logger.debug("AEP action {} completed ({} bytes)", action, response.length());
-        return null;
-      } catch (AepException e) {
-        logger.warn("AEP action {} failed (continuing)", action, e);
-        return null;
-      } catch (Exception e) {
-        logger.warn("Failed to serialize AEP action context for {} (continuing)", action, e);
-        return null;
-      }
-    }).whenException(e -> logger.warn("Background AEP action execution failed", e));
+    Promise.ofBlocking(
+            blockingExecutor,
+            () -> {
+              try {
+                String response = aepService.executeAction(action, JsonUtils.toJson(context));
+                logger.debug("AEP action {} completed ({} bytes)", action, response.length());
+                return null;
+              } catch (AepException e) {
+                logger.warn("AEP action {} failed (continuing)", action, e);
+                return null;
+              } catch (Exception e) {
+                logger.warn(
+                    "Failed to serialize AEP action context for {} (continuing)", action, e);
+                return null;
+              }
+            })
+        .whenException(e -> logger.warn("Background AEP action execution failed", e));
   }
 }

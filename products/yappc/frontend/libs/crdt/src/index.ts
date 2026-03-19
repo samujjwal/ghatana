@@ -1,32 +1,11 @@
 /**
- * @ghatana/yappc-crdt
- * 
- * CRDT (Conflict-free Replicated Data Types) library for YAPPC.
- * Enables real-time collaboration with automatic conflict resolution.
- * 
- * @module @ghatana/yappc-crdt
+ * @deprecated Use @yappc/collab instead.
+ *
+ * This package has been merged into @yappc/collab.
+ * - CRDT primitives: import from '@yappc/collab/crdt'
+ * - WebSocket hooks: import from '@yappc/collab/websocket'
+ *
+ * Sub-path exports (./core, ./ide, ./conflict-resolution, ./websocket) are
+ * retained as-is for backward compatibility.
  */
-
-// ============================================================================
-// Core CRDT Implementation
-// ============================================================================
-// Fundamental CRDT data structures and algorithms
-export * from './core/index.js';
-
-// ============================================================================
-// IDE Integration
-// ============================================================================
-// CRDT integration for IDE features (code editing, etc.)
-export * from './ide/index.js';
-
-// ============================================================================
-// WebSocket Utilities
-// ============================================================================
-// Hooks and helpers for WebSocket-based collaboration
-export * from './websocket/index.js';
-
-// ============================================================================
-// Conflict Resolution
-// ============================================================================
-// Advanced conflict resolution strategies and algorithms
-export * from './conflict-resolution/index.js';
+export * from '@yappc/collab/crdt';

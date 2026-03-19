@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "deprecated": "Use @yappc/messaging instead. This package is a compatibility shim.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -12,14 +13,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "jotai": "^2.17.0",
-    "lucide-react": "^0.563.0"
+    "@yappc/messaging": "workspace:*"
   },
   "devDependencies": {
-    "@types/react": "^19.2.10",
-    "@types/react-dom": "^19.2.3",
     "typescript": "^5.9.3"
   }
 }
+

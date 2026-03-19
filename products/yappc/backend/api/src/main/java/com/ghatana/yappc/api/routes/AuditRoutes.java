@@ -25,19 +25,21 @@ public final class AuditRoutes {
   /**
    * Registers all audit API routes on the given builder.
    *
-   * @param builder     the routing servlet builder
-   * @param controller  audit controller
+   * @param builder the routing servlet builder
+   * @param controller audit controller
    */
   public static void register(RoutingServlet.Builder builder, AuditController controller) {
     builder
         .with(POST, "/api/audit/record", controller::recordEvent)
-        .with(GET,  "/api/audit/events", controller::queryEvents)
-        .with(GET,  "/api/audit/events/:eventId",
+        .with(GET, "/api/audit/events", controller::queryEvents)
+        .with(
+            GET,
+            "/api/audit/events/:eventId",
             request -> {
               String eventId = request.getPathParameter("eventId");
               return controller.getEvent(request, eventId);
             })
         // v1 lifecycle-oriented audit query (Observability 6.2)
-        .with(GET,  "/api/v1/audit/events", controller::queryAuditEventsV1);
+        .with(GET, "/api/v1/audit/events", controller::queryAuditEventsV1);
   }
 }

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
+ */
 package com.ghatana.yappc.api.testing.dto;
 
 /**
@@ -8,10 +12,4 @@ package com.ghatana.yappc.api.testing.dto;
  * @doc.layer product
  * @doc.pattern ValueObject
  */
-public record GeneratedTest(
-    String name,
-    String type,
-    String code,
-    String framework,
-    int lines
-) {}
+public record GeneratedTest(String name, String type, String code, String framework, int lines) {}

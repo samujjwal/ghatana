@@ -95,7 +95,7 @@ import {
   chromeMinimapVisibleAtom,
   chromeInspectorVisibleAtom,
   chromeZoomLevelAtom,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 
 import { UnifiedToolbar } from '../../../components/canvas/unified/UnifiedToolbar';
 import { UnifiedLeftRail } from '../../../components/canvas/unified/UnifiedLeftRail';

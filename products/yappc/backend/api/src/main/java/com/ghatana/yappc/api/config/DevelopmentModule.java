@@ -4,25 +4,24 @@
  */
 package com.ghatana.yappc.api.config;
 
-import com.ghatana.platform.audit.AuditService;
-import com.ghatana.platform.audit.AuditEvent;
-import com.ghatana.platform.security.rbac.InMemoryRolePermissionRegistry;
-import com.ghatana.platform.security.rbac.Permission;
-import com.ghatana.platform.security.rbac.RolePermissionRegistry;
-import com.ghatana.platform.security.rbac.SyncAuthorizationService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.datacloud.application.version.VersionService;
 import com.ghatana.datacloud.entity.version.VersionRecord;
 import com.ghatana.datacloud.infrastructure.persistence.version.InMemoryVersionRecord;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditService;
+import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.platform.security.rbac.InMemoryRolePermissionRegistry;
+import com.ghatana.platform.security.rbac.Permission;
+import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.yappc.api.repository.AISuggestionRepository;
 import com.ghatana.yappc.api.repository.InMemoryAISuggestionRepository;
 import com.ghatana.yappc.api.repository.InMemoryRequirementRepository;
 import com.ghatana.yappc.api.repository.InMemoryWorkspaceRepository;
 import com.ghatana.yappc.api.repository.RequirementRepository;
 import com.ghatana.yappc.api.repository.WorkspaceRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.yappc.api.service.AISuggestionService;
 import com.ghatana.yappc.api.service.ApprovalWorkflowService;
 import com.ghatana.yappc.api.service.LifecycleEventEmitter;
@@ -138,7 +137,8 @@ public class DevelopmentModule extends SharedBaseModule {
     return new InMemoryAuditService();
   }
 
-  /** Provides permissive AuthorizationService for development. Uses default RolePermissionMapping
+  /**
+   * Provides permissive AuthorizationService for development. Uses default RolePermissionMapping
    * that grants all permissions.
    */
   @Provides
@@ -151,8 +151,8 @@ public class DevelopmentModule extends SharedBaseModule {
   /**
    * Provides local YAPPC JwtTokenProvider for SecurityMiddleware (development).
    *
-   * <p>Uses a fixed dev secret so the server starts without any env vars set.
-   * Tokens are still validated — dev mode is not auth-bypass.
+   * <p>Uses a fixed dev secret so the server starts without any env vars set. Tokens are still
+   * validated — dev mode is not auth-bypass.
    *
    * @doc.type class
    * @doc.purpose Dev-mode YAPPC JwtTokenProvider for SecurityMiddleware
@@ -161,9 +161,10 @@ public class DevelopmentModule extends SharedBaseModule {
    */
   @Provides
   com.ghatana.yappc.api.security.JwtTokenProvider yappcJwtTokenProvider() {
-    String secretKey = java.util.Optional.ofNullable(System.getenv("JWT_SECRET_KEY"))
-        .filter(s -> !s.isBlank())
-        .orElse("dev-yappc-jwt-secret-key-32-chars!!");
+    String secretKey =
+        java.util.Optional.ofNullable(System.getenv("JWT_SECRET_KEY"))
+            .filter(s -> !s.isBlank())
+            .orElse("dev-yappc-jwt-secret-key-32-chars!!");
     logger.info("Creating development YAPPC JwtTokenProvider");
     return new com.ghatana.yappc.api.security.JwtTokenProvider(secretKey, 60L, 7L);
   }
@@ -188,8 +189,8 @@ public class DevelopmentModule extends SharedBaseModule {
   /**
    * Provides noop LifecycleEventEmitter for development.
    *
-   * <p>Events are logged at DEBUG level without actually connecting to AEP,
-   * so the dev environment starts without requiring an AEP sidecar.
+   * <p>Events are logged at DEBUG level without actually connecting to AEP, so the dev environment
+   * starts without requiring an AEP sidecar.
    *
    * @doc.type class
    * @doc.purpose Noop lifecycle event emitter for development without AEP
@@ -205,8 +206,8 @@ public class DevelopmentModule extends SharedBaseModule {
   /**
    * Provides permissive PolicyEngine for development.
    *
-   * <p>PermissivePolicyEngine allows all requests and logs what real OPA would evaluate.
-   * In production, the OpaRestPolicyEngine is used when {@code OPA_ENDPOINT} is set.
+   * <p>PermissivePolicyEngine allows all requests and logs what real OPA would evaluate. In
+   * production, the OpaRestPolicyEngine is used when {@code OPA_ENDPOINT} is set.
    *
    * @doc.type class
    * @doc.purpose Permissive policy engine for dev without OPA sidecar
@@ -251,8 +252,8 @@ public class DevelopmentModule extends SharedBaseModule {
   /**
    * Provides a boot-time pipeline definition loader for development mode.
    *
-   * <p>Scans the same directories as production; gracefully returns an empty
-   * loader when no pipeline YAMLs are found (no crash, just a WARN log).
+   * <p>Scans the same directories as production; gracefully returns an empty loader when no
+   * pipeline YAMLs are found (no crash, just a WARN log).
    *
    * @doc.type class
    * @doc.purpose Boot-time YAML pipeline manifest loader (dev)
@@ -276,14 +277,14 @@ public class DevelopmentModule extends SharedBaseModule {
     return new RequirementService(repository, auditService, versionService);
   }
 
-  /**
-   * Provides AISuggestionService with development AuditService and LLM gateway.
-   */
+  /** Provides AISuggestionService with development AuditService and LLM gateway. */
   @Provides
   AISuggestionService aiSuggestionService(
-      AISuggestionRepository repository, AuditService auditService,
+      AISuggestionRepository repository,
+      AuditService auditService,
       com.ghatana.ai.llm.LLMGateway llmGateway) {
-    logger.info("Creating AISuggestionService with LLM gateway: {}", llmGateway.getClass().getSimpleName());
+    logger.info(
+        "Creating AISuggestionService with LLM gateway: {}", llmGateway.getClass().getSimpleName());
     return new AISuggestionService(repository, auditService, llmGateway);
   }
 
@@ -296,39 +297,48 @@ public class DevelopmentModule extends SharedBaseModule {
   @Provides
   com.ghatana.ai.llm.LLMGateway llmGateway(io.activej.eventloop.Eventloop eventloop) {
     java.util.List<String> providers = new java.util.ArrayList<>();
-    com.ghatana.ai.llm.DefaultLLMGateway.Builder builder = com.ghatana.ai.llm.DefaultLLMGateway.builder();
+    com.ghatana.ai.llm.DefaultLLMGateway.Builder builder =
+        com.ghatana.ai.llm.DefaultLLMGateway.builder();
     com.ghatana.platform.observability.NoopMetricsCollector metricsCollector =
         new com.ghatana.platform.observability.NoopMetricsCollector();
-    io.activej.dns.DnsClient dnsClient = io.activej.dns.DnsClient.builder(eventloop, java.net.InetAddress.getLoopbackAddress()).build();
+    io.activej.dns.DnsClient dnsClient =
+        io.activej.dns.DnsClient.builder(eventloop, java.net.InetAddress.getLoopbackAddress())
+            .build();
     io.activej.http.HttpClient httpClient = io.activej.http.HttpClient.create(eventloop, dnsClient);
 
     String openAiKey = System.getenv("OPENAI_API_KEY");
     if (openAiKey != null && !openAiKey.isBlank()) {
-      com.ghatana.ai.llm.LLMConfiguration openAiConfig = com.ghatana.ai.llm.LLMConfiguration.builder()
-          .apiKey(openAiKey.trim())
-          .modelName(envOrDefault("OPENAI_MODEL", "gpt-4o-mini"))
-          .temperature(0.7)
-          .maxTokens(2000)
-          .timeoutSeconds(30)
-          .maxRetries(2)
-          .build();
-      builder.addProvider("openai",
-          new com.ghatana.ai.llm.ToolAwareOpenAICompletionService(openAiConfig, httpClient, metricsCollector));
+      com.ghatana.ai.llm.LLMConfiguration openAiConfig =
+          com.ghatana.ai.llm.LLMConfiguration.builder()
+              .apiKey(openAiKey.trim())
+              .modelName(envOrDefault("OPENAI_MODEL", "gpt-4o-mini"))
+              .temperature(0.7)
+              .maxTokens(2000)
+              .timeoutSeconds(30)
+              .maxRetries(2)
+              .build();
+      builder.addProvider(
+          "openai",
+          new com.ghatana.ai.llm.ToolAwareOpenAICompletionService(
+              openAiConfig, httpClient, metricsCollector));
       providers.add("openai");
     }
 
     String anthropicKey = System.getenv("ANTHROPIC_API_KEY");
     if (anthropicKey != null && !anthropicKey.isBlank()) {
-      com.ghatana.ai.llm.LLMConfiguration anthropicConfig = com.ghatana.ai.llm.LLMConfiguration.builder()
-          .apiKey(anthropicKey.trim())
-          .modelName(envOrDefault("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022"))
-          .temperature(0.7)
-          .maxTokens(2000)
-          .timeoutSeconds(30)
-          .maxRetries(2)
-          .build();
-      builder.addProvider("anthropic",
-          new com.ghatana.ai.llm.ToolAwareAnthropicCompletionService(anthropicConfig, httpClient, metricsCollector));
+      com.ghatana.ai.llm.LLMConfiguration anthropicConfig =
+          com.ghatana.ai.llm.LLMConfiguration.builder()
+              .apiKey(anthropicKey.trim())
+              .modelName(envOrDefault("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022"))
+              .temperature(0.7)
+              .maxTokens(2000)
+              .timeoutSeconds(30)
+              .maxRetries(2)
+              .build();
+      builder.addProvider(
+          "anthropic",
+          new com.ghatana.ai.llm.ToolAwareAnthropicCompletionService(
+              anthropicConfig, httpClient, metricsCollector));
       providers.add("anthropic");
     }
 
@@ -339,7 +349,8 @@ public class DevelopmentModule extends SharedBaseModule {
 
     String primary = providers.get(0);
     builder.defaultProvider(primary).fallbackOrder(providers);
-    logger.info("Development LLMGateway configured with real providers={} primary={}", providers, primary);
+    logger.info(
+        "Development LLMGateway configured with real providers={} primary={}", providers, primary);
     return builder.build();
   }
 
@@ -463,33 +474,67 @@ public class DevelopmentModule extends SharedBaseModule {
     InMemoryRolePermissionRegistry registry = new InMemoryRolePermissionRegistry();
 
     // OWNER: Full system access
-    registry.registerRole("OWNER", java.util.Set.of(
-        Permission.WORKSPACE_CREATE, Permission.WORKSPACE_READ, Permission.WORKSPACE_UPDATE,
-        Permission.WORKSPACE_DELETE, Permission.WORKSPACE_MANAGE_MEMBERS,
-        Permission.PROJECT_CREATE, Permission.PROJECT_READ, Permission.PROJECT_UPDATE,
-        Permission.PROJECT_DELETE, Permission.REQUIREMENT_CREATE, Permission.REQUIREMENT_READ,
-        Permission.REQUIREMENT_UPDATE, Permission.REQUIREMENT_DELETE, Permission.REQUIREMENT_APPROVE,
-        Permission.AI_SUGGESTION_REQUEST, Permission.AI_SUGGESTION_FEEDBACK,
-        Permission.USER_MANAGE, Permission.ROLE_ASSIGN, Permission.ADMIN_SYSTEM));
+    registry.registerRole(
+        "OWNER",
+        java.util.Set.of(
+            Permission.WORKSPACE_CREATE,
+            Permission.WORKSPACE_READ,
+            Permission.WORKSPACE_UPDATE,
+            Permission.WORKSPACE_DELETE,
+            Permission.WORKSPACE_MANAGE_MEMBERS,
+            Permission.PROJECT_CREATE,
+            Permission.PROJECT_READ,
+            Permission.PROJECT_UPDATE,
+            Permission.PROJECT_DELETE,
+            Permission.REQUIREMENT_CREATE,
+            Permission.REQUIREMENT_READ,
+            Permission.REQUIREMENT_UPDATE,
+            Permission.REQUIREMENT_DELETE,
+            Permission.REQUIREMENT_APPROVE,
+            Permission.AI_SUGGESTION_REQUEST,
+            Permission.AI_SUGGESTION_FEEDBACK,
+            Permission.USER_MANAGE,
+            Permission.ROLE_ASSIGN,
+            Permission.ADMIN_SYSTEM));
 
     // ADMIN: Administrative access
-    registry.registerRole("ADMIN", java.util.Set.of(
-        Permission.WORKSPACE_CREATE, Permission.WORKSPACE_READ, Permission.WORKSPACE_UPDATE,
-        Permission.WORKSPACE_DELETE, Permission.WORKSPACE_MANAGE_MEMBERS,
-        Permission.PROJECT_CREATE, Permission.PROJECT_READ, Permission.PROJECT_UPDATE,
-        Permission.PROJECT_DELETE, Permission.REQUIREMENT_APPROVE,
-        Permission.USER_MANAGE, Permission.ROLE_ASSIGN, Permission.AI_SUGGESTION_REQUEST));
+    registry.registerRole(
+        "ADMIN",
+        java.util.Set.of(
+            Permission.WORKSPACE_CREATE,
+            Permission.WORKSPACE_READ,
+            Permission.WORKSPACE_UPDATE,
+            Permission.WORKSPACE_DELETE,
+            Permission.WORKSPACE_MANAGE_MEMBERS,
+            Permission.PROJECT_CREATE,
+            Permission.PROJECT_READ,
+            Permission.PROJECT_UPDATE,
+            Permission.PROJECT_DELETE,
+            Permission.REQUIREMENT_APPROVE,
+            Permission.USER_MANAGE,
+            Permission.ROLE_ASSIGN,
+            Permission.AI_SUGGESTION_REQUEST));
 
     // MEMBER: Standard user permissions
-    registry.registerRole("MEMBER", java.util.Set.of(
-        Permission.WORKSPACE_READ, Permission.PROJECT_CREATE, Permission.PROJECT_READ,
-        Permission.PROJECT_UPDATE, Permission.REQUIREMENT_CREATE, Permission.REQUIREMENT_READ,
-        Permission.REQUIREMENT_UPDATE, Permission.REQUIREMENT_DELETE,
-        Permission.AI_SUGGESTION_REQUEST, Permission.AI_SUGGESTION_FEEDBACK));
+    registry.registerRole(
+        "MEMBER",
+        java.util.Set.of(
+            Permission.WORKSPACE_READ,
+            Permission.PROJECT_CREATE,
+            Permission.PROJECT_READ,
+            Permission.PROJECT_UPDATE,
+            Permission.REQUIREMENT_CREATE,
+            Permission.REQUIREMENT_READ,
+            Permission.REQUIREMENT_UPDATE,
+            Permission.REQUIREMENT_DELETE,
+            Permission.AI_SUGGESTION_REQUEST,
+            Permission.AI_SUGGESTION_FEEDBACK));
 
     // VIEWER: Read-only access
-    registry.registerRole("VIEWER", java.util.Set.of(
-        Permission.WORKSPACE_READ, Permission.PROJECT_READ, Permission.REQUIREMENT_READ));
+    registry.registerRole(
+        "VIEWER",
+        java.util.Set.of(
+            Permission.WORKSPACE_READ, Permission.PROJECT_READ, Permission.REQUIREMENT_READ));
 
     // EDITOR: Same as MEMBER
     registry.registerRole("EDITOR", registry.getPermissions("MEMBER"));
@@ -516,7 +561,8 @@ public class DevelopmentModule extends SharedBaseModule {
       @Override
       public String generateCode(String prompt) {
         return "// [DEV STUB] Code generation is disabled in development mode.\n"
-            + "// Prompt received: " + prompt.lines().findFirst().orElse("(empty)");
+            + "// Prompt received: "
+            + prompt.lines().findFirst().orElse("(empty)");
       }
 
       @Override

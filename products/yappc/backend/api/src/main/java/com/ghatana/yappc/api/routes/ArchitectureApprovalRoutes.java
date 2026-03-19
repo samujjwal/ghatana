@@ -16,8 +16,8 @@ import io.activej.http.RoutingServlet;
  * Route registrations for Architecture and Approval APIs.
  *
  * <ul>
- *   <li>/api/architecture/* - impact analysis, dependencies, tech debt, patterns</li>
- *   <li>/api/approvals/* - approval workflow management</li>
+ *   <li>/api/architecture/* - impact analysis, dependencies, tech debt, patterns
+ *   <li>/api/approvals/* - approval workflow management
  * </ul>
  *
  * @doc.type class
@@ -32,9 +32,9 @@ public final class ArchitectureApprovalRoutes {
   /**
    * Registers all architecture and approval API routes on the given builder.
    *
-   * @param builder   the routing servlet builder
-   * @param archCtrl  architecture controller
-   * @param apprCtrl  approval controller
+   * @param builder the routing servlet builder
+   * @param archCtrl architecture controller
+   * @param apprCtrl approval controller
    */
   public static void register(
       RoutingServlet.Builder builder,
@@ -43,31 +43,39 @@ public final class ArchitectureApprovalRoutes {
 
     builder
         // Architecture
-        .with(POST, "/api/architecture/impact",       archCtrl::analyzeImpact)
-        .with(GET,  "/api/architecture/dependencies", archCtrl::getDependencies)
-        .with(GET,  "/api/architecture/tech-debt",    archCtrl::getTechDebt)
-        .with(GET,  "/api/architecture/patterns",     archCtrl::getPatternWarnings)
-        .with(POST, "/api/architecture/simulate",     archCtrl::simulateChange)
+        .with(POST, "/api/architecture/impact", archCtrl::analyzeImpact)
+        .with(GET, "/api/architecture/dependencies", archCtrl::getDependencies)
+        .with(GET, "/api/architecture/tech-debt", archCtrl::getTechDebt)
+        .with(GET, "/api/architecture/patterns", archCtrl::getPatternWarnings)
+        .with(POST, "/api/architecture/simulate", archCtrl::simulateChange)
 
         // Approvals
-        .with(POST,   "/api/approvals",                  apprCtrl::createWorkflow)
-        .with(GET,    "/api/approvals/pending",           apprCtrl::getPendingApprovals)
-        .with(GET,    "/api/approvals/:id",
+        .with(POST, "/api/approvals", apprCtrl::createWorkflow)
+        .with(GET, "/api/approvals/pending", apprCtrl::getPendingApprovals)
+        .with(
+            GET,
+            "/api/approvals/:id",
             request -> {
               String id = request.getPathParameter("id");
               return apprCtrl.getWorkflow(request, id);
             })
-        .with(POST,   "/api/approvals/:id/decision",
+        .with(
+            POST,
+            "/api/approvals/:id/decision",
             request -> {
               String id = request.getPathParameter("id");
               return apprCtrl.submitDecision(request, id);
             })
-        .with(DELETE, "/api/approvals/:id",
+        .with(
+            DELETE,
+            "/api/approvals/:id",
             request -> {
               String id = request.getPathParameter("id");
               return apprCtrl.cancelWorkflow(request, id);
             })
-        .with(GET,    "/api/approvals/:id/history",
+        .with(
+            GET,
+            "/api/approvals/:id/history",
             request -> {
               String id = request.getPathParameter("id");
               return apprCtrl.getHistory(request, id);

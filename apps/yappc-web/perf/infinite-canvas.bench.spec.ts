@@ -34,7 +34,7 @@ import {
   zoomAtPoint,
   type Viewport,
   type Point,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 /**

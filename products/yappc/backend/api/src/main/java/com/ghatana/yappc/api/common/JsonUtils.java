@@ -12,12 +12,12 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * API-layer JSON helpers for request parsing and typed JSON conversion.
- 
+ *
  * @doc.type class
  * @doc.purpose Handles json utils operations
  * @doc.layer product
  * @doc.pattern Utility
-*/
+ */
 public final class JsonUtils {
 
   private static final ObjectMapper OBJECT_MAPPER =
@@ -32,19 +32,21 @@ public final class JsonUtils {
   }
 
   public static <T> Promise<T> parseBody(HttpRequest request, Class<T> bodyType) {
-    return request.loadBody().then(
-        body -> {
-          String json = body != null ? body.getString(StandardCharsets.UTF_8) : null;
-          if (json == null || json.isBlank()) {
-            return Promise.ofException(new BadRequestException("Request body is required"));
-          }
+    return request
+        .loadBody()
+        .then(
+            body -> {
+              String json = body != null ? body.getString(StandardCharsets.UTF_8) : null;
+              if (json == null || json.isBlank()) {
+                return Promise.ofException(new BadRequestException("Request body is required"));
+              }
 
-          try {
-            return Promise.of(fromJson(json, bodyType));
-          } catch (JsonProcessingException e) {
-            return Promise.ofException(new BadRequestException("Invalid JSON request body", e));
-          }
-        });
+              try {
+                return Promise.of(fromJson(json, bodyType));
+              } catch (JsonProcessingException e) {
+                return Promise.ofException(new BadRequestException("Invalid JSON request body", e));
+              }
+            });
   }
 
   public static <T> T fromJson(String json, Class<T> bodyType) throws JsonProcessingException {

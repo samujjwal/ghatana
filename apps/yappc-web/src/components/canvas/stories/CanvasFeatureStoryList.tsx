@@ -1,5 +1,5 @@
 import { Search as SearchIcon } from 'lucide-react';
-import { FeatureStories } from '@ghatana/canvas';
+import { FeatureStories } from '@yappc/canvas';
 import { Alert, Box, Chip, Stack, Typography } from '@ghatana/design-system';
 import { InputAdornment, Tab, Tabs, TextField } from '@ghatana/design-system';
 import { useCallback, useEffect, useMemo, useState } from 'react';

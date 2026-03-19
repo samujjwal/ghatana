@@ -7,12 +7,14 @@ package com.ghatana.yappc.api;
 import com.ghatana.yappc.api.service.ConfigLoader;
 import java.nio.file.Paths;
 
-/** Simple test to verify config loading works. 
+/**
+ * Simple test to verify config loading works.
+ *
  * @doc.type class
  * @doc.purpose Handles config test operations
  * @doc.layer product
  * @doc.pattern Test
-*/
+ */
 public class ConfigTest {
   public static void main(String[] args) {
     System.out.println("Testing YAPPC Configuration Loading...");

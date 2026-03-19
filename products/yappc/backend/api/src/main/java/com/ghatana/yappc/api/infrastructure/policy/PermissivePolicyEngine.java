@@ -15,12 +15,12 @@ import org.slf4j.LoggerFactory;
  * Fall-through PolicyEngine implementation that permits all requests.
  *
  * <p><b>Purpose</b><br>
- * Used when OPA is unavailable or not yet configured. All policy checks
- * pass with a WARN-level log so operations stay visible in the audit trail
- * even while real enforcement is pending.
+ * Used when OPA is unavailable or not yet configured. All policy checks pass with a WARN-level log
+ * so operations stay visible in the audit trail even while real enforcement is pending.
  *
  * <p><b>Usage</b><br>
  * Wire this engine via DI when {@code OPA_ENDPOINT} is absent:
+ *
  * <pre>{@code
  * PolicyEngine engine = new PermissivePolicyEngine();
  * engine.evaluate("require_approval", ctx).toCompletableFuture().get(); // → true
@@ -47,8 +47,8 @@ public final class PermissivePolicyEngine implements PolicyEngine {
   /**
    * {@inheritDoc}
    *
-   * <p>Always returns {@code true}. Logs the policy name and context so operators
-   * can audit what would be evaluated once a real engine is wired.
+   * <p>Always returns {@code true}. Logs the policy name and context so operators can audit what
+   * would be evaluated once a real engine is wired.
    */
   @Override
   @NotNull
@@ -56,7 +56,8 @@ public final class PermissivePolicyEngine implements PolicyEngine {
       @NotNull String policyName, @NotNull Map<String, Object> context) {
     logger.warn(
         "[PERMISSIVE] Policy '{}' would be evaluated against context keys={}; ALLOWED by default.",
-        policyName, context.keySet());
+        policyName,
+        context.keySet());
     return Promise.of(Boolean.TRUE);
   }
 

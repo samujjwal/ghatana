@@ -4,10 +4,9 @@
  */
 package com.ghatana.yappc.api.controller;
 
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
-import io.activej.http.HttpHeaders;
-import io.activej.http.MediaType;
 import io.activej.promise.Promise;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,8 +21,8 @@ import org.slf4j.LoggerFactory;
  * Static file controller for serving frontend assets and static content.
  *
  * <p><b>Purpose</b><br>
- * Serves static files from a configured directory with proper MIME type detection,
- * caching headers, and security protections.
+ * Serves static files from a configured directory with proper MIME type detection, caching headers,
+ * and security protections.
  *
  * <p><b>Features</b><br>
  * - MIME type detection based on file extension - Cache-Control headers for performance - Path
@@ -148,8 +147,8 @@ public class StaticFileController {
       HttpResponse response =
           HttpResponse.ok200()
               .withBody(content)
-            .withHeader(HttpHeaders.CONTENT_TYPE, contentType)
-            .withHeader(HttpHeaders.CACHE_CONTROL, "public, max-age=" + CACHE_MAX_AGE)
+              .withHeader(HttpHeaders.CONTENT_TYPE, contentType)
+              .withHeader(HttpHeaders.CACHE_CONTROL, "public, max-age=" + CACHE_MAX_AGE)
               .build();
 
       logger.debug("Served file: {} ({} bytes, {})", filePath, content.length, contentType);
@@ -157,8 +156,7 @@ public class StaticFileController {
 
     } catch (IOException e) {
       logger.error("Error reading file: {}", filePath, e);
-      return Promise.of(
-          HttpResponse.ofCode(500).withPlainText("Internal Server Error").build());
+      return Promise.of(HttpResponse.ofCode(500).withPlainText("Internal Server Error").build());
     }
   }
 

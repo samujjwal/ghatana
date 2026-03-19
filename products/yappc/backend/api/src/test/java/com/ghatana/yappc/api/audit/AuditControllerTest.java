@@ -6,8 +6,8 @@ package com.ghatana.yappc.api.audit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;

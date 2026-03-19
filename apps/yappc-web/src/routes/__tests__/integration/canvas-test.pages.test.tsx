@@ -1,4 +1,3 @@
-// All tests skipped - incomplete feature
 /**
  * Integration tests for Feature 2.10: Multi-Page Navigation
  *
@@ -37,7 +36,7 @@ import {
   type Page,
   type DeepLink,
   type PortalLink,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
@@ -314,7 +313,7 @@ function PageNavigator({
   );
 }
 
-describe.skip('Feature 2.10: Multi-Page Navigation - Integration Tests', () => {
+describe('Feature 2.10: Multi-Page Navigation - Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

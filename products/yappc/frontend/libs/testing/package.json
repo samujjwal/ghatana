@@ -18,6 +18,10 @@
             "import": "./src/mocks/index.ts",
             "types": "./src/mocks/index.ts"
         },
+        "./mocks/faker-shim": {
+            "import": "./src/mocks/faker-shim.ts",
+            "types": "./src/mocks/faker-shim.ts"
+        },
         "./utils": {
             "import": "./src/utils/index.ts",
             "types": "./src/utils/index.ts"

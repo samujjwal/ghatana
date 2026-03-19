@@ -114,7 +114,6 @@ public class SharedBaseModule extends AbstractModule {
     logger.info("Creating ArchitectureAnalysisService");
     return new ArchitectureAnalysisService();
   }
-
 }
 // Note: MemoryStore binding is declared per-environment:
 //   DevelopmentModule → EventLogMemoryStore (in-memory)

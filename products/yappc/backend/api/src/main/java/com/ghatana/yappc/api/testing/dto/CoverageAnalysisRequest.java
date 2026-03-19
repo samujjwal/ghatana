@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
  */
-
 package com.ghatana.yappc.api.testing.dto;
 
 /**
@@ -13,7 +13,4 @@ package com.ghatana.yappc.api.testing.dto;
  * @doc.pattern ValueObject
  */
 public record CoverageAnalysisRequest(
-        String projectPath,
-        String[] includePatterns,
-        String[] excludePatterns
-) {}
+    String projectPath, String[] includePatterns, String[] excludePatterns) {}

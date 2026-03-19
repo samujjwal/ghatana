@@ -28,7 +28,7 @@ import {
   type CodeGenerationOptions,
   type CodeGenerationResult as LibCodeGenerationResult,
   type GeneratedFile,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 
 // ============================================================================
 // Types

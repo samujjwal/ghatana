@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
  */
-
 package com.ghatana.yappc.api.scaffold;
 
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * Represents a feature pack that can be applied to a project.
-  *
+ *
  * @doc.type record
  * @doc.purpose feature pack
  * @doc.layer product
@@ -21,5 +21,4 @@ public record FeaturePack(
     String description,
     List<String> compatibleProjectTypes,
     List<String> dependencies,
-    Map<String, Object> configurationSchema
-) {}
+    Map<String, Object> configurationSchema) {}

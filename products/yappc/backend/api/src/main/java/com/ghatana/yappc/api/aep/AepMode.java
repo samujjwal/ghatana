@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC API Module - AEP Integration
+ * YAPPC API Module
  */
 package com.ghatana.yappc.api.aep;
 
@@ -16,8 +16,7 @@ package com.ghatana.yappc.api.aep;
  * </ul>
  *
  * <p><b>Architecture Decision</b><br>
- * YAPPC frontend (TypeScript) does NOT configure AEP mode. The backend handles all AEP
- * integration:
+ * YAPPC frontend (TypeScript) does NOT configure AEP mode. The backend handles all AEP integration:
  *
  * <pre>
  * TypeScript Frontend (app-creator)
@@ -40,7 +39,6 @@ package com.ghatana.yappc.api.aep;
  *
  * @see AepConfig
  * @see AepClientFactory
-  *
  * @doc.type enum
  * @doc.purpose aep mode
  * @doc.layer product
@@ -52,11 +50,8 @@ public enum AepMode {
    *
    * <p><b>Use Case</b>: Development and testing
    *
-   * <p><b>Benefits</b>:
-   * - No network overhead
-   * - Easier debugging
-   * - Single process (simpler deployment)
-   * - Shared memory with YAPPC
+   * <p><b>Benefits</b>: - No network overhead - Easier debugging - Single process (simpler
+   * deployment) - Shared memory with YAPPC
    */
   LIBRARY,
 
@@ -65,11 +60,8 @@ public enum AepMode {
    *
    * <p><b>Use Case</b>: Staging, Production, Scalable deployments
    *
-   * <p><b>Benefits</b>:
-   * - Independent scaling
-   * - Technology flexibility (AEP can be any language)
-   * - Resource isolation
-   * - Fault isolation (AEP crash doesn't crash YAPPC)
+   * <p><b>Benefits</b>: - Independent scaling - Technology flexibility (AEP can be any language) -
+   * Resource isolation - Fault isolation (AEP crash doesn't crash YAPPC)
    */
   SERVICE
 }

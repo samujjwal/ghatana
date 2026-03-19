@@ -30,10 +30,9 @@ import org.slf4j.LoggerFactory;
  * <p>This class manages its own thread pool and ObjectMapper for YAML deserialization.
  * Configuration is loaded once at startup and cached in-memory.
  *
- * @deprecated Migrate to platform config module ({@code platform:java:config}) for
- *     centralized configuration management with schema validation, hot-reload, and
- *     multi-tenant support. The custom thread pool and cache should be replaced by
- *     platform config infrastructure.
+ * @deprecated Migrate to platform config module ({@code platform:java:config}) for centralized
+ *     configuration management with schema validation, hot-reload, and multi-tenant support. The
+ *     custom thread pool and cache should be replaced by platform config infrastructure.
  * @doc.type class
  * @doc.purpose Load and parse configuration files from /config directory
  * @doc.layer product

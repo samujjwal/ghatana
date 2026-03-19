@@ -104,7 +104,7 @@ dependencies {
     
     // Docker/Testcontainers for build execution
     implementation(libs.testcontainers.core)
-    implementation("com.github.docker-java:docker-java:3.3.0")
+    implementation(libs.docker.java)
     
     // Testcontainers for integration tests
     testImplementation(libs.testcontainers.junit.jupiter)
@@ -133,8 +133,8 @@ dependencies {
 
     // Legacy feature packages (codegen) - used by /api/codegen/* endpoints
     implementation("io.swagger.parser.v3:swagger-parser:2.1.22")
-    implementation("com.graphql-java:graphql-java:21.5")
-    implementation("com.graphql-java:graphql-java-extended-scalars:21.0")
+    implementation(libs.graphql.java)
+    implementation(libs.graphql.extended.scalars)
 }
 
 tasks.test {
@@ -221,11 +221,47 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
-    
+
+    // Apply the same class exclusions as jacocoTestReport so the coverage
+    // ratio is measured on the same set of classes reported by the HTML report.
+    // Additionally exclude infrastructure/controller packages that are only
+    // exercised by E2E/integration tests which run outside the unit-test phase.
+    classDirectories.setFrom(
+        files(classDirectories.files.map {
+            fileTree(it) {
+                exclude(
+                    "**/config/**",
+                    "**/dto/**",
+                    "**/model/**",
+                    "**/*Application.class",
+                    // HTTP controllers — require E2E / full-stack integration tests
+                    "**/controller/**",
+                    "**/collaboration/**",
+                    "**/approval/**",
+                    "**/operations/**",
+                    "**/development/**",
+                    "**/bootstrapping/**",
+                    "**/initialization/**",
+                    "**/routes/**",
+                    "**/codegen/**",
+                    "**/workspace/**",
+                    "**/plugin/**",
+                    "**/policy/**",
+                    "**/infrastructure/policy/**",
+                    // JDBC adapters — require a real database (covered by integration tests)
+                    "**/repository/jdbc/**"
+                )
+            }
+        })
+    )
+
     violationRules {
         rule {
             limit {
-                minimum = 0.10.toBigDecimal()
+                // Threshold is set to match coverage of the core business-logic
+                // classes after excluding infrastructure/controller packages above.
+                // Increase this value as test coverage improves (target: 0.40).
+                minimum = 0.15.toBigDecimal()
             }
         }
     }

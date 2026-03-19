@@ -27,36 +27,46 @@ public final class RequirementsRoutes {
   /**
    * Registers all requirements API routes on the given builder.
    *
-   * @param builder     the routing servlet builder
-   * @param controller  requirements controller
+   * @param builder the routing servlet builder
+   * @param controller requirements controller
    */
   public static void register(RoutingServlet.Builder builder, RequirementsController controller) {
     builder
-        .with(POST, "/api/requirements",              controller::createRequirement)
-        .with(GET,  "/api/requirements",              controller::queryRequirements)
-        .with(GET,  "/api/requirements/domains",      controller::getAvailableDomains)
-        .with(GET,  "/api/requirements/funnel",       controller::getFunnelAnalytics)
-        .with(GET,  "/api/requirements/:id",
+        .with(POST, "/api/requirements", controller::createRequirement)
+        .with(GET, "/api/requirements", controller::queryRequirements)
+        .with(GET, "/api/requirements/domains", controller::getAvailableDomains)
+        .with(GET, "/api/requirements/funnel", controller::getFunnelAnalytics)
+        .with(
+            GET,
+            "/api/requirements/:id",
             request -> {
               String id = request.getPathParameter("id");
               return controller.getRequirement(request, id);
             })
-        .with(PUT,    "/api/requirements/:id",
+        .with(
+            PUT,
+            "/api/requirements/:id",
             request -> {
               String id = request.getPathParameter("id");
               return controller.updateRequirement(request, id);
             })
-        .with(DELETE, "/api/requirements/:id",
+        .with(
+            DELETE,
+            "/api/requirements/:id",
             request -> {
               String id = request.getPathParameter("id");
               return controller.deleteRequirement(request, id);
             })
-        .with(POST, "/api/requirements/:id/approve",
+        .with(
+            POST,
+            "/api/requirements/:id/approve",
             request -> {
               String id = request.getPathParameter("id");
               return controller.approveRequirement(request, id);
             })
-        .with(POST, "/api/requirements/:id/quality",
+        .with(
+            POST,
+            "/api/requirements/:id/quality",
             request -> {
               String id = request.getPathParameter("id");
               return controller.calculateQualityScore(request, id);

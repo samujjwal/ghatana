@@ -6,17 +6,17 @@ package com.ghatana.yappc.api.requirements;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.ghatana.platform.audit.AuditService;
-import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.datacloud.application.version.VersionComparator;
 import com.ghatana.datacloud.application.version.VersionService;
 import com.ghatana.datacloud.infrastructure.persistence.version.InMemoryVersionRecord;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.api.domain.AgentCapabilities;
 import com.ghatana.yappc.api.domain.TaskDomain;
 import com.ghatana.yappc.api.repository.InMemoryRequirementRepository;
-import com.ghatana.yappc.api.service.ConfigService;
 import com.ghatana.yappc.api.service.ConfigLoader;
+import com.ghatana.yappc.api.service.ConfigService;
 import com.ghatana.yappc.api.service.RequirementService;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -70,15 +70,18 @@ class RequirementsControllerTest extends EventloopTestBase {
     controller = new RequirementsController(requirementService, configService);
   }
 
-  /**
-   * Helper to create a requirement via the service and return its UUID.
-   */
+  /** Helper to create a requirement via the service and return its UUID. */
   private String createTestRequirement() {
-    var requirement = runPromise(() -> requirementService.createRequirement(
-        "tenant-123", "Test Requirement", "Test Description",
-        com.ghatana.yappc.api.domain.Requirement.RequirementType.FUNCTIONAL,
-        com.ghatana.yappc.api.domain.Requirement.Priority.HIGH,
-        "user-1"));
+    var requirement =
+        runPromise(
+            () ->
+                requirementService.createRequirement(
+                    "tenant-123",
+                    "Test Requirement",
+                    "Test Description",
+                    com.ghatana.yappc.api.domain.Requirement.RequirementType.FUNCTIONAL,
+                    com.ghatana.yappc.api.domain.Requirement.Priority.HIGH,
+                    "user-1"));
     return requirement.getId().toString();
   }
 
@@ -282,7 +285,9 @@ class RequirementsControllerTest extends EventloopTestBase {
               null);
 
       // WHEN
-      HttpResponse response = runPromise(() -> controller.getRequirement(request, "00000000-0000-0000-0000-000000000099"));
+      HttpResponse response =
+          runPromise(
+              () -> controller.getRequirement(request, "00000000-0000-0000-0000-000000000099"));
 
       // THEN
       assertThat(response.getCode()).isEqualTo(404);
@@ -354,8 +359,10 @@ class RequirementsControllerTest extends EventloopTestBase {
       // GIVEN - Create a requirement and transition it to REVIEW state first
       String reqId = createTestRequirement();
       // Submit for review (DRAFT → IN_REVIEW)
-      runPromise(() -> requirementService.submitForReview(
-          "tenant-123", java.util.UUID.fromString(reqId), "user-1"));
+      runPromise(
+          () ->
+              requirementService.submitForReview(
+                  "tenant-123", java.util.UUID.fromString(reqId), "user-1"));
 
       HttpRequest request =
           createRequest(
@@ -436,8 +443,7 @@ class RequirementsControllerTest extends EventloopTestBase {
               null);
 
       // WHEN
-      HttpResponse response =
-          runPromise(() -> controller.calculateQualityScore(request, reqId));
+      HttpResponse response = runPromise(() -> controller.calculateQualityScore(request, reqId));
 
       // THEN
       assertThat(response.getCode()).isEqualTo(200);
@@ -457,8 +463,7 @@ class RequirementsControllerTest extends EventloopTestBase {
               null);
 
       // WHEN
-      HttpResponse response =
-          runPromise(() -> controller.calculateQualityScore(request, reqId));
+      HttpResponse response = runPromise(() -> controller.calculateQualityScore(request, reqId));
 
       // THEN
       assertThat(response.getCode()).isEqualTo(200);
@@ -494,7 +499,7 @@ class RequirementsControllerTest extends EventloopTestBase {
 
   // Mock ConfigService for testing
   private static class MockConfigService extends ConfigService {
-    
+
     public MockConfigService() {
       super(org.mockito.Mockito.mock(ConfigLoader.class));
     }

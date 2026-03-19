@@ -15,10 +15,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Global exception handler middleware.
  *
- * <p>Wraps the delegate servlet and catches all unhandled exceptions, converting them to
- * consistent JSON error responses via {@link ApiResponse#fromException(Throwable)}. This
- * eliminates the need for per-endpoint {@code .then(ok, fromException)} error callbacks and
- * prevents raw error messages from leaking to clients.
+ * <p>Wraps the delegate servlet and catches all unhandled exceptions, converting them to consistent
+ * JSON error responses via {@link ApiResponse#fromException(Throwable)}. This eliminates the need
+ * for per-endpoint {@code .then(ok, fromException)} error callbacks and prevents raw error messages
+ * from leaking to clients.
  *
  * <p><b>Order</b>: Should be applied <em>inside</em> CORS middleware (CORS wraps this, this wraps
  * routing).

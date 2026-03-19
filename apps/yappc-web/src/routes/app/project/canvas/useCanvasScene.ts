@@ -12,7 +12,7 @@ import {
   updateElementAtom,
   convertReactFlowNodeToCanvasNode,
   convertReactFlowEdgeToCanvasEdge,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 

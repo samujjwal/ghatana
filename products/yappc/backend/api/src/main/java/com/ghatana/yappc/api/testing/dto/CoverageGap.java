@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
+ */
 package com.ghatana.yappc.api.testing.dto;
 
 /**
@@ -8,9 +12,4 @@ package com.ghatana.yappc.api.testing.dto;
  * @doc.layer product
  * @doc.pattern ValueObject
  */
-public record CoverageGap(
-    String file,
-    String type,
-    String description,
-    String severity
-) {}
+public record CoverageGap(String file, String type, String description, String severity) {}

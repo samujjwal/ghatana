@@ -1,4 +1,4 @@
-import { FeatureStories } from '@ghatana/canvas';
+import { FeatureStories } from '@yappc/canvas';
 
 import { CanvasFeatureStoryList } from './CanvasFeatureStoryList';
 

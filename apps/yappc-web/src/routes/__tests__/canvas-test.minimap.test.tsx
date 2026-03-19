@@ -1,4 +1,3 @@
-// All tests skipped - incomplete feature
 /**
  * Minimap Integration Tests
  * Feature 2.9: Minimap & Viewport Controls
@@ -30,7 +29,7 @@ import {
   type Viewport,
   type MinimapNode,
   type MinimapConfig,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 
 /**
  * Integration tests for minimap with canvas-test route structure.
@@ -129,7 +128,7 @@ const createTestNodes = (): TestCanvasNode[] => {
   ];
 };
 
-describe.skip('Minimap Integration Tests', () => {
+describe('Minimap Integration Tests', () => {
   let testNodes: TestCanvasNode[];
   let testViewport: Viewport;
   let mockOnViewportChange: ReturnType<typeof vi.fn>;

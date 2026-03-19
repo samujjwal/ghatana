@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC API Module - AEP Integration
+ * YAPPC API Module
  */
 package com.ghatana.yappc.api.aep;
 
@@ -12,15 +12,11 @@ import org.slf4j.LoggerFactory;
  *
  * <p><b>Purpose</b><br>
  * Provides backend service layer for AEP integration. This is the single point where all AEP
- * operations happen:
- * - Publishing events
- * - Querying events
- * - Executing agentic actions
+ * operations happen: - Publishing events - Querying events - Executing agentic actions
  *
  * <p><b>Architecture</b><br>
- * - Uses AepClient interface (library or service mode)
- * - Handles errors and logging
- * - Can be injected into controllers
+ * - Uses AepClient interface (library or service mode) - Handles errors and logging - Can be
+ * injected into controllers
  *
  * <p><b>Usage in Controllers</b><br>
  *
@@ -38,7 +34,6 @@ import org.slf4j.LoggerFactory;
  *
  * @see AepClient
  * @see AepConfig
-  *
  * @doc.type class
  * @doc.purpose aep service
  * @doc.layer product
@@ -105,10 +100,9 @@ public class AepService {
   /**
    * Executes an agentic action through AEP.
    *
-   * <p><b>Supported Actions</b>:
-   * - "auto-layout" - Automatic layout suggestion
-   * - "suggest-organization" - Organization suggestion
-   * - "detect-patterns" - Pattern detection in current canvas
+   * <p><b>Supported Actions</b>: - "auto-layout" - Automatic layout suggestion -
+   * "suggest-organization" - Organization suggestion - "detect-patterns" - Pattern detection in
+   * current canvas
    *
    * @param actionName The action to execute
    * @param contextJson The action context
@@ -151,9 +145,7 @@ public class AepService {
     }
   }
 
-  /**
-   * Closes the AEP client connection/resources.
-   */
+  /** Closes the AEP client connection/resources. */
   public void close() {
     try {
       client.close();

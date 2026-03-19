@@ -15,15 +15,14 @@ import org.mockito.MockitoAnnotations;
 import java.util.UUID;
 
 /**
- * Integration tests for data-cloud adapters.
+ * Integration tests for data-cloud repository adapters.
+ *
+ * @doc.type class
+ * @doc.purpose Validates YappcDataCloudRepository adapter wiring and behavior against a mock EntityRepository
+ * @doc.layer product
+ * @doc.pattern Integration Test
  */
 @DisplayName("Data-Cloud Integration Tests")
-/**
- * @doc.type class
- * @doc.purpose Handles data cloud integration test operations
- * @doc.layer platform
- * @doc.pattern Test
- */
 class DataCloudIntegrationTest {
     
     @Mock

@@ -7,9 +7,8 @@
  * AEP (Agentic Event Processor) Integration Package.
  *
  * <p><b>Purpose</b><br>
- * Provides backend integration with AEP. Supports two modes:
- * - LIBRARY mode: AEP embedded in Java process (development)
- * - SERVICE mode: AEP as external HTTP service (production)
+ * Provides backend integration with AEP. Supports two modes: - LIBRARY mode: AEP embedded in Java
+ * process (development) - SERVICE mode: AEP as external HTTP service (production)
  *
  * <p><b>Architecture Overview</b><br>
  *
@@ -110,8 +109,8 @@
  * </ol>
  *
  * <p><b>Key Principle</b><br>
- * <b>Frontend never talks to AEP directly</b>. All communication happens through backend APIs.
- * This maintains clean architecture and allows flexible AEP deployment options.
+ * <b>Frontend never talks to AEP directly</b>. All communication happens through backend APIs. This
+ * maintains clean architecture and allows flexible AEP deployment options.
  *
  * @see AepService
  * @see AepConfig

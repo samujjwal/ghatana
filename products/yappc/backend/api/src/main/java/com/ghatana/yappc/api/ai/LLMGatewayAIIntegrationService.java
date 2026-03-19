@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies
+ * Copyright (c) 2025 Ghatana Technologies
  * YAPPC API Module
  */
 package com.ghatana.yappc.api.ai;
@@ -15,15 +15,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Adapter that bridges {@link LLMGateway} to the {@link AIIntegrationService} interface
- * required by {@code CodeGenerationService} and {@code TestGenerationService}.
+ * Adapter that bridges {@link LLMGateway} to the {@link AIIntegrationService} interface required by
+ * {@code CodeGenerationService} and {@code TestGenerationService}.
  *
- * <p>Uses the multi-provider gateway (with cost enforcement, routing, and fallback)
- * as the underlying engine. The synchronous {@link #generateCode(String)} method blocks
- * the calling thread and must only be called from within a {@code Promise.ofBlocking}
- * context (as both consumer services already do).
+ * <p>Uses the multi-provider gateway (with cost enforcement, routing, and fallback) as the
+ * underlying engine. The synchronous {@link #generateCode(String)} method blocks the calling thread
+ * and must only be called from within a {@code Promise.ofBlocking} context (as both consumer
+ * services already do).
  *
  * <p><b>Calling pattern</b>
+ *
  * <pre>{@code
  * // Already inside Promise.ofBlocking — blocking is safe:
  * String code = aiService.generateCode(prompt);
@@ -53,15 +54,16 @@ public final class LLMGatewayAIIntegrationService implements AIIntegrationServic
    */
   public LLMGatewayAIIntegrationService(LLMGateway gateway) {
     this.gateway = Objects.requireNonNull(gateway, "gateway");
-    logger.info("LLMGatewayAIIntegrationService created — backed by {}",
+    logger.info(
+        "LLMGatewayAIIntegrationService created — backed by {}",
         gateway.getClass().getSimpleName());
   }
 
   /**
    * Synchronously generate code from the given prompt.
    *
-   * <p><b>MUST</b> be called from a blocking executor context (e.g., inside
-   * {@code Promise.ofBlocking(executor, () -> aiService.generateCode(prompt))}).
+   * <p><b>MUST</b> be called from a blocking executor context (e.g., inside {@code
+   * Promise.ofBlocking(executor, () -> aiService.generateCode(prompt))}).
    *
    * @param prompt the code-generation prompt
    * @return the generated code text, or an error message on failure
@@ -70,22 +72,20 @@ public final class LLMGatewayAIIntegrationService implements AIIntegrationServic
   public String generateCode(String prompt) {
     Objects.requireNonNull(prompt, "prompt cannot be null");
     try {
-      CompletionRequest request = CompletionRequest.builder()
-          .messages(List.of(
-              ChatMessage.system(
-                  "You are an expert Java/TypeScript code generator. "
-                  + "Generate production-quality, well-documented code. "
-                  + "When generating multiple files, separate them with '// FILE: <filename>' markers."),
-              ChatMessage.user(prompt)
-          ))
-          .maxTokens(CODE_GEN_MAX_TOKENS)
-          .temperature(0.2) // low temperature for deterministic code generation
-          .build();
+      CompletionRequest request =
+          CompletionRequest.builder()
+              .messages(
+                  List.of(
+                      ChatMessage.system(
+                          "You are an expert Java/TypeScript code generator. "
+                              + "Generate production-quality, well-documented code. "
+                              + "When generating multiple files, separate them with '// FILE: <filename>' markers."),
+                      ChatMessage.user(prompt)))
+              .maxTokens(CODE_GEN_MAX_TOKENS)
+              .temperature(0.2) // low temperature for deterministic code generation
+              .build();
 
-      return gateway.complete(request)
-          .toCompletableFuture()
-          .get()
-          .getText();
+      return gateway.complete(request).toCompletableFuture().get().getText();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       logger.error("Code generation interrupted", e);
@@ -105,11 +105,12 @@ public final class LLMGatewayAIIntegrationService implements AIIntegrationServic
   @Override
   public Promise<String> complete(String prompt) {
     Objects.requireNonNull(prompt, "prompt cannot be null");
-    CompletionRequest request = CompletionRequest.builder()
-        .messages(List.of(ChatMessage.user(prompt)))
-        .maxTokens(CODE_GEN_MAX_TOKENS)
-        .temperature(0.3)
-        .build();
+    CompletionRequest request =
+        CompletionRequest.builder()
+            .messages(List.of(ChatMessage.user(prompt)))
+            .maxTokens(CODE_GEN_MAX_TOKENS)
+            .temperature(0.3)
+            .build();
 
     return gateway.complete(request).map(result -> result.getText());
   }

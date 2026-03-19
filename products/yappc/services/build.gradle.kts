@@ -6,7 +6,7 @@ plugins {
 group = "com.ghatana.products.yappc"
 version = "2026.3.1-SNAPSHOT"
 
-description = "YAPPC Services - Unified services module (merged: ai, api, domain, infrastructure, lifecycle, scaffold)"
+description = "YAPPC Services - Integration test aggregator (bounded contexts: domain, infrastructure, lifecycle, scaffold)"
 
 java {
     toolchain {
@@ -46,6 +46,12 @@ dependencies {
     implementation(project(":platform:java:testing"))
     
     // YAPPC modules
+    // ===== Services bounded-context sub-modules =====
+    implementation(project(":products:yappc:services:domain"))
+    implementation(project(":products:yappc:services:infrastructure"))
+    implementation(project(":products:yappc:services:lifecycle"))
+    implementation(project(":products:yappc:services:scaffold"))
+
     implementation(project(":products:yappc:backend:api"))
     implementation(project(":products:yappc:platform"))
     implementation(project(":products:yappc:libs:java:yappc-domain"))
@@ -84,9 +90,9 @@ dependencies {
     implementation("org.postgresql:postgresql:42.7.1")
     implementation("com.zaxxer:HikariCP:5.1.0")
     
-    // GraphQL (aligned with backend:api)
-    implementation("com.graphql-java:graphql-java:21.5")
-    implementation("com.graphql-java:graphql-java-extended-scalars:21.0")
+    // GraphQL
+    implementation(libs.graphql.java)
+    implementation(libs.graphql.extended.scalars)
 
     // gRPC (from services:api)
     implementation(libs.grpc.stub)
@@ -99,11 +105,11 @@ dependencies {
     implementation("jakarta.validation:jakarta.validation-api:3.0.2")
     implementation("org.hibernate.validator:hibernate-validator:8.0.1.Final")
 
-    // JSON Schema Validation (from services:scaffold)
-    implementation("com.networknt:json-schema-validator:1.3.3")
+    // JSON Schema Validation
+    implementation(libs.networknt.validator)
     
     // Docker (for runtime build execution)
-    implementation("com.github.docker-java:docker-java:3.3.4")
+    implementation(libs.docker.java)
     // Testcontainers for integration tests only (not production classpath)
     testImplementation("org.testcontainers:testcontainers:1.19.3")
     testImplementation("org.testcontainers:postgresql:1.19.3")

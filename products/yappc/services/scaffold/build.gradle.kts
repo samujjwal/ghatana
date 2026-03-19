@@ -41,7 +41,7 @@ dependencies {
     implementation(libs.jackson.datatype.jsr310)
 
     // JSON Schema Validation
-    implementation("com.networknt:json-schema-validator:1.3.3")
+    implementation(libs.networknt.validator)
 
     // Logging
     implementation(libs.slf4j.api)

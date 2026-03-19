@@ -6,11 +6,11 @@ package com.ghatana.yappc.api.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.ai.llm.ChatMessage;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
+import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.yappc.api.domain.AISuggestion.SuggestionType;
 import io.activej.promise.Promise;
 import java.util.*;

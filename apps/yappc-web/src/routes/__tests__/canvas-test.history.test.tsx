@@ -24,7 +24,7 @@ import {
   markSavePending,
   type DocumentVersion,
   type DocumentTemplate,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 /**

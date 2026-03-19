@@ -37,7 +37,8 @@ public class ArchitectureController {
         .then(
             ctx -> {
               logger.info("Analyzing architecture impact for tenant: {}", ctx.tenantId());
-              return architectureAnalysisService.analyzeImpact(ctx.tenantId())
+              return architectureAnalysisService
+                  .analyzeImpact(ctx.tenantId())
                   .map(response -> ApiResponse.ok(response));
             })
         .then(response -> Promise.of(response), e -> Promise.of(ApiResponse.fromException(e)));
@@ -49,7 +50,8 @@ public class ArchitectureController {
         .then(
             ctx -> {
               logger.info("Getting dependency graph for tenant: {}", ctx.tenantId());
-              return architectureAnalysisService.getDependencies(ctx.tenantId())
+              return architectureAnalysisService
+                  .getDependencies(ctx.tenantId())
                   .map(response -> ApiResponse.ok(response));
             })
         .then(response -> Promise.of(response), e -> Promise.of(ApiResponse.fromException(e)));
@@ -61,7 +63,8 @@ public class ArchitectureController {
         .then(
             ctx -> {
               logger.info("Getting tech debt analysis for tenant: {}", ctx.tenantId());
-              return architectureAnalysisService.getTechDebt(ctx.tenantId())
+              return architectureAnalysisService
+                  .getTechDebt(ctx.tenantId())
                   .map(response -> ApiResponse.ok(response));
             })
         .then(response -> Promise.of(response), e -> Promise.of(ApiResponse.fromException(e)));
@@ -73,7 +76,8 @@ public class ArchitectureController {
         .then(
             ctx -> {
               logger.info("Getting pattern warnings for tenant: {}", ctx.tenantId());
-              return architectureAnalysisService.getPatternWarnings(ctx.tenantId())
+              return architectureAnalysisService
+                  .getPatternWarnings(ctx.tenantId())
                   .map(response -> ApiResponse.ok(response));
             })
         .then(response -> Promise.of(response), e -> Promise.of(ApiResponse.fromException(e)));
@@ -85,8 +89,10 @@ public class ArchitectureController {
         .then(
             ctx -> {
               logger.info("Simulating change impact for tenant: {}", ctx.tenantId());
-              return architectureAnalysisService.simulateChange(ctx.tenantId())
+              return architectureAnalysisService
+                  .simulateChange(ctx.tenantId())
                   .map(ApiResponse::ok);
             })
         .then(response -> Promise.of(response), e -> Promise.of(ApiResponse.fromException(e)));
-  }}
+  }
+}

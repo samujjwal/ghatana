@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("AuditTrailStore — Integration Tests")
 class PostgresAuditTrailStoreTest extends EventloopTestBase {
 

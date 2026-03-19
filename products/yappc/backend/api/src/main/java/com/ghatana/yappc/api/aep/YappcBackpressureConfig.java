@@ -1,25 +1,25 @@
 /*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC API Module - AEP Integration
+ * YAPPC API Module
  */
 package com.ghatana.yappc.api.aep;
 
 import com.ghatana.aep.operator.BackpressureStrategy;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * YAPPC Backpressure Configuration - Per-agent-type backpressure settings.
  *
  * <p><b>Purpose</b><br>
- * Configures backpressure strategies and buffer sizes for different agent categories
- * in YAPPC. Critical agents (security, governance) get BLOCK strategy, while
- * analytics agents get DROP_OLDEST to prioritize fresh data.
+ * Configures backpressure strategies and buffer sizes for different agent categories in YAPPC.
+ * Critical agents (security, governance) get BLOCK strategy, while analytics agents get DROP_OLDEST
+ * to prioritize fresh data.
  *
  * <p><b>Default Strategies by Agent Category</b><br>
+ *
  * <pre>
  * Security/Governance (sentinel, release-governance): BLOCK — never drop security events
  * Orchestrators (debug-orchestrator, deploy-orchestrator): DROP_OLDEST — prioritize recent
@@ -29,15 +29,13 @@ import java.util.Objects;
  * </pre>
  *
  * <p><b>Configuration</b><br>
- * Can be loaded from YAML or constructed programmatically. Environment overrides
- * supported for buffer sizes via AEP_BUFFER_SIZE_{CATEGORY} variables.
+ * Can be loaded from YAML or constructed programmatically. Environment overrides supported for
+ * buffer sizes via AEP_BUFFER_SIZE_{CATEGORY} variables.
  *
  * @see YappcAgentEventRouter
  * @see BackpressureStrategy
- *
  * @author Ghatana AI Platform
  * @since 2.0.0
-  *
  * @doc.type class
  * @doc.purpose yappc backpressure config
  * @doc.layer product
@@ -48,17 +46,10 @@ public class YappcBackpressureConfig {
   private final Map<String, AgentBackpressureSettings> settingsByCategory;
   private final AgentBackpressureSettings defaultSettings;
 
-  /**
-   * Backpressure settings for a specific agent or category.
-   */
+  /** Backpressure settings for a specific agent or category. */
   public record AgentBackpressureSettings(
-      @NotNull BackpressureStrategy strategy,
-      int bufferSize,
-      boolean enableMetrics
-  ) {
-    /**
-     * Creates settings with validation.
-     */
+      @NotNull BackpressureStrategy strategy, int bufferSize, boolean enableMetrics) {
+    /** Creates settings with validation. */
     public AgentBackpressureSettings {
       Objects.requireNonNull(strategy, "strategy");
       if (bufferSize <= 0) {
@@ -69,9 +60,10 @@ public class YappcBackpressureConfig {
 
   private YappcBackpressureConfig(Builder builder) {
     this.settingsByCategory = new HashMap<>(builder.settingsByCategory);
-    this.defaultSettings = builder.defaultSettings != null
-        ? builder.defaultSettings
-        : new AgentBackpressureSettings(BackpressureStrategy.DROP_LATEST, 1024, true);
+    this.defaultSettings =
+        builder.defaultSettings != null
+            ? builder.defaultSettings
+            : new AgentBackpressureSettings(BackpressureStrategy.DROP_LATEST, 1024, true);
   }
 
   /**
@@ -107,43 +99,49 @@ public class YappcBackpressureConfig {
   public static YappcBackpressureConfig createDefault() {
     return builder()
         // Security/Governance: BLOCK — never drop critical events
-        .withCategory("security",
-            new AgentBackpressureSettings(BackpressureStrategy.BLOCK, 2048, true))
-        .withCategory("governance",
-            new AgentBackpressureSettings(BackpressureStrategy.BLOCK, 1024, true))
+        .withCategory(
+            "security", new AgentBackpressureSettings(BackpressureStrategy.BLOCK, 2048, true))
+        .withCategory(
+            "governance", new AgentBackpressureSettings(BackpressureStrategy.BLOCK, 1024, true))
 
         // Orchestrators: DROP_OLDEST — prioritize recent state
-        .withCategory("orchestration",
+        .withCategory(
+            "orchestration",
             new AgentBackpressureSettings(BackpressureStrategy.DROP_OLDEST, 4096, true))
-        .withCategory("debugging",
+        .withCategory(
+            "debugging",
             new AgentBackpressureSettings(BackpressureStrategy.DROP_OLDEST, 2048, true))
 
         // Workers: DROP_LATEST — bounded load
-        .withCategory("worker",
-            new AgentBackpressureSettings(BackpressureStrategy.DROP_LATEST, 1024, true))
-        .withCategory("code-generation",
+        .withCategory(
+            "worker", new AgentBackpressureSettings(BackpressureStrategy.DROP_LATEST, 1024, true))
+        .withCategory(
+            "code-generation",
             new AgentBackpressureSettings(BackpressureStrategy.DROP_LATEST, 512, true))
-        .withCategory("testing",
-            new AgentBackpressureSettings(BackpressureStrategy.DROP_LATEST, 512, true))
+        .withCategory(
+            "testing", new AgentBackpressureSettings(BackpressureStrategy.DROP_LATEST, 512, true))
 
         // Analytics: DROP_OLDEST — fresh data prioritized
-        .withCategory("analytics",
+        .withCategory(
+            "analytics",
             new AgentBackpressureSettings(BackpressureStrategy.DROP_OLDEST, 1024, true))
-        .withCategory("improvement",
+        .withCategory(
+            "improvement",
             new AgentBackpressureSettings(BackpressureStrategy.DROP_OLDEST, 512, true))
 
         // Integration: OVERFLOW_TO_DLQ — preserve events
-        .withCategory("integration",
+        .withCategory(
+            "integration",
             new AgentBackpressureSettings(BackpressureStrategy.OVERFLOW_TO_DLQ, 2048, true))
-        .withCategory("notification",
+        .withCategory(
+            "notification",
             new AgentBackpressureSettings(BackpressureStrategy.OVERFLOW_TO_DLQ, 1024, true))
 
         // Deployment: BLOCK — ensure deployment events processed
-        .withCategory("deployment",
-            new AgentBackpressureSettings(BackpressureStrategy.BLOCK, 1024, true))
-        .withCategory("release",
-            new AgentBackpressureSettings(BackpressureStrategy.BLOCK, 512, true))
-
+        .withCategory(
+            "deployment", new AgentBackpressureSettings(BackpressureStrategy.BLOCK, 1024, true))
+        .withCategory(
+            "release", new AgentBackpressureSettings(BackpressureStrategy.BLOCK, 512, true))
         .withDefaultSettings(
             new AgentBackpressureSettings(BackpressureStrategy.DROP_LATEST, 1024, true))
         .build();
@@ -195,9 +193,7 @@ public class YappcBackpressureConfig {
     return "default";
   }
 
-  /**
-   * Builder for YappcBackpressureConfig.
-   */
+  /** Builder for YappcBackpressureConfig. */
   public static class Builder {
     private final Map<String, AgentBackpressureSettings> settingsByCategory = new HashMap<>();
     private AgentBackpressureSettings defaultSettings;
@@ -211,8 +207,7 @@ public class YappcBackpressureConfig {
      */
     @NotNull
     public Builder withCategory(
-        @NotNull String category,
-        @NotNull AgentBackpressureSettings settings) {
+        @NotNull String category, @NotNull AgentBackpressureSettings settings) {
       settingsByCategory.put(category.toLowerCase(), settings);
       return this;
     }

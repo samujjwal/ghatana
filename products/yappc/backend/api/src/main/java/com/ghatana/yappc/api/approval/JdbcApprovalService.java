@@ -28,20 +28,20 @@ import org.slf4j.LoggerFactory;
  * JDBC-backed approval service that persists workflow state to PostgreSQL.
  *
  * <p><b>Purpose</b><br>
- * Extends {@link ApprovalService} to add durability: every state mutation is
- * persisted to the {@code approval_workflows} table immediately after the
- * in-memory state machine has been updated. On construction the service
- * rehydrates all existing workflows from the DB so no state is lost on restart.
+ * Extends {@link ApprovalService} to add durability: every state mutation is persisted to the
+ * {@code approval_workflows} table immediately after the in-memory state machine has been updated.
+ * On construction the service rehydrates all existing workflows from the DB so no state is lost on
+ * restart.
  *
  * <p><b>Serialization</b><br>
- * Each workflow (including all stages and approval records) is serialized to
- * a single JSONB column using Jackson. Reconstruction is done manually because
- * the inner domain classes are package-private.
+ * Each workflow (including all stages and approval records) is serialized to a single JSONB column
+ * using Jackson. Reconstruction is done manually because the inner domain classes are
+ * package-private.
  *
  * <p><b>Thread Safety</b><br>
- * All mutating operations are atomic at the service level: the DB write occurs
- * immediately after the in-memory update within the same method call. This is
- * sufficient for a single-node ActiveJ deployment.
+ * All mutating operations are atomic at the service level: the DB write occurs immediately after
+ * the in-memory update within the same method call. This is sufficient for a single-node ActiveJ
+ * deployment.
  *
  * @doc.type class
  * @doc.purpose JDBC-backed durable approval service
@@ -59,7 +59,7 @@ public class JdbcApprovalService extends ApprovalService {
   /**
    * Creates a JdbcApprovalService and loads pre-existing workflows from the DB.
    *
-   * @param dataSource   HikariCP DataSource
+   * @param dataSource HikariCP DataSource
    * @param objectMapper Jackson mapper for JSONB serialization
    */
   public JdbcApprovalService(DataSource dataSource, ObjectMapper objectMapper) {
@@ -81,8 +81,8 @@ public class JdbcApprovalService extends ApprovalService {
   }
 
   @Override
-  public WorkflowResponse submitDecision(String tenantId, String userId,
-      String workflowId, SubmitDecisionRequest req) {
+  public WorkflowResponse submitDecision(
+      String tenantId, String userId, String workflowId, SubmitDecisionRequest req) {
     WorkflowResponse response = super.submitDecision(tenantId, userId, workflowId, req);
     persistWorkflow(tenantId, workflowId);
     return response;
@@ -100,8 +100,8 @@ public class JdbcApprovalService extends ApprovalService {
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
-   * Retrieves the workflow from the in-memory store (via package-private access)
-   * and upserts it into the DB.
+   * Retrieves the workflow from the in-memory store (via package-private access) and upserts it
+   * into the DB.
    */
   private void persistWorkflow(String tenantId, String workflowId) {
     // Package-private access — JdbcApprovalService is in the same package
@@ -118,7 +118,8 @@ public class JdbcApprovalService extends ApprovalService {
 
     try {
       String json = serializeWorkflow(wf);
-      String sql = """
+      String sql =
+          """
           INSERT INTO approval_workflows
               (id, tenant_id, state_json, created_at, updated_at)
           VALUES (?, ?, ?::jsonb, ?, ?)
@@ -137,18 +138,22 @@ public class JdbcApprovalService extends ApprovalService {
         ps.executeUpdate();
       }
 
-      logger.debug("Persisted approval workflow id={} tenant={} status={}",
-          workflowId, tenantId, wf.status);
+      logger.debug(
+          "Persisted approval workflow id={} tenant={} status={}", workflowId, tenantId, wf.status);
 
     } catch (Exception e) {
-      logger.error("Failed to persist approval workflow id={} tenant={}: {}",
-          workflowId, tenantId, e.getMessage(), e);
+      logger.error(
+          "Failed to persist approval workflow id={} tenant={}: {}",
+          workflowId,
+          tenantId,
+          e.getMessage(),
+          e);
     }
   }
 
   /**
-   * Loads all workflows from the DB and rehydrates the parent's in-memory store.
-   * Called once during construction.
+   * Loads all workflows from the DB and rehydrates the parent's in-memory store. Called once during
+   * construction.
    */
   private void rehydrateFromDb() {
     String sql = "SELECT tenant_id, state_json FROM approval_workflows";
@@ -163,8 +168,7 @@ public class JdbcApprovalService extends ApprovalService {
         try {
           Workflow wf = deserializeWorkflow(json);
           // Package-private access to parent's store
-          store.computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>())
-              .put(wf.id, wf);
+          store.computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>()).put(wf.id, wf);
           count++;
         } catch (Exception e) {
           logger.warn("Failed to rehydrate approval workflow from DB: {}", e.getMessage());
@@ -259,13 +263,13 @@ public class JdbcApprovalService extends ApprovalService {
       stages.add(stage);
     }
 
-    Workflow wf = new Workflow(id, tenantId, resourceType, resourceId,
-        workflowType, initiator, stages);
+    Workflow wf =
+        new Workflow(id, tenantId, resourceType, resourceId, workflowType, initiator, stages);
 
     // Restore mutable state (package-private fields, same package access)
     wf.status = Status.valueOf(statusStr);
     wf.currentStageIndex = currentStageIndex;
-    wf.createdAt = createdAt;  // restore original creation time (field is non-final for rehydration)
+    wf.createdAt = createdAt; // restore original creation time (field is non-final for rehydration)
     wf.updatedAt = updatedAt;
 
     return wf;

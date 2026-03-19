@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC API Module - AEP Integration
+ * YAPPC API Module
  */
 package com.ghatana.yappc.api.aep;
 
@@ -24,7 +24,6 @@ import java.util.Objects;
  * </ul>
  *
  * @see AepMode
-  *
  * @doc.type class
  * @doc.purpose aep config
  * @doc.layer product
@@ -60,10 +59,7 @@ public class AepConfig {
     }
 
     if (modeEnv != null) {
-      mode =
-          modeEnv.equalsIgnoreCase("service")
-              ? AepMode.SERVICE
-              : AepMode.LIBRARY;
+      mode = modeEnv.equalsIgnoreCase("service") ? AepMode.SERVICE : AepMode.LIBRARY;
     }
 
     Builder builder = new Builder().mode(mode);

@@ -2,7 +2,7 @@ import { Box, Chip, Stack, Typography } from '@ghatana/design-system';
 import { Divider, InteractiveList as List, ListItem, ListItemText, Surface as Paper, type PaperProps } from '@ghatana/design-system';
 import { forwardRef, memo, useCallback, useMemo } from 'react';
 
-import type { FeatureStories } from '@ghatana/canvas';
+import type { FeatureStories } from '@yappc/canvas';
 
 /**
  *

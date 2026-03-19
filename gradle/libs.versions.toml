@@ -18,7 +18,7 @@ resilience4j = "2.1.0"
 vertx = "4.5.8"
 
 # JSON Schema Validator
-networknt-json-schema = "1.0.86"
+networknt-json-schema = "1.5.9"
 
 # Playwright
 playwright = "1.43.0"
@@ -149,8 +149,9 @@ wiremock = "2.35.0"
 jackson-datatype-protobuf = "0.9.15"
 
 # Additional commonly used libraries found across modules
-graphql-java = "21.3"
+graphql-java = "21.5"
 graphql-java-extended-scalars = "21.0"
+docker-java = "3.3.6"
 graphql-java-tools = "13.1.0"
 picocli = "4.7.6"
 jline = "3.24.1"
@@ -542,7 +543,12 @@ grpc-auth = { module = "io.grpc:grpc-auth", version.ref = "grpc" }
 grpc-protobuf-lite = { module = "io.grpc:grpc-protobuf-lite", version.ref = "grpc" }
 
 # NetworkNT
-networknt-validator = { module = "com.networknt:json-schema-validator", version = "1.4.0" }
+networknt-validator = { module = "com.networknt:json-schema-validator", version.ref = "networknt-json-schema" }
+
+# Docker Java SDK
+docker-java = { module = "com.github.docker-java:docker-java", version.ref = "docker-java" }
+docker-java-core = { module = "com.github.docker-java:docker-java-core", version.ref = "docker-java" }
+docker-java-transport-httpclient5 = { module = "com.github.docker-java:docker-java-transport-httpclient5", version.ref = "docker-java" }
 
 # Resilience4j
 resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "resilience4j" }

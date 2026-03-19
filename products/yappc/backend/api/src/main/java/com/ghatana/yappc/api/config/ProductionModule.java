@@ -5,125 +5,109 @@
 package com.ghatana.yappc.api.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.platform.core.util.JsonUtils;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.agent.catalog.CatalogRegistry;
+import com.ghatana.agent.registry.YamlAgentCatalogLoader;
 import com.ghatana.ai.llm.DefaultLLMGateway;
 import com.ghatana.ai.llm.LLMConfiguration;
 import com.ghatana.ai.llm.ToolAwareAnthropicCompletionService;
 import com.ghatana.ai.llm.ToolAwareOpenAICompletionService;
+import com.ghatana.datacloud.application.version.VersionService;
+import com.ghatana.datacloud.entity.version.VersionRecord;
 import com.ghatana.platform.audit.AuditQueryService;
 import com.ghatana.platform.audit.AuditService;
-import com.ghatana.yappc.api.audit.JdbcAuditService;
+import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.security.rbac.SyncAuthorizationService;
+import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
 import com.ghatana.yappc.api.aep.AepClient;
 import com.ghatana.yappc.api.aep.AepClientFactory;
 import com.ghatana.yappc.api.aep.AepConfig;
 import com.ghatana.yappc.api.aep.AepException;
 import com.ghatana.yappc.api.aep.AepService;
-import com.ghatana.yappc.api.outbox.OutboxRelayService;
-import com.ghatana.yappc.api.service.LifecycleEventEmitter;
-import com.ghatana.platform.security.rbac.SyncAuthorizationService;
-import com.ghatana.datacloud.application.version.VersionService;
-import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.yappc.api.repository.AISuggestionRepository;
-import com.ghatana.yappc.api.repository.BootstrappingSessionRepository;
-import com.ghatana.yappc.api.repository.ProjectRepository;
-import com.ghatana.yappc.api.repository.RequirementRepository;
-import com.ghatana.yappc.api.repository.SprintRepository;
-import com.ghatana.yappc.api.repository.StoryRepository;
-import com.ghatana.yappc.api.repository.WorkspaceRepository;
-// Collaboration repositories
-import com.ghatana.yappc.api.repository.TeamRepository;
-import com.ghatana.yappc.api.repository.CodeReviewRepository;
-import com.ghatana.yappc.api.repository.NotificationRepository;
-import com.ghatana.yappc.api.repository.ChannelRepository;
-// Operations repositories
-import com.ghatana.yappc.api.repository.MetricRepository;
-import com.ghatana.yappc.api.repository.AlertRepository;
-import com.ghatana.yappc.api.repository.IncidentRepository;
-import com.ghatana.yappc.api.repository.LogEntryRepository;
-import com.ghatana.yappc.api.repository.TraceRepository;
-// Security repositories
-import com.ghatana.yappc.api.repository.VulnerabilityRepository;
-import com.ghatana.yappc.api.repository.SecurityScanRepository;
-import com.ghatana.yappc.api.repository.ComplianceRepository;
-// JDBC repositories
-import com.ghatana.yappc.api.repository.jdbc.JdbcBootstrappingSessionRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcProjectRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcRequirementRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcSprintRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcStoryRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcCodeReviewRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcMetricRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcAlertRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcIncidentRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcLogEntryRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcTraceRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcVulnerabilityRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcSecurityScanRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcComplianceRepository;
-// Core services
-import com.ghatana.yappc.api.service.AISuggestionService;
-import com.ghatana.yappc.api.service.ArchitectureAnalysisService;
-import com.ghatana.yappc.api.service.BootstrappingService;
-import com.ghatana.yappc.api.service.ConfigLoader;
-import com.ghatana.yappc.api.service.ConfigService;
-import com.ghatana.yappc.api.service.DashboardService;
-import com.ghatana.yappc.api.service.ProjectService;
-import com.ghatana.yappc.api.service.RequirementService;
-import com.ghatana.yappc.api.service.SprintService;
-import com.ghatana.yappc.api.service.StoryService;
-import com.ghatana.yappc.api.service.WorkspaceService;
-// Collaboration services
-import com.ghatana.yappc.api.service.TeamService;
-import com.ghatana.yappc.api.service.CodeReviewService;
-import com.ghatana.yappc.api.service.NotificationService;
-// Operations services
-import com.ghatana.yappc.api.service.MetricService;
-import com.ghatana.yappc.api.service.AlertService;
-import com.ghatana.yappc.api.service.IncidentService;
-import com.ghatana.yappc.api.service.LogService;
-import com.ghatana.yappc.api.service.TraceService;
-// Security services
-import com.ghatana.yappc.api.service.VulnerabilityService;
-import com.ghatana.yappc.api.service.SecurityScanService;
-import com.ghatana.yappc.api.service.ComplianceService;
-// Event store
-import com.ghatana.yappc.api.events.EventRepository;
-import com.ghatana.yappc.api.events.EventPublisher;
-import com.ghatana.yappc.api.repository.jdbc.JdbcEventRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcRolePermissionRegistry;
-import com.ghatana.yappc.api.repository.jdbc.JdbcVersionRecord;
-import com.ghatana.yappc.api.repository.jdbc.JdbcWorkflowStateStore;
-import com.ghatana.datacloud.entity.version.VersionRecord;
-import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
-// Agent registry
-import com.ghatana.yappc.api.repository.AgentRegistryRepository;
-import com.ghatana.yappc.api.repository.jdbc.JdbcAgentRegistryRepository;
-import com.ghatana.yappc.api.service.AgentRegistryService;
-// Agent catalog
-import com.ghatana.agent.catalog.CatalogRegistry;
-import com.ghatana.agent.catalog.loader.CatalogLoader;
-import com.ghatana.agent.registry.YamlAgentCatalogLoader;
-// Controllers
+import com.ghatana.yappc.api.audit.JdbcAuditService;
 import com.ghatana.yappc.api.bootstrapping.BootstrappingController;
-import com.ghatana.yappc.api.development.SprintController;
-import com.ghatana.yappc.api.development.StoryController;
-import com.ghatana.yappc.api.initialization.ProjectController;
-// Collaboration controllers
-import com.ghatana.yappc.api.collaboration.TeamController;
 import com.ghatana.yappc.api.collaboration.CodeReviewController;
 import com.ghatana.yappc.api.collaboration.NotificationController;
-// Operations controllers
-import com.ghatana.yappc.api.operations.MetricController;
+import com.ghatana.yappc.api.collaboration.TeamController;
+import com.ghatana.yappc.api.development.SprintController;
+import com.ghatana.yappc.api.development.StoryController;
+import com.ghatana.yappc.api.events.EventPublisher;
+import com.ghatana.yappc.api.events.EventRepository;
+import com.ghatana.yappc.api.initialization.ProjectController;
 import com.ghatana.yappc.api.operations.AlertController;
 import com.ghatana.yappc.api.operations.IncidentController;
 import com.ghatana.yappc.api.operations.LogController;
+import com.ghatana.yappc.api.operations.MetricController;
 import com.ghatana.yappc.api.operations.TraceController;
-// Security controllers
-import com.ghatana.yappc.api.security.VulnerabilityController;
-import com.ghatana.yappc.api.security.SecurityScanController;
+import com.ghatana.yappc.api.outbox.OutboxRelayService;
+import com.ghatana.yappc.api.repository.AISuggestionRepository;
+import com.ghatana.yappc.api.repository.AgentRegistryRepository;
+import com.ghatana.yappc.api.repository.AlertRepository;
+import com.ghatana.yappc.api.repository.BootstrappingSessionRepository;
+import com.ghatana.yappc.api.repository.ChannelRepository;
+import com.ghatana.yappc.api.repository.CodeReviewRepository;
+import com.ghatana.yappc.api.repository.ComplianceRepository;
+import com.ghatana.yappc.api.repository.IncidentRepository;
+import com.ghatana.yappc.api.repository.LogEntryRepository;
+import com.ghatana.yappc.api.repository.MetricRepository;
+import com.ghatana.yappc.api.repository.NotificationRepository;
+import com.ghatana.yappc.api.repository.ProjectRepository;
+import com.ghatana.yappc.api.repository.RequirementRepository;
+import com.ghatana.yappc.api.repository.SecurityScanRepository;
+import com.ghatana.yappc.api.repository.SprintRepository;
+import com.ghatana.yappc.api.repository.StoryRepository;
+import com.ghatana.yappc.api.repository.TeamRepository;
+import com.ghatana.yappc.api.repository.TraceRepository;
+import com.ghatana.yappc.api.repository.VulnerabilityRepository;
+import com.ghatana.yappc.api.repository.WorkspaceRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcAgentRegistryRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcAlertRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcBootstrappingSessionRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcCodeReviewRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcComplianceRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcEventRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcIncidentRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcLogEntryRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcMetricRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcProjectRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcRequirementRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcRolePermissionRegistry;
+import com.ghatana.yappc.api.repository.jdbc.JdbcSecurityScanRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcSprintRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcStoryRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcTraceRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcVersionRecord;
+import com.ghatana.yappc.api.repository.jdbc.JdbcVulnerabilityRepository;
+import com.ghatana.yappc.api.repository.jdbc.JdbcWorkflowStateStore;
 import com.ghatana.yappc.api.security.ComplianceController;
+import com.ghatana.yappc.api.security.SecurityScanController;
+import com.ghatana.yappc.api.security.VulnerabilityController;
+import com.ghatana.yappc.api.service.AISuggestionService;
+import com.ghatana.yappc.api.service.AgentRegistryService;
+import com.ghatana.yappc.api.service.AlertService;
+import com.ghatana.yappc.api.service.ArchitectureAnalysisService;
+import com.ghatana.yappc.api.service.BootstrappingService;
+import com.ghatana.yappc.api.service.CodeReviewService;
+import com.ghatana.yappc.api.service.ComplianceService;
+import com.ghatana.yappc.api.service.ConfigLoader;
+import com.ghatana.yappc.api.service.ConfigService;
+import com.ghatana.yappc.api.service.DashboardService;
+import com.ghatana.yappc.api.service.IncidentService;
+import com.ghatana.yappc.api.service.LifecycleEventEmitter;
+import com.ghatana.yappc.api.service.LogService;
+import com.ghatana.yappc.api.service.MetricService;
+import com.ghatana.yappc.api.service.NotificationService;
+import com.ghatana.yappc.api.service.ProjectService;
+import com.ghatana.yappc.api.service.RequirementService;
+import com.ghatana.yappc.api.service.SecurityScanService;
+import com.ghatana.yappc.api.service.SprintService;
+import com.ghatana.yappc.api.service.StoryService;
+import com.ghatana.yappc.api.service.TeamService;
+import com.ghatana.yappc.api.service.TraceService;
+import com.ghatana.yappc.api.service.VulnerabilityService;
+import com.ghatana.yappc.api.service.WorkspaceService;
 import io.activej.dns.DnsClient;
 import io.activej.dns.IDnsClient;
 import io.activej.eventloop.Eventloop;
@@ -199,8 +183,8 @@ public class ProductionModule extends SharedBaseModule {
   /**
    * Provides the durable JDBC-backed audit service (singleton).
    *
-   * <p>Implements both {@link AuditService} (writes) and {@link AuditQueryService} (reads)
-   * so consumers that need either or both get the same instance.
+   * <p>Implements both {@link AuditService} (writes) and {@link AuditQueryService} (reads) so
+   * consumers that need either or both get the same instance.
    *
    * @doc.layer product
    * @doc.pattern Repository
@@ -224,14 +208,16 @@ public class ProductionModule extends SharedBaseModule {
   }
 
   /**
-   * Provides the unified health aggregation controller (Observability 6.6).
-   * Agent count defaults to 228 (number of YAPPC SDLC specialist agents).
+   * Provides the unified health aggregation controller (Observability 6.6). Agent count defaults to
+   * 228 (number of YAPPC SDLC specialist agents).
    */
   @Provides
-  com.ghatana.yappc.api.observability.HealthAggregationController healthAggregationController(DataSource dataSource) {
+  com.ghatana.yappc.api.observability.HealthAggregationController healthAggregationController(
+      DataSource dataSource) {
     int agentCount = Integer.parseInt(System.getProperty("yappc.agents.count", "228"));
     logger.info("Creating HealthAggregationController (agentCount={})", agentCount);
-    return new com.ghatana.yappc.api.observability.HealthAggregationController(dataSource, agentCount);
+    return new com.ghatana.yappc.api.observability.HealthAggregationController(
+        dataSource, agentCount);
   }
 
   /**
@@ -294,8 +280,8 @@ public class ProductionModule extends SharedBaseModule {
    * Provides and starts the transactional outbox relay service.
    *
    * <p>Polls {@code yappc.event_outbox} every 500 ms for {@code PENDING} entries and forwards each
-   * to AEP via {@link AepClient#publishEvent}. Marks entries {@code DELIVERED} on success or
-   * {@code FAILED} with exponential back-off on error.
+   * to AEP via {@link AepClient#publishEvent}. Marks entries {@code DELIVERED} on success or {@code
+   * FAILED} with exponential back-off on error.
    *
    * @doc.type class
    * @doc.purpose Durable domain-event delivery from outbox to AEP
@@ -334,9 +320,9 @@ public class ProductionModule extends SharedBaseModule {
   /**
    * Provides PolicyEngine for governance and compliance enforcement.
    *
-   * <p>When {@code OPA_ENDPOINT} env var is set, delegates to the OPA REST API.
-   * Otherwise falls back to {@link com.ghatana.yappc.api.infrastructure.policy.PermissivePolicyEngine}
-   * which allows all requests with a warning log.
+   * <p>When {@code OPA_ENDPOINT} env var is set, delegates to the OPA REST API. Otherwise falls
+   * back to {@link com.ghatana.yappc.api.infrastructure.policy.PermissivePolicyEngine} which allows
+   * all requests with a warning log.
    *
    * @doc.type class
    * @doc.purpose OPA-backed governance policy enforcement
@@ -364,17 +350,20 @@ public class ProductionModule extends SharedBaseModule {
   @Provides
   AISuggestionRepository aiSuggestionRepository(DataSource dataSource, ObjectMapper objectMapper) {
     logger.info("Creating JDBC-based AISuggestionRepository");
-    return new com.ghatana.yappc.api.repository.jdbc.JdbcAISuggestionRepository(dataSource, objectMapper);
+    return new com.ghatana.yappc.api.repository.jdbc.JdbcAISuggestionRepository(
+        dataSource, objectMapper);
   }
 
   @Provides
   WorkspaceRepository workspaceRepository(DataSource dataSource, ObjectMapper objectMapper) {
     logger.info("Creating JDBC-based WorkspaceRepository");
-    return new com.ghatana.yappc.api.repository.jdbc.JdbcWorkspaceRepository(dataSource, objectMapper);
+    return new com.ghatana.yappc.api.repository.jdbc.JdbcWorkspaceRepository(
+        dataSource, objectMapper);
   }
 
   @Provides
-  BootstrappingSessionRepository bootstrappingSessionRepository(DataSource dataSource, ObjectMapper objectMapper) {
+  BootstrappingSessionRepository bootstrappingSessionRepository(
+      DataSource dataSource, ObjectMapper objectMapper) {
     logger.info("Creating JDBC-based BootstrappingSessionRepository");
     return new JdbcBootstrappingSessionRepository(dataSource, objectMapper);
   }
@@ -414,7 +403,8 @@ public class ProductionModule extends SharedBaseModule {
   @Provides
   NotificationRepository notificationRepository(DataSource dataSource, ObjectMapper objectMapper) {
     logger.info("Creating JDBC NotificationRepository");
-    return new com.ghatana.yappc.api.repository.jdbc.JdbcNotificationRepository(dataSource, objectMapper);
+    return new com.ghatana.yappc.api.repository.jdbc.JdbcNotificationRepository(
+        dataSource, objectMapper);
   }
 
   @Provides
@@ -458,7 +448,8 @@ public class ProductionModule extends SharedBaseModule {
   // ========== Security Repositories (JDBC) ==========
 
   @Provides
-  VulnerabilityRepository vulnerabilityRepository(DataSource dataSource, ObjectMapper objectMapper) {
+  VulnerabilityRepository vulnerabilityRepository(
+      DataSource dataSource, ObjectMapper objectMapper) {
     logger.info("Creating JDBC VulnerabilityRepository");
     return new JdbcVulnerabilityRepository(dataSource, objectMapper);
   }
@@ -499,7 +490,8 @@ public class ProductionModule extends SharedBaseModule {
   /** Provides AISuggestionService with production AuditService. */
   @Provides
   AISuggestionService aiSuggestionService(
-      AISuggestionRepository repository, AuditService auditService,
+      AISuggestionRepository repository,
+      AuditService auditService,
       com.ghatana.ai.llm.LLMGateway llmGateway) {
     logger.info("Creating AISuggestionService with production audit and LLM gateway");
     return new AISuggestionService(repository, auditService, llmGateway);
@@ -523,7 +515,8 @@ public class ProductionModule extends SharedBaseModule {
   /** Provides BootstrappingService for project bootstrapping phase. */
   @Provides
   BootstrappingService bootstrappingService(
-      BootstrappingSessionRepository repository, AuditService auditService,
+      BootstrappingSessionRepository repository,
+      AuditService auditService,
       com.ghatana.ai.llm.LLMGateway llmGateway) {
     logger.info("Creating BootstrappingService with LLM gateway");
     return new BootstrappingService(repository, auditService, llmGateway);
@@ -531,8 +524,7 @@ public class ProductionModule extends SharedBaseModule {
 
   /** Provides ProjectService for project lifecycle management. */
   @Provides
-  ProjectService projectService(
-      ProjectRepository repository, AuditService auditService) {
+  ProjectService projectService(ProjectRepository repository, AuditService auditService) {
     logger.info("Creating ProjectService");
     return new ProjectService(repository, auditService);
   }
@@ -540,8 +532,8 @@ public class ProductionModule extends SharedBaseModule {
   /** Provides SprintService for sprint management. */
   @Provides
   SprintService sprintService(
-      SprintRepository sprintRepository, 
-      StoryRepository storyRepository, 
+      SprintRepository sprintRepository,
+      StoryRepository storyRepository,
       AuditService auditService) {
     logger.info("Creating SprintService");
     return new SprintService(sprintRepository, storyRepository, auditService);
@@ -550,7 +542,8 @@ public class ProductionModule extends SharedBaseModule {
   /** Provides StoryService for story management. */
   @Provides
   StoryService storyService(
-      StoryRepository repository, AuditService auditService,
+      StoryRepository repository,
+      AuditService auditService,
       com.ghatana.ai.llm.LLMGateway llmGateway) {
     logger.info("Creating StoryService with LLM gateway");
     return new StoryService(repository, auditService, llmGateway);
@@ -574,9 +567,7 @@ public class ProductionModule extends SharedBaseModule {
 
   /** Provides CodeReviewService for code reviews. */
   @Provides
-  CodeReviewService codeReviewService(
-      CodeReviewRepository repository, 
-      AuditService auditService) {
+  CodeReviewService codeReviewService(CodeReviewRepository repository, AuditService auditService) {
     logger.info("Creating CodeReviewService");
     return new CodeReviewService(repository, auditService);
   }
@@ -593,7 +584,7 @@ public class ProductionModule extends SharedBaseModule {
   /** Provides AlertService for alert management. */
   @Provides
   AlertService alertService(
-      AlertRepository repository, 
+      AlertRepository repository,
       AuditService auditService,
       NotificationService notificationService) {
     logger.info("Creating AlertService");
@@ -603,7 +594,7 @@ public class ProductionModule extends SharedBaseModule {
   /** Provides IncidentService for incident management. */
   @Provides
   IncidentService incidentService(
-      IncidentRepository repository, 
+      IncidentRepository repository,
       AuditService auditService,
       NotificationService notificationService) {
     logger.info("Creating IncidentService");
@@ -629,7 +620,7 @@ public class ProductionModule extends SharedBaseModule {
   /** Provides VulnerabilityService for vulnerability management. */
   @Provides
   VulnerabilityService vulnerabilityService(
-      VulnerabilityRepository repository, 
+      VulnerabilityRepository repository,
       AuditService auditService,
       NotificationService notificationService) {
     logger.info("Creating VulnerabilityService");
@@ -646,8 +637,7 @@ public class ProductionModule extends SharedBaseModule {
 
   /** Provides ComplianceService for compliance management. */
   @Provides
-  ComplianceService complianceService(
-      ComplianceRepository repository, AuditService auditService) {
+  ComplianceService complianceService(ComplianceRepository repository, AuditService auditService) {
     logger.info("Creating ComplianceService");
     return new ComplianceService(repository);
   }
@@ -720,7 +710,7 @@ public class ProductionModule extends SharedBaseModule {
     String secretKey = System.getenv("JWT_SECRET_KEY");
     if (secretKey == null || secretKey.isBlank()) {
       throw new IllegalStateException(
-              "JWT_SECRET_KEY environment variable is required but not set. "
+          "JWT_SECRET_KEY environment variable is required but not set. "
               + "Must be at least 32 characters.");
     }
     long validityMs = 3_600_000L; // 1 hour
@@ -731,9 +721,9 @@ public class ProductionModule extends SharedBaseModule {
   /**
    * Provides local YAPPC JwtTokenProvider for SecurityMiddleware.
    *
-   * <p>Uses the same {@code JWT_SECRET_KEY} as the platform provider so tokens
-   * issued by {@link com.ghatana.yappc.api.auth.AuthenticationService} are
-   * verifiable by {@link com.ghatana.yappc.api.security.SecurityMiddleware}.
+   * <p>Uses the same {@code JWT_SECRET_KEY} as the platform provider so tokens issued by {@link
+   * com.ghatana.yappc.api.auth.AuthenticationService} are verifiable by {@link
+   * com.ghatana.yappc.api.security.SecurityMiddleware}.
    *
    * @doc.type class
    * @doc.purpose YAPPC-scoped JWT token provider for middleware auth
@@ -746,10 +736,10 @@ public class ProductionModule extends SharedBaseModule {
     if (secretKey == null || secretKey.isBlank()) {
       throw new IllegalStateException(
           "JWT_SECRET_KEY environment variable is required but not set. "
-          + "Must be at least 32 characters.");
+              + "Must be at least 32 characters.");
     }
-    long tokenValidityMinutes = 60L;   // 1 hour
-    long refreshValidityDays  = 30L;
+    long tokenValidityMinutes = 60L; // 1 hour
+    long refreshValidityDays = 30L;
     logger.info("Creating YAPPC JwtTokenProvider (validity={}min)", tokenValidityMinutes);
     return new com.ghatana.yappc.api.security.JwtTokenProvider(
         secretKey, tokenValidityMinutes, refreshValidityDays);
@@ -831,7 +821,8 @@ public class ProductionModule extends SharedBaseModule {
   @Provides
   com.ghatana.yappc.ai.requirements.ai.feedback.FeedbackLearningService feedbackLearningService(
       MetricsCollector metricsCollector) {
-    logger.info("Creating FeedbackLearningService with MetricsCollector: {}",
+    logger.info(
+        "Creating FeedbackLearningService with MetricsCollector: {}",
         metricsCollector.getClass().getSimpleName());
     return new com.ghatana.yappc.ai.requirements.ai.feedback.FeedbackLearningService(
         metricsCollector);
@@ -872,24 +863,21 @@ public class ProductionModule extends SharedBaseModule {
 
   /** Provides ProjectController for project endpoints. */
   @Provides
-  ProjectController projectController(
-      ProjectService projectService, ObjectMapper objectMapper) {
+  ProjectController projectController(ProjectService projectService, ObjectMapper objectMapper) {
     logger.info("Creating ProjectController");
     return new ProjectController(projectService, objectMapper);
   }
 
   /** Provides SprintController for sprint endpoints. */
   @Provides
-  SprintController sprintController(
-      SprintService sprintService, ObjectMapper objectMapper) {
+  SprintController sprintController(SprintService sprintService, ObjectMapper objectMapper) {
     logger.info("Creating SprintController");
     return new SprintController(sprintService, objectMapper);
   }
 
   /** Provides StoryController for story endpoints. */
   @Provides
-  StoryController storyController(
-      StoryService storyService, ObjectMapper objectMapper) {
+  StoryController storyController(StoryService storyService, ObjectMapper objectMapper) {
     logger.info("Creating StoryController");
     return new StoryController(storyService, objectMapper);
   }
@@ -1003,7 +991,8 @@ public class ProductionModule extends SharedBaseModule {
 
   /** Provides JDBC-backed agent registry repository. */
   @Provides
-  AgentRegistryRepository agentRegistryRepository(DataSource dataSource, ObjectMapper objectMapper) {
+  AgentRegistryRepository agentRegistryRepository(
+      DataSource dataSource, ObjectMapper objectMapper) {
     logger.info("Creating JdbcAgentRegistryRepository");
     return new JdbcAgentRegistryRepository(dataSource, objectMapper);
   }
@@ -1018,13 +1007,12 @@ public class ProductionModule extends SharedBaseModule {
   // ========== Agent Catalog (boot-time YAML loading) ==========
 
   /**
-   * Provides the YAPPC agent {@link CatalogRegistry} by loading all
-   * {@code agent-catalog.yaml} files at startup.
+   * Provides the YAPPC agent {@link CatalogRegistry} by loading all {@code agent-catalog.yaml}
+   * files at startup.
    *
-   * <p>The root directory is resolved from the {@code YAPPC_AGENT_CATALOG_DIR}
-   * environment variable (defaults to {@code config/agents} relative to the
-   * working directory). Loading failures for individual catalog files are
-   * logged as warnings rather than crashing the server.
+   * <p>The root directory is resolved from the {@code YAPPC_AGENT_CATALOG_DIR} environment variable
+   * (defaults to {@code config/agents} relative to the working directory). Loading failures for
+   * individual catalog files are logged as warnings rather than crashing the server.
    *
    * @doc.layer product
    * @doc.pattern Registry
@@ -1039,8 +1027,10 @@ public class ProductionModule extends SharedBaseModule {
     YamlAgentCatalogLoader catalogLoader = new YamlAgentCatalogLoader();
     CatalogRegistry registry = CatalogRegistry.empty();
     int agentCount = catalogLoader.loadInto(registry);
-    logger.info("CatalogRegistry populated with {} agent definition(s) from '{}'",
-        agentCount, catalogLoader.getCatalogRoot());
+    logger.info(
+        "CatalogRegistry populated with {} agent definition(s) from '{}'",
+        agentCount,
+        catalogLoader.getCatalogRoot());
     return registry;
   }
 
@@ -1048,8 +1038,8 @@ public class ProductionModule extends SharedBaseModule {
    * Provides the boot-time pipeline definition loader.
    *
    * <p>Scans {@code YAPPC_PIPELINE_DIR} (or defaults) for {@code *.yaml} pipeline manifests.
-   * Pipelines are indexed by name and available for introspection at runtime.
-   * Parse failures are logged as warnings rather than crashing the server.
+   * Pipelines are indexed by name and available for introspection at runtime. Parse failures are
+   * logged as warnings rather than crashing the server.
    *
    * @doc.type class
    * @doc.purpose Boot-time YAML pipeline manifest loader and registry
@@ -1097,8 +1087,7 @@ public class ProductionModule extends SharedBaseModule {
    * @doc.pattern Repository
    */
   @Provides
-  JdbcWorkflowStateStore jdbcWorkflowStateStore(
-      DataSource dataSource, ObjectMapper objectMapper) {
+  JdbcWorkflowStateStore jdbcWorkflowStateStore(DataSource dataSource, ObjectMapper objectMapper) {
     logger.info("Creating JdbcWorkflowStateStore — workflow runs persisted to PostgreSQL");
     return new JdbcWorkflowStateStore(dataSource, objectMapper);
   }
@@ -1110,8 +1099,7 @@ public class ProductionModule extends SharedBaseModule {
    * @doc.pattern Repository
    */
   @Provides
-  DurableWorkflowEngine.WorkflowStateStore workflowStateStore(
-      JdbcWorkflowStateStore store) {
+  DurableWorkflowEngine.WorkflowStateStore workflowStateStore(JdbcWorkflowStateStore store) {
     return store;
   }
 
@@ -1142,7 +1130,8 @@ public class ProductionModule extends SharedBaseModule {
 
   /** Provides LLMGateway for agent AI operations with per-tenant cost enforcement. */
   @Provides
-  com.ghatana.ai.llm.LLMGateway llmGateway(MetricsCollector metricsCollector, HttpClient llmHttpClient) {
+  com.ghatana.ai.llm.LLMGateway llmGateway(
+      MetricsCollector metricsCollector, HttpClient llmHttpClient) {
     DefaultLLMGateway.Builder builder = DefaultLLMGateway.builder().metrics(metricsCollector);
     List<String> providers = new ArrayList<>();
 
@@ -1163,7 +1152,8 @@ public class ProductionModule extends SharedBaseModule {
               .maxRetries(parseIntEnv("LLM_MAX_RETRIES", 3))
               .build();
 
-      builder.addProvider("openai",
+      builder.addProvider(
+          "openai",
           new ToolAwareOpenAICompletionService(openAiConfig, llmHttpClient, metricsCollector));
       providers.add("openai");
       logger.info("LLMGateway: OpenAI provider enabled with cost enforcement");
@@ -1182,8 +1172,10 @@ public class ProductionModule extends SharedBaseModule {
               .maxRetries(parseIntEnv("LLM_MAX_RETRIES", 3))
               .build();
 
-      builder.addProvider("anthropic",
-          new ToolAwareAnthropicCompletionService(anthropicConfig, llmHttpClient, metricsCollector));
+      builder.addProvider(
+          "anthropic",
+          new ToolAwareAnthropicCompletionService(
+              anthropicConfig, llmHttpClient, metricsCollector));
       providers.add("anthropic");
       logger.info("LLMGateway: Anthropic provider enabled with cost enforcement");
     }
@@ -1195,12 +1187,16 @@ public class ProductionModule extends SharedBaseModule {
 
     String primaryProvider = envOrDefault("LLM_PRIMARY_PROVIDER", providers.get(0));
     if (!providers.contains(primaryProvider)) {
-      logger.warn("Configured LLM_PRIMARY_PROVIDER '{}' is unavailable, using '{}'", primaryProvider, providers.get(0));
+      logger.warn(
+          "Configured LLM_PRIMARY_PROVIDER '{}' is unavailable, using '{}'",
+          primaryProvider,
+          providers.get(0));
       primaryProvider = providers.get(0);
     }
 
     builder.defaultProvider(primaryProvider).fallbackOrder(providers);
-    logger.info("Creating production LLMGateway with providers={} primary={}", providers, primaryProvider);
+    logger.info(
+        "Creating production LLMGateway with providers={} primary={}", providers, primaryProvider);
     return builder.build();
   }
 
@@ -1245,15 +1241,15 @@ public class ProductionModule extends SharedBaseModule {
   /**
    * Provides CompletionService by adapting the multi-provider LLMGateway.
    *
-   * <p>This ensures a single LLM integration path — routing, fallback, and
-   * circuit-breaker behaviour from the gateway are reused by every consumer.</p>
+   * <p>This ensures a single LLM integration path — routing, fallback, and circuit-breaker
+   * behaviour from the gateway are reused by every consumer.
    */
   @Provides
   com.ghatana.ai.llm.CompletionService completionService(
-      com.ghatana.ai.llm.LLMGateway llmGateway,
-      MetricsCollector metricsCollector) {
+      com.ghatana.ai.llm.LLMGateway llmGateway, MetricsCollector metricsCollector) {
     logger.info("Creating GatewayCompletionServiceAdapter backed by LLMGateway");
-    return new com.ghatana.yappc.api.ai.GatewayCompletionServiceAdapter(llmGateway, metricsCollector);
+    return new com.ghatana.yappc.api.ai.GatewayCompletionServiceAdapter(
+        llmGateway, metricsCollector);
   }
 
   /** Provides LLMSuggestionGenerator for AI-powered suggestion generation. */
@@ -1271,7 +1267,8 @@ public class ProductionModule extends SharedBaseModule {
       com.ghatana.ai.llm.LLMGateway llmGateway,
       MetricsCollector metricsCollector) {
     logger.info("Creating DefaultWorkflowAgentService");
-    return new com.ghatana.agent.workflow.DefaultWorkflowAgentService(registry, llmGateway, metricsCollector);
+    return new com.ghatana.agent.workflow.DefaultWorkflowAgentService(
+        registry, llmGateway, metricsCollector);
   }
 
   /** Provides WorkflowAgentController for workflow agent endpoints. */
@@ -1280,7 +1277,8 @@ public class ProductionModule extends SharedBaseModule {
       com.ghatana.agent.workflow.WorkflowAgentService agentService,
       com.ghatana.agent.workflow.WorkflowAgentRegistry agentRegistry) {
     logger.info("Creating WorkflowAgentController");
-    return new com.ghatana.yappc.api.controller.WorkflowAgentController(agentService, agentRegistry);
+    return new com.ghatana.yappc.api.controller.WorkflowAgentController(
+        agentService, agentRegistry);
   }
 
   /** Provides WorkflowAgentInitializer for agent registration on startup. */
@@ -1291,16 +1289,19 @@ public class ProductionModule extends SharedBaseModule {
     logger.info("Creating WorkflowAgentInitializer");
     com.ghatana.yappc.api.service.WorkflowAgentInitializer initializer =
         new com.ghatana.yappc.api.service.WorkflowAgentInitializer(agentRegistry, llmGateway);
-    
+
     // Initialize agents on startup
-    initializer.initialize().whenComplete((count, error) -> {
-      if (error != null) {
-        logger.error("Failed to initialize workflow agents", error);
-      } else {
-        logger.info("Successfully registered {} workflow agents", count);
-      }
-    });
-    
+    initializer
+        .initialize()
+        .whenComplete(
+            (count, error) -> {
+              if (error != null) {
+                logger.error("Failed to initialize workflow agents", error);
+              } else {
+                logger.info("Successfully registered {} workflow agents", count);
+              }
+            });
+
     return initializer;
   }
 
@@ -1311,9 +1312,9 @@ public class ProductionModule extends SharedBaseModule {
   /**
    * Provides AIIntegrationService backed by the production LLMGateway.
    *
-   * <p>The adapter wraps the multi-provider gateway (already cost-enforced) and exposes
-   * the simple {@code generateCode(prompt)} / {@code complete(prompt)} contract that
-   * {@code CodeGenerationService} and {@code TestGenerationService} depend on.
+   * <p>The adapter wraps the multi-provider gateway (already cost-enforced) and exposes the simple
+   * {@code generateCode(prompt)} / {@code complete(prompt)} contract that {@code
+   * CodeGenerationService} and {@code TestGenerationService} depend on.
    */
   @Provides
   com.ghatana.ai.AIIntegrationService aiIntegrationService(
@@ -1357,8 +1358,8 @@ public class ProductionModule extends SharedBaseModule {
   // -------------------------------------------------------------------------
 
   /**
-   * Provides the shared {@link com.ghatana.core.template.YamlTemplateEngine}
-   * for variable substitution in YAML template resources (YAPPC-Ph3).
+   * Provides the shared {@link com.ghatana.core.template.YamlTemplateEngine} for variable
+   * substitution in YAML template resources (YAPPC-Ph3).
    *
    * @doc.layer product
    * @doc.pattern Factory
@@ -1370,17 +1371,16 @@ public class ProductionModule extends SharedBaseModule {
   }
 
   /**
-   * Provides {@link com.ghatana.yappc.api.workflow.WorkflowMaterializer} — reads
-   * {@code lifecycle-workflow-templates.yaml} and registers all templates with the
-   * durable workflow engine at startup.
+   * Provides {@link com.ghatana.yappc.api.workflow.WorkflowMaterializer} — reads {@code
+   * lifecycle-workflow-templates.yaml} and registers all templates with the durable workflow engine
+   * at startup.
    *
    * @doc.layer product
    * @doc.pattern Service, Bootstrapper
    */
   @Provides
   com.ghatana.yappc.api.workflow.WorkflowMaterializer workflowMaterializer(
-      DurableWorkflowEngine engine,
-      com.ghatana.core.template.YamlTemplateEngine templateEngine) {
+      DurableWorkflowEngine engine, com.ghatana.core.template.YamlTemplateEngine templateEngine) {
     logger.info("Creating WorkflowMaterializer — materializing canonical workflow templates");
     com.ghatana.yappc.api.workflow.WorkflowMaterializer materializer =
         new com.ghatana.yappc.api.workflow.WorkflowMaterializer(engine, templateEngine);
@@ -1390,8 +1390,8 @@ public class ProductionModule extends SharedBaseModule {
   }
 
   /**
-   * Provides {@link com.ghatana.yappc.api.workflow.WorkflowExecutionController} —
-   * REST API for starting and monitoring durable workflow runs.
+   * Provides {@link com.ghatana.yappc.api.workflow.WorkflowExecutionController} — REST API for
+   * starting and monitoring durable workflow runs.
    *
    * @doc.layer api
    * @doc.pattern Controller
@@ -1452,12 +1452,12 @@ public class ProductionModule extends SharedBaseModule {
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
-   * Provides {@link com.ghatana.agent.memory.persistence.JdbcMemoryItemRepository}
-   * backed by the shared YAPPC DataSource. Used by the PersistentMemoryPlane.
+   * Provides {@link com.ghatana.agent.memory.persistence.JdbcMemoryItemRepository} backed by the
+   * shared YAPPC DataSource. Used by the PersistentMemoryPlane.
    *
    * <p>Schema: {@code memory_items} table created by the agent-memory platform migration
-   * (V001__create_memory_items.sql). The YAPPC product adds its own migration alias
-   * {@code V20__agent_memory_items.sql}.
+   * (V001__create_memory_items.sql). The YAPPC product adds its own migration alias {@code
+   * V20__agent_memory_items.sql}.
    *
    * @doc.layer product
    * @doc.pattern Repository
@@ -1470,14 +1470,15 @@ public class ProductionModule extends SharedBaseModule {
   }
 
   /**
-   * Provides {@link com.ghatana.agent.memory.store.taskstate.TaskStateStore} backed by
-   * {@link com.ghatana.agent.memory.persistence.JdbcTaskStateRepository}.
+   * Provides {@link com.ghatana.agent.memory.store.taskstate.TaskStateStore} backed by {@link
+   * com.ghatana.agent.memory.persistence.JdbcTaskStateRepository}.
    *
    * @doc.layer product
    * @doc.pattern Repository
    */
   @Provides
-  com.ghatana.agent.memory.store.taskstate.TaskStateStore taskStateStore(javax.sql.DataSource dataSource) {
+  com.ghatana.agent.memory.store.taskstate.TaskStateStore taskStateStore(
+      javax.sql.DataSource dataSource) {
     logger.info("Creating JdbcTaskStateStore");
     com.ghatana.agent.memory.persistence.JdbcTaskStateRepository repo =
         new com.ghatana.agent.memory.persistence.JdbcTaskStateRepository(dataSource);
@@ -1485,14 +1486,14 @@ public class ProductionModule extends SharedBaseModule {
   }
 
   /**
-   * Provides the production {@link com.ghatana.agent.memory.persistence.PersistentMemoryPlane}
-   * that replaces the in-memory {@code EventLogMemoryStore}.
+   * Provides the production {@link com.ghatana.agent.memory.persistence.PersistentMemoryPlane} that
+   * replaces the in-memory {@code EventLogMemoryStore}.
    *
-   * <p>All agent episodic, semantic, procedural, and preference memory is persisted to
-   * PostgreSQL via {@link com.ghatana.agent.memory.persistence.JdbcMemoryItemRepository}.
+   * <p>All agent episodic, semantic, procedural, and preference memory is persisted to PostgreSQL
+   * via {@link com.ghatana.agent.memory.persistence.JdbcMemoryItemRepository}.
    *
    * @param memoryItemRepository the JDBC-backed memory item repository
-   * @param taskStateStore       the task state store for durable task tracking
+   * @param taskStateStore the task state store for durable task tracking
    * @doc.layer product
    * @doc.pattern Service
    * @doc.gaa.memory episodic|semantic|procedural|preference
@@ -1515,9 +1516,9 @@ public class ProductionModule extends SharedBaseModule {
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
-   * Provides the {@link com.ghatana.agent.memory.security.MemoryRedactionFilter} loaded
-   * from {@code config/memory/redaction-rules.yaml} (external config dir) with a fallback
-   * to the default built-in patterns if the file is not found.
+   * Provides the {@link com.ghatana.agent.memory.security.MemoryRedactionFilter} loaded from {@code
+   * config/memory/redaction-rules.yaml} (external config dir) with a fallback to the default
+   * built-in patterns if the file is not found.
    *
    * @doc.layer product
    * @doc.pattern Security
@@ -1527,7 +1528,8 @@ public class ProductionModule extends SharedBaseModule {
   com.ghatana.agent.memory.security.MemoryRedactionFilter memoryRedactionFilter() {
     String configDir = System.getProperty("yappc.config.dir");
     if (configDir != null && !configDir.isBlank()) {
-      java.nio.file.Path rulesPath = java.nio.file.Paths.get(configDir, "memory/redaction-rules.yaml");
+      java.nio.file.Path rulesPath =
+          java.nio.file.Paths.get(configDir, "memory/redaction-rules.yaml");
       if (java.nio.file.Files.exists(rulesPath)) {
         try {
           com.ghatana.agent.memory.security.YamlRedactionPatternProvider provider =
@@ -1535,7 +1537,10 @@ public class ProductionModule extends SharedBaseModule {
           logger.info("MemoryRedactionFilter: loaded YAML rules from '{}'", rulesPath);
           return new com.ghatana.agent.memory.security.MemoryRedactionFilter(true, true, provider);
         } catch (java.io.IOException e) {
-          logger.warn("MemoryRedactionFilter: failed to load '{}', using defaults: {}", rulesPath, e.getMessage());
+          logger.warn(
+              "MemoryRedactionFilter: failed to load '{}', using defaults: {}",
+              rulesPath,
+              e.getMessage());
         }
       }
     }
@@ -1544,8 +1549,8 @@ public class ProductionModule extends SharedBaseModule {
   }
 
   /**
-   * Provides the {@link com.ghatana.agent.memory.security.MemorySecurityManager} that
-   * enforces tenant isolation on all memory reads and writes.
+   * Provides the {@link com.ghatana.agent.memory.security.MemorySecurityManager} that enforces
+   * tenant isolation on all memory reads and writes.
    *
    * @doc.layer product
    * @doc.pattern Security
@@ -1561,11 +1566,11 @@ public class ProductionModule extends SharedBaseModule {
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
-   * Provides the {@link com.ghatana.yappc.api.history.AgentHistoryController} that
-   * exposes agent execution history and turn-level rationale via REST endpoints.
+   * Provides the {@link com.ghatana.yappc.api.history.AgentHistoryController} that exposes agent
+   * execution history and turn-level rationale via REST endpoints.
    *
-   * @param persistentMemoryPlane the shared memory plane (provides both task state
-   *                              and episodic memory access)
+   * @param persistentMemoryPlane the shared memory plane (provides both task state and episodic
+   *     memory access)
    * @doc.layer api
    * @doc.pattern Controller
    * @doc.gaa.lifecycle capture
@@ -1595,11 +1600,11 @@ public class ProductionModule extends SharedBaseModule {
   }
 
   /**
-   * Provides the {@link com.ghatana.yappc.api.policy.LearnedPolicyController} that
-   * exposes the {@code GET /api/v1/agents/{id}/policies} endpoint (plan 9.5.4).
+   * Provides the {@link com.ghatana.yappc.api.policy.LearnedPolicyController} that exposes the
+   * {@code GET /api/v1/agents/{id}/policies} endpoint (plan 9.5.4).
    *
    * @param learnedPolicyRepository backing store for learned policies
-   * @param tenantContextExtractor  auth context extractor
+   * @param tenantContextExtractor auth context extractor
    * @doc.layer api
    * @doc.pattern Controller
    * @doc.gaa.lifecycle reflect
@@ -1613,4 +1618,3 @@ public class ProductionModule extends SharedBaseModule {
         learnedPolicyRepository, tenantContextExtractor);
   }
 }
-

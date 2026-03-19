@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
+ */
 package com.ghatana.yappc.api.scaffold;
 
 import java.util.List;
@@ -18,13 +22,32 @@ public record Template(
     String category,
     List<String> tags,
     String version,
-    Map<String, Object> configSchema
-) {
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public String getDescription() { return description; }
-    public String getCategory() { return category; }
-    public List<String> getTags() { return tags; }
-    public String getVersion() { return version; }
-    public Map<String, Object> getConfigSchema() { return configSchema; }
+    Map<String, Object> configSchema) {
+  public String getId() {
+    return id;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public String getCategory() {
+    return category;
+  }
+
+  public List<String> getTags() {
+    return tags;
+  }
+
+  public String getVersion() {
+    return version;
+  }
+
+  public Map<String, Object> getConfigSchema() {
+    return configSchema;
+  }
 }

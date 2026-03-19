@@ -2,6 +2,7 @@
     "name": "@yappc/crdt",
     "version": "0.1.0",
     "description": "CRDT (Conflict-free Replicated Data Types) library for real-time collaboration in YAPPC",
+    "deprecated": "This package has been merged into @yappc/collab. Use @yappc/collab/crdt for CRDT primitives and @yappc/collab/websocket for WebSocket hooks.",
     "type": "module",
     "main": "./src/index.ts",
     "types": "./src/index.ts",
@@ -33,7 +34,9 @@
         "test": "vitest run",
         "test:watch": "vitest"
     },
-    "dependencies": {},
+    "dependencies": {
+        "@yappc/collab": "workspace:*"
+    },
     "devDependencies": {
         "@types/node": "^25.2.0",
         "typescript": "^5.9.3",

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC API Module - AEP Integration
+ * YAPPC API Module
  */
 package com.ghatana.yappc.api.aep;
 
@@ -11,9 +11,8 @@ import org.slf4j.LoggerFactory;
  * Factory for creating AEP clients based on configuration mode.
  *
  * <p><b>Purpose</b><br>
- * Creates appropriate AEP client implementation based on configured mode:
- * - LIBRARY mode → AepLibraryClient (in-process)
- * - SERVICE mode → AepServiceClient (HTTP-based)
+ * Creates appropriate AEP client implementation based on configured mode: - LIBRARY mode →
+ * AepLibraryClient (in-process) - SERVICE mode → AepServiceClient (HTTP-based)
  *
  * <p><b>Usage</b><br>
  *
@@ -25,7 +24,6 @@ import org.slf4j.LoggerFactory;
  *
  * @see AepConfig
  * @see AepClient
-  *
  * @doc.type class
  * @doc.purpose aep client factory
  * @doc.layer product

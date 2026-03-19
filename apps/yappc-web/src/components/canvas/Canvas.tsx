@@ -20,7 +20,7 @@ import { Suspense, ComponentType } from 'react';
 import { Box, Spinner as CircularProgress } from '@ghatana/design-system';
 
 // Dev playground for quick testing
-import { CanvasPlayground } from '@ghatana/canvas';
+import { CanvasPlayground } from '@yappc/canvas';
 
 // All canvas implementations
 import { CodeEditorCanvas } from './content/CodeEditorCanvas';

@@ -9,12 +9,11 @@ import com.ghatana.yappc.api.domain.CodeReview;
 import com.ghatana.yappc.api.domain.CodeReview.*;
 import com.ghatana.yappc.api.repository.CodeReviewRepository;
 import io.activej.promise.Promise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
 import java.time.Instant;
 import java.util.*;
+import javax.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Service for managing code reviews.
@@ -26,280 +25,272 @@ import java.util.*;
  */
 public class CodeReviewService {
 
-    private static final Logger logger = LoggerFactory.getLogger(CodeReviewService.class);
+  private static final Logger logger = LoggerFactory.getLogger(CodeReviewService.class);
 
-    private final CodeReviewRepository repository;
-    private final AuditService auditService;
+  private final CodeReviewRepository repository;
+  private final AuditService auditService;
 
-    @Inject
-    public CodeReviewService(CodeReviewRepository repository, AuditService auditService) {
-        this.repository = repository;
-        this.auditService = auditService;
+  @Inject
+  public CodeReviewService(CodeReviewRepository repository, AuditService auditService) {
+    this.repository = repository;
+    this.auditService = auditService;
+  }
+
+  /** Creates a new code review. */
+  public Promise<CodeReview> createReview(String tenantId, CreateReviewInput input) {
+    logger.info("Creating code review for project: {}", input.projectId());
+
+    CodeReview review = new CodeReview();
+    review.setTenantId(tenantId);
+    review.setProjectId(input.projectId());
+    review.setStoryId(input.storyId());
+    review.setPullRequestUrl(input.pullRequestUrl());
+    review.setPullRequestNumber(input.pullRequestNumber());
+    review.setTitle(input.title());
+    review.setDescription(input.description());
+    review.setAuthorId(input.authorId());
+    review.setStatus(input.isDraft() ? ReviewStatus.DRAFT : ReviewStatus.OPEN);
+
+    // Add reviewers
+    if (input.reviewerIds() != null) {
+      for (String reviewerId : input.reviewerIds()) {
+        Reviewer reviewer = new Reviewer();
+        reviewer.setUserId(reviewerId);
+        reviewer.setRequired(true);
+        review.addReviewer(reviewer);
+      }
     }
 
-    /**
-     * Creates a new code review.
-     */
-    public Promise<CodeReview> createReview(String tenantId, CreateReviewInput input) {
-        logger.info("Creating code review for project: {}", input.projectId());
-
-        CodeReview review = new CodeReview();
-        review.setTenantId(tenantId);
-        review.setProjectId(input.projectId());
-        review.setStoryId(input.storyId());
-        review.setPullRequestUrl(input.pullRequestUrl());
-        review.setPullRequestNumber(input.pullRequestNumber());
-        review.setTitle(input.title());
-        review.setDescription(input.description());
-        review.setAuthorId(input.authorId());
-        review.setStatus(input.isDraft() ? ReviewStatus.DRAFT : ReviewStatus.OPEN);
-
-        // Add reviewers
-        if (input.reviewerIds() != null) {
-            for (String reviewerId : input.reviewerIds()) {
-                Reviewer reviewer = new Reviewer();
-                reviewer.setUserId(reviewerId);
-                reviewer.setRequired(true);
-                review.addReviewer(reviewer);
-            }
-        }
-
-        // Set file changes
-        if (input.fileChanges() != null) {
-            review.setFileChanges(input.fileChanges());
-            ReviewMetrics metrics = review.getMetrics();
-            metrics.setTotalFiles(input.fileChanges().size());
-            int additions = input.fileChanges().stream().mapToInt(FileChange::getAdditions).sum();
-            int deletions = input.fileChanges().stream().mapToInt(FileChange::getDeletions).sum();
-            metrics.setAdditions(additions);
-            metrics.setDeletions(deletions);
-        }
-
-        return repository.save(review);
+    // Set file changes
+    if (input.fileChanges() != null) {
+      review.setFileChanges(input.fileChanges());
+      ReviewMetrics metrics = review.getMetrics();
+      metrics.setTotalFiles(input.fileChanges().size());
+      int additions = input.fileChanges().stream().mapToInt(FileChange::getAdditions).sum();
+      int deletions = input.fileChanges().stream().mapToInt(FileChange::getDeletions).sum();
+      metrics.setAdditions(additions);
+      metrics.setDeletions(deletions);
     }
 
-    /**
-     * Gets a code review by ID.
-     */
-    public Promise<Optional<CodeReview>> getReview(String tenantId, UUID reviewId) {
-        return repository.findById(tenantId, reviewId);
-    }
+    return repository.save(review);
+  }
 
-    /**
-     * Lists reviews for a project.
-     */
-    public Promise<List<CodeReview>> listProjectReviews(String tenantId, String projectId) {
-        return repository.findByProject(tenantId, projectId);
-    }
+  /** Gets a code review by ID. */
+  public Promise<Optional<CodeReview>> getReview(String tenantId, UUID reviewId) {
+    return repository.findById(tenantId, reviewId);
+  }
 
-    /**
-     * Lists reviews for a story.
-     */
-    public Promise<List<CodeReview>> listStoryReviews(String tenantId, String storyId) {
-        return repository.findByStory(tenantId, storyId);
-    }
+  /** Lists reviews for a project. */
+  public Promise<List<CodeReview>> listProjectReviews(String tenantId, String projectId) {
+    return repository.findByProject(tenantId, projectId);
+  }
 
-    /**
-     * Lists reviews pending for a user.
-     */
-    public Promise<List<CodeReview>> listPendingReviews(String tenantId, String userId) {
-        return repository.findPendingForUser(tenantId, userId);
-    }
+  /** Lists reviews for a story. */
+  public Promise<List<CodeReview>> listStoryReviews(String tenantId, String storyId) {
+    return repository.findByStory(tenantId, storyId);
+  }
 
-    /**
-     * Lists reviews authored by a user.
-     */
-    public Promise<List<CodeReview>> listAuthoredReviews(String tenantId, String userId) {
-        return repository.findByAuthor(tenantId, userId);
-    }
+  /** Lists reviews pending for a user. */
+  public Promise<List<CodeReview>> listPendingReviews(String tenantId, String userId) {
+    return repository.findPendingForUser(tenantId, userId);
+  }
 
-    /**
-     * Submits a review.
-     */
-    public Promise<CodeReview> submitReview(String tenantId, UUID reviewId, SubmitReviewInput input) {
-        return repository.findById(tenantId, reviewId)
-                .then(opt -> {
-                    if (opt.isEmpty()) {
-                        return Promise.ofException(new IllegalArgumentException("Review not found"));
-                    }
-                    CodeReview review = opt.get();
+  /** Lists reviews authored by a user. */
+  public Promise<List<CodeReview>> listAuthoredReviews(String tenantId, String userId) {
+    return repository.findByAuthor(tenantId, userId);
+  }
 
-                    review.submitReview(input.reviewerId(), input.decision());
+  /** Submits a review. */
+  public Promise<CodeReview> submitReview(String tenantId, UUID reviewId, SubmitReviewInput input) {
+    return repository
+        .findById(tenantId, reviewId)
+        .then(
+            opt -> {
+              if (opt.isEmpty()) {
+                return Promise.ofException(new IllegalArgumentException("Review not found"));
+              }
+              CodeReview review = opt.get();
 
-                    // Add comment if provided
-                    if (input.comment() != null && !input.comment().isEmpty()) {
-                        ReviewComment comment = new ReviewComment();
-                        comment.setAuthorId(input.reviewerId());
-                        comment.setType(CommentType.GENERAL);
-                        comment.setContent(input.comment());
-                        review.addComment(comment);
-                    }
+              review.submitReview(input.reviewerId(), input.decision());
 
-                    return repository.save(review);
-                });
-    }
+              // Add comment if provided
+              if (input.comment() != null && !input.comment().isEmpty()) {
+                ReviewComment comment = new ReviewComment();
+                comment.setAuthorId(input.reviewerId());
+                comment.setType(CommentType.GENERAL);
+                comment.setContent(input.comment());
+                review.addComment(comment);
+              }
 
-    /**
-     * Adds a comment to a review.
-     */
-    public Promise<CodeReview> addComment(String tenantId, UUID reviewId, AddCommentInput input) {
-        return repository.findById(tenantId, reviewId)
-                .then(opt -> {
-                    if (opt.isEmpty()) {
-                        return Promise.ofException(new IllegalArgumentException("Review not found"));
-                    }
-                    CodeReview review = opt.get();
+              return repository.save(review);
+            });
+  }
 
-                    ReviewComment comment = new ReviewComment();
-                    comment.setAuthorId(input.authorId());
-                    comment.setAuthorName(input.authorName());
-                    comment.setType(input.type());
-                    comment.setContent(input.content());
-                    comment.setFilePath(input.filePath());
-                    comment.setLineNumber(input.lineNumber());
-                    comment.setSuggestionCode(input.suggestionCode());
+  /** Adds a comment to a review. */
+  public Promise<CodeReview> addComment(String tenantId, UUID reviewId, AddCommentInput input) {
+    return repository
+        .findById(tenantId, reviewId)
+        .then(
+            opt -> {
+              if (opt.isEmpty()) {
+                return Promise.ofException(new IllegalArgumentException("Review not found"));
+              }
+              CodeReview review = opt.get();
 
-                    review.addComment(comment);
-                    return repository.save(review);
-                });
-    }
+              ReviewComment comment = new ReviewComment();
+              comment.setAuthorId(input.authorId());
+              comment.setAuthorName(input.authorName());
+              comment.setType(input.type());
+              comment.setContent(input.content());
+              comment.setFilePath(input.filePath());
+              comment.setLineNumber(input.lineNumber());
+              comment.setSuggestionCode(input.suggestionCode());
 
-    /**
-     * Resolves a comment.
-     */
-    public Promise<CodeReview> resolveComment(String tenantId, UUID reviewId, String commentId, String resolvedBy) {
-        return repository.findById(tenantId, reviewId)
-                .then(opt -> {
-                    if (opt.isEmpty()) {
-                        return Promise.ofException(new IllegalArgumentException("Review not found"));
-                    }
-                    CodeReview review = opt.get();
+              review.addComment(comment);
+              return repository.save(review);
+            });
+  }
 
-                    review.getComments().stream()
-                            .filter(c -> c.getId().equals(commentId))
-                            .findFirst()
-                            .ifPresent(c -> {
-                                c.setResolved(true);
-                                c.setResolvedBy(resolvedBy);
-                                c.setUpdatedAt(Instant.now());
-                            });
+  /** Resolves a comment. */
+  public Promise<CodeReview> resolveComment(
+      String tenantId, UUID reviewId, String commentId, String resolvedBy) {
+    return repository
+        .findById(tenantId, reviewId)
+        .then(
+            opt -> {
+              if (opt.isEmpty()) {
+                return Promise.ofException(new IllegalArgumentException("Review not found"));
+              }
+              CodeReview review = opt.get();
 
-                    // Update metrics
-                    long resolved = review.getComments().stream().filter(ReviewComment::isResolved).count();
-                    review.getMetrics().setResolvedComments((int) resolved);
+              review.getComments().stream()
+                  .filter(c -> c.getId().equals(commentId))
+                  .findFirst()
+                  .ifPresent(
+                      c -> {
+                        c.setResolved(true);
+                        c.setResolvedBy(resolvedBy);
+                        c.setUpdatedAt(Instant.now());
+                      });
 
-                    return repository.save(review);
-                });
-    }
+              // Update metrics
+              long resolved =
+                  review.getComments().stream().filter(ReviewComment::isResolved).count();
+              review.getMetrics().setResolvedComments((int) resolved);
 
-    /**
-     * Requests changes on a review.
-     */
-    public Promise<CodeReview> requestChanges(String tenantId, UUID reviewId, String reviewerId, String comment) {
-        SubmitReviewInput input = new SubmitReviewInput(reviewerId, ReviewDecision.REQUEST_CHANGES, comment);
-        return submitReview(tenantId, reviewId, input);
-    }
+              return repository.save(review);
+            });
+  }
 
-    /**
-     * Approves a review.
-     */
-    public Promise<CodeReview> approveReview(String tenantId, UUID reviewId, String reviewerId, String comment) {
-        SubmitReviewInput input = new SubmitReviewInput(reviewerId, ReviewDecision.APPROVE, comment);
-        return submitReview(tenantId, reviewId, input);
-    }
+  /** Requests changes on a review. */
+  public Promise<CodeReview> requestChanges(
+      String tenantId, UUID reviewId, String reviewerId, String comment) {
+    SubmitReviewInput input =
+        new SubmitReviewInput(reviewerId, ReviewDecision.REQUEST_CHANGES, comment);
+    return submitReview(tenantId, reviewId, input);
+  }
 
-    /**
-     * Merges a review.
-     */
-    public Promise<CodeReview> mergeReview(String tenantId, UUID reviewId) {
-        return repository.findById(tenantId, reviewId)
-                .then(opt -> {
-                    if (opt.isEmpty()) {
-                        return Promise.ofException(new IllegalArgumentException("Review not found"));
-                    }
-                    CodeReview review = opt.get();
+  /** Approves a review. */
+  public Promise<CodeReview> approveReview(
+      String tenantId, UUID reviewId, String reviewerId, String comment) {
+    SubmitReviewInput input = new SubmitReviewInput(reviewerId, ReviewDecision.APPROVE, comment);
+    return submitReview(tenantId, reviewId, input);
+  }
 
-                    review.merge();
-                    return repository.save(review);
-                });
-    }
+  /** Merges a review. */
+  public Promise<CodeReview> mergeReview(String tenantId, UUID reviewId) {
+    return repository
+        .findById(tenantId, reviewId)
+        .then(
+            opt -> {
+              if (opt.isEmpty()) {
+                return Promise.ofException(new IllegalArgumentException("Review not found"));
+              }
+              CodeReview review = opt.get();
 
-    /**
-     * Closes a review without merging.
-     */
-    public Promise<CodeReview> closeReview(String tenantId, UUID reviewId) {
-        return repository.findById(tenantId, reviewId)
-                .then(opt -> {
-                    if (opt.isEmpty()) {
-                        return Promise.ofException(new IllegalArgumentException("Review not found"));
-                    }
-                    CodeReview review = opt.get();
+              review.merge();
+              return repository.save(review);
+            });
+  }
 
-                    review.close();
-                    return repository.save(review);
-                });
-    }
+  /** Closes a review without merging. */
+  public Promise<CodeReview> closeReview(String tenantId, UUID reviewId) {
+    return repository
+        .findById(tenantId, reviewId)
+        .then(
+            opt -> {
+              if (opt.isEmpty()) {
+                return Promise.ofException(new IllegalArgumentException("Review not found"));
+              }
+              CodeReview review = opt.get();
 
-    /**
-     * Gets review statistics for a project.
-     */
-    public Promise<ReviewStatistics> getProjectStatistics(String tenantId, String projectId) {
-        return repository.findByProject(tenantId, projectId)
-                .map(reviews -> {
-                    int total = reviews.size();
-                    int open = (int) reviews.stream().filter(r -> r.getStatus() == ReviewStatus.OPEN).count();
-                    int inReview = (int) reviews.stream().filter(r -> r.getStatus() == ReviewStatus.IN_REVIEW).count();
-                    int approved = (int) reviews.stream().filter(r -> r.getStatus() == ReviewStatus.APPROVED).count();
-                    int merged = (int) reviews.stream().filter(r -> r.getStatus() == ReviewStatus.MERGED).count();
-                    int closed = (int) reviews.stream().filter(r -> r.getStatus() == ReviewStatus.CLOSED).count();
+              review.close();
+              return repository.save(review);
+            });
+  }
 
-                    double avgReviewTime = reviews.stream()
-                            .mapToLong(r -> r.getMetrics().getReviewTimeMs())
-                            .average()
-                            .orElse(0);
+  /** Gets review statistics for a project. */
+  public Promise<ReviewStatistics> getProjectStatistics(String tenantId, String projectId) {
+    return repository
+        .findByProject(tenantId, projectId)
+        .map(
+            reviews -> {
+              int total = reviews.size();
+              int open =
+                  (int) reviews.stream().filter(r -> r.getStatus() == ReviewStatus.OPEN).count();
+              int inReview =
+                  (int)
+                      reviews.stream().filter(r -> r.getStatus() == ReviewStatus.IN_REVIEW).count();
+              int approved =
+                  (int)
+                      reviews.stream().filter(r -> r.getStatus() == ReviewStatus.APPROVED).count();
+              int merged =
+                  (int) reviews.stream().filter(r -> r.getStatus() == ReviewStatus.MERGED).count();
+              int closed =
+                  (int) reviews.stream().filter(r -> r.getStatus() == ReviewStatus.CLOSED).count();
 
-                    return new ReviewStatistics(total, open, inReview, approved, merged, closed, avgReviewTime);
-                });
-    }
+              double avgReviewTime =
+                  reviews.stream()
+                      .mapToLong(r -> r.getMetrics().getReviewTimeMs())
+                      .average()
+                      .orElse(0);
 
-    // ========== Input/Output DTOs ==========
+              return new ReviewStatistics(
+                  total, open, inReview, approved, merged, closed, avgReviewTime);
+            });
+  }
 
-    public record CreateReviewInput(
-            String projectId,
-            String storyId,
-            String pullRequestUrl,
-            int pullRequestNumber,
-            String title,
-            String description,
-            String authorId,
-            boolean isDraft,
-            List<String> reviewerIds,
-            List<FileChange> fileChanges
-    ) {}
+  // ========== Input/Output DTOs ==========
 
-    public record SubmitReviewInput(
-            String reviewerId,
-            ReviewDecision decision,
-            String comment
-    ) {}
+  public record CreateReviewInput(
+      String projectId,
+      String storyId,
+      String pullRequestUrl,
+      int pullRequestNumber,
+      String title,
+      String description,
+      String authorId,
+      boolean isDraft,
+      List<String> reviewerIds,
+      List<FileChange> fileChanges) {}
 
-    public record AddCommentInput(
-            String authorId,
-            String authorName,
-            CommentType type,
-            String content,
-            String filePath,
-            Integer lineNumber,
-            String suggestionCode
-    ) {}
+  public record SubmitReviewInput(String reviewerId, ReviewDecision decision, String comment) {}
 
-    public record ReviewStatistics(
-            int total,
-            int open,
-            int inReview,
-            int approved,
-            int merged,
-            int closed,
-            double avgReviewTimeMs
-    ) {}
+  public record AddCommentInput(
+      String authorId,
+      String authorName,
+      CommentType type,
+      String content,
+      String filePath,
+      Integer lineNumber,
+      String suggestionCode) {}
+
+  public record ReviewStatistics(
+      int total,
+      int open,
+      int inReview,
+      int approved,
+      int merged,
+      int closed,
+      double avgReviewTimeMs) {}
 }

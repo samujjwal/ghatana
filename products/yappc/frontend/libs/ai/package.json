@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/ai-legacy",
+  "name": "@yappc/ai",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@yappc/core": "workspace:*",
-    "@yappc/ui-legacy": "workspace:*"
+    "@yappc/ui": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.2.4"

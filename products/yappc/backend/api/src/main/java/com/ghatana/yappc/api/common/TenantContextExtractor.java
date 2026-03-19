@@ -4,11 +4,11 @@
  */
 package com.ghatana.yappc.api.common;
 
+import com.ghatana.yappc.api.security.UserContext;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.promise.Promise;
 import java.util.Base64;
-import com.ghatana.yappc.api.security.UserContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,9 +61,10 @@ public class TenantContextExtractor {
   /**
    * Extracts context from HTTP request.
    *
-   * <p>Checks for a {@link UserContext} attached by {@link com.ghatana.yappc.api.security.SecurityMiddleware}
-   * first (avoids double JWT parsing and guarantees consistency with the middleware's validation).
-   * Falls back to raw JWT header decode or explicit dev headers when running without the middleware.
+   * <p>Checks for a {@link UserContext} attached by {@link
+   * com.ghatana.yappc.api.security.SecurityMiddleware} first (avoids double JWT parsing and
+   * guarantees consistency with the middleware's validation). Falls back to raw JWT header decode
+   * or explicit dev headers when running without the middleware.
    *
    * @param request the HTTP request
    * @return request context
@@ -73,9 +74,8 @@ public class TenantContextExtractor {
       // Prefer the UserContext attached by SecurityMiddleware (JWT already validated)
       UserContext userContext = request.getAttachment(UserContext.class);
       if (userContext != null) {
-        String primaryRole = userContext.getRoles().isEmpty()
-            ? "MEMBER"
-            : userContext.getRoles().get(0);
+        String primaryRole =
+            userContext.getRoles().isEmpty() ? "MEMBER" : userContext.getRoles().get(0);
         return new RequestContext(
             userContext.getTenantId(),
             userContext.getUserId(),

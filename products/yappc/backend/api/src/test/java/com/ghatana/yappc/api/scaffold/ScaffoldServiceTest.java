@@ -1,340 +1,349 @@
 /*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC API Module — ScaffoldService Tests
+ * YAPPC API Module
  */
 package com.ghatana.yappc.api.scaffold;
-
-import com.ghatana.yappc.api.scaffold.dto.*;
-import io.activej.promise.Promise;
-import com.ghatana.platform.testing.activej.EventloopTestBase;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.yappc.api.scaffold.dto.*;
+import io.activej.promise.Promise;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
 /**
  * Unit tests for {@link ScaffoldService}.
  *
- * <p>Covers template listing/filtering, project scaffolding job lifecycle,
- * job status tracking, download, cancellation, feature packs, and conflict
- * management.
- 
+ * <p>Covers template listing/filtering, project scaffolding job lifecycle, job status tracking,
+ * download, cancellation, feature packs, and conflict management.
+ *
  * @doc.type class
  * @doc.purpose Handles scaffold service test operations
  * @doc.layer product
  * @doc.pattern Test
-*/
+ */
 class ScaffoldServiceTest extends EventloopTestBase {
 
-    private ScaffoldEngine scaffoldEngine;
-    private TemplateRegistry templateRegistry;
-    private ScaffoldService service;
+  private ScaffoldEngine scaffoldEngine;
+  private TemplateRegistry templateRegistry;
+  private ScaffoldService service;
 
-    private static final Template JAVA_TEMPLATE = new Template(
-            "java-microservice", "Java Microservice", "Spring Boot microservice starter",
-            "backend", List.of("java", "spring"), "1.0.0",
-            Map.of("javaVersion", "17", "buildTool", "gradle"));
+  private static final Template JAVA_TEMPLATE =
+      new Template(
+          "java-microservice",
+          "Java Microservice",
+          "Spring Boot microservice starter",
+          "backend",
+          List.of("java", "spring"),
+          "1.0.0",
+          Map.of("javaVersion", "17", "buildTool", "gradle"));
 
-    private static final Template REACT_TEMPLATE = new Template(
-            "react-app", "React App", "React SPA with TypeScript",
-            "frontend", List.of("react", "typescript"), "2.0.0",
-            Map.of("cssFramework", "tailwind"));
+  private static final Template REACT_TEMPLATE =
+      new Template(
+          "react-app",
+          "React App",
+          "React SPA with TypeScript",
+          "frontend",
+          List.of("react", "typescript"),
+          "2.0.0",
+          Map.of("cssFramework", "tailwind"));
 
-    private static final FeaturePack AUTH_PACK = new FeaturePack(
-            "auth-oauth2", "OAuth2 Authentication", "Adds OAuth2 login flow",
-            List.of("java-microservice"), List.of("spring-security-oauth2"),
-            Map.of("provider", "google"));
+  private static final FeaturePack AUTH_PACK =
+      new FeaturePack(
+          "auth-oauth2",
+          "OAuth2 Authentication",
+          "Adds OAuth2 login flow",
+          List.of("java-microservice"),
+          List.of("spring-security-oauth2"),
+          Map.of("provider", "google"));
 
-    @BeforeEach
-    void setUp() {
-        scaffoldEngine = mock(ScaffoldEngine.class);
-        templateRegistry = mock(TemplateRegistry.class);
-        service = new ScaffoldService(scaffoldEngine, templateRegistry);
+  @BeforeEach
+  void setUp() {
+    scaffoldEngine = mock(ScaffoldEngine.class);
+    templateRegistry = mock(TemplateRegistry.class);
+    service = new ScaffoldService(scaffoldEngine, templateRegistry);
 
-        when(templateRegistry.getAllTemplates())
-                .thenReturn(List.of(JAVA_TEMPLATE, REACT_TEMPLATE));
-        when(templateRegistry.getTemplate("java-microservice"))
-                .thenReturn(Optional.of(JAVA_TEMPLATE));
-        when(templateRegistry.getTemplate("react-app"))
-                .thenReturn(Optional.of(REACT_TEMPLATE));
-        when(templateRegistry.getTemplate("nonexistent"))
-                .thenReturn(Optional.empty());
-        when(templateRegistry.getAllFeaturePacks())
-                .thenReturn(List.of(AUTH_PACK));
-        when(templateRegistry.getFeaturePack("auth-oauth2"))
-                .thenReturn(Optional.of(AUTH_PACK));
+    when(templateRegistry.getAllTemplates()).thenReturn(List.of(JAVA_TEMPLATE, REACT_TEMPLATE));
+    when(templateRegistry.getTemplate("java-microservice")).thenReturn(Optional.of(JAVA_TEMPLATE));
+    when(templateRegistry.getTemplate("react-app")).thenReturn(Optional.of(REACT_TEMPLATE));
+    when(templateRegistry.getTemplate("nonexistent")).thenReturn(Optional.empty());
+    when(templateRegistry.getAllFeaturePacks()).thenReturn(List.of(AUTH_PACK));
+    when(templateRegistry.getFeaturePack("auth-oauth2")).thenReturn(Optional.of(AUTH_PACK));
+  }
+
+  // =========================================================================
+  // listTemplates
+  // =========================================================================
+
+  @Nested
+  class ListTemplates {
+
+    @Test
+    void shouldListAllTemplates() {
+      List<TemplateInfo> result = runPromise(() -> service.listTemplates());
+
+      assertThat(result).hasSize(2);
+      assertThat(result)
+          .extracting(TemplateInfo::id)
+          .containsExactlyInAnyOrder("java-microservice", "react-app");
     }
 
-    // =========================================================================
-    // listTemplates
-    // =========================================================================
+    @Test
+    void shouldFilterByCategory() {
+      List<TemplateInfo> result = runPromise(() -> service.listTemplates("backend"));
 
-    @Nested
-    class ListTemplates {
-
-        @Test
-        void shouldListAllTemplates() {
-            List<TemplateInfo> result = runPromise(() -> service.listTemplates());
-
-            assertThat(result).hasSize(2);
-            assertThat(result).extracting(TemplateInfo::id)
-                    .containsExactlyInAnyOrder("java-microservice", "react-app");
-        }
-
-        @Test
-        void shouldFilterByCategory() {
-            List<TemplateInfo> result = runPromise(() -> service.listTemplates("backend"));
-
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).id()).isEqualTo("java-microservice");
-        }
-
-        @Test
-        void shouldReturnEmptyForUnknownCategory() {
-            List<TemplateInfo> result = runPromise(() -> service.listTemplates("mobile"));
-
-            assertThat(result).isEmpty();
-        }
+      assertThat(result).hasSize(1);
+      assertThat(result.get(0).id()).isEqualTo("java-microservice");
     }
 
-    // =========================================================================
-    // getTemplate
-    // =========================================================================
+    @Test
+    void shouldReturnEmptyForUnknownCategory() {
+      List<TemplateInfo> result = runPromise(() -> service.listTemplates("mobile"));
 
-    @Nested
-    class GetTemplate {
+      assertThat(result).isEmpty();
+    }
+  }
 
-        @Test
-        void shouldReturnTemplateById() {
-            Optional<TemplateInfo> result = runPromise(() -> service.getTemplate("java-microservice"));
+  // =========================================================================
+  // getTemplate
+  // =========================================================================
 
-            assertThat(result).isPresent();
-            assertThat(result.get().name()).isEqualTo("Java Microservice");
-            assertThat(result.get().category()).isEqualTo("backend");
-            assertThat(result.get().tags()).contains("java", "spring");
-        }
+  @Nested
+  class GetTemplate {
 
-        @Test
-        void shouldReturnEmptyForMissingTemplate() {
-            Optional<TemplateInfo> result = runPromise(() -> service.getTemplate("nonexistent"));
+    @Test
+    void shouldReturnTemplateById() {
+      Optional<TemplateInfo> result = runPromise(() -> service.getTemplate("java-microservice"));
 
-            assertThat(result).isEmpty();
-        }
+      assertThat(result).isPresent();
+      assertThat(result.get().name()).isEqualTo("Java Microservice");
+      assertThat(result.get().category()).isEqualTo("backend");
+      assertThat(result.get().tags()).contains("java", "spring");
     }
 
-    // =========================================================================
-    // getTemplateConfigSchema
-    // =========================================================================
+    @Test
+    void shouldReturnEmptyForMissingTemplate() {
+      Optional<TemplateInfo> result = runPromise(() -> service.getTemplate("nonexistent"));
 
-    @Nested
-    class GetTemplateConfigSchema {
+      assertThat(result).isEmpty();
+    }
+  }
 
-        @Test
-        void shouldReturnConfigSchema() {
-            Map<String, Object> result = runPromise(() -> service.getTemplateConfigSchema("java-microservice"));
+  // =========================================================================
+  // getTemplateConfigSchema
+  // =========================================================================
 
-            assertThat(result).containsEntry("javaVersion", "17");
-            assertThat(result).containsEntry("buildTool", "gradle");
-        }
+  @Nested
+  class GetTemplateConfigSchema {
 
-        @Test
-        void shouldReturnEmptyMapForMissingTemplate() {
-            Map<String, Object> result = runPromise(() -> service.getTemplateConfigSchema("nonexistent"));
+    @Test
+    void shouldReturnConfigSchema() {
+      Map<String, Object> result =
+          runPromise(() -> service.getTemplateConfigSchema("java-microservice"));
 
-            assertThat(result).isEmpty();
-        }
+      assertThat(result).containsEntry("javaVersion", "17");
+      assertThat(result).containsEntry("buildTool", "gradle");
     }
 
-    // =========================================================================
-    // scaffoldProject — async job lifecycle
-    // =========================================================================
+    @Test
+    void shouldReturnEmptyMapForMissingTemplate() {
+      Map<String, Object> result = runPromise(() -> service.getTemplateConfigSchema("nonexistent"));
 
-    @Nested
-    class ScaffoldProject {
+      assertThat(result).isEmpty();
+    }
+  }
 
-        @Test
-        void shouldReturnStartedResult() {
-            ScaffoldRequest request = new ScaffoldRequest(
-                    "java-microservice", "my-service", "/tmp/out", Map.of(), true);
+  // =========================================================================
+  // scaffoldProject — async job lifecycle
+  // =========================================================================
 
-            ScaffoldResult result = runPromise(() -> service.scaffoldProject(request));
+  @Nested
+  class ScaffoldProject {
 
-            assertThat(result.jobId()).isNotNull().isNotBlank();
-            assertThat(result.status()).isEqualTo("STARTED");
-        }
+    @Test
+    void shouldReturnStartedResult() {
+      ScaffoldRequest request =
+          new ScaffoldRequest("java-microservice", "my-service", "/tmp/out", Map.of(), true);
 
-        @Test
-        void shouldTrackJobStatus() throws InterruptedException {
-            when(scaffoldEngine.generate(any(GenerationContext.class)))
-                    .thenReturn(new GenerationResult("/tmp/out", List.of("pom.xml", "App.java"), true));
+      ScaffoldResult result = runPromise(() -> service.scaffoldProject(request));
 
-            ScaffoldRequest request = new ScaffoldRequest(
-                    "java-microservice", "my-service", "/tmp/out", Map.of(), true);
-            ScaffoldResult started = runPromise(() -> service.scaffoldProject(request));
-
-            // Initially the job should be tracked
-            Optional<JobStatus> status = runPromise(() -> service.getJobStatus(started.jobId()));
-            assertThat(status).isPresent();
-        }
+      assertThat(result.jobId()).isNotNull().isNotBlank();
+      assertThat(result.status()).isEqualTo("STARTED");
     }
 
-    // =========================================================================
-    // getJobStatus
-    // =========================================================================
+    @Test
+    void shouldTrackJobStatus() throws InterruptedException {
+      when(scaffoldEngine.generate(any(GenerationContext.class)))
+          .thenReturn(new GenerationResult("/tmp/out", List.of("pom.xml", "App.java"), true));
 
-    @Nested
-    class GetJobStatus {
+      ScaffoldRequest request =
+          new ScaffoldRequest("java-microservice", "my-service", "/tmp/out", Map.of(), true);
+      ScaffoldResult started = runPromise(() -> service.scaffoldProject(request));
 
-        @Test
-        void shouldReturnEmptyForUnknownJob() {
-            Optional<JobStatus> result = runPromise(() -> service.getJobStatus("nonexistent-job"));
+      // Initially the job should be tracked
+      Optional<JobStatus> status = runPromise(() -> service.getJobStatus(started.jobId()));
+      assertThat(status).isPresent();
+    }
+  }
 
-            assertThat(result).isEmpty();
-        }
+  // =========================================================================
+  // getJobStatus
+  // =========================================================================
+
+  @Nested
+  class GetJobStatus {
+
+    @Test
+    void shouldReturnEmptyForUnknownJob() {
+      Optional<JobStatus> result = runPromise(() -> service.getJobStatus("nonexistent-job"));
+
+      assertThat(result).isEmpty();
+    }
+  }
+
+  // =========================================================================
+  // downloadProject
+  // =========================================================================
+
+  @Nested
+  class DownloadProject {
+
+    @Test
+    void shouldReturnEmptyForIncompleteJob() {
+      // Start a job but don't let it complete
+      ScaffoldRequest request =
+          new ScaffoldRequest("java-microservice", "my-service", "/tmp/out", Map.of(), true);
+      ScaffoldResult started = runPromise(() -> service.scaffoldProject(request));
+
+      // Immediately try to download — job is RUNNING, not COMPLETED
+      Optional<byte[]> result = runPromise(() -> service.downloadProject(started.jobId()));
+
+      // Should be empty since job hasn't completed yet
+      // (it might be empty or present depending on timing, but for nonexistent it's empty)
+      assertThat(result).isEmpty();
     }
 
-    // =========================================================================
-    // downloadProject
-    // =========================================================================
+    @Test
+    void shouldReturnEmptyForNonexistentJob() {
+      Optional<byte[]> result = runPromise(() -> service.downloadProject("no-such-job"));
 
-    @Nested
-    class DownloadProject {
+      assertThat(result).isEmpty();
+    }
+  }
 
-        @Test
-        void shouldReturnEmptyForIncompleteJob() {
-            // Start a job but don't let it complete
-            ScaffoldRequest request = new ScaffoldRequest(
-                    "java-microservice", "my-service", "/tmp/out", Map.of(), true);
-            ScaffoldResult started = runPromise(() -> service.scaffoldProject(request));
+  // =========================================================================
+  // cancelJob
+  // =========================================================================
 
-            // Immediately try to download — job is RUNNING, not COMPLETED
-            Optional<byte[]> result = runPromise(() -> service.downloadProject(started.jobId()));
+  @Nested
+  class CancelJob {
 
-            // Should be empty since job hasn't completed yet
-            // (it might be empty or present depending on timing, but for nonexistent it's empty)
-            assertThat(result).isEmpty();
-        }
+    @Test
+    void shouldCancelRunningJob() {
+      ScaffoldRequest request =
+          new ScaffoldRequest("java-microservice", "my-service", "/tmp/out", Map.of(), true);
+      // Make engine.generate block so the job stays RUNNING
+      when(scaffoldEngine.generate(any(GenerationContext.class)))
+          .thenAnswer(
+              inv -> {
+                Thread.sleep(5000);
+                return new GenerationResult("/tmp/out", List.of(), true);
+              });
+      ScaffoldResult started = runPromise(() -> service.scaffoldProject(request));
 
-        @Test
-        void shouldReturnEmptyForNonexistentJob() {
-            Optional<byte[]> result = runPromise(() -> service.downloadProject("no-such-job"));
+      // Small delay to let async job start
+      try {
+        Thread.sleep(50);
+      } catch (InterruptedException ignored) {
+      }
 
-            assertThat(result).isEmpty();
-        }
+      Boolean cancelled = runPromise(() -> service.cancelJob(started.jobId()));
+
+      assertThat(cancelled).isTrue();
+
+      Optional<JobStatus> status = runPromise(() -> service.getJobStatus(started.jobId()));
+      assertThat(status).isPresent();
+      assertThat(status.get().status()).isEqualTo("CANCELLED");
     }
 
-    // =========================================================================
-    // cancelJob
-    // =========================================================================
+    @Test
+    void shouldReturnFalseForNonexistentJob() {
+      Boolean cancelled = runPromise(() -> service.cancelJob("unknown-job"));
 
-    @Nested
-    class CancelJob {
+      assertThat(cancelled).isFalse();
+    }
+  }
 
-        @Test
-        void shouldCancelRunningJob() {
-            ScaffoldRequest request = new ScaffoldRequest(
-                    "java-microservice", "my-service", "/tmp/out", Map.of(), true);
-            // Make engine.generate block so the job stays RUNNING
-            when(scaffoldEngine.generate(any(GenerationContext.class)))
-                    .thenAnswer(inv -> {
-                        Thread.sleep(5000);
-                        return new GenerationResult("/tmp/out", List.of(), true);
-                    });
-            ScaffoldResult started = runPromise(() -> service.scaffoldProject(request));
+  // =========================================================================
+  // listFeaturePacks
+  // =========================================================================
 
-            // Small delay to let async job start
-            try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+  @Nested
+  class ListFeaturePacks {
 
-            Boolean cancelled = runPromise(() -> service.cancelJob(started.jobId()));
+    @Test
+    void shouldListAllFeaturePacks() {
+      List<FeaturePackInfo> result = runPromise(() -> service.listFeaturePacks());
 
-            assertThat(cancelled).isTrue();
+      assertThat(result).hasSize(1);
+      assertThat(result.get(0).id()).isEqualTo("auth-oauth2");
+      assertThat(result.get(0).name()).isEqualTo("OAuth2 Authentication");
+      assertThat(result.get(0).compatibleTemplates()).contains("java-microservice");
+    }
+  }
 
-            Optional<JobStatus> status = runPromise(() -> service.getJobStatus(started.jobId()));
-            assertThat(status).isPresent();
-            assertThat(status.get().status()).isEqualTo("CANCELLED");
-        }
+  // =========================================================================
+  // addFeaturePack
+  // =========================================================================
 
-        @Test
-        void shouldReturnFalseForNonexistentJob() {
-            Boolean cancelled = runPromise(() -> service.cancelJob("unknown-job"));
+  @Nested
+  class AddFeaturePack {
 
-            assertThat(cancelled).isFalse();
-        }
+    @Test
+    void shouldStartFeaturePackJob() {
+      when(scaffoldEngine.applyFeaturePack(any(GenerationContext.class)))
+          .thenReturn(Promise.of(true));
+
+      FeaturePackRequest request = new FeaturePackRequest("project-1", "auth-oauth2", Map.of());
+      ScaffoldResult result = runPromise(() -> service.addFeaturePack("project-1", request));
+
+      assertThat(result.jobId()).isNotNull();
+      assertThat(result.status()).isEqualTo("STARTED");
+    }
+  }
+
+  // =========================================================================
+  // getConflicts / resolveConflicts
+  // =========================================================================
+
+  @Nested
+  class ConflictManagement {
+
+    @Test
+    void shouldReturnEmptyConflictReport() {
+      ConflictReport report = runPromise(() -> service.getConflicts("job-1"));
+
+      assertThat(report).isNotNull();
+      assertThat(report.jobId()).isEqualTo("job-1");
+      assertThat(report.conflicts()).isEmpty();
     }
 
-    // =========================================================================
-    // listFeaturePacks
-    // =========================================================================
+    @Test
+    void shouldResolveConflicts() {
+      when(scaffoldEngine.resolveConflicts(anyString(), anyMap())).thenReturn(Promise.of(true));
 
-    @Nested
-    class ListFeaturePacks {
+      ConflictResolution resolution = new ConflictResolution(Map.of("file.txt", "KEEP_OURS"));
+      Boolean result = runPromise(() -> service.resolveConflicts("job-1", resolution));
 
-        @Test
-        void shouldListAllFeaturePacks() {
-            List<FeaturePackInfo> result = runPromise(() -> service.listFeaturePacks());
-
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).id()).isEqualTo("auth-oauth2");
-            assertThat(result.get(0).name()).isEqualTo("OAuth2 Authentication");
-            assertThat(result.get(0).compatibleTemplates()).contains("java-microservice");
-        }
+      assertThat(result).isTrue();
+      verify(scaffoldEngine).resolveConflicts("job-1", Map.of("file.txt", "KEEP_OURS"));
     }
-
-    // =========================================================================
-    // addFeaturePack
-    // =========================================================================
-
-    @Nested
-    class AddFeaturePack {
-
-        @Test
-        void shouldStartFeaturePackJob() {
-            when(scaffoldEngine.applyFeaturePack(any(GenerationContext.class)))
-                    .thenReturn(Promise.of(true));
-
-            FeaturePackRequest request = new FeaturePackRequest(
-                    "project-1", "auth-oauth2", Map.of());
-            ScaffoldResult result = runPromise(() -> service.addFeaturePack("project-1", request));
-
-            assertThat(result.jobId()).isNotNull();
-            assertThat(result.status()).isEqualTo("STARTED");
-        }
-    }
-
-    // =========================================================================
-    // getConflicts / resolveConflicts
-    // =========================================================================
-
-    @Nested
-    class ConflictManagement {
-
-        @Test
-        void shouldReturnEmptyConflictReport() {
-            ConflictReport report = runPromise(() -> service.getConflicts("job-1"));
-
-            assertThat(report).isNotNull();
-            assertThat(report.jobId()).isEqualTo("job-1");
-            assertThat(report.conflicts()).isEmpty();
-        }
-
-        @Test
-        void shouldResolveConflicts() {
-            when(scaffoldEngine.resolveConflicts(anyString(), anyMap()))
-                    .thenReturn(Promise.of(true));
-
-            ConflictResolution resolution = new ConflictResolution(
-                    Map.of("file.txt", "KEEP_OURS"));
-            Boolean result = runPromise(() -> service.resolveConflicts("job-1", resolution));
-
-            assertThat(result).isTrue();
-            verify(scaffoldEngine).resolveConflicts("job-1", Map.of("file.txt", "KEEP_OURS"));
-        }
-    }
+  }
 }

@@ -1,14 +1,18 @@
 /**
- * @ghatana/yappc-chat
- * 
- * Real-time chat library for YAPPC.
- * Provides chat components and hooks for team messaging.
- * 
+ * @yappc/chat — DEPRECATED
+ *
+ * @deprecated Use `@yappc/messaging` instead.
+ * This package is a compatibility shim and will be removed in a future release.
+ *
+ * Migration: replace `@yappc/chat` imports with `@yappc/messaging` or
+ * the scoped `@yappc/messaging/chat` sub-path.
+ *
  * @module chat
  */
 
-// Hooks
-export { useChatBackend } from './hooks/useChatBackend';
+// Re-export everything from the canonical messaging library
+export * from '@yappc/messaging/chat';
+
 export type {
   UseChatBackendConfig,
   ChatMessage,

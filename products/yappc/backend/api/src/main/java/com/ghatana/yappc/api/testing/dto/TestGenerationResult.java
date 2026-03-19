@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
  */
-
 package com.ghatana.yappc.api.testing.dto;
 
 import java.util.List;
@@ -15,7 +15,4 @@ import java.util.List;
  * @doc.pattern ValueObject
  */
 public record TestGenerationResult(
-        List<GeneratedTest> generatedTests,
-        TestStatistics statistics,
-        String outputPath
-) {}
+    List<GeneratedTest> generatedTests, TestStatistics statistics, String outputPath) {}

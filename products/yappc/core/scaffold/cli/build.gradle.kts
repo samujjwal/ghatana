@@ -8,10 +8,9 @@ java {
 }
 
 dependencies {
+    // adapters and schemas are now bundled in scaffold:core
     implementation(project(":products:yappc:core:scaffold:core"))
-    implementation(project(":products:yappc:core:scaffold:adapters"))
     implementation(project(":products:yappc:core:scaffold:packs"))
-    implementation(project(":products:yappc:core:scaffold:schemas"))
 
     implementation(libs.picocli)
     implementation(libs.jackson.databind)

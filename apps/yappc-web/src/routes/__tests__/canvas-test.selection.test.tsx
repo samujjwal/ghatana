@@ -1,4 +1,3 @@
-// All tests skipped - incomplete feature
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -7,7 +6,7 @@ import {
   applyRotation,
   updateLayerOrder,
   batchUpdatePositions,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 
 /**
  * Integration tests for element manipulation in canvas-test route.
@@ -60,7 +59,7 @@ const createTestItem = (overrides: Partial<BaseItem> = {}): BaseItem => ({
   ...overrides,
 });
 
-describe.skip('Canvas Selection Integration', () => {
+describe('Canvas Selection Integration', () => {
   describe('Multi-select drag operations', () => {
     it('should batch update positions for multiple selected elements', () => {
       // Arrange: Create 3 items in a row

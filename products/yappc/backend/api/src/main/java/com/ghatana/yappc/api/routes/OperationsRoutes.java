@@ -14,17 +14,16 @@ import com.ghatana.yappc.api.workflow.WorkflowExecutionController;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
-
 import java.nio.charset.StandardCharsets;
 
 /**
  * Route registrations for Observability and Operations APIs.
  *
  * <ul>
- *   <li>/metrics              - Prometheus scrape endpoint</li>
- *   <li>/health/detailed      - aggregated health check</li>
- *   <li>/api/v1/workflows/{templateId}/start, /runs/{runId}/status - workflow execution</li>
- *   <li>/api/v1/dlq/*         - dead-letter queue management</li>
+ *   <li>/metrics - Prometheus scrape endpoint
+ *   <li>/health/detailed - aggregated health check
+ *   <li>/api/v1/workflows/{templateId}/start, /runs/{runId}/status - workflow execution
+ *   <li>/api/v1/dlq/* - dead-letter queue management
  * </ul>
  *
  * @doc.type class
@@ -39,11 +38,11 @@ public final class OperationsRoutes {
   /**
    * Registers all operations and observability routes on the given builder.
    *
-   * @param builder       the routing servlet builder
-   * @param metrics       Micrometer metrics collector (provides Prometheus scrape data)
-   * @param healthCtrl    health aggregation controller
-   * @param workflowCtrl  workflow execution controller
-   * @param dlqCtrl       dead-letter queue controller
+   * @param builder the routing servlet builder
+   * @param metrics Micrometer metrics collector (provides Prometheus scrape data)
+   * @param healthCtrl health aggregation controller
+   * @param workflowCtrl workflow execution controller
+   * @param dlqCtrl dead-letter queue controller
    */
   public static void register(
       RoutingServlet.Builder builder,
@@ -54,33 +53,41 @@ public final class OperationsRoutes {
 
     builder
         // Prometheus scrape endpoint
-        .with(GET, "/metrics",
-            request -> io.activej.promise.Promise.of(
-                HttpResponse.ok200()
-                    .withHeader(
-                        HttpHeaders.CONTENT_TYPE,
-                        "text/plain; version=0.0.4; charset=utf-8")
-                    .withBody(metrics.scrape().getBytes(StandardCharsets.UTF_8))
-                    .build()))
+        .with(
+            GET,
+            "/metrics",
+            request ->
+                io.activej.promise.Promise.of(
+                    HttpResponse.ok200()
+                        .withHeader(
+                            HttpHeaders.CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")
+                        .withBody(metrics.scrape().getBytes(StandardCharsets.UTF_8))
+                        .build()))
 
         // Health Aggregation (Observability 6.6)
         .with(GET, "/health/detailed", healthCtrl::getDetailedHealth)
 
         // Workflow Execution (Orchestration 7.3)
-        .with(POST, "/api/v1/workflows/:templateId/start",
+        .with(
+            POST,
+            "/api/v1/workflows/:templateId/start",
             request -> {
               String templateId = request.getPathParameter("templateId");
               return workflowCtrl.startWorkflow(request, templateId);
             })
-        .with(GET, "/api/v1/workflows/runs/:runId/status",
+        .with(
+            GET,
+            "/api/v1/workflows/runs/:runId/status",
             request -> {
               String runId = request.getPathParameter("runId");
               return workflowCtrl.getRunStatus(request, runId);
             })
 
         // DLQ Management (Orchestration 7.4)
-        .with(GET,  "/api/v1/dlq",            dlqCtrl::listEntries)
-        .with(POST, "/api/v1/dlq/:id/retry",
+        .with(GET, "/api/v1/dlq", dlqCtrl::listEntries)
+        .with(
+            POST,
+            "/api/v1/dlq/:id/retry",
             request -> {
               String entryId = request.getPathParameter("id");
               return dlqCtrl.retryEntry(request, entryId);

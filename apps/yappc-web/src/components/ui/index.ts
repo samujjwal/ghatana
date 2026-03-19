@@ -16,10 +16,6 @@ export {
   getPaletteMain,
 } from '@yappc/ui';
 
-// REMOVED: deprecated @ghatana/yappc-charts
-// REMOVED: deprecated @ghatana/yappc-charts
-// // export * from '@ghatana/yappc-charts';
-
 /**
  * UI Components Index
  * 

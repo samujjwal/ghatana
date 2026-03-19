@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("PostgresHolidayCalendar — Integration Tests")
 class PostgresHolidayCalendarTest extends EventloopTestBase {
 

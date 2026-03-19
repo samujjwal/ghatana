@@ -1,4 +1,4 @@
-import { atom, useAtomValue } from 'jotai';
+import { atom, useAtom, useAtomValue } from 'jotai';
 import type {
   Item,
   Milestone,
@@ -8,15 +8,30 @@ import type {
 } from '@yappc/core/types/devsecops';
 import { createDevSecOpsOverview } from '@yappc/core/types/devsecops/fixtures';
 import { devsecopsClient } from '@yappc/api/devsecops/client';
-import {
-  // Canvas/store-level hooks for shared UI state (view mode, filters, side panel, current phase)
-  useViewManagement as useStoreViewManagement,
-  useSearchQuery,
-  useFilterConfig,
-  useCurrentPhase as useStoreCurrentPhase,
-  useSidePanel,
-  useSelectedItem,
-} from '@ghatana/yappc-store/devsecops';
+
+// ---------------------------------------------------------------------------
+// Local store atoms (migrated from @ghatana/yappc-store/devsecops → inline)
+// ---------------------------------------------------------------------------
+type ViewMode = 'kanban' | 'timeline' | 'table';
+export type { ViewMode };
+type FilterConfig = Record<string, unknown>;
+
+const viewModeAtom = atom<ViewMode>('kanban');
+const searchQueryAtom = atom<string>('');
+const filterConfigAtom = atom<FilterConfig>({});
+const currentPhaseAtom = atom<Phase | null>(null);
+const sidePanelOpenAtom = atom<boolean>(false);
+const selectedItemAtom = atom<Item | null>(null);
+
+function useStoreViewManagement() {
+  const [viewMode, setViewMode] = useAtom(viewModeAtom);
+  return { viewMode, setViewMode };
+}
+function useSearchQuery() { return useAtom(searchQueryAtom); }
+function useFilterConfig() { return useAtom(filterConfigAtom); }
+function useStoreCurrentPhase() { return useAtomValue(currentPhaseAtom); }
+function useSidePanel() { return useAtom(sidePanelOpenAtom); }
+function useSelectedItem() { return useAtom(selectedItemAtom); }
 
 /**
  * Logging utility for state management debugging.
@@ -150,9 +165,7 @@ export const usePhaseKpiStats = (phaseId: string | 'all'): PhaseKpiStats => {
   };
 };
 
-// View Management (delegates to shared store hooks)
-export type ViewMode = 'kanban' | 'timeline' | 'table';
-
+// View Management
 export const useViewManagement = () => {
   return useStoreViewManagement();
 };

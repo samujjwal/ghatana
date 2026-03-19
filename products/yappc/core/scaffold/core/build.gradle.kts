@@ -10,6 +10,9 @@ dependencies {
     api(project(":platform:java:domain"))
     api(project(":platform:java:core"))
     api(project(":platform:java:testing"))
+    // Absorbed from core:scaffold:adapters
+    implementation(project(":platform:java:http"))
+    implementation(project(":platform:java:observability"))
     
     // Core framework API and testing utilities
     api(project(":products:yappc:core:framework"))
@@ -32,7 +35,7 @@ dependencies {
     implementation(libs.handlebars)
 
     // JSON Schema Validation
-    implementation("com.networknt:json-schema-validator:1.0.87")
+    implementation(libs.networknt.validator)
 
     // Code Transformation (Week 2 Day 6)
     implementation(libs.openrewrite.core)

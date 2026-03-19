@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
+ */
 package com.ghatana.yappc.api.scaffold;
 
 import java.util.List;
@@ -12,8 +16,11 @@ import java.util.Optional;
  * @doc.pattern Registry
  */
 public interface TemplateRegistry {
-    List<Template> getAllTemplates();
-    Optional<Template> getTemplate(String id);
-    List<FeaturePack> getAllFeaturePacks();
-    Optional<FeaturePack> getFeaturePack(String id);
+  List<Template> getAllTemplates();
+
+  Optional<Template> getTemplate(String id);
+
+  List<FeaturePack> getAllFeaturePacks();
+
+  Optional<FeaturePack> getFeaturePack(String id);
 }

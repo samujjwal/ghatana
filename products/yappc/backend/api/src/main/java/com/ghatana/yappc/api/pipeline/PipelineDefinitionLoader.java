@@ -1,8 +1,12 @@
+/*
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
+ */
 package com.ghatana.yappc.api.pipeline;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -18,20 +22,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Boot-time loader that reads all {@code *.yaml} pipeline manifests from a directory
- * and indexes them by name for fast lookup.
+ * Boot-time loader that reads all {@code *.yaml} pipeline manifests from a directory and indexes
+ * them by name for fast lookup.
  *
  * <p>The pipeline directory is resolved in priority order:
+ *
  * <ol>
- *   <li>Environment variable {@code YAPPC_PIPELINE_DIR}</li>
- *   <li>Classpath resource {@code config/pipelines/} (via working directory)</li>
- *   <li>Bundled product default {@code products/yappc/config/pipelines/}</li>
+ *   <li>Environment variable {@code YAPPC_PIPELINE_DIR}
+ *   <li>Classpath resource {@code config/pipelines/} (via working directory)
+ *   <li>Bundled product default {@code products/yappc/config/pipelines/}
  * </ol>
  *
  * <p>Pipelines that fail to parse are skipped with a WARN log rather than aborting boot.
  *
- * <p><b>Thread Safety:</b> After construction the registry is immutable. Safe for
- * concurrent reads.
+ * <p><b>Thread Safety:</b> After construction the registry is immutable. Safe for concurrent reads.
  *
  * @see PipelineDefinition
  * @doc.type class
@@ -44,12 +48,11 @@ public final class PipelineDefinitionLoader {
   private static final Logger logger = LoggerFactory.getLogger(PipelineDefinitionLoader.class);
 
   /** Candidate directories to scan, in priority order. */
-  private static final List<String> CANDIDATE_DIRS = List.of(
-      System.getenv("YAPPC_PIPELINE_DIR") != null
-          ? System.getenv("YAPPC_PIPELINE_DIR") : "",
-      "config/pipelines",
-      "products/yappc/config/pipelines"
-  );
+  private static final List<String> CANDIDATE_DIRS =
+      List.of(
+          System.getenv("YAPPC_PIPELINE_DIR") != null ? System.getenv("YAPPC_PIPELINE_DIR") : "",
+          "config/pipelines",
+          "products/yappc/config/pipelines");
 
   private final Map<String, PipelineDefinition> registry; // name → definition
   private final ObjectMapper yaml;
@@ -57,8 +60,8 @@ public final class PipelineDefinitionLoader {
   /**
    * Create the loader, immediately scanning and parsing all YAML manifests.
    *
-   * @param jsonMapper base ObjectMapper used for configuration (not YAML — a new
-   *                   {@code YAMLFactory}-backed mapper is created internally)
+   * @param jsonMapper base ObjectMapper used for configuration (not YAML — a new {@code
+   *     YAMLFactory}-backed mapper is created internally)
    */
   public PipelineDefinitionLoader(ObjectMapper jsonMapper) {
     this(jsonMapper, resolveDirectory());
@@ -72,14 +75,16 @@ public final class PipelineDefinitionLoader {
    */
   PipelineDefinitionLoader(ObjectMapper jsonMapper, Path pipelineDir) {
     Objects.requireNonNull(jsonMapper, "jsonMapper");
-    this.yaml = new ObjectMapper(new YAMLFactory())
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    this.yaml =
+        new ObjectMapper(new YAMLFactory())
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     Map<String, PipelineDefinition> loaded = new LinkedHashMap<>();
     if (pipelineDir == null) {
-      logger.warn("PipelineDefinitionLoader: no pipeline directory found — "
-          + "set YAPPC_PIPELINE_DIR or place YAMLs in config/pipelines/. "
-          + "Zero pipelines loaded.");
+      logger.warn(
+          "PipelineDefinitionLoader: no pipeline directory found — "
+              + "set YAPPC_PIPELINE_DIR or place YAMLs in config/pipelines/. "
+              + "Zero pipelines loaded.");
       this.registry = Collections.emptyMap();
       return;
     }
@@ -90,19 +95,27 @@ public final class PipelineDefinitionLoader {
         try {
           PipelineDefinition def = parse(file);
           if (loaded.containsKey(def.name())) {
-            logger.warn("Pipeline '{}' in {} overrides earlier definition from another file",
-                def.name(), file.getFileName());
+            logger.warn(
+                "Pipeline '{}' in {} overrides earlier definition from another file",
+                def.name(),
+                file.getFileName());
           }
           loaded.put(def.name(), def);
-          logger.info("  ✓ Loaded pipeline: {} v{} ({} operators)",
-              def.name(), def.version(), def.operators().size());
+          logger.info(
+              "  ✓ Loaded pipeline: {} v{} ({} operators)",
+              def.name(),
+              def.version(),
+              def.operators().size());
         } catch (Exception e) {
-          logger.warn("  ✗ Failed to parse pipeline YAML {}: {}", file.getFileName(), e.getMessage());
+          logger.warn(
+              "  ✗ Failed to parse pipeline YAML {}: {}", file.getFileName(), e.getMessage());
         }
       }
     } catch (IOException e) {
-      logger.error("PipelineDefinitionLoader: failed to list pipeline directory {}: {}",
-          pipelineDir, e.getMessage());
+      logger.error(
+          "PipelineDefinitionLoader: failed to list pipeline directory {}: {}",
+          pipelineDir,
+          e.getMessage());
     }
 
     this.registry = Collections.unmodifiableMap(loaded);

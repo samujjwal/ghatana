@@ -40,6 +40,29 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      - name: No describe.skip in canvas integration tests (regression guard)
+        working-directory: apps/yappc-web
+        run: |
+          FILES=(
+            src/routes/__tests__/canvas-test.minimap.test.tsx
+            src/routes/__tests__/canvas-test.selection.test.tsx
+            src/routes/__tests__/canvas-test.infinite.test.tsx
+            src/routes/__tests__/canvas-test.grid.test.tsx
+            src/routes/__tests__/canvas-test.history.test.tsx
+            src/routes/__tests__/integration/canvas-test.checkpoint.test.tsx
+            src/routes/__tests__/integration/canvas-test.stable-ids.test.tsx
+            src/routes/__tests__/integration/canvas-test.pages.test.tsx
+          )
+          FOUND=0
+          for f in "${FILES[@]}"; do
+            if grep -q "describe\.skip\|test\.skip\|it\.skip" "$f" 2>/dev/null; then
+              echo "FAIL: describe.skip found in $f"
+              FOUND=1
+            fi
+          done
+          [ "$FOUND" -eq 0 ] && echo "✓ No describe.skip in canvas integration tests."
+          exit $FOUND
+
       - name: Unit tests
         run: pnpm run test
 

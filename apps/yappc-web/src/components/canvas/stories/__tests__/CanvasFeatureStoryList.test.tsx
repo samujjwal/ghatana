@@ -1,6 +1,6 @@
 // All tests skipped - incomplete feature
 import { fireEvent, render, screen } from '@testing-library/react';
-import { FeatureStories } from '@ghatana/canvas';
+import { FeatureStories } from '@yappc/canvas';
 import { describe, expect, it, vi } from 'vitest';
 
 import { CanvasFeatureStoryList } from '../CanvasFeatureStoryList';

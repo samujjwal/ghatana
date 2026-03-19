@@ -28,7 +28,8 @@ public class AISuggestionService {
   private final AuditService auditService;
   private final LLMGateway llmGateway;
 
-  public AISuggestionService(AISuggestionRepository repository, AuditService auditService, LLMGateway llmGateway) {
+  public AISuggestionService(
+      AISuggestionRepository repository, AuditService auditService, LLMGateway llmGateway) {
     this.repository = repository;
     this.auditService = auditService;
     this.llmGateway = llmGateway;
@@ -41,9 +42,12 @@ public class AISuggestionService {
    * @param request The generation request
    * @return The generated suggestion response
    */
-  public io.activej.promise.Promise<com.ghatana.yappc.api.ai.dto.AISuggestionResponse> generateSuggestion(String tenantId, com.ghatana.yappc.api.ai.dto.GenerateSuggestionRequest request) {
+  public io.activej.promise.Promise<com.ghatana.yappc.api.ai.dto.AISuggestionResponse>
+      generateSuggestion(
+          String tenantId, com.ghatana.yappc.api.ai.dto.GenerateSuggestionRequest request) {
     // Map DTO SuggestionType to Domain SuggestionType
-    com.ghatana.yappc.api.domain.AISuggestion.SuggestionType type = mapSuggestionType(request.suggestionType());
+    com.ghatana.yappc.api.domain.AISuggestion.SuggestionType type =
+        mapSuggestionType(request.suggestionType());
 
     CompletionRequest llmRequest =
         CompletionRequest.builder()
@@ -59,11 +63,13 @@ public class AISuggestionService {
             .temperature(0.7)
             .build();
 
-    io.activej.promise.Promise<CompletionResult> completionPromise = llmGateway.complete(llmRequest);
+    io.activej.promise.Promise<CompletionResult> completionPromise =
+        llmGateway.complete(llmRequest);
     if (completionPromise == null) {
       logger.warn("LLM gateway returned null completion promise, using fallback suggestion");
-      completionPromise = io.activej.promise.Promise.ofException(
-          new IllegalStateException("LLM gateway returned null completion promise"));
+      completionPromise =
+          io.activej.promise.Promise.ofException(
+              new IllegalStateException("LLM gateway returned null completion promise"));
     }
 
     return completionPromise
@@ -97,7 +103,8 @@ public class AISuggestionService {
       com.ghatana.yappc.api.ai.dto.GenerateSuggestionRequest request, CompletionResult result) {
     String text = result.getText() != null ? result.getText().trim() : "";
     String modelId = result.getModelUsed() != null ? result.getModelUsed() : "unknown";
-    String suggestionType = request.suggestionType() != null ? request.suggestionType().name() : "REQUIREMENT";
+    String suggestionType =
+        request.suggestionType() != null ? request.suggestionType().name() : "REQUIREMENT";
 
     if (text.isEmpty()) {
       return new GeneratedSuggestion(
@@ -115,8 +122,10 @@ public class AISuggestionService {
     return new GeneratedSuggestion("AI Suggestion for " + suggestionType, text, modelId);
   }
 
-  private GeneratedSuggestion fallbackSuggestion(com.ghatana.yappc.api.ai.dto.GenerateSuggestionRequest request) {
-    String suggestionType = request.suggestionType() != null ? request.suggestionType().name() : "REQUIREMENT";
+  private GeneratedSuggestion fallbackSuggestion(
+      com.ghatana.yappc.api.ai.dto.GenerateSuggestionRequest request) {
+    String suggestionType =
+        request.suggestionType() != null ? request.suggestionType().name() : "REQUIREMENT";
     return new GeneratedSuggestion(
         "AI Generated Suggestion for " + suggestionType,
         "Suggestion generated based on user prompt: " + request.userPrompt(),
@@ -125,14 +134,16 @@ public class AISuggestionService {
 
   private record GeneratedSuggestion(String title, String content, String modelId) {}
 
-  private com.ghatana.yappc.api.domain.AISuggestion.SuggestionType mapSuggestionType(com.ghatana.yappc.api.ai.dto.GenerateSuggestionRequest.SuggestionType dtoType) {
-      if (dtoType == null) return com.ghatana.yappc.api.domain.AISuggestion.SuggestionType.REQUIREMENT;
-      try {
-          return com.ghatana.yappc.api.domain.AISuggestion.SuggestionType.valueOf(dtoType.name());
-      } catch (IllegalArgumentException e) {
-          // Fallback mapping
-          return com.ghatana.yappc.api.domain.AISuggestion.SuggestionType.REQUIREMENT;
-      }
+  private com.ghatana.yappc.api.domain.AISuggestion.SuggestionType mapSuggestionType(
+      com.ghatana.yappc.api.ai.dto.GenerateSuggestionRequest.SuggestionType dtoType) {
+    if (dtoType == null)
+      return com.ghatana.yappc.api.domain.AISuggestion.SuggestionType.REQUIREMENT;
+    try {
+      return com.ghatana.yappc.api.domain.AISuggestion.SuggestionType.valueOf(dtoType.name());
+    } catch (IllegalArgumentException e) {
+      // Fallback mapping
+      return com.ghatana.yappc.api.domain.AISuggestion.SuggestionType.REQUIREMENT;
+    }
   }
 
   /**
@@ -143,40 +154,40 @@ public class AISuggestionService {
    * @param projectId Project ID (optional)
    * @return List of suggestions
    */
-  public io.activej.promise.Promise<java.util.List<com.ghatana.yappc.api.ai.dto.AISuggestionResponse>> getSuggestions(String tenantId, String workspaceId, String projectId) {
-      if (projectId != null) {
-          return repository.findPendingByProject(tenantId, projectId)
-              .map(list -> list.stream().map(s -> mapToResponse(s, workspaceId, "unknown")).toList());
-      } else {
-          // Fallback to finding all pending for tenant if no project specified (simplified)
-          return repository.findPending(tenantId)
-              .map(list -> list.stream().map(s -> mapToResponse(s, workspaceId, "unknown")).toList());
-      }
+  public io.activej.promise.Promise<
+          java.util.List<com.ghatana.yappc.api.ai.dto.AISuggestionResponse>>
+      getSuggestions(String tenantId, String workspaceId, String projectId) {
+    if (projectId != null) {
+      return repository
+          .findPendingByProject(tenantId, projectId)
+          .map(list -> list.stream().map(s -> mapToResponse(s, workspaceId, "unknown")).toList());
+    } else {
+      // Fallback to finding all pending for tenant if no project specified (simplified)
+      return repository
+          .findPending(tenantId)
+          .map(list -> list.stream().map(s -> mapToResponse(s, workspaceId, "unknown")).toList());
+    }
   }
 
-  private com.ghatana.yappc.api.ai.dto.AISuggestionResponse mapToResponse(com.ghatana.yappc.api.domain.AISuggestion domain, String workspaceId, String modelId) {
-      return new com.ghatana.yappc.api.ai.dto.AISuggestionResponse(
-          domain.getId().toString(),
-          workspaceId != null ? workspaceId : "unknown", // Domain doesn't have workspaceId
-          domain.getProjectId(),
-          domain.getType().name(),
-          domain.getStatus().name(),
-          domain.getTargetResourceId(),
-          domain.getTargetResourceType(),
-          new com.ghatana.yappc.api.ai.dto.AISuggestionResponse.SuggestionContent(
-              domain.getTitle(),
-              domain.getContent(),
-              java.util.List.of(),
-              "",
-              java.util.Map.of()
-          ),
-          new com.ghatana.yappc.api.ai.dto.AISuggestionResponse.ConfidenceScore("medium", domain.getConfidence(), java.util.List.of()),
-          domain.getRationale(),
-          domain.getCreatedAt(),
-          null,
-          "LLM-Gateway",
-          modelId,
-          java.util.Map.of()
-      );
+  private com.ghatana.yappc.api.ai.dto.AISuggestionResponse mapToResponse(
+      com.ghatana.yappc.api.domain.AISuggestion domain, String workspaceId, String modelId) {
+    return new com.ghatana.yappc.api.ai.dto.AISuggestionResponse(
+        domain.getId().toString(),
+        workspaceId != null ? workspaceId : "unknown", // Domain doesn't have workspaceId
+        domain.getProjectId(),
+        domain.getType().name(),
+        domain.getStatus().name(),
+        domain.getTargetResourceId(),
+        domain.getTargetResourceType(),
+        new com.ghatana.yappc.api.ai.dto.AISuggestionResponse.SuggestionContent(
+            domain.getTitle(), domain.getContent(), java.util.List.of(), "", java.util.Map.of()),
+        new com.ghatana.yappc.api.ai.dto.AISuggestionResponse.ConfidenceScore(
+            "medium", domain.getConfidence(), java.util.List.of()),
+        domain.getRationale(),
+        domain.getCreatedAt(),
+        null,
+        "LLM-Gateway",
+        modelId,
+        java.util.Map.of());
   }
 }

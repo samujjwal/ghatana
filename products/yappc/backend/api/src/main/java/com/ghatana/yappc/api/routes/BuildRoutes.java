@@ -26,16 +26,16 @@ public final class BuildRoutes {
   /**
    * Registers all build API routes on the given builder.
    *
-   * @param builder     the routing servlet builder
-   * @param controller  build controller
+   * @param builder the routing servlet builder
+   * @param controller build controller
    */
   public static void register(RoutingServlet.Builder builder, BuildController controller) {
     builder
-        .with(POST,   "/api/v1/build/execute",                     controller::executeBuild)
-        .with(GET,    "/api/v1/build/jobs/:jobId",                 controller::getBuildStatus)
-        .with(GET,    "/api/v1/build/jobs/:jobId/logs",            controller::getBuildLogs)
-        .with(GET,    "/api/v1/build/jobs/:jobId/artifacts",       controller::downloadArtifacts)
-        .with(DELETE, "/api/v1/build/jobs/:jobId",                 controller::cancelBuild)
-        .with(GET,    "/api/v1/build/history",                     controller::getBuildHistory);
+        .with(POST, "/api/v1/build/execute", controller::executeBuild)
+        .with(GET, "/api/v1/build/jobs/:jobId", controller::getBuildStatus)
+        .with(GET, "/api/v1/build/jobs/:jobId/logs", controller::getBuildLogs)
+        .with(GET, "/api/v1/build/jobs/:jobId/artifacts", controller::downloadArtifacts)
+        .with(DELETE, "/api/v1/build/jobs/:jobId", controller::cancelBuild)
+        .with(GET, "/api/v1/build/history", controller::getBuildHistory);
   }
 }

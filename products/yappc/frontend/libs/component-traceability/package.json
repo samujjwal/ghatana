@@ -1,23 +1,28 @@
 {
   "name": "@yappc/component-traceability",
   "version": "1.0.0",
-  "description": "Component traceability management for YAPPC",
+  "description": "DEPRECATED — component traceability types. Use @yappc/ui/traceability instead.",
+  "deprecated": "Use @yappc/ui/traceability instead. This package is a compatibility shim.",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./types": "./src/types.ts"
+    "./types": "./src/index.ts"
   },
   "scripts": {
-    "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts"
+    "type-check": "tsc --noEmit"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@yappc/ui": "workspace:*"
+  },
   "devDependencies": {
-    "@types/node": "^25.2.0",
     "typescript": "^5.9.3"
   },
+  "author": "YAPPC Team",
+  "license": "MIT"
+}
+
   "keywords": [
     "traceability",
     "component",

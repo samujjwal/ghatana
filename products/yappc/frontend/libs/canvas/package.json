@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/canvas-legacy",
+  "name": "@yappc/canvas",
   "version": "1.0.0",
   "description": "World-class, production-ready Canvas library for diagramming applications",
   "type": "module",
@@ -35,8 +35,8 @@
     "@yappc/core": "workspace:*",
     "jotai": "^2.17.0",
     "@xyflow/react": "^12.10.0",
-    "@yappc/ui-legacy": "workspace:*",
-    "@yappc/ai-legacy": "workspace:*",
+    "@yappc/ui": "workspace:*",
+    "@yappc/ai": "workspace:*",
     "@ghatana/design-system": "workspace:*"
   },
   "devDependencies": {

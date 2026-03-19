@@ -1,14 +1,18 @@
 /**
- * @ghatana/yappc-notifications
- * 
- * Real-time notification library for YAPPC.
- * Provides notification components and hooks for system notifications.
- * 
+ * @yappc/notifications — DEPRECATED
+ *
+ * @deprecated Use `@yappc/messaging` instead.
+ * This package is a compatibility shim and will be removed in a future release.
+ *
+ * Migration: replace `@yappc/notifications` imports with `@yappc/messaging` or
+ * the scoped `@yappc/messaging/notifications` sub-path.
+ *
  * @module notifications
  */
 
-// Hooks
-export { useNotificationBackend } from './hooks/useNotificationBackend';
+// Re-export everything from the canonical messaging library
+export * from '@yappc/messaging/notifications';
+
 export type {
   UseNotificationBackendConfig,
   Notification,

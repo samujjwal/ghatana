@@ -1,4 +1,3 @@
-// All tests skipped - incomplete feature
 /**
  * Integration tests for Feature 2.11: Undo/Redo UX with Timeline & Checkpoints
  *
@@ -45,7 +44,7 @@ import {
   type Checkpoint,
   type TimelineBranch,
   type UndoConflict,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
@@ -350,7 +349,7 @@ function TimelineManager({
   );
 }
 
-describe.skip('Feature 2.11: Undo/Redo UX - Integration Tests', () => {
+describe('Feature 2.11: Undo/Redo UX - Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

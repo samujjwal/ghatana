@@ -27,56 +27,74 @@ public final class WorkspaceRoutes {
   /**
    * Registers all workspace API routes on the given builder.
    *
-   * @param builder     the routing servlet builder
-   * @param controller  workspace controller
+   * @param builder the routing servlet builder
+   * @param controller workspace controller
    */
   public static void register(RoutingServlet.Builder builder, WorkspaceController controller) {
     builder
-        .with(GET,    "/api/workspaces",                               controller::listWorkspaces)
-        .with(POST,   "/api/workspaces",                               controller::createWorkspace)
-        .with(GET,    "/api/workspaces/:id",
+        .with(GET, "/api/workspaces", controller::listWorkspaces)
+        .with(POST, "/api/workspaces", controller::createWorkspace)
+        .with(
+            GET,
+            "/api/workspaces/:id",
             request -> {
               String id = request.getPathParameter("id");
               return controller.getWorkspace(request, id);
             })
-        .with(PUT,    "/api/workspaces/:id",
+        .with(
+            PUT,
+            "/api/workspaces/:id",
             request -> {
               String id = request.getPathParameter("id");
               return controller.updateWorkspace(request, id);
             })
-        .with(DELETE, "/api/workspaces/:id",
+        .with(
+            DELETE,
+            "/api/workspaces/:id",
             request -> {
               String id = request.getPathParameter("id");
               return controller.deleteWorkspace(request, id);
             })
-        .with(GET,    "/api/workspaces/:id/members",
+        .with(
+            GET,
+            "/api/workspaces/:id/members",
             request -> {
               String id = request.getPathParameter("id");
               return controller.listMembers(request, id);
             })
-        .with(POST,   "/api/workspaces/:id/members",
+        .with(
+            POST,
+            "/api/workspaces/:id/members",
             request -> {
               String id = request.getPathParameter("id");
               return controller.addMember(request, id);
             })
-        .with(PUT,    "/api/workspaces/:workspaceId/members/:userId",
+        .with(
+            PUT,
+            "/api/workspaces/:workspaceId/members/:userId",
             request -> {
               String workspaceId = request.getPathParameter("workspaceId");
-              String userId      = request.getPathParameter("userId");
+              String userId = request.getPathParameter("userId");
               return controller.updateMember(request, workspaceId, userId);
             })
-        .with(DELETE, "/api/workspaces/:workspaceId/members/:userId",
+        .with(
+            DELETE,
+            "/api/workspaces/:workspaceId/members/:userId",
             request -> {
               String workspaceId = request.getPathParameter("workspaceId");
-              String userId      = request.getPathParameter("userId");
+              String userId = request.getPathParameter("userId");
               return controller.removeMember(request, workspaceId, userId);
             })
-        .with(GET,    "/api/workspaces/:id/settings",
+        .with(
+            GET,
+            "/api/workspaces/:id/settings",
             request -> {
               String id = request.getPathParameter("id");
               return controller.getSettings(request, id);
             })
-        .with(PUT,    "/api/workspaces/:id/settings",
+        .with(
+            PUT,
+            "/api/workspaces/:id/settings",
             request -> {
               String id = request.getPathParameter("id");
               return controller.updateSettings(request, id);

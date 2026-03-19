@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 
-import { ComponentRegistry } from './ComponentRegistry';
+import { ComponentRegistry } from '../ComponentRegistry';
 
-import type { ComponentDefinition } from './types';
+import type { ComponentDefinition } from '@yappc/core/types';
 
 describe('ComponentRegistry', () => {
   beforeEach(() => {
@@ -20,6 +20,32 @@ describe('ComponentRegistry', () => {
     defaultData: { text: 'Click' },
     tags: ['test', 'button'],
   };
+
+  describe('update', () => {
+    test('should update an existing component', () => {
+      ComponentRegistry.register(mockComponent);
+
+      ComponentRegistry.update('button', '1.0.0', { label: 'Updated Button' });
+
+      expect(ComponentRegistry.get('button')?.label).toBe('Updated Button');
+    });
+
+    test('should preserve fields not included in the update', () => {
+      ComponentRegistry.register(mockComponent);
+
+      ComponentRegistry.update('button', '1.0.0', { label: 'New Label' });
+      const component = ComponentRegistry.getVersion('button', '1.0.0');
+
+      expect(component?.type).toBe('button');
+      expect(component?.version).toBe('1.0.0');
+    });
+
+    test('should throw for non-existent component type+version', () => {
+      expect(() => {
+        ComponentRegistry.update('nonexistent', '1.0.0', { label: 'X' });
+      }).toThrow('Component not found: nonexistent:1.0.0');
+    });
+  });
 
   describe('register', () => {
     test('should register a component', () => {

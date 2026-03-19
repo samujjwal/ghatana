@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana Technologies
+ * YAPPC API Module
  */
-
 package com.ghatana.yappc.api.testing.dto;
 
 /**
@@ -11,15 +11,9 @@ package com.ghatana.yappc.api.testing.dto;
  * @param name Template name
  * @param framework Test framework
  * @param description Template description
- *
  * @doc.type record
  * @doc.purpose Test template DTO
  * @doc.layer product
  * @doc.pattern DTO
  */
-public record TestTemplate(
-        String id,
-        String name,
-        String framework,
-        String description
-) {}
+public record TestTemplate(String id, String name, String framework, String description) {}

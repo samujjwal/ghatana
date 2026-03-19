@@ -19,8 +19,8 @@ dependencies {
     implementation(libs.activej.promise)
 
     // Docker
-    implementation("com.github.docker-java:docker-java-core:3.3.6")
-    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.3.6")
+    implementation(libs.docker.java.core)
+    implementation(libs.docker.java.transport.httpclient5)
 
     // JSON & YAML
     implementation(libs.jackson.databind)

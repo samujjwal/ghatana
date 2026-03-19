@@ -2,7 +2,7 @@ import { seedScenarios } from '@yappc/testing/mocks/seed-canvas';
 import { Provider, useSetAtom } from 'jotai';
 import React, { useEffect } from 'react';
 
-import { canvasStateAtom } from '@ghatana/canvas';
+import { canvasStateAtom } from '@yappc/canvas';
 import CanvasScene from '../../routes/app/project/canvas/CanvasScene';
 
 import type { Meta, StoryObj } from '@storybook/react';

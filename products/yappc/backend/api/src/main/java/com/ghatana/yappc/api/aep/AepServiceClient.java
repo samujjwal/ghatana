@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC API Module - AEP Integration
+ * YAPPC API Module
  */
 package com.ghatana.yappc.api.aep;
 
@@ -25,12 +25,12 @@ import org.slf4j.LoggerFactory;
 
 /**
  * HTTP client for external AEP service mode.
- 
+ *
  * @doc.type class
  * @doc.purpose Handles aep service client operations
  * @doc.layer product
  * @doc.pattern Implementation
-*/
+ */
 public final class AepServiceClient implements AepClient {
 
   private static final Logger LOG = LoggerFactory.getLogger(AepServiceClient.class);
@@ -118,7 +118,8 @@ public final class AepServiceClient implements AepClient {
 
     HttpResponse<String> response =
         sendJson("POST", "/api/v1/events", requestBody, tenantId, "execute action " + action);
-    Map<String, Object> responseBody = new LinkedHashMap<>(parseJsonMap(response.body(), "action response"));
+    Map<String, Object> responseBody =
+        new LinkedHashMap<>(parseJsonMap(response.body(), "action response"));
     responseBody.putIfAbsent("action", action);
     responseBody.putIfAbsent("status", "submitted");
     return toJson(responseBody);

@@ -66,6 +66,12 @@ export default defineConfig({
         '**/src/main.tsx',
         '**/src/App.tsx',
       ],
+      thresholds: {
+        lines: 40,
+        functions: 40,
+        branches: 35,
+        statements: 40,
+      },
     },
 
     // Test timeout

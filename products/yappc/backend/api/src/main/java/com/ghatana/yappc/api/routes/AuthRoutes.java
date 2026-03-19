@@ -28,9 +28,9 @@ public final class AuthRoutes {
   /**
    * Registers all auth API routes on the given builder.
    *
-   * @param builder  the routing servlet builder
-   * @param authz    authorization controller (RBAC)
-   * @param authn    authentication controller (sessions)
+   * @param builder the routing servlet builder
+   * @param authz authorization controller (RBAC)
+   * @param authn authentication controller (sessions)
    */
   public static void register(
       RoutingServlet.Builder builder,
@@ -39,27 +39,31 @@ public final class AuthRoutes {
 
     builder
         // Authorization
-        .with(POST, "/api/auth/check-permission",               authz::checkPermission)
-        .with(GET,  "/api/auth/user/permissions",               authz::getUserPermissions)
-        .with(GET,  "/api/auth/persona/:persona/permissions",
+        .with(POST, "/api/auth/check-permission", authz::checkPermission)
+        .with(GET, "/api/auth/user/permissions", authz::getUserPermissions)
+        .with(
+            GET,
+            "/api/auth/persona/:persona/permissions",
             request -> {
               String persona = request.getPathParameter("persona");
               return authz.getPersonaPermissions(request, persona);
             })
-        .with(GET,  "/api/auth/persona/:persona/has-permission/:permission",
+        .with(
+            GET,
+            "/api/auth/persona/:persona/has-permission/:permission",
             request -> {
-              String persona    = request.getPathParameter("persona");
+              String persona = request.getPathParameter("persona");
               String permission = request.getPathParameter("permission");
               return authz.checkPersonaPermission(request, persona, permission);
             })
 
         // Authentication
-        .with(POST, "/api/auth/login",           authn::login)
-        .with(POST, "/api/auth/register",        authn::register)
-        .with(POST, "/api/auth/logout",          authn::logout)
-        .with(POST, "/api/auth/refresh",         authn::refresh)
-        .with(GET,  "/api/auth/profile",         authn::getProfile)
-        .with(POST, "/api/auth/reset",           authn::requestPasswordReset)
-        .with(POST, "/api/auth/reset/confirm",   authn::confirmPasswordReset);
+        .with(POST, "/api/auth/login", authn::login)
+        .with(POST, "/api/auth/register", authn::register)
+        .with(POST, "/api/auth/logout", authn::logout)
+        .with(POST, "/api/auth/refresh", authn::refresh)
+        .with(GET, "/api/auth/profile", authn::getProfile)
+        .with(POST, "/api/auth/reset", authn::requestPasswordReset)
+        .with(POST, "/api/auth/reset/confirm", authn::confirmPasswordReset);
   }
 }

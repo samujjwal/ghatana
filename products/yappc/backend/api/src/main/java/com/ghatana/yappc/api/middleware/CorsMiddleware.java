@@ -90,7 +90,8 @@ public class CorsMiddleware implements AsyncServlet {
                 logger.error("Unhandled exception after middleware chain", e);
                 finalResponse =
                     HttpResponse.ofCode(500)
-                        .withBody("{\"error\":\"Internal Server Error\",\"message\":\"An unexpected error occurred\",\"code\":\"INTERNAL_ERROR\"}")
+                        .withBody(
+                            "{\"error\":\"Internal Server Error\",\"message\":\"An unexpected error occurred\",\"code\":\"INTERNAL_ERROR\"}")
                         .build();
               }
               return Promise.of(addCorsHeaders(finalResponse));

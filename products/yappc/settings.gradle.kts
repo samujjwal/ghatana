@@ -54,25 +54,45 @@ include(":platform")
 include(":services")
 include(":backend:api")
 
+// --- Backend Service Modules ---
+include(":backend:persistence")
+include(":backend:auth")
+include(":backend:websocket")
+include(":backend:deployment")
+
+// --- Application Launcher ---
+include(":launcher")
+
 // --- Unified Service Modules ---
-include(":services:domain")
-include(":services:infrastructure")
+include(":services:platform")   // canonical combined module (was: domain + infrastructure)
+include(":services:domain")     // backward-compat stub — delegates to :services:platform
+include(":services:infrastructure") // backward-compat stub — delegates to :services:platform
 include(":services:ai")
 include(":services:lifecycle")
 include(":services:scaffold")
 
 // --- Core Domain Modules ---
 include(":core:domain")
+include(":core:domain:service")
+include(":core:domain:task")
 
 // --- Core: Scaffold Engine ---
 include(":core:scaffold")
 include(":core:scaffold:api")
+include(":core:scaffold:api:http")
+include(":core:scaffold:api:grpc")
 include(":core:scaffold:core")
 include(":core:scaffold:packs")
+include(":core:scaffold:adapters")
+include(":core:scaffold:cli")
+include(":core:scaffold:schemas")
 
 // --- Core: AI & Agents ---
 include(":core:ai")
 include(":core:agents")
+include(":core:agents:runtime")
+include(":core:agents:workflow")
+include(":core:agents:specialists")
 
 // --- Core: Refactorer ---
 include(":core:refactorer:api")
@@ -88,12 +108,16 @@ include(":core:spi")
 
 // --- Infrastructure ---
 include(":infrastructure:datacloud")
+include(":infrastructure:security")
 
 // --- YAPPC Shared Libraries ---
 include(":libs:java:yappc-domain")
 
 // --- Examples (plugin SDK reference implementations) ---
 include(":examples:sample-build-generator-plugin")
+
+// --- Gradle build tooling & validation tests ---
+include(":tools:validation-tests")
 
 // ============================================================================
 // Monorepo Shared Libraries (Standalone build only)
@@ -122,18 +146,34 @@ if (isStandaloneBuild) {
             "platform",
             "services",
             "backend:api",
-            "services:domain",
-            "services:infrastructure",
+            "backend:persistence",
+            "backend:auth",
+            "backend:websocket",
+            "backend:deployment",
+            "launcher",
+            "services:platform",       // canonical combined module
+            "services:domain",         // backward-compat stub
+            "services:infrastructure", // backward-compat stub
             "services:ai",
             "services:lifecycle",
             "services:scaffold",
             "core:domain",
+            "core:domain:service",
+            "core:domain:task",
             "core:scaffold",
             "core:scaffold:api",
+            "core:scaffold:api:http",
+            "core:scaffold:api:grpc",
             "core:scaffold:core",
             "core:scaffold:packs",
+            "core:scaffold:adapters",
+            "core:scaffold:cli",
+            "core:scaffold:schemas",
             "core:ai",
             "core:agents",
+            "core:agents:runtime",
+            "core:agents:workflow",
+            "core:agents:specialists",
             "core:refactorer:api",
             "core:refactorer:engine",
             "core:cli-tools",
@@ -143,6 +183,7 @@ if (isStandaloneBuild) {
             "core:framework:integration-test",
             "core:spi",
             "infrastructure:datacloud",
+            "infrastructure:security",
             "libs:java:yappc-domain")
 
     yappcAliasModules.forEach { modulePath ->
@@ -157,13 +198,22 @@ if (isStandaloneBuild) {
     }
 
     // Core platform libraries
-    listOf(
-        "core", "domain", "database", "http", "auth", "observability",
-        "testing", "runtime", "config", "workflow", "ai-integration",
-        "governance", "security", "agent-framework", "agent-memory",
-        "agent-learning", "event-cloud", "audit",
-        "connectors", "ingestion", "plugin"
-    ).forEach { includePlatformLib(it) }
+    monorepoPlatformJava
+        .listFiles()
+        .orEmpty()
+        .filter { it.isDirectory }
+        .map { it.name }
+        .sorted()
+        .forEach { includePlatformLib(it) }
+
+    val aiIntegrationDir = File(monorepoRoot, "platform/java/ai-integration")
+    listOf("feature-store", "observability", "registry").forEach { moduleName ->
+        val moduleDir = File(aiIntegrationDir, moduleName)
+        if (moduleDir.exists()) {
+            include("platform:java:ai-integration:$moduleName")
+            project(":platform:java:ai-integration:$moduleName").projectDir = moduleDir
+        }
+    }
 
     // Peer product dependencies
     val productsRoot = File(monorepoRoot, "products")
@@ -193,6 +243,17 @@ if (isStandaloneBuild) {
         project(":products:aep").projectDir = aepRoot
         include("products:aep:platform")
         project(":products:aep:platform").projectDir = aepPlatform
+    }
+
+    val sharedServicesRoot = File(monorepoRoot, "shared-services")
+    val authGatewayRoot = File(sharedServicesRoot, "auth-gateway")
+    if (sharedServicesRoot.exists()) {
+        include("shared-services")
+        project(":shared-services").projectDir = sharedServicesRoot
+        if (authGatewayRoot.exists()) {
+            include("shared-services:auth-gateway")
+            project(":shared-services:auth-gateway").projectDir = authGatewayRoot
+        }
     }
 }
 

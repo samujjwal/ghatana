@@ -4,9 +4,9 @@
  */
 package com.ghatana.yappc.api.service;
 
-import com.ghatana.platform.audit.AuditService;
-import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.datacloud.application.version.VersionService;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditService;
 import com.ghatana.yappc.api.domain.Requirement;
 import com.ghatana.yappc.api.domain.Requirement.Priority;
 import com.ghatana.yappc.api.domain.Requirement.RequirementStatus;

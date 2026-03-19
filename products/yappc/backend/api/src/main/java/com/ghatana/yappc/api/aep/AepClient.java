@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC API Module - AEP Integration
+ * YAPPC API Module
  */
 package com.ghatana.yappc.api.aep;
 
@@ -12,16 +12,14 @@ package com.ghatana.yappc.api.aep;
  * whether it runs as a library or external service.
  *
  * <p><b>Architecture</b><br>
- * Two implementations:
- * - AepLibraryClient: Direct in-process library calls
- * - AepServiceClient: HTTP-based remote calls
+ * Two implementations: - AepLibraryClient: Direct in-process library calls - AepServiceClient:
+ * HTTP-based remote calls
  *
  * <p><b>Backend Responsibilities</b><br>
  * All AEP communication happens in the backend. The frontend never talks to AEP directly.
  *
  * @see AepLibraryClient
  * @see AepServiceClient
-  *
  * @doc.type interface
  * @doc.purpose aep client
  * @doc.layer product
@@ -66,8 +64,6 @@ public interface AepClient {
    */
   String healthCheck() throws AepException;
 
-  /**
-   * Gracefully closes the AEP client.
-   */
+  /** Gracefully closes the AEP client. */
   void close();
 }

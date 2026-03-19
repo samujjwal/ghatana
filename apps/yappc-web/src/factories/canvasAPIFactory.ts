@@ -5,7 +5,7 @@
  */
 
 import { logger } from '../utils/Logger';
-import type { CanvasAPI, CanvasElement, CanvasDocument } from '@ghatana/canvas';
+import type { CanvasAPI, CanvasElement, CanvasDocument } from '@yappc/canvas';
 
 const STORAGE_KEY = 'page-builder-canvas-state';
 

@@ -4,8 +4,8 @@
  */
 package com.ghatana.yappc.api.requirements;
 
-import com.ghatana.yappc.api.common.ApiResponse;
 import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.yappc.api.common.ApiResponse;
 import com.ghatana.yappc.api.common.TenantContextExtractor;
 import com.ghatana.yappc.api.domain.Requirement;
 import com.ghatana.yappc.api.requirements.dto.*;
@@ -45,41 +45,55 @@ public class RequirementsController {
         .then(
             ctx -> {
               logger.info("Creating requirement for tenant: {}", ctx.tenantId());
-              
-              return request.loadBody().then(body -> {
-                  CreateRequirementRequest req = JsonUtils.fromJson(body.getString(StandardCharsets.UTF_8), CreateRequirementRequest.class);
 
-                  // Use config-driven data for requirement creation
-                  return configService
-                      .getDomains()
-                      .then(
-                          domains -> {
-                            // Use first domain as default for demo, or parse from request
-                            var defaultDomain = domains.isEmpty() ? "general" : domains.get(0).id();
+              return request
+                  .loadBody()
+                  .then(
+                      body -> {
+                        CreateRequirementRequest req =
+                            JsonUtils.fromJson(
+                                body.getString(StandardCharsets.UTF_8),
+                                CreateRequirementRequest.class);
 
-                            Requirement.RequirementType domainType = req.type() != null ? 
-                                Requirement.RequirementType.valueOf(req.type().name()) : null;
-                                
-                            Requirement.Priority domainPriority = req.priority() != null ? 
-                                Requirement.Priority.valueOf(req.priority().name()) : null;
+                        // Use config-driven data for requirement creation
+                        return configService
+                            .getDomains()
+                            .then(
+                                domains -> {
+                                  // Use first domain as default for demo, or parse from request
+                                  var defaultDomain =
+                                      domains.isEmpty() ? "general" : domains.get(0).id();
 
-                            return requirementService.createRequirement(
-                                ctx.tenantId(),
-                                req.title() != null ? req.title() : "New Requirement", 
-                                req.description() != null ? req.description() : ("Auto-generated requirement using domain: " + defaultDomain),
-                                domainType,
-                                domainPriority,
-                                ctx.userId());
-                          })
-                      .<HttpResponse>map(
-                          requirement -> {
-                            logger.info(
-                                "Successfully created requirement {} for tenant {}",
-                                requirement.getId(),
-                                ctx.tenantId());
-                            return ApiResponse.created(requirement);
-                          });
-              });
+                                  Requirement.RequirementType domainType =
+                                      req.type() != null
+                                          ? Requirement.RequirementType.valueOf(req.type().name())
+                                          : null;
+
+                                  Requirement.Priority domainPriority =
+                                      req.priority() != null
+                                          ? Requirement.Priority.valueOf(req.priority().name())
+                                          : null;
+
+                                  return requirementService.createRequirement(
+                                      ctx.tenantId(),
+                                      req.title() != null ? req.title() : "New Requirement",
+                                      req.description() != null
+                                          ? req.description()
+                                          : ("Auto-generated requirement using domain: "
+                                              + defaultDomain),
+                                      domainType,
+                                      domainPriority,
+                                      ctx.userId());
+                                })
+                            .<HttpResponse>map(
+                                requirement -> {
+                                  logger.info(
+                                      "Successfully created requirement {} for tenant {}",
+                                      requirement.getId(),
+                                      ctx.tenantId());
+                                  return ApiResponse.created(requirement);
+                                });
+                      });
             })
         .then(response -> Promise.of(response), e -> Promise.of(ApiResponse.fromException(e)));
   }
@@ -136,37 +150,45 @@ public class RequirementsController {
             ctx -> {
               logger.info("Updating requirement {} for tenant: {}", id, ctx.tenantId());
 
-              return request.loadBody().then(body -> {
-                  UpdateRequirementRequest req = JsonUtils.fromJson(body.getString(StandardCharsets.UTF_8), UpdateRequirementRequest.class);
+              return request
+                  .loadBody()
+                  .then(
+                      body -> {
+                        UpdateRequirementRequest req =
+                            JsonUtils.fromJson(
+                                body.getString(StandardCharsets.UTF_8),
+                                UpdateRequirementRequest.class);
 
-                  Requirement.Priority domainPriority = req.priority() != null ? 
-                        Requirement.Priority.valueOf(req.priority().name()) : null;
+                        Requirement.Priority domainPriority =
+                            req.priority() != null
+                                ? Requirement.Priority.valueOf(req.priority().name())
+                                : null;
 
-                  return requirementService
-                      .updateRequirement(
-                          ctx.tenantId(),
-                          java.util.UUID.fromString(id),
-                          req.title(),
-                          req.description(),
-                          domainPriority,
-                          ctx.userId())
-                      .map(
-                          optionalRequirement -> {
-                            if (optionalRequirement.isPresent()) {
-                              logger.info(
-                                  "Successfully updated requirement {} for tenant {}",
-                                  id,
-                                  ctx.tenantId());
-                              return ApiResponse.ok(optionalRequirement.get());
-                            } else {
-                              logger.warn(
-                                  "Requirement {} not found for update in tenant {}",
-                                  id,
-                                  ctx.tenantId());
-                              return ApiResponse.notFound("Requirement not found: " + id);
-                            }
-                          });
-              });
+                        return requirementService
+                            .updateRequirement(
+                                ctx.tenantId(),
+                                java.util.UUID.fromString(id),
+                                req.title(),
+                                req.description(),
+                                domainPriority,
+                                ctx.userId())
+                            .map(
+                                optionalRequirement -> {
+                                  if (optionalRequirement.isPresent()) {
+                                    logger.info(
+                                        "Successfully updated requirement {} for tenant {}",
+                                        id,
+                                        ctx.tenantId());
+                                    return ApiResponse.ok(optionalRequirement.get());
+                                  } else {
+                                    logger.warn(
+                                        "Requirement {} not found for update in tenant {}",
+                                        id,
+                                        ctx.tenantId());
+                                    return ApiResponse.notFound("Requirement not found: " + id);
+                                  }
+                                });
+                      });
             })
         .then(response -> Promise.of(response), e -> Promise.of(ApiResponse.fromException(e)));
   }

@@ -6,8 +6,9 @@ package com.ghatana.yappc.api.ai;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.ghatana.platform.audit.AuditService;
+import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.api.aep.AepClient;
 import com.ghatana.yappc.api.aep.AepException;
@@ -15,10 +16,9 @@ import com.ghatana.yappc.api.aep.AepService;
 import com.ghatana.yappc.api.domain.AgentCapabilities;
 import com.ghatana.yappc.api.domain.TaskDomain;
 import com.ghatana.yappc.api.repository.InMemoryAISuggestionRepository;
-import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.yappc.api.service.AISuggestionService;
-import com.ghatana.yappc.api.service.ConfigService;
 import com.ghatana.yappc.api.service.ConfigLoader;
+import com.ghatana.yappc.api.service.ConfigService;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
@@ -61,7 +61,8 @@ class AISuggestionsControllerTest extends EventloopTestBase {
     var auditService = new MockAuditService();
     var aiSuggestionRepository = new InMemoryAISuggestionRepository();
     var llmGateway = org.mockito.Mockito.mock(LLMGateway.class);
-    var aiSuggestionService = new AISuggestionService(aiSuggestionRepository, auditService, llmGateway);
+    var aiSuggestionService =
+        new AISuggestionService(aiSuggestionRepository, auditService, llmGateway);
     var configService = new MockConfigService();
     var aepService = new AepService(new NoOpAepClient());
 
@@ -453,7 +454,7 @@ class AISuggestionsControllerTest extends EventloopTestBase {
 
   // Mock ConfigService for testing
   private static class MockConfigService extends ConfigService {
-    
+
     public MockConfigService() {
       super(org.mockito.Mockito.mock(ConfigLoader.class));
     }

@@ -24,17 +24,17 @@ import org.slf4j.LoggerFactory;
  * JDBC-backed implementation of {@link RolePermissionRegistry} with an in-memory read cache.
  *
  * <p><b>Purpose</b><br>
- * Stores role-to-permission mappings in PostgreSQL (replacing hardcoded in-memory definitions)
- * so that RBAC configuration survives restarts and can be updated at runtime without redeployment.
+ * Stores role-to-permission mappings in PostgreSQL (replacing hardcoded in-memory definitions) so
+ * that RBAC configuration survives restarts and can be updated at runtime without redeployment.
  *
  * <p><b>Caching Strategy</b><br>
- * Permissions are loaded eagerly from the DB on construction, then cached in a
- * {@link ConcurrentHashMap} for O(1) read performance. {@link #registerRole} writes through
- * to the DB and updates the cache atomically.
+ * Permissions are loaded eagerly from the DB on construction, then cached in a {@link
+ * ConcurrentHashMap} for O(1) read performance. {@link #registerRole} writes through to the DB and
+ * updates the cache atomically.
  *
  * <p><b>Multi-Tenancy</b><br>
- * This registry is system-wide (roles are shared across tenants). Per-tenant overrides
- * would require a separate {@code tenant_id}-scoped table — out of scope for this phase.
+ * This registry is system-wide (roles are shared across tenants). Per-tenant overrides would
+ * require a separate {@code tenant_id}-scoped table — out of scope for this phase.
  *
  * @doc.type class
  * @doc.purpose JDBC-backed role-permission registry with eager-load read cache
@@ -84,7 +84,8 @@ public class JdbcRolePermissionRegistry implements RolePermissionRegistry {
 
     try {
       String permJson = objectMapper.writeValueAsString(permissions);
-      String sql = """
+      String sql =
+          """
           INSERT INTO role_permissions (role_name, permissions, created_at, updated_at)
           VALUES (?, ?::jsonb, ?, ?)
           ON CONFLICT (role_name)
@@ -114,9 +115,9 @@ public class JdbcRolePermissionRegistry implements RolePermissionRegistry {
   // -------------------------------------------------------------------------
 
   /**
-   * Eagerly loads all role-permission mappings from the DB into the in-memory cache.
-   * Called once during construction. Logs a warning if the table is empty (likely first boot
-   * before V15 migration seeds defaults).
+   * Eagerly loads all role-permission mappings from the DB into the in-memory cache. Called once
+   * during construction. Logs a warning if the table is empty (likely first boot before V15
+   * migration seeds defaults).
    */
   private void loadAll() {
     String sql = "SELECT role_name, permissions FROM role_permissions";

@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import { faker } from '@ghatana/yappc-mocks/faker-shim';
+import { faker } from '@yappc/testing/mocks/faker-shim';
 
 /**
  *

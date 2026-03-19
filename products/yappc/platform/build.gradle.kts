@@ -40,7 +40,7 @@ dependencies {
     implementation(libs.jackson.datatype.jsr310)
 
     // GraphQL
-    implementation("com.graphql-java:graphql-java:21.3")
+    implementation(libs.graphql.java)
 
     // Database
     implementation("com.zaxxer:HikariCP:5.1.0")
@@ -60,7 +60,7 @@ dependencies {
     implementation("org.jline:jline:3.25.1")
     
     // JSON Schema Validation
-    implementation("com.networknt:json-schema-validator:1.3.3")
+    implementation(libs.networknt.validator)
     
     // Logging
     implementation(libs.slf4j.api)

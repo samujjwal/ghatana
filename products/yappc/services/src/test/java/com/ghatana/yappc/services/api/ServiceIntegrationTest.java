@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import io.activej.promise.Promise;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.Statement;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -74,10 +77,15 @@ class ServiceIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return OK from health check")
-        void shouldReturnOkFromHealthCheck() {
-            // GIVEN
+        void shouldReturnOkFromHealthCheck() throws Exception {
+            // GIVEN — mock DataSource that simulates a reachable database
+            DataSource mockDs = mock(DataSource.class);
+            Connection mockConn = mock(Connection.class);
+            Statement mockStmt = mock(Statement.class);
+            when(mockDs.getConnection()).thenReturn(mockConn);
+            when(mockConn.createStatement()).thenReturn(mockStmt);
             InfrastructureServiceFacade infraService = new InfrastructureServiceFacade(
-                    new SecurityServiceAdapter());
+                    new SecurityServiceAdapter(), mockDs);
 
             // WHEN
             String health = runPromise(infraService::healthCheck);
@@ -88,10 +96,15 @@ class ServiceIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should report database as reachable")
-        void shouldReportDatabaseAsReachable() {
-            // GIVEN
+        void shouldReportDatabaseAsReachable() throws Exception {
+            // GIVEN — mock DataSource that simulates a reachable database
+            DataSource mockDs = mock(DataSource.class);
+            Connection mockConn = mock(Connection.class);
+            Statement mockStmt = mock(Statement.class);
+            when(mockDs.getConnection()).thenReturn(mockConn);
+            when(mockConn.createStatement()).thenReturn(mockStmt);
             InfrastructureServiceFacade infraService = new InfrastructureServiceFacade(
-                    new SecurityServiceAdapter());
+                    new SecurityServiceAdapter(), mockDs);
 
             // WHEN
             Boolean reachable = runPromise(infraService::isDatabaseReachable);

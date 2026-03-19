@@ -13,6 +13,14 @@
     "./components": {
       "types": "./src/components/index.ts",
       "import": "./src/components/index.ts"
+    },
+    "./crdt": {
+      "types": "./src/crdt/index.ts",
+      "import": "./src/crdt/index.ts"
+    },
+    "./websocket": {
+      "types": "./src/websocket/index.ts",
+      "import": "./src/websocket/index.ts"
     }
   },
   "scripts": {

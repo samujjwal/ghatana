@@ -260,6 +260,12 @@ jobs:
       - name: PMD
         run: ./gradlew :products:yappc:pmdMain --no-daemon
 
+      - name: Spotless (format check)
+        run: ./gradlew :products:yappc:backend:api:spotlessCheck --no-daemon
+
+      - name: Doc-tag compliance
+        run: ./gradlew checkDocTags --no-daemon
+
       - name: Upload Quality Reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -268,6 +274,7 @@ jobs:
           path: |
             products/yappc/**/build/reports/checkstyle/**/*
             products/yappc/**/build/reports/pmd/**/*
+            products/yappc/**/build/reports/spotbugs/**/*
           retention-days: 7
 
   # ─────────────────────────────────────────────

@@ -7,36 +7,28 @@ package com.ghatana.yappc.api;
 import static io.activej.http.HttpMethod.*;
 
 import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.yappc.api.observability.MicrometerMetricsCollector;
 import com.ghatana.yappc.api.ai.AISuggestionsController;
-import com.ghatana.yappc.api.config.FlywayConfiguration;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-import javax.sql.DataSource;
 import com.ghatana.yappc.api.approval.ApprovalController;
 import com.ghatana.yappc.api.architecture.ArchitectureController;
 import com.ghatana.yappc.api.audit.AuditController;
 import com.ghatana.yappc.api.auth.AuthenticationController;
 import com.ghatana.yappc.api.auth.AuthorizationController;
 import com.ghatana.yappc.api.build.BuildController;
+import com.ghatana.yappc.api.config.FlywayConfiguration;
 import com.ghatana.yappc.api.config.ProductionModule;
-import com.ghatana.yappc.api.outbox.OutboxRelayService;
 import com.ghatana.yappc.api.controller.ConfigController;
 import com.ghatana.yappc.api.controller.DashboardController;
+import com.ghatana.yappc.api.controller.GraphQLController;
 import com.ghatana.yappc.api.controller.RailController;
-import com.ghatana.yappc.api.controller.StaticFileController;
+import com.ghatana.yappc.api.controller.WebSocketController;
 import com.ghatana.yappc.api.controller.WorkflowAgentController;
+import com.ghatana.yappc.api.middleware.CorrelationIdFilter;
 import com.ghatana.yappc.api.middleware.CorsMiddleware;
 import com.ghatana.yappc.api.middleware.GlobalExceptionHandler;
-import com.ghatana.yappc.api.security.JwtTokenProvider;
-import com.ghatana.yappc.api.security.SecurityMiddleware;
+import com.ghatana.yappc.api.middleware.RateLimitFilter;
+import com.ghatana.yappc.api.observability.MicrometerMetricsCollector;
+import com.ghatana.yappc.api.outbox.OutboxRelayService;
 import com.ghatana.yappc.api.requirements.RequirementsController;
-import com.ghatana.yappc.api.version.VersionController;
-import com.ghatana.yappc.api.workspace.WorkspaceController;
-import com.ghatana.yappc.api.controller.GraphQLController;
-import com.ghatana.yappc.api.controller.WebSocketController;
-import io.activej.http.AsyncServlet;
-import io.activej.http.RoutingServlet;
 import com.ghatana.yappc.api.routes.AgentRoutes;
 import com.ghatana.yappc.api.routes.AiRoutes;
 import com.ghatana.yappc.api.routes.ArchitectureApprovalRoutes;
@@ -49,9 +41,18 @@ import com.ghatana.yappc.api.routes.PlatformRoutes;
 import com.ghatana.yappc.api.routes.RequirementsRoutes;
 import com.ghatana.yappc.api.routes.VersionRoutes;
 import com.ghatana.yappc.api.routes.WorkspaceRoutes;
+import com.ghatana.yappc.api.security.JwtTokenProvider;
+import com.ghatana.yappc.api.security.SecurityMiddleware;
+import com.ghatana.yappc.api.version.VersionController;
+import com.ghatana.yappc.api.workspace.WorkspaceController;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import io.activej.http.AsyncServlet;
+import io.activej.http.RoutingServlet;
 import io.activej.inject.annotation.Provides;
 import io.activej.launchers.http.HttpServerLauncher;
 import io.activej.reactor.Reactor;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,9 +91,9 @@ public class ApiApplication extends HttpServerLauncher {
   private static final Logger logger = LoggerFactory.getLogger(ApiApplication.class);
 
   /**
-   * Prometheus-backed MetricsCollector created before the DI module so the same instance
-   * can be both passed to {@link com.ghatana.yappc.api.config.ProductionModule} (for service
-   * injection) and referenced by the /metrics scrape endpoint closure.
+   * Prometheus-backed MetricsCollector created before the DI module so the same instance can be
+   * both passed to {@link com.ghatana.yappc.api.config.ProductionModule} (for service injection)
+   * and referenced by the /metrics scrape endpoint closure.
    */
   private MicrometerMetricsCollector micrometerMetricsCollector;
 
@@ -100,7 +101,7 @@ public class ApiApplication extends HttpServerLauncher {
   @Provides
   AsyncServlet servlet(
       Reactor reactor,
-      org.flywaydb.core.Flyway flyway,  // Ensure migrations run before servlet starts
+      org.flywaydb.core.Flyway flyway, // Ensure migrations run before servlet starts
       JwtTokenProvider jwtTokenProvider,
       AuditController auditController,
       VersionController versionController,
@@ -140,23 +141,36 @@ public class ApiApplication extends HttpServerLauncher {
     WorkspaceRoutes.register(builder, workspaceController);
     ArchitectureApprovalRoutes.register(builder, architectureController, approvalController);
     ConfigRoutes.register(builder, configController, dashboardController, railController);
-    AgentRoutes.register(builder, workflowAgentController, codeGenerationController,
-        testGenerationController, agentHistoryController, learnedPolicyController);
-    OperationsRoutes.register(builder, micrometerMetricsCollector,
-        healthAggregationController, workflowExecutionController, dlqController);
+    AgentRoutes.register(
+        builder,
+        workflowAgentController,
+        codeGenerationController,
+        testGenerationController,
+        agentHistoryController,
+        learnedPolicyController);
+    OperationsRoutes.register(
+        builder,
+        micrometerMetricsCollector,
+        healthAggregationController,
+        workflowExecutionController,
+        dlqController);
     // outboxRelayService and catalogRegistry are injected here to ensure they are
     // initialised by ActiveJ DI before the servlet begins serving requests.
-    logger.info("Registered {} domain route groups; outbox={}, catalog={}",
-        12, outboxRelayService.getClass().getSimpleName(),
+    logger.info(
+        "Registered {} domain route groups; outbox={}, catalog={}",
+        12,
+        outboxRelayService.getClass().getSimpleName(),
         catalogRegistry.getClass().getSimpleName());
 
     AsyncServlet routingServlet = builder.build();
 
-    // Wrap: CorrelationId → CORS → GlobalExceptionHandler → SecurityMiddleware → RoutingServlet
-    return new com.ghatana.yappc.api.middleware.CorrelationIdFilter(
-        new CorsMiddleware(
-            new GlobalExceptionHandler(
-                SecurityMiddleware.create(jwtTokenProvider, routingServlet))));
+    // Wrap: RateLimit → CorrelationId → CORS → GlobalExceptionHandler → SecurityMiddleware →
+    // RoutingServlet
+    return new RateLimitFilter(
+        new CorrelationIdFilter(
+            new CorsMiddleware(
+                new GlobalExceptionHandler(
+                    SecurityMiddleware.create(jwtTokenProvider, routingServlet)))));
   }
 
   /** Override the default module with ProductionModule for real service implementations. */
@@ -173,18 +187,17 @@ public class ApiApplication extends HttpServerLauncher {
   /**
    * Creates a production {@link MicrometerMetricsCollector} backed by a Prometheus registry.
    *
-   * <p>The reference is stored in {@link #micrometerMetricsCollector} so the same instance
-   * can be served at the /metrics scrape endpoint.
+   * <p>The reference is stored in {@link #micrometerMetricsCollector} so the same instance can be
+   * served at the /metrics scrape endpoint.
    */
   private MetricsCollector createMetricsCollector() {
     micrometerMetricsCollector = MicrometerMetricsCollector.create();
-    logger.info("Created MicrometerMetricsCollector — Prometheus scrape endpoint active at /metrics");
+    logger.info(
+        "Created MicrometerMetricsCollector — Prometheus scrape endpoint active at /metrics");
     return micrometerMetricsCollector;
   }
 
-  /**
-   * Creates and configures the database connection pool.
-   */
+  /** Creates and configures the database connection pool. */
   private static DataSource createDataSource() {
     String jdbcUrl = System.getenv("DATABASE_URL");
     if (jdbcUrl == null) {
@@ -201,7 +214,7 @@ public class ApiApplication extends HttpServerLauncher {
     String password = System.getenv("DATABASE_PASSWORD");
     if (password == null || password.isBlank()) {
       throw new IllegalStateException(
-              "DATABASE_PASSWORD environment variable is required but not set");
+          "DATABASE_PASSWORD environment variable is required but not set");
     }
 
     HikariConfig config = new HikariConfig();

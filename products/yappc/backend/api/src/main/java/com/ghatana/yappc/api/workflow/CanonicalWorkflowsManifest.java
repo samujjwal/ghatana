@@ -1,11 +1,10 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies
+ * Copyright (c) 2025 Ghatana Technologies
  * YAPPC API Module
  */
 package com.ghatana.yappc.api.workflow;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Collections;
 import java.util.List;
 
@@ -13,6 +12,7 @@ import java.util.List;
  * Top-level YAML model for {@code lifecycle-workflow-templates.yaml}.
  *
  * <p>Example structure:
+ *
  * <pre>
  * workflows:
  *   - id: new-feature
@@ -32,20 +32,22 @@ import java.util.List;
  */
 public final class CanonicalWorkflowsManifest {
 
-    @JsonProperty("workflows")
-    private List<WorkflowTemplate> workflows = Collections.emptyList();
+  @JsonProperty("workflows")
+  private List<WorkflowTemplate> workflows = Collections.emptyList();
 
-    // Jackson requires no-arg constructor
-    public CanonicalWorkflowsManifest() {}
+  // Jackson requires no-arg constructor
+  public CanonicalWorkflowsManifest() {}
 
-    public CanonicalWorkflowsManifest(List<WorkflowTemplate> workflows) {
-        this.workflows = workflows != null ? workflows : Collections.emptyList();
-    }
+  public CanonicalWorkflowsManifest(List<WorkflowTemplate> workflows) {
+    this.workflows = workflows != null ? workflows : Collections.emptyList();
+  }
 
-    public List<WorkflowTemplate> getWorkflows() { return workflows; }
+  public List<WorkflowTemplate> getWorkflows() {
+    return workflows;
+  }
 
-    @Override
-    public String toString() {
-        return "CanonicalWorkflowsManifest{workflows=" + workflows.size() + "}";
-    }
+  @Override
+  public String toString() {
+    return "CanonicalWorkflowsManifest{workflows=" + workflows.size() + "}";
+  }
 }

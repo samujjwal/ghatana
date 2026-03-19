@@ -16,6 +16,9 @@ def checkPlatformBoundary() {
     def violations = []
     
     // Check build file dependencies
+    if (!project.buildFile.exists()) {
+        return // No build file (intermediate parent project), skip check
+    }
     project.buildFile.eachLine { line ->
         if (line.contains('project(":products:')) {
             violations << "build.gradle: ${line.trim()}"

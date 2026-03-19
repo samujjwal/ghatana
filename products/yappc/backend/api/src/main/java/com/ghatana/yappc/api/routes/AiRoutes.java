@@ -25,25 +25,31 @@ public final class AiRoutes {
   /**
    * Registers all AI suggestions API routes on the given builder.
    *
-   * @param builder     the routing servlet builder
-   * @param controller  AI suggestions controller
+   * @param builder the routing servlet builder
+   * @param controller AI suggestions controller
    */
   public static void register(RoutingServlet.Builder builder, AISuggestionsController controller) {
     builder
-        .with(POST, "/api/ai/suggestions/generate",  controller::generateSuggestion)
-        .with(GET,  "/api/ai/suggestions",           controller::querySuggestions)
-        .with(GET,  "/api/ai/suggestions/inbox",     controller::getInbox)
-        .with(GET,  "/api/ai/suggestions/:id",
+        .with(POST, "/api/ai/suggestions/generate", controller::generateSuggestion)
+        .with(GET, "/api/ai/suggestions", controller::querySuggestions)
+        .with(GET, "/api/ai/suggestions/inbox", controller::getInbox)
+        .with(
+            GET,
+            "/api/ai/suggestions/:id",
             request -> {
               String id = request.getPathParameter("id");
               return controller.getSuggestion(request, id);
             })
-        .with(POST, "/api/ai/suggestions/:id/accept",
+        .with(
+            POST,
+            "/api/ai/suggestions/:id/accept",
             request -> {
               String id = request.getPathParameter("id");
               return controller.acceptSuggestion(request, id);
             })
-        .with(POST, "/api/ai/suggestions/:id/reject",
+        .with(
+            POST,
+            "/api/ai/suggestions/:id/reject",
             request -> {
               String id = request.getPathParameter("id");
               return controller.rejectSuggestion(request, id);

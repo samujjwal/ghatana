@@ -247,7 +247,8 @@ class VersionControllerTest extends EventloopTestBase {
   // Mock VersionRecord for testing
   private static class MockVersionRecord implements VersionRecord {
     @Override
-    public Promise<EntityVersion> saveVersion(String tenantId, Entity entity, VersionMetadata metadata) {
+    public Promise<EntityVersion> saveVersion(
+        String tenantId, Entity entity, VersionMetadata metadata) {
       return Promise.of(null);
     }
 
@@ -257,7 +258,8 @@ class VersionControllerTest extends EventloopTestBase {
     }
 
     @Override
-    public Promise<EntityVersion> getVersion(String tenantId, UUID entityId, Integer versionNumber) {
+    public Promise<EntityVersion> getVersion(
+        String tenantId, UUID entityId, Integer versionNumber) {
       return Promise.of(null);
     }
 
@@ -267,7 +269,8 @@ class VersionControllerTest extends EventloopTestBase {
     }
 
     @Override
-    public Promise<VersionDiff> computeDiff(String tenantId, UUID entityId, Integer from, Integer to) {
+    public Promise<VersionDiff> computeDiff(
+        String tenantId, UUID entityId, Integer from, Integer to) {
       return Promise.of(null);
     }
 

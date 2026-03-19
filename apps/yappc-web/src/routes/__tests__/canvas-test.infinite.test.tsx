@@ -1,4 +1,3 @@
-// All tests skipped - incomplete feature
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
@@ -17,7 +16,7 @@ import {
   testCoordinateAccuracy,
   validateOriginShiftConfig,
   type Viewport,
-} from '@ghatana/canvas';
+} from '@yappc/canvas';
 
 /**
  * Integration tests for infinite canvas viewport utilities in canvas-test route.
@@ -95,7 +94,7 @@ const createTestItem = (overrides: DeepPartial<BaseItem> = {}): BaseItem => {
   };
 };
 
-describe.skip('Infinite Canvas Integration Tests', () => {
+describe('Infinite Canvas Integration Tests', () => {
   let viewport: Viewport;
   let elements: BaseItem[];
 

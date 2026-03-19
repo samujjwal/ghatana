@@ -14,28 +14,27 @@ import com.ghatana.yappc.api.common.TenantContextExtractor;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * REST controller providing access to agent execution history and turn rationale.
  *
  * <h2>Endpoints</h2>
+ *
  * <ul>
- *   <li>{@code GET /api/v1/agents/{id}/history?limit=20&amp;offset=0}
- *       — paginated list of task-state records for the given agent</li>
- *   <li>{@code GET /api/v1/agents/{id}/rationale/{turnId}}
- *       — episodic memory entries captured during a specific agent turn</li>
+ *   <li>{@code GET /api/v1/agents/{id}/history?limit=20&amp;offset=0} — paginated list of
+ *       task-state records for the given agent
+ *   <li>{@code GET /api/v1/agents/{id}/rationale/{turnId}} — episodic memory entries captured
+ *       during a specific agent turn
  * </ul>
  *
  * <h2>History Response (200 OK)</h2>
+ *
  * <pre>
  * {
  *   "agentId": "requirements-analyst-v2",
@@ -57,6 +56,7 @@ import java.util.Objects;
  * </pre>
  *
  * <h2>Rationale Response (200 OK)</h2>
+ *
  * <pre>
  * {
  *   "agentId": "requirements-analyst-v2",
@@ -81,184 +81,206 @@ import java.util.Objects;
  */
 public class AgentHistoryController {
 
-    private static final Logger log = LoggerFactory.getLogger(AgentHistoryController.class);
+  private static final Logger log = LoggerFactory.getLogger(AgentHistoryController.class);
 
-    private static final int DEFAULT_LIMIT  = 20;
-    private static final int MAX_LIMIT      = 100;
+  private static final int DEFAULT_LIMIT = 20;
+  private static final int MAX_LIMIT = 100;
 
-    private final TaskStateStore taskStateStore;
-    private final PersistentMemoryPlane memoryPlane;
+  private final TaskStateStore taskStateStore;
+  private final PersistentMemoryPlane memoryPlane;
 
-    /**
-     * Creates a new {@code AgentHistoryController}.
-     *
-     * @param memoryPlane the persistent memory plane providing both task state
-     *                    and episodic memory access (never {@code null})
-     */
-    public AgentHistoryController(PersistentMemoryPlane memoryPlane) {
-        this.memoryPlane    = Objects.requireNonNull(memoryPlane, "memoryPlane");
-        this.taskStateStore = Objects.requireNonNull(memoryPlane.getTaskStateStore(), "taskStateStore");
+  /**
+   * Creates a new {@code AgentHistoryController}.
+   *
+   * @param memoryPlane the persistent memory plane providing both task state and episodic memory
+   *     access (never {@code null})
+   */
+  public AgentHistoryController(PersistentMemoryPlane memoryPlane) {
+    this.memoryPlane = Objects.requireNonNull(memoryPlane, "memoryPlane");
+    this.taskStateStore = Objects.requireNonNull(memoryPlane.getTaskStateStore(), "taskStateStore");
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // GET /api/v1/agents/{id}/history
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Returns a paginated list of active task-state records for the given agent, scoped to the
+   * authenticated tenant.
+   *
+   * <p>Query parameters:
+   *
+   * <ul>
+   *   <li>{@code limit} — number of records to return (1–{@value #MAX_LIMIT}, default
+   *       {#DEFAULT_LIMIT})
+   *   <li>{@code offset} — zero-based offset for pagination (default 0)
+   * </ul>
+   *
+   * @param request HTTP request (must be authenticated)
+   * @param agentId the agent identifier from the URL path
+   * @return 200 OK with paginated history, or 400/401 on validation failure
+   */
+  public Promise<HttpResponse> getHistory(HttpRequest request, String agentId) {
+    TenantContextExtractor.RequestContext ctx = TenantContextExtractor.extract(request);
+    if (!ctx.authenticated()) {
+      return Promise.of(ApiResponse.unauthorized("Authentication required"));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // GET /api/v1/agents/{id}/history
-    // ─────────────────────────────────────────────────────────────────────────
+    int limit = parseQueryInt(request, "limit", DEFAULT_LIMIT, 1, MAX_LIMIT);
+    int offset = parseQueryInt(request, "offset", 0, 0, Integer.MAX_VALUE);
 
-    /**
-     * Returns a paginated list of active task-state records for the given agent,
-     * scoped to the authenticated tenant.
-     *
-     * <p>Query parameters:
-     * <ul>
-     *   <li>{@code limit}  — number of records to return (1–{@value #MAX_LIMIT}, default {#DEFAULT_LIMIT})</li>
-     *   <li>{@code offset} — zero-based offset for pagination (default 0)</li>
-     * </ul>
-     *
-     * @param request HTTP request (must be authenticated)
-     * @param agentId the agent identifier from the URL path
-     * @return 200 OK with paginated history, or 400/401 on validation failure
-     */
-    public Promise<HttpResponse> getHistory(HttpRequest request, String agentId) {
-        TenantContextExtractor.RequestContext ctx = TenantContextExtractor.extract(request);
-        if (!ctx.authenticated()) {
-            return Promise.of(ApiResponse.unauthorized("Authentication required"));
-        }
+    log.debug(
+        "Agent history: agentId={} tenant={} limit={} offset={}",
+        agentId,
+        ctx.tenantId(),
+        limit,
+        offset);
 
-        int limit  = parseQueryInt(request, "limit",  DEFAULT_LIMIT, 1, MAX_LIMIT);
-        int offset = parseQueryInt(request, "offset", 0, 0, Integer.MAX_VALUE);
+    return taskStateStore
+        .listActiveTasks(agentId)
+        .map(
+            tasks -> {
+              // Apply tenant scoping and client-side pagination
+              List<TaskState> filtered =
+                  tasks.stream()
+                      .filter(t -> ctx.tenantId().equals(t.getTenantId()))
+                      .sorted((a, b) -> b.getUpdatedAt().compareTo(a.getUpdatedAt()))
+                      .skip(offset)
+                      .limit(limit)
+                      .toList();
 
-        log.debug("Agent history: agentId={} tenant={} limit={} offset={}", agentId, ctx.tenantId(), limit, offset);
+              List<Map<String, Object>> items =
+                  filtered.stream().map(this::serializeTaskState).toList();
 
-        return taskStateStore.listActiveTasks(agentId)
-                .map(tasks -> {
-                    // Apply tenant scoping and client-side pagination
-                    List<TaskState> filtered = tasks.stream()
-                            .filter(t -> ctx.tenantId().equals(t.getTenantId()))
-                            .sorted((a, b) -> b.getUpdatedAt().compareTo(a.getUpdatedAt()))
-                            .skip(offset)
-                            .limit(limit)
-                            .toList();
+              Map<String, Object> response = new LinkedHashMap<>();
+              response.put("agentId", agentId);
+              response.put("tenantId", ctx.tenantId());
+              response.put("total", items.size());
+              response.put("offset", offset);
+              response.put("limit", limit);
+              response.put("items", items);
 
-                    List<Map<String, Object>> items = filtered.stream()
-                            .map(this::serializeTaskState)
-                            .toList();
+              return ApiResponse.ok(response);
+            })
+        .then(
+            Promise::of,
+            e -> {
+              log.error(
+                  "Agent history query failed: agentId={} error={}", agentId, e.getMessage(), e);
+              return Promise.of(ApiResponse.fromException(e));
+            });
+  }
 
-                    Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("agentId",  agentId);
-                    response.put("tenantId", ctx.tenantId());
-                    response.put("total",    items.size());
-                    response.put("offset",   offset);
-                    response.put("limit",    limit);
-                    response.put("items",    items);
+  // ─────────────────────────────────────────────────────────────────────────
+  // GET /api/v1/agents/{id}/rationale/{turnId}
+  // ─────────────────────────────────────────────────────────────────────────
 
-                    return ApiResponse.ok(response);
-                })
-                .then(Promise::of, e -> {
-                    log.error("Agent history query failed: agentId={} error={}", agentId, e.getMessage(), e);
-                    return Promise.of(ApiResponse.fromException(e));
-                });
+  /**
+   * Returns the episodic memory entries captured during a specific agent turn, providing reasoning
+   * transparency (rationale) for agent decisions.
+   *
+   * @param request HTTP request (must be authenticated)
+   * @param agentId the agent identifier from the URL path
+   * @param turnId the turn identifier (UUID) from the URL path
+   * @return 200 OK with turn episodes or 404 if no episodes found for that turn
+   */
+  public Promise<HttpResponse> getRationale(HttpRequest request, String agentId, String turnId) {
+    TenantContextExtractor.RequestContext ctx = TenantContextExtractor.extract(request);
+    if (!ctx.authenticated()) {
+      return Promise.of(ApiResponse.unauthorized("Authentication required"));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // GET /api/v1/agents/{id}/rationale/{turnId}
-    // ─────────────────────────────────────────────────────────────────────────
+    log.debug("Agent rationale: agentId={} turnId={} tenant={}", agentId, turnId, ctx.tenantId());
 
-    /**
-     * Returns the episodic memory entries captured during a specific agent turn,
-     * providing reasoning transparency (rationale) for agent decisions.
-     *
-     * @param request HTTP request (must be authenticated)
-     * @param agentId the agent identifier from the URL path
-     * @param turnId  the turn identifier (UUID) from the URL path
-     * @return 200 OK with turn episodes or 404 if no episodes found for that turn
-     */
-    public Promise<HttpResponse> getRationale(HttpRequest request, String agentId, String turnId) {
-        TenantContextExtractor.RequestContext ctx = TenantContextExtractor.extract(request);
-        if (!ctx.authenticated()) {
-            return Promise.of(ApiResponse.unauthorized("Authentication required"));
-        }
+    MemoryQuery query =
+        MemoryQuery.builder()
+            .agentId(agentId)
+            .tenantId(ctx.tenantId())
+            .itemTypes(List.of(MemoryItemType.EPISODE))
+            .limit(MAX_LIMIT)
+            .build();
 
-        log.debug("Agent rationale: agentId={} turnId={} tenant={}", agentId, turnId, ctx.tenantId());
+    return memoryPlane
+        .queryEpisodes(query)
+        .map(
+            episodes -> {
+              // Filter to the specific turnId
+              var turnEpisodes =
+                  episodes.stream().filter(ep -> turnId.equals(ep.getTurnId())).toList();
 
-        MemoryQuery query = MemoryQuery.builder()
-                .agentId(agentId)
-                .tenantId(ctx.tenantId())
-                .itemTypes(List.of(MemoryItemType.EPISODE))
-                .limit(MAX_LIMIT)
-                .build();
+              if (turnEpisodes.isEmpty()) {
+                return ApiResponse.notFound(
+                    "No rationale found for agent '" + agentId + "' turn '" + turnId + "'");
+              }
 
-        return memoryPlane.queryEpisodes(query)
-                .map(episodes -> {
-                    // Filter to the specific turnId
-                    var turnEpisodes = episodes.stream()
-                            .filter(ep -> turnId.equals(ep.getTurnId()))
-                            .toList();
+              List<Map<String, Object>> items =
+                  turnEpisodes.stream()
+                      .map(
+                          ep -> {
+                            Map<String, Object> m = new LinkedHashMap<>();
+                            m.put("id", ep.getId());
+                            m.put("turnId", ep.getTurnId());
+                            m.put("input", ep.getInput());
+                            m.put("output", ep.getOutput());
+                            m.put("action", ep.getAction());
+                            m.put("confidence", ep.getValidity().getConfidence());
+                            m.put("cost", ep.getCost());
+                            m.put("latencyMs", ep.getLatencyMs());
+                            m.put("createdAt", ep.getCreatedAt());
+                            if (ep.getProvenance() != null) {
+                              m.put("source", ep.getProvenance().getSource());
+                            }
+                            return m;
+                          })
+                      .toList();
 
-                    if (turnEpisodes.isEmpty()) {
-                        return ApiResponse.notFound(
-                                "No rationale found for agent '" + agentId + "' turn '" + turnId + "'");
-                    }
+              Map<String, Object> response = new LinkedHashMap<>();
+              response.put("agentId", agentId);
+              response.put("turnId", turnId);
+              response.put("tenantId", ctx.tenantId());
+              response.put("episodes", items);
+              return ApiResponse.ok(response);
+            })
+        .then(
+            Promise::of,
+            e -> {
+              log.error(
+                  "Agent rationale query failed: agentId={} turnId={} error={}",
+                  agentId,
+                  turnId,
+                  e.getMessage(),
+                  e);
+              return Promise.of(ApiResponse.fromException(e));
+            });
+  }
 
-                    List<Map<String, Object>> items = turnEpisodes.stream()
-                            .map(ep -> {
-                                Map<String, Object> m = new LinkedHashMap<>();
-                                m.put("id",         ep.getId());
-                                m.put("turnId",     ep.getTurnId());
-                                m.put("input",      ep.getInput());
-                                m.put("output",     ep.getOutput());
-                                m.put("action",     ep.getAction());
-                                m.put("confidence", ep.getValidity().getConfidence());
-                                m.put("cost",       ep.getCost());
-                                m.put("latencyMs",  ep.getLatencyMs());
-                                m.put("createdAt",  ep.getCreatedAt());
-                                if (ep.getProvenance() != null) {
-                                    m.put("source", ep.getProvenance().getSource());
-                                }
-                                return m;
-                            })
-                            .toList();
+  // ─────────────────────────────────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────────────────────────────────
 
-                    Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("agentId",  agentId);
-                    response.put("turnId",   turnId);
-                    response.put("tenantId", ctx.tenantId());
-                    response.put("episodes", items);
-                    return ApiResponse.ok(response);
-                })
-                .then(Promise::of, e -> {
-                    log.error("Agent rationale query failed: agentId={} turnId={} error={}",
-                            agentId, turnId, e.getMessage(), e);
-                    return Promise.of(ApiResponse.fromException(e));
-                });
+  private Map<String, Object> serializeTaskState(TaskState t) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("taskId", t.getTaskId());
+    m.put("name", t.getName());
+    m.put("status", t.getStatus().name());
+    m.put("currentPhase", t.getCurrentPhase());
+    m.put("createdAt", t.getCreatedAt());
+    m.put("updatedAt", t.getUpdatedAt());
+    m.put("lastActiveAt", t.getLastActiveAt());
+    m.put("phaseCount", t.getPhases().size());
+    m.put("checkpointCount", t.getCheckpoints().size());
+    m.put("blockerCount", t.getBlockers().size());
+    return m;
+  }
+
+  private int parseQueryInt(
+      HttpRequest request, String param, int defaultValue, int minValue, int maxValue) {
+    String raw = request.getQueryParameter(param);
+    if (raw == null || raw.isBlank()) return defaultValue;
+    try {
+      return Math.max(minValue, Math.min(maxValue, Integer.parseInt(raw.trim())));
+    } catch (NumberFormatException e) {
+      return defaultValue;
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private Map<String, Object> serializeTaskState(TaskState t) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("taskId",          t.getTaskId());
-        m.put("name",            t.getName());
-        m.put("status",          t.getStatus().name());
-        m.put("currentPhase",    t.getCurrentPhase());
-        m.put("createdAt",       t.getCreatedAt());
-        m.put("updatedAt",       t.getUpdatedAt());
-        m.put("lastActiveAt",    t.getLastActiveAt());
-        m.put("phaseCount",      t.getPhases().size());
-        m.put("checkpointCount", t.getCheckpoints().size());
-        m.put("blockerCount",    t.getBlockers().size());
-        return m;
-    }
-
-    private int parseQueryInt(HttpRequest request, String param, int defaultValue,
-                               int minValue, int maxValue) {
-        String raw = request.getQueryParameter(param);
-        if (raw == null || raw.isBlank()) return defaultValue;
-        try {
-            return Math.max(minValue, Math.min(maxValue, Integer.parseInt(raw.trim())));
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
-    }
+  }
 }

@@ -26,8 +26,8 @@ dependencies {
     // Logging
     implementation(libs.logback.classic)
 
-    // JSON processing
-    implementation("com.fasterxml.jackson.core:jackson-core:2.15.2")
+    // JSON processing (version from BOM/catalog)
+    implementation(libs.jackson.core)
     implementation(libs.jackson.databind)
 }
 

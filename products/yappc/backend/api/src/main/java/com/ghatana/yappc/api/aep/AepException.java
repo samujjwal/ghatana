@@ -1,17 +1,15 @@
 /*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC API Module - AEP Integration
+ * YAPPC API Module
  */
 package com.ghatana.yappc.api.aep;
 
 /**
  * Exception thrown when AEP (Agentic Event Processor) operations fail.
  *
- * <p>Indicates issues with:
- * - AEP library initialization (LIBRARY mode)
- * - AEP service communication (SERVICE mode)
- * - Event processing or action execution
-  *
+ * <p>Indicates issues with: - AEP library initialization (LIBRARY mode) - AEP service communication
+ * (SERVICE mode) - Event processing or action execution
+ *
  * @doc.type class
  * @doc.purpose aep exception
  * @doc.layer product
