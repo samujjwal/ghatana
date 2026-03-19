@@ -68,6 +68,10 @@ include(":platform:java:schema-registry")
 include(":platform:java:connectors")
 include(":platform:java:ingestion")
 include(":platform:java:audit")
+include(":platform:java:kernel:modules:authentication")
+include(":platform:java:kernel:modules:config")
+include(":platform:java:kernel:modules:event-store")
+include(":platform:java:kernel:modules:audit")
 
 // =============================================================================
 // Product: AEP — Autonomous Event Processing
@@ -201,22 +205,40 @@ include(":products:virtual-org:launcher")
 include(":products:security-gateway:platform:java")
 
 // =============================================================================
-// Product: App-Platform — Multi-Domain Financial Operating System (Siddhanta)
-// Sprint 1: K-05 Event Store, K-07 Audit Trail, K-15 Calendar Service, K-02 Config Engine
+// Product: Finance — Financial Operating System with Regulatory Compliance
+// Migrated from app-platform with kernel vision compliance
 // =============================================================================
 
-include(":products:app-platform:kernel:event-store")
-include(":products:app-platform:kernel:audit-trail")
-include(":products:app-platform:kernel:calendar-service")
-include(":products:app-platform:kernel:config-engine")
-include(":products:app-platform:kernel:ledger-framework")
-include(":products:app-platform:kernel:secrets-management")
-include(":products:app-platform:kernel:iam")
-include(":products:app-platform:kernel:observability-sdk")
-include(":products:app-platform:kernel:api-gateway")
-include(":products:app-platform:kernel:resilience-patterns")
-include(":products:app-platform:kernel:rules-engine")
-include(":products:app-platform:service-template")
+include(":products:finance:platform-sdk")
+include(":products:finance:operator-workflows")
+include(":products:finance:regulator-portal")
+include(":products:finance:rules-engine")
+include(":products:finance:data-governance")
+include(":products:finance:ledger-framework")
+include(":products:finance:calendar-service")
+include(":products:finance:incident-management")
+
+// Finance Domain Modules - Core (OMS, EMS, PMS, Risk, Compliance, Rules)
+include(":products:finance:domains:oms")
+include(":products:finance:domains:ems")
+include(":products:finance:domains:pms")
+include(":products:finance:domains:risk")
+include(":products:finance:domains:compliance")
+include(":products:finance:domains:rules")
+
+// Finance Domain Modules - Phase 2 Migration (9 new domains)
+include(":products:finance:domains:corporate-actions")
+include(":products:finance:domains:market-data")
+include(":products:finance:domains:post-trade")
+include(":products:finance:domains:pricing")
+include(":products:finance:domains:reconciliation")
+include(":products:finance:domains:reference-data")
+include(":products:finance:domains:regulatory-reporting")
+include(":products:finance:domains:sanctions")
+include(":products:finance:domains:surveillance")
+
+// Finance Product Module (main entry point)
+include(":products:finance:product")
 
 // =============================================================================
 // Shared Services — Cross-product microservices

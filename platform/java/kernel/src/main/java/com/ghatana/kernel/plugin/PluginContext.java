@@ -1,0 +1,73 @@
+package com.ghatana.kernel.plugin;
+
+import com.ghatana.kernel.capability.KernelCapability;
+import com.ghatana.kernel.registry.CapabilityRegistry;
+import com.ghatana.kernel.registry.ServiceRegistry;
+import com.ghatana.kernel.context.KernelContext;
+
+import java.util.Optional;
+
+/**
+ * Plugin context provides access to kernel services.
+ * 
+ * This interface gives plugins access to kernel capabilities and services
+ * without exposing internal kernel implementation details.
+ */
+public interface PluginContext {
+    
+    /**
+     * Get the underlying kernel context.
+     */
+    KernelContext getKernelContext();
+    
+    /**
+     * Get the capability registry for discovering capabilities.
+     */
+    CapabilityRegistry getCapabilityRegistry();
+    
+    /**
+     * Get the service registry for accessing services.
+     */
+    ServiceRegistry getServiceRegistry();
+    
+    /**
+     * Get a specific kernel capability instance.
+     * 
+     * @param capability the capability to get
+     * @param type the expected type
+     * @return the capability instance
+     * @throws IllegalArgumentException if capability is not available
+     */
+    <T> T getCapability(KernelCapability capability, Class<T> type);
+    
+    /**
+     * Get an optional kernel capability instance.
+     * 
+     * @param capability the capability to get
+     * @param type the expected type
+     * @return optional capability instance
+     */
+    <T> Optional<T> getOptionalCapability(KernelCapability capability, Class<T> type);
+    
+    /**
+     * Register a service with the kernel.
+     * 
+     * @param serviceId the service identifier
+     * @param service the service implementation
+     */
+    void registerService(String serviceId, Object service);
+    
+    /**
+     * Register an extension with the kernel.
+     * 
+     * @param extension the extension to register
+     */
+    void registerExtension(KernelExtension extension);
+    
+    /**
+     * Register an operator with the kernel.
+     * 
+     * @param operator the operator to register
+     */
+    void registerOperator(KernelOperator operator);
+}
