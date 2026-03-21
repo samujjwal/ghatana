@@ -61,16 +61,14 @@ public final class FinanceRulesDomain implements KernelModule {
     public Set<KernelCapability> getCapabilities() {
         return Set.of(
             // Finance-specific capabilities
-            KernelCapability.Products.TRADE_VALIDATION,
+            KernelCapability.Products.TRADE_PROCESSING,
             KernelCapability.Products.COMPLIANCE_CHECKING,
-            KernelCapability.Products.RISK_ASSESSMENT,
-            KernelCapability.Products.REGULATORY_REPORTING,
+            KernelCapability.Products.RISK_MANAGEMENT,
             
             // Reused kernel capabilities
-            KernelCapability.Core.RULE_PROCESSING,
-            KernelCapability.Core.CONFIGURATION_MANAGEMENT,
+            KernelCapability.Core.CONFIG_MANAGEMENT,
             KernelCapability.Core.EVENT_PROCESSING,
-            KernelCapability.Core.AUDIT_LOGGING
+            KernelCapability.Core.OBSERVABILITY_FRAMEWORK
         );
     }
 
@@ -106,28 +104,26 @@ public final class FinanceRulesDomain implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting Finance Rules domain");
 
-        return Promise.ofBlocking(() -> {
+        
             // Start rules service
             rulesService.start();
 
             log.info("Finance Rules domain started successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Finance Rules domain");
 
-        return Promise.ofBlocking(() -> {
+        
             // Stop rules service
             if (rulesService != null) {
                 rulesService.stop();
             }
 
             log.info("Finance Rules domain stopped successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override

@@ -2,7 +2,7 @@ package com.ghatana.yappc.services.lifecycle;
 
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.orchestrator.subsys.TriggerListener;
-import com.ghatana.platform.domain.domain.event.GEvent;
+import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import com.ghatana.yappc.services.lifecycle.operators.PhaseTransitionValidatorOperator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -75,13 +75,14 @@ class YappcAepPipelineE2eTest {
         when(mockTriggerListener.handlePatternMatch(any(), any(), any(), any()))
             .thenReturn(Promise.complete());
 
-        // Create bootstrap
+        // Create bootstrap with test tenant
         triggerListenerBootstrap = new TriggerListenerBootstrap(
             mockTriggerListener,
             mockEventCloud,
             mockPipelineBootstrapper,
             mockDlqPublisher,
-            objectMapper
+            objectMapper,
+            List.of("test-tenant")
         );
     }
 

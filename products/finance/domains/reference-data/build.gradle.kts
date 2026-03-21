@@ -36,6 +36,17 @@ dependencies {
     implementation(libs.activej.eventloop)
 
     // Testing
+
+    // ─── Infrastructure Dependencies (migrated from app-platform) ──────────
+    implementation(libs.postgresql)
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.database.postgresql)
+    implementation(libs.hikaricp)
+    implementation(libs.jackson.databind)
+    implementation(libs.jedis)
+    implementation(libs.micrometer.core)
+    implementation(libs.slf4j.api)
+
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

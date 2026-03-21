@@ -14,7 +14,7 @@
 import React, { useCallback, useEffect, useRef, type DragEvent } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import {
-  FlowCanvas,
+  ReactFlow,
   addEdge,
   useNodesState,
   useEdgesState,
@@ -22,7 +22,8 @@ import {
   type Edge,
   type Connection,
   type ReactFlowInstance,
-} from '@ghatana/flow-canvas';
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 
 import { StageNode, ConnectorNode } from './nodes';
 import {
@@ -43,12 +44,13 @@ import type {
 } from '@/types/pipeline.types';
 
 type CanvasNode = Node<StageNodeData | ConnectorNodeData>;
+type CanvasEdge = Edge;
 
-// ─── AEP-specific node types (passed as additionalNodeTypes to FlowCanvas) ────
+// ─── AEP-specific node types (passed to ReactFlow) ────
 
 const PIPELINE_NODE_TYPES = {
-  stage: StageNode as React.ComponentType<Node>,
-  connector: ConnectorNode as React.ComponentType<Node>,
+  stage: StageNode,
+  connector: ConnectorNode,
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -61,7 +63,7 @@ function nextId(prefix: string): string {
 // ─── Component ───────────────────────────────────────────────────────
 
 export function PipelineCanvas() {
-  const rfInstance = useRef<ReactFlowInstance | null>(null);
+  const rfInstance = useRef<ReactFlowInstance<CanvasNode, CanvasEdge> | null>(null);
 
   // Jotai ↔ local state sync
   const [storeNodes, setStoreNodes] = useAtom(nodesAtom);
@@ -222,28 +224,30 @@ export function PipelineCanvas() {
   // ── Render ──────────────────────────────────────────────────────
 
   return (
-    <FlowCanvas
-      nodes={nodes as never}
-      edges={edges as never}
-      onNodesChange={onNodesChange as never}
-      onEdgesChange={onEdgesChange as never}
-      onConnect={onConnect}
-      onNodeClick={onNodeClick as never}
-      onEdgeClick={onEdgeClick as never}
-      onPaneClick={onPaneClick}
-      onInit={(instance) => {
-        rfInstance.current = instance as never;
-      }}
-      additionalNodeTypes={PIPELINE_NODE_TYPES}
-      snapToGrid
-      snapGrid={[16, 16]}
-      deleteKeyCode={null}
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-      onKeyDown={onKeyDown}
-      className="flex-1 h-full"
-      ariaLabel="AEP pipeline builder canvas"
-    />
+    <div data-testid="pipeline-canvas" className="flex-1 h-full" onKeyDown={onKeyDown} tabIndex={0}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
+        onPaneClick={onPaneClick}
+        onInit={(instance) => {
+          rfInstance.current = instance;
+        }}
+        nodeTypes={PIPELINE_NODE_TYPES}
+        snapToGrid
+        snapGrid={[16, 16]}
+        deleteKeyCode={null}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onKeyDown={onKeyDown}
+        className="flex-1 h-full"
+        aria-label="AEP pipeline builder canvas"
+      />
+    </div>
   );
 }
 

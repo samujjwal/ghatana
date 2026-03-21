@@ -6,5 +6,4 @@
  * @doc.layer frontend
  */
 
-export { RootLayout } from './RootLayout';
 export { DefaultLayout } from './DefaultLayout';

@@ -106,12 +106,9 @@ export function LineageGraph({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
-        nodeTypes={nodeTypes}
-        fitView
-        attributionPosition="bottom-left"
-      >
-        <FlowControls />
-      </FlowCanvas>
+        additionalNodeTypes={nodeTypes}
+        controls={{ showMiniMap: false, showControls: true }}
+      />
     </div>
   );
 }

@@ -8,7 +8,7 @@
  * @doc.layer frontend
  */
 
-import axios, { AxiosInstance } from 'axios';
+import { apiClient } from '../lib/api/client';
 
 export interface Policy {
   id: string;
@@ -104,68 +104,48 @@ export interface AccessRequest {
  * Governance Service Client
  */
 export class GovernanceService {
-  private client: AxiosInstance;
-
-  constructor(baseURL: string = '/api') {
-    this.client = axios.create({
-      baseURL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-  }
-
   // ==================== Policies ====================
 
   /**
    * Get all policies
    */
   async getPolicies(type?: string): Promise<Policy[]> {
-    const response = await this.client.get<Policy[]>('/policies', {
-      params: { type },
-    });
-    return response.data;
+    return apiClient.get<Policy[]>('/policies', { params: { type } });
   }
 
   /**
    * Get policy by ID
    */
   async getPolicy(policyId: string): Promise<Policy> {
-    const response = await this.client.get<Policy>(`/policies/${policyId}`);
-    return response.data;
+    return apiClient.get<Policy>(`/policies/${policyId}`);
   }
 
   /**
    * Create policy
    */
   async createPolicy(policy: Partial<Policy>): Promise<Policy> {
-    const response = await this.client.post<Policy>('/policies', policy);
-    return response.data;
+    return apiClient.post<Policy>('/policies', policy);
   }
 
   /**
    * Update policy
    */
   async updatePolicy(policyId: string, policy: Partial<Policy>): Promise<Policy> {
-    const response = await this.client.put<Policy>(`/policies/${policyId}`, policy);
-    return response.data;
+    return apiClient.put<Policy>(`/policies/${policyId}`, policy);
   }
 
   /**
    * Delete policy
    */
   async deletePolicy(policyId: string): Promise<void> {
-    await this.client.delete(`/policies/${policyId}`);
+    await apiClient.delete<void>(`/policies/${policyId}`);
   }
 
   /**
    * Enable/disable policy
    */
   async togglePolicy(policyId: string, enabled: boolean): Promise<Policy> {
-    const response = await this.client.patch<Policy>(`/policies/${policyId}`, {
-      enabled,
-    });
-    return response.data;
+    return apiClient.patch<Policy>(`/policies/${policyId}`, { enabled });
   }
 
   // ==================== Violations ====================
@@ -177,19 +157,16 @@ export class GovernanceService {
     policyId?: string,
     limit: number = 50
   ): Promise<PolicyViolation[]> {
-    const response = await this.client.get<PolicyViolation[]>('/governance/violations', {
+    return apiClient.get<PolicyViolation[]>('/governance/violations', {
       params: { policyId, limit },
     });
-    return response.data;
   }
 
   /**
    * Resolve violation
    */
   async resolveViolation(violationId: string, resolution: string): Promise<void> {
-    await this.client.post(`/governance/violations/${violationId}/resolve`, {
-      resolution,
-    });
+    await apiClient.post<void>(`/governance/violations/${violationId}/resolve`, { resolution });
   }
 
   // ==================== Compliance ====================
@@ -198,10 +175,7 @@ export class GovernanceService {
    * Get compliance report
    */
   async getComplianceReport(period: string = '30d'): Promise<ComplianceReport> {
-    const response = await this.client.get<ComplianceReport>('/governance/reports', {
-      params: { period },
-    });
-    return response.data;
+    return apiClient.get<ComplianceReport>('/governance/reports', { params: { period } });
   }
 
   /**
@@ -210,18 +184,16 @@ export class GovernanceService {
   async generateComplianceReport(
     period: string
   ): Promise<{ reportId: string; status: string }> {
-    const response = await this.client.post('/governance/reports', { period });
-    return response.data;
+    return apiClient.post('/governance/reports', { period });
   }
 
   /**
    * Download compliance report
    */
   async downloadComplianceReport(reportId: string): Promise<Blob> {
-    const response = await this.client.get(`/governance/reports/${reportId}/download`, {
+    return apiClient.get<Blob>(`/governance/reports/${reportId}/download`, {
       responseType: 'blob',
     });
-    return response.data;
   }
 
   // ==================== Audit ====================
@@ -234,20 +206,16 @@ export class GovernanceService {
     userId?: string,
     limit: number = 100
   ): Promise<AuditLog[]> {
-    const response = await this.client.get<AuditLog[]>('/audit/logs', {
+    return apiClient.get<AuditLog[]>('/audit/logs', {
       params: { resourceType, userId, limit },
     });
-    return response.data;
   }
 
   /**
    * Search audit logs
    */
   async searchAuditLogs(query: string): Promise<AuditLog[]> {
-    const response = await this.client.get<AuditLog[]>('/audit/logs/search', {
-      params: { q: query },
-    });
-    return response.data;
+    return apiClient.get<AuditLog[]>('/audit/logs/search', { params: { q: query } });
   }
 
   // ==================== Access Requests ====================
@@ -256,10 +224,7 @@ export class GovernanceService {
    * Get access requests
    */
   async getAccessRequests(status?: string): Promise<AccessRequest[]> {
-    const response = await this.client.get<AccessRequest[]>('/governance/access-requests', {
-      params: { status },
-    });
-    return response.data;
+    return apiClient.get<AccessRequest[]>('/governance/access-requests', { params: { status } });
   }
 
   /**
@@ -269,11 +234,7 @@ export class GovernanceService {
     datasetId: string,
     reason: string
   ): Promise<AccessRequest> {
-    const response = await this.client.post<AccessRequest>('/governance/access-requests', {
-      datasetId,
-      reason,
-    });
-    return response.data;
+    return apiClient.post<AccessRequest>('/governance/access-requests', { datasetId, reason });
   }
 
   /**
@@ -284,11 +245,10 @@ export class GovernanceService {
     decision: 'APPROVED' | 'REJECTED',
     comment?: string
   ): Promise<AccessRequest> {
-    const response = await this.client.post<AccessRequest>(
+    return apiClient.post<AccessRequest>(
       `/governance/access-requests/${requestId}/review`,
       { decision, comment }
     );
-    return response.data;
   }
 }
 

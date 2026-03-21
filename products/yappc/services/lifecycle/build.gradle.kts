@@ -24,7 +24,10 @@ dependencies {
     implementation(project(":platform:java:yaml-template"))    // YAPPC-Ph3: YamlTemplateEngine
 
     // AEP platform (YAPPC-Ph4: OperatorCatalog, InMemoryOperatorCatalog, AepOperatorCatalogLoader)
-    implementation(project(":products:aep:platform"))
+    implementation(project(":products:aep:platform-bundle"))
+
+    // AEP orchestrator (TriggerListener, ExecutionQueue)
+    implementation(project(":products:aep:orchestrator"))
 
     // Platform: Agent Memory — YAPPC-Ph7/8 (persistent MemoryPlane, MemoryStoreAdapter, Jdbc stores)
     implementation(project(":platform:java:agent-memory"))

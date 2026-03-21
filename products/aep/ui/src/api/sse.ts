@@ -10,10 +10,7 @@
  * @doc.purpose Server-Sent Events subscription for AEP real-time updates
  * @doc.layer frontend
  */
-
-// In dev the Vite proxy (/api → localhost:8081) handles routing.
-// In production set VITE_AEP_API_URL or rely on the reverse-proxy.
-const BASE_URL = import.meta.env.VITE_AEP_API_URL ?? '';
+import { API_BASE_URL } from '@/lib/http-client';
 
 const KNOWN_EVENTS = ['connected', 'heartbeat', 'run.update', 'hitl.new', 'hitl.update', 'agent.output'] as const;
 const RECONNECT_BASE_MS = 3_000;
@@ -52,7 +49,7 @@ export function subscribeToAepStream(
   onMessage: SseHandler,
   onError?: SseErrorHandler,
 ): SseSubscription {
-  const url = `${BASE_URL}/events/stream?tenantId=${encodeURIComponent(tenantId)}`;
+  const url = `${API_BASE_URL}/events/stream?tenantId=${encodeURIComponent(tenantId)}`;
 
   let es: EventSource | null = null;
   let closed = false;

@@ -1,0 +1,147 @@
+.ai-assistant {
+  width: 280px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.ai-assistant--empty {
+  padding: 24px;
+  text-align: center;
+}
+
+.ai-assistant__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.ai-assistant__icon {
+  font-size: 20px;
+}
+
+.ai-assistant__title {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.ai-assistant__processing {
+  font-size: 11px;
+  opacity: 0.8;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.4; }
+}
+
+.ai-assistant__suggestions {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.ai-assistant__suggestion {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ai-assistant__suggestion:last-child {
+  border-bottom: none;
+}
+
+.ai-assistant__suggestion-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ai-assistant__suggestion-type {
+  font-size: 14px;
+}
+
+.ai-assistant__confidence {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4caf50;
+  background: #e8f5e9;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.ai-assistant__suggestion-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+}
+
+.ai-assistant__suggestion-desc {
+  font-size: 12px;
+  color: #666;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.ai-assistant__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-assistant__apply {
+  flex: 1;
+  padding: 6px 12px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ai-assistant__apply:hover {
+  background: #45a049;
+}
+
+.ai-assistant__dismiss {
+  padding: 6px 12px;
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-assistant__dismiss:hover {
+  background: #f5f5f5;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .ai-assistant {
+    background: #16213e;
+  }
+  
+  .ai-assistant__suggestion {
+    border-bottom-color: #0f3460;
+  }
+  
+  .ai-assistant__suggestion-title {
+    color: #fff;
+  }
+  
+  .ai-assistant__suggestion-desc {
+    color: #999;
+  }
+}

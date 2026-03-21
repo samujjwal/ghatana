@@ -9,7 +9,7 @@
  * @doc.pattern Service
  */
 
-import axios, { type AxiosInstance } from 'axios';
+import { apiClient } from '../lib/api/client';
 
 export type AlertSeverity = 'critical' | 'warning' | 'info';
 export type AlertStatus = 'active' | 'acknowledged' | 'resolved';
@@ -54,65 +54,49 @@ export interface AlertQueryParams {
 }
 
 export class AlertsService {
-  private client: AxiosInstance;
-  private baseURL: string;
-
-  constructor(baseURL: string = '/api') {
-    this.baseURL = baseURL;
-    this.client = axios.create({
-      baseURL,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
   /** List active and historical alerts */
   async getAlerts(params: AlertQueryParams = {}): Promise<Alert[]> {
-    const { data } = await this.client.get<Alert[]>('/v1/alerts', { params });
-    return data;
+    return apiClient.get<Alert[]>('/alerts', { params });
   }
 
   /** Acknowledge an alert */
   async acknowledgeAlert(alertId: string): Promise<Alert> {
-    const { data } = await this.client.post<Alert>(`/v1/alerts/${alertId}/acknowledge`);
-    return data;
+    return apiClient.post<Alert>(`/alerts/${alertId}/acknowledge`);
   }
 
   /** Resolve an alert */
   async resolveAlert(alertId: string): Promise<Alert> {
-    const { data } = await this.client.post<Alert>(`/v1/alerts/${alertId}/resolve`);
-    return data;
+    return apiClient.post<Alert>(`/alerts/${alertId}/resolve`);
   }
 
   /** Get AI-detected correlated alert groups */
   async getAlertGroups(): Promise<AlertGroup[]> {
-    const { data } = await this.client.get<AlertGroup[]>('/v1/alerts/groups');
-    return data;
+    return apiClient.get<AlertGroup[]>('/alerts/groups');
   }
 
   /** Auto-resolve a correlated alert group */
   async resolveGroup(groupId: string): Promise<void> {
-    await this.client.post(`/v1/alerts/groups/${groupId}/resolve`);
+    await apiClient.post<void>(`/alerts/groups/${groupId}/resolve`);
   }
 
   /** Get AI resolution suggestions for active alerts */
   async getResolutionSuggestions(): Promise<ResolutionSuggestion[]> {
-    const { data } = await this.client.get<ResolutionSuggestion[]>('/v1/alerts/suggestions');
-    return data;
+    return apiClient.get<ResolutionSuggestion[]>('/alerts/suggestions');
   }
 
   /** Apply an AI resolution suggestion */
   async applySuggestion(suggestionId: string): Promise<void> {
-    await this.client.post(`/v1/alerts/suggestions/${suggestionId}/apply`);
+    await apiClient.post<void>(`/alerts/suggestions/${suggestionId}/apply`);
   }
 
   /** Open an SSE stream for live alert events */
   openStream(): EventSource {
-    return new EventSource(`${this.baseURL}/v1/events/stream?eventType=alert.triggered`);
+    return new EventSource(
+      `${import.meta.env.VITE_API_URL ?? '/api/v1'}/events/stream?eventType=alert.triggered`,
+    );
   }
 }
 
-export const alertsService = new AlertsService(
-  import.meta.env.VITE_DC_API_URL ?? '/api',
-);
+export const alertsService = new AlertsService();
 
 export default alertsService;

@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.diagnostics.java;
 
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import com.ghatana.refactorer.shared.service.LanguageService;
 import io.activej.promise.Promise;

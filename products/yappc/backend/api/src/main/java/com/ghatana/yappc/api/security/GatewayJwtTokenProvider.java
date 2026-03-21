@@ -165,7 +165,7 @@ public class GatewayJwtTokenProvider {
           .userId(userId)
           .email(email)
           .userName(userName != null ? userName : userId)
-          .tenantId(tenantId != null ? tenantId : "default")
+          .tenantId(tenantId)
           .roles(roles)
           .permissions(List.of()) // Permissions resolved locally
           .build();

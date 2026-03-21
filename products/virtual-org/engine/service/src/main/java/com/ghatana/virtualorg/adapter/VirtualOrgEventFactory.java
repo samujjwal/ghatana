@@ -1,6 +1,6 @@
 package com.ghatana.virtualorg.adapter;
 
-import com.ghatana.platform.domain.domain.event.*;
+import com.ghatana.platform.domain.event.*;
 import com.ghatana.virtualorg.v1.TaskProto;
 import com.ghatana.virtualorg.v1.TaskResponseProto;
 import com.ghatana.virtualorg.v1.DecisionProto;

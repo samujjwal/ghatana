@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.ghatana.refactorer.shared.FixAction;
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import java.nio.file.Files;
 import java.nio.file.Path;

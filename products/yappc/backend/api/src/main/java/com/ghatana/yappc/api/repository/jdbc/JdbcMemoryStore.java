@@ -9,6 +9,7 @@ import com.ghatana.agent.framework.memory.Episode;
 import com.ghatana.agent.framework.memory.EventLogMemoryStore;
 import com.ghatana.agent.framework.memory.Fact;
 import com.ghatana.agent.framework.memory.Policy;
+import com.ghatana.platform.governance.security.TenantContext;
 import io.activej.promise.Promise;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -165,7 +166,8 @@ public class JdbcMemoryStore extends EventLogMemoryStore {
         PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setString(1, e.getId());
       ps.setString(2, e.getAgentId());
-      ps.setString(3, "default"); // tenant isolation — extend when Episode carries tenantId
+      ps.setString(
+          3, TenantContext.getCurrentTenantId()); // tenant isolation via thread-local context
       ps.setString(4, e.getTurnId());
       ps.setString(5, e.getInput());
       ps.setString(6, e.getOutput());
@@ -198,7 +200,7 @@ public class JdbcMemoryStore extends EventLogMemoryStore {
         PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setString(1, f.getId());
       ps.setString(2, f.getAgentId());
-      ps.setString(3, "default");
+      ps.setString(3, TenantContext.getCurrentTenantId());
       ps.setString(4, f.getSubject());
       ps.setString(5, f.getPredicate());
       ps.setString(6, f.getObject());
@@ -226,7 +228,7 @@ public class JdbcMemoryStore extends EventLogMemoryStore {
         PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setString(1, p.getId());
       ps.setString(2, p.getAgentId());
-      ps.setString(3, "default");
+      ps.setString(3, TenantContext.getCurrentTenantId());
       ps.setString(4, p.getSituation());
       ps.setString(5, p.getAction());
       ps.setDouble(6, p.getConfidence() != null ? p.getConfidence() : 0.5);

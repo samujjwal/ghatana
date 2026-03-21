@@ -1,52 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
+import {
+  WorkflowSchema,
+  PaginatedWorkflowResponseSchema,
+  CreateWorkflowRequestSchema,
+  ExecutionSchema,
+  paginatedSchema,
+} from '../../src/contracts/schemas';
 
 /**
  * Workflows API Contract Tests
  * 
  * Validates workflow API responses match expected schema.
+ * Schemas are imported from the shared contracts module.
  * 
  * @doc.type test
  * @doc.purpose API contract validation for workflows
  * @doc.layer testing
  */
-
-const WorkflowSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  status: z.enum(['active', 'inactive', 'draft']),
-  executionCount: z.number(),
-  lastExecutedAt: z.string().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-
-const ExecutionSchema = z.object({
-  id: z.string(),
-  workflowId: z.string(),
-  status: z.enum(['pending', 'running', 'completed', 'failed', 'cancelled']),
-  startedAt: z.string(),
-  completedAt: z.string().optional(),
-  duration: z.number().optional(),
-  input: z.record(z.unknown()).optional(),
-  output: z.record(z.unknown()).optional(),
-  error: z.string().optional(),
-});
-
-const PaginatedWorkflowResponseSchema = z.object({
-  items: z.array(WorkflowSchema),
-  total: z.number(),
-  page: z.number(),
-  pageSize: z.number(),
-  hasMore: z.boolean(),
-});
-
-const CreateWorkflowRequestSchema = z.object({
-  name: z.string().min(1),
-  description: z.string(),
-  definition: z.record(z.unknown()).optional(),
-});
 
 describe('Workflows API Contract', () => {
   describe('GET /api/v1/workflows', () => {
@@ -107,13 +78,7 @@ describe('Workflows API Contract', () => {
         hasMore: false,
       };
 
-      const PaginatedExecutionResponseSchema = z.object({
-        items: z.array(ExecutionSchema),
-        total: z.number(),
-        page: z.number(),
-        pageSize: z.number(),
-        hasMore: z.boolean(),
-      });
+      const PaginatedExecutionResponseSchema = paginatedSchema(ExecutionSchema);
 
       const result = PaginatedExecutionResponseSchema.safeParse(mockResponse);
       expect(result.success).toBe(true);

@@ -49,37 +49,9 @@ declare global {
     retryCount?: number;
   }
 
-  interface WorkflowNode {
-    id: string;
-    type: string;
-    position: { x: number; y: number };
-    data: {
-      label: string;
-      [key: string]: unknown;
-    };
-  }
-
-  interface WorkflowEdge {
-    id: string;
-    source: string;
-    target: string;
-    sourceHandle?: string;
-    targetHandle?: string;
-    label?: string;
-  }
-
-  interface WorkflowDefinition {
-    id: string;
-    name: string;
-    description?: string;
-    version: number;
-    nodes: WorkflowNode[];
-    edges: WorkflowEdge[];
-    createdAt: string;
-    updatedAt: string;
-    createdBy: string;
-  }
-
+  // WorkflowNode, WorkflowEdge, WorkflowDefinition are defined in the module
+  // system at @/features/workflow/types/workflow.types (re-exported via @/types/workflow.types).
+  // Global declarations must not shadow those module types.
   // Add other global types as needed
 }
 

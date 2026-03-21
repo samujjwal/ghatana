@@ -1,6 +1,6 @@
 package com.ghatana.virtualorg.framework.integration;
 
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import com.ghatana.core.operator.OperatorId;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.core.pipeline.Pipeline;

@@ -4,10 +4,23 @@
  */
 package com.ghatana.kernel.modules.eventstore.service;
 
+import com.ghatana.core.event.cloud.AppendResult;
 import com.ghatana.core.event.cloud.EventCloud;
+import com.ghatana.core.event.cloud.EventCloud.AppendRequest;
+import com.ghatana.core.event.cloud.EventCloud.EventConsumer;
+import com.ghatana.core.event.cloud.EventCloud.EventEnvelope;
+import com.ghatana.core.event.cloud.EventCloud.HistoryQuery;
+import com.ghatana.core.event.cloud.EventCloud.HistoryScan;
+import com.ghatana.core.event.cloud.EventCloud.Page;
+import com.ghatana.core.event.cloud.EventCloud.Selection;
+import com.ghatana.core.event.cloud.EventCloud.StartingPositions;
 import com.ghatana.core.event.cloud.EventRecord;
+import com.ghatana.core.event.cloud.EventStream;
+import com.ghatana.platform.domain.auth.TenantId;
+import com.ghatana.platform.types.identity.Offset;
+import com.ghatana.platform.types.identity.PartitionId;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.test.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.config.ConfigManager;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +69,7 @@ public class EventStoreServiceTest extends EventloopTestBase {
         Map<String, Object> payload = Map.of("key", "value", "number", 42);
 
         Promise<Void> promise = eventStoreService.publish("test.topic", payload);
-        await(promise);
+        runPromise(() -> promise);
 
         assertTrue(promise.isResult(), "Event should be published successfully");
     }
@@ -67,7 +80,7 @@ public class EventStoreServiceTest extends EventloopTestBase {
         Map<String, Object> payload = Map.of("action", "test", "data", "sample");
 
         Promise<Void> promise = eventStoreService.publish("tenant.topic", "tenant-1", payload);
-        await(promise);
+        runPromise(() -> promise);
 
         assertTrue(promise.isResult(), "Event with tenant should be published successfully");
     }
@@ -86,7 +99,7 @@ public class EventStoreServiceTest extends EventloopTestBase {
             data,
             Instant.now()
         );
-        await(promise);
+        runPromise(() -> promise);
 
         assertTrue(promise.isResult(), "Structured event should be published successfully");
     }
@@ -98,7 +111,6 @@ public class EventStoreServiceTest extends EventloopTestBase {
 
         Map<String, Object> payload = Map.of("key", "value");
         Promise<Void> promise = eventStoreService.publish("test.topic", payload);
-        await(promise);
 
         assertTrue(promise.isException(), "Should fail when service not started");
     }
@@ -115,7 +127,7 @@ public class EventStoreServiceTest extends EventloopTestBase {
         );
 
         Promise<Void> promise = eventStoreService.publishBatch(events);
-        await(promise);
+        runPromise(() -> promise);
 
         assertTrue(promise.isResult(), "Batch should be published successfully");
     }
@@ -126,7 +138,7 @@ public class EventStoreServiceTest extends EventloopTestBase {
         List<EventStoreService.EventData> events = List.of();
 
         Promise<Void> promise = eventStoreService.publishBatch(events);
-        await(promise);
+        runPromise(() -> promise);
 
         assertTrue(promise.isResult(), "Empty batch should complete successfully");
     }
@@ -176,7 +188,7 @@ public class EventStoreServiceTest extends EventloopTestBase {
         Map<String, Object> payload = Map.of("largeData", largeValue.toString());
 
         Promise<Void> promise = eventStoreService.publish("large.payload", payload);
-        await(promise);
+        runPromise(() -> promise);
 
         assertTrue(promise.isResult(), "Large payload should be published successfully");
     }
@@ -191,7 +203,7 @@ public class EventStoreServiceTest extends EventloopTestBase {
         );
 
         Promise<Void> promise = eventStoreService.publish("special.payload", payload);
-        await(promise);
+        runPromise(() -> promise);
 
         assertTrue(promise.isResult(), "Special characters should be handled successfully");
     }
@@ -207,77 +219,173 @@ public class EventStoreServiceTest extends EventloopTestBase {
      */
     private static class InMemoryEventCloud implements EventCloud {
         private final java.util.List<EventRecord> events = new java.util.ArrayList<>();
+        private final java.util.concurrent.atomic.AtomicLong offsetCounter = new java.util.concurrent.atomic.AtomicLong(0);
 
         @Override
         public Promise<AppendResult> append(AppendRequest request) {
             events.add(request.event());
-            return Promise.of(new AppendResult() {
-                @Override
-                public String partitionId() { return "0"; }
-                @Override
-                public long offset() { return events.size() - 1; }
-            });
+            long off = offsetCounter.getAndIncrement();
+            return Promise.of(new AppendResult(PartitionId.of("0"), Offset.of(String.valueOf(off)), java.time.Instant.now()));
         }
 
         @Override
-        public Promise<List<AppendResult>> appendBatch(List<AppendRequest> requests) {
-            List<AppendResult> results = new java.util.ArrayList<>();
-            for (int i = 0; i < requests.size(); i++) {
-                events.add(requests.get(i).event());
-                final int offset = events.size() - 1;
-                results.add(() -> offset);
+        public Promise<java.util.List<AppendResult>> appendBatch(java.util.List<AppendRequest> requests) {
+            java.util.List<AppendResult> results = new java.util.ArrayList<>();
+            for (AppendRequest req : requests) {
+                events.add(req.event());
+                long off = offsetCounter.getAndIncrement();
+                results.add(new AppendResult(PartitionId.of("0"), Offset.of(String.valueOf(off)), java.time.Instant.now()));
             }
             return Promise.of(results);
         }
 
         @Override
+        public EventStream subscribe(TenantId tenant, Selection selection, StartingPositions start) {
+            return new EventStream() {
+                @Override public void request(long n) {}
+                @Override public void onEvent(EventConsumer consumer) {}
+                @Override public void pause() {}
+                @Override public void resume() {}
+                @Override public void close() {}
+            };
+        }
+
+        @Override
+        public Promise<Page> query(HistoryQuery query) {
+            return Promise.of(new Page(java.util.List.of(), false, Offset.of("0")));
+        }
+
+        @Override
+        public HistoryScan scan(HistoryQuery query) {
+            return new HistoryScan() {
+                @Override public void onBatch(java.util.function.Consumer<java.util.List<EventEnvelope>> consumer) {}
+                @Override public void start() {}
+                @Override public void pause() {}
+                @Override public void resume() {}
+                @Override public void close() {}
+            };
+        }
+
         public boolean isHealthy() {
             return true;
         }
     }
 
-    /**
-     * Test implementation of KernelContext.
+            /**
+     * Test implementation of KernelContext for unit testing.
      */
     private static class TestKernelContext implements KernelContext {
+        private final java.util.concurrent.ConcurrentHashMap<Class<?>, Object> services =
+                new java.util.concurrent.ConcurrentHashMap<>();
+
+        // ---- Dependency Lookup ----
+
         @Override
-        public String getKernelId() {
-            return "test-kernel";
+        @SuppressWarnings("unchecked")
+        public <T> T getDependency(Class<T> type) {
+            T result = (T) services.get(type);
+            if (result == null) throw new IllegalStateException("No service: " + type.getName());
+            return result;
         }
 
         @Override
-        public String getTenantId() {
-            return "test-tenant";
+        @SuppressWarnings("unchecked")
+        public <T> java.util.Optional<T> getOptionalDependency(Class<T> type) {
+            return java.util.Optional.ofNullable((T) services.get(type));
         }
 
         @Override
-        public <T> void registerService(Class<T> serviceClass, T service) {
-            // No-op for testing
+        public <T> boolean hasDependency(Class<T> type) {
+            return services.containsKey(type);
         }
 
         @Override
-        public <T> T getService(Class<T> serviceClass) {
+        @SuppressWarnings("unchecked")
+        public <T> T getDependency(String name, Class<T> type) {
+            return (T) services.get(type);
+        }
+
+        // ---- Event System ----
+
+        @Override
+        public <E> void registerEventHandler(Class<E> eventType,
+                com.ghatana.kernel.event.EventHandler<E> handler) { /* no-op */ }
+
+        @Override
+        public <E> void unregisterEventHandler(Class<E> eventType,
+                com.ghatana.kernel.event.EventHandler<E> handler) { /* no-op */ }
+
+        @Override
+        public <E> void publishEvent(E event) { /* no-op */ }
+
+        // ---- Tenant & Runtime ----
+
+        @Override
+        public com.ghatana.kernel.context.KernelTenantContext getTenantContext() {
             return null;
         }
 
         @Override
-        public ConfigManager getConfig() {
-            return ConfigManager.createDefault("test");
+        public com.ghatana.kernel.context.KernelTenantContext getTenantContext(String tenantId) {
+            return null;
         }
 
         @Override
-        public java.util.concurrent.Executor getExecutor(String name) {
-            return java.util.concurrent.Executors.newSingleThreadExecutor();
-        }
-
-        @Override
-        public boolean hasCapability(String capabilityId) {
-            return true;
+        public io.activej.eventloop.Eventloop getEventloop() {
+            return io.activej.eventloop.Eventloop.create();
         }
 
         @Override
         public java.util.Set<com.ghatana.kernel.descriptor.KernelCapability> getAvailableCapabilities() {
             return java.util.Set.of();
+        }
+
+        @Override
+        public boolean hasCapability(com.ghatana.kernel.descriptor.KernelCapability capability) {
+            return true;
+        }
+
+        @Override
+        public <T> T getConfig(String key, Class<T> type) {
+            return null;
+        }
+
+        @Override
+        public <T> java.util.Optional<T> getOptionalConfig(String key, Class<T> type) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public String getKernelVersion() {
+            return "test-1.0.0";
+        }
+
+        @Override
+        public String getEnvironment() {
+            return "test";
+        }
+
+        @Override
+        public java.util.concurrent.Executor getExecutor(String executorName) {
+            return java.util.concurrent.ForkJoinPool.commonPool();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> java.util.Optional<T> getCapability(String capabilityId) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public <T> void registerService(Class<T> type, T service) {
+            services.put(type, service);
+        }
+
+        // ---- Test Helper (not part of interface) ----
+
+        @SuppressWarnings("unchecked")
+        public <T> T getService(Class<T> serviceClass) {
+            return (T) services.get(serviceClass);
         }
     }
 }

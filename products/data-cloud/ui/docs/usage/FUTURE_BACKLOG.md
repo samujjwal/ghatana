@@ -1,4 +1,4 @@
-# CES UI – Future Backlog
+# Data Cloud UI – Future Backlog
 
 ## 1. Short-Term
 
@@ -6,6 +6,6 @@
 
 ## 2. Medium-Term
 
-- Add more advanced visualization tools for CES schemas.
+- Add more advanced visualization tools for Data Cloud schemas.
 
-This backlog is self-contained and outlines potential evolution paths for the CES UI module.
+This backlog is self-contained and outlines potential evolution paths for the Data Cloud UI module.

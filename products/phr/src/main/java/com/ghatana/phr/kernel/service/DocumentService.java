@@ -6,7 +6,9 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadReque
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.util.JsonUtils;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -111,7 +113,7 @@ public class DocumentService {
         Promise<Void> contentWrite = storeContent(content);
         Promise<Void> metadataWrite = storeDocument(document);
 
-        return Promise.all(contentWrite, metadataWrite)
+        return Promises.all(List.of(contentWrite, metadataWrite))
             .then($ -> audit("DOCUMENT_UPLOAD", request.getPatientId(),
                 "Document uploaded: " + documentId + " with visibility: " + request.getVisibility()))
             .map($ -> document);
@@ -331,7 +333,7 @@ public class DocumentService {
             Map.of("retention", "25years")
         )).whenException(e -> {});
 
-        return Promise.all(documents, content).map($ -> null);
+        return Promises.all(List.of(documents, content));
     }
 
     private Promise<Optional<PatientDocument>> fetchDocument(String documentId) {

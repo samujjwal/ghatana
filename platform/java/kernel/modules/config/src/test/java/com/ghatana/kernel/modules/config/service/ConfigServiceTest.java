@@ -5,7 +5,7 @@
 package com.ghatana.kernel.modules.config.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.test.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.config.ConfigManager;
 import com.ghatana.platform.config.ConfigSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -264,48 +264,121 @@ public class ConfigServiceTest extends EventloopTestBase {
         return new MapConfigSource(values);
     }
 
-    /**
-     * Test implementation of KernelContext.
+            /**
+     * Test implementation of KernelContext for unit testing.
      */
     private static class TestKernelContext implements KernelContext {
+        private final java.util.concurrent.ConcurrentHashMap<Class<?>, Object> services =
+                new java.util.concurrent.ConcurrentHashMap<>();
+
+        // ---- Dependency Lookup ----
+
         @Override
-        public String getKernelId() {
-            return "test-kernel";
+        @SuppressWarnings("unchecked")
+        public <T> T getDependency(Class<T> type) {
+            T result = (T) services.get(type);
+            if (result == null) throw new IllegalStateException("No service: " + type.getName());
+            return result;
         }
 
         @Override
-        public String getTenantId() {
-            return "test-tenant";
+        @SuppressWarnings("unchecked")
+        public <T> java.util.Optional<T> getOptionalDependency(Class<T> type) {
+            return java.util.Optional.ofNullable((T) services.get(type));
         }
 
         @Override
-        public <T> void registerService(Class<T> serviceClass, T service) {
-            // No-op for testing
+        public <T> boolean hasDependency(Class<T> type) {
+            return services.containsKey(type);
         }
 
         @Override
-        public <T> T getService(Class<T> serviceClass) {
+        @SuppressWarnings("unchecked")
+        public <T> T getDependency(String name, Class<T> type) {
+            return (T) services.get(type);
+        }
+
+        // ---- Event System ----
+
+        @Override
+        public <E> void registerEventHandler(Class<E> eventType,
+                com.ghatana.kernel.event.EventHandler<E> handler) { /* no-op */ }
+
+        @Override
+        public <E> void unregisterEventHandler(Class<E> eventType,
+                com.ghatana.kernel.event.EventHandler<E> handler) { /* no-op */ }
+
+        @Override
+        public <E> void publishEvent(E event) { /* no-op */ }
+
+        // ---- Tenant & Runtime ----
+
+        @Override
+        public com.ghatana.kernel.context.KernelTenantContext getTenantContext() {
             return null;
         }
 
         @Override
-        public ConfigManager getConfig() {
-            return ConfigManager.createDefault("test");
+        public com.ghatana.kernel.context.KernelTenantContext getTenantContext(String tenantId) {
+            return null;
         }
 
         @Override
-        public java.util.concurrent.Executor getExecutor(String name) {
-            return java.util.concurrent.Executors.newSingleThreadExecutor();
-        }
-
-        @Override
-        public boolean hasCapability(String capabilityId) {
-            return true;
+        public io.activej.eventloop.Eventloop getEventloop() {
+            return io.activej.eventloop.Eventloop.create();
         }
 
         @Override
         public java.util.Set<com.ghatana.kernel.descriptor.KernelCapability> getAvailableCapabilities() {
             return java.util.Set.of();
+        }
+
+        @Override
+        public boolean hasCapability(com.ghatana.kernel.descriptor.KernelCapability capability) {
+            return true;
+        }
+
+        @Override
+        public <T> T getConfig(String key, Class<T> type) {
+            return null;
+        }
+
+        @Override
+        public <T> java.util.Optional<T> getOptionalConfig(String key, Class<T> type) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public String getKernelVersion() {
+            return "test-1.0.0";
+        }
+
+        @Override
+        public String getEnvironment() {
+            return "test";
+        }
+
+        @Override
+        public java.util.concurrent.Executor getExecutor(String executorName) {
+            return java.util.concurrent.ForkJoinPool.commonPool();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> java.util.Optional<T> getCapability(String capabilityId) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public <T> void registerService(Class<T> type, T service) {
+            services.put(type, service);
+        }
+
+        // ---- Test Helper (not part of interface) ----
+
+        @SuppressWarnings("unchecked")
+        public <T> T getService(Class<T> serviceClass) {
+            return (T) services.get(serviceClass);
         }
     }
 
@@ -372,6 +445,31 @@ public class ConfigServiceTest extends EventloopTestBase {
         @Override
         public boolean hasKey(String key) {
             return values.containsKey(key);
+        }
+
+        @Override
+        public java.util.Optional<String[]> getStringArray(String key) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public java.util.Optional<java.util.Map<String, String>> getMap(String key) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public <T> java.util.Optional<T> getObject(String key, Class<T> type) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public java.util.Optional<com.ghatana.platform.config.ConfigSource> getConfig(String key) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public String getName() {
+            return "test-map-config";
         }
     }
 }

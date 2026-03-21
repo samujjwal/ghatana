@@ -141,6 +141,8 @@ public class KernelRegistryImpl implements KernelRegistry {
 
         resolveDependenciesRecursive(module, visited, resolved);
 
+        resolved.removeIf(candidate -> candidate.getModuleId().equals(module.getModuleId()));
+
         return resolved;
     }
 
@@ -177,14 +179,14 @@ public class KernelRegistryImpl implements KernelRegistry {
         for (KernelDependency dep : module.getDependencies()) {
             switch (dep.getType()) {
                 case MODULE -> {
-                    if (!modules.containsKey(dep.getDependencyId())) {
+                    if (!dep.isOptional() && !modules.containsKey(dep.getDependencyId())) {
                         errors.add("Missing required module: " + dep.getDependencyId());
                     }
                 }
                 case CAPABILITY -> {
                     boolean hasCapability = capabilities.stream()
                         .anyMatch(c -> c.getCapabilityId().equals(dep.getDependencyId()));
-                    if (!hasCapability) {
+                    if (!dep.isOptional() && !hasCapability) {
                         errors.add("Missing required capability: " + dep.getDependencyId());
                     }
                 }
@@ -208,31 +210,40 @@ public class KernelRegistryImpl implements KernelRegistry {
 
     @Override
     public Promise<Void> startAllModules() {
-        // Sort modules by dependency order
         List<KernelModule> ordered = topologicalSort(modules.values());
+        List<KernelModule> startedModules = new CopyOnWriteArrayList<>();
+        Promise<Void> chain = Promise.complete();
 
-        // Start each module in order
-        List<Promise<Void>> startPromises = new ArrayList<>();
         for (KernelModule module : ordered) {
-            startPromises.add(module.start());
+            chain = chain.then(() -> module.start()
+                .map($ -> {
+                    startedModules.add(module);
+                    return null;
+                }));
         }
 
-        return Promises.all(startPromises);
+        return chain.then(
+            result -> Promise.complete(),
+            exception -> rollbackStartedModules(startedModules).then(
+                ignored -> Promise.ofException(exception),
+                rollbackException -> {
+                    rollbackException.addSuppressed(exception);
+                    return Promise.ofException(rollbackException);
+                })
+        );
     }
 
     @Override
     public Promise<Void> stopAllModules() {
-        // Sort modules in reverse dependency order
         List<KernelModule> ordered = topologicalSort(modules.values());
         Collections.reverse(ordered);
+        Promise<Void> chain = Promise.complete();
 
-        // Stop each module in reverse order
-        List<Promise<Void>> stopPromises = new ArrayList<>();
         for (KernelModule module : ordered) {
-            stopPromises.add(module.stop());
+            chain = chain.then(module::stop);
         }
 
-        return Promises.all(stopPromises);
+        return chain;
     }
 
     @Override
@@ -268,6 +279,32 @@ public class KernelRegistryImpl implements KernelRegistry {
     public void registerDependency(String name, Object instance) {
         dependencyByName.put(name, instance.getClass());
         dependencies.put(instance.getClass(), instance);
+    }
+
+    /**
+     * Gets a dependency by name and type.
+     *
+     * @param name the dependency name
+     * @param type the expected type
+     * @param <T> the dependency type
+     * @return the dependency instance
+     * @throws IllegalStateException if not found or type mismatch
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getDependency(String name, Class<T> type) {
+        Class<?> registeredType = dependencyByName.get(name);
+        if (registeredType == null) {
+            throw new IllegalStateException("Dependency not found: " + name);
+        }
+        if (!type.isAssignableFrom(registeredType)) {
+            throw new IllegalStateException("Dependency type mismatch for '" + name +
+                "': expected " + type.getName() + " but was " + registeredType.getName());
+        }
+        Object dep = dependencies.get(registeredType);
+        if (dep == null) {
+            throw new IllegalStateException("Dependency not found: " + name);
+        }
+        return (T) dep;
     }
 
     /**
@@ -360,6 +397,18 @@ public class KernelRegistryImpl implements KernelRegistry {
         }
 
         return result;
+    }
+
+    private Promise<Void> rollbackStartedModules(List<KernelModule> startedModules) {
+        List<KernelModule> rollbackOrder = new ArrayList<>(startedModules);
+        Collections.reverse(rollbackOrder);
+
+        Promise<Void> chain = Promise.complete();
+        for (KernelModule module : rollbackOrder) {
+            chain = chain.then(module::stop);
+        }
+
+        return chain;
     }
 
     // ==================== Health Status ====================

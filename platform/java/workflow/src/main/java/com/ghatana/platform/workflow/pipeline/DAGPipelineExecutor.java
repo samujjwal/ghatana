@@ -1,6 +1,6 @@
 package com.ghatana.platform.workflow.pipeline;
 
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.workflow.operator.OperatorResult;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;

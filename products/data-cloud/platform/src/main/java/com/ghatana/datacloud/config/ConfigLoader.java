@@ -83,7 +83,7 @@ public class ConfigLoader {
             String tenantId,
             String collectionName) {
 
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             log.debug("Loading collection config: tenant={}, collection={}",
                     tenantId, collectionName);
 
@@ -111,9 +111,11 @@ public class ConfigLoader {
                 }
             }
 
-            return yamlMapper.readValue(inputStream, RawCollectionConfig.class);
-        })
-                .then(this::interpolateVariablesAsync);
+            RawCollectionConfig config = yamlMapper.readValue(inputStream, RawCollectionConfig.class);
+            return Promise.of(interpolateEnvVars(config));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     private Promise<RawCollectionConfig> interpolateVariablesAsync(RawCollectionConfig config) {
@@ -163,27 +165,27 @@ public class ConfigLoader {
      * @return Promise containing list of collection names
      */
     public Promise<java.util.List<String>> listCollectionsAsync(String tenantId) {
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            java.util.List<String> collections = new java.util.ArrayList<>();
+        java.util.List<String> collections = new java.util.ArrayList<>();
 
-            // Check filesystem first
-            Path tenantPath = configBasePath.resolve("collections").resolve(tenantId);
-            if (Files.exists(tenantPath) && Files.isDirectory(tenantPath)) {
-                try (var stream = Files.list(tenantPath)) {
-                    stream.filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
-                            .map(Path::getFileName)
-                            .map(Path::toString)
-                            .map(name -> name.replaceAll("\\.(yaml|yml)$", ""))
-                            .forEach(collections::add);
-                }
+        // Check filesystem first
+        Path tenantPath = configBasePath.resolve("collections").resolve(tenantId);
+        if (Files.exists(tenantPath) && Files.isDirectory(tenantPath)) {
+            try (var stream = Files.list(tenantPath)) {
+                stream.filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
+                        .map(Path::getFileName)
+                        .map(Path::toString)
+                        .map(name -> name.replaceAll("\\.(yaml|yml)$", ""))
+                        .forEach(collections::add);
+            } catch (Exception e) {
+                return Promise.ofException(e);
             }
+        }
 
-            // Also check classpath (for bundled defaults)
-            // This is a simplified implementation - in production would use resource scanning
-            log.debug("Listed {} collections for tenant {}", collections.size(), tenantId);
+        // Also check classpath (for bundled defaults)
+        // This is a simplified implementation - in production would use resource scanning
+        log.debug("Listed {} collections for tenant {}", collections.size(), tenantId);
 
-            return collections;
-        });
+        return Promise.of(collections);
     }
 
     // ===== Plugin Loading =====
@@ -198,7 +200,7 @@ public class ConfigLoader {
             String tenantId,
             String pluginName) {
 
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             log.debug("Loading plugin config: tenant={}, plugin={}", tenantId, pluginName);
 
             Path filePath = configBasePath
@@ -235,9 +237,11 @@ public class ConfigLoader {
                 }
             }
 
-            return yamlMapper.readValue(inputStream,
-                    com.ghatana.datacloud.config.model.RawPluginConfig.class);
-        });
+            return Promise.of(yamlMapper.readValue(inputStream,
+                    com.ghatana.datacloud.config.model.RawPluginConfig.class));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -247,37 +251,39 @@ public class ConfigLoader {
      * @return Promise containing list of plugin names
      */
     public Promise<java.util.List<String>> listPluginsAsync(String tenantId) {
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            java.util.List<String> plugins = new java.util.ArrayList<>();
+        java.util.List<String> plugins = new java.util.ArrayList<>();
 
-            // Check tenant-specific plugins
-            Path tenantPath = configBasePath.resolve("plugins").resolve(tenantId);
-            if (Files.exists(tenantPath) && Files.isDirectory(tenantPath)) {
-                try (var stream = Files.list(tenantPath)) {
-                    stream.filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
-                            .map(Path::getFileName)
-                            .map(Path::toString)
-                            .map(name -> name.replaceAll("\\.(yaml|yml)$", ""))
-                            .forEach(plugins::add);
-                }
+        // Check tenant-specific plugins
+        Path tenantPath = configBasePath.resolve("plugins").resolve(tenantId);
+        if (Files.exists(tenantPath) && Files.isDirectory(tenantPath)) {
+            try (var stream = Files.list(tenantPath)) {
+                stream.filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
+                        .map(Path::getFileName)
+                        .map(Path::toString)
+                        .map(name -> name.replaceAll("\\.(yaml|yml)$", ""))
+                        .forEach(plugins::add);
+            } catch (Exception e) {
+                return Promise.ofException(e);
             }
+        }
 
-            // Also include default plugins
-            Path defaultPath = configBasePath.resolve("plugins").resolve("default");
-            if (Files.exists(defaultPath) && Files.isDirectory(defaultPath)) {
-                try (var stream = Files.list(defaultPath)) {
-                    stream.filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
-                            .map(Path::getFileName)
-                            .map(Path::toString)
-                            .map(name -> name.replaceAll("\\.(yaml|yml)$", ""))
-                            .filter(name -> !plugins.contains(name)) // Don't duplicate
-                            .forEach(plugins::add);
-                }
+        // Also include default plugins
+        Path defaultPath = configBasePath.resolve("plugins").resolve("default");
+        if (Files.exists(defaultPath) && Files.isDirectory(defaultPath)) {
+            try (var stream = Files.list(defaultPath)) {
+                stream.filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
+                        .map(Path::getFileName)
+                        .map(Path::toString)
+                        .map(name -> name.replaceAll("\\.(yaml|yml)$", ""))
+                        .filter(name -> !plugins.contains(name)) // Don't duplicate
+                        .forEach(plugins::add);
+            } catch (Exception e) {
+                return Promise.ofException(e);
             }
+        }
 
-            log.debug("Listed {} plugins for tenant {}", plugins.size(), tenantId);
-            return plugins;
-        });
+        log.debug("Listed {} plugins for tenant {}", plugins.size(), tenantId);
+        return Promise.of(plugins);
     }
 
     // ===== Storage Profile Loading =====
@@ -292,7 +298,7 @@ public class ConfigLoader {
             String tenantId,
             String profileName) {
 
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             log.debug("Loading storage profile config: tenant={}, profile={}", tenantId, profileName);
 
             // Load all profiles from YAML file and find the one we need
@@ -304,12 +310,14 @@ public class ConfigLoader {
                         String.format("Storage profiles not found for tenant: %s", tenantId));
             }
 
-            return allProfiles.profiles().stream()
+            return Promise.of(allProfiles.profiles().stream()
                     .filter(p -> profileName.equals(p.name()))
                     .findFirst()
                     .orElseThrow(() -> new ConfigNotFoundException(
-                    String.format("Storage profile not found: %s/%s", tenantId, profileName)));
-        });
+                    String.format("Storage profile not found: %s/%s", tenantId, profileName))));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -319,46 +327,48 @@ public class ConfigLoader {
      * @return Promise containing list of profile names
      */
     public Promise<java.util.List<String>> listStorageProfilesAsync(String tenantId) {
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            java.util.List<String> profiles = new java.util.ArrayList<>();
+        java.util.List<String> profiles = new java.util.ArrayList<>();
 
+        try {
+            com.ghatana.datacloud.config.model.RawStorageProfileConfig allProfiles
+                    = loadAllStorageProfiles(tenantId);
+
+            if (allProfiles != null && allProfiles.profiles() != null) {
+                allProfiles.profiles().stream()
+                        .map(com.ghatana.datacloud.config.model.RawStorageProfileConfig.RawStorageProfile::name)
+                        .forEach(profiles::add);
+            }
+        } catch (ConfigNotFoundException e) {
+            log.debug("No storage profiles found for tenant {}", tenantId);
+        } catch (java.io.IOException e) {
+            log.warn("Error reading storage profiles for tenant {}: {}", tenantId, e.getMessage());
+        }
+
+        // Also include default profiles if not tenant-specific
+        if (!"default".equals(tenantId)) {
             try {
-                com.ghatana.datacloud.config.model.RawStorageProfileConfig allProfiles
-                        = loadAllStorageProfiles(tenantId);
+                com.ghatana.datacloud.config.model.RawStorageProfileConfig defaultProfiles
+                        = loadAllStorageProfiles("default");
 
-                if (allProfiles != null && allProfiles.profiles() != null) {
-                    allProfiles.profiles().stream()
+                if (defaultProfiles != null && defaultProfiles.profiles() != null) {
+                    defaultProfiles.profiles().stream()
                             .map(com.ghatana.datacloud.config.model.RawStorageProfileConfig.RawStorageProfile::name)
+                            .filter(name -> !profiles.contains(name))
                             .forEach(profiles::add);
                 }
             } catch (ConfigNotFoundException e) {
-                log.debug("No storage profiles found for tenant {}", tenantId);
+                log.debug("No default storage profiles found");
+            } catch (java.io.IOException e) {
+                log.warn("Error reading default storage profiles: {}", e.getMessage());
             }
+        }
 
-            // Also include default profiles if not tenant-specific
-            if (!"default".equals(tenantId)) {
-                try {
-                    com.ghatana.datacloud.config.model.RawStorageProfileConfig defaultProfiles
-                            = loadAllStorageProfiles("default");
-
-                    if (defaultProfiles != null && defaultProfiles.profiles() != null) {
-                        defaultProfiles.profiles().stream()
-                                .map(com.ghatana.datacloud.config.model.RawStorageProfileConfig.RawStorageProfile::name)
-                                .filter(name -> !profiles.contains(name))
-                                .forEach(profiles::add);
-                    }
-                } catch (ConfigNotFoundException e) {
-                    log.debug("No default storage profiles found");
-                }
-            }
-
-            log.debug("Listed {} storage profiles for tenant {}", profiles.size(), tenantId);
-            return profiles;
-        });
+        log.debug("Listed {} storage profiles for tenant {}", profiles.size(), tenantId);
+        return Promise.of(profiles);
     }
 
     private com.ghatana.datacloud.config.model.RawStorageProfileConfig loadAllStorageProfiles(
-            String tenantId) throws Exception {
+            String tenantId) throws java.io.IOException {
 
         Path filePath = configBasePath
                 .resolve("storage-profiles")
@@ -398,7 +408,7 @@ public class ConfigLoader {
             String tenantId,
             String policyName) {
 
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             log.debug("Loading policy config: tenant={}, policy={}", tenantId, policyName);
 
             Path filePath = configBasePath
@@ -435,9 +445,11 @@ public class ConfigLoader {
                 }
             }
 
-            return yamlMapper.readValue(inputStream,
-                    com.ghatana.datacloud.config.model.RawPolicyConfig.class);
-        });
+            return Promise.of(yamlMapper.readValue(inputStream,
+                    com.ghatana.datacloud.config.model.RawPolicyConfig.class));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -447,37 +459,39 @@ public class ConfigLoader {
      * @return Promise containing list of policy names
      */
     public Promise<java.util.List<String>> listPoliciesAsync(String tenantId) {
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            java.util.List<String> policies = new java.util.ArrayList<>();
+        java.util.List<String> policies = new java.util.ArrayList<>();
 
-            // Check tenant-specific policies
-            Path tenantPath = configBasePath.resolve("policies").resolve(tenantId);
-            if (Files.exists(tenantPath) && Files.isDirectory(tenantPath)) {
-                try (var stream = Files.list(tenantPath)) {
-                    stream.filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
-                            .map(Path::getFileName)
-                            .map(Path::toString)
-                            .map(name -> name.replaceAll("\\.(yaml|yml)$", ""))
-                            .forEach(policies::add);
-                }
+        // Check tenant-specific policies
+        Path tenantPath = configBasePath.resolve("policies").resolve(tenantId);
+        if (Files.exists(tenantPath) && Files.isDirectory(tenantPath)) {
+            try (var stream = Files.list(tenantPath)) {
+                stream.filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
+                        .map(Path::getFileName)
+                        .map(Path::toString)
+                        .map(name -> name.replaceAll("\\.(yaml|yml)$", ""))
+                        .forEach(policies::add);
+            } catch (Exception e) {
+                return Promise.ofException(e);
             }
+        }
 
-            // Also include default policies
-            Path defaultPath = configBasePath.resolve("policies").resolve("default");
-            if (Files.exists(defaultPath) && Files.isDirectory(defaultPath)) {
-                try (var stream = Files.list(defaultPath)) {
-                    stream.filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
-                            .map(Path::getFileName)
-                            .map(Path::toString)
-                            .map(name -> name.replaceAll("\\.(yaml|yml)$", ""))
-                            .filter(name -> !policies.contains(name)) // Don't duplicate
-                            .forEach(policies::add);
-                }
+        // Also include default policies
+        Path defaultPath = configBasePath.resolve("policies").resolve("default");
+        if (Files.exists(defaultPath) && Files.isDirectory(defaultPath)) {
+            try (var stream = Files.list(defaultPath)) {
+                stream.filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
+                        .map(Path::getFileName)
+                        .map(Path::toString)
+                        .map(name -> name.replaceAll("\\.(yaml|yml)$", ""))
+                        .filter(name -> !policies.contains(name)) // Don't duplicate
+                        .forEach(policies::add);
+            } catch (Exception e) {
+                return Promise.ofException(e);
             }
+        }
 
-            log.debug("Listed {} policies for tenant {}", policies.size(), tenantId);
-            return policies;
-        });
+        log.debug("Listed {} policies for tenant {}", policies.size(), tenantId);
+        return Promise.of(policies);
     }
 
     /**
@@ -492,7 +506,7 @@ public class ConfigLoader {
             String tenantId,
             String routingName) {
 
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             log.debug("Loading routing config: tenant={}, routing={}", tenantId, routingName);
 
             Path filePath = configBasePath
@@ -537,9 +551,11 @@ public class ConfigLoader {
                 }
             }
 
-            return yamlMapper.readValue(inputStream,
-                    com.ghatana.datacloud.config.model.RawRoutingConfig.class);
-        });
+            return Promise.of(yamlMapper.readValue(inputStream,
+                    com.ghatana.datacloud.config.model.RawRoutingConfig.class));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // ===== Synchronous File Loading (for CLI) =====

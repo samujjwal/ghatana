@@ -1,6 +1,6 @@
 # 11. Dataset Explorer – List View – Deep-Dive Spec
 
-> **Status:** Planned page – no concrete implementation in CES UI yet. This spec translates the Dataset Explorer list requirements from `frontend_todo (1).md` into a concrete future page.
+> **Status:** Planned page – no concrete implementation in Data Cloud UI yet. This spec translates the Dataset Explorer list requirements from `frontend_todo (1).md` into a concrete future page.
 
 ---
 
@@ -8,7 +8,7 @@
 
 **One-sentence intent:**
 
-> Provide a **global list of datasets** (not just CES collections) with search, filters, and sorting, as the main entry to exploring data in the Data Cloud.
+> Provide a **global list of datasets** (not just Data Cloud collections) with search, filters, and sorting, as the main entry to exploring data in the Data Cloud.
 
 **Primary goals:**
 
@@ -99,7 +99,7 @@ High-level layout for the list page:
 
 A production-ready Dataset Explorer list should:
 
-1. Pull from the **central metadata catalog**, not only CES collections.
+1. Pull from the **central metadata catalog**, not only Data Cloud collections.
 2. Represent datasets from multiple storage backends and table formats.
 3. Integrate with governance signals (PII, policies) and optimizer signals (hotness, tiering).
 4. Scale to thousands of datasets with pagination or infinite scroll.

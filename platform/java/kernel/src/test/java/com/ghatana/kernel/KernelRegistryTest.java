@@ -8,7 +8,7 @@ import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.registry.KernelRegistryImpl;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
-import io.activej.test.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

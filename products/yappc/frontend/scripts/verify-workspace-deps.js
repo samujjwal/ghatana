@@ -17,9 +17,12 @@ const chalk = require('chalk');
 
 // Configuration
 const ROOT_DIR = process.cwd();
-const WORKSPACES = require('../pnpm-workspace.yaml').packages.map(pkg => 
-  pkg.replace('/*', '')
-);
+
+// Derive workspace directories from the local package.json "workspaces" field
+// instead of a non-existent pnpm-workspace.yaml in the frontend root.
+const frontendPkg = require('../package.json');
+const workspaceGlobs = frontendPkg.workspaces || [];
+const WORKSPACES = workspaceGlobs.map(pkg => pkg.replace('/*', ''));
 
 // Track issues
 const issues = {

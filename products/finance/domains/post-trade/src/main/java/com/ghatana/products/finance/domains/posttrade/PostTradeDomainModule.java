@@ -83,7 +83,7 @@ public final class PostTradeDomainModule implements KernelModule {
             ),
             KernelCapability.Core.DATA_STORAGE,
             KernelCapability.Core.EVENT_PROCESSING,
-            KernelCapability.Core.AUDIT_LOGGING
+            KernelCapability.Core.OBSERVABILITY_FRAMEWORK
         );
     }
 
@@ -110,21 +110,19 @@ public final class PostTradeDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Post-Trade Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = true;
             log.info("Post-Trade Domain module started successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Post-Trade Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = false;
             log.info("Post-Trade Domain module stopped successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override

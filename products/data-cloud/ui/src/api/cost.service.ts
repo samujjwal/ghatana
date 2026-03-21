@@ -8,7 +8,7 @@
  * @doc.layer frontend
  */
 
-import axios, { AxiosInstance } from 'axios';
+import { apiClient } from '../lib/api/client';
 
 export interface CostBreakdown {
   total: number;
@@ -82,35 +82,20 @@ export interface HotnessMetric {
  * Cost Service Client
  */
 export class CostService {
-  private client: AxiosInstance;
-
-  constructor(baseURL: string = '/api') {
-    this.client = axios.create({
-      baseURL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-  }
-
   /**
    * Get cost breakdown analysis
    */
   async getCostAnalysis(period: string = '30d'): Promise<CostBreakdown> {
-    const response = await this.client.get<CostBreakdown>('/cost/analysis', {
+    return apiClient.get<CostBreakdown>('/cost/analysis', {
       params: { period },
     });
-    return response.data;
   }
 
   /**
    * Get optimization suggestions for a query
    */
   async getQueryOptimization(query: string): Promise<QueryOptimization> {
-    const response = await this.client.post<QueryOptimization>('/query/optimize', {
-      query,
-    });
-    return response.data;
+    return apiClient.post<QueryOptimization>('/query/optimize', { query });
   }
 
   /**
@@ -120,32 +105,21 @@ export class CostService {
     queryId: string,
     suggestionType: string
   ): Promise<{ success: boolean; newQuery?: string }> {
-    const response = await this.client.post(
-      `/query/optimize/${queryId}/apply`,
-      { suggestionType }
-    );
-    return response.data;
+    return apiClient.post(`/query/optimize/${queryId}/apply`, { suggestionType });
   }
 
   /**
    * Predict query cost and latency
    */
   async predictQuery(query: string, tier?: string): Promise<QueryPrediction> {
-    const response = await this.client.post<QueryPrediction>('/query/predict', {
-      query,
-      tier,
-    });
-    return response.data;
+    return apiClient.post<QueryPrediction>('/query/predict', { query, tier });
   }
 
   /**
    * Get materialized view suggestions
    */
   async getMaterializedViewSuggestions(): Promise<MaterializedViewSuggestion[]> {
-    const response = await this.client.get<MaterializedViewSuggestion[]>(
-      '/query/materialized-views/suggestions'
-    );
-    return response.data;
+    return apiClient.get<MaterializedViewSuggestion[]>('/query/materialized-views/suggestions');
   }
 
   /**
@@ -154,16 +128,14 @@ export class CostService {
   async createMaterializedView(
     suggestion: MaterializedViewSuggestion
   ): Promise<{ id: string; status: string }> {
-    const response = await this.client.post('/query/materialized-views', suggestion);
-    return response.data;
+    return apiClient.post('/query/materialized-views', suggestion);
   }
 
   /**
    * Get hotness metrics for datasets
    */
   async getHotnessMetrics(): Promise<HotnessMetric[]> {
-    const response = await this.client.get<HotnessMetric[]>('/cost/hotness');
-    return response.data;
+    return apiClient.get<HotnessMetric[]>('/cost/hotness');
   }
 
   /**
@@ -173,7 +145,7 @@ export class CostService {
     datasetId: string,
     tier: 'HOT' | 'WARM' | 'COLD'
   ): Promise<void> {
-    await this.client.put(`/cost/hotness/${datasetId}`, { tier });
+    await apiClient.put<void>(`/cost/hotness/${datasetId}`, { tier });
   }
 
   /**
@@ -182,10 +154,7 @@ export class CostService {
   async getCostForecast(
     days: number = 30
   ): Promise<{ forecast: Array<{ date: string; cost: number }> }> {
-    const response = await this.client.get('/cost/forecast', {
-      params: { days },
-    });
-    return response.data;
+    return apiClient.get('/cost/forecast', { params: { days } });
   }
 }
 

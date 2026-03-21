@@ -1,6 +1,6 @@
 package com.ghatana.virtualorg.framework.runtime;
 
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import io.activej.promise.Promise;
 
 /**

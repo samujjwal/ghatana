@@ -14,7 +14,7 @@ import com.ghatana.kernel.modules.authentication.service.OAuthService;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
-import io.activej.test.ActiveJTest;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for AuthenticationKernelModule.
@@ -41,7 +40,7 @@ import static org.mockito.Mockito.when;
  * @since 1.0.0
  */
 @ExtendWith(MockitoExtension.class)
-public class AuthenticationKernelModuleTest extends ActiveJTest {
+public class AuthenticationKernelModuleTest extends EventloopTestBase {
 
     @Mock
     private KernelContext mockContext;
@@ -54,13 +53,6 @@ public class AuthenticationKernelModuleTest extends ActiveJTest {
     @BeforeEach
     void setUp() {
         module = new AuthenticationKernelModule();
-        
-        // Setup mock context
-        when(mockContext.getExecutor("authentication")).thenReturn(mockExecutor);
-        when(mockContext.getExecutor("authorization")).thenReturn(mockExecutor);
-        when(mockContext.getExecutor("token")).thenReturn(mockExecutor);
-        when(mockContext.getExecutor("mfa")).thenReturn(mockExecutor);
-        when(mockContext.getExecutor("oauth")).thenReturn(mockExecutor);
     }
 
     @Test
@@ -118,10 +110,7 @@ public class AuthenticationKernelModuleTest extends ActiveJTest {
         // Start module
         Promise<Void> startPromise = module.start();
         assertThat(startPromise).isNotNull();
-        
-        // Wait for start to complete
-        Void startResult = startPromise.getResult();
-        assertThat(startResult).isNull();
+        runPromise(() -> startPromise);
         
         // Check health after start
         var healthStatus = module.getHealthStatus();
@@ -130,10 +119,7 @@ public class AuthenticationKernelModuleTest extends ActiveJTest {
         // Stop module
         Promise<Void> stopPromise = module.stop();
         assertThat(stopPromise).isNotNull();
-        
-        // Wait for stop to complete
-        Void stopResult = stopPromise.getResult();
-        assertThat(stopResult).isNull();
+        runPromise(() -> stopPromise);
     }
 
     @Test
@@ -141,7 +127,7 @@ public class AuthenticationKernelModuleTest extends ActiveJTest {
         // Test health status before initialization
         var healthStatus = module.getHealthStatus();
         assertThat(healthStatus.isHealthy()).isFalse();
-        assertThat(healthStatus.getMessage()).contains("Health check failed");
+        assertThat(healthStatus.getMessage()).contains("degraded");
     }
 
     @Test
@@ -175,8 +161,7 @@ public class AuthenticationKernelModuleTest extends ActiveJTest {
         assertThat(capabilities).allMatch(cap -> 
             cap.getCapabilityId().startsWith("user.") ||
             cap.getCapabilityId().startsWith("security.") ||
-            cap.getCapabilityId().equals("security.framework") ||
-            cap.getCapabilityId().equals("multi.factor.auth") ||
+            cap.getCapabilityId().startsWith("mfa.") ||
             cap.getCapabilityId().equals("oauth.framework")
         );
     }

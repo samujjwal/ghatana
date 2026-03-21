@@ -111,7 +111,7 @@ public class HotReloadPluginManager {
 
     // ── Internal ─────────────────────────────────────────────────────────
 
-    private void loadPlugin(Path jarPath) {
+    protected void loadPlugin(Path jarPath) {
         String fileName = jarPath.getFileName().toString();
         try {
             log.info("Loading plugin: {}", fileName);

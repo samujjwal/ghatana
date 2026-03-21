@@ -52,13 +52,18 @@ public class RiskManagementKernelExtension implements KernelExtension {
     }
 
     @Override
+    public String getVersion() {
+        return VERSION;
+    }
+
+    @Override
     public KernelDescriptor getDescriptor() {
-        return KernelDescriptor.builder()
-            .descriptorId(EXTENSION_ID)
-            .name(getName())
-            .version(VERSION)
-            .description("Real-time risk management with VaR, position limits, and portfolio monitoring")
-            .type(KernelDescriptor.ComponentType.EXTENSION)
+        return new KernelDescriptor.Builder()
+            .withDescriptorId(EXTENSION_ID)
+            .withName(getName())
+            .withVersion(VERSION)
+            .withDescription("Real-time risk management with VaR, position limits, and portfolio monitoring")
+            .withType(KernelDescriptor.DescriptorType.EXTENSION)
             .build();
     }
 

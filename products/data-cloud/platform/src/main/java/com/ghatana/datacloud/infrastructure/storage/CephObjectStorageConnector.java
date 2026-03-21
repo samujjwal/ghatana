@@ -108,64 +108,62 @@ public class CephObjectStorageConnector implements StorageConnector {
 
     @Override
     public Promise<Entity> create(Entity entity) {
-        return Promise.ofBlocking(executor, () -> {
-            Timer.Sample sample = Timer.start();
-            try {
-                String key  = objectKey(entity.getTenantId(),
-                                        entity.getCollectionName(),
-                                        entity.getId().toString());
-                byte[] body = MAPPER.writeValueAsBytes(entity.getData());
-                s3.putObject(
-                        PutObjectRequest.builder()
-                                .bucket(bucket)
-                                .key(key)
-                                .contentType(CONTENT_TYPE_JSON)
-                                .contentLength((long) body.length)
-                                .build(),
-                        RequestBody.fromBytes(body));
-                createCounter.increment();
-                log.debug("Ceph: created object {}", key);
-                return entity;
-            } catch (Exception e) {
-                createErrorCounter.increment();
-                log.error("Ceph: create failed for entity {}", entity.getId(), e);
-                throw new RuntimeException("Ceph create failed", e);
-            } finally {
-                sample.stop(createTimer);
-            }
-        });
+        Timer.Sample sample = Timer.start();
+        try {
+            String key  = objectKey(entity.getTenantId(),
+                                    entity.getCollectionName(),
+                                    entity.getId().toString());
+            byte[] body = MAPPER.writeValueAsBytes(entity.getData());
+            s3.putObject(
+                    PutObjectRequest.builder()
+                            .bucket(bucket)
+                            .key(key)
+                            .contentType(CONTENT_TYPE_JSON)
+                            .contentLength((long) body.length)
+                            .build(),
+                    RequestBody.fromBytes(body));
+            createCounter.increment();
+            log.debug("Ceph: created object {}", key);
+            return Promise.of(entity);
+        } catch (Exception e) {
+            createErrorCounter.increment();
+            log.error("Ceph: create failed for entity {}", entity.getId(), e);
+            return Promise.ofException(new RuntimeException("Ceph create failed", e));
+        } finally {
+            sample.stop(createTimer);
+        }
     }
 
     @Override
     public Promise<Optional<Entity>> read(UUID collectionId, String tenantId, UUID entityId) {
-        return Promise.ofBlocking(executor, () -> {
-            Timer.Sample sample = Timer.start();
-            try {
-                // collectionId is stored as namespace; do a prefix-scan to find collectionName
-                String prefix = tenantId + "/";
-                // Use entityId to locate the object — scan listing for this entityId
-                ListObjectsV2Response listing = s3.listObjectsV2(
-                        ListObjectsV2Request.builder()
-                                .bucket(bucket)
-                                .prefix(prefix)
-                                .build());
+        Timer.Sample sample = Timer.start();
+        try {
+            // collectionId is stored as namespace; do a prefix-scan to find collectionName
+            String prefix = tenantId + "/";
+            // Use entityId to locate the object — scan listing for this entityId
+            ListObjectsV2Response listing = s3.listObjectsV2(
+                    ListObjectsV2Request.builder()
+                            .bucket(bucket)
+                            .prefix(prefix)
+                            .build());
 
-                Optional<S3Object> match = listing.contents().stream()
-                        .filter(o -> o.key().endsWith("/" + entityId + ".json"))
-                        .findFirst();
+            Optional<S3Object> match = listing.contents().stream()
+                    .filter(o -> o.key().endsWith("/" + entityId + ".json"))
+                    .findFirst();
 
-                if (match.isEmpty()) {
-                    readCounter.increment();
-                    return Optional.empty();
-                }
+            if (match.isEmpty()) {
                 readCounter.increment();
-                return Optional.of(fetchEntity(match.get().key()));
-            } catch (NoSuchKeyException e) {
-                return Optional.empty();
-            } finally {
-                sample.stop(readTimer);
+                return Promise.of(Optional.empty());
             }
-        });
+            readCounter.increment();
+            return Promise.of(Optional.of(fetchEntity(match.get().key())));
+        } catch (NoSuchKeyException e) {
+            return Promise.of(Optional.empty());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        } finally {
+            sample.stop(readTimer);
+        }
     }
 
     @Override
@@ -176,7 +174,7 @@ public class CephObjectStorageConnector implements StorageConnector {
 
     @Override
     public Promise<Void> delete(UUID collectionId, String tenantId, UUID entityId) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             // We need to find the exact key — use listing to resolve collectionName
             String prefix = tenantId + "/";
             ListObjectsV2Response listing = s3.listObjectsV2(
@@ -193,13 +191,15 @@ public class CephObjectStorageConnector implements StorageConnector {
                         deleteCounter.increment();
                         log.debug("Ceph: deleted object {}", o.key());
                     });
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<QueryResult> query(UUID collectionId, String tenantId, QuerySpec spec) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String prefix = tenantId + "/" + collectionId + "/";
             List<Entity> results = new ArrayList<>();
             String continuationToken = null;
@@ -221,14 +221,16 @@ public class CephObjectStorageConnector implements StorageConnector {
             int from   = Math.min(spec.getOffset(), total);
             int to     = Math.min(from + spec.getLimit(), total);
             List<Entity> page = results.subList(from, to);
-            return new QueryResult(page, total, spec.getLimit(), spec.getOffset(), 0L);
-        });
+            return Promise.of(new QueryResult(page, total, spec.getLimit(), spec.getOffset(), 0L));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<Entity>> scan(UUID collectionId, String tenantId,
                                        String filterExpression, int limit, int offset) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String prefix = tenantId + "/" + collectionId + "/";
             List<Entity> results = new ArrayList<>();
             ListObjectsV2Response page = s3.listObjectsV2(
@@ -240,13 +242,15 @@ public class CephObjectStorageConnector implements StorageConnector {
             for (int i = offset; i < Math.min(offset + limit, page.contents().size()); i++) {
                 results.add(fetchEntity(page.contents().get(i).key()));
             }
-            return results;
-        });
+            return Promise.of(results);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Long> count(UUID collectionId, String tenantId, String filterExpression) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String prefix = tenantId + "/" + collectionId + "/";
             long count = 0;
             String continuationToken = null;
@@ -258,13 +262,15 @@ public class CephObjectStorageConnector implements StorageConnector {
                 count += resp.keyCount();
                 continuationToken = resp.isTruncated() ? resp.nextContinuationToken() : null;
             } while (continuationToken != null);
-            return count;
-        });
+            return Promise.of(count);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<Entity>> bulkCreate(UUID collectionId, String tenantId, List<Entity> entities) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             List<Entity> created = new ArrayList<>(entities.size());
             for (Entity e : entities) {
                 String key  = objectKey(e.getTenantId(), e.getCollectionName(), e.getId().toString());
@@ -275,8 +281,10 @@ public class CephObjectStorageConnector implements StorageConnector {
                         RequestBody.fromBytes(body));
                 created.add(e);
             }
-            return created;
-        });
+            return Promise.of(created);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -286,7 +294,7 @@ public class CephObjectStorageConnector implements StorageConnector {
 
     @Override
     public Promise<Long> bulkDelete(UUID collectionId, String tenantId, List<UUID> entityIds) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             Set<String> ids = new HashSet<>();
             for (UUID id : entityIds) ids.add(id.toString());
             String prefix = tenantId + "/" + collectionId + "/";
@@ -301,13 +309,15 @@ public class CephObjectStorageConnector implements StorageConnector {
                     deleted++;
                 }
             }
-            return deleted;
-        });
+            return Promise.of(deleted);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Long> truncate(UUID collectionId, String tenantId) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String prefix = tenantId + "/" + collectionId + "/";
             long deleted = 0;
             String continuationToken = null;
@@ -322,8 +332,10 @@ public class CephObjectStorageConnector implements StorageConnector {
                 }
                 continuationToken = resp.isTruncated() ? resp.nextContinuationToken() : null;
             } while (continuationToken != null);
-            return deleted;
-        });
+            return Promise.of(deleted);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -341,10 +353,12 @@ public class CephObjectStorageConnector implements StorageConnector {
 
     @Override
     public Promise<Void> healthCheck() {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             s3.headBucket(HeadBucketRequest.builder().bucket(bucket).build());
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // ==================== Internal Helpers ====================

@@ -221,6 +221,19 @@ public final class JdbcWorkflowStateStore implements WorkflowStateStore {
         );
     }
 
+    @Override
+    public Promise<Void> storeMetrics(@NotNull Object metrics) {
+        return Promise.ofBlocking(executor, () -> {
+            String json = toJson(metrics);
+            try (var conn = dataSource.getConnection();
+                 var ps = conn.prepareStatement("INSERT INTO workflow_metrics (data, created_at) VALUES (?, NOW())")) {
+                ps.setString(1, json);
+                ps.executeUpdate();
+            }
+            return null;
+        });
+    }
+
     private String toJson(Object obj) {
         try {
             return MAPPER.writeValueAsString(obj);

@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 public final class AepServiceClient implements AepClient {
 
   private static final Logger LOG = LoggerFactory.getLogger(AepServiceClient.class);
-  private static final String DEFAULT_TENANT_ID = "default";
 
   private final HttpClient httpClient;
   private final ObjectMapper objectMapper;
@@ -269,14 +268,16 @@ public final class AepServiceClient implements AepClient {
     if (tenantId instanceof String tenant && !tenant.isBlank()) {
       return tenant;
     }
-    // Prefer thread-local TenantContext (set by auth filter) over the
-    // static DEFAULT_TENANT_ID constant, which would collapse all
-    // tenants together and violate multi-tenant isolation.
+    // Fall back to thread-local TenantContext set by the auth filter.
     String contextTenantId = TenantContext.getCurrentTenantId();
-    if (!contextTenantId.isBlank() && !contextTenantId.equals("default-tenant")) {
+    if (contextTenantId != null
+        && !contextTenantId.isBlank()
+        && !contextTenantId.equals("default-tenant")) {
       return contextTenantId;
     }
-    return DEFAULT_TENANT_ID;
+    throw new IllegalStateException(
+        "Tenant ID is required but was not found in payload or TenantContext. "
+            + "Ensure the request carries a valid X-Tenant-ID header.");
   }
 
   private String toJson(Object body) throws AepException {

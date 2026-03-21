@@ -17,6 +17,8 @@ ADRs document significant architectural decisions made during the AEP + Event-Cl
 | [ADR-008](ADR-008-datacloud-spi.md) | Data-Cloud SPI with ServiceLoader Discovery | Accepted | 1 |
 | [ADR-009](ADR-009-configuration-first.md) | Configuration-First Architecture with YAML and JSON Schema | Accepted | 3 |
 | [ADR-010](ADR-010-flyway-migrations.md) | Flyway for Database Schema Management | Accepted | 4 |
+| [ADR-011](ADR-011-yappc-modular-refactoring.md) | Yappc Modular Refactoring | Accepted | 5 |
+| [ADR-012](ADR-012-keep-aep-gateway.md) | Keep AEP Gateway as First-Class Service | Accepted | 3 |
 
 ## ADR Format
 

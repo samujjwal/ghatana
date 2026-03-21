@@ -62,6 +62,7 @@ public final class KernelDependency {
     // ==================== Getters ====================
 
     public String getDependencyId() { return dependencyId; }
+    public String getCapabilityId() { return dependencyId; }
     public String getVersionConstraint() { return versionConstraint; }
     public DependencyType getType() { return type; }
     public boolean isOptional() { return optional; }
@@ -115,6 +116,36 @@ public final class KernelDependency {
      */
     public boolean isExternalServiceDependency() {
         return type == DependencyType.EXTERNAL_SERVICE;
+    }
+
+    /**
+     * Creates a dependency on a kernel capability.
+     *
+     * @param capabilityId the capability ID
+     * @return new dependency on the capability
+     */
+    public static KernelDependency onCapability(String capabilityId) {
+        return new KernelDependency(capabilityId, "*", DependencyType.CAPABILITY, false);
+    }
+
+    /**
+     * Creates a dependency on a kernel module.
+     *
+     * @param moduleId the module ID
+     * @return new dependency on the module
+     */
+    public static KernelDependency onModule(String moduleId) {
+        return new KernelDependency(moduleId, "*", DependencyType.MODULE, false);
+    }
+
+    /**
+     * Creates a dependency on an external service.
+     *
+     * @param serviceId the service ID
+     * @return new dependency on the service
+     */
+    public static KernelDependency onService(String serviceId) {
+        return new KernelDependency(serviceId, "*", DependencyType.EXTERNAL_SERVICE, false);
     }
 
     // ==================== Object Methods ====================

@@ -514,7 +514,7 @@ export const ZeroTrustArchitectureCanvas: React.FC<ZeroTrustArchitectureCanvasPr
                             <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
                                     className="bg-blue-600 h-2 rounded-full"
-                                    style={{ width: `${trustScore.identityScore}%` }}
+                                    style={{ width: `${trustScore.identityScore}%`}}
                                 />
                             </div>
 
@@ -525,7 +525,7 @@ export const ZeroTrustArchitectureCanvas: React.FC<ZeroTrustArchitectureCanvasPr
                             <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
                                     className="bg-green-600 h-2 rounded-full"
-                                    style={{ width: `${trustScore.networkScore}%` }}
+                                    style={{ width: `${trustScore.networkScore}%`}}
                                 />
                             </div>
 
@@ -536,7 +536,7 @@ export const ZeroTrustArchitectureCanvas: React.FC<ZeroTrustArchitectureCanvasPr
                             <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
                                     className="bg-purple-600 h-2 rounded-full"
-                                    style={{ width: `${trustScore.policyScore}%` }}
+                                    style={{ width: `${trustScore.policyScore}%`}}
                                 />
                             </div>
                         </div>

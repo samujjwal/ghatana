@@ -1,7 +1,7 @@
 /* Licensed under Apache-2.0 */
 package com.ghatana.refactorer.languages.tsjs.eslint;
 
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import com.ghatana.refactorer.shared.util.JsonSupport;
 import java.io.BufferedReader;

@@ -274,7 +274,7 @@ export const ComplianceCanvas: React.FC = () => {
                                                                 ? 'bg-red-500'
                                                                 : 'bg-gray-400'
                                                 }`}
-                                            style={{ width: `${percentage}%` }}
+                                            style={{ width: `${percentage}%`}}
                                         />
                                     </div>
                                 </div>

@@ -8,7 +8,7 @@ dependencies {
     implementation(project(":products:virtual-org:modules:workflow"))
 
     // AEP platform (operator framework: AbstractOperator, UnifiedOperator, etc.)
-    implementation(project(":products:aep:platform"))
+    implementation(project(":products:aep:platform-bundle"))
 
     // Platform modules
     implementation(project(":platform:java:domain"))

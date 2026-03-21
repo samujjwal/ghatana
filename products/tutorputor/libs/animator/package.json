@@ -1,0 +1,70 @@
+{
+  "name": "@tutorputor/animator",
+  "version": "1.0.0",
+  "description": "Core animation engine for TutorPutor with timeline management, easing functions, and React Router v7 integration",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./presets": {
+      "types": "./dist/presets/index.d.ts",
+      "import": "./dist/presets/index.js"
+    },
+    "./authoring": {
+      "types": "./dist/authoring/index.d.ts",
+      "import": "./dist/authoring/index.js"
+    },
+    "./auto": {
+      "types": "./dist/auto/index.d.ts",
+      "import": "./dist/auto/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts,.tsx",
+    "storybook": "storybook dev -p 6008",
+    "build-storybook": "storybook build -o storybook-static"
+  },
+  "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router": "^7.5.0",
+    "zod": "^4.3.6",
+    "jotai": "^2.17.0",
+    "@tutorputor/contracts": "workspace:*",
+    "@ghatana/ui": "workspace:*",
+    "@ghatana/theme": "workspace:*",
+    "@ghatana/tokens": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.10",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "eslint": "^9.25.0",
+    "@storybook/react": "^10.2.4",
+    "@storybook/react-vite": "^10.2.4"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "keywords": [
+    "animation",
+    "timeline",
+    "easing",
+    "react",
+    "education",
+    "tutorputor"
+  ],
+  "license": "MIT"
+}

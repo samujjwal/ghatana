@@ -1,7 +1,7 @@
 /* Licensed under Apache-2.0 */
 package com.ghatana.refactorer.shared;
 
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;

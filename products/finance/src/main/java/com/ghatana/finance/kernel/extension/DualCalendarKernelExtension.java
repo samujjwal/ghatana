@@ -51,8 +51,10 @@ public class DualCalendarKernelExtension implements KernelExtension {
     @Override
     public KernelDescriptor getDescriptor() {
         return new KernelDescriptor.Builder()
-            .withKernelId(EXTENSION_ID)
+            .withDescriptorId(EXTENSION_ID)
+            .withName(NAME)
             .withVersion(VERSION)
+            .withType(KernelDescriptor.DescriptorType.EXTENSION)
             .withCapability(KernelCapability.Core.CONFIG_MANAGEMENT)
             .build();
     }
@@ -85,9 +87,6 @@ public class DualCalendarKernelExtension implements KernelExtension {
 
         // Register Nepali Bikram Sambat calendar
         calendarRegistry.register(new NepaliCalendar());
-
-        // Register dual calendar calculator
-        calendarRegistry.register(new DualCalendarCalculator());
     }
 
     @Override

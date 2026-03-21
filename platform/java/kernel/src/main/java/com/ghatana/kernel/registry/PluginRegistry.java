@@ -1,7 +1,10 @@
 package com.ghatana.kernel.registry;
 
-import com.ghatana.kernel.capability.KernelCapability;
+import com.ghatana.kernel.annotation.KernelInternal;
+import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
+import com.ghatana.kernel.plugin.KernelExtension;
+import com.ghatana.kernel.plugin.KernelOperator;
 import com.ghatana.kernel.plugin.ProductPlugin;
 import com.ghatana.kernel.plugin.PluginContext;
 
@@ -12,10 +15,29 @@ import java.util.stream.Collectors;
 
 /**
  * Plugin registry for dynamic plugin management.
- * 
- * This registry manages product plugins without creating coupling
- * between the kernel and specific products.
+ *
+ * <p>This registry manages product plugins without creating coupling
+ * between the kernel and specific products.</p>
+ *
+ * <p><b>Internal helper registry.</b> Per KERNEL_CANONICALIZATION_DECISIONS.md (Decision D4),
+ * {@link KernelRegistry} is the only public root registry contract. This class is an
+ * internal implementation helper. External consumers should prefer KernelRegistry for
+ * plugin discovery. This class may be refactored into KernelRegistryImpl in a future release.</p>
+ *
+ * <p>Additionally, this class depends on the transitional {@link ProductPlugin} type
+ * and {@code com.ghatana.kernel.plugin.KernelExtension}. When ProductPlugin is retired,
+ * this class must migrate to canonical {@link com.ghatana.kernel.plugin.KernelPlugin}
+ * abstractions or be absorbed into KernelRegistryImpl. The registerExtension method
+ * currently uses the deprecated plugin.KernelExtension interface for compatibility.</p>
+ *
+ * @doc.type class
+ * @doc.purpose Internal plugin sub-registry behind KernelRegistry — uses transitional types
+ * @doc.layer core
+ * @doc.pattern Registry
+ * @author Ghatana Kernel Team
+ * @since 1.0.0
  */
+@KernelInternal("Use KernelRegistry for plugin discovery")
 public class PluginRegistry {
     private final Map<String, ProductPlugin> plugins = new ConcurrentHashMap<>();
     private final Map<String, Set<KernelCapability>> capabilitiesByPlugin = new ConcurrentHashMap<>();
@@ -247,7 +269,7 @@ public class PluginRegistry {
 
         @Override
         public void registerExtension(KernelExtension extension) {
-            serviceRegistry.registerExtension(extension);
+            serviceRegistry.registerService(extension.getExtensionId(), extension);
         }
 
         @Override

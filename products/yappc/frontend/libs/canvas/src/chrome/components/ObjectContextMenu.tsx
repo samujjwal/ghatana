@@ -235,7 +235,7 @@ export function ObjectContextMenu({
     >
       {/* Search filter */}
       {enableSearch && (
-        <Box style={{ paddingLeft: SPACING.SM, paddingRight: SPACING.SM, paddingTop: SPACING.SM, paddingBottom: SPACING.SM, borderBottom: `1px solid ${COLORS.BORDER_LIGHT}` }}>
+        <Box style={{ paddingLeft: SPACING.SM, paddingRight: SPACING.SM, paddingTop: SPACING.SM, paddingBottom: SPACING.SM, borderBottom: `1px solid ${COLORS.BORDER_LIGHT}`}}>
           <Box
             className="flex items-center gap-1 px-2 py-1 rounded-[RADIUS.SMpx]" >
             <SearchIcon style={{ fontSize: TYPOGRAPHY.SM, color: COLORS.TEXT_SECONDARY }} />

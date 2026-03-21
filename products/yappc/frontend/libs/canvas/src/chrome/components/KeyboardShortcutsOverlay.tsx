@@ -120,7 +120,7 @@ function KeyboardKey({ children }: { children: React.ReactNode }) {
     return (
         <Box
             component="kbd"
-            className="inline-flex items-center justify-center min-w-[24px] h-[24px] font-mono" style={{ paddingLeft: SPACING.XS, paddingRight: SPACING.XS, fontSize: TYPOGRAPHY.XS, fontWeight: FONT_WEIGHT.SEMIBOLD, backgroundColor: COLORS.NEUTRAL_100, border: `1px solid ${COLORS.BORDER_LIGHT}` }}
+            className="inline-flex items-center justify-center min-w-[24px] h-[24px] font-mono" style={{ paddingLeft: SPACING.XS, paddingRight: SPACING.XS, fontSize: TYPOGRAPHY.XS, fontWeight: FONT_WEIGHT.SEMIBOLD, backgroundColor: COLORS.NEUTRAL_100, border: `1px solid ${COLORS.BORDER_LIGHT}`}}
         >
             {children}
         </Box>
@@ -216,7 +216,7 @@ export function KeyboardShortcutsOverlay({
         >
             {/* Header */}
             <Box
-                className="flex items-center justify-between" style={{ padding: SPACING.LG, borderBottom: `1px solid ${COLORS.BORDER_LIGHT}` }}
+                className="flex items-center justify-between" style={{ padding: SPACING.LG, borderBottom: `1px solid ${COLORS.BORDER_LIGHT}`}}
             >
                 <Box>
                     <Typography variant="h5" style={{ fontWeight: FONT_WEIGHT.BOLD, marginBottom: SPACING.XXS }}>
@@ -288,7 +288,7 @@ export function KeyboardShortcutsOverlay({
                                         {shortcutsByCategory[category].map((shortcut, index) => (
                                             <Box
                                                 key={index}
-                                                className="flex items-center justify-between" style={{ gap: SPACING.MD, padding: SPACING.SM, backgroundColor: COLORS.NEUTRAL_50, borderRadius: RADIUS.SM, border: `1px solid ${COLORS.BORDER_LIGHT}` }}
+                                                className="flex items-center justify-between" style={{ gap: SPACING.MD, padding: SPACING.SM, backgroundColor: COLORS.NEUTRAL_50, borderRadius: RADIUS.SM, border: `1px solid ${COLORS.BORDER_LIGHT}`}}
                                             >
                                                 <Box className="flex-1">
                                                     <Typography

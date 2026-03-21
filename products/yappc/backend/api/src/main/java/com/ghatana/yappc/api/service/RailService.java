@@ -214,7 +214,11 @@ public class RailService {
   }
 
   public Promise<List<AISuggestion>> getSuggestions(Map<String, Object> context) {
-    String tenantId = String.valueOf(context.getOrDefault("tenantId", "default"));
+    Object rawTenantId = context.get("tenantId");
+    if (rawTenantId == null) {
+      throw new IllegalArgumentException("Missing required tenantId in suggestion context");
+    }
+    String tenantId = String.valueOf(rawTenantId);
     String mode = String.valueOf(context.getOrDefault("mode", "developer"));
     String userPrompt =
         String.valueOf(context.getOrDefault("prompt", "Suggest meaningful improvements."));

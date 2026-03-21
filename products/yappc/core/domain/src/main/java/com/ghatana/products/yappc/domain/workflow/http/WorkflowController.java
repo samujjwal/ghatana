@@ -410,7 +410,10 @@ public class WorkflowController {
 
     private String extractTenantId(HttpRequest request) {
         String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
-        return tenantId != null ? tenantId : "default";
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("Missing required X-Tenant-ID header");
+        }
+        return tenantId;
     }
 
     private int getIntParam(HttpRequest request, String name, int defaultValue) {

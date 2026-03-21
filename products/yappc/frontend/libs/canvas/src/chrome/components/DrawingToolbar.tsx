@@ -163,7 +163,7 @@ export function DrawingToolbar({ style, onStyleChange, visible = true }: Drawing
         <Button
           onClick={(e) => setColorAnchor(e.currentTarget)}
           aria-label="Select color"
-          className="min-w-[40px] w-[40px] h-[40px] p-0" style={{ backgroundColor: style.color, border: `2px solid ${COLORS.BORDER_LIGHT}` }}
+          className="min-w-[40px] w-[40px] h-[40px] p-0" style={{ backgroundColor: style.color, border: `2px solid ${COLORS.BORDER_LIGHT}`}}
         />
 
         {/* Color Picker Popover */}

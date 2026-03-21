@@ -96,7 +96,7 @@ public class JwtTokenProvider {
           .userId(userId)
           .email(defaultString(asString(claims.get("email")), "unknown@ghatana.local"))
           .userName(defaultString(asString(claims.get("userName")), userId))
-          .tenantId(defaultString(asString(claims.get("tenantId")), "default"))
+          .tenantId(asString(claims.get("tenantId")))
           .roles(roles)
           .permissions(permissions)
           .build();

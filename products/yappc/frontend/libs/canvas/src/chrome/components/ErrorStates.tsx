@@ -253,7 +253,7 @@ export function LoadingState({
   // Canvas type (full screen overlay)
   return (
     <Box
-      className="fixed flex flex-col items-center justify-center top-[0px] left-[0px] right-[0px] bottom-[0px]" style={{ backgroundColor: 'rgba(255, backdropFilter: 'blur(4px)', zIndex: CANVAS_TOKENS.Z_INDEX.MODAL' }} >
+      className="fixed flex flex-col items-center justify-center top-[0px] left-[0px] right-[0px] bottom-[0px]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(4px)', zIndex: CANVAS_TOKENS.Z_INDEX.MODAL }} >
       <CircularProgress size={spinnerSize} />
       <Typography
         style={{
@@ -563,14 +563,15 @@ export function GenericError({
       </Typography>
 
       {/* Message */}
-      <Typograp: COLORS.TEXT_SECONDARY, mb: SPACING.LG */
+      <Typography
+        className="max-w-[400px] text-base mb-6" style={{ color: COLORS.TEXT_SECONDARY }}
       >
         {message}
       </Typography>
 
       {/* Error Details */}
       {showDetails && details && (
-        <grate remaining sx: mb: SPACING.LG */>
+        <Box style={{ marginBottom: SPACING.LG }}>
           <Button
             size="sm"
             onClick={() => setDetailsExpanded(!detailsExpanded)}
@@ -580,7 +581,7 @@ export function GenericError({
           </Button>
           {detailsExpanded && (
             <Box
-              className="text-left overflow-auto font-mono max-h-[200px] p-4 rounded-[RADIUS.MDpx] text-xs" >
+              className="text-left overflow-auto font-mono max-h-[200px] p-4 rounded text-xs" >
               {details}
             </Box>
           )}

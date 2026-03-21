@@ -5,14 +5,17 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 const workspaceAliases = {
-  '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/design-system/src/index.ts'),
+  '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/capabilities/design-system/src/index.ts'),
   '@ghatana/theme': path.resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
   '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
-  '@ghatana/utils': path.resolve(__dirname, '../../../platform/typescript/utils/src/index.ts'),
+  // Both @ghatana/utils and @ghatana/platform-utils resolve to the same foundation library
+  '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
+  '@ghatana/utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
+  '@ghatana/canvas': path.resolve(__dirname, '../../../platform/typescript/capabilities/canvas-core/src/index.ts'),
 };
 
 /**
- * Vitest configuration for CES Workflow Platform.
+ * Vitest configuration for Data Cloud Platform.
  *
  * @doc.type config
  * @doc.purpose Test runner configuration
@@ -34,6 +37,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -49,6 +53,13 @@ export default defineConfig({
     alias: {
       ...workspaceAliases,
       '@': path.resolve(__dirname, './src'),
+      // Short aliases matching tsconfig.json paths
+      '@components': path.resolve(__dirname, './src/components'),
+      '@hooks': path.resolve(__dirname, './src/hooks'),
+      '@stores': path.resolve(__dirname, './src/stores'),
+      '@types': path.resolve(__dirname, './src/types'),
+      '@api': path.resolve(__dirname, './src/api'),
+      '@utils': path.resolve(__dirname, './src/utils'),
       // Redirect @ghatana/flow-canvas to a lightweight stub so jsdom tests don't
       // need ReactFlow's browser-only DOM APIs. vi.mock() calls in tests supersede this.
       '@ghatana/flow-canvas': path.resolve(__dirname, 'src/__tests__/stubs/flow-canvas.tsx'),

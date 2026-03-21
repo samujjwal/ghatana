@@ -60,7 +60,7 @@ public final class SecretsService {
         this.context = context;
         this.secretStore = new ConcurrentHashMap<>();
         this.executor = context.getExecutor("secrets");
-        this.masterKey = deriveMasterKey(context.getKernelId());
+        this.masterKey = deriveMasterKey(context.getKernelVersion());
     }
 
     /**

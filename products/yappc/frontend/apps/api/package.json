@@ -3,6 +3,7 @@
     "version": "0.0.0",
     "private": true,
     "type": "module",
+    "description": "YAPPC backend API service (Fastify/GraphQL/Prisma). NOTE: This backend service is currently located inside the frontend workspace for historical reasons. It should be relocated to products/yappc/backend/ in a future migration.",
     "scripts": {
         "dev": "pnpm run build && node dist/index.js",
         "build": "tsup src/index.ts --format esm --clean --external @opentelemetry/* --external import-in-the-middle",

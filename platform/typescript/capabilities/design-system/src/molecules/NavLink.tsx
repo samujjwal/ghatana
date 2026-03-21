@@ -50,7 +50,7 @@ export const NavLink: React.FC<NavLinkProps> = ({
     padding: '0 6px',
     borderRadius: tokens.borderRadius.full,
     backgroundColor: tokens.colors.primary[600],
-    color: tokens.colors.neutral[0],
+    color: tokens.colors.neutral[50],
     fontSize: tokens.typography.fontSize.xs,
     fontWeight: 600,
     marginLeft: 'auto',

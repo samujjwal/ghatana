@@ -90,7 +90,7 @@ export const PortalElement: React.FC<PortalElementProps> = ({
       <div className="flex items-start space-x-3">
         <div
           className="flex-shrink-0 p-2 rounded-md"
-          style={{ backgroundColor: `${portalColor}20` }}
+          style={{ backgroundColor: `${portalColor}20`}}
         >
           {getPortalIcon()}
         </div>

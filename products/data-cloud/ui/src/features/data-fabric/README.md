@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **Data Fabric Admin UI** provides comprehensive management interfaces for storage profiles and data connectors within the Collection Entity System. This feature enables administrators to:
+The **Data Fabric Admin UI** provides comprehensive management interfaces for storage profiles and data connectors within the Data Cloud. This feature enables administrators to:
 
 - **Storage Profiles**: Configure cloud/local storage backends (S3, Azure Blob, GCS, PostgreSQL, MongoDB, Snowflake, Databricks, HDFS)
 - **Data Connectors**: Link data sources to storage backends with scheduled synchronization
@@ -381,7 +381,7 @@ Test files created in `__tests__/`:
 ### Build
 
 ```bash
-cd products/collection-entity-system/ui
+cd products/data-cloud/ui
 pnpm build
 ```
 
@@ -451,5 +451,5 @@ pnpm type-check
 
 - [Jotai State Management Guide](../../../docs/JOTAI_STATE_MANAGEMENT.md)
 - [UI Architecture](../../../docs/UI_ARCHITECTURE.md)
-- [Collection Entity System](../../README.md)
+- [Data Cloud](../../README.md)
 - [Project Conventions](../../../.github/copilot-instructions.md)

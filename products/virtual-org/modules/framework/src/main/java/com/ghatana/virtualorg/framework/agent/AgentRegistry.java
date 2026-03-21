@@ -48,7 +48,13 @@ import java.util.stream.Collectors;
  *     cross-product registry for TypedAgent metadata. This class is a factory
  *     registry scoped to VirtualOrg agent creation only. Do not depend on
  *     this class from other products — use the platform SPI instead.
+ *
+ * @deprecated Since v2.4. Products should migrate to the platform
+ *     {@code AgentLogicProvider} SPI (in {@code platform:java:agent-spi}).
+ *     This factory registry will be removed once all VirtualOrg consumers
+ *     (software-org, etc.) have migrated. See {@code docs/AGENT_REGISTRY_MIGRATION_GUIDE.md}.
  */
+@Deprecated(since = "2.4.0", forRemoval = true)
 public class AgentRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(AgentRegistry.class);

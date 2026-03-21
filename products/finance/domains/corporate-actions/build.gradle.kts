@@ -35,7 +35,27 @@ dependencies {
     api(libs.activej.promise)
     implementation(libs.activej.eventloop)
 
+    // Observability (for workflow metrics in CorporateActionWorkflowService)
+    implementation(libs.micrometer.core)
+
     // Testing
+
+    // ─── Cross-Domain Dependencies (migrated from app-platform) ────────────
+    implementation(project(":products:finance:domains:reference-data"))
+    implementation(project(":products:finance:domains:oms"))
+    implementation(project(":products:finance:domains:post-trade"))
+
+    // ─── Infrastructure Dependencies (migrated from app-platform) ──────────
+    api(project(":platform:java:governance"))
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jsr310)
+    implementation(platform(libs.jackson.bom))
+    implementation(libs.postgresql)
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.database.postgresql)
+    implementation(libs.hikaricp)
+    implementation(libs.slf4j.api)
+
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

@@ -4,7 +4,7 @@
  */
 package com.ghatana.yappc.services.lifecycle;
 
-import com.ghatana.platform.domain.domain.event.GEvent;
+import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.platform.workflow.operator.OperatorConfig;
 import com.ghatana.platform.workflow.pipeline.Pipeline;
 import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;

@@ -3,7 +3,8 @@ package com.ghatana.phr.kernel.data;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Initializes PHR data stores in Data-Cloud with healthcare governance.
@@ -40,15 +41,13 @@ public class PhrDataService {
      * @return Promise completing when all stores are initialized
      */
     public Promise<Void> initializeStores() {
-        return Promises.all(
-            Stream.of(
-                initializePatientRecordsStore(),
-                initializeConsentRecordsStore(),
-                initializeDocumentStore(),
-                initializeAppointmentStore(),
-                initializeAuditStore()
-            )
-        ).toVoid();
+        return Promises.all(List.of(
+            initializePatientRecordsStore(),
+            initializeConsentRecordsStore(),
+            initializeDocumentStore(),
+            initializeAppointmentStore(),
+            initializeAuditStore()
+        ));
     }
 
     /**

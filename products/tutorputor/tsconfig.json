@@ -1,0 +1,66 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@tutorputor/*": ["./libs/*/src"],
+      "@tutorputor/animator": ["./libs/animator/src"],
+      "@tutorputor/simulation-engine": ["./libs/simulation-engine/src"],
+      "@tutorputor/tracing": ["./libs/tracing"],
+      "@tutorputor/tutorputor-db": ["./libs/tutorputor-db/src"],
+      "@ghatana/ui": ["../platform/ui/src"],
+      "@ghatana/theme": ["../platform/theme/src"]
+    },
+    "typeRoots": ["./node_modules/@types", "./types"],
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": [
+    "apps/**/*",
+    "libs/**/*",
+    "services/**/*",
+    "scripts/**/*",
+    "tools/**/*",
+    "tests/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/node_modules"
+  ],
+  "references": [
+    { "path": "./apps/tutorputor-web" },
+    { "path": "./apps/tutorputor-admin" },
+    { "path": "./libs/animator" },
+    { "path": "./libs/simulation-engine" },
+    { "path": "./libs/tracing" },
+    { "path": "./libs/tutorputor-db" },
+    { "path": "./services/tutorputor-content" },
+    { "path": "./services/tutorputor-assessment" },
+    { "path": "./services/tutorputor-simulation" }
+  ]
+}

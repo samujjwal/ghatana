@@ -1,0 +1,44 @@
+name: SonarQube Analysis
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  sonarqube:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+      
+      - name: Run SonarQube Analysis for Data-Cloud
+        working-directory: products/data-cloud
+        run: ./gradlew sonarqube \
+          -Dsonar.projectKey=ghatana_datacloud \
+          -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+          -Dsonar.token=${{ secrets.SONAR_TOKEN_DATACLOUD }}
+      
+      - name: Run SonarQube Analysis for AEP
+        working-directory: products/aep
+        run: ./gradlew sonarqube \
+          -Dsonar.projectKey=ghatana_aep \
+          -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+          -Dsonar.token=${{ secrets.SONAR_TOKEN_AEP }}

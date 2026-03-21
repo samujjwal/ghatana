@@ -1,6 +1,6 @@
 package com.ghatana.virtualorg.adapter;
 
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;

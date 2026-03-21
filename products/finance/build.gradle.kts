@@ -20,6 +20,8 @@ dependencies {
     implementation(project(":platform:java:plugin"))
     implementation(project(":platform:java:event-cloud"))
     implementation(project(":platform:java:audit"))
+    implementation(project(":platform:java:agent-framework"))
+    implementation(project(":platform:java:agent-spi"))
 
     // Kernel modules
     implementation(project(":platform:java:kernel:modules:authentication"))
@@ -64,5 +66,5 @@ dependencies {
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.mockito:mockito-core")
-    testImplementation("io.activej:activej-test")
+    testImplementation("io.activej:activej-test:6.0-rc2")
 }

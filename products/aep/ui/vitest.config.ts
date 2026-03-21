@@ -2,11 +2,12 @@ import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 
 const workspaceAliases = {
-  '@ghatana/design-system': resolve(__dirname, '../../../platform/typescript/design-system/src/index.ts'),
-  '@ghatana/flow-canvas': resolve(__dirname, '../../../platform/typescript/canvas/flow-canvas/src/index.ts'),
+  '@ghatana/design-system': resolve(__dirname, '../../../platform/typescript/capabilities/design-system/src/index.ts'),
+  '@ghatana/canvas-core': resolve(__dirname, '../../../platform/typescript/capabilities/canvas-core/src/index.ts'),
   '@ghatana/theme': resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
   '@ghatana/tokens': resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
-  '@ghatana/utils': resolve(__dirname, '../../../platform/typescript/utils/src/index.ts'),
+  '@ghatana/utils': resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
+  '@ghatana/platform-utils': resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
 };
 
 export default defineConfig({

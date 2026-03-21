@@ -2,7 +2,7 @@ package com.ghatana.platform.workflow.operator;
 
 import com.ghatana.platform.types.identity.OperatorId;
 
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 
 import java.util.ArrayList;
 import java.util.Collections;

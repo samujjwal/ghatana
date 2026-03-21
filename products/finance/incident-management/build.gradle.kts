@@ -9,37 +9,38 @@ plugins {
 
 dependencies {
     // Platform core dependencies
-    implementation(platform(":platform:java:core"))
-    implementation(":platform:java:core")
-    implementation(":platform:java:domain")
-    implementation(":platform:java:database")
-    implementation(":platform:java:observability")
-    implementation(":platform:java:config")
-    implementation(":platform:java:workflow")
-    implementation(":platform:java:audit")
-    
+    implementation(project(":platform:java:core"))
+    implementation(project(":platform:java:domain"))
+    implementation(project(":platform:java:database"))
+    implementation(project(":platform:java:observability"))
+    implementation(project(":platform:java:config"))
+    implementation(project(":platform:java:workflow"))
+    implementation(project(":platform:java:audit"))
+
     // Kernel modules
-    implementation(":platform:java:kernel:modules:authentication")
-    implementation(":platform:java:kernel:modules:config")
-    implementation(":platform:java:kernel:modules:event-store")
-    implementation(":platform:java:kernel:modules:audit")
-    
+    implementation(project(":platform:java:kernel:modules:authentication"))
+    implementation(project(":platform:java:kernel:modules:config"))
+    implementation(project(":platform:java:kernel:modules:event-store"))
+    implementation(project(":platform:java:kernel:modules:audit"))
+
     // ActiveJ Promise
-    implementation("io.activej:activej-promise")
-    
+    implementation(libs.activej.promise)
+
     // Jackson for JSON
-    implementation("com.fasterxml.jackson.core:jackson-databind")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-    
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jsr310)
+
     // Micrometer for metrics
-    implementation("io.micrometer:micrometer-core")
-    
+    implementation(libs.micrometer.core)
+
     // PostgreSQL
-    implementation("org.postgresql:postgresql")
-    implementation("com.zaxxer:HikariCP")
-    
+    implementation(libs.postgresql)
+    implementation(libs.hikaricp)
+
     // Testing
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.mockito:mockito-core")
-    testImplementation("io.activej:activej-test")
+    testImplementation(project(":platform:java:testing"))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.mockito.core)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

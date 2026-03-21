@@ -8,18 +8,7 @@
  * @doc.purpose AEP agent registry, HITL queue, observability, and learning endpoints
  * @doc.layer frontend
  */
-import axios, { type AxiosInstance } from 'axios';
-
-// In dev the Vite proxy (/api → localhost:8081) handles routing.
-// In production set VITE_AEP_API_URL to the backend origin if cross-origin;
-// otherwise leave unset and a reverse-proxy routes /api to AEP.
-const BASE_URL = import.meta.env.VITE_AEP_API_URL ?? '';
-
-const client: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 30_000,
-});
+import { apiClient as client } from '@/lib/http-client';
 
 // ─── Types ───────────────────────────────────────────────────────────
 

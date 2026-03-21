@@ -810,7 +810,7 @@ export const ReleaseTrain: React.FC<ReleaseTrainProps> = ({
                                             <div className="w-full bg-gray-200 rounded-full h-2">
                                                 <div
                                                     className={`h-2 rounded-full ${percentage === 100 ? 'bg-green-600' : 'bg-blue-600'}`}
-                                                    style={{ width: `${percentage}%` }}
+                                                    style={{ width: `${percentage}%`}}
                                                 />
                                             </div>
                                         </div>

@@ -29,7 +29,7 @@ java {
 
 dependencies {
     // ─── AEP Platform (90% reuse — dead-letter handling + replay) ────────────
-    api(project(":products:aep:platform"))
+    api(project(":products:aep:platform-bundle"))
 
     // ─── Platform core ────────────────────────────────────────────────────────
     api(project(":platform:java:core"))

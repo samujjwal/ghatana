@@ -13,6 +13,7 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -100,21 +101,19 @@ public final class EmsDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting EMS Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = true;
             log.info("EMS Domain module started successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override
     public Promise<Void> stop() {
         log.info("Stopping EMS Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = false;
             log.info("EMS Domain module stopped successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override

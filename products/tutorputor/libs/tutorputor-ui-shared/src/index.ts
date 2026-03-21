@@ -9,6 +9,6 @@
  * @module @ghatana/tutorputor-ui-shared
  */
 
-export { cn } from './utils.js';
-export { MinimalThemeProvider } from './MinimalThemeProvider.js';
-export type { MinimalThemeProviderProps } from './MinimalThemeProvider.js';
+export { cn } from './utils';
+export { MinimalThemeProvider } from './MinimalThemeProvider';
+export type { MinimalThemeProviderProps } from './MinimalThemeProvider';

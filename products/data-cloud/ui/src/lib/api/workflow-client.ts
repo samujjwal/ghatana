@@ -17,7 +17,7 @@
  * @doc.pattern API Client
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import { apiClient } from './client';
 import type {
   WorkflowDefinition,
   WorkflowExecution,
@@ -37,32 +37,24 @@ import type {
  * @doc.type interface
  */
 export interface ApiClientConfig {
-  baseURL?: string;
-  timeout?: number;
   tenantId?: string;
   userId?: string;
 }
 
 /**
- * API error response.
- *
- * @doc.type interface
+ * Re-export ApiError from central client.
  */
-export interface ApiError {
-  code: string;
-  message: string;
-  details?: Record<string, unknown>;
-}
+export type { ApiError } from './client';
 
 /**
  * Workflow API client.
  *
  * Provides methods for workflow CRUD operations, execution, and AI features.
+ * Delegates HTTP calls to the shared apiClient.
  *
  * @doc.type class
  */
 export class WorkflowApiClient {
-  private client: AxiosInstance;
   private tenantId: string;
   private userId: string;
 
@@ -74,22 +66,13 @@ export class WorkflowApiClient {
   constructor(config: ApiClientConfig = {}) {
     this.tenantId = config.tenantId || 'default';
     this.userId = config.userId || 'anonymous';
+  }
 
-    this.client = axios.create({
-      baseURL: config.baseURL || '/api/v1',
-      timeout: config.timeout || 30000,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Tenant-ID': this.tenantId,
-        'X-User-ID': this.userId,
-      },
-    });
-
-    // Add response interceptor for error handling
-    this.client.interceptors.response.use(
-      (response) => response,
-      (error) => this.handleError(error)
-    );
+  private getHeaders(): Record<string, string> {
+    return {
+      'X-Tenant-ID': this.tenantId,
+      'X-User-ID': this.userId,
+    };
   }
 
   /**
@@ -99,7 +82,6 @@ export class WorkflowApiClient {
    */
   setTenantId(tenantId: string): void {
     this.tenantId = tenantId;
-    this.client.defaults.headers['X-Tenant-ID'] = tenantId;
   }
 
   /**
@@ -109,7 +91,6 @@ export class WorkflowApiClient {
    */
   setUserId(userId: string): void {
     this.userId = userId;
-    this.client.defaults.headers['X-User-ID'] = userId;
   }
 
   /**
@@ -125,10 +106,10 @@ export class WorkflowApiClient {
     page: number = 0,
     pageSize: number = 50
   ): Promise<WorkflowListResponse> {
-    const response = await this.client.get<WorkflowListResponse>('/workflows', {
+    return apiClient.get<WorkflowListResponse>('/workflows', {
       params: { collectionId, page, pageSize },
+      headers: this.getHeaders(),
     });
-    return response.data;
   }
 
   /**
@@ -138,8 +119,9 @@ export class WorkflowApiClient {
    * @returns the workflow definition
    */
   async getWorkflow(workflowId: string): Promise<WorkflowDefinition> {
-    const response = await this.client.get<WorkflowDefinition>(`/workflows/${workflowId}`);
-    return response.data;
+    return apiClient.get<WorkflowDefinition>(`/workflows/${workflowId}`, {
+      headers: this.getHeaders(),
+    });
   }
 
   /**
@@ -149,8 +131,9 @@ export class WorkflowApiClient {
    * @returns the created workflow
    */
   async createWorkflow(request: CreateWorkflowRequest): Promise<WorkflowDefinition> {
-    const response = await this.client.post<WorkflowDefinition>('/workflows', request);
-    return response.data;
+    return apiClient.post<WorkflowDefinition>('/workflows', request, {
+      headers: this.getHeaders(),
+    });
   }
 
   /**
@@ -164,11 +147,11 @@ export class WorkflowApiClient {
     workflowId: string,
     request: UpdateWorkflowRequest
   ): Promise<WorkflowDefinition> {
-    const response = await this.client.put<WorkflowDefinition>(
+    return apiClient.put<WorkflowDefinition>(
       `/workflows/${workflowId}`,
-      request
+      request,
+      { headers: this.getHeaders() }
     );
-    return response.data;
   }
 
   /**
@@ -177,7 +160,9 @@ export class WorkflowApiClient {
    * @param workflowId the workflow ID
    */
   async deleteWorkflow(workflowId: string): Promise<void> {
-    await this.client.delete(`/workflows/${workflowId}`);
+    await apiClient.delete(`/workflows/${workflowId}`, {
+      headers: this.getHeaders(),
+    });
   }
 
   /**
@@ -191,11 +176,11 @@ export class WorkflowApiClient {
     workflowId: string,
     request: ExecuteWorkflowRequest = {}
   ): Promise<ExecutionCreatedResponse> {
-    const response = await this.client.post<ExecutionCreatedResponse>(
+    return apiClient.post<ExecutionCreatedResponse>(
       `/workflows/${workflowId}/execute`,
-      request
+      request,
+      { headers: this.getHeaders() }
     );
-    return response.data;
   }
 
   /**
@@ -205,8 +190,9 @@ export class WorkflowApiClient {
    * @returns the execution status
    */
   async getExecutionStatus(executionId: string): Promise<WorkflowExecution> {
-    const response = await this.client.get<WorkflowExecution>(`/executions/${executionId}`);
-    return response.data;
+    return apiClient.get<WorkflowExecution>(`/executions/${executionId}`, {
+      headers: this.getHeaders(),
+    });
   }
 
   /**
@@ -215,7 +201,9 @@ export class WorkflowApiClient {
    * @param executionId the execution ID
    */
   async cancelExecution(executionId: string): Promise<void> {
-    await this.client.post(`/executions/${executionId}/cancel`);
+    await apiClient.post(`/executions/${executionId}/cancel`, undefined, {
+      headers: this.getHeaders(),
+    });
   }
 
   /**
@@ -225,10 +213,10 @@ export class WorkflowApiClient {
    * @returns the suggestions response
    */
   async getSuggestions(collectionId: string): Promise<SuggestionsResponse> {
-    const response = await this.client.get<SuggestionsResponse>('/workflows/suggestions', {
+    return apiClient.get<SuggestionsResponse>('/workflows/suggestions', {
       params: { collectionId },
+      headers: this.getHeaders(),
     });
-    return response.data;
   }
 
   /**
@@ -238,10 +226,10 @@ export class WorkflowApiClient {
    * @returns the templates response
    */
   async getTemplates(category?: string): Promise<TemplatesResponse> {
-    const response = await this.client.get<TemplatesResponse>('/workflows/templates', {
+    return apiClient.get<TemplatesResponse>('/workflows/templates', {
       params: category ? { category } : undefined,
+      headers: this.getHeaders(),
     });
-    return response.data;
   }
 
   /**
@@ -251,11 +239,11 @@ export class WorkflowApiClient {
    * @returns the validation result
    */
   async validateWorkflow(workflow: WorkflowDefinition): Promise<ValidateWorkflowResponse> {
-    const response = await this.client.post<ValidateWorkflowResponse>(
+    return apiClient.post<ValidateWorkflowResponse>(
       '/workflows/validate',
-      workflow
+      workflow,
+      { headers: this.getHeaders() }
     );
-    return response.data;
   }
 
   /**
@@ -267,38 +255,8 @@ export class WorkflowApiClient {
   getExecutionStreamUrl(executionId: string): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    const baseURL = this.client.defaults.baseURL || '/api/v1';
+    const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
     return `${protocol}//${host}${baseURL}/executions/${executionId}/stream?tenantId=${this.tenantId}&userId=${this.userId}`;
-  }
-
-  /**
-   * Handles API errors.
-   *
-   * @param error the axios error
-   * @throws the parsed API error
-   */
-  private handleError(error: AxiosError): never {
-    if (error.response) {
-      const data = error.response.data as Record<string, unknown>;
-      const apiError: ApiError = {
-        code: (data.code as string) || 'UNKNOWN_ERROR',
-        message: (data.message as string) || error.message,
-        details: (data.details as Record<string, unknown>) || undefined,
-      };
-      throw apiError;
-    }
-
-    if (error.request) {
-      throw {
-        code: 'NETWORK_ERROR',
-        message: 'Network error: No response from server',
-      };
-    }
-
-    throw {
-      code: 'REQUEST_ERROR',
-      message: error.message,
-    };
   }
 }
 
@@ -307,7 +265,4 @@ export class WorkflowApiClient {
  *
  * @doc.type variable
  */
-export const workflowClient = new WorkflowApiClient({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
-  timeout: 30000,
-});
+export const workflowClient = new WorkflowApiClient();

@@ -1,0 +1,22 @@
+# Tutorputor Agent Catalog
+#
+# Placeholder for Tutorputor content-agent definitions.
+# Tutorputor is a TypeScript product; this catalog exists for canonical layout
+# compliance and can be populated when TypeScript agents need AEP integration.
+
+catalog:
+  id: "tutorputor"
+  name: "Tutorputor Agent Catalog"
+  version: "1.0.0"
+
+  extends:
+    - "platform"
+
+  agents: []
+
+  metadata:
+    maintainer: "tutorputor-team@ghatana.ai"
+    scope: "education-platform"
+    stability: "placeholder"
+    priority: 200
+    note: "TypeScript product — no Java agent definitions yet"

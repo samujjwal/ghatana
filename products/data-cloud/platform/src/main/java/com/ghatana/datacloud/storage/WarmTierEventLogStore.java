@@ -146,31 +146,35 @@ public class WarmTierEventLogStore implements EventLogStore {
 
     @Override
     public Promise<Offset> append(TenantContext tenant, EventEntry entry) {
-        return Promise.ofBlocking(executor, () -> doAppend(tenant.tenantId(), entry));
+        try {
+            return Promise.of(doAppend(tenant.tenantId(), entry));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<Offset>> appendBatch(TenantContext tenant, List<EventEntry> entries) {
-        return Promise.ofBlocking(executor, () -> {
-            List<Offset> offsets = new ArrayList<>(entries.size());
-            // Use a single connection for the whole batch so they land atomically
-            try (Connection conn = dataSource.getConnection()) {
-                boolean autoCommit = conn.getAutoCommit();
-                conn.setAutoCommit(false);
-                try {
-                    for (EventEntry entry : entries) {
-                        offsets.add(doAppendWithConn(conn, tenant.tenantId(), entry));
-                    }
-                    conn.commit();
-                } catch (Exception e) {
-                    conn.rollback();
-                    throw e;
-                } finally {
-                    conn.setAutoCommit(autoCommit);
+        List<Offset> offsets = new ArrayList<>(entries.size());
+        // Use a single connection for the whole batch so they land atomically
+        try (Connection conn = dataSource.getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                for (EventEntry entry : entries) {
+                    offsets.add(doAppendWithConn(conn, tenant.tenantId(), entry));
                 }
+                conn.commit();
+                return Promise.of(offsets);
+            } catch (Exception e) {
+                conn.rollback();
+                return Promise.ofException(e);
+            } finally {
+                conn.setAutoCommit(autoCommit);
             }
-            return offsets;
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================
@@ -180,46 +184,46 @@ public class WarmTierEventLogStore implements EventLogStore {
     @Override
     public Promise<List<EventEntry>> read(TenantContext tenant, Offset from, int limit) {
         long fromValue = parseLong(from);
-        return Promise.ofBlocking(executor, () -> {
-            try (Connection conn = dataSource.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(READ_SQL)) {
-                ps.setString(1, tenant.tenantId());
-                ps.setLong(2, fromValue);
-                ps.setInt(3, limit);
-                return mapResultSet(ps.executeQuery());
-            }
-        });
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(READ_SQL)) {
+            ps.setString(1, tenant.tenantId());
+            ps.setLong(2, fromValue);
+            ps.setInt(3, limit);
+            return Promise.of(mapResultSet(ps.executeQuery()));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<EventEntry>> readByTimeRange(
             TenantContext tenant, Instant startTime, Instant endTime, int limit) {
-        return Promise.ofBlocking(executor, () -> {
-            try (Connection conn = dataSource.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(READ_BY_TIME_SQL)) {
-                ps.setString(1, tenant.tenantId());
-                ps.setTimestamp(2, Timestamp.from(startTime));
-                ps.setTimestamp(3, Timestamp.from(endTime));
-                ps.setInt(4, limit);
-                return mapResultSet(ps.executeQuery());
-            }
-        });
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(READ_BY_TIME_SQL)) {
+            ps.setString(1, tenant.tenantId());
+            ps.setTimestamp(2, Timestamp.from(startTime));
+            ps.setTimestamp(3, Timestamp.from(endTime));
+            ps.setInt(4, limit);
+            return Promise.of(mapResultSet(ps.executeQuery()));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<EventEntry>> readByType(
             TenantContext tenant, String eventType, Offset from, int limit) {
         long fromValue = parseLong(from);
-        return Promise.ofBlocking(executor, () -> {
-            try (Connection conn = dataSource.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(READ_BY_TYPE_SQL)) {
-                ps.setString(1, tenant.tenantId());
-                ps.setString(2, eventType);
-                ps.setLong(3, fromValue);
-                ps.setInt(4, limit);
-                return mapResultSet(ps.executeQuery());
-            }
-        });
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(READ_BY_TYPE_SQL)) {
+            ps.setString(1, tenant.tenantId());
+            ps.setString(2, eventType);
+            ps.setLong(3, fromValue);
+            ps.setInt(4, limit);
+            return Promise.of(mapResultSet(ps.executeQuery()));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================
@@ -228,36 +232,36 @@ public class WarmTierEventLogStore implements EventLogStore {
 
     @Override
     public Promise<Offset> getLatestOffset(TenantContext tenant) {
-        return Promise.ofBlocking(executor, () -> {
-            try (Connection conn = dataSource.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(LATEST_OFFSET_SQL)) {
-                ps.setString(1, tenant.tenantId());
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        long val = rs.getLong(1);
-                        return rs.wasNull() ? Offset.zero() : Offset.of(val);
-                    }
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(LATEST_OFFSET_SQL)) {
+            ps.setString(1, tenant.tenantId());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    long val = rs.getLong(1);
+                    return Promise.of(rs.wasNull() ? Offset.zero() : Offset.of(val));
                 }
             }
-            return Offset.zero();
-        });
+            return Promise.of(Offset.zero());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Offset> getEarliestOffset(TenantContext tenant) {
-        return Promise.ofBlocking(executor, () -> {
-            try (Connection conn = dataSource.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(EARLIEST_OFFSET_SQL)) {
-                ps.setString(1, tenant.tenantId());
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        long val = rs.getLong(1);
-                        return rs.wasNull() ? Offset.zero() : Offset.of(val);
-                    }
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(EARLIEST_OFFSET_SQL)) {
+            ps.setString(1, tenant.tenantId());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    long val = rs.getLong(1);
+                    return Promise.of(rs.wasNull() ? Offset.zero() : Offset.of(val));
                 }
             }
-            return Offset.zero();
-        });
+            return Promise.of(Offset.zero());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================
@@ -267,10 +271,8 @@ public class WarmTierEventLogStore implements EventLogStore {
     @Override
     public Promise<Subscription> tail(TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
         PollingSubscription subscription = new PollingSubscription(tenant, from, handler);
-        return Promise.ofBlocking(executor, () -> {
-            subscription.start(dataSource, executor);
-            return subscription;
-        });
+        subscription.start(dataSource, executor);
+        return Promise.of(subscription);
     }
 
     // =========================================================================

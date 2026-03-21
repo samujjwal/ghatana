@@ -49,7 +49,7 @@ class HealthcareConsentKernelExtensionTest {
         assertEquals("healthcare-consent-nepal-2081", descriptor.getDescriptorId());
         assertEquals("Healthcare Consent Management (Nepal Directive 2081)", descriptor.getName());
         assertEquals("1.0.0", descriptor.getVersion());
-        assertEquals(KernelDescriptor.ComponentType.PLUGIN, descriptor.getType());
+        assertEquals(KernelDescriptor.DescriptorType.EXTENSION, descriptor.getType());
     }
 
     @Test
@@ -63,11 +63,11 @@ class HealthcareConsentKernelExtensionTest {
         assertEquals(KernelCapability.CapabilityType.SECURITY, cap.getType());
 
         // Check Nepal-specific metadata
-        assertEquals("nepal-directive-2081", cap.getMetadataValue("regulation"));
-        assertEquals("nepal-2075", cap.getMetadataValue("privacy_act"));
-        assertEquals("true", cap.getMetadataValue("supports_withdrawal"));
-        assertEquals("true", cap.getMetadataValue("supports_expiration"));
-        assertEquals("true", cap.getMetadataValue("audit_required"));
+        assertEquals("nepal-directive-2081", cap.getMetadata().get("regulation"));
+        assertEquals("nepal-2075", cap.getMetadata().get("privacy_act"));
+        assertEquals("true", cap.getMetadata().get("supports_withdrawal"));
+        assertEquals("true", cap.getMetadata().get("supports_expiration"));
+        assertEquals("true", cap.getMetadata().get("audit_required"));
     }
 
     @Test
@@ -133,8 +133,8 @@ class HealthcareConsentKernelExtensionTest {
 
         Promise<Void> promise = extension.withdrawConsent("non-existent-id", "Test");
 
-        Exception exception = assertThrows(Exception.class, promise::getResult);
-        assertTrue(exception.getMessage().contains("not found"));
+        assertTrue(promise.isException());
+        assertTrue(promise.getException().getMessage().contains("not found"));
     }
 
     @Test
@@ -153,8 +153,8 @@ class HealthcareConsentKernelExtensionTest {
         // Try to withdraw again
         Promise<Void> secondWithdrawal = extension.withdrawConsent(consentId, "Second attempt");
 
-        Exception exception = assertThrows(Exception.class, secondWithdrawal::getResult);
-        assertTrue(exception.getMessage().contains("not in GRANTED state"));
+        assertTrue(secondWithdrawal.isException());
+        assertTrue(secondWithdrawal.getException().getMessage().contains("not in GRANTED state"));
     }
 
     @Test
@@ -247,8 +247,8 @@ class HealthcareConsentKernelExtensionTest {
                 HealthcareConsentKernelExtension.ConsentScope.ALL_DATA,
                 HealthcareConsentKernelExtension.ConsentDuration.ONE_YEAR);
 
-        Exception exception = assertThrows(Exception.class, promise::getResult);
-        assertTrue(exception.getMessage().contains("not started"));
+        assertTrue(promise.isException());
+        assertTrue(promise.getException().getMessage().contains("not started"));
     }
 
     @Test
@@ -352,7 +352,11 @@ class HealthcareConsentKernelExtensionTest {
             @Override public String getModuleId() { return "test-module"; }
             @Override public String getVersion() { return "1.0.0"; }
             @Override public Set<com.ghatana.kernel.descriptor.KernelCapability> getCapabilities() {
-                return Set.of(new com.ghatana.kernel.descriptor.KernelCapability(capabilityId, "Test"));
+                return Set.of(new com.ghatana.kernel.descriptor.KernelCapability(
+                        capabilityId, "Test Capability",
+                        "Test capability for " + capabilityId,
+                        com.ghatana.kernel.descriptor.KernelCapability.CapabilityType.MONITORING,
+                        java.util.Map.of()));
             }
             @Override public Set<com.ghatana.kernel.descriptor.KernelDependency> getDependencies() { return Set.of(); }
             @Override public void initialize(com.ghatana.kernel.context.KernelContext ctx) {}

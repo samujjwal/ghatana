@@ -94,17 +94,16 @@ public class AgenticDataProcessor {
 
     private ValidationStrategy tryLoadAepStrategy() {
         try {
-            // Try to load AEP via ServiceLoader
-            // This would require AEP to be on the classpath
-            Class<?> aepEngineClass = Class.forName("com.ghatana.aep.core.AepEngine");
-            java.util.ServiceLoader<?> loader = java.util.ServiceLoader.load(aepEngineClass);
-            if (loader.findFirst().isPresent()) {
-                return new AepValidationStrategy(loader.findFirst().get());
-            }
-        } catch (ClassNotFoundException e) {
-            log.debug("AEP not on classpath, using basic validation");
+            // Discover AEP validation via ServiceLoader (explicit SPI, no reflection)
+            java.util.ServiceLoader<ValidationStrategy> loader =
+                    java.util.ServiceLoader.load(ValidationStrategy.class);
+            return loader.stream()
+                    .map(java.util.ServiceLoader.Provider::get)
+                    .filter(s -> s instanceof AepValidationStrategy)
+                    .findFirst()
+                    .orElse(null);
         } catch (Exception e) {
-            log.warn("Failed to load AEP strategy", e);
+            log.debug("AEP validation strategy not available: {}", e.getMessage());
         }
         return null;
     }

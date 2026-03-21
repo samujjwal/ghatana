@@ -9,15 +9,15 @@ import java.util.UUID;
 /**
  * Legacy port interface for audit log persistence used by AuditService.
  *
- * <p>
- * Newer code should prefer domain-layer ports instead.
- 
+ * @deprecated Use domain-layer ports (e.g. {@link com.ghatana.datacloud.entity.audit.AuditLogPort})
+ *             instead. This legacy interface will be removed when AuditService is migrated.
  *
  * @doc.type interface
- * @doc.purpose Audit repository
+ * @doc.purpose Audit repository (deprecated legacy)
  * @doc.layer platform
  * @doc.pattern Repository
-*/
+ */
+@Deprecated(since = "2026-03-20", forRemoval = true)
 public interface AuditRepository {
 
     Promise<AuditLog> append(AuditLog entry);

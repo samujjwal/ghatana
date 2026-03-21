@@ -1,15 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { BrowserRouter } from 'react-router';
-import { Provider } from 'jotai';
+import { TestWrapper } from '../test-utils/wrapper';
 import { AlertsPage } from '../../pages/AlertsPage';
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <Provider>
-    <BrowserRouter>{children}</BrowserRouter>
-  </Provider>
-);
 
 describe('AlertsPage', () => {
   it('renders without crashing', () => {

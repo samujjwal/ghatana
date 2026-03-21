@@ -119,7 +119,6 @@ class DefaultKernelContextTest {
         EventHandler<TestEvent> handler = event -> {
             handled.set(true);
             capturedEvent.set(event);
-            return io.activej.promise.Promise.complete();
         };
 
         context.registerEventHandler(TestEvent.class, handler);
@@ -138,7 +137,6 @@ class DefaultKernelContextTest {
 
         EventHandler<TestEvent> handler = event -> {
             handled.set(true);
-            return io.activej.promise.Promise.complete();
         };
 
         context.registerEventHandler(TestEvent.class, handler);
@@ -157,12 +155,10 @@ class DefaultKernelContextTest {
 
         context.registerEventHandler(TestEvent.class, event -> {
             handler1Called.set(true);
-            return io.activej.promise.Promise.complete();
         });
 
         context.registerEventHandler(TestEvent.class, event -> {
             handler2Called.set(true);
-            return io.activej.promise.Promise.complete();
         });
 
         context.publishEvent(new TestEvent("test"));
@@ -182,7 +178,6 @@ class DefaultKernelContextTest {
 
         context.registerEventHandler(TestEvent.class, event -> {
             goodHandlerCalled.set(true);
-            return io.activej.promise.Promise.complete();
         });
 
         // Should not throw
@@ -208,7 +203,7 @@ class DefaultKernelContextTest {
     @DisplayName("Should check capability availability")
     void shouldCheckCapabilityAvailability() {
         assertTrue(context.hasCapability(KernelCapability.Core.DATA_STORAGE));
-        assertFalse(context.hasCapability(new KernelCapability("nonexistent", "Non")));
+        assertFalse(context.hasCapability(new KernelCapability("nonexistent", "Non-existent", "Test", KernelCapability.CapabilityType.DATA_MANAGEMENT, java.util.Map.of())));
     }
 
     @Test
@@ -284,12 +279,10 @@ class DefaultKernelContextTest {
 
         context.registerEventHandler(TestEvent.class, event -> {
             testHandlerCalled.set(true);
-            return io.activej.promise.Promise.complete();
         });
 
         context.registerEventHandler(OtherEvent.class, event -> {
             otherHandlerCalled.set(true);
-            return io.activej.promise.Promise.complete();
         });
 
         context.publishEvent(new TestEvent("test"));
@@ -332,16 +325,24 @@ class DefaultKernelContextTest {
                 if ("test.key".equals(key)) {
                     return type.cast("test-value");
                 }
-                return null;
+                throw new IllegalArgumentException("Config key not found: " + key);
+            }
+            @Override public <T> T resolveWithDefault(String key, Class<T> type, T defaultValue, KernelTenantContext tenantContext) {
+                java.util.Optional<T> opt = resolveOptional(key, type, tenantContext);
+                return opt.orElse(defaultValue);
             }
             @Override public <T> java.util.Optional<T> resolveOptional(String key, Class<T> type, KernelTenantContext tenantContext) {
                 if ("optional.key".equals(key)) {
                     return java.util.Optional.of(type.cast("optional-value"));
                 }
+                if ("test.key".equals(key)) {
+                    return java.util.Optional.of(type.cast("test-value"));
+                }
                 return java.util.Optional.empty();
             }
-            @Override public java.util.List<String> getConfigSources() { return java.util.List.of(); }
-            @Override public void reload() {}
+            @Override public void addConfigProvider(ConfigProvider provider) {}
+            @Override public io.activej.promise.Promise<Void> reloadConfig(String tenantId) { return io.activej.promise.Promise.complete(); }
+            @Override public java.util.List<String> getAvailableKeys(KernelTenantContext ctx) { return java.util.List.of(); }
         };
     }
 

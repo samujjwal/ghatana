@@ -300,7 +300,7 @@ export const DataWarehouseCanvas: React.FC<DataWarehouseCanvasProps> = ({
             {!validation.valid && (
                 <Alert severity="error" className="mb-4">
                     <Typography as="p" className="text-sm font-medium">Schema Validation Errors:</Typography>
-                    <ul style={{ margin: 0, paddingLeft: 20, gridTemplateColumns: 'repeat(auto-fill }}>
+                    <ul style={{ margin: 0, paddingLeft: 20 }}>
                         {validation.errors.map((error, idx) => (
                             <li key={idx}>{error}</li>
                         ))}

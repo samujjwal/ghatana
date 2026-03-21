@@ -99,7 +99,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   };
 
   const paletteStyles: React.CSSProperties = {
-    backgroundColor: tokens.colors.neutral[0],
+    backgroundColor: tokens.colors.neutral[50],
     borderRadius: tokens.borderRadius.lg,
     boxShadow: tokens.colors.neutral[900] + '33',
     width: '90%',

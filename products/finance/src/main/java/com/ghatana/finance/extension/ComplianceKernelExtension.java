@@ -48,13 +48,18 @@ public class ComplianceKernelExtension implements KernelExtension {
     }
 
     @Override
+    public String getVersion() {
+        return VERSION;
+    }
+
+    @Override
     public KernelDescriptor getDescriptor() {
-        return KernelDescriptor.builder()
-            .descriptorId(EXTENSION_ID)
-            .name(getName())
-            .version(VERSION)
-            .description("Compliance engine for SOX, PCI-DSS, and financial regulations")
-            .type(KernelDescriptor.ComponentType.EXTENSION)
+        return new KernelDescriptor.Builder()
+            .withDescriptorId(EXTENSION_ID)
+            .withName(getName())
+            .withVersion(VERSION)
+            .withDescription("Compliance engine for SOX, PCI-DSS, and financial regulations")
+            .withType(KernelDescriptor.DescriptorType.EXTENSION)
             .build();
     }
 
@@ -404,5 +409,24 @@ public class ComplianceKernelExtension implements KernelExtension {
         public String getRuleId() { return ruleId; }
         public String getDetails() { return details; }
         public Instant getTimestamp() { return timestamp; }
+    }
+
+    public static class CommandResult {
+        private final String commandId;
+        private final boolean success;
+        private final String message;
+        private final java.util.Map<String, Object> data;
+
+        public CommandResult(String commandId, boolean success, String message, java.util.Map<String, Object> data) {
+            this.commandId = commandId;
+            this.success = success;
+            this.message = message;
+            this.data = data != null ? java.util.Map.copyOf(data) : java.util.Map.of();
+        }
+
+        public String getCommandId() { return commandId; }
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+        public java.util.Map<String, Object> getData() { return data; }
     }
 }

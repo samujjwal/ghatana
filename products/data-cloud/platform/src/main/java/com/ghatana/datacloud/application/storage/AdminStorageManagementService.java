@@ -143,7 +143,7 @@ public class AdminStorageManagementService {
 
                 long startMs = System.currentTimeMillis();
 
-                return Promise.ofBlocking(blockingExecutor(), () -> {
+                try {
                         // GIVEN: Tenant context
                         // WHEN: Profiles are filtered by tenant (simulated via cache key prefix)
                         // THEN: Paginated results returned
@@ -164,8 +164,10 @@ public class AdminStorageManagementService {
                                         "Listed {} profiles for tenant {} (offset={}, pageSize={})",
                                         allProfiles.size(), tenantId, request.offset(), request.pageSize());
 
-                        return allProfiles;
-                });
+                        return Promise.of(allProfiles);
+                } catch (Exception e) {
+                        return Promise.ofException(e);
+                }
         }
 
         /**
@@ -211,7 +213,7 @@ public class AdminStorageManagementService {
 
                 long startMs = System.currentTimeMillis();
 
-                return Promise.ofBlocking(blockingExecutor(), () -> {
+                try {
                         // Create profile DTO
                         StorageProfileDto profile = new StorageProfileDto(
                                         UUID.randomUUID().toString(),
@@ -236,8 +238,10 @@ public class AdminStorageManagementService {
                                         "Created storage profile '{}' for tenant {} (id={})",
                                         profile.name(), tenantId, profile.id());
 
-                        return profile;
-                });
+                        return Promise.of(profile);
+                } catch (Exception e) {
+                        return Promise.ofException(e);
+                }
         }
 
         /**
@@ -261,7 +265,7 @@ public class AdminStorageManagementService {
 
                 long startMs = System.currentTimeMillis();
 
-                return Promise.ofBlocking(blockingExecutor(), () -> {
+                try {
                         String cacheKeyPrefix = tenantId + ":profile:";
                         Optional<StorageProfileDto> profile = profileCache.entrySet().stream()
                                         .filter(e -> e.getKey().startsWith(cacheKeyPrefix))
@@ -278,8 +282,10 @@ public class AdminStorageManagementService {
                                 metrics.incrementCounter("admin.api.profile.get.notfound");
                         }
 
-                        return profile;
-                });
+                        return Promise.of(profile);
+                } catch (Exception e) {
+                        return Promise.ofException(e);
+                }
         }
 
         /**
@@ -322,7 +328,7 @@ public class AdminStorageManagementService {
 
                 long startMs = System.currentTimeMillis();
 
-                return Promise.ofBlocking(blockingExecutor(), () -> {
+                try {
                         // Find existing profile for this tenant only
                         String cacheKeyPrefix = tenantId + ":profile:";
                         Optional<Map.Entry<String, StorageProfileDto>> existingEntry = profileCache.entrySet().stream()
@@ -365,8 +371,10 @@ public class AdminStorageManagementService {
                                         "Updated storage profile {} for tenant {}",
                                         profileId, tenantId);
 
-                        return updated;
-                });
+                        return Promise.of(updated);
+                } catch (Exception e) {
+                        return Promise.ofException(e);
+                }
         }
 
         /**
@@ -390,7 +398,7 @@ public class AdminStorageManagementService {
 
                 long startMs = System.currentTimeMillis();
 
-                return Promise.ofBlocking(blockingExecutor(), () -> {
+                try {
                         // Find and remove profile
                         Optional<String> cacheKeyToRemove = profileCache.entrySet().stream()
                                         .filter(e -> e.getValue().id().equals(profileId)
@@ -412,8 +420,10 @@ public class AdminStorageManagementService {
                                         "Deleted storage profile {} for tenant {}",
                                         profileId, tenantId);
 
-                        return null;
-                });
+                        return Promise.of(null);
+                } catch (Exception e) {
+                        return Promise.ofException(e);
+                }
         }
 
         // ========== Connector Management Operations ==========
@@ -437,7 +447,7 @@ public class AdminStorageManagementService {
 
                 long startMs = System.currentTimeMillis();
 
-                return Promise.ofBlocking(blockingExecutor(), () -> {
+                try {
                         List<ConnectorMetadataDto> connectors = connectorRegistry.entrySet().stream()
                                         .map(e -> {
                                                 StorageBackendType backendType = StorageBackendType.RELATIONAL;
@@ -460,8 +470,10 @@ public class AdminStorageManagementService {
                                         "Listed {} connectors for tenant {}",
                                         connectors.size(), tenantId);
 
-                        return connectors;
-                });
+                        return Promise.of(connectors);
+                } catch (Exception e) {
+                        return Promise.ofException(e);
+                }
         }
 
         /**
@@ -498,7 +510,7 @@ public class AdminStorageManagementService {
 
                 long startMs = System.currentTimeMillis();
 
-                return Promise.ofBlocking(blockingExecutor(), () -> {
+                try {
                         long connectorStartMs = System.currentTimeMillis();
                         long connectorLatencyMs = System.currentTimeMillis() - connectorStartMs;
 
@@ -510,11 +522,13 @@ public class AdminStorageManagementService {
                                         "Health check passed for connector {} (latency={}ms)",
                                         connectorId, connectorLatencyMs);
 
-                        return new ConnectorHealthCheckResponse(
+                        return Promise.of(new ConnectorHealthCheckResponse(
                                         "healthy",
                                         connectorLatencyMs,
-                                        "Connection successful");
-                });
+                                        "Connection successful"));
+                } catch (Exception e) {
+                        return Promise.ofException(e);
+                }
         }
 
         /**

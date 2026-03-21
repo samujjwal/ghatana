@@ -18,7 +18,7 @@ package com.ghatana.yappc.core.policy;
 
 import com.ghatana.yappc.core.ci.CIPipelineSpec;
 import com.ghatana.yappc.core.deps.DependencyGraphExtractor;
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

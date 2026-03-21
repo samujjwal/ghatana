@@ -14,7 +14,7 @@ packages:
   # Product UIs
   - "products/data-cloud/ui"
   - "products/aep/ui"
-  - "products/aep/api"
+  - "products/aep/gateway"
 
   # YAPPC frontend (existing)
   - "products/yappc/frontend/libs/*"

@@ -36,8 +36,8 @@ dependencies {
     implementation(project(":products:app-platform:kernel:resilience-patterns"))
 
     // ─── Domain packs under test ──────────────────────────────────────────────
-    implementation(project(":products:app-platform:domain-packs:oms"))
-    implementation(project(":products:app-platform:domain-packs:risk-engine"))
+    implementation(project(":products:finance:domains:oms"))
+    implementation(project(":products:finance:domains:risk"))
 
     // ─── Security & Chaos ─────────────────────────────────────────────────────
     implementation(project(":products:app-platform:kernel:secrets-management"))

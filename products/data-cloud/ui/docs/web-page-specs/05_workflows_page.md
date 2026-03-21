@@ -158,7 +158,7 @@ Last executed: 2025-11-18
 
 [Card] "Customer Sync"      [Paused]
 -------------------------------------------------------------------------------
-"Syncs customer records from CRM to CES collections."
+"Syncs customer records from CRM to Data Cloud collections."
 Nodes: [Start] → [API Call] → [Decision] → [Notify]
 ...
 ```

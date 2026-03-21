@@ -63,11 +63,11 @@ class ReferenceDataDomainModuleTest {
 
         assertThat(capabilities).isNotEmpty();
         assertThat(capabilities.stream()
-            .map(KernelCapability::getId)
-            .anyMatch(id -> id.equals("finance.instrument.master")))
+            .map(KernelCapability::getCapabilityId)
+            .anyMatch(id -> id.equals("finance.securities.master")))
             .isTrue();
         assertThat(capabilities.stream()
-            .map(KernelCapability::getId)
+            .map(KernelCapability::getCapabilityId)
             .anyMatch(id -> id.equals("finance.counterparty.data")))
             .isTrue();
     }
@@ -90,7 +90,7 @@ class ReferenceDataDomainModuleTest {
     @DisplayName("Should start successfully and update health status")
     void shouldStartSuccessfullyAndUpdateHealthStatus() {
         module.initialize(mockContext);
-        module.start().get();
+        module.start();
 
         HealthStatus status = module.getHealthStatus();
         assertThat(status.isHealthy()).isTrue();
@@ -100,8 +100,8 @@ class ReferenceDataDomainModuleTest {
     @DisplayName("Should stop successfully and update health status")
     void shouldStopSuccessfullyAndUpdateHealthStatus() {
         module.initialize(mockContext);
-        module.start().get();
-        module.stop().get();
+        module.start();
+        module.stop();
 
         HealthStatus status = module.getHealthStatus();
         assertThat(status.isHealthy()).isFalse();

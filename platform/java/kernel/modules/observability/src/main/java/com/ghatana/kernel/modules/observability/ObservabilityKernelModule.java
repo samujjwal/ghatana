@@ -11,6 +11,7 @@ import com.ghatana.kernel.health.HealthStatus;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.modules.observability.service.ObservabilityService;
 import io.activej.promise.Promise;
+import java.util.concurrent.ForkJoinPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,7 +85,7 @@ public final class ObservabilityKernelModule implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting Observability module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             observabilityService.start();
             log.info("Observability module started successfully");
             return null;
@@ -95,7 +96,7 @@ public final class ObservabilityKernelModule implements KernelModule {
     public Promise<Void> stop() {
         log.info("Stopping Observability module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             if (observabilityService != null) {
                 observabilityService.stop();
             }

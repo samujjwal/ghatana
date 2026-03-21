@@ -1,6 +1,6 @@
-# CES UI – Web Page Specs Index
+# Data Cloud UI – Web Page Specs Index
 
-These specs document the **Collection & Entity System (CES) UI** pages at the level of:
+These specs document the **Data Cloud UI** pages at the level of:
 
 - **Intention** – why the page exists.
 - **Content & layout** – what is shown on the page.
@@ -16,13 +16,13 @@ Each spec follows the 10-section structure we use for App Creator, Software Org,
 - `00_shell_and_routing.md`  
   Root React entry, Router, and global layout/suspense.
 
-## 1. Core CES Pages
+## 1. Core Data Cloud Pages
 
 - `01_dashboard_page.md`  
   Overview dashboard for collections, workflows, executions, audit/compliance, and quick actions.
 
 - `02_collections_page.md`  
-  Collections list + detail page (mock API-backed) for viewing and navigating CES collections.
+  Collections list + detail page (mock API-backed) for viewing and navigating Data Cloud collections.
 
 - `03_create_collection_page.md`  
   Create Collection page for defining new collections and schemas.

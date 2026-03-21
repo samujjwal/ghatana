@@ -1,5 +1,5 @@
 /**
- * Accessibility utilities for CES Workflow Platform.
+ * Accessibility utilities for Data Cloud Platform.
  *
  * <p><b>Purpose</b><br>
  * Provides utilities for WCAG 2.1 compliance including

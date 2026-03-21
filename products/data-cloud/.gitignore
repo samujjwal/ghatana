@@ -1,0 +1,22 @@
+# Build outputs — NEVER commit these
+build/
+out/
+*.class
+*.jar
+
+# UI build
+ui/dist/
+ui/node_modules/
+ui/coverage/
+ui/.storybook-out/
+ui/playwright-report/
+ui/test-results/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

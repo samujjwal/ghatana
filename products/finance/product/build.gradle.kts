@@ -47,7 +47,7 @@ dependencies {
     api(project(":products:finance:domains:risk"))
     api(project(":products:finance:domains:compliance"))
     api(project(":products:finance:domains:rules"))
-    api(project(":products:finance:domains:governance"))
+    api(project(":products:finance:data-governance"))
     
     // ─── New Finance Domains (Migration Phase 2) ──────────────────────────────────
     api(project(":products:finance:domains:corporate-actions"))

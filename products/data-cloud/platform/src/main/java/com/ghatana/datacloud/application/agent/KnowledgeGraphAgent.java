@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  * }</pre>
  *
  * <p><b>Architecture</b><br>
- * Part of the collection-entity-system for multi-tenant metadata management. Uses ActiveJ
+ * Part of the data-cloud for multi-tenant metadata management. Uses ActiveJ
  * Promise for async operations and integrates with GraphRepository for persistence.
  *
  * @doc.type class

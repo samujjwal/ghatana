@@ -1,0 +1,30 @@
+id: agent.finance.risk-assessment
+name: Risk Assessment Agent
+version: "1.0.0"
+description: >
+  GAA-pattern agent that performs real-time risk assessment
+  on portfolio updates using the PERCEIVE → REASON → ACT → CAPTURE → REFLECT lifecycle.
+
+metadata:
+  level: expert
+  domain: finance
+  tags:
+    - risk-management
+    - portfolio-analysis
+    - gaa-agent
+
+capabilities:
+  - risk-assessment
+  - portfolio-analysis
+  - compliance-check
+
+implementationRef: "finance:risk-assessment"
+
+generator:
+  type: gaa-lifecycle
+  steps:
+    - perceive
+    - reason
+    - act
+    - capture
+    - reflect

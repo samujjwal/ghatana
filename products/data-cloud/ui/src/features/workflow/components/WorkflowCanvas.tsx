@@ -26,7 +26,7 @@ import {
   useEdgesState,
   addEdge,
 } from '@ghatana/flow-canvas';
-import type { Node, Edge, Connection, NodeChange } from '@ghatana/flow-canvas';
+import type { Node, Edge, Connection, OnNodesChange } from '@ghatana/flow-canvas';
 import {
   workflowAtom,
   selectedNodeIdAtom,
@@ -143,8 +143,8 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
    * Handles nodes change.
    */
   const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      onNodesChange(changes);
+    (changes: Parameters<OnNodesChange>[0]) => {
+      onNodesChange(changes as any);
 
       // Update node positions
       changes.forEach((change) => {
@@ -201,17 +201,15 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
       <FlowCanvas
         nodes={reactFlowNodes}
         edges={reactFlowEdges}
-        nodeTypes={nodeTypes}
+        additionalNodeTypes={nodeTypes as any}
         onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={handleConnect}
         onNodeClick={handleNodeClick}
         onPaneClick={handleCanvasClick}
-        fitView
         deleteKeyCode={readOnly ? null : 'Delete'}
-      >
-        <FlowControls />
-      </FlowCanvas>
+        controls={{ showMiniMap: false, showControls: true }}
+      />
     </div>
   );
 };

@@ -24,7 +24,7 @@ import java.util.UUID;
  * Immutable record - thread-safe.
  *
  * @param id Entity unique identifier
- * @param collectionId Parent collection identifier
+ * @param collectionName Parent collection name
  * @param tenantId Tenant identifier
  * @param data Entity data (JSON object)
  * @param active Active status (soft delete flag)
@@ -42,7 +42,7 @@ import java.util.UUID;
  */
 public record EntityResponse(
     UUID id,
-    UUID collectionId,
+    String collectionName,
     String tenantId,
     Map<String, Object> data,
     boolean active,
@@ -68,10 +68,10 @@ public record EntityResponse(
 
         return new EntityResponse(
             entity.getId(),
-            entity.getId(),  // collectionId - using id as placeholder
+            entity.getCollectionName(),
             entity.getTenantId(),
             entity.getData(),
-            entity.getActive(),
+            Boolean.TRUE.equals(entity.getActive()),
             entity.getCreatedAt(),
             entity.getUpdatedAt(),
             entity.getCreatedBy(),

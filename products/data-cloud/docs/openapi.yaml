@@ -34,8 +34,8 @@ info:
     email: data-cloud@ghatana.internal
 
 servers:
-  - url: http://localhost:8080
-    description: Local development
+  - url: http://localhost:8082
+    description: Local development (standalone launcher)
   - url: https://data-cloud-staging.ghatana.internal
     description: Staging
   - url: https://data-cloud.ghatana.internal

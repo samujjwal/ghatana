@@ -462,7 +462,7 @@ export function APIEndpointNode({ data, id, selected }: NodeProps<APIEndpointNod
         <Paper
             elevation={selected ? 8 : 2}
             onDoubleClick={handleDoubleClick}
-            className="min-w-[200px]" style={{ border: `2px solid ${borderColor}` }}
+            className="min-w-[200px]" style={{ border: `2px solid ${borderColor}`}}
         >
             <Handle type="target" position={Position.Left} />
 
@@ -595,7 +595,7 @@ export function TestSuiteNode({ data, id, selected }: NodeProps<TestSuiteNodeDat
     return (
         <Paper
             elevation={selected ? 8 : 2}
-            className="min-w-[200px]" style={{ border: `2px solid ${borderColor}` }}
+            className="min-w-[200px]" style={{ border: `2px solid ${borderColor}`}}
         >
             <Handle type="target" position={Position.Left} />
 

@@ -12,6 +12,7 @@ import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.modules.eventstore.service.EventStoreService;
 import com.ghatana.core.event.cloud.EventCloud;
 import io.activej.promise.Promise;
+import java.util.concurrent.ForkJoinPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +95,7 @@ public final class EventStoreKernelModule implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting Event Store module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Start event store service
             eventStoreService.start();
 
@@ -107,7 +108,7 @@ public final class EventStoreKernelModule implements KernelModule {
     public Promise<Void> stop() {
         log.info("Stopping Event Store module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Stop event store service
             if (eventStoreService != null) {
                 eventStoreService.stop();

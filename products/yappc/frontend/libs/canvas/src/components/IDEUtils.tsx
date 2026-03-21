@@ -182,7 +182,7 @@ export const LoadingStates: React.FC<LoadingStatesProps> = ({
             <div className="progress-bar">
               <div 
                 className="progress-fill" 
-                style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, progress))}%`}}
               />
             </div>
             <span className="progress-text">{Math.round(progress)}%</span>

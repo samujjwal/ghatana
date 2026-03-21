@@ -298,26 +298,26 @@ public class PluginAutoScaler implements AutoScaler {
 
     @Override
     public Promise<ScalingRecommendation> evaluate(String pluginId) {
-        return Promise.ofBlocking(evaluationExecutor, () -> {
+        try {
             List<String> policyIds = pluginPolicies.getOrDefault(pluginId, List.of());
             if (policyIds.isEmpty()) {
-                return new ScalingRecommendation(
+                return Promise.of(new ScalingRecommendation(
                     pluginId, ScaleDirection.NONE, ScaleType.HORIZONTAL,
                     executor.getCurrentInstances(pluginId),
                     executor.getCurrentResources(pluginId),
                     0.0, "No policies configured", List.of()
-                );
+                ));
             }
 
             // Check cooldown
             Instant cooldownEnd = cooldowns.get(pluginId);
             if (cooldownEnd != null && Instant.now().isBefore(cooldownEnd)) {
-                return new ScalingRecommendation(
+                return Promise.of(new ScalingRecommendation(
                     pluginId, ScaleDirection.NONE, ScaleType.HORIZONTAL,
                     executor.getCurrentInstances(pluginId),
                     executor.getCurrentResources(pluginId),
                     0.0, "In cooldown until " + cooldownEnd, List.of()
-                );
+                ));
             }
 
             // Evaluate each policy
@@ -334,12 +334,12 @@ public class PluginAutoScaler implements AutoScaler {
 
             // Aggregate recommendations (prioritize scale-up)
             if (recommendations.isEmpty()) {
-                return new ScalingRecommendation(
+                return Promise.of(new ScalingRecommendation(
                     pluginId, ScaleDirection.NONE, ScaleType.HORIZONTAL,
                     executor.getCurrentInstances(pluginId),
                     executor.getCurrentResources(pluginId),
                     1.0, "No scaling needed", List.of()
-                );
+                ));
             }
 
             // Prefer scale-up recommendations
@@ -348,14 +348,16 @@ public class PluginAutoScaler implements AutoScaler {
                 .max(Comparator.comparingDouble(ScalingRecommendation::confidence));
 
             if (scaleUp.isPresent()) {
-                return scaleUp.get();
+                return Promise.of(scaleUp.get());
             }
 
             // Otherwise return highest confidence scale-down
-            return recommendations.stream()
+            return Promise.of(recommendations.stream()
                 .max(Comparator.comparingDouble(ScalingRecommendation::confidence))
-                .orElse(recommendations.get(0));
-        });
+                .orElse(recommendations.get(0)));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     private ScalingRecommendation evaluatePolicy(String pluginId, ScalingPolicy policy) {
@@ -638,7 +640,7 @@ public class PluginAutoScaler implements AutoScaler {
             ));
         }
 
-        return Promise.ofBlocking(evaluationExecutor, () -> {
+        try {
             String pluginId = recommendation.pluginId();
             int previousInstances = executor.getCurrentInstances(pluginId);
             ResourceAllocation previousResources = executor.getCurrentResources(pluginId);
@@ -648,12 +650,12 @@ public class PluginAutoScaler implements AutoScaler {
                 try {
                     Boolean proceed = hook.beforeScale(recommendation).getResult();
                     if (!Boolean.TRUE.equals(proceed)) {
-                        return createEvent(
+                        return Promise.of(createEvent(
                             pluginId, ScaleDirection.NONE, recommendation.type(),
                             previousInstances, previousInstances,
                             previousResources, previousResources,
                             "Blocked by hook", false, "Hook vetoed scaling"
-                        );
+                        ));
                     }
                 } catch (Exception e) {
                     logger.warn("Hook failed for plugin {}", pluginId, e);
@@ -721,7 +723,7 @@ public class PluginAutoScaler implements AutoScaler {
                 logger.info("Scaled plugin {} from {} to {} instances ({})",
                     pluginId, previousInstances, newInstances, recommendation.reason());
 
-                return event;
+                return Promise.of(event);
 
             } catch (Exception e) {
                 scaleFailureCounter.increment();
@@ -745,9 +747,11 @@ public class PluginAutoScaler implements AutoScaler {
                 }
 
                 logger.error("Failed to scale plugin {}", pluginId, e);
-                return failedEvent;
+                return Promise.of(failedEvent);
             }
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -864,18 +868,24 @@ public class PluginAutoScaler implements AutoScaler {
 
     @Override
     public Promise<Map<String, ScalingState>> getAllStates() {
-        return Promise.ofBlocking(evaluationExecutor, () -> {
+        try {
             Map<String, ScalingState> allStates = new HashMap<>(states);
             
             // Add states for plugins without recorded state
             for (String pluginId : executor.getManagedPlugins()) {
-                if (!allStates.containsKey(pluginId)) {
-                    allStates.put(pluginId, getState(pluginId).getResult());
-                }
+                allStates.putIfAbsent(pluginId, new ScalingState(
+                    pluginId,
+                    executor.getCurrentInstances(pluginId),
+                    executor.getCurrentInstances(pluginId),
+                    executor.getCurrentResources(pluginId),
+                    null, null, true
+                ));
             }
             
-            return allStates;
-        });
+            return Promise.of(allStates);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override

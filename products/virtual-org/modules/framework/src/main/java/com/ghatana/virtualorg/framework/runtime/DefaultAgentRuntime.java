@@ -6,7 +6,7 @@ import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.ai.llm.ToolCall;
 import com.ghatana.ai.llm.ToolCallResult;
 import com.ghatana.ai.llm.ToolDefinition;
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.virtualorg.framework.tools.AgentTool;
 import com.ghatana.virtualorg.framework.tools.ToolContext;

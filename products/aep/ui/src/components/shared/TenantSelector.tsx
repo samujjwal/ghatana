@@ -4,12 +4,17 @@
  * Reads and writes the shared `tenantIdAtom`. Clicking the label opens
  * an inline input. On blur or Enter the new ID is committed.
  *
+ * On every tenant switch, all TanStack Query caches are invalidated so
+ * each page re-fetches its data under the new tenant context — preventing
+ * stale cross-tenant data from being served from cache.
+ *
  * @doc.type component
  * @doc.purpose Allow users to switch tenants from the navigation sidebar
  * @doc.layer frontend
  */
 import React, { useRef, useState } from 'react';
 import { useAtom } from 'jotai';
+import { useQueryClient } from '@tanstack/react-query';
 import { tenantIdAtom } from '@/stores/tenant.store';
 
 export function TenantSelector() {
@@ -17,10 +22,15 @@ export function TenantSelector() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(tenantId);
   const inputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   function submit() {
     const value = draft.trim();
-    if (value) setTenantId(value);
+    if (value && value !== tenantId) {
+      setTenantId(value);
+      // Invalidate all cached queries so every page re-fetches under the new tenant.
+      queryClient.invalidateQueries();
+    }
     setEditing(false);
   }
 

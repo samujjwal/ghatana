@@ -290,7 +290,7 @@ export const ThreatModelingCanvas: React.FC<ThreatModelingCanvasProps> = ({
                                                     key={threat.id}
                                                     elevation={2}
                                                     className="p-4"
-                                                    style={{ borderLeft: `4px solid ${categoryConfig.color}` }}
+                                                    style={{ borderLeft: `4px solid ${categoryConfig.color}`}}
                                                 >
                                                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                                                         <Box className="grow">
@@ -501,7 +501,7 @@ export const ThreatModelingCanvas: React.FC<ThreatModelingCanvasProps> = ({
                                             <Paper
                                                 key={category.id}
                                                 className="p-3 cursor-pointer"
-                                                style={{ borderLeft: `4px solid ${category.color}` }}
+                                                style={{ borderLeft: `4px solid ${category.color}`}}
                                             >
                                                 <Stack direction="row" spacing={1} alignItems="center">
                                                     {category.icon}
@@ -714,7 +714,7 @@ export const ThreatModelingCanvas: React.FC<ThreatModelingCanvasProps> = ({
                             {Object.entries(strideResults.categoryBreakdown).map(([category, data]) => {
                                 const categoryConfig = getCategoryConfig(category as ThreatCategory);
                                 return (
-                                    <Paper key={category} className="p-4" style={{ borderLeft: `4px solid ${categoryConfig.color}` }}>
+                                    <Paper key={category} className="p-4" style={{ borderLeft: `4px solid ${categoryConfig.color}`}}>
                                         <Stack direction="row" justifyContent="space-between" alignItems="center">
                                             <Stack direction="row" spacing={1} alignItems="center">
                                                 {categoryConfig.icon}

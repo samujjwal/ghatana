@@ -1,6 +1,6 @@
 package com.ghatana.security.alert;
 
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;

@@ -7,8 +7,12 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequ
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
+
+import com.ghatana.kernel.util.JsonUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -214,7 +218,7 @@ public class RiskManagementService {
             Map.of("retention", "10years")
         )).whenException(e -> {});
 
-        return Promise.all(risk, alerts).map($ -> null);
+        return Promises.all(risk, alerts).map($ -> null);
     }
 
     private Promise<BigDecimal> getCurrentPosition(String traderId, String symbol) {
@@ -292,7 +296,7 @@ public class RiskManagementService {
     private Promise<Void> checkRiskLimits(String traderId) {
         return getRiskMetrics(traderId)
             .then(metrics -> {
-                List<Promise<Void>> checks = List.of();
+                List<Promise<Void>> checks = new ArrayList<>();
 
                 // Check daily loss limit
                 if (metrics.getDailyPnL().abs().compareTo(MAX_DAILY_LOSS) > 0) {
@@ -300,7 +304,7 @@ public class RiskManagementService {
                         "Daily loss limit exceeded"));
                 }
 
-                return Promise.all(checks).map($ -> null);
+                return Promises.all(checks).map($ -> null);
             });
     }
 

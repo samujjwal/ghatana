@@ -18,7 +18,7 @@ dependencies {
     implementation(project(":products:software-org:engine:modules:domain-model"))
 
     // AEP integration (used by engineering department)
-    implementation(project(":products:aep:platform"))
+    implementation(project(":products:aep:platform-bundle"))
 
     // Core abstractions
     implementation(project(":platform:java:core"))

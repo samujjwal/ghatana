@@ -1,0 +1,192 @@
+package com.ghatana.datacloud.launcher.http.handlers;
+
+import io.activej.http.*;
+import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * HTTP middleware filters for Data-Cloud: CORS, rate-limiting, content-type
+ * enforcement, and payload-size limiting.
+ *
+ * <p>Extracted from {@code DataCloudHttpServer} to reduce its surface and
+ * allow independent testing of each filter.
+ *
+ * @doc.type class
+ * @doc.purpose Composable HTTP middleware filters for Data-Cloud server
+ * @doc.layer product
+ * @doc.pattern Middleware, Decorator
+ */
+public final class DataCloudMiddleware {
+
+    private static final Logger log = LoggerFactory.getLogger(DataCloudMiddleware.class);
+
+    private final String corsAllowOrigin;
+    private final String corsAllowMethods;
+    private final String corsAllowHeaders;
+    private final String corsMaxAge;
+    private final int rateLimitRequests;
+    private final long rateLimitWindowMs;
+    private final int rateLimitMaxEntries;
+    private final long maxBodyBytes;
+
+    private final Map<String, long[]> rateLimitState = new ConcurrentHashMap<>();
+
+    /**
+     * @param corsAllowOrigin   allowed CORS origin
+     * @param corsAllowMethods  allowed CORS methods
+     * @param corsAllowHeaders  allowed CORS headers
+     * @param corsMaxAge        CORS preflight max-age
+     * @param rateLimitRequests max requests per IP per window
+     * @param rateLimitWindowMs rate limit window in milliseconds
+     * @param rateLimitMaxEntries max tracked IPs
+     * @param maxBodyBytes      max request body size
+     */
+    public DataCloudMiddleware(
+            String corsAllowOrigin,
+            String corsAllowMethods,
+            String corsAllowHeaders,
+            String corsMaxAge,
+            int rateLimitRequests,
+            long rateLimitWindowMs,
+            int rateLimitMaxEntries,
+            long maxBodyBytes) {
+        this.corsAllowOrigin = corsAllowOrigin;
+        this.corsAllowMethods = corsAllowMethods;
+        this.corsAllowHeaders = corsAllowHeaders;
+        this.corsMaxAge = corsMaxAge;
+        this.rateLimitRequests = rateLimitRequests;
+        this.rateLimitWindowMs = rateLimitWindowMs;
+        this.rateLimitMaxEntries = rateLimitMaxEntries;
+        this.maxBodyBytes = maxBodyBytes;
+    }
+
+    /**
+     * Applies the full middleware chain in the canonical order:
+     * CORS → Rate Limit → Payload Size → Content-Type.
+     */
+    public AsyncServlet applyAll(AsyncServlet delegate) {
+        return corsFilter(rateLimitFilter(payloadSizeLimitFilter(contentTypeFilter(delegate))));
+    }
+
+    public AsyncServlet corsFilter(AsyncServlet delegate) {
+        return request -> {
+            if (request.getMethod() == HttpMethod.OPTIONS) {
+                return Promise.of(HttpResponse.ok200()
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(corsAllowOrigin))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                    .withHeader(HttpHeaders.of("Access-Control-Max-Age"), HttpHeaderValue.of(corsMaxAge))
+                    .build());
+            }
+            return delegate.serve(request);
+        };
+    }
+
+    public AsyncServlet rateLimitFilter(AsyncServlet delegate) {
+        return request -> {
+            String ip = remoteIp(request);
+            long now = System.currentTimeMillis();
+
+            long[] state = rateLimitState.compute(ip, (key, existing) -> {
+                if (existing == null || (now - existing[1]) >= rateLimitWindowMs) {
+                    return new long[]{1L, now};
+                }
+                existing[0]++;
+                return existing;
+            });
+
+            long count = state[0];
+            long windowStart = state[1];
+            long windowRemainingMs = rateLimitWindowMs - (now - windowStart);
+            long retryAfterSec = Math.max(1L, (windowRemainingMs + 999) / 1000);
+
+            if (count > rateLimitRequests) {
+                log.warn("Rate limit exceeded for ip={} count={}", ip, count);
+                String body = String.format(
+                        "{\"error\":\"Too Many Requests\",\"retryAfterSeconds\":%d}",
+                        retryAfterSec);
+                return Promise.of(HttpResponse.ofCode(429)
+                        .withHeader(HttpHeaders.CONTENT_TYPE,
+                                HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                        .withHeader(HttpHeaders.of("Retry-After"),
+                                HttpHeaderValue.of(String.valueOf(retryAfterSec)))
+                        .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
+                                HttpHeaderValue.of(corsAllowOrigin))
+                        .withBody(body.getBytes(StandardCharsets.UTF_8))
+                        .build());
+            }
+
+            if (rateLimitState.size() > rateLimitMaxEntries) {
+                rateLimitState.entrySet().removeIf(e ->
+                        (now - e.getValue()[1]) >= rateLimitWindowMs);
+            }
+
+            return delegate.serve(request);
+        };
+    }
+
+    public AsyncServlet contentTypeFilter(AsyncServlet delegate) {
+        return request -> {
+            HttpMethod method = request.getMethod();
+            if (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH) {
+                String ct = request.getHeader(HttpHeaders.CONTENT_TYPE);
+                if (ct == null || !ct.contains("application/json")) {
+                    return Promise.of(HttpResponse.ofCode(415)
+                        .withHeader(HttpHeaders.CONTENT_TYPE,
+                            HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                        .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
+                            HttpHeaderValue.of(corsAllowOrigin))
+                        .withBody("{\"error\":\"Content-Type must be application/json\"}".getBytes(StandardCharsets.UTF_8))
+                        .build());
+                }
+            }
+            return delegate.serve(request);
+        };
+    }
+
+    public AsyncServlet payloadSizeLimitFilter(AsyncServlet delegate) {
+        return request -> {
+            String contentLengthHeader = request.getHeader(HttpHeaders.of("Content-Length"));
+            if (contentLengthHeader != null) {
+                try {
+                    long size = Long.parseLong(contentLengthHeader.trim());
+                    if (size > maxBodyBytes) {
+                        String msg = String.format(
+                            "{\"error\":\"Request body too large: %d bytes (limit %d bytes)\"}",
+                            size, maxBodyBytes);
+                        return Promise.of(HttpResponse.ofCode(413)
+                            .withHeader(HttpHeaders.CONTENT_TYPE,
+                                HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
+                                HttpHeaderValue.of(corsAllowOrigin))
+                            .withBody(msg.getBytes(StandardCharsets.UTF_8))
+                            .build());
+                    }
+                } catch (NumberFormatException ignored) {
+                    // pass through
+                }
+            }
+            return delegate.serve(request);
+        };
+    }
+
+    /**
+     * Extracts originating IP from X-Forwarded-For or socket address.
+     */
+    public static String remoteIp(HttpRequest request) {
+        String xff = request.getHeader(HttpHeaders.of("X-Forwarded-For"));
+        if (xff != null && !xff.isBlank()) {
+            int comma = xff.indexOf(',');
+            return (comma > 0 ? xff.substring(0, comma) : xff).strip();
+        }
+        return Optional.ofNullable(request.getRemoteAddress())
+                .map(Object::toString)
+                .orElse("unknown");
+    }
+}

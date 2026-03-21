@@ -1,6 +1,6 @@
 # 14. SQL Workspace Page – Deep-Dive Spec
 
-> **Status:** Planned page – no concrete implementation in CES UI yet. This spec implements the SQL Workspace ideas from `frontend_todo (1).md`.
+> **Status:** Planned page – no concrete implementation in Data Cloud UI yet. This spec implements the SQL Workspace ideas from `frontend_todo (1).md`.
 
 ---
 

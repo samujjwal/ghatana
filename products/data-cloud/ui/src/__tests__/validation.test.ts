@@ -36,8 +36,6 @@ const createEdge = (overrides: Partial<WorkflowEdge> = {}): WorkflowEdge => ({
   id: 'edge-1',
   source: 'node-1',
   target: 'node-2',
-  source: 'node-1',
-  target: 'node-2',
   ...overrides,
 });
 
@@ -298,8 +296,6 @@ describe('Workflow Validation', () => {
             id: 'edge-1',
             source: 'node-999',
             target: 'node-1',
-            source: 'node-999',
-            target: 'node-1',
           }),
         ],
       });
@@ -323,8 +319,6 @@ describe('Workflow Validation', () => {
         edges: [
           createEdge({
             id: 'edge-1',
-            source: 'node-1',
-            target: 'node-999',
             source: 'node-1',
             target: 'node-999',
           }),
@@ -358,8 +352,6 @@ describe('Workflow Validation', () => {
         edges: [
           createEdge({
             id: 'edge-1',
-            source: 'node-1',
-            target: 'node-1',
             source: 'node-1',
             target: 'node-1',
           }),
@@ -396,20 +388,14 @@ describe('Workflow Validation', () => {
             id: 'edge-1',
             source: 'node-1',
             target: 'node-2',
-            source: 'node-1',
-            target: 'node-2',
           }),
           createEdge({
             id: 'edge-2',
             source: 'node-2',
             target: 'node-3',
-            source: 'node-2',
-            target: 'node-3',
           }),
           createEdge({
             id: 'edge-3',
-            source: 'node-3',
-            target: 'node-1',
             source: 'node-3',
             target: 'node-1',
           }),
@@ -444,8 +430,6 @@ describe('Workflow Validation', () => {
         edges: [
           createEdge({
             id: 'edge-1',
-            source: 'node-1',
-            target: 'node-2',
             source: 'node-1',
             target: 'node-2',
           }),
@@ -506,16 +490,12 @@ describe('Workflow Validation', () => {
         edges: [
           createEdge({
             id: 'edge-1',
-            sourceNodeId: 'node-1',
-            targetNodeId: 'node-2',
             source: 'node-1',
             target: 'node-2',
             type: EdgeType.DEFAULT,
           }),
           createEdge({
             id: 'edge-2',
-            sourceNodeId: 'node-2',
-            targetNodeId: 'node-3',
             source: 'node-2',
             target: 'node-3',
             type: EdgeType.DEFAULT,
@@ -570,40 +550,30 @@ describe('Workflow Validation', () => {
         edges: [
           createEdge({
             id: 'edge-1',
-            sourceNodeId: 'node-1',
-            targetNodeId: 'node-2',
             source: 'node-1',
             target: 'node-2',
             type: EdgeType.DEFAULT,
           }),
           createEdge({
             id: 'edge-2',
-            sourceNodeId: 'node-2',
-            targetNodeId: 'node-3',
             source: 'node-2',
             target: 'node-3',
             type: EdgeType.CONDITIONAL,
           }),
           createEdge({
             id: 'edge-3',
-            sourceNodeId: 'node-2',
-            targetNodeId: 'node-4',
             source: 'node-2',
             target: 'node-4',
             type: EdgeType.CONDITIONAL,
           }),
           createEdge({
             id: 'edge-4',
-            sourceNodeId: 'node-3',
-            targetNodeId: 'node-5',
             source: 'node-3',
             target: 'node-5',
             type: EdgeType.DEFAULT,
           }),
           createEdge({
             id: 'edge-5',
-            sourceNodeId: 'node-4',
-            targetNodeId: 'node-5',
             source: 'node-4',
             target: 'node-5',
             type: EdgeType.DEFAULT,

@@ -54,6 +54,11 @@ jobs:
       - name: License policy check
         run: node scripts/check-license-policy.sh
 
+      - name: Java architecture governance check
+        run: bash scripts/check-java-architecture.sh
+        id: java-arch-check
+        continue-on-error: true
+
       - name: Post PR comment on violations
         if: github.event_name == 'pull_request' && failure()
         uses: actions/github-script@v7

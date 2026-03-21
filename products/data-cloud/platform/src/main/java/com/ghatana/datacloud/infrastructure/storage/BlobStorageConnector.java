@@ -174,7 +174,7 @@ public class BlobStorageConnector implements StorageConnector {
         if (entity.getId() == null) {
             entity.setId(UUID.randomUUID());
         }
-        return Promise.ofBlocking(executor, () -> {
+        try {
             Timer.Sample sample = Timer.start();
             try {
                 String key   = objectKey(entity.getTenantId(), entity.getCollectionName(), entity.getId().toString());
@@ -182,20 +182,22 @@ public class BlobStorageConnector implements StorageConnector {
                 putObject(key, bytes);
                 createOps.increment();
                 log.debug("BlobConnector: created key={}", key);
-                return entity;
+                return Promise.of(entity);
             } catch (Exception e) {
                 createErrors.increment();
                 log.error("BlobConnector: create failed entity={}", entity.getId(), e);
-                throw new RuntimeException("S3 create failed: " + e.getMessage(), e);
+                return Promise.ofException(new RuntimeException("S3 create failed: " + e.getMessage(), e));
             } finally {
                 sample.stop(createLatency);
             }
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Optional<Entity>> read(UUID collectionId, String tenantId, UUID entityId) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             Timer.Sample sample = Timer.start();
             try {
                 // Object key uses collection name as path segment. Since we only have collectionId here,
@@ -204,14 +206,16 @@ public class BlobStorageConnector implements StorageConnector {
                 Optional<Entity> found = listAndFind(prefix, entityId.toString());
                 readOps.increment();
                 if (found.isEmpty()) readMisses.increment();
-                return found;
+                return Promise.of(found);
             } catch (NoSuchKeyException e) {
                 readMisses.increment();
-                return Optional.empty();
+                return Promise.of(Optional.empty());
             } finally {
                 sample.stop(readLatency);
             }
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -223,7 +227,7 @@ public class BlobStorageConnector implements StorageConnector {
      * @return Promise of Optional entity
      */
     public Promise<Optional<Entity>> readByName(String tenantId, String collectionName, UUID entityId) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             Timer.Sample sample = Timer.start();
             try {
                 String key = objectKey(tenantId, collectionName, entityId.toString());
@@ -232,31 +236,35 @@ public class BlobStorageConnector implements StorageConnector {
                 byte[] bytes = s3.getObjectAsBytes(req).asByteArray();
                 Entity entity = deserializeEntityFromKey(key, bytes);
                 readOps.increment();
-                return Optional.of(entity);
+                return Promise.of(Optional.of(entity));
             } catch (NoSuchKeyException e) {
                 readMisses.increment();
-                return Optional.empty();
+                return Promise.of(Optional.empty());
             } finally {
                 sample.stop(readLatency);
             }
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Entity> update(Entity entity) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String key   = objectKey(entity.getTenantId(), entity.getCollectionName(), entity.getId().toString());
             byte[] bytes = serializeEntity(entity);
             putObject(key, bytes);
             updateOps.increment();
             log.debug("BlobConnector: updated key={}", key);
-            return entity;
-        });
+            return Promise.of(entity);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Void> delete(UUID collectionId, String tenantId, UUID entityId) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             // Resolve key via listing  (collectionId→name is unknown here)
             String prefix = keyPrefix() + tenantId + "/";
             listObjectsWithPrefix(prefix).stream()
@@ -273,8 +281,10 @@ public class BlobStorageConnector implements StorageConnector {
                                 deleteErrors.increment();
                                 log.warn("BlobConnector: delete miss entity={}", entityId);
                             });
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -286,7 +296,7 @@ public class BlobStorageConnector implements StorageConnector {
      * @return Promise&lt;Void&gt; on success
      */
     public Promise<Void> deleteByName(String tenantId, String collectionName, UUID entityId) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String key = objectKey(tenantId, collectionName, entityId.toString());
             try {
                 s3.deleteObject(DeleteObjectRequest.builder()
@@ -297,35 +307,41 @@ public class BlobStorageConnector implements StorageConnector {
                 deleteErrors.increment();
                 log.warn("BlobConnector: delete error key={}: {}", key, e.getMessage());
             }
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<QueryResult> query(UUID collectionId, String tenantId, QuerySpec spec) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             Timer.Sample sample = Timer.start();
             try {
                 // Use collectionId as prefix segment (UUID string)
                 String prefix = keyPrefix() + tenantId + "/" + collectionId + "/";
                 List<Entity> all = loadAllEntities(prefix, tenantId, collectionId.toString());
-                return paginateResults(all, spec.getOffset(), spec.getLimit());
+                return Promise.of(paginateResults(all, spec.getOffset(), spec.getLimit()));
             } finally {
                 sample.stop(queryLatency);
             }
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<Entity>> scan(UUID collectionId, String tenantId,
                                        String filterExpression, int limit, int offset) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String prefix = keyPrefix() + tenantId + "/" + collectionId + "/";
             List<Entity> all = loadAllEntities(prefix, tenantId, collectionId.toString());
             int from = Math.min(offset, all.size());
             int to   = Math.min(offset + (limit > 0 ? limit : all.size()), all.size());
-            return all.subList(from, to);
-        });
+            return Promise.of(all.subList(from, to));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -338,18 +354,20 @@ public class BlobStorageConnector implements StorageConnector {
      * @return Promise of entities
      */
     public Promise<List<Entity>> scanByName(String tenantId, String collectionName, int limit, int offset) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String prefix = objectKey(tenantId, collectionName, "");
             List<Entity> all = loadAllEntities(prefix, tenantId, collectionName);
             int from = Math.min(offset, all.size());
             int to   = Math.min(offset + (limit > 0 ? limit : all.size()), all.size());
-            return all.subList(from, to);
-        });
+            return Promise.of(all.subList(from, to));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Long> count(UUID collectionId, String tenantId, String filterExpression) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String prefix = keyPrefix() + tenantId + "/" + collectionId + "/";
             long count = 0;
             String token = null;
@@ -361,13 +379,15 @@ public class BlobStorageConnector implements StorageConnector {
                 count += resp.keyCount();
                 token = resp.isTruncated() ? resp.nextContinuationToken() : null;
             } while (token != null);
-            return count;
-        });
+            return Promise.of(count);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<Entity>> bulkCreate(UUID collectionId, String tenantId, List<Entity> entities) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             List<Entity> created = new ArrayList<>(entities.size());
             for (Entity e : entities) {
                 if (e.getId() == null) e.setId(UUID.randomUUID());
@@ -377,8 +397,10 @@ public class BlobStorageConnector implements StorageConnector {
             }
             bulkCreateOps.increment(entities.size());
             log.debug("BlobConnector: bulk-created {} entities", entities.size());
-            return created;
-        });
+            return Promise.of(created);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -389,8 +411,8 @@ public class BlobStorageConnector implements StorageConnector {
 
     @Override
     public Promise<Long> bulkDelete(UUID collectionId, String tenantId, List<UUID> entityIds) {
-        return Promise.ofBlocking(executor, () -> {
-            if (entityIds.isEmpty()) return 0L;
+        try {
+            if (entityIds.isEmpty()) return Promise.of(0L);
             List<ObjectIdentifier> toDelete = entityIds.stream()
                     .map(id -> ObjectIdentifier.builder()
                             .key(keyPrefix() + tenantId + "/" + collectionId + "/" + id + ".json")
@@ -404,13 +426,15 @@ public class BlobStorageConnector implements StorageConnector {
             long deleted = (long) entityIds.size() - resp.errors().size();
             deleteOps.increment(deleted);
             log.debug("BlobConnector: bulk-deleted {}/{} entities", deleted, entityIds.size());
-            return deleted;
-        });
+            return Promise.of(deleted);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Long> truncate(UUID collectionId, String tenantId) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String prefix = keyPrefix() + tenantId + "/" + collectionId + "/";
             long deleted = 0;
             String token = null;
@@ -432,16 +456,20 @@ public class BlobStorageConnector implements StorageConnector {
                 token = page.isTruncated() ? page.nextContinuationToken() : null;
             } while (token != null);
             log.info("BlobConnector: truncated collection={} tenant={} count={}", collectionId, tenantId, deleted);
-            return deleted;
-        });
+            return Promise.of(deleted);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Void> healthCheck() {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             s3.headBucket(HeadBucketRequest.builder().bucket(config.getBucketName()).build());
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override

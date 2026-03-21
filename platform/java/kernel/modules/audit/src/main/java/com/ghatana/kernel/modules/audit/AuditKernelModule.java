@@ -12,6 +12,7 @@ import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.modules.audit.service.AuditServiceWrapper;
 import com.ghatana.platform.audit.AuditService;
 import io.activej.promise.Promise;
+import java.util.concurrent.ForkJoinPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +94,7 @@ public final class AuditKernelModule implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting Audit module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Start audit service wrapper
             auditServiceWrapper.start();
 
@@ -106,7 +107,7 @@ public final class AuditKernelModule implements KernelModule {
     public Promise<Void> stop() {
         log.info("Stopping Audit module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Stop audit service wrapper
             if (auditServiceWrapper != null) {
                 auditServiceWrapper.stop();

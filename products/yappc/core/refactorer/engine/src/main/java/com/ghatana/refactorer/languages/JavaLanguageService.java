@@ -1,7 +1,7 @@
 /* Licensed under Apache-2.0 */
 package com.ghatana.refactorer.languages;
 
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.refactorer.shared.FixAction;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;

@@ -1,6 +1,6 @@
 # 16. Governance & Security Hub – Deep-Dive Spec
 
-> **Status:** Planned page – no concrete implementation in CES UI yet. This spec corresponds to the Governance & Security UI section in `frontend_todo (1).md`.
+> **Status:** Planned page – no concrete implementation in Data Cloud UI yet. This spec corresponds to the Governance & Security UI section in `frontend_todo (1).md`.
 
 ---
 
@@ -118,7 +118,7 @@ For real deployments, this hub should:
 ## 7. Coherence with App Creator / Canvas & Platform
 
 - Governance settings here should apply consistently across:
-  - CES collections and workflows.
+  - Data Cloud collections and workflows.
   - SQL Workspace.
   - App Creator and AEP pipelines.
 - App and workflow canvases may surface **governance badges** that link back to details in this hub.

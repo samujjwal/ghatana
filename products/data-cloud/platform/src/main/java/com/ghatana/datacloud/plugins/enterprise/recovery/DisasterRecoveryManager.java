@@ -129,10 +129,12 @@ public class DisasterRecoveryManager {
             String regionId,
             RegionConfig config) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             regions.put(regionId, config);
-            return config;
-        });
+            return Promise.of(config);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -142,7 +144,7 @@ public class DisasterRecoveryManager {
      * @return Promise of result
      */
     public Promise<Boolean> setPrimaryRegion(String regionId) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             if (!regions.containsKey(regionId)) {
                 throw new IllegalArgumentException("Region not found: " + regionId);
             }
@@ -163,8 +165,10 @@ public class DisasterRecoveryManager {
                 failoverHistory.add(event);
             }
 
-            return true;
-        });
+            return Promise.of(true);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // --- Replication Management ---
@@ -181,7 +185,7 @@ public class DisasterRecoveryManager {
             String sourceRegion,
             List<String> targetRegions) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             ReplicationStatus status = ReplicationStatus.builder()
                     .datasetId(datasetId)
                     .sourceRegion(sourceRegion)
@@ -198,8 +202,10 @@ public class DisasterRecoveryManager {
                     .build();
             replicationStatuses.put(datasetId, status);
 
-            return status;
-        });
+            return Promise.of(status);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -218,8 +224,11 @@ public class DisasterRecoveryManager {
      * @return Promise of health report
      */
     public Promise<ReplicationHealthReport> checkReplicationHealth() {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), ()
-                -> checkReplicationHealthSync());
+        try {
+            return Promise.of(checkReplicationHealthSync());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -285,7 +294,7 @@ public class DisasterRecoveryManager {
             String datasetId,
             String label) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             String pointId = UUID.randomUUID().toString();
             String snapshotId = "snap-" + System.currentTimeMillis();
 
@@ -300,8 +309,10 @@ public class DisasterRecoveryManager {
 
             recoveryPoints.computeIfAbsent(datasetId, k -> new ArrayList<>()).add(point);
 
-            return point;
-        });
+            return Promise.of(point);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -327,7 +338,7 @@ public class DisasterRecoveryManager {
             Instant targetTime,
             String targetDatasetId) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             List<RecoveryPoint> points = recoveryPoints.getOrDefault(datasetId, List.of());
 
             // Find nearest recovery point before target time
@@ -337,16 +348,16 @@ public class DisasterRecoveryManager {
                     .orElse(null);
 
             if (nearestPoint == null) {
-                return RecoveryResult.builder()
+                return Promise.of(RecoveryResult.builder()
                         .success(false)
                         .errorMessage("No recovery point found before target time")
-                        .build();
+                        .build());
             }
 
             // Simulate recovery
             Duration recoveryTime = Duration.ofMinutes(2); // Simulated
 
-            return RecoveryResult.builder()
+            return Promise.of(RecoveryResult.builder()
                     .success(true)
                     .sourceDatasetId(datasetId)
                     .targetDatasetId(targetDatasetId)
@@ -356,8 +367,10 @@ public class DisasterRecoveryManager {
                     .recoveryDuration(recoveryTime)
                     .dataLossMinutes(
                             (int) Duration.between(nearestPoint.getCreatedAt(), targetTime).toMinutes())
-                    .build();
-        });
+                    .build());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // --- Automated Failover ---
@@ -372,7 +385,7 @@ public class DisasterRecoveryManager {
             String reason,
             String targetRegion) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             String currentPrimary = primaryRegion.get();
             Instant startTime = Instant.now();
 
@@ -382,10 +395,10 @@ public class DisasterRecoveryManager {
                     : targetRegion;
 
             if (selectedRegion == null) {
-                return FailoverResult.builder()
+                return Promise.of(FailoverResult.builder()
                         .success(false)
                         .errorMessage("No available failover target")
-                        .build();
+                        .build());
             }
 
             // Simulate failover steps
@@ -454,15 +467,17 @@ public class DisasterRecoveryManager {
 
             boolean metRTO = totalDuration.toMinutes() <= TARGET_RTO_MINUTES;
 
-            return FailoverResult.builder()
+            return Promise.of(FailoverResult.builder()
                     .success(true)
                     .fromRegion(currentPrimary)
                     .toRegion(selectedRegion)
                     .totalDuration(totalDuration)
                     .steps(steps)
                     .metRTOTarget(metRTO)
-                    .build();
-        });
+                    .build());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -472,7 +487,7 @@ public class DisasterRecoveryManager {
      * @return Promise of test result
      */
     public Promise<FailoverTestResult> testFailover(String targetRegion) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             List<String> checks = new ArrayList<>();
             List<String> warnings = new ArrayList<>();
             boolean passed = true;
@@ -511,7 +526,7 @@ public class DisasterRecoveryManager {
             // Estimate recovery time
             Duration estimatedRTO = Duration.ofMinutes(10); // Simulated
 
-            return FailoverTestResult.builder()
+            return Promise.of(FailoverTestResult.builder()
                     .testId(UUID.randomUUID().toString())
                     .targetRegion(targetRegion)
                     .passed(passed)
@@ -519,8 +534,10 @@ public class DisasterRecoveryManager {
                     .warnings(warnings)
                     .estimatedRTO(estimatedRTO)
                     .withinRTOTarget(estimatedRTO.toMinutes() <= TARGET_RTO_MINUTES)
-                    .build();
-        });
+                    .build());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // --- Runbook Management ---
@@ -550,7 +567,7 @@ public class DisasterRecoveryManager {
      * @return Promise of DR metrics
      */
     public Promise<DRMetrics> getDRMetrics() {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             // Calculate current RPO from replication lag
             Duration maxLag = Duration.ZERO;
             for (ReplicationStatus status : replicationStatuses.values()) {
@@ -571,7 +588,7 @@ public class DisasterRecoveryManager {
                 }
             }
 
-            return DRMetrics.builder()
+            return Promise.of(DRMetrics.builder()
                     .currentRPOMinutes((int) maxLag.toMinutes())
                     .targetRPOMinutes(TARGET_RPO_MINUTES)
                     .meetingRPOTarget(maxLag.toMinutes() <= TARGET_RPO_MINUTES)
@@ -582,8 +599,10 @@ public class DisasterRecoveryManager {
                     .targetReplicationLagSeconds(MAX_REPLICATION_LAG_SECONDS)
                     .totalDatasetsProtected(replicationStatuses.size())
                     .primaryRegion(primaryRegion.get())
-                    .build();
-        });
+                    .build());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // --- Private Helper Methods ---

@@ -90,8 +90,11 @@ public class RailController {
               TenantContextExtractor.RequestContext context =
                   TenantContextExtractor.extract(request);
               Map<String, Object> suggestionContext = new java.util.HashMap<>(requestBody);
-              suggestionContext.putIfAbsent(
-                  "tenantId", context.tenantId() != null ? context.tenantId() : "default");
+              if (context.tenantId() == null || context.tenantId().isBlank()) {
+                return Promise.of(
+                    ApiResponse.error(400, "BAD_REQUEST", "Missing required tenant context", null));
+              }
+              suggestionContext.putIfAbsent("tenantId", context.tenantId());
               suggestionContext.putIfAbsent(
                   "userId", context.userId() != null ? context.userId() : "anonymous");
               suggestionContext.putIfAbsent("mode", request.getQueryParameter("mode"));
@@ -109,6 +112,7 @@ public class RailController {
     if (context.tenantId() != null && !context.tenantId().isBlank()) {
       return context.tenantId();
     }
-    return "default";
+    throw new IllegalArgumentException(
+        "Missing required tenant ID in query parameters and request headers");
   }
 }

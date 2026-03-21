@@ -260,9 +260,9 @@ export function DynamicForm<T extends Record<string, unknown>>({
     fields.forEach((field) => {
       if (initialData[field.name] !== undefined) {
         const value = initialData[field.name];
-        data[field.name] = field.transform?.toForm
+        data[field.name] = (field.transform?.toForm
           ? field.transform.toForm(value)
-          : value;
+          : value) as T[keyof T];
       }
     });
 
@@ -374,10 +374,10 @@ export function DynamicForm<T extends Record<string, unknown>>({
 
       try {
         // Transform data for submission
-        const submitData: unknown = {};
+        const submitData: Record<string, unknown> = {};
         fields.forEach((field) => {
           const value = state.data[field.name];
-          submitData[field.name] = field.transform?.fromForm
+          submitData[field.name as string] = field.transform?.fromForm
             ? field.transform.fromForm(value)
             : value;
         });
@@ -403,7 +403,7 @@ export function DynamicForm<T extends Record<string, unknown>>({
         return null;
       }
 
-      const value = state.data[field.name] ?? '';
+      const value = (state.data[field.name] ?? '') as string;
       const error = state.errors[field.name];
       const showError = state.touched[field.name] && error;
       const isDisabled = state.isSubmitting || (field.disabled && field.disabled(state.data));

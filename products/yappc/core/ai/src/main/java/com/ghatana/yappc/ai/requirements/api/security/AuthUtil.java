@@ -87,7 +87,7 @@ public final class AuthUtil {
      */
     public static String getCurrentTenantId(HttpRequest request) throws AuthenticationException {
         // Tenant ID is not directly available in core UserPrincipal
-        // Extract from email domain or use a default
+        // Extract from email domain
         String email = getCurrentUser(request).getEmail();
         if (email != null && email.contains("@")) {
             String domain = email.substring(email.indexOf("@") + 1);
@@ -95,7 +95,7 @@ public final class AuthUtil {
                 return domain.replace(".local", "");
             }
         }
-        return "default";
+        throw new AuthenticationException("Unable to resolve tenant ID from user principal — email domain extraction failed");
     }
     
     /**

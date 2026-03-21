@@ -108,21 +108,19 @@ public final class PricingDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Pricing Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = true;
             log.info("Pricing Domain module started successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Pricing Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = false;
             log.info("Pricing Domain module stopped successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override

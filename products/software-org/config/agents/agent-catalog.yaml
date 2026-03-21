@@ -1,0 +1,22 @@
+# Software-Org Agent Catalog
+#
+# Defines persona-based agents for the Software-Org virtual organization simulation.
+# Extends the platform catalog with role-specific agent definitions.
+
+catalog:
+  id: "software-org"
+  name: "Software-Org Agent Catalog"
+  version: "1.0.0"
+
+  extends:
+    - "platform"
+
+  # Agent definition files relative to this directory
+  agents:
+    - "*-agent.yaml"
+
+  metadata:
+    maintainer: "software-org-team@ghatana.ai"
+    scope: "virtual-org-simulation"
+    stability: "stable"
+    priority: 200

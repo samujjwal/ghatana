@@ -24,7 +24,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.pattern Service
  * @author Ghatana Kernel Team
  * @since 1.0.0
+ * @deprecated Use {@link CrossScopeWorkflowEngine} instead. This class uses product id
+ *             strings in WorkflowContext that violate kernel purity. Scheduled for removal
+ *             after Day 10 migration.
  */
+@Deprecated(forRemoval = true)
 public class CrossProductWorkflowEngine {
 
     private final AepKernelAdapter aepAdapter;

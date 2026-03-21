@@ -9,7 +9,7 @@
  * @doc.layer frontend
  */
 
-import axios, { type AxiosInstance } from 'axios';
+import { apiClient } from '../lib/api/client';
 
 // =============================================================================
 // Types
@@ -66,31 +66,16 @@ export interface EventQueryParams {
  * @doc.pattern Service
  */
 export class EventsService {
-  private client: AxiosInstance;
-  private baseURL: string;
-
-  constructor(baseURL: string = '/api') {
-    this.baseURL = baseURL;
-    this.client = axios.create({
-      baseURL,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
   /** List events with optional filtering */
   async listEvents(params: EventQueryParams = {}): Promise<EventListResponse> {
-    const { data } = await this.client.get<EventListResponse>('/v1/events', {
-      params,
-    });
-    return data;
+    return apiClient.get<EventListResponse>('/events', { params });
   }
 
   /** Get event statistics */
   async getStats(tenantId?: string): Promise<EventStats> {
-    const { data } = await this.client.get<EventStats>('/v1/events/stats', {
+    return apiClient.get<EventStats>('/events/stats', {
       params: tenantId ? { tenantId } : {},
     });
-    return data;
   }
 
   /** Open an SSE stream for live event tailing */
@@ -101,11 +86,9 @@ export class EventsService {
     if (params.tier) search.set('tier', params.tier);
     const query = search.toString();
     return new EventSource(
-      `${this.baseURL}/v1/events/stream${query ? `?${query}` : ''}`,
+      `${import.meta.env.VITE_API_URL ?? '/api/v1'}/events/stream${query ? `?${query}` : ''}`,
     );
   }
 }
 
-export const eventsService = new EventsService(
-  import.meta.env.VITE_DC_API_URL ?? '/api',
-);
+export const eventsService = new EventsService();

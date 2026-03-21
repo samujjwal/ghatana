@@ -57,10 +57,12 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            - name: HTTP_PORT
+            - name: DATACLOUD_HTTP_PORT
               value: {{ .Values.config.httpPort | quote }}
-            - name: GRPC_PORT
+            - name: DATACLOUD_GRPC_PORT
               value: {{ .Values.config.grpcPort | quote }}
+            - name: DATACLOUD_HTTP_ENABLED
+              value: "true"
             - name: LOG_LEVEL
               value: {{ .Values.config.logLevel | quote }}
             # Kafka

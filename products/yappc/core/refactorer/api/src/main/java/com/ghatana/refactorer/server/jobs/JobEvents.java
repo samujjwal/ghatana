@@ -1,8 +1,8 @@
 package com.ghatana.refactorer.server.jobs;
 
-import com.ghatana.platform.domain.domain.event.Event;
-import com.ghatana.platform.domain.domain.event.EventId;
-import com.ghatana.platform.domain.domain.event.GEvent;
+import com.ghatana.platform.domain.event.Event;
+import com.ghatana.platform.domain.event.EventId;
+import com.ghatana.platform.domain.event.GEvent;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;

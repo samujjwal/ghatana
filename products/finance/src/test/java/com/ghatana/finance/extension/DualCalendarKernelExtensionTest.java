@@ -51,7 +51,7 @@ class DualCalendarKernelExtensionTest {
         assertEquals("dual-calendar-nepal", descriptor.getDescriptorId());
         assertEquals("Dual Calendar Support (AD/BS)", descriptor.getName());
         assertEquals("1.0.0", descriptor.getVersion());
-        assertEquals(KernelDescriptor.ComponentType.EXTENSION, descriptor.getType());
+        assertEquals(KernelDescriptor.DescriptorType.EXTENSION, descriptor.getType());
     }
 
     @Test
@@ -64,10 +64,10 @@ class DualCalendarKernelExtensionTest {
         assertEquals("calendar.dual", cap.getCapabilityId());
         assertEquals(KernelCapability.CapabilityType.DATA_MANAGEMENT, cap.getType());
 
-        assertEquals("true", cap.getMetadataValue("supports_ad"));
-        assertEquals("true", cap.getMetadataValue("supports_bs"));
-        assertEquals("nepal", cap.getMetadataValue("region"));
-        assertEquals("true", cap.getMetadataValue("conversion_supported"));
+        assertEquals("true", cap.getMetadata().get("supports_ad").toString());
+        assertEquals("true", cap.getMetadata().get("supports_bs").toString());
+        assertEquals("nepal", cap.getMetadata().get("region").toString());
+        assertEquals("true", cap.getMetadata().get("conversion_supported").toString());
     }
 
     @Test

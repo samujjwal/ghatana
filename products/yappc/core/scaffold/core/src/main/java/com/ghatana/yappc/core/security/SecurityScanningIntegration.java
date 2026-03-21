@@ -17,7 +17,7 @@
 
 package com.ghatana.yappc.core.security;
 
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.yappc.core.ci.CIPipelineSpec;
 import java.time.LocalDateTime;
 import java.util.*;

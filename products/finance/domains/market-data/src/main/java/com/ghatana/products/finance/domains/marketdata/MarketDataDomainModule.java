@@ -109,21 +109,19 @@ public final class MarketDataDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Market Data Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = true;
             log.info("Market Data Domain module started successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Market Data Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = false;
             log.info("Market Data Domain module stopped successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override

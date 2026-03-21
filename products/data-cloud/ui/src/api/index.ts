@@ -28,9 +28,6 @@ export { lineageService } from './lineage.service';
 export * from './governance.service';
 export { governanceService } from './governance.service';
 
-// Workflow (existing)
-export * from './workflow-client';
-
 // Schema (existing)
 export * from './schema.service';
 

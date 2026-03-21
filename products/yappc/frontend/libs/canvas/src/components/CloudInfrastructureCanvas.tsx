@@ -501,7 +501,7 @@ export const CloudInfrastructureCanvas: React.FC<CloudInfrastructureCanvasProps>
                                     className={`h-2 rounded-full ${complianceReport.compliantPercentage >= 80 ? 'bg-green-600' :
                                         complianceReport.compliantPercentage >= 60 ? 'bg-yellow-600' : 'bg-red-600'
                                         }`}
-                                    style={{ width: `${complianceReport.compliantPercentage}%` }}
+                                    style={{ width: `${complianceReport.compliantPercentage}%`}}
                                 />
                             </div>
 
@@ -823,7 +823,7 @@ export const CloudInfrastructureCanvas: React.FC<CloudInfrastructureCanvasProps>
                                                     <div className="w-full bg-gray-200 rounded-full h-2">
                                                         <div
                                                             className="bg-green-600 h-2 rounded-full"
-                                                            style={{ width: `${percentage}%` }}
+                                                            style={{ width: `${percentage}%`}}
                                                         />
                                                     </div>
                                                 </div>

@@ -85,4 +85,12 @@ public interface WorkflowStateStore {
      * @param runId the run identifier to delete
      */
     void delete(@NotNull String runId);
+
+    /**
+     * Stores workflow metrics for a run.
+     *
+     * @param metrics the workflow metrics to store
+     * @return a promise that completes when the metrics are stored
+     */
+    Promise<Void> storeMetrics(@NotNull Object metrics);
 }

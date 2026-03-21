@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 
 /**
@@ -36,6 +37,7 @@ public final class ConfigService {
     private final KernelContext context;
     private final ConfigManager platformConfigManager;
     private final Map<String, ConfigManager> tenantConfigManagers;
+    private final Map<String, CopyOnWriteArrayList<ConfigSource>> tenantConfigSources;
     private final Executor executor;
     private volatile boolean started = false;
 
@@ -49,6 +51,7 @@ public final class ConfigService {
         this.context = context;
         this.platformConfigManager = platformConfigManager;
         this.tenantConfigManagers = new ConcurrentHashMap<>();
+        this.tenantConfigSources = new ConcurrentHashMap<>();
         this.executor = context.getExecutor("config");
     }
 
@@ -67,6 +70,7 @@ public final class ConfigService {
     public void stop() {
         log.info("Stopping configuration service");
         tenantConfigManagers.clear();
+        tenantConfigSources.clear();
         started = false;
         log.info("Configuration service stopped");
     }
@@ -87,6 +91,12 @@ public final class ConfigService {
      * @return optional containing the value
      */
     public Optional<String> getString(String key) {
+        if (key == null) {
+            throw new NullPointerException("key cannot be null");
+        }
+        if (key.isEmpty()) {
+            return Optional.empty();
+        }
         return platformConfigManager.getString(key);
     }
 
@@ -108,6 +118,12 @@ public final class ConfigService {
      * @return optional containing the value
      */
     public Optional<Integer> getInt(String key) {
+        if (key == null) {
+            throw new NullPointerException("key cannot be null");
+        }
+        if (key.isEmpty()) {
+            return Optional.empty();
+        }
         return platformConfigManager.getInt(key);
     }
 
@@ -129,6 +145,12 @@ public final class ConfigService {
      * @return optional containing the value
      */
     public Optional<Long> getLong(String key) {
+        if (key == null) {
+            throw new NullPointerException("key cannot be null");
+        }
+        if (key.isEmpty()) {
+            return Optional.empty();
+        }
         return platformConfigManager.getLong(key);
     }
 
@@ -150,6 +172,12 @@ public final class ConfigService {
      * @return optional containing the value
      */
     public Optional<Double> getDouble(String key) {
+        if (key == null) {
+            throw new NullPointerException("key cannot be null");
+        }
+        if (key.isEmpty()) {
+            return Optional.empty();
+        }
         return platformConfigManager.getDouble(key);
     }
 
@@ -171,6 +199,12 @@ public final class ConfigService {
      * @return optional containing the value
      */
     public Optional<Boolean> getBoolean(String key) {
+        if (key == null) {
+            throw new NullPointerException("key cannot be null");
+        }
+        if (key.isEmpty()) {
+            return Optional.empty();
+        }
         return platformConfigManager.getBoolean(key);
     }
 
@@ -312,8 +346,10 @@ public final class ConfigService {
      * @param source the configuration source
      */
     public void addTenantConfigSource(String tenantId, ConfigSource source) {
-        ConfigManager tenantConfig = getTenantConfigManager(tenantId);
-        tenantConfig.addSource(source);
+        tenantConfigSources
+            .computeIfAbsent(tenantId, ignored -> new CopyOnWriteArrayList<>())
+            .add(source);
+        tenantConfigManagers.put(tenantId, createTenantConfigManager(tenantId));
         log.debug("Added config source for tenant: {}", tenantId);
     }
 
@@ -329,14 +365,14 @@ public final class ConfigService {
     // ==================== Private Methods ====================
 
     private ConfigManager getTenantConfigManager(String tenantId) {
-        return tenantConfigManagers.computeIfAbsent(tenantId, id -> {
-            // Create tenant-specific config manager that inherits platform config
-            ConfigManager tenantConfig = new ConfigManager("tenant-" + id);
-            
-            // Add platform config as base (will be overridden by tenant-specific sources)
-            platformConfigManager.getSources().forEach(tenantConfig::addSource);
-            
-            return tenantConfig;
-        });
+        return tenantConfigManagers.computeIfAbsent(tenantId, this::createTenantConfigManager);
+    }
+
+    private ConfigManager createTenantConfigManager(String tenantId) {
+        ConfigManager tenantConfig = new ConfigManager("tenant-" + tenantId);
+        tenantConfigSources.getOrDefault(tenantId, new CopyOnWriteArrayList<>())
+            .forEach(tenantConfig::addSource);
+        platformConfigManager.getSources().forEach(tenantConfig::addSource);
+        return tenantConfig;
     }
 }

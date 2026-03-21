@@ -11,6 +11,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.sql.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.*;
 import java.util.concurrent.Executor;
 
@@ -406,7 +407,6 @@ public final class FinanceIncidentManagementService {
                                 LocalDateTime.now(),
                                 reportSummary,
                                 impactAssessment.businessImpact(),
-                                "To be determined by investigation",
                                 "To be determined by investigation",
                                 List.of("Immediate containment", "Root cause investigation"),
                                 impactAssessment.estimatedFinancialLoss(),

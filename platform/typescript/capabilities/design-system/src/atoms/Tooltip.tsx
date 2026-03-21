@@ -193,21 +193,22 @@ export function Tooltip({
       ? <span>{children}</span>
       : children;
 
+  type EventHandler = ((...args: unknown[]) => void) | undefined;
   const childProps: Record<string, unknown> = {
     onMouseEnter: (event: React.MouseEvent) => {
-      (child as React.ReactElement)?.props?.onMouseEnter?.(event);
+      ((child as React.ReactElement)?.props as Record<string, EventHandler>)?.onMouseEnter?.(event);
       show();
     },
     onMouseLeave: (event: React.MouseEvent) => {
-      (child as React.ReactElement)?.props?.onMouseLeave?.(event);
+      ((child as React.ReactElement)?.props as Record<string, EventHandler>)?.onMouseLeave?.(event);
       hide();
     },
     onFocus: (event: React.FocusEvent) => {
-      (child as React.ReactElement)?.props?.onFocus?.(event);
+      ((child as React.ReactElement)?.props as Record<string, EventHandler>)?.onFocus?.(event);
       show();
     },
     onBlur: (event: React.FocusEvent) => {
-      (child as React.ReactElement)?.props?.onBlur?.(event);
+      ((child as React.ReactElement)?.props as Record<string, EventHandler>)?.onBlur?.(event);
       hide();
     },
     'aria-describedby': tooltipContent ? tooltipId : undefined,

@@ -10,6 +10,8 @@ import com.ghatana.core.event.cloud.EventTypeRef;
 import com.ghatana.core.event.cloud.Version;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.platform.domain.auth.TenantId;
+import com.ghatana.platform.types.ContentType;
+import com.ghatana.platform.types.identity.EventId;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -99,19 +102,17 @@ public final class EventStoreService {
             return Promise.ofException(new IllegalStateException("Event store service not started"));
         }
 
-        return Promise.ofBlocking(executor, () -> {
-            log.debug("Publishing event to topic: {}", topic);
+        log.debug("Publishing event to topic: {}", topic);
 
-            // Create event record
-            EventRecord event = createEventRecord(topic, null, payload);
-            
-            // Append to event cloud
-            return eventCloud.append(new EventCloud.AppendRequest(event, EventCloud.AppendOptions.defaults()))
-                .map(result -> {
-                    log.debug("Event published to partition {} offset {}", result.partitionId(), result.offset());
-                    return null;
-                });
-        }).then(Promise::of);
+        // Create event record
+        EventRecord event = createEventRecord(topic, null, payload);
+        
+        // Append to event cloud
+        return eventCloud.append(new EventCloud.AppendRequest(event, EventCloud.AppendOptions.defaults()))
+            .map(result -> {
+                log.debug("Event published to partition {} offset {}", result.partitionId(), result.offset());
+                return null;
+            });
     }
 
     /**
@@ -127,19 +128,17 @@ public final class EventStoreService {
             return Promise.ofException(new IllegalStateException("Event store service not started"));
         }
 
-        return Promise.ofBlocking(executor, () -> {
-            log.debug("Publishing event to topic: {} for tenant: {}", topic, tenantId);
+        log.debug("Publishing event to topic: {} for tenant: {}", topic, tenantId);
 
-            // Create event record with tenant
-            EventRecord event = createEventRecord(topic, tenantId, payload);
-            
-            // Append to event cloud
-            return eventCloud.append(new EventCloud.AppendRequest(event, EventCloud.AppendOptions.defaults()))
-                .map(result -> {
-                    log.debug("Event published to partition {} offset {}", result.partitionId(), result.offset());
-                    return null;
-                });
-        }).then(Promise::of);
+        // Create event record with tenant
+        EventRecord event = createEventRecord(topic, tenantId, payload);
+        
+        // Append to event cloud
+        return eventCloud.append(new EventCloud.AppendRequest(event, EventCloud.AppendOptions.defaults()))
+            .map(result -> {
+                log.debug("Event published to partition {} offset {}", result.partitionId(), result.offset());
+                return null;
+            });
     }
 
     /**
@@ -161,27 +160,25 @@ public final class EventStoreService {
             return Promise.ofException(new IllegalStateException("Event store service not started"));
         }
 
-        return Promise.ofBlocking(executor, () -> {
-            log.debug("Publishing structured event: {} category: {}", topic, category);
+        log.debug("Publishing structured event: {} category: {}", topic, category);
 
-            // Create enriched payload
-            Map<String, Object> payload = new java.util.HashMap<>();
-            payload.put("runId", runId);
-            payload.put("category", category);
-            payload.put("stepName", stepName);
-            payload.put("data", data);
-            payload.put("timestamp", timestamp.toString());
+        // Create enriched payload
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("runId", runId);
+        payload.put("category", category);
+        payload.put("stepName", stepName);
+        payload.put("data", data);
+        payload.put("timestamp", timestamp.toString());
 
-            // Create event record
-            EventRecord event = createEventRecord(topic, tenantId, payload);
-            
-            // Append to event cloud
-            return eventCloud.append(new EventCloud.AppendRequest(event, EventCloud.AppendOptions.defaults()))
-                .map(result -> {
-                    log.debug("Structured event published to partition {} offset {}", result.partitionId(), result.offset());
-                    return null;
-                });
-        }).then(Promise::of);
+        // Create event record
+        EventRecord event = createEventRecord(topic, tenantId, payload);
+        
+        // Append to event cloud
+        return eventCloud.append(new EventCloud.AppendRequest(event, EventCloud.AppendOptions.defaults()))
+            .map(result -> {
+                log.debug("Structured event published to partition {} offset {}", result.partitionId(), result.offset());
+                return null;
+            });
     }
 
     /**
@@ -195,24 +192,22 @@ public final class EventStoreService {
             return Promise.ofException(new IllegalStateException("Event store service not started"));
         }
 
-        return Promise.ofBlocking(executor, () -> {
-            log.debug("Publishing batch of {} events", events.size());
+        log.debug("Publishing batch of {} events", events.size());
 
-            // Convert to EventRecords
-            List<EventCloud.AppendRequest> requests = events.stream()
-                .map(eventData -> {
-                    EventRecord event = createEventRecord(eventData);
-                    return new EventCloud.AppendRequest(event, EventCloud.AppendOptions.defaults());
-                })
-                .toList();
+        // Convert to EventRecords
+        List<EventCloud.AppendRequest> requests = events.stream()
+            .map(eventData -> {
+                EventRecord event = createEventRecord(eventData);
+                return new EventCloud.AppendRequest(event, EventCloud.AppendOptions.defaults());
+            })
+            .toList();
 
-            // Batch append
-            return eventCloud.appendBatch(requests)
-                .map(results -> {
-                    log.debug("Batch published {} events", results.size());
-                    return null;
-                });
-        }).then(Promise::of);
+        // Batch append
+        return eventCloud.appendBatch(requests)
+            .map(results -> {
+                log.debug("Batch published {} events", results.size());
+                return null;
+            });
     }
 
     /**
@@ -229,24 +224,26 @@ public final class EventStoreService {
     private EventRecord createEventRecord(String topic, String tenantId, Map<String, Object> payload) {
         return EventRecord.builder()
             .tenantId(tenantId != null ? TenantId.of(tenantId) : TenantId.of("default"))
-            .typeRef(EventTypeRef.of(topic, Version.of("1.0.0")))
-            .eventId(com.ghatana.platform.types.identity.EventId.random())
+            .typeRef(EventTypeRef.of(topic, 1, 0))
+            .eventId(EventId.random())
             .occurrenceTime(Instant.now())
             .detectionTime(Instant.now())
             .payload(ByteBuffer.wrap(serializePayload(payload)))
-            .contentType(com.ghatana.core.event.cloud.ContentType.JSON)
+            .contentType(ContentType.JSON)
+            .schemaUri("schema://kernel/event-store/" + topic + "/v1")
             .build();
     }
 
     private EventRecord createEventRecord(EventData eventData) {
         return EventRecord.builder()
             .tenantId(eventData.tenantId() != null ? TenantId.of(eventData.tenantId()) : TenantId.of("default"))
-            .typeRef(EventTypeRef.of(eventData.topic(), Version.of("1.0.0")))
-            .eventId(com.ghatana.platform.types.identity.EventId.random())
+            .typeRef(EventTypeRef.of(eventData.topic(), 1, 0))
+            .eventId(EventId.random())
             .occurrenceTime(eventData.timestamp() != null ? eventData.timestamp() : Instant.now())
             .detectionTime(Instant.now())
             .payload(ByteBuffer.wrap(serializePayload(eventData.payload())))
-            .contentType(com.ghatana.core.event.cloud.ContentType.JSON)
+            .contentType(ContentType.JSON)
+                .schemaUri("schema://kernel/event-store/" + eventData.topic() + "/v1")
             .build();
     }
 

@@ -13,7 +13,8 @@ import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.aiplatform.featurestore.FeatureStoreService;
 import com.ghatana.aiplatform.observability.AiMetricsEmitter;
 import com.ghatana.aiplatform.registry.ModelRegistryService;
-import com.ghatana.platform.observability.NoopMetricsCollector;
+import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
@@ -157,7 +158,7 @@ public class DataCloudLauncher {
     }
 
     private static void startHttpServer(DataCloudClient client, DataCloud.DataCloudConfig config) {
-        int port = 8090;
+        int port = 8082;
         String portEnv = System.getenv("DATACLOUD_HTTP_PORT");
         if (portEnv != null) {
             port = Integer.parseInt(portEnv);
@@ -207,7 +208,10 @@ public class DataCloudLauncher {
         if ("true".equalsIgnoreCase(System.getenv("DATACLOUD_AI_ENABLED"))) {
             try {
                 DataSource aiDataSource = buildAiDataSource();
-                NoopMetricsCollector metrics = new NoopMetricsCollector();
+                io.micrometer.prometheus.PrometheusMeterRegistry promRegistry =
+                    new io.micrometer.prometheus.PrometheusMeterRegistry(
+                        io.micrometer.prometheus.PrometheusConfig.DEFAULT);
+                MetricsCollector metrics = MetricsCollectorFactory.create(promRegistry);
                 AiMetricsEmitter aiMetrics = new AiMetricsEmitter(metrics);
                 ModelRegistryService modelRegistry = new ModelRegistryService(aiDataSource, metrics);
                 aiModelManager = new AIModelManager(modelRegistry, aiMetrics);
@@ -235,7 +239,10 @@ public class DataCloudLauncher {
             DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
                     .withReportService(reportService)
                     .withAiModelManager(aiModelManager)
-                    .withFeatureStoreService(featureStoreService);
+                    .withFeatureStoreService(featureStoreService)
+                    .withMetricsCollector(MetricsCollectorFactory.create(
+                            new io.micrometer.prometheus.PrometheusMeterRegistry(
+                                    io.micrometer.prometheus.PrometheusConfig.DEFAULT)));
             httpServer.start();
             log.info("HTTP server started on port {}", port);
 

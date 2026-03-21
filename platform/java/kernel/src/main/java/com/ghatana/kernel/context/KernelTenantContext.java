@@ -57,6 +57,16 @@ public class KernelTenantContext {
     public String getTenantId() { return tenantId; }
     public TenantType getTenantType() { return tenantType; }
 
+    /**
+     * Gets the current product context for this tenant.
+     *
+     * @return the product ID if set, or null
+     */
+    public String getCurrentProduct() {
+        Object product = tenantConfig.get("product");
+        return product instanceof String ? (String) product : null;
+    }
+
     // ==================== Feature Gating ====================
 
     /**

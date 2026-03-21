@@ -7,6 +7,7 @@ package com.ghatana.yappc.api.controller;
 import com.ghatana.agent.workflow.*;
 import com.ghatana.core.activej.promise.PromiseUtils;
 import com.ghatana.yappc.api.common.ApiResponse;
+import com.ghatana.yappc.api.common.TenantContextExtractor;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -121,12 +122,18 @@ public class WorkflowAgentController {
                 }
 
                 // Build execution request
+                TenantContextExtractor.RequestContext tenantCtx =
+                    TenantContextExtractor.extract(request);
+                String tenantId = tenantCtx.tenantId();
+                if (tenantId == null || tenantId.isBlank()) {
+                  return Promise.of(ApiResponse.badRequest("Missing required X-Tenant-ID header"));
+                }
                 WorkflowAgentRequest agentRequest =
                     WorkflowAgentRequest.builder(agentId, role)
                         .itemId(itemId)
                         .input(input)
                         .priority(priority)
-                        .context(WorkflowAgentRequest.ExecutionContext.system("default"))
+                        .context(WorkflowAgentRequest.ExecutionContext.system(tenantId))
                         .build();
 
                 // Execute and return result
@@ -165,6 +172,13 @@ public class WorkflowAgentController {
                   return Promise.of(ApiResponse.badRequest("Missing or empty requests array"));
                 }
 
+                TenantContextExtractor.RequestContext tenantCtx =
+                    TenantContextExtractor.extract(request);
+                String batchTenantId = tenantCtx.tenantId();
+                if (batchTenantId == null || batchTenantId.isBlank()) {
+                  return Promise.of(ApiResponse.badRequest("Missing required X-Tenant-ID header"));
+                }
+
                 List<WorkflowAgentRequest> agentRequests = new ArrayList<>();
                 for (Map<String, Object> req : requests) {
                   String agentId = (String) req.get("agentId");
@@ -184,7 +198,7 @@ public class WorkflowAgentController {
                         WorkflowAgentRequest.builder(agentId, role)
                             .itemId(itemId)
                             .input(input)
-                            .context(WorkflowAgentRequest.ExecutionContext.system("default"))
+                            .context(WorkflowAgentRequest.ExecutionContext.system(batchTenantId))
                             .build());
                   } catch (IllegalArgumentException e) {
                     logger.warn("Skipping invalid role in batch: {}", roleCode);

@@ -153,7 +153,7 @@ export function PortalNode({ id, data, selected }: NodeProps<PortalNodeData>) {
           {/* Thumbnail preview */}
           {data.thumbnail && (
             <Box
-              className="w-full h-[80px] bg-gray-100 dark:bg-gray-800 rounded mb-2" style={{ backgroundImage: `url(${data.thumbnail }}
+              className="w-full h-[80px] bg-gray-100 dark:bg-gray-800 rounded mb-2" style={{ backgroundImage: `url(${data.thumbnail})`}}
             >
               {!data.thumbnail && <ImageIcon color="disabled" />}
             </Box>

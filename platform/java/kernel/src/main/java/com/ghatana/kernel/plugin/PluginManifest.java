@@ -28,6 +28,7 @@ public final class PluginManifest {
     private final String description;
     private final String author;
     private final String license;
+    private final String mainClass;
     private final Set<KernelCapability> capabilities;
     private final Set<KernelDependency> dependencies;
     private final Set<String> requiredKernelVersions;
@@ -39,6 +40,7 @@ public final class PluginManifest {
         this.description = builder.description != null ? builder.description : "";
         this.author = builder.author != null ? builder.author : "Unknown";
         this.license = builder.license != null ? builder.license : "Unknown";
+        this.mainClass = builder.mainClass;
         this.capabilities = Set.copyOf(builder.capabilities);
         this.dependencies = Set.copyOf(builder.dependencies);
         this.requiredKernelVersions = Set.copyOf(builder.requiredKernelVersions);
@@ -51,6 +53,7 @@ public final class PluginManifest {
     public String getDescription() { return description; }
     public String getAuthor() { return author; }
     public String getLicense() { return license; }
+    public String getMainClass() { return mainClass; }
     public Set<KernelCapability> getCapabilities() { return capabilities; }
     public Set<KernelDependency> getDependencies() { return dependencies; }
     public Set<String> getRequiredKernelVersions() { return requiredKernelVersions; }
@@ -96,6 +99,7 @@ public final class PluginManifest {
         private String description;
         private String author;
         private String license;
+        private String mainClass;
         private Set<KernelCapability> capabilities = new HashSet<>();
         private Set<KernelDependency> dependencies = new HashSet<>();
         private Set<String> requiredKernelVersions = new HashSet<>();
@@ -123,6 +127,11 @@ public final class PluginManifest {
 
         public Builder license(String license) {
             this.license = license;
+            return this;
+        }
+
+        public Builder mainClass(String mainClass) {
+            this.mainClass = mainClass;
             return this;
         }
 

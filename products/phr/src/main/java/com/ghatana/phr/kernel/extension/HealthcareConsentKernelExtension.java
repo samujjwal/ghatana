@@ -51,8 +51,10 @@ public class HealthcareConsentKernelExtension implements KernelExtension {
     @Override
     public KernelDescriptor getDescriptor() {
         return new KernelDescriptor.Builder()
-            .withKernelId(EXTENSION_ID)
+            .withDescriptorId(EXTENSION_ID)
+            .withName(NAME)
             .withVersion(VERSION)
+            .withType(KernelDescriptor.DescriptorType.EXTENSION)
             .withCapability(KernelCapability.Core.SECURITY_FRAMEWORK)
             .build();
     }

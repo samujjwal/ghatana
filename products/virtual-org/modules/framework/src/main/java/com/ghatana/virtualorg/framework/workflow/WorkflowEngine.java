@@ -1,6 +1,6 @@
 package com.ghatana.virtualorg.framework.workflow;
 
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import com.ghatana.virtualorg.framework.agent.OrganizationalAgent;
 
 import java.time.Instant;

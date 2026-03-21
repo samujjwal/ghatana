@@ -193,7 +193,7 @@ public class SecurityTestService {
       Process process = pb.start();
 
       try (BufferedReader reader =
-               new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+          new BufferedReader(new InputStreamReader(process.getInputStream()))) {
         String line;
         while ((line = reader.readLine()) != null) {
           if (line.contains("\"severity\":")) {
@@ -232,7 +232,7 @@ public class SecurityTestService {
       Process process = pb.start();
 
       try (BufferedReader reader =
-               new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+          new BufferedReader(new InputStreamReader(process.getInputStream()))) {
         // Parse safety check output
       }
 

@@ -234,38 +234,36 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
 
         logger.info("Connecting to central: {}", config.centralUrl());
 
-        return Promise.ofBlocking(syncExecutor, () -> {
-            try {
-                Boolean result = centralConnection.connect(config.centralUrl(), config.edgeId()).getResult();
-                if (Boolean.TRUE.equals(result)) {
-                    connected.set(true);
-                    mode.set(EdgeMode.CONNECTED);
-                    lastHeartbeat = Instant.now();
-                    
-                    // Notify hooks
-                    hooks.values().forEach(h -> {
-                        try {
-                            h.onConnect();
-                        } catch (Exception e) {
-                            logger.warn("Hook onConnect failed", e);
-                        }
-                    });
+        try {
+            Boolean result = centralConnection.connect(config.centralUrl(), config.edgeId()).getResult();
+            if (Boolean.TRUE.equals(result)) {
+                connected.set(true);
+                mode.set(EdgeMode.CONNECTED);
+                lastHeartbeat = Instant.now();
+                
+                // Notify hooks
+                hooks.values().forEach(h -> {
+                    try {
+                        h.onConnect();
+                    } catch (Exception e) {
+                        logger.warn("Hook onConnect failed", e);
+                    }
+                });
 
-                    // Trigger initial sync
-                    syncNow(SyncDirection.BIDIRECTIONAL);
+                // Trigger initial sync
+                syncNow(SyncDirection.BIDIRECTIONAL);
 
-                    logger.info("Connected to central Data-Cloud");
-                } else {
-                    logger.warn("Failed to connect to central");
-                    mode.set(EdgeMode.DISCONNECTED);
-                }
-            } catch (Exception e) {
-                logger.error("Error connecting to central", e);
+                logger.info("Connected to central Data-Cloud");
+            } else {
+                logger.warn("Failed to connect to central");
                 mode.set(EdgeMode.DISCONNECTED);
-                throw e;
             }
-            return null;
-        });
+        } catch (Exception e) {
+            logger.error("Error connecting to central", e);
+            mode.set(EdgeMode.DISCONNECTED);
+            return Promise.ofException(e);
+        }
+        return Promise.complete();
     }
 
     @Override
@@ -276,7 +274,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
 
         logger.info("Disconnecting from central (graceful={})", graceful);
 
-        return Promise.ofBlocking(syncExecutor, () -> {
+        try {
             if (graceful) {
                 // Flush pending uploads
                 try {
@@ -304,8 +302,10 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             });
 
             logger.info("Disconnected from central");
-            return null;
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
+        return Promise.complete();
     }
 
     @Override
@@ -384,84 +384,84 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             }
         });
 
-        return Promise.ofBlocking(syncExecutor, () -> {
-            Instant startTime = Instant.now();
-            long entriesSynced = 0;
-            long bytesSynced = 0;
-            long conflictsDetected = 0;
-            long conflictsResolvedLocal = 0;
-            String errorMessage = null;
-            boolean success = true;
+        Instant startTime = Instant.now();
+        long entriesSynced = 0;
+        long bytesSynced = 0;
+        long conflictsDetected = 0;
+        long conflictsResolvedLocal = 0;
+        String errorMessage = null;
+        boolean success = true;
 
-            try {
-                if (!connected.get() || centralConnection == null) {
-                    // Offline - queue changes for later
-                    logger.debug("Offline sync - changes queued");
-                    return createSyncEvent(direction, 0, 0, 0, 0, startTime, true, null);
-                }
-
-                // Upload
-                if (direction == SyncDirection.UPLOAD || direction == SyncDirection.BIDIRECTIONAL) {
-                    SyncResult uploadResult = performUpload();
-                    entriesSynced += uploadResult.entriesSynced;
-                    bytesSynced += uploadResult.bytesSynced;
-                }
-
-                // Download
-                if (direction == SyncDirection.DOWNLOAD || direction == SyncDirection.BIDIRECTIONAL) {
-                    SyncResult downloadResult = performDownload();
-                    entriesSynced += downloadResult.entriesSynced;
-                    bytesSynced += downloadResult.bytesSynced;
-                    conflictsDetected += downloadResult.conflictsDetected;
-                    conflictsResolvedLocal += downloadResult.conflictsResolved;
-                }
-
-                lastSyncTime = Instant.now();
-                totalSynced += entriesSynced;
-                conflictsResolved += conflictsResolvedLocal;
-
-                if (syncSuccessCounter != null) {
-                    syncSuccessCounter.increment();
-                }
-
-            } catch (Exception e) {
-                success = false;
-                errorMessage = e.getMessage();
-                logger.error("Sync failed", e);
-
-                if (syncFailureCounter != null) {
-                    syncFailureCounter.increment();
-                }
-
-                // Notify hooks
-                for (EdgeHook hook : hooks.values()) {
-                    try {
-                        hook.onSyncFailure(direction, e);
-                    } catch (Exception he) {
-                        logger.warn("Hook onSyncFailure failed", he);
-                    }
-                }
+        try {
+            if (!connected.get() || centralConnection == null) {
+                // Offline - queue changes for later
+                logger.debug("Offline sync - changes queued");
+                EdgeSyncEvent offlineEvent = createSyncEvent(direction, 0, 0, 0, 0, startTime, true, null);
+                recordSyncHistory(offlineEvent);
+                return Promise.of(offlineEvent);
             }
 
-            EdgeSyncEvent event = createSyncEvent(
-                direction, entriesSynced, bytesSynced,
-                conflictsDetected, conflictsResolvedLocal,
-                startTime, success, errorMessage
-            );
+            // Upload
+            if (direction == SyncDirection.UPLOAD || direction == SyncDirection.BIDIRECTIONAL) {
+                SyncResult uploadResult = performUpload();
+                entriesSynced += uploadResult.entriesSynced;
+                bytesSynced += uploadResult.bytesSynced;
+            }
 
-            recordSyncHistory(event);
+            // Download
+            if (direction == SyncDirection.DOWNLOAD || direction == SyncDirection.BIDIRECTIONAL) {
+                SyncResult downloadResult = performDownload();
+                entriesSynced += downloadResult.entriesSynced;
+                bytesSynced += downloadResult.bytesSynced;
+                conflictsDetected += downloadResult.conflictsDetected;
+                conflictsResolvedLocal += downloadResult.conflictsResolved;
+            }
+
+            lastSyncTime = Instant.now();
+            totalSynced += entriesSynced;
+            conflictsResolved += conflictsResolvedLocal;
+
+            if (syncSuccessCounter != null) {
+                syncSuccessCounter.increment();
+            }
+
+        } catch (Exception e) {
+            success = false;
+            errorMessage = e.getMessage();
+            logger.error("Sync failed", e);
+
+            if (syncFailureCounter != null) {
+                syncFailureCounter.increment();
+            }
 
             // Notify hooks
             for (EdgeHook hook : hooks.values()) {
                 try {
-                    hook.afterSync(event);
-                } catch (Exception e) {
-                    logger.warn("Hook afterSync failed", e);
+                    hook.onSyncFailure(direction, e);
+                } catch (Exception he) {
+                    logger.warn("Hook onSyncFailure failed", he);
                 }
             }
+        }
 
-            return event;
-        });
+        EdgeSyncEvent event = createSyncEvent(
+            direction, entriesSynced, bytesSynced,
+            conflictsDetected, conflictsResolvedLocal,
+            startTime, success, errorMessage
+        );
+
+        recordSyncHistory(event);
+
+        // Notify hooks
+        for (EdgeHook hook : hooks.values()) {
+            try {
+                hook.afterSync(event);
+            } catch (Exception e) {
+                logger.warn("Hook afterSync failed", e);
+            }
+        }
+
+        return Promise.of(event);
     }
 
     private record SyncResult(long entriesSynced, long bytesSynced, long conflictsDetected, long conflictsResolved) {}
@@ -753,7 +753,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
 
         logger.info("Prefetching {} keys", keys.size());
         
-        return Promise.ofBlocking(syncExecutor, () -> {
+        try {
             for (String key : keys) {
                 if (!localStorage.containsKey(key)) {
                     pendingDownload.offer(key);
@@ -761,8 +761,10 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             }
             // Trigger sync
             syncNow(SyncDirection.DOWNLOAD);
-            return null;
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
+        return Promise.complete();
     }
 
     @Override

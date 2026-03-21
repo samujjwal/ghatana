@@ -1,6 +1,6 @@
 package com.ghatana.core.operator.adapter;
 
-import com.ghatana.platform.domain.domain.event.*;
+import com.ghatana.platform.domain.event.*;
 import com.ghatana.platform.workflow.operator.*;
 import com.ghatana.platform.types.identity.OperatorId;
 import com.ghatana.platform.testing.activej.EventloopTestBase;

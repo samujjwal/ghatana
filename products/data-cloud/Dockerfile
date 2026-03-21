@@ -74,8 +74,14 @@ ENV DATACLOUD_METRICS_ENABLED=true
 ENV DB_HOST=postgres
 ENV DB_PORT=5432
 ENV DB_NAME=datacloud
-ENV DB_USER=datacloud
-ENV DB_PASSWORD=changeme
+# DB_USER and DB_PASSWORD must be provided at runtime via secrets.
+# Do NOT set default credentials in the image.
+
+# Enable HTTP server by default in container mode
+ENV DATACLOUD_HTTP_ENABLED=true
+
+# CORS — restrict to known frontend origins; override in deployment
+ENV DATACLOUD_CORS_ALLOWED_ORIGINS=""
 
 # Kafka (event log)
 ENV KAFKA_BOOTSTRAP_SERVERS=kafka:9092

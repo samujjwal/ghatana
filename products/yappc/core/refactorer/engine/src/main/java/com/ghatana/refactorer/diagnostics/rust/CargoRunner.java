@@ -2,7 +2,7 @@ package com.ghatana.refactorer.diagnostics.rust;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import com.ghatana.refactorer.shared.process.ProcessRunner;
 import com.ghatana.refactorer.shared.util.JsonSupport;

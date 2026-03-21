@@ -8,8 +8,12 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequ
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
+
+import com.ghatana.kernel.util.JsonUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -273,7 +277,7 @@ public class AppointmentService {
             Map.of("retention", "1year")
         )).whenException(e -> {});
 
-        return Promise.all(appointments, slots).map($ -> null);
+        return Promises.all(List.of(appointments, slots));
     }
 
     private Promise<Boolean> checkSlotAvailability(String slotId) {

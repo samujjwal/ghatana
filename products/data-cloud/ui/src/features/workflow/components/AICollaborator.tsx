@@ -8,7 +8,7 @@ import { workflowAtom, nodesAtom } from '@/stores/workflow.store';
  *
  * <p><b>Purpose</b><br>
  * Enables the workflow designer to receive step-by-step plan suggestions,
- * auto-remediations, and template generation from CES orchestration agents.
+ * auto-remediations, and template generation from Data Cloud orchestration agents.
  * Simplifies complex workflow authoring with real-time agent collaboration.
  *
  * <p><b>Usage</b><br>

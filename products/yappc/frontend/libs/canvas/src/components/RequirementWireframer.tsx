@@ -273,7 +273,7 @@ export const RequirementWireframer: React.FC<RequirementWireframerProps> = ({
                                 <Button
                                     startIcon={<ScreenIcon />}
                                     onClick={() => setActiveTab('elements')}
-                                    className="rounded-none border-blue-600 px-6" style={{ borderBottom: activeTab === 'elements' ? 2 : 0, gridTemplateColumns: 'repeat(auto-fill }}
+                                    className="rounded-none border-blue-600 px-6" style={{ borderBottom: activeTab === 'elements' ? 2 : 0 }}
                                     color={activeTab === 'elements' ? 'primary' : 'inherit'}
                                 >
                                     Elements ({elements.length})
@@ -300,7 +300,7 @@ export const RequirementWireframer: React.FC<RequirementWireframerProps> = ({
                             <Box className="flex-1 overflow-auto p-4">
                                 {/* Elements Tab */}
                                 {activeTab === 'elements' && (
-                                    <Box cl'repeat(auto-fill */>
+                                    <Box className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
                                         {elements.map(element => (
                                             <Card variant="outlined" key={element.id}>
                                                 <CardContent>
@@ -423,7 +423,7 @@ export const RequirementWireframer: React.FC<RequirementWireframerProps> = ({
                                                     </Box>
                                                 </Box>
 
-                                                <Typography as="span" className="text-xs text-gray-500" color="text.secondary" display="block" className="mb-2">
+                                                <Typography as="span" className="text-xs text-gray-500 mb-2" color="text.secondary" display="block">
                                                     Step {simulation.currentStep + 1} of {flow.length}
                                                 </Typography>
 

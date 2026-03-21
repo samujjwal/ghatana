@@ -1,5 +1,5 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
@@ -8,7 +8,14 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": false,
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": false,
+    "declaration": true,
+    "declarationMap": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmitOnError": false
   },
   "include": [
     "src/**/*"

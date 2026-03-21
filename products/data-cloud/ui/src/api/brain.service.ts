@@ -9,7 +9,7 @@
  * @doc.layer frontend
  */
 
-import axios, { AxiosInstance } from 'axios';
+import { apiClient } from '../lib/api/client';
 
 export interface SalienceScore {
   score: number;
@@ -102,64 +102,48 @@ export interface BrainStats {
  * Brain API Client
  */
 export class BrainService {
-  private client: AxiosInstance;
-
-  constructor(baseURL: string = '/api') {
-    this.client = axios.create({
-      baseURL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-  }
-
   // ==================== Workspace & Spotlight ====================
 
   /**
    * Fetch current GlobalWorkspace spotlight entries
    */
   async getSpotlight(): Promise<SpotlightItem[]> {
-    const response = await this.client.get<SpotlightItem[]>('/v1/brain/workspace');
-    return response.data;
+    return apiClient.get<SpotlightItem[]>('/brain/workspace');
   }
 
   /**
    * Elevate salience of an item in the workspace
    */
   async broadcastEmergency(item: Partial<SpotlightItem>): Promise<SpotlightItem> {
-    const response = await this.client.post<SpotlightItem>('/v1/brain/attention/elevate', item);
-    return response.data;
+    return apiClient.post<SpotlightItem>('/brain/attention/elevate', item);
   }
 
   /**
    * Get brain statistics
    */
   async getBrainStats(): Promise<BrainStats> {
-    const response = await this.client.get<BrainStats>('/v1/brain/stats');
-    return response.data;
+    return apiClient.get<BrainStats>('/brain/stats');
   }
 
   /**
    * Get current attention thresholds
    */
   async getAttentionThresholds(): Promise<{ elevation: number; emergency: number }> {
-    const response = await this.client.get<{ elevation: number; emergency: number }>('/v1/brain/attention/thresholds');
-    return response.data;
+    return apiClient.get<{ elevation: number; emergency: number }>('/brain/attention/thresholds');
   }
 
   /**
    * Update attention thresholds
    */
   async updateAttentionThresholds(thresholds: { elevation?: number; emergency?: number }): Promise<void> {
-    await this.client.put('/v1/brain/attention/thresholds', thresholds);
+    await apiClient.put<void>('/brain/attention/thresholds', thresholds);
   }
 
   /**
    * Get salience score for a specific item
    */
   async getSalienceScore(itemId: string): Promise<SalienceScore> {
-    const response = await this.client.get<SalienceScore>(`/v1/brain/salience/${itemId}`);
-    return response.data;
+    return apiClient.get<SalienceScore>(`/brain/salience/${itemId}`);
   }
 
   // ==================== Autonomy ====================
@@ -171,18 +155,16 @@ export class BrainService {
     domain?: string,
     limit: number = 50
   ): Promise<AutonomyAction[]> {
-    const response = await this.client.get<AutonomyAction[]>('/v1/brain/autonomy/timeline', {
+    return apiClient.get<AutonomyAction[]>('/brain/autonomy/timeline', {
       params: { domain, limit },
     });
-    return response.data;
   }
 
   /**
    * Get autonomy state for a domain
    */
   async getAutonomyState(domain: string): Promise<AutonomyState> {
-    const response = await this.client.get<AutonomyState>(`/v1/brain/autonomy/state/${domain}`);
-    return response.data;
+    return apiClient.get<AutonomyState>(`/brain/autonomy/state/${domain}`);
   }
 
   /**
@@ -192,11 +174,10 @@ export class BrainService {
     domain: string,
     policy: Partial<AutonomyState>
   ): Promise<AutonomyState> {
-    const response = await this.client.put<AutonomyState>(
-      `/v1/brain/autonomy/policy/${domain}`,
+    return apiClient.put<AutonomyState>(
+      `/brain/autonomy/policy/${domain}`,
       policy
     );
-    return response.data;
   }
 
   // ==================== Memory ====================
@@ -205,18 +186,16 @@ export class BrainService {
    * Recall episodic memory (delegates to memory plane)
    */
   async recallMemory(query: string, tier?: string): Promise<MemoryRecall[]> {
-    const response = await this.client.get<MemoryRecall[]>('/v1/memory/recall', {
+    return apiClient.get<MemoryRecall[]>('/memory/recall', {
       params: { query, tier },
     });
-    return response.data;
   }
 
   /**
    * Store memory entry
    */
   async storeMemory(memory: Partial<MemoryRecall>): Promise<MemoryRecall> {
-    const response = await this.client.post<MemoryRecall>('/v1/memory/store', memory);
-    return response.data;
+    return apiClient.post<MemoryRecall>('/memory/store', memory);
   }
 
   // ==================== Patterns ====================
@@ -225,16 +204,14 @@ export class BrainService {
    * Match patterns via ReflexEngine
    */
   async matchPatterns(data: Record<string, unknown>): Promise<PatternMatch[]> {
-    const response = await this.client.post<PatternMatch[]>('/v1/brain/patterns/match', data);
-    return response.data;
+    return apiClient.post<PatternMatch[]>('/brain/patterns/match', data);
   }
 
   /**
    * Get all patterns from PatternCatalog
    */
   async getPatterns(): Promise<PatternMatch[]> {
-    const response = await this.client.get<PatternMatch[]>('/v1/brain/patterns');
-    return response.data;
+    return apiClient.get<PatternMatch[]>('/brain/patterns');
   }
 
   // ==================== Feedback & Learning ====================
@@ -243,18 +220,16 @@ export class BrainService {
    * Submit feedback event
    */
   async submitFeedback(feedback: FeedbackEvent): Promise<LearningSignal> {
-    const response = await this.client.post<LearningSignal>('/v1/learning/trigger', feedback);
-    return response.data;
+    return apiClient.post<LearningSignal>('/learning/trigger', feedback);
   }
 
   /**
    * Get learning signals
    */
   async getLearningSignals(limit: number = 50): Promise<LearningSignal[]> {
-    const response = await this.client.get<LearningSignal[]>('/v1/learning/status', {
+    return apiClient.get<LearningSignal[]>('/learning/status', {
       params: { limit },
     });
-    return response.data;
   }
 }
 

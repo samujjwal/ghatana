@@ -1,10 +1,10 @@
 /**
- * @ghatana/utils
+ * @ghatana/platform-utils
  *
  * Shared utility functions for Ghatana platform
  * Consolidated from DCMAAR and YAPPC
  *
- * @package @ghatana/utils
+ * @package @ghatana/platform-utils
  * @version 0.1.0
  */
 

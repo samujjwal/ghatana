@@ -1,6 +1,6 @@
 # 13. Lineage Explorer Page – Deep-Dive Spec
 
-> **Status:** Planned page – no concrete implementation in CES UI yet. This spec describes the lineage explorer called out in `frontend_todo (1).md`.
+> **Status:** Planned page – no concrete implementation in Data Cloud UI yet. This spec describes the lineage explorer called out in `frontend_todo (1).md`.
 
 ---
 

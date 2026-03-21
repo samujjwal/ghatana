@@ -1,6 +1,6 @@
 package com.ghatana.aiplatform.adapters.guardian;
 
-import com.ghatana.platform.domain.domain.models.agent.AgentInfo;
+import com.ghatana.platform.domain.models.agent.AgentInfo;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

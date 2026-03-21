@@ -9,7 +9,7 @@
  * @doc.layer frontend
  */
 
-import axios, { type AxiosInstance } from 'axios';
+import { apiClient } from '../lib/api/client';
 
 // =============================================================================
 // Types
@@ -58,31 +58,20 @@ export interface MemoryConsolidationStatus {
  * @doc.pattern Service
  */
 export class MemoryService {
-  private client: AxiosInstance;
-
-  constructor(baseURL: string = '/api') {
-    this.client = axios.create({
-      baseURL,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
   /** Get memory summary (count per tier) for an agent */
   async getAgentMemorySummary(agentId: string, tenantId?: string): Promise<Record<string, number>> {
-    const { data } = await this.client.get<Record<string, number>>(
-      `/v1/memory/${agentId}`,
+    return apiClient.get<Record<string, number>>(
+      `/memory/${agentId}`,
       { params: tenantId ? { tenantId } : {} },
     );
-    return data;
   }
 
   /** List memory items for an agent by tier */
   async listMemoryByTier(agentId: string, tier: MemoryType, params: { limit?: number; offset?: number; tenantId?: string } = {}): Promise<MemoryItem[]> {
-    const { data } = await this.client.get<MemoryItem[]>(
-      `/v1/memory/${agentId}/${tier.toLowerCase()}`,
+    return apiClient.get<MemoryItem[]>(
+      `/memory/${agentId}/${tier.toLowerCase()}`,
       { params },
     );
-    return data;
   }
 
   /** List memory items for an agent/tenant (all tiers) */
@@ -95,39 +84,34 @@ export class MemoryService {
       // Default to episodic if no type specified
       return this.listMemoryByTier(agentId, 'EPISODIC', rest);
     }
-    const { data } = await this.client.get<MemoryItem[]>('/v1/memory', { params });
-    return data;
+    return apiClient.get<MemoryItem[]>('/memory', { params });
   }
 
   /** Delete a memory item */
   async deleteMemoryItem(agentId: string, memoryId: string): Promise<void> {
-    await this.client.delete(`/v1/memory/${agentId}/${memoryId}`);
+    await apiClient.delete<void>(`/memory/${agentId}/${memoryId}`);
   }
 
   /** Mark a memory item as retained (bypass decay) */
   async retainMemoryItem(agentId: string, memoryId: string): Promise<void> {
-    await this.client.put(`/v1/memory/${agentId}/${memoryId}/retain`);
+    await apiClient.put<void>(`/memory/${agentId}/${memoryId}/retain`);
   }
 
   /** Semantic search across agent memory */
   async searchMemory(agentId: string, query: string, tenantId?: string): Promise<MemoryItem[]> {
-    const { data } = await this.client.post<MemoryItem[]>(
-      `/v1/memory/${agentId}/search`,
+    return apiClient.post<MemoryItem[]>(
+      `/memory/${agentId}/search`,
       { query, tenantId },
     );
-    return data;
   }
 
   /** Get consolidation status */
   async getConsolidationStatus(tenantId?: string): Promise<MemoryConsolidationStatus> {
-    const { data } = await this.client.get<MemoryConsolidationStatus>(
-      '/v1/learning/status',
+    return apiClient.get<MemoryConsolidationStatus>(
+      '/learning/status',
       { params: tenantId ? { tenantId } : {} },
     );
-    return data;
   }
 }
 
-export const memoryService = new MemoryService(
-  import.meta.env.VITE_DC_API_URL ?? '/api',
-);
+export const memoryService = new MemoryService();

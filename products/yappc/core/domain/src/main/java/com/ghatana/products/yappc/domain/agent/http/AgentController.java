@@ -201,6 +201,21 @@ public final class AgentController {
      * Executes an agent with the provided input.
      */
     public Promise<HttpResponse> executeAgent(HttpRequest request) {
+        // Validate required tenant headers before any other processing
+        String tenantHeader = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
+        String orgHeader = request.getHeader(HttpHeaders.of("X-Organization-ID"));
+        String workspaceHeader = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
+
+        if (tenantHeader == null || tenantHeader.isBlank()) {
+            return Promise.of(badRequest("Missing required X-Tenant-ID header"));
+        }
+        if (orgHeader == null || orgHeader.isBlank()) {
+            return Promise.of(badRequest("Missing required X-Organization-ID header"));
+        }
+        if (workspaceHeader == null || workspaceHeader.isBlank()) {
+            return Promise.of(badRequest("Missing required X-Workspace-ID header"));
+        }
+
         Optional<String> agentNameOpt = extractAgentName(request.getPath());
 
         if (agentNameOpt.isEmpty()) {
@@ -679,11 +694,14 @@ public final class AgentController {
     private AIAgentContext extractContext(HttpRequest request, JsonNode inputNode) {
         String userId = Optional.ofNullable(request.getHeader(HttpHeaders.of("X-User-ID"))).orElse("anonymous");
         String workspaceId = Optional.ofNullable(getStringField(inputNode, "workspaceId"))
-            .orElse(Optional.ofNullable(request.getHeader(HttpHeaders.of("X-Workspace-ID"))).orElse("default"));
+            .orElse(Optional.ofNullable(request.getHeader(HttpHeaders.of("X-Workspace-ID")))
+                .orElseThrow(() -> new IllegalArgumentException("Missing required X-Workspace-ID header or workspaceId field")));
         String requestId = Optional.ofNullable(request.getHeader(HttpHeaders.of("X-Request-ID")))
             .orElse(UUID.randomUUID().toString());
-        String tenantId = Optional.ofNullable(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).orElse("default");
-        String organizationId = Optional.ofNullable(request.getHeader(HttpHeaders.of("X-Organization-ID"))).orElse("default");
+        String tenantId = Optional.ofNullable(request.getHeader(HttpHeaders.of("X-Tenant-ID")))
+            .orElseThrow(() -> new IllegalArgumentException("Missing required X-Tenant-ID header"));
+        String organizationId = Optional.ofNullable(request.getHeader(HttpHeaders.of("X-Organization-ID")))
+            .orElseThrow(() -> new IllegalArgumentException("Missing required X-Organization-ID header"));
 
         Set<String> permissions = Optional.ofNullable(request.getHeader(HttpHeaders.of("X-Permissions")))
             .map(v -> Arrays.stream(v.split(","))

@@ -153,7 +153,7 @@ export function OutlinePanel({
       </Box>
 
       {/* Search */}
-      <Box style={{ padding: SPACING.MD, borderBottom: `1px solid ${COLORS.BORDER_LIGHT}` }}>
+      <Box style={{ padding: SPACING.MD, borderBottom: `1px solid ${COLORS.BORDER_LIGHT}`}}>
         <TextField
           fullWidth
           size="small"

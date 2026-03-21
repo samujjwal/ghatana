@@ -2,6 +2,8 @@ package com.ghatana.finance.ai;
 
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.api.OutputGenerator;
+import com.ghatana.agent.framework.memory.Episode;
+import com.ghatana.agent.framework.memory.MemoryFilter;
 import com.ghatana.agent.framework.runtime.BaseAgent;
 import io.activej.promise.Promise;
 
@@ -151,16 +153,14 @@ public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessme
      */
     @Override
     protected Promise<Void> capture(PortfolioUpdate input, RiskAssessmentResult output, AgentContext context) {
-        RiskEpisode episode = RiskEpisode.builder()
+        Episode episode = Episode.builder()
             .agentId(getAgentId())
-            .portfolioId(input.getPortfolioId())
-            .inputFeatures(input.getRiskFeatures())
-            .outputResult(output)
-            .marketConditions(getMarketConditions())
+            .input(input.getPortfolioId())
+            .output(output.toString())
             .timestamp(Instant.now())
             .build();
 
-        return context.getMemoryStore().storeEpisode(episode);
+        return context.getMemoryStore().storeEpisode(episode).toVoid();
     }
 
     /**
@@ -181,7 +181,7 @@ public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessme
      */
     @Override
     protected Promise<Void> reflect(PortfolioUpdate input, RiskAssessmentResult output, AgentContext context) {
-        return context.getMemoryStore().getRecentEpisodes(getAgentId(), 50)
+        return context.getMemoryStore().queryEpisodes(MemoryFilter.builder().agentId(getAgentId()).build(), 50)
             .then(episodes -> riskPatternEngine.extractPatterns(episodes))
             .then(patterns -> {
                 if (patterns.getConfidence() > 0.7) {
@@ -288,7 +288,7 @@ public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessme
      * Risk pattern extraction engine.
      */
     public interface RiskPatternEngine {
-        Promise<RiskPatterns> extractPatterns(java.util.List<RiskEpisode> episodes);
+        Promise<RiskPatterns> extractPatterns(java.util.List<Episode> episodes);
     }
 
     /**

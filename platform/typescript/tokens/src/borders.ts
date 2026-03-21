@@ -41,6 +41,10 @@ export const componentRadius = {
   checkbox: borderRadius.xs,
   radio: borderRadius.full,
   switch: borderRadius.full,
+  // Size aliases for ergonomic access (e.g. componentRadius.md)
+  sm: borderRadius.sm,
+  md: borderRadius.md,
+  lg: borderRadius.lg,
 } as const;
 
 // Shape variants for different design systems

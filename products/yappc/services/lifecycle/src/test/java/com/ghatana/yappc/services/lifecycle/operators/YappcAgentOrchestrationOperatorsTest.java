@@ -4,8 +4,8 @@
  */
 package com.ghatana.yappc.services.lifecycle.operators;
 
-import com.ghatana.platform.domain.domain.event.Event;
-import com.ghatana.platform.domain.domain.event.GEvent;
+import com.ghatana.platform.domain.event.Event;
+import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.workflow.operator.OperatorResult;
 import com.ghatana.yappc.agent.YappcAgentSystem;

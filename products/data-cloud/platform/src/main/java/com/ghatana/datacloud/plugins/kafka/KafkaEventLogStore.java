@@ -188,12 +188,16 @@ public class KafkaEventLogStore implements EventLogStore {
 
     @Override
     public Promise<Offset> append(TenantContext tenant, EventEntry entry) {
-        return Promise.ofBlocking(blockingExecutor, () -> doAppend(tenant, entry));
+        try {
+            return Promise.of(doAppend(tenant, entry));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<Offset>> appendBatch(TenantContext tenant, List<EventEntry> entries) {
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             String topic = topicFor(tenant.tenantId());
             ensureTopicExists(topic);
 
@@ -212,14 +216,16 @@ public class KafkaEventLogStore implements EventLogStore {
                     offsets.add(Offset.of(meta.offset()));
                     appendCounter.increment();
                 }
-                return offsets;
+                return Promise.of(offsets);
             } catch (Exception e) {
                 producer.abortTransaction();
                 appendErrorCounter.increment();
                 log.error("appendBatch failed for tenant={}", tenant.tenantId(), e);
-                throw new RuntimeException("Kafka appendBatch failed", e);
+                return Promise.ofException(new RuntimeException("Kafka appendBatch failed", e));
             }
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================
@@ -228,26 +234,33 @@ public class KafkaEventLogStore implements EventLogStore {
 
     @Override
     public Promise<List<EventEntry>> read(TenantContext tenant, Offset from, int limit) {
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             long fromOffset = parseLong(from);
-            return readFromKafka(tenant.tenantId(), fromOffset, limit, null, null, null);
-        });
+            return Promise.of(readFromKafka(tenant.tenantId(), fromOffset, limit, null, null, null));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<EventEntry>> readByTimeRange(
             TenantContext tenant, Instant startTime, Instant endTime, int limit) {
-        return Promise.ofBlocking(blockingExecutor, () ->
-                readFromKafka(tenant.tenantId(), 0L, limit, startTime, endTime, null));
+        try {
+            return Promise.of(readFromKafka(tenant.tenantId(), 0L, limit, startTime, endTime, null));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<EventEntry>> readByType(
             TenantContext tenant, String eventType, Offset from, int limit) {
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             long fromOffset = parseLong(from);
-            return readFromKafka(tenant.tenantId(), fromOffset, limit, null, null, eventType);
-        });
+            return Promise.of(readFromKafka(tenant.tenantId(), fromOffset, limit, null, null, eventType));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================
@@ -256,7 +269,7 @@ public class KafkaEventLogStore implements EventLogStore {
 
     @Override
     public Promise<Offset> getLatestOffset(TenantContext tenant) {
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             String topic = topicFor(tenant.tenantId());
             ensureTopicExists(topic);
             try (KafkaConsumer<String, byte[]> consumer = buildConsumer(config, "offset-query-" + UUID.randomUUID())) {
@@ -264,14 +277,16 @@ public class KafkaEventLogStore implements EventLogStore {
                 consumer.assign(Collections.singletonList(tp));
                 Map<TopicPartition, Long> endOffsets = consumer.endOffsets(Collections.singletonList(tp));
                 Long end = endOffsets.get(tp);
-                return end != null && end > 0 ? Offset.of(end - 1) : Offset.zero();
+                return Promise.of(end != null && end > 0 ? Offset.of(end - 1) : Offset.zero());
             }
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Offset> getEarliestOffset(TenantContext tenant) {
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             String topic = topicFor(tenant.tenantId());
             ensureTopicExists(topic);
             try (KafkaConsumer<String, byte[]> consumer = buildConsumer(config, "offset-query-" + UUID.randomUUID())) {
@@ -279,9 +294,11 @@ public class KafkaEventLogStore implements EventLogStore {
                 consumer.assign(Collections.singletonList(tp));
                 Map<TopicPartition, Long> beginOffsets = consumer.beginningOffsets(Collections.singletonList(tp));
                 Long begin = beginOffsets.get(tp);
-                return begin != null ? Offset.of(begin) : Offset.zero();
+                return Promise.of(begin != null ? Offset.of(begin) : Offset.zero());
             }
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================

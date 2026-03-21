@@ -564,6 +564,10 @@ public class AgentConfigMaterializer {
                 .type(type)
                 .version(dto.getVersion());
 
+        if (dto.getImplementationRef() != null) {
+            builder.implementationRef(dto.getImplementationRef());
+        }
+
         if (dto.getTimeout() != null) {
             builder.timeout(AgentConfigDto.parseDuration(dto.getTimeout(), Duration.ofSeconds(5)));
         }

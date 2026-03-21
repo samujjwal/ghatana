@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.ghatana.refactorer.shared.FixAction;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;

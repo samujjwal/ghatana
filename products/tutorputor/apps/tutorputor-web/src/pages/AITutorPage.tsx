@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Box, Card, Text, Button, Spinner } from "@/components/ui";
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/logger';
 const logger = createLogger('AITutorPage');
 
 interface Message {

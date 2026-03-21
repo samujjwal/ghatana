@@ -90,7 +90,7 @@ public final class SurveillanceDomainModule implements KernelModule {
             ),
             KernelCapability.Core.DATA_STORAGE,
             KernelCapability.Core.EVENT_PROCESSING,
-            KernelCapability.Core.AUDIT_LOGGING
+            KernelCapability.Core.OBSERVABILITY_FRAMEWORK
         );
     }
 
@@ -118,21 +118,19 @@ public final class SurveillanceDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Surveillance Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = true;
             log.info("Surveillance Domain module started successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Surveillance Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = false;
             log.info("Surveillance Domain module stopped successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override

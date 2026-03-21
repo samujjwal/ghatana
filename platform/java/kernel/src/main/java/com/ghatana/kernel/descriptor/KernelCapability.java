@@ -256,6 +256,65 @@ public final class KernelCapability {
                 "required_services", "tenant_service,isolation_enforcer"
             )
         );
+
+        public static final KernelCapability RESILIENCE_PATTERNS = new KernelCapability(
+            "resilience.patterns", "Resilience Patterns",
+            "Fault tolerance patterns including circuit breaker, retry, and bulkhead",
+            CapabilityType.RELIABILITY,
+            Map.of(
+                "patterns", "circuit-breaker,retry,bulkhead,timeout",
+                "required_services", "resilience_service"
+            )
+        );
+
+        public static final KernelCapability CIRCUIT_BREAKER = new KernelCapability(
+            "resilience.circuit-breaker", "Circuit Breaker",
+            "Circuit breaker pattern for fault tolerance",
+            CapabilityType.RELIABILITY,
+            Map.of(
+                "threshold", "50",
+                "timeout", "60000",
+                "required_services", "circuit_breaker_service"
+            )
+        );
+
+        public static final KernelCapability RETRY_MECHANISM = new KernelCapability(
+            "resilience.retry", "Retry Mechanism",
+            "Automatic retry with exponential backoff",
+            CapabilityType.RELIABILITY,
+            Map.of(
+                "strategy", "exponential_backoff",
+                "max_retries", "3",
+                "required_services", "retry_service"
+            )
+        );
+
+        public static final KernelCapability BULKHEAD_PATTERN = new KernelCapability(
+            "resilience.bulkhead", "Bulkhead Pattern",
+            "Resource isolation using bulkhead pattern",
+            CapabilityType.RELIABILITY,
+            Map.of(
+                "isolation", "thread_pool",
+                "pool_size", "10",
+                "required_services", "bulkhead_service"
+            )
+        );
+
+        /**
+         * Cryptographic audit trail with hash chain verification and Merkle anchoring.
+         * Goes beyond observability.logging — provides immutable, tamper-evident audit records.
+         * Identified during Day 11 AppPlatform convergence pass.
+         */
+        public static final KernelCapability AUDIT_IMMUTABLE_TRAIL = new KernelCapability(
+            "audit.immutable-trail", "Immutable Audit Trail",
+            "Cryptographic hash chain audit trail with Merkle anchoring and retention policies",
+            CapabilityType.COMPLIANCE,
+            Map.of(
+                "hash_algorithm", "SHA-256",
+                "anchoring", "merkle_tree",
+                "required_services", "audit_trail_store"
+            )
+        );
     }
 
     // ==================== Getters ====================
@@ -270,12 +329,19 @@ public final class KernelCapability {
     public Set<String> getSupportedProducts() { return Collections.unmodifiableSet(supportedProducts); }
     public boolean isShared() { return isShared; }
 
-    // ==================== Product-Specific Capabilities ====================
+    // ==================== Product-Specific Capabilities (TRANSITIONAL) ====================
 
     /**
      * Product-specific capabilities that extend the core kernel capabilities.
-     * These capabilities are declared by product modules and define domain-specific functionality.
+     *
+     * @deprecated Transitional. Product-specific capabilities violate kernel purity.
+     *     Per KERNEL_CANONICALIZATION_DECISIONS.md §4.1, the canonical kernel must not
+     *     contain product-specific definitions. Products must declare their own capabilities
+     *     via domain packs or product modules using the generic {@link KernelCapability}
+     *     constructor. This inner class will be removed when products own their capability
+     *     declarations. New code MUST NOT reference these constants.
      */
+    @Deprecated(forRemoval = true)
     public static final class Products {
 
         // ==================== PHR (Personal Health Record) Capabilities ====================
@@ -674,6 +740,7 @@ public final class KernelCapability {
         API_FRAMEWORK,
         BUSINESS_LOGIC,
         OBSERVABILITY,
-        CONFIGURATION
+        CONFIGURATION,
+        RELIABILITY
     }
 }

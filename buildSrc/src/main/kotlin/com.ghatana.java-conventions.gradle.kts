@@ -43,3 +43,19 @@ tasks.withType<Javadoc>().configureEach {
 tasks.withType<Test>().configureEach {
     testLogging.events("passed", "skipped", "failed")
 }
+
+// ── Dependency Guard: Block deprecated shared:* modules ──────────────────────
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == project.rootProject.name
+            && requested.name.startsWith("shared-")
+        ) {
+            throw GradleException(
+                "Dependency on deprecated module '${requested.name}' is forbidden.\n" +
+                "Migrate: shared:metrics → libs:observability, " +
+                "shared:exception → libs:common-utils, " +
+                "shared:test-utils → libs:activej-test-utils"
+            )
+        }
+    }
+}

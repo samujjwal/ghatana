@@ -127,7 +127,7 @@ public class AutoDocumentationGenerator {
             SchemaDefinition schema,
             Map<String, String> metadata) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             // Generate column documentation
             List<ColumnDocumentation> columnDocs = new ArrayList<>();
             for (SchemaColumn column : schema.getColumns()) {
@@ -163,8 +163,10 @@ public class AutoDocumentationGenerator {
             // Index for search
             indexDocumentation(doc);
 
-            return doc;
-        });
+            return Promise.of(doc);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -178,7 +180,7 @@ public class AutoDocumentationGenerator {
             String datasetId,
             SchemaDefinition newSchema) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             DatasetDocumentation existing = documentationStore.get(datasetId);
             if (existing == null) {
                 throw new IllegalArgumentException("Documentation not found for: " + datasetId);
@@ -220,8 +222,10 @@ public class AutoDocumentationGenerator {
             storeVersion(datasetId, updated);
             indexDocumentation(updated);
 
-            return updated;
-        });
+            return Promise.of(updated);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -239,7 +243,7 @@ public class AutoDocumentationGenerator {
             String description,
             String updatedBy) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             DatasetDocumentation existing = documentationStore.get(datasetId);
             if (existing == null) {
                 throw new IllegalArgumentException("Documentation not found for: " + datasetId);
@@ -277,8 +281,10 @@ public class AutoDocumentationGenerator {
             storeVersion(datasetId, updated);
             indexDocumentation(updated);
 
-            return updated;
-        });
+            return Promise.of(updated);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -309,7 +315,7 @@ public class AutoDocumentationGenerator {
      * @return Promise of search results
      */
     public Promise<List<SearchResult>> search(String query, int maxResults) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             String lowerQuery = query.toLowerCase();
             List<SearchResult> results = new ArrayList<>();
 
@@ -336,8 +342,10 @@ public class AutoDocumentationGenerator {
             // Sort by relevance
             results.sort((a, b) -> Double.compare(b.getRelevanceScore(), a.getRelevanceScore()));
 
-            return results.size() > maxResults ? results.subList(0, maxResults) : results;
-        });
+            return Promise.of(results.size() > maxResults ? results.subList(0, maxResults) : results);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -347,10 +355,10 @@ public class AutoDocumentationGenerator {
      * @return Promise of Markdown documentation
      */
     public Promise<String> exportAsMarkdown(String datasetId) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             DatasetDocumentation doc = documentationStore.get(datasetId);
             if (doc == null) {
-                return null;
+                return Promise.of(null);
             }
 
             StringBuilder md = new StringBuilder();
@@ -394,8 +402,10 @@ public class AutoDocumentationGenerator {
             md.append("*Version ").append(doc.getVersion())
                     .append(" | Updated: ").append(doc.getUpdatedAt()).append("*\n");
 
-            return md.toString();
-        });
+            return Promise.of(md.toString());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // --- Private Helper Methods ---

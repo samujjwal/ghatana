@@ -272,9 +272,9 @@ describe('Workflow Lifecycle', () => {
         }),
       ];
 
-      workflow.nodes[0].config.method = 'POST';
+      workflow.nodes[0]!.config!['method'] = 'POST';
 
-      expect(workflow.nodes[0].config.method).toBe('POST');
+      expect(workflow.nodes[0]!.config!['method']).toBe('POST');
     });
   });
 
@@ -438,7 +438,7 @@ describe('Workflow Lifecycle', () => {
       workflow.triggers.push(trigger);
 
       expect(workflow.triggers).toHaveLength(1);
-      expect(workflow.triggers[0].type).toBe(TriggerType.MANUAL);
+      expect((workflow.triggers[0] as WorkflowTrigger).type).toBe(TriggerType.MANUAL);
     });
 
     /**
@@ -454,10 +454,10 @@ describe('Workflow Lifecycle', () => {
         createTrigger({ id: 'trigger-2', type: TriggerType.SCHEDULED, config: { schedule: '0 0 * * *' } }),
       ];
 
-      workflow.triggers = workflow.triggers.filter((t) => t.id !== 'trigger-1');
+      workflow.triggers = workflow.triggers.filter((t) => (t as WorkflowTrigger).id !== 'trigger-1');
 
       expect(workflow.triggers).toHaveLength(1);
-      expect(workflow.triggers[0].type).toBe(TriggerType.SCHEDULED);
+      expect((workflow.triggers[0] as WorkflowTrigger).type).toBe(TriggerType.SCHEDULED);
     });
 
     /**
@@ -477,9 +477,9 @@ describe('Workflow Lifecycle', () => {
         },
       ];
 
-      workflow.triggers[0].active = false;
+      (workflow.triggers[0] as WorkflowTrigger).active = false;
 
-      expect(workflow.triggers[0].active).toBe(false);
+      expect((workflow.triggers[0] as WorkflowTrigger).active).toBe(false);
     });
   });
 

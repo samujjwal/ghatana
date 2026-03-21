@@ -253,7 +253,7 @@ export function Table<T = unknown>(props: TableProps<T>) {
               backgroundColor: isSelected
                 ? tokens.colors.primary[50]
                 : isStriped
-                  ? tokens.colors.neutral[25]
+                   ? tokens.colors.neutral[50]
                   : tokens.colors.white,
               borderBottom: `${tokens.borderWidth[1]} solid ${tokens.colors.neutral[200]}`,
               transition: `background-color ${tokens.transitions.duration.fast} ${tokens.transitions.easing.easeInOut}`,
@@ -274,7 +274,7 @@ export function Table<T = unknown>(props: TableProps<T>) {
                   e.currentTarget.style.backgroundColor = isSelected
                     ? tokens.colors.primary[50]
                     : isStriped
-                      ? tokens.colors.neutral[25]
+                       ? tokens.colors.neutral[50]
                       : tokens.colors.white;
                 }}
               >

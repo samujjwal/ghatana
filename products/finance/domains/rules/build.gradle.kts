@@ -21,9 +21,6 @@ java {
 }
 
 dependencies {
-    // ─── Finance Core ───────────────────────────────────────────────────────────
-    api(project(":products:finance"))
-    
     // ─── Kernel Platform ───────────────────────────────────────────────────────
     api(project(":platform:java:kernel"))
     

@@ -88,7 +88,7 @@ export function ZoomHUD({
 
   return (
     <Box
-      className="fixed flex items-center" style={{ bottom: SPACING.LG, right: SPACING.LG, gap: SPACING.XS, backgroundColor: COLORS.PANEL_BG_LIGHT, borderRadius: RADIUS.FULL, boxShadow: SHADOWS.LG, border: `1px solid ${COLORS.BORDER_LIGHT}` }}
+      className="fixed flex items-center" style={{ bottom: SPACING.LG, right: SPACING.LG, gap: SPACING.XS, backgroundColor: COLORS.PANEL_BG_LIGHT, borderRadius: RADIUS.FULL, boxShadow: SHADOWS.LG, border: `1px solid ${COLORS.BORDER_LIGHT}`}}
     >
       {/* Zoom Out */}
       <Tooltip title="Zoom out (-)">

@@ -8,7 +8,7 @@
  * @doc.layer frontend
  */
 
-import axios, { AxiosInstance } from 'axios';
+import { apiClient } from '../lib/api/client';
 
 export interface LineageNode {
   id: string;
@@ -70,17 +70,6 @@ export interface ExecutionLog {
  * Lineage Service Client
  */
 export class LineageService {
-  private client: AxiosInstance;
-
-  constructor(baseURL: string = '/api') {
-    this.client = axios.create({
-      baseURL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-  }
-
   /**
    * Get lineage graph for a dataset
    */
@@ -89,20 +78,16 @@ export class LineageService {
     direction: 'UPSTREAM' | 'DOWNSTREAM' | 'BOTH' = 'BOTH',
     depth: number = 3
   ): Promise<LineageGraph> {
-    const response = await this.client.get<LineageGraph>(`/lineage/${datasetId}`, {
+    return apiClient.get<LineageGraph>(`/lineage/${datasetId}`, {
       params: { direction, depth },
     });
-    return response.data;
   }
 
   /**
    * Get impact analysis for a dataset
    */
   async getImpactAnalysis(datasetId: string): Promise<ImpactAnalysis> {
-    const response = await this.client.get<ImpactAnalysis>(
-      `/lineage/${datasetId}/impact`
-    );
-    return response.data;
+    return apiClient.get<ImpactAnalysis>(`/lineage/${datasetId}/impact`);
   }
 
   /**
@@ -112,13 +97,9 @@ export class LineageService {
     datasetId: string,
     timestamp: string
   ): Promise<TimeTravelSnapshot> {
-    const response = await this.client.get<TimeTravelSnapshot>(
-      `/lineage/${datasetId}`,
-      {
-        params: { timestamp },
-      }
-    );
-    return response.data;
+    return apiClient.get<TimeTravelSnapshot>(`/lineage/${datasetId}`, {
+      params: { timestamp },
+    });
   }
 
   /**
@@ -128,13 +109,9 @@ export class LineageService {
     datasetId: string,
     limit: number = 50
   ): Promise<ExecutionLog[]> {
-    const response = await this.client.get<ExecutionLog[]>(
-      `/lineage/${datasetId}/executions`,
-      {
-        params: { limit },
-      }
-    );
-    return response.data;
+    return apiClient.get<ExecutionLog[]>(`/lineage/${datasetId}/executions`, {
+      params: { limit },
+    });
   }
 
   /**
@@ -143,10 +120,7 @@ export class LineageService {
   async searchLineage(
     query: string
   ): Promise<{ datasets: LineageNode[]; relationships: LineageEdge[] }> {
-    const response = await this.client.get('/lineage/search', {
-      params: { q: query },
-    });
-    return response.data;
+    return apiClient.get('/lineage/search', { params: { q: query } });
   }
 
   /**
@@ -156,10 +130,7 @@ export class LineageService {
     datasetId: string,
     columnName: string
   ): Promise<LineageGraph> {
-    const response = await this.client.get<LineageGraph>(
-      `/lineage/${datasetId}/columns/${columnName}`
-    );
-    return response.data;
+    return apiClient.get<LineageGraph>(`/lineage/${datasetId}/columns/${columnName}`);
   }
 }
 

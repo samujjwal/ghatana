@@ -241,10 +241,12 @@ public class TierMigrationScheduler {
      * @return Promise with count of migrated events
      */
     public Promise<Long> triggerMigration(String tenantId, String streamName) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             log.info("Manual migration triggered for tenant={}, stream={}", tenantId, streamName);
-            return migrateStream(tenantId, streamName);
-        });
+            return Promise.of(migrateStream(tenantId, streamName));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**

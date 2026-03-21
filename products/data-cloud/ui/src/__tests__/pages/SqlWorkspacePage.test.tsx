@@ -1,13 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { BrowserRouter } from 'react-router';
-import { Provider } from 'jotai';
+import { TestWrapper } from '../test-utils/wrapper';
 import { SqlWorkspacePage } from '../../pages/SqlWorkspacePage';
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <Provider><BrowserRouter>{children}</BrowserRouter></Provider>
-);
 
 describe('SqlWorkspacePage', () => {
   it('renders without crashing', () => {

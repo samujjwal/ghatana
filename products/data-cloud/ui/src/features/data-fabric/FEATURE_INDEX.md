@@ -2,7 +2,7 @@
 
 ## 📦 Overview
 
-This index provides a complete map of the **Day 17: Data Fabric Admin UI** implementation for the Collection Entity System. All code, documentation, and resources are organized below for easy navigation.
+This index provides a complete map of the **Day 17: Data Fabric Admin UI** implementation for the Data Cloud. All code, documentation, and resources are organized below for easy navigation.
 
 **Implementation Date**: 2024-11-05  
 **Status**: ✅ **COMPLETE & PRODUCTION READY**  
@@ -398,7 +398,7 @@ src/features/data-fabric/
 ### First Time Setup
 ```bash
 # 1. Ensure dependencies installed
-cd products/collection-entity-system/ui
+cd products/data-cloud/ui
 pnpm install
 
 # 2. Type check

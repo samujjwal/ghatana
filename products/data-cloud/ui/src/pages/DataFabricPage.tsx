@@ -25,7 +25,7 @@ import {
   type FlowEdge,
   type OnConnect,
 } from '@ghatana/flow-canvas';
-import axios from 'axios';
+import { apiClient } from '../lib/api/client';
 
 // =============================================================================
 // Types
@@ -54,12 +54,8 @@ interface FabricMetricsResponse {
 // API
 // =============================================================================
 
-const DC_BASE = import.meta.env.VITE_DC_API_URL ?? '/api';
-const dc = axios.create({ baseURL: DC_BASE });
-
 async function fetchFabricMetrics(): Promise<FabricMetricsResponse> {
-  const { data } = await dc.get<FabricMetricsResponse>('/dc/fabric/metrics');
-  return data;
+  return apiClient.get<FabricMetricsResponse>('/dc/fabric/metrics');
 }
 
 // =============================================================================
@@ -324,14 +320,9 @@ export function DataFabricPage(): React.ReactElement {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          fitView
-          minZoom={0.3}
-          maxZoom={2}
-          proOptions={{ hideAttribution: true }}
-        >
-          <TierLegend />
-          <FlowControls position="top-right" showMiniMap showFitView />
-        </FlowCanvas>
+          controls={{ showMiniMap: true, showControls: true, controlsPosition: 'top-right' }}
+        />
+        <TierLegend />
       </div>
     </div>
   );

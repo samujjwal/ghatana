@@ -161,12 +161,12 @@ public class IcebergTableManager implements Closeable {
      * @return Promise completing when table is ready
      */
     public Promise<Table> createTableIfNotExists(String tableName) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             TableIdentifier tableId = TableIdentifier.of(namespace, tableName);
 
             if (catalog.tableExists(tableId)) {
                 log.info("Table already exists: {}", tableId);
-                return catalog.loadTable(tableId);
+                return Promise.of(catalog.loadTable(tableId));
             }
 
             // Create partition spec based on config
@@ -178,8 +178,10 @@ public class IcebergTableManager implements Closeable {
             Table table = catalog.createTable(tableId, EVENT_SCHEMA, partitionSpec, properties);
 
             log.info("Created Iceberg table: {} with partitioning: {}", tableId, partitionSpec);
-            return table;
-        });
+            return Promise.of(table);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -189,10 +191,12 @@ public class IcebergTableManager implements Closeable {
      * @return Promise with loaded table
      */
     public Promise<Table> loadTable(String tableName) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             TableIdentifier tableId = TableIdentifier.of(namespace, tableName);
-            return catalog.loadTable(tableId);
-        });
+            return Promise.of(catalog.loadTable(tableId));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -202,10 +206,12 @@ public class IcebergTableManager implements Closeable {
      * @return Promise with true if exists
      */
     public Promise<Boolean> tableExists(String tableName) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             TableIdentifier tableId = TableIdentifier.of(namespace, tableName);
-            return catalog.tableExists(tableId);
-        });
+            return Promise.of(catalog.tableExists(tableId));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -215,14 +221,16 @@ public class IcebergTableManager implements Closeable {
      * @return Promise completing when table is dropped
      */
     public Promise<Boolean> dropTable(String tableName) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             TableIdentifier tableId = TableIdentifier.of(namespace, tableName);
             boolean dropped = catalog.dropTable(tableId, true);
             if (dropped) {
                 log.warn("Dropped Iceberg table: {}", tableId);
             }
-            return dropped;
-        });
+            return Promise.of(dropped);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // ==================== Query Operations ====================
@@ -246,7 +254,7 @@ public class IcebergTableManager implements Closeable {
             Instant endTime,
             int limit) {
         
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             // Build filter expression
             Expression filter = Expressions.equal("tenant_id", tenantId);
 
@@ -281,8 +289,10 @@ public class IcebergTableManager implements Closeable {
             log.debug("Scanned {} records from table {} for tenant {}",
                     records.size(), table.name(), tenantId);
 
-            return records;
-        });
+            return Promise.of(records);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -300,13 +310,13 @@ public class IcebergTableManager implements Closeable {
             String tenantId,
             int limit) {
         
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             // Find snapshot at or before the given time
             Long snapshotId = findSnapshotAtTime(table, snapshotTime);
 
             if (snapshotId == null) {
                 log.warn("No snapshot found at or before {}", snapshotTime);
-                return Collections.emptyList();
+                return Promise.of(Collections.emptyList());
             }
 
             Expression filter = Expressions.equal("tenant_id", tenantId);
@@ -328,8 +338,10 @@ public class IcebergTableManager implements Closeable {
             log.debug("Time-travel scan: {} records at snapshot {} ({})",
                     records.size(), snapshotId, snapshotTime);
 
-            return records;
-        });
+            return Promise.of(records);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // ==================== Snapshot Operations ====================
@@ -385,7 +397,7 @@ public class IcebergTableManager implements Closeable {
      * @return Promise completing when snapshots are expired
      */
     public Promise<Void> expireSnapshots(Table table) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             long olderThanMs = System.currentTimeMillis() -
                     config.getSnapshotRetention().toMillis();
 
@@ -396,8 +408,10 @@ public class IcebergTableManager implements Closeable {
 
             log.info("Expired snapshots older than {} for table {}",
                     Instant.ofEpochMilli(olderThanMs), table.name());
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // ==================== Record Conversion ====================

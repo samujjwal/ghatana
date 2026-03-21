@@ -9,11 +9,11 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.modules.authentication.service.AuthenticationService;
 import com.ghatana.kernel.modules.resilience.service.ResilienceService;
 import com.ghatana.products.finance.bff.FinanceBFF;
+import com.ghatana.products.finance.FinanceCapabilities;
 import com.ghatana.products.finance.rules.service.FinanceRulesService;
 import com.ghatana.products.finance.shell.FinanceProductShell;
-import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
-import io.activej.test.ActiveJTest;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 /**
  * Integration tests for FinanceProductModule.
@@ -41,7 +40,7 @@ import static org.mockito.Mockito.when;
  * @since 1.0.0
  */
 @ExtendWith(MockitoExtension.class)
-public class FinanceProductModuleIntegrationTest extends ActiveJTest {
+public class FinanceProductModuleIntegrationTest extends EventloopTestBase {
 
     @Mock
     private KernelContext mockContext;
@@ -63,12 +62,6 @@ public class FinanceProductModuleIntegrationTest extends ActiveJTest {
     @BeforeEach
     void setUp() {
         module = new FinanceProductModule();
-        
-        // Setup mock context
-        when(mockContext.getExecutor("finance")).thenReturn(mockExecutor);
-        when(mockContext.getDependency(AuthenticationService.class)).thenReturn(java.util.Optional.of(mockAuthService));
-        when(mockContext.getDependency(ResilienceService.class)).thenReturn(java.util.Optional.of(mockResilienceService));
-        when(mockContext.getDependency(FinanceRulesService.class)).thenReturn(java.util.Optional.of(mockRulesService));
     }
 
     @Test
@@ -87,17 +80,17 @@ public class FinanceProductModuleIntegrationTest extends ActiveJTest {
             .hasSize(10)
             .contains(
                 // Finance-specific capabilities
-                KernelCapability.Products.TRADE_EXECUTION,
-                KernelCapability.Products.PORTFOLIO_MANAGEMENT,
-                KernelCapability.Products.RISK_ASSESSMENT,
-                KernelCapability.Products.COMPLIANCE_CHECKING,
-                KernelCapability.Products.FINANCIAL_REPORTING,
+                FinanceCapabilities.TRADE_PROCESSING,
+                FinanceCapabilities.PORTFOLIO_MANAGEMENT,
+                FinanceCapabilities.RISK_MANAGEMENT,
+                FinanceCapabilities.COMPLIANCE_CHECKING,
+                FinanceCapabilities.LEDGER_MANAGEMENT,
                 
                 // Reused kernel capabilities
                 KernelCapability.Core.USER_AUTHENTICATION,
-                KernelCapability.Core.CONFIGURATION_MANAGEMENT,
+                KernelCapability.Core.CONFIG_MANAGEMENT,
                 KernelCapability.Core.EVENT_PROCESSING,
-                KernelCapability.Core.AUDIT_LOGGING,
+                KernelCapability.Core.OBSERVABILITY_FRAMEWORK,
                 KernelCapability.Core.RESILIENCE_PATTERNS
             );
     }
@@ -108,7 +101,7 @@ public class FinanceProductModuleIntegrationTest extends ActiveJTest {
         var dependencies = module.getDependencies();
         
         assertThat(dependencies)
-            .hasSize(9)
+            .hasSize(8)
             .anyMatch(dep -> dep.getDependencyId().equals("authentication"))
             .anyMatch(dep -> dep.getDependencyId().equals("config"))
             .anyMatch(dep -> dep.getDependencyId().equals("event-store"))
@@ -138,10 +131,7 @@ public class FinanceProductModuleIntegrationTest extends ActiveJTest {
         // Start module
         Promise<Void> startPromise = module.start();
         assertThat(startPromise).isNotNull();
-        
-        // Wait for start to complete
-        Void startResult = startPromise.getResult();
-        assertThat(startResult).isNull();
+        runPromise(() -> startPromise);
         
         // Check health after start
         var healthStatus = module.getHealthStatus();
@@ -150,10 +140,7 @@ public class FinanceProductModuleIntegrationTest extends ActiveJTest {
         // Stop module
         Promise<Void> stopPromise = module.stop();
         assertThat(stopPromise).isNotNull();
-        
-        // Wait for stop to complete
-        Void stopResult = stopPromise.getResult();
-        assertThat(stopResult).isNull();
+        runPromise(() -> stopPromise);
     }
 
     @Test
@@ -161,7 +148,7 @@ public class FinanceProductModuleIntegrationTest extends ActiveJTest {
         // Test health status before initialization
         var healthStatus = module.getHealthStatus();
         assertThat(healthStatus.isHealthy()).isFalse();
-        assertThat(healthStatus.getMessage()).contains("Health check failed");
+        assertThat(healthStatus.getMessage()).contains("degraded");
     }
 
     @Test
@@ -179,11 +166,7 @@ public class FinanceProductModuleIntegrationTest extends ActiveJTest {
         
         // Should have finance-specific capabilities
         assertThat(capabilities).anyMatch(cap -> 
-            cap.getCapabilityId().startsWith("trade.") ||
-            cap.getCapabilityId().startsWith("portfolio.") ||
-            cap.getCapabilityId().startsWith("risk.") ||
-            cap.getCapabilityId().startsWith("compliance.") ||
-            cap.getCapabilityId().startsWith("financial.")
+            cap.getCapabilityId().startsWith("finance.")
         );
         
         // Should reuse kernel capabilities
@@ -204,11 +187,7 @@ public class FinanceProductModuleIntegrationTest extends ActiveJTest {
         
         // Product-specific capabilities should be clearly marked
         assertThat(capabilities).anyMatch(cap -> 
-            cap.getCapabilityId().startsWith("trade.") ||
-            cap.getCapabilityId().startsWith("portfolio.") ||
-            cap.getCapabilityId().startsWith("risk.") ||
-            cap.getCapabilityId().startsWith("compliance.") ||
-            cap.getCapabilityId().startsWith("financial.")
+            cap.getCapabilityId().startsWith("finance.")
         );
         
         // Should not have kernel-internal capabilities

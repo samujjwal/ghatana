@@ -6,7 +6,7 @@ import com.ghatana.kernel.registry.KernelRegistryImpl;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import io.activej.promise.Promise;
-import io.activej.test.ActivejTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-class KernelCoreUnitTest extends ActivejTestBase {
+class KernelCoreUnitTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
     private HierarchicalKernelConfigResolver configResolver;
@@ -44,7 +44,7 @@ class KernelCoreUnitTest extends ActivejTestBase {
 
     @Test
     void kernelDescriptorBuilderCreatesValidDescriptor() {
-        KernelDescriptor descriptor = KernelDescriptor.builder()
+        KernelDescriptor descriptor = new KernelDescriptor.Builder()
             .withDescriptorId("test-module")
             .withName("Test Module")
             .withVersion("1.0.0")
@@ -60,7 +60,7 @@ class KernelCoreUnitTest extends ActivejTestBase {
     @Test
     void kernelDescriptorValidationRejectsInvalidId() {
         assertThrows(IllegalArgumentException.class, () ->
-            KernelDescriptor.builder()
+            new KernelDescriptor.Builder()
                 .withDescriptorId("Invalid_ID_With_CAPS") // Invalid: uppercase
                 .withName("Test")
                 .withVersion("1.0.0")
@@ -72,7 +72,7 @@ class KernelCoreUnitTest extends ActivejTestBase {
     @Test
     void kernelDescriptorValidationRejectsInvalidVersion() {
         assertThrows(IllegalArgumentException.class, () ->
-            KernelDescriptor.builder()
+            new KernelDescriptor.Builder()
                 .withDescriptorId("test-module")
                 .withName("Test")
                 .withVersion("invalid-version") // Invalid: not semver
@@ -85,7 +85,7 @@ class KernelCoreUnitTest extends ActivejTestBase {
     void kernelDescriptorHasCapabilityCheck() {
         KernelCapability capability = KernelCapability.Core.DATA_STORAGE;
 
-        KernelDescriptor descriptor = KernelDescriptor.builder()
+        KernelDescriptor descriptor = new KernelDescriptor.Builder()
             .withDescriptorId("test-module")
             .withName("Test Module")
             .withVersion("1.0.0")
@@ -100,7 +100,7 @@ class KernelCoreUnitTest extends ActivejTestBase {
 
     @Test
     void kernelDescriptorSupportsTenantCheck() {
-        KernelDescriptor descriptor = KernelDescriptor.builder()
+        KernelDescriptor descriptor = new KernelDescriptor.Builder()
             .withDescriptorId("test-module")
             .withName("Test")
             .withVersion("1.0.0")
@@ -116,7 +116,7 @@ class KernelCoreUnitTest extends ActivejTestBase {
 
     @Test
     void kernelDescriptorEmptySupportedTenantsMeansAllTenants() {
-        KernelDescriptor descriptor = KernelDescriptor.builder()
+        KernelDescriptor descriptor = new KernelDescriptor.Builder()
             .withDescriptorId("test-module")
             .withName("Test")
             .withVersion("1.0.0")

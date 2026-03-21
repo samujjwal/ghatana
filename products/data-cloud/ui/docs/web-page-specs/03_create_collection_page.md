@@ -12,7 +12,7 @@ Related routes & files:
 
 **One-sentence intent:**
 
-> Provide a **guided form** for defining a new collection and its schema in CES.
+> Provide a **guided form** for defining a new collection and its schema in Data Cloud.
 
 **Primary goals:**
 
@@ -75,7 +75,7 @@ From `CreateCollectionPage.tsx`:
 
 ## 5. Completeness and Real-World Coverage
 
-For a real CES deployment, Create Collection should:
+For a real Data Cloud deployment, Create Collection should:
 
 1. Integrate with backend API (not mock client).
 2. Validate schema (unique field names, types, constraints, etc.).
@@ -112,7 +112,7 @@ For a real CES deployment, Create Collection should:
    - Add presets for common collection types (orders, customers, events).
 
 2. **Backend validation:**
-   - Round-trip validation with CES backend for schema correctness before final save.
+   - Round-trip validation with Data Cloud backend for schema correctness before final save.
 
 3. **Canvas integration (future):**
    - Launch a visual schema designer from this page or integrate it inline.

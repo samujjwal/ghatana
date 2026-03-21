@@ -1,6 +1,6 @@
 package com.ghatana.softwareorg.product;
 
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import lombok.Getter;

@@ -52,6 +52,9 @@ final class MapWorkflowContext implements WorkflowContext {
     public @NotNull String getCorrelationId() { return correlationId; }
 
     @Override
+    public @NotNull String getRunId() { return correlationId; }
+
+    @Override
     public @Nullable String getCurrentStep() { return currentStep; }
 
     @Override

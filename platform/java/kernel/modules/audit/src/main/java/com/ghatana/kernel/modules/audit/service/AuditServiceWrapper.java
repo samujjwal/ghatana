@@ -95,17 +95,13 @@ public final class AuditServiceWrapper {
             return Promise.ofException(new IllegalStateException("Audit service not started"));
         }
 
-        return Promise.ofBlocking(executor, () -> {
-            log.debug("Recording audit event: {} {} by {}", action, resource, userId);
+        log.debug("Recording audit event: {} {} by {}", action, resource, userId);
+        AuditEvent event = createAuditEvent(action, resource, userId, null, null);
+        return platformAuditService.record(event)
+            .whenResult(ignored -> {
+                log.debug("Audit event recorded: {}", event.getId());
 
-            AuditEvent event = createAuditEvent(action, resource, userId, null, null);
-            
-            return platformAuditService.record(event)
-                .map(result -> {
-                    log.debug("Audit event recorded: {}", event.getEventId());
-                    return null;
-                });
-        }).then(Promise::of);
+            });
     }
 
     /**
@@ -124,17 +120,13 @@ public final class AuditServiceWrapper {
             return Promise.ofException(new IllegalStateException("Audit service not started"));
         }
 
-        return Promise.ofBlocking(executor, () -> {
-            log.debug("Recording audit event: {} {} by {} for tenant: {}", action, resource, userId, tenantId);
+        log.debug("Recording audit event: {} {} by {} for tenant: {}", action, resource, userId, tenantId);
+        AuditEvent event = createAuditEvent(action, resource, userId, tenantId, metadata);
+        return platformAuditService.record(event)
+            .whenResult(ignored -> {
+                log.debug("Audit event recorded: {}", event.getId());
 
-            AuditEvent event = createAuditEvent(action, resource, userId, tenantId, metadata);
-            
-            return platformAuditService.record(event)
-                .map(result -> {
-                    log.debug("Audit event recorded: {}", event.getEventId());
-                    return null;
-                });
-        }).then(Promise::of);
+            });
     }
 
     /**
@@ -152,24 +144,19 @@ public final class AuditServiceWrapper {
             return Promise.ofException(new IllegalStateException("Audit service not started"));
         }
 
-        return Promise.ofBlocking(executor, () -> {
-            log.debug("Recording security audit event: {} {} by {} - outcome: {}", 
-                securityAction, resource, userId, outcome);
+        log.debug("Recording security audit event: {} {} by {} - outcome: {}", 
+            securityAction, resource, userId, outcome);
+        Map<String, Object> secMetadata = Map.of(
+            "category", "security",
+            "outcome", outcome,
+            "severity", "high"
+        );
+        AuditEvent event = createAuditEvent(securityAction, resource, userId, null, secMetadata);
+        return platformAuditService.record(event)
+            .whenResult(ignored -> {
+                log.debug("Security audit event recorded: {}", event.getId());
 
-            Map<String, Object> metadata = Map.of(
-                "category", "security",
-                "outcome", outcome,
-                "severity", "high"
-            );
-
-            AuditEvent event = createAuditEvent(securityAction, resource, userId, null, metadata);
-            
-            return platformAuditService.record(event)
-                .map(result -> {
-                    log.debug("Security audit event recorded: {}", event.getEventId());
-                    return null;
-                });
-        }).then(Promise::of);
+            });
     }
 
     /**
@@ -188,25 +175,20 @@ public final class AuditServiceWrapper {
             return Promise.ofException(new IllegalStateException("Audit service not started"));
         }
 
-        return Promise.ofBlocking(executor, () -> {
-            log.debug("Recording configuration audit event: {} {} by {} from {} to {}", 
-                configAction, configKey, userId, oldValue, newValue);
+        log.debug("Recording configuration audit event: {} {} by {} from {} to {}", 
+            configAction, configKey, userId, oldValue, newValue);
+        Map<String, Object> configMetadata = Map.of(
+            "category", "configuration",
+            "configKey", configKey,
+            "oldValue", oldValue,
+            "newValue", newValue
+        );
+        AuditEvent event = createAuditEvent(configAction, "configuration:" + configKey, userId, null, configMetadata);
+        return platformAuditService.record(event)
+            .whenResult(ignored -> {
+                log.debug("Configuration audit event recorded: {}", event.getId());
 
-            Map<String, Object> metadata = Map.of(
-                "category", "configuration",
-                "configKey", configKey,
-                "oldValue", oldValue,
-                "newValue", newValue
-            );
-
-            AuditEvent event = createAuditEvent(configAction, "configuration:" + configKey, userId, null, metadata);
-            
-            return platformAuditService.record(event)
-                .map(result -> {
-                    log.debug("Configuration audit event recorded: {}", event.getEventId());
-                    return null;
-                });
-        }).then(Promise::of);
+            });
     }
 
     /**
@@ -222,41 +204,14 @@ public final class AuditServiceWrapper {
 
     private AuditEvent createAuditEvent(String action, String resource, String userId, 
                                        String tenantId, Map<String, Object> metadata) {
-        return new AuditEvent() {
-            @Override
-            public String getEventId() {
-                return UUID.randomUUID().toString();
-            }
-
-            @Override
-            public String getAction() {
-                return action;
-            }
-
-            @Override
-            public String getResource() {
-                return resource;
-            }
-
-            @Override
-            public String getUserId() {
-                return userId;
-            }
-
-            @Override
-            public String getTenantId() {
-                return tenantId != null ? tenantId : "default";
-            }
-
-            @Override
-            public Instant getTimestamp() {
-                return Instant.now();
-            }
-
-            @Override
-            public Map<String, Object> getMetadata() {
-                return metadata != null ? metadata : Map.of();
-            }
-        };
+        return AuditEvent.builder()
+            .tenantId(tenantId != null ? tenantId : "default")
+            .eventType(action)
+            .principal(userId)
+            .resourceType(resource)
+            .success(true)
+            .timestamp(Instant.now())
+            .details(metadata != null ? metadata : Map.of())
+            .build();
     }
 }

@@ -1,11 +1,11 @@
-# CES UI – Testing Guidelines
+# Data Cloud UI – Testing Guidelines
 
 ## 1. Goals
 
-- Ensure CES UI flows render correctly and handle user input/edge cases.
+- Ensure Data Cloud UI flows render correctly and handle user input/edge cases.
 
 ## 2. Tests
 
 - Use component and integration tests to verify behaviors and API interactions.
 
-This document is self-contained and explains how to test the CES UI module.
+This document is self-contained and explains how to test the Data Cloud UI module.

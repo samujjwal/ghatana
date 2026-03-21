@@ -158,7 +158,7 @@ export function MemoryPlaneViewerPage(): React.ReactElement {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => memoryService.deleteMemoryItem(id),
+    mutationFn: (id: string) => memoryService.deleteMemoryItem(agentFilter || 'default', id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['dc', 'memory'] }),
   });
 

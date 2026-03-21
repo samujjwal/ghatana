@@ -29,18 +29,21 @@
       "@api/*": ["src/api/*"],
       "@utils/*": ["src/utils/*"],
       "@ghatana/design-system": [
-        "../../../platform/typescript/design-system/src/index.ts"
+        "../../../platform/typescript/capabilities/design-system"
       ],
       "@ghatana/flow-canvas": [
-        "../../../platform/typescript/canvas/flow-canvas/src/index.ts"
+        "../../../platform/typescript/capabilities/canvas-core/flow-canvas"
       ],
-      "@ghatana/theme": ["../../../platform/typescript/theme/src/index.ts"],
-      "@ghatana/tokens": ["../../../platform/typescript/tokens/src/index.ts"],
+      "@ghatana/theme": ["../../../platform/typescript/theme"],
+      "@ghatana/tokens": ["../../../platform/typescript/tokens"],
       "@ghatana/platform-utils": [
-        "../../../platform/typescript/utils/src/index.ts"
+        "../../../platform/typescript/foundation/platform-utils"
       ],
-      "@ghatana/canvas": ["../../../platform/typescript/canvas/src/index.ts"],
-      "@ghatana/canvas/*": ["../../../platform/typescript/canvas/src/*"]
+      "@ghatana/utils": [
+        "../../../platform/typescript/foundation/platform-utils"
+      ],
+      "@ghatana/canvas": ["../../../platform/typescript/capabilities/canvas-core"],
+      "@ghatana/canvas/*": ["../../../platform/typescript/capabilities/canvas-core/dist/*"]
     },
     "typeRoots": [
       "./node_modules/@types",

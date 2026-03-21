@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -107,13 +108,13 @@ public final class TokenService {
             // Store refresh token
             refreshTokens.put(refreshToken, new TokenInfo(tenantId, claims.getPrincipalId(), now.plusSeconds(86400))); // 24 hours
 
-            TokenResponse response = new TokenResponse(
-                accessToken,
-                refreshToken,
-                "Bearer",
-                expiresAt.getEpochSecond(),
-                Set.of("read", "write") // Generic scopes
-            );
+            TokenResponse response = TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(expiresAt.getEpochSecond())
+                .scopes(Set.of("read", "write"))
+                .build();
 
             log.info("Generated token for principal: {}", claims.getPrincipalId());
             return response;
@@ -211,13 +212,13 @@ public final class TokenService {
             refreshTokens.remove(refreshToken);
             refreshTokens.put(newRefreshToken, new TokenInfo(tenantId, tokenInfo.getPrincipalId(), now.plusSeconds(86400)));
 
-            TokenResponse response = new TokenResponse(
-                accessToken,
-                newRefreshToken,
-                "Bearer",
-                expiresAt.getEpochSecond(),
-                Set.of("read", "write") // Generic scopes
-            );
+            TokenResponse response = TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(newRefreshToken)
+                .tokenType("Bearer")
+                .expiresIn(expiresAt.getEpochSecond())
+                .scopes(Set.of("read", "write"))
+                .build();
 
             log.info("Refreshed token for principal: {}", tokenInfo.getPrincipalId());
             return response;

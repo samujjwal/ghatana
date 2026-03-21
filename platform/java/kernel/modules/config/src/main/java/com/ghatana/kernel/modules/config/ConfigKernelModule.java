@@ -12,6 +12,7 @@ import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.modules.config.service.ConfigService;
 import com.ghatana.platform.config.ConfigManager;
 import io.activej.promise.Promise;
+import java.util.concurrent.ForkJoinPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +91,7 @@ public final class ConfigKernelModule implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting Configuration module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Start configuration service
             configService.start();
 
@@ -103,7 +104,7 @@ public final class ConfigKernelModule implements KernelModule {
     public Promise<Void> stop() {
         log.info("Stopping Configuration module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Stop configuration service
             if (configService != null) {
                 configService.stop();

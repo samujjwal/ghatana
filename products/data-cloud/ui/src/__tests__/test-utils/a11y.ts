@@ -21,12 +21,9 @@
 
 import { render, type RenderOptions, type RenderResult } from '@testing-library/react';
 import { expect } from 'vitest';
-import { toHaveNoViolations } from 'vitest-axe';
+import 'vitest-axe/extend-expect';
 import { axe } from '../setup';
 import type { ReactElement } from 'react';
-
-// Extend vitest expect with axe matchers (idempotent — safe to call multiple times)
-expect.extend(toHaveNoViolations);
 
 export interface A11yRenderResult extends RenderResult {
   /** The axe violations found (empty array means accessible). */
@@ -49,7 +46,8 @@ export async function renderWithA11y(
 
   const results = await axe(renderResult.container);
   // Assert immediately so failures show the component under test in context
-  expect(results).toHaveNoViolations();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (expect(results) as any).toHaveNoViolations();
 
   return { ...renderResult, violations: results.violations };
 }

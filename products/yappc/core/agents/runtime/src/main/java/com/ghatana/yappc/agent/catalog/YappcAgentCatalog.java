@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -31,8 +32,14 @@ import java.util.Set;
  * {@link com.ghatana.agent.catalog.CatalogRegistry} via {@link java.util.ServiceLoader}.
  *
  * <p>Discovers agent definitions from the YAPPC agent configuration directory.
- * The catalog is loaded from the classpath resource {@code yappc-agent-catalog.yaml}
- * or, when running in-tree, directly from {@code products/yappc/config/agents/}.
+ * The catalog resolves its root from the canonical product layout
+ * ({@code products/yappc/config/agents/agent-catalog.yaml}) and falls back to
+ * classpath resolution for classpath-only deployments.
+ *
+ * <h2>Central Catalog Integration</h2>
+ * As of v2.4, the central {@code AepCentralCatalogService} also discovers
+ * YAPPC definitions from the product root. This ServiceLoader provider is
+ * retained for backward-compatible classpath-based discovery.
  *
  * <h2>ServiceLoader Registration</h2>
  * This class is registered in
@@ -40,14 +47,20 @@ import java.util.Set;
  * {@link com.ghatana.agent.catalog.CatalogRegistry#discover()} picks it up automatically
  * at runtime without any explicit wiring.
  *
+ * @deprecated Since v2.4. The central {@code AepCentralCatalogService} now discovers
+ *     YAPPC definitions automatically from the product root. This ServiceLoader-based
+ *     provider is retained for backward compatibility and will be removed in v3.0.
+ *     See {@code docs/AGENT_REGISTRY_MIGRATION_GUIDE.md}.
+ *
  * @doc.type class
- * @doc.purpose YAPPC product agent catalog — ServiceLoader provider
+ * @doc.purpose YAPPC product agent catalog — ServiceLoader provider (deprecated)
  * @doc.layer product
  * @doc.pattern SPI, Registry
  *
  * @author Ghatana AI Platform
  * @since 2.1.0
  */
+@Deprecated(since = "2.4.0", forRemoval = true)
 public class YappcAgentCatalog implements AgentCatalog {
 
     private static final Logger log = LoggerFactory.getLogger(YappcAgentCatalog.class);
@@ -56,6 +69,12 @@ public class YappcAgentCatalog implements AgentCatalog {
     static final String DISPLAY_NAME = "YAPPC Agent Catalog";
 
     private static final String CATALOG_RESOURCE = "yappc-agent-catalog.yaml";
+
+    /**
+     * Canonical in-tree path relative to the repository root.
+     * {@code AepCentralCatalogService} also uses this path for multi-root discovery.
+     */
+    private static final String CANONICAL_PRODUCT_PATH = "products/yappc/config/agents/agent-catalog.yaml";
 
     private volatile FileBasedCatalog delegate;
 
@@ -144,6 +163,14 @@ public class YappcAgentCatalog implements AgentCatalog {
     }
 
     private Path resolveCatalogPath() throws URISyntaxException {
+        // 1. Try canonical in-tree path (for monorepo development / central catalog)
+        Path canonicalPath = Path.of(CANONICAL_PRODUCT_PATH);
+        if (Files.exists(canonicalPath)) {
+            log.debug("YappcAgentCatalog: using canonical product path '{}'", canonicalPath);
+            return canonicalPath;
+        }
+
+        // 2. Fallback to classpath resource (for packaged deployments)
         URL resource = YappcAgentCatalog.class.getClassLoader().getResource(CATALOG_RESOURCE);
         if (resource != null) {
             return Paths.get(resource.toURI());

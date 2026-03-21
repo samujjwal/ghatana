@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Instant;
 import java.time.YearMonth;
+import java.util.Map;
 import java.util.*;
 import java.util.concurrent.Executor;
 
@@ -409,7 +410,7 @@ public final class FinanceCalendarService {
         };
     }
 
-    private FinanceJurisdiction getJurisdictionEnum(String jurisdiction) {
+    private static FinanceJurisdiction getJurisdictionEnum(String jurisdiction) {
         return switch (jurisdiction) {
             case "US" -> FinanceJurisdiction.US;
             case "UK" -> FinanceJurisdiction.UK;

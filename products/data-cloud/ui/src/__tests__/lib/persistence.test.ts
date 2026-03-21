@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { NodeType } from '@/types/workflow.types';
-import type { WorkflowDefinition } from '@/types/workflow.types';
+import type { WorkflowDefinition, WorkflowNode } from '@/types/workflow.types';
 import {
   saveWorkflowState,
   loadWorkflowState,
@@ -262,8 +262,13 @@ describe('Persistence Service', () => {
   describe('Export/Import', () => {
     const mockWorkflow: WorkflowDefinition = {
       id: 'workflow-123',
+      tenantId: 'tenant-1',
+      collectionId: 'collection-1',
       name: 'Test Workflow',
       description: 'A test workflow',
+      status: 'DRAFT',
+      version: 1,
+      active: true,
       nodes: [
         {
           id: 'node-1',
@@ -274,6 +279,11 @@ describe('Persistence Service', () => {
         },
       ],
       edges: [],
+      triggers: [],
+      variables: {},
+      tags: [],
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

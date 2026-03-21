@@ -80,8 +80,8 @@ function formatDuration(seconds: number): string {
 /**
  * Get tone color palette
  */
-function getTonePalette(tone: string): unknown {
-  const tonePalettes: Record<string, unknown> = {
+function getTonePalette(tone: string): Record<number, string> {
+  const tonePalettes: Record<string, Record<number, string>> = {
     neutral: palette.gray,
     primary: palette.primary,
     success: palette.success,

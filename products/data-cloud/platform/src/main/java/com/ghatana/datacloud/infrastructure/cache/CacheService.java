@@ -52,14 +52,14 @@ public class CacheService {
      * @return cached entity or empty
      */
     public Promise<Optional<Entity>> get(String tenantId, String collectionName, UUID entityId) {
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
+        try {
             String key = buildKey(tenantId, collectionName, entityId);
             CacheEntry entry = cache.get(key);
 
             if (entry != null && !entry.isExpired()) {
                 hits++;
                 logger.debug("Cache hit: {}", key);
-                return Optional.of(entry.entity());
+                return Promise.of(Optional.of(entry.entity()));
             }
 
             misses++;
@@ -67,8 +67,10 @@ public class CacheService {
                 cache.remove(key);
             }
             logger.debug("Cache miss: {}", key);
-            return Optional.empty();
-        });
+            return Promise.of(Optional.empty());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -79,7 +81,7 @@ public class CacheService {
      * @param entity entity to cache
      */
     public Promise<Void> put(String tenantId, String collectionName, Entity entity) {
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
+        try {
             if (cache.size() >= MAX_CACHE_SIZE) {
                 evictOldest();
             }
@@ -87,8 +89,10 @@ public class CacheService {
             String key = buildKey(tenantId, collectionName, entity.getId());
             cache.put(key, new CacheEntry(entity, System.currentTimeMillis()));
             logger.debug("Cached entity: {}", key);
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -99,12 +103,14 @@ public class CacheService {
      * @param entityId entity ID
      */
     public Promise<Void> invalidate(String tenantId, String collectionName, UUID entityId) {
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
+        try {
             String key = buildKey(tenantId, collectionName, entityId);
             cache.remove(key);
             logger.debug("Invalidated cache: {}", key);
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -114,12 +120,14 @@ public class CacheService {
      * @param collectionName collection name
      */
     public Promise<Void> invalidateCollection(String tenantId, String collectionName) {
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
+        try {
             String prefix = tenantId + ":" + collectionName + ":";
             cache.keySet().removeIf(key -> key.startsWith(prefix));
             logger.debug("Invalidated collection cache: {}", collectionName);
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -137,11 +145,13 @@ public class CacheService {
      * Clears entire cache.
      */
     public Promise<Void> clear() {
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
+        try {
             cache.clear();
             logger.info("Cache cleared");
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     private String buildKey(String tenantId, String collectionName, UUID entityId) {

@@ -227,8 +227,8 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
         }
 
         @Override
-        public java.util.List<com.ghatana.platform.domain.domain.event.Event> handle(
-            com.ghatana.platform.domain.domain.event.Event event,
+        public java.util.List<com.ghatana.platform.domain.event.Event> handle(
+            com.ghatana.platform.domain.event.Event event,
             com.ghatana.platform.domain.agent.registry.AgentExecutionContext context
         ) {
             return java.util.List.of(event);

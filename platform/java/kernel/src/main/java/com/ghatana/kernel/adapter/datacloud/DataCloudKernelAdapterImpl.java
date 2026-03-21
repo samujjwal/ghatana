@@ -1,7 +1,8 @@
 package com.ghatana.kernel.adapter.datacloud;
 
-import com.ghatana.kernel.audit.CrossProductAuditService;
-import com.ghatana.kernel.communication.KernelInterProductBus;
+import com.ghatana.kernel.audit.CrossScopeAuditService;
+import com.ghatana.kernel.communication.KernelInterScopeBus;
+import com.ghatana.kernel.util.JsonUtils;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -220,24 +221,29 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
         return wrapFuture(future).cast();
     }
 
+    // ==================== Canonical Scope-Aware Methods ====================
+
     /**
-     * Stores audit events with domain-specific retention policies.
+     * Stores a scope-aware audit record using scope descriptors instead of product ids.
      *
-     * @param record the audit record to store
+     * <p>Dataset naming is derived from scope descriptors, not hardcoded product names.</p>
+     *
+     * @param record the scope audit record
      * @return Promise completing when stored
      */
-    public Promise<Void> storeAuditEvent(CrossProductAuditService.AuditRecord record) {
+    public Promise<Void> storeScopeAuditRecord(CrossScopeAuditService.ScopeAuditRecord record) {
         Objects.requireNonNull(record, "record cannot be null");
 
-        // Store in audit dataset with appropriate retention
-        String auditDataset = "audit." + record.getSourceProduct() + "." + record.getTargetProduct();
+        String auditDataset = "audit." + record.getSourceScope().getScopeId()
+                + "." + record.getTargetScope().getScopeId();
 
         DataWriteRequest request = new DataWriteRequest(
             auditDataset,
             record.getAuditId(),
-            serializeAuditRecord(record),
+            JsonUtils.toJson(record).getBytes(StandardCharsets.UTF_8),
             Map.of(
-                "retentionYears", String.valueOf(record.getRetentionPeriod().getYears()),
+                "retentionYears", String.valueOf(record.getRetentionYears()),
+                "storageTier", record.getStorageTier() != null ? record.getStorageTier() : "default",
                 "timestamp", record.getTimestamp().toString()
             )
         );
@@ -246,61 +252,23 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
     }
 
     /**
-     * Queries audit events with filtering.
+     * Stores scope-aware shared data using scope descriptors instead of product ids.
      *
-     * @param start start time
-     * @param end end time
-     * @param sourceProduct optional source filter
-     * @param targetProduct optional target filter
-     * @return Promise containing matching records
-     */
-    public Promise<Set<CrossProductAuditService.AuditRecord>> queryAuditEvents(
-            Instant start, Instant end,
-            String sourceProduct, String targetProduct) {
-
-        // Build query for audit dataset
-        StringBuilder query = new StringBuilder("timestamp >= :start AND timestamp <= :end");
-        Map<String, Object> params = new HashMap<>();
-        params.put("start", start.toEpochMilli());
-        params.put("end", end.toEpochMilli());
-
-        if (sourceProduct != null) {
-            query.append(" AND sourceProduct = :source");
-            params.put("source", sourceProduct);
-        }
-
-        if (targetProduct != null) {
-            query.append(" AND targetProduct = :target");
-            params.put("target", targetProduct);
-        }
-
-        // Query across all audit datasets
-        return queryAllAuditDatasets(query.toString(), params)
-            .map(results -> results.stream()
-                .map(this::deserializeAuditRecord)
-                .collect(Collectors.toSet()));
-    }
-
-    /**
-     * Stores shared data for cross-product access.
-     *
-     * @param record the shared data record
+     * @param record the shared scope record
      * @return Promise completing when stored
      */
-    public Promise<Void> storeSharedData(KernelInterProductBus.SharedDataRecord record) {
+    public Promise<Void> storeScopeSharedData(KernelInterScopeBus.SharedScopeRecord record) {
         Objects.requireNonNull(record, "record cannot be null");
 
-        String sharedDataset = "shared." + record.getSourceProduct() + "." + record.getTargetProduct();
+        String sharedDataset = "shared." + record.getSourceScope().getScopeId()
+                + "." + record.getTargetScope().getScopeId();
 
         DataWriteRequest request = new DataWriteRequest(
             sharedDataset,
             record.getDataId(),
-            serializeSharedData(record),
+            JsonUtils.toJson(record).getBytes(StandardCharsets.UTF_8),
             Map.of(
-                "accessPolicy", record.getAccessPolicy(),
-                "retentionDays", String.valueOf(record.getRetentionPeriod().toDays()),
-                "encryptionRequired", String.valueOf(record.isEncryptionRequired()),
-                "auditRequired", String.valueOf(record.isAuditRequired()),
+                "classification", record.getClassification().toString(),
                 "createdAt", record.getCreatedAt().toString()
             )
         );
@@ -308,98 +276,10 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
         return writeData(request);
     }
 
-    /**
-     * Retrieves shared data from another product.
-     *
-     * @param dataId the data identifier
-     * @param requestingProduct the requesting product
-     * @return Promise containing the shared data
-     */
-    public Promise<KernelInterProductBus.SharedDataRecord> retrieveSharedData(
-            String dataId, String requestingProduct) {
-
-        Objects.requireNonNull(dataId, "dataId cannot be null");
-        Objects.requireNonNull(requestingProduct, "requestingProduct cannot be null");
-
-        // Query across shared datasets
-        return querySharedDatasets(dataId)
-            .then(result -> {
-                if (result == null) {
-                    return Promise.ofException(new IllegalStateException("Shared data not found: " + dataId));
-                }
-                return Promise.of(deserializeSharedData(result));
-            });
-    }
-
     // ==================== Private Methods ====================
 
     private <T> Promise<T> wrapFuture(CompletableFuture<T> future) {
         return Promise.ofFuture(future);
-    }
-
-    private byte[] serializeAuditRecord(CrossProductAuditService.AuditRecord record) {
-        // JSON serialization with canonical format for signatures
-        return JsonUtils.toJson(record).getBytes(StandardCharsets.UTF_8);
-    }
-
-    private CrossProductAuditService.AuditRecord deserializeAuditRecord(DataResult result) {
-        return JsonUtils.fromJson(new String(result.getData(), StandardCharsets.UTF_8),
-            CrossProductAuditService.AuditRecord.class);
-    }
-
-    private byte[] serializeSharedData(KernelInterProductBus.SharedDataRecord record) {
-        return JsonUtils.toJson(record).getBytes(StandardCharsets.UTF_8);
-    }
-
-    private KernelInterProductBus.SharedDataRecord deserializeSharedData(DataResult result) {
-        return JsonUtils.fromJson(new String(result.getData(), StandardCharsets.UTF_8),
-            KernelInterProductBus.SharedDataRecord.class);
-    }
-
-    private Promise<List<DataResult>> queryAllAuditDatasets(String query, Map<String, Object> params) {
-        // Query audit datasets for all products
-        List<Promise<List<DataResult>>> promises = List.of(
-            queryData(new DataQueryRequest("audit.phr.finance", query, params, 1000, 0)),
-            queryData(new DataQueryRequest("audit.finance.phr", query, params, 1000, 0))
-        );
-
-        return Promises.all(promises).then(results -> {
-            List<DataResult> combined = new ArrayList<>();
-            for (QueryResult qr : results) {
-                combined.addAll(qr.getResults());
-            }
-            return Promise.of(combined);
-        });
-    }
-
-    private Promise<DataResult> querySharedDatasets(String dataId) {
-        // Try to find data across all shared datasets
-        List<String> datasets = List.of("shared.phr.finance", "shared.finance.phr");
-
-        Promise<DataResult> searchPromise = Promise.of(null);
-
-        for (String dataset : datasets) {
-            searchPromise = searchPromise.then(currentResult -> {
-                if (currentResult != null) {
-                    return Promise.of(currentResult);
-                }
-                return queryData(new DataQueryRequest(
-                    dataset,
-                    "dataId = :id",
-                    Map.of("id", dataId),
-                    1, 0
-                )).then(queryResult -> {
-                    if (!queryResult.getResults().isEmpty()) {
-                        return Promise.of(queryResult.getResults().get(0));
-                    }
-                    return Promise.of(null);
-                }).whenException(e -> {
-                    // Continue to next dataset on error
-                });
-            });
-        }
-
-        return searchPromise;
     }
 
     // ==================== Inner Types ====================
@@ -420,6 +300,9 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
         CompletableFuture<Void> rollbackTransaction(Object transaction);
         CompletableFuture<Object> openReadStream(String datasetId, Map<String, String> options);
         CompletableFuture<Object> openWriteStream(String datasetId, Map<String, String> options);
+        CompletableFuture<byte[]> readStreamChunk(Object stream);
+        CompletableFuture<Void> writeStreamChunk(Object stream, byte[] data);
+        CompletableFuture<Void> closeStream(Object stream);
     }
 
     private static class TransactionImpl implements TransactionHandle {

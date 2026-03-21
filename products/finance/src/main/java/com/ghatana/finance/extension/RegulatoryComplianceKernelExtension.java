@@ -61,7 +61,7 @@ public class RegulatoryComplianceKernelExtension implements KernelExtension {
 
     @Override
     public KernelDescriptor getDescriptor() {
-        return KernelDescriptor.builder()
+        return new KernelDescriptor.Builder()
             .withDescriptorId(EXTENSION_ID)
             .withName(NAME)
             .withVersion(VERSION)
@@ -104,7 +104,6 @@ public class RegulatoryComplianceKernelExtension implements KernelExtension {
         );
     }
 
-    @Override
     public String getTargetCapabilityId() {
         return "security.framework";
     }
@@ -140,7 +139,6 @@ public class RegulatoryComplianceKernelExtension implements KernelExtension {
             .anyMatch(c -> c.getCapabilityId().equals("security.framework"));
     }
 
-    @Override
     public boolean isCompatibleWithKernel(String kernelVersion) {
         return kernelVersion.compareTo("1.0.0") >= 0;
     }

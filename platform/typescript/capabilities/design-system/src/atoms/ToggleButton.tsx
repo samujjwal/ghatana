@@ -47,7 +47,7 @@ const sizeMetrics: Record<ToggleButtonSize, {
 // ---------------------------------------------------------------------------
 
 export interface ToggleButtonProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'value'> {
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'value' | 'onChange'> {
   /** Unique value in a group */
   value: string;
 

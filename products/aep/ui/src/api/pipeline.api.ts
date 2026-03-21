@@ -8,23 +8,13 @@
  * @doc.purpose AEP backend integration
  * @doc.layer frontend
  */
-import axios, { type AxiosInstance } from 'axios';
 import type {
   PipelineSpec,
   PipelineValidationResult,
   ConnectorSpec,
   PatternType,
 } from '@/types/pipeline.types';
-
-// In dev the Vite proxy (/api → localhost:8081) handles routing.
-// In production set VITE_AEP_API_URL or rely on the reverse-proxy.
-const BASE_URL = import.meta.env.VITE_AEP_API_URL ?? '';
-
-const client: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 30_000,
-});
+import { apiClient as client } from '@/lib/http-client';
 
 // ─── Pipeline CRUD ───────────────────────────────────────────────────
 

@@ -351,11 +351,13 @@ public class AdvancedQueryBuilder {
      * @return promise of results
      */
     private Promise<QueryResults> executeQuery(QueryPlan plan) {
-        return Promise.ofBlocking(blockingExecutor(), () -> {
+        try {
             logger.info("Executing optimized query: {}", plan.id());
             // Placeholder - in production this would execute SQL/JSONB query
-            return new QueryResults(plan.id(), Collections.emptyList(), 0, plan.limit);
-        });
+            return Promise.of(new QueryResults(plan.id(), Collections.emptyList(), 0, plan.limit));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**

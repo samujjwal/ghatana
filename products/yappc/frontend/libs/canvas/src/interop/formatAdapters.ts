@@ -168,7 +168,7 @@ export function exportToMermaid(
         break;
     }
 
-    mermaid += `${nodeDef  }\n`;
+    mermaid += `${nodeDef}\n`;
 
     // Add styling if enabled
     if (includeStyles && node.style) {

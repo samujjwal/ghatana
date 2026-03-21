@@ -15,6 +15,12 @@ import java.util.Map;
 public interface WorkflowContext {
 
     /**
+     * Returns the run ID for this execution.
+     */
+    @NotNull
+    String getRunId();
+
+    /**
      * Returns the workflow ID.
      */
     @NotNull

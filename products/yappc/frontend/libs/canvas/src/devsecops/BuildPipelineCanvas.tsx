@@ -81,7 +81,7 @@ export const BuildPipelineCanvas: React.FC<BuildPipelineCanvasProps> = ({
     const renderStep = (step: BuildStep) => (
         <Paper
             key={step.id}
-            className="p-4 mb-4" style={{ borderLeft: `4px solid ${step.parallel ? '#10b981' : '#3b82f6' }}
+            className="p-4 mb-4" style={{ borderLeft: `4px solid ${step.parallel ? '#10b981' : '#3b82f6'}`}}
         >
             <Box className="flex items-start gap-2">
                 <Build className="mt-1" />

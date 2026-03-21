@@ -91,59 +91,45 @@ public class EmbeddingCacheAdapter {
         long startTime = System.currentTimeMillis();
         String cacheKeyValue = buildCacheKey(text);
 
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
-            try {
-                // Try to get from cache
-                String cached = commands.get(cacheKeyValue);
-                if (cached != null) {
-                    long duration = System.currentTimeMillis() - startTime;
-                    metricsCollector.incrementCounter("cache.embedding.hits");
-                    logger.debug("Embedding cache hit for text: {} ({}ms)", text.hashCode(), duration);
-                    return objectMapper.readValue(cached, float[].class);
-                }
-
-                metricsCollector.incrementCounter("cache.embedding.misses");
-                logger.debug("Embedding cache miss for text: {}", text.hashCode());
-                return null;
-            } catch (Exception e) {
-                logger.error("Error reading from embedding cache", e);
-                metricsCollector.incrementCounter("cache.embedding.errors");
-                return null;
-            }
-        }).then(cached -> {
+        try {
+            // Try to get from cache
+            String cached = commands.get(cacheKeyValue);
             if (cached != null) {
-                return Promise.of(cached);
+                long duration = System.currentTimeMillis() - startTime;
+                metricsCollector.incrementCounter("cache.embedding.hits");
+                logger.debug("Embedding cache hit for text: {} ({}ms)", text.hashCode(), duration);
+                return Promise.of(objectMapper.readValue(cached, float[].class));
             }
 
-            // Compute embedding
+            metricsCollector.incrementCounter("cache.embedding.misses");
+            logger.debug("Embedding cache miss for text: {}", text.hashCode());
+            // Compute embedding on cache miss
             return provider.provide()
-                    .then(embedding -> {
-                        // Store in cache
-                        return Promise.ofBlocking(new ForkJoinPool(), () -> {
-                            try {
-                                String keyForStorage = buildCacheKey(text);
-                                String serialized = objectMapper.writeValueAsString(embedding);
-                                commands.setex(keyForStorage, TTL_SECONDS, serialized);
-                                
-                                // Check cache size and evict if needed
-                                checkAndEvictIfNeeded();
-                                
-                                long duration = System.currentTimeMillis() - startTime;
-                                logger.debug("Embedding computed and cached: {} ({}ms)", text.hashCode(), duration);
-                                
-                                return embedding;
-                            } catch (Exception e) {
-                                logger.error("Error storing embedding in cache", e);
-                                metricsCollector.incrementCounter("cache.embedding.errors");
-                                throw e;
-                            }
-                        });
-                    });
-        }).mapException(error -> {
-            logger.error("Error in embedding cache: {}", error.getMessage());
+                            .then(embedding -> {
+                                // Store in cache
+                                try {
+                                    String keyForStorage = buildCacheKey(text);
+                                    String serialized = objectMapper.writeValueAsString(embedding);
+                                    commands.setex(keyForStorage, TTL_SECONDS, serialized);
+
+                                    // Check cache size and evict if needed
+                                    checkAndEvictIfNeeded();
+
+                                    long duration = System.currentTimeMillis() - startTime;
+                                    logger.debug("Embedding computed and cached: {} ({}ms)", text.hashCode(), duration);
+
+                                    return Promise.of(embedding);
+                                } catch (Exception ex) {
+                                    logger.error("Error storing embedding in cache", ex);
+                                    metricsCollector.incrementCounter("cache.embedding.errors");
+                                    return Promise.ofException(ex);
+                                }
+                            });
+        } catch (Exception e) {
+            logger.error("Error reading from embedding cache", e);
             metricsCollector.incrementCounter("cache.embedding.errors");
-            throw new RuntimeException("Failed to get embedding: " + error.getMessage());
-        });
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -152,27 +138,26 @@ public class EmbeddingCacheAdapter {
      * @return void
      */
     public Promise<Void> clear() {
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
-            try {
-                ArrayList<String> keysToDelete = new ArrayList<>();
-                ScanCursor cursor = ScanCursor.INITIAL;
-                
-                do {
-                    KeyScanCursor<String> scanResult = commands.scan(cursor,
-                            ScanArgs.Builder.matches(CACHE_PREFIX + "*"));
-                    cursor = scanResult;
-                    keysToDelete.addAll(scanResult.getKeys());
-                } while (!cursor.isFinished());
-                
-                if (!keysToDelete.isEmpty()) {
-                    commands.del(keysToDelete.toArray(new String[0]));
-                    logger.info("Cleared {} embeddings from cache", keysToDelete.size());
-                }
-            } catch (Exception e) {
-                logger.error("Error clearing embedding cache", e);
+        try {
+            ArrayList<String> keysToDelete = new ArrayList<>();
+            ScanCursor cursor = ScanCursor.INITIAL;
+
+            do {
+                KeyScanCursor<String> scanResult = commands.scan(cursor,
+                        ScanArgs.Builder.matches(CACHE_PREFIX + "*"));
+                cursor = scanResult;
+                keysToDelete.addAll(scanResult.getKeys());
+            } while (!cursor.isFinished());
+
+            if (!keysToDelete.isEmpty()) {
+                commands.del(keysToDelete.toArray(new String[0]));
+                logger.info("Cleared {} embeddings from cache", keysToDelete.size());
             }
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            logger.error("Error clearing embedding cache", e);
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -181,34 +166,32 @@ public class EmbeddingCacheAdapter {
      * @return cache stats
      */
     public Promise<CacheStats> getStats() {
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
-            try {
-                ArrayList<String> keysToCount = new ArrayList<>();
-                ScanCursor cursor = ScanCursor.INITIAL;
-                long totalMemory = 0;
-                
-                do {
-                    KeyScanCursor<String> scanResult = commands.scan(cursor,
-                            ScanArgs.Builder.matches(CACHE_PREFIX + "*"));
-                    cursor = scanResult;
-                    keysToCount.addAll(scanResult.getKeys());
-                } while (!cursor.isFinished());
-                
-                for (String key : keysToCount) {
-                    totalMemory += commands.strlen(key);
-                }
-                
-                return new CacheStats(
-                        keysToCount.size(),
-                        totalMemory,
-                        TTL_SECONDS,
-                        MAX_CACHE_SIZE
-                );
-            } catch (Exception e) {
-                logger.error("Error getting cache stats", e);
-                return new CacheStats(0, 0, TTL_SECONDS, MAX_CACHE_SIZE);
+        try {
+            ArrayList<String> keysToCount = new ArrayList<>();
+            ScanCursor cursor = ScanCursor.INITIAL;
+            long totalMemory = 0;
+
+            do {
+                KeyScanCursor<String> scanResult = commands.scan(cursor,
+                        ScanArgs.Builder.matches(CACHE_PREFIX + "*"));
+                cursor = scanResult;
+                keysToCount.addAll(scanResult.getKeys());
+            } while (!cursor.isFinished());
+
+            for (String key : keysToCount) {
+                totalMemory += commands.strlen(key);
             }
-        });
+
+            return Promise.of(new CacheStats(
+                    keysToCount.size(),
+                    totalMemory,
+                    TTL_SECONDS,
+                    MAX_CACHE_SIZE
+            ));
+        } catch (Exception e) {
+            logger.error("Error getting cache stats", e);
+            return Promise.of(new CacheStats(0, 0, TTL_SECONDS, MAX_CACHE_SIZE));
+        }
     }
 
     /**

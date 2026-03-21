@@ -134,47 +134,45 @@ public class StorageService {
 
         long startTime = System.currentTimeMillis();
 
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            try {
-                // Find spans ready for archival
-                List<SpanData> archivalCandidates = tierManager.getSpansReadyForArchival(tenantId, spans);
+        try {
+            // Find spans ready for archival
+            List<SpanData> archivalCandidates = tierManager.getSpansReadyForArchival(tenantId, spans);
 
-                if (archivalCandidates.isEmpty()) {
-                    return 0;
-                }
-
-                // Archive each span
-                int archived = 0;
-                for (SpanData span : archivalCandidates) {
-                    try {
-                        String archivePath = tierManager.getArchivePath(span);
-                        archiveAdapter.archiveSpan(tenantId, span, archivePath);
-                        archived++;
-                    } catch (Exception e) {
-                        // Log but continue with other spans
-                        metrics.incrementCounter(
-                                "trace.archive.failed",
-                                "tenant", tenantId,
-                                "trace_id", span.getTraceId()
-                        );
-                    }
-                }
-
-                // Record metrics
-                long duration = System.currentTimeMillis() - startTime;
-                metrics.recordTimer("trace.archive.batch.duration", duration);
-                metrics.incrementCounter(
-                        "trace.archived",
-                        "tenant", tenantId,
-                        "count", String.valueOf(archived)
-                );
-
-                return archived;
-            } catch (Exception e) {
-                metrics.incrementCounter("trace.archive.error", "tenant", tenantId);
-                throw e;
+            if (archivalCandidates.isEmpty()) {
+                return Promise.of(0);
             }
-        });
+
+            // Archive each span
+            int archived = 0;
+            for (SpanData span : archivalCandidates) {
+                try {
+                    String archivePath = tierManager.getArchivePath(span);
+                    archiveAdapter.archiveSpan(tenantId, span, archivePath);
+                    archived++;
+                } catch (Exception e) {
+                    // Log but continue with other spans
+                    metrics.incrementCounter(
+                            "trace.archive.failed",
+                            "tenant", tenantId,
+                            "trace_id", span.getTraceId()
+                    );
+                }
+            }
+
+            // Record metrics
+            long duration = System.currentTimeMillis() - startTime;
+            metrics.recordTimer("trace.archive.batch.duration", duration);
+            metrics.incrementCounter(
+                    "trace.archived",
+                    "tenant", tenantId,
+                    "count", String.valueOf(archived)
+            );
+
+            return Promise.of(archived);
+        } catch (Exception e) {
+            metrics.incrementCounter("trace.archive.error", "tenant", tenantId);
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -195,46 +193,44 @@ public class StorageService {
 
         long startTime = System.currentTimeMillis();
 
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            try {
-                // Find spans ready for deletion
-                List<SpanData> deletionCandidates = tierManager.getSpansReadyForDeletion(
-                        tenantId, spans, deleteAfterArchiveAge);
+        try {
+            // Find spans ready for deletion
+            List<SpanData> deletionCandidates = tierManager.getSpansReadyForDeletion(
+                    tenantId, spans, deleteAfterArchiveAge);
 
-                if (deletionCandidates.isEmpty()) {
-                    return 0;
-                }
-
-                // Delete each span
-                int deleted = 0;
-                for (SpanData span : deletionCandidates) {
-                    try {
-                        archiveAdapter.deleteSpan(tenantId, span);
-                        deleted++;
-                    } catch (Exception e) {
-                        metrics.incrementCounter(
-                                "trace.delete.failed",
-                                "tenant", tenantId,
-                                "trace_id", span.getTraceId()
-                        );
-                    }
-                }
-
-                // Record metrics
-                long duration = System.currentTimeMillis() - startTime;
-                metrics.recordTimer("trace.delete.batch.duration", duration);
-                metrics.incrementCounter(
-                        "trace.deleted",
-                        "tenant", tenantId,
-                        "count", String.valueOf(deleted)
-                );
-
-                return deleted;
-            } catch (Exception e) {
-                metrics.incrementCounter("trace.delete.error", "tenant", tenantId);
-                throw e;
+            if (deletionCandidates.isEmpty()) {
+                return Promise.of(0);
             }
-        });
+
+            // Delete each span
+            int deleted = 0;
+            for (SpanData span : deletionCandidates) {
+                try {
+                    archiveAdapter.deleteSpan(tenantId, span);
+                    deleted++;
+                } catch (Exception e) {
+                    metrics.incrementCounter(
+                            "trace.delete.failed",
+                            "tenant", tenantId,
+                            "trace_id", span.getTraceId()
+                    );
+                }
+            }
+
+            // Record metrics
+            long duration = System.currentTimeMillis() - startTime;
+            metrics.recordTimer("trace.delete.batch.duration", duration);
+            metrics.incrementCounter(
+                    "trace.deleted",
+                    "tenant", tenantId,
+                    "count", String.valueOf(deleted)
+            );
+
+            return Promise.of(deleted);
+        } catch (Exception e) {
+            metrics.incrementCounter("trace.delete.error", "tenant", tenantId);
+            return Promise.ofException(e);
+        }
     }
 
     /**

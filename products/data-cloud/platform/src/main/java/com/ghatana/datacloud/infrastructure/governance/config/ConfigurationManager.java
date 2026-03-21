@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Configuration manager for Collection Entity System governance.
+ * Configuration manager for Data Cloud governance.
  *
  * <p><b>Purpose</b><br>
  * Centralizes loading and management of application configuration from

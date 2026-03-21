@@ -302,7 +302,7 @@ export function FloatingToolbar({
   return (
     <>
       <Box
-        className="fixed flex items-center gap-0" style={{ left: position.x, top: position.y, transform: getTransform(), zIndex: Z_INDEX.FLOATING_TOOLBAR || 450, backgroundColor: COLORS.PANEL_BG_LIGHT, borderRadius: SPACING.SM, border: `1px solid ${COLORS.BORDER_LIGHT}` }}
+        className="fixed flex items-center gap-0" style={{ left: position.x, top: position.y, transform: getTransform(), zIndex: Z_INDEX.FLOATING_TOOLBAR || 450, backgroundColor: COLORS.PANEL_BG_LIGHT, borderRadius: SPACING.SM, border: `1px solid ${COLORS.BORDER_LIGHT}`}}
         role="toolbar"
         aria-label="Floating actions"
         onClick={(e) => e.stopPropagation()}

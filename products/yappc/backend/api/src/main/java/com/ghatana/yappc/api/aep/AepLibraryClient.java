@@ -34,8 +34,6 @@ import org.slf4j.LoggerFactory;
 public final class AepLibraryClient implements AepClient {
 
   private static final Logger LOG = LoggerFactory.getLogger(AepLibraryClient.class);
-  private static final String DEFAULT_TENANT_ID = "default";
-
   private final ObjectMapper objectMapper;
   private final AepEngine engine;
 
@@ -202,7 +200,8 @@ public final class AepLibraryClient implements AepClient {
     if (!contextTenantId.isBlank() && !contextTenantId.equals("default-tenant")) {
       return contextTenantId;
     }
-    return DEFAULT_TENANT_ID;
+    throw new IllegalStateException(
+        "No tenant ID found in payload, headers, or TenantContext — multi-tenant isolation requires an explicit tenant");
   }
 
   private String writeJson(Object value) throws AepException {

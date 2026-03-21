@@ -239,7 +239,7 @@ class BrainUnifiedService {
    */
   async matchPatterns(data: unknown): Promise<BrainResponse<PatternMatch[]>> {
     try {
-      const patterns = await brainService.matchPatterns(data);
+      const patterns = await brainService.matchPatterns(data as Record<string, unknown>);
 
       return {
         data: patterns,

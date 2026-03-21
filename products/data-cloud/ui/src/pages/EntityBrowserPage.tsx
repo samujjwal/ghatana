@@ -12,7 +12,7 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { apiClient } from '../lib/api/client';
 
 // =============================================================================
 // Types
@@ -54,36 +54,30 @@ interface EntityListResponse {
 // API helpers
 // =============================================================================
 
-const DC_BASE = import.meta.env.VITE_DC_API_URL ?? '/api';
-const dc = axios.create({ baseURL: DC_BASE, headers: { 'Content-Type': 'application/json' } });
-
 async function listNamespaces(tenantId?: string): Promise<string[]> {
-  const { data } = await dc.get<string[]>('/dc/entities/namespaces', {
+  return apiClient.get<string[]>('/dc/entities/namespaces', {
     params: tenantId ? { tenantId } : {},
   });
-  return data;
 }
 
 async function listEntities(namespace: string, tenantId?: string, limit = 20): Promise<EntityListResponse> {
-  const { data } = await dc.get<EntityListResponse>(`/dc/entities/${namespace}`, {
+  return apiClient.get<EntityListResponse>(`/dc/entities/${namespace}`, {
     params: { ...(tenantId ? { tenantId } : {}), limit },
   });
-  return data;
 }
 
 async function getEntitySchema(namespace: string, tenantId?: string): Promise<EntitySchema | null> {
   try {
-    const { data } = await dc.get<EntitySchema>(`/dc/schemas/${namespace}`, {
+    return await apiClient.get<EntitySchema>(`/dc/schemas/${namespace}`, {
       params: tenantId ? { tenantId } : {},
     });
-    return data;
   } catch {
     return null;
   }
 }
 
 async function deleteEntity(namespace: string, id: string, tenantId?: string): Promise<void> {
-  await dc.delete(`/dc/entities/${namespace}/${id}`, {
+  await apiClient.delete(`/dc/entities/${namespace}/${id}`, {
     params: tenantId ? { tenantId } : {},
   });
 }

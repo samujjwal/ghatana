@@ -47,9 +47,6 @@ dependencies {
     api(project(":platform:java:database"))
     api(project(":platform:java:observability"))
     
-    // ─── Platform Types ───────────────────────────────────────────────────────
-    api(project(":platform:java:types"))
-    
     // ─── ActiveJ (Mandatory for kernel modules) ───────────────────────────────
     api(libs.activej.promise)
     implementation(libs.activej.eventloop)

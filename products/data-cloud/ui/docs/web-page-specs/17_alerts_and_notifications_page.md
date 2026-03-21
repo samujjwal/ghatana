@@ -1,6 +1,6 @@
 # 17. Alerts & Notifications Page – Deep-Dive Spec
 
-> **Status:** Planned page – no concrete implementation in CES UI yet. This spec corresponds to the Notifications & Alerts section in `frontend_todo (1).md`.
+> **Status:** Planned page – no concrete implementation in Data Cloud UI yet. This spec corresponds to the Notifications & Alerts section in `frontend_todo (1).md`.
 
 ---
 
@@ -110,7 +110,7 @@ In a mature system, the Alerts & Notifications UI should:
 
 ## 7. Coherence with App Creator / Canvas & Platform
 
-- Alerts may be generated from workflows created in CES and from apps/pipelines across the platform.
+- Alerts may be generated from workflows created in Data Cloud and from apps/pipelines across the platform.
 - App Creator and AEP UIs should be able to deep-link into this page with pre-filtered contexts.
 - Alert rules should be aware of governance settings (e.g., extra sensitivity for PII-related metrics).
 

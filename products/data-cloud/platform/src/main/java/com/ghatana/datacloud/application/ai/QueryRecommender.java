@@ -75,7 +75,7 @@ public class QueryRecommender {
             String userId,
             String queryText) {
 
-        return Promise.ofBlocking(blockingExecutor(), () -> {
+        try {
             logger.info("Generating recommendations for user: {} query: {}", userId, queryText);
 
             List<QueryRecommendation> recommendations = new ArrayList<>();
@@ -100,11 +100,20 @@ public class QueryRecommender {
                     .limit(5)
                     .collect(Collectors.toList());
 
-            metricsCollector.incrementCounter("ai.recommendations_generated", "count", String.valueOf(topRecommendations.size()));
-            logger.info("Generated {} recommendations", topRecommendations.size());
+            // Track pattern
+            UserQueryPattern pattern = userPatterns.computeIfAbsent(
+                    userId,
+                    k -> new UserQueryPattern(userId)
+            );
+            pattern.recordQuery(queryText, topRecommendations.size(), 0);
 
-            return topRecommendations;
-        });
+            metricsCollector.incrementCounter("recommendations.generated");
+            logger.debug("Generated {} recommendations for user: {}", topRecommendations.size(), userId);
+
+            return Promise.of(topRecommendations);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**

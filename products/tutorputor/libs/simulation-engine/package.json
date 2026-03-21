@@ -10,7 +10,7 @@
     "format": "prettier --write \"src/**/*.ts\""
   },
   "dependencies": {
-    "fastify": "^4.24.3",
+    "fastify": "^5.7.4",
     "@tutorputor/db": "workspace:*",
     "@tutorputor/ai-proxy": "workspace:*"
   },

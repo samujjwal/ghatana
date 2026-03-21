@@ -13,7 +13,7 @@ import static com.ghatana.platform.observability.util.BlockingExecutors.blocking
  *
  * <p><b>Purpose</b><br>
  * Enables the workflow designer to receive step-by-step plan suggestions,
- * auto-remediations, and template generation from CES orchestration agents.
+ * auto-remediations, and template generation from Data Cloud orchestration agents.
  * Simplifies complex workflow authoring with real-time agent collaboration.
  *
  * <p><b>Usage</b><br>
@@ -84,7 +84,7 @@ public class AgentRecommendationService {
     public Promise<WorkflowRecommendation> getRecommendations(UUID workflowId, String context) {
         long startTime = System.currentTimeMillis();
 
-        return Promise.ofBlocking(blockingExecutor(), () -> {
+        try {
             logger.info("Generating recommendations for workflow: {}", workflowId);
 
             List<Suggestion> suggestions = new ArrayList<>();
@@ -122,8 +122,10 @@ public class AgentRecommendationService {
             logger.info("Generated {} recommendations for workflow: {} ({}ms)",
                     suggestions.size(), workflowId, duration);
 
-            return recommendation;
-        });
+            return Promise.of(recommendation);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -252,7 +254,7 @@ public class AgentRecommendationService {
      * @return void
      */
     public Promise<Void> recordFeedback(UUID workflowId, String suggestionId, String feedback) {
-        return Promise.ofBlocking(blockingExecutor(), () -> {
+        try {
             logger.info("Recording feedback for suggestion: {} - {}", suggestionId, feedback);
 
             Observation observation = new Observation(
@@ -266,14 +268,12 @@ public class AgentRecommendationService {
             observationRepository.save(observation);
             metricsCollector.incrementCounter("agent.feedback_recorded", "type", feedback);
             logger.debug("Feedback recorded successfully");
-            return null;
-        })
-                .map(v -> (Void) null)
-                .mapException(error -> {
+            return Promise.of(null);
+        } catch (Exception error) {
             logger.error("Error recording feedback: {}", error.getMessage());
             metricsCollector.incrementCounter("agent.feedback_error");
-            throw new RuntimeException("Failed to record feedback: " + error.getMessage());
-        });
+            return Promise.ofException(new RuntimeException("Failed to record feedback: " + error.getMessage()));
+        }
     }
 
     /**

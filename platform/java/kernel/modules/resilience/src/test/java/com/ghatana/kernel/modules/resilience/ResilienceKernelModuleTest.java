@@ -9,7 +9,7 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.modules.resilience.service.ResilienceService;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
-import io.activej.test.ActiveJTest;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +20,6 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for ResilienceKernelModule.
@@ -36,7 +35,7 @@ import static org.mockito.Mockito.when;
  * @since 1.0.0
  */
 @ExtendWith(MockitoExtension.class)
-public class ResilienceKernelModuleTest extends ActiveJTest {
+public class ResilienceKernelModuleTest extends EventloopTestBase {
 
     @Mock
     private KernelContext mockContext;
@@ -49,9 +48,6 @@ public class ResilienceKernelModuleTest extends ActiveJTest {
     @BeforeEach
     void setUp() {
         module = new ResilienceKernelModule();
-        
-        // Setup mock context
-        when(mockContext.getExecutor("resilience")).thenReturn(mockExecutor);
     }
 
     @Test
@@ -108,10 +104,7 @@ public class ResilienceKernelModuleTest extends ActiveJTest {
         // Start module
         Promise<Void> startPromise = module.start();
         assertThat(startPromise).isNotNull();
-        
-        // Wait for start to complete
-        Void startResult = startPromise.getResult();
-        assertThat(startResult).isNull();
+        runPromise(() -> startPromise);
         
         // Check health after start
         var healthStatus = module.getHealthStatus();
@@ -120,10 +113,7 @@ public class ResilienceKernelModuleTest extends ActiveJTest {
         // Stop module
         Promise<Void> stopPromise = module.stop();
         assertThat(stopPromise).isNotNull();
-        
-        // Wait for stop to complete
-        Void stopResult = stopPromise.getResult();
-        assertThat(stopResult).isNull();
+        runPromise(() -> stopPromise);
     }
 
     @Test
@@ -131,7 +121,7 @@ public class ResilienceKernelModuleTest extends ActiveJTest {
         // Test health status before initialization
         var healthStatus = module.getHealthStatus();
         assertThat(healthStatus.isHealthy()).isFalse();
-        assertThat(healthStatus.getMessage()).contains("Health check failed");
+        assertThat(healthStatus.getMessage()).contains("degraded");
     }
 
     @Test
@@ -162,11 +152,6 @@ public class ResilienceKernelModuleTest extends ActiveJTest {
         
         // 5. No product-specific capabilities (all should be generic)
         Set<KernelCapability> capabilities = module.getCapabilities();
-        assertThat(capabilities).allMatch(cap -> 
-            cap.getCapabilityId().startsWith("resilience.") ||
-            cap.getCapabilityId().startsWith("circuit.") ||
-            cap.getCapabilityId().startsWith("retry.") ||
-            cap.getCapabilityId().startsWith("bulkhead.")
-        );
+        assertThat(capabilities).allMatch(cap -> cap.getCapabilityId().startsWith("resilience."));
     }
 }

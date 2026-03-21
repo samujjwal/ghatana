@@ -127,16 +127,14 @@ public class BackpressureManager {
                 return Promise.of(EnqueueResult.rejected("Queue full"));
             } else if (control.shouldThrottle()) {
                 // Apply backoff and retry in a blocking-safe way
-                return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                    try {
-                        Thread.sleep(control.getBackoffMs());
-                        ingestQueue.put(item);
-                        return EnqueueResult.accepted();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        return EnqueueResult.failed("Interrupted");
-                    }
-                });
+                try {
+                    Thread.sleep(control.getBackoffMs());
+                    ingestQueue.put(item);
+                    return Promise.of(EnqueueResult.accepted());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return Promise.of(EnqueueResult.failed("Interrupted"));
+                }
              }
          }
 
@@ -262,35 +260,35 @@ public class BackpressureManager {
             this.reason = reason;
             this.backoffMs = backoffMs;
         }
-        
+
         public boolean canAccept() {
             return action == FlowControlAction.ACCEPT;
         }
-        
-        public boolean shouldThrottle() {
-            return action == FlowControlAction.THROTTLE;
-        }
-        
+
         public boolean shouldReject() {
             return action == FlowControlAction.REJECT;
         }
-        
+
+        public boolean shouldThrottle() {
+            return action == FlowControlAction.THROTTLE;
+        }
+
         public long getBackoffMs() {
             return backoffMs;
         }
-        
+
         public String getReason() {
             return reason;
         }
-        
+
         public static FlowControl accept() {
-            return new FlowControl(FlowControlAction.ACCEPT, "Queue has capacity", 0);
+            return new FlowControl(FlowControlAction.ACCEPT, "Accepted", 0);
         }
-        
+
         public static FlowControl throttle(long backoffMs) {
-            return new FlowControl(FlowControlAction.THROTTLE, "Queue high", backoffMs);
+            return new FlowControl(FlowControlAction.THROTTLE, "Throttle", backoffMs);
         }
-        
+
         public static FlowControl reject(String reason) {
             return new FlowControl(FlowControlAction.REJECT, reason, 0);
         }

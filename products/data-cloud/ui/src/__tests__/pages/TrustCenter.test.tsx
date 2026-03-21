@@ -1,12 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router';
-import { Provider } from 'jotai';
+import { TestWrapper } from '../test-utils/wrapper';
 import { TrustCenter } from '../../pages/TrustCenter';
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <Provider><BrowserRouter>{children}</BrowserRouter></Provider>
-);
 
 describe('TrustCenter', () => {
   it('renders without crashing', () => {

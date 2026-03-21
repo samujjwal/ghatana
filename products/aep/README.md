@@ -18,7 +18,7 @@ AEP is the canonical home for the `Operator`, `OperatorCatalog`, and `Pipeline` 
 ## Architecture
 
 ```
-data-cloud/event  →  AEP Launcher  →  PipelineExecutionEngine  →  OperatorCatalog
+data-cloud/event  →  AEP Server  →  PipelineExecutionEngine  →  OperatorCatalog
                                              │
                                     ┌────────┴────────┐
                               OperatorChain     UnifiedOperator impls
@@ -30,7 +30,7 @@ data-cloud/event  →  AEP Launcher  →  PipelineExecutionEngine  →  Operator
 |--------|---------|
 | `platform/` | Core interfaces: `Operator`, `Pipeline`, `OperatorCatalog`, `AgentRegistryService` |
 | `api/` | REST API for pipeline management and operator catalog queries |
-| `launcher/` | ActiveJ bootstrap and event-loop wiring |
+| `server/` | ActiveJ HTTP server, bootstrap and event-loop wiring |
 | `agent-catalog/` | YAML-based catalog of built-in operators |
 | `k8s/` | Kubernetes manifests for production deployment |
 | `helm/` | Helm charts |
@@ -54,7 +54,7 @@ data-cloud/event  →  AEP Launcher  →  PipelineExecutionEngine  →  Operator
 ./gradlew :products:aep:test
 
 # Run locally (requires Kafka/Redis)
-./gradlew :products:aep:launcher:run
+./gradlew :products:aep:server:run
 ```
 
 ## Key Design Decisions

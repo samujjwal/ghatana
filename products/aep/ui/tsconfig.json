@@ -16,19 +16,21 @@
     "paths": {
       "@/*": ["./src/*"],
       "@ghatana/design-system": [
-        "../../../platform/typescript/design-system/src/index.ts"
+        "../../../platform/typescript/capabilities/design-system/src/index.ts"
       ],
-      "@ghatana/flow-canvas": [
-        "../../../platform/typescript/canvas/flow-canvas/src/index.ts"
+      "@ghatana/canvas-core": [
+        "../../../platform/typescript/capabilities/canvas-core/src"
       ],
-      "@ghatana/theme": ["../../../platform/typescript/theme/src/index.ts"],
-      "@ghatana/tokens": ["../../../platform/typescript/tokens/src/index.ts"],
+      "@ghatana/theme": ["../../../platform/typescript/theme/src"],
+      "@ghatana/tokens": ["../../../platform/typescript/tokens/src"],
+      "@ghatana/utils": [
+        "../../../platform/typescript/foundation/platform-utils/src/index.ts"
+      ],
       "@ghatana/platform-utils": [
-        "../../../platform/typescript/utils/src/index.ts"
+        "../../../platform/typescript/foundation/platform-utils/src/index.ts"
       ]
     },
     "baseUrl": "."
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"]
 }

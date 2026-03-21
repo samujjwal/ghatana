@@ -226,7 +226,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
      */
     @Override
     public Promise<Void> healthCheck() {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             try (ClickHouseClient client = ClickHouseClient.newInstance(ClickHouseProtocol.HTTP);
                  ClickHouseResponse resp = client.read(server)
                          .query("SELECT 1")
@@ -235,8 +235,10 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
                 for (ClickHouseRecord ignored : resp.records()) { /* no-op */ }
             }
             log.debug("ClickHouse healthCheck OK (host={})", server.getHost());
-            return (Void) null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================
@@ -257,7 +259,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
                         .data(entity.getData())
                         .build();
 
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String dataJson = mapToJson(toCreate.getData());
             String sql = String.format(
                     "INSERT INTO %s (id, tenant_id, collection_name, data, created_at) VALUES ('%s','%s','%s','%s', now())",
@@ -270,8 +272,10 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             metrics.incrementCounter("connector.clickhouse.create",
                     "tenant", toCreate.getTenantId());
             log.debug("Inserted entity id={} tenant={}", id, toCreate.getTenantId());
-            return toCreate;
-        });
+            return Promise.of(toCreate);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -279,7 +283,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
         Objects.requireNonNull(entity, "entity must not be null");
         Objects.requireNonNull(entity.getId(), "entity.id must not be null");
         // ClickHouse MergeTree is append-only; updates are modelled as deletions + re-insert
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String deleteSql = String.format(
                     "ALTER TABLE %s DELETE WHERE id = '%s' AND tenant_id = '%s'",
                     TABLE,
@@ -298,15 +302,17 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             executeUpdate(insertSql);
             metrics.incrementCounter("connector.clickhouse.update",
                     "tenant", entity.getTenantId());
-            return entity;
-        });
+            return Promise.of(entity);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Void> delete(UUID collectionId, String tenantId, UUID entityId) {
         Objects.requireNonNull(entityId, "entityId must not be null");
         Objects.requireNonNull(tenantId, "tenantId must not be null");
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String sql = String.format(
                     // mutations_sync=1: block until ClickHouse applies the mutation on THIS
                     // node before returning — required for test correctness and for callers
@@ -318,8 +324,10 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
                     escapeIdentifier(tenantId));
             executeUpdate(sql);
             metrics.incrementCounter("connector.clickhouse.delete", "tenant", tenantId);
-            return (Void) null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================
@@ -330,7 +338,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
     public Promise<Optional<Entity>> read(UUID collectionId, String tenantId, UUID entityId) {
         Objects.requireNonNull(entityId, "entityId must not be null");
         Objects.requireNonNull(tenantId, "tenantId must not be null");
-        return Promise.ofBlocking(executor, () -> {
+        try {
             // PREWHERE on primary key columns (tenant_id, id) for MergeTree efficiency.
             // The engine evaluates PREWHERE before reading non-key columns (data, created_at),
             // dramatically reducing I/O for point-lookup queries.
@@ -342,15 +350,17 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
                     escapeIdentifier(tenantId),
                     escapeIdentifier(entityId.toString()));
             List<Entity> results = executeSelect(sql);
-            return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
-        });
+            return Promise.of(results.isEmpty() ? Optional.empty() : Optional.of(results.get(0)));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<QueryResult> query(UUID collectionId, String tenantId, QuerySpec spec) {
         Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(spec, "spec must not be null");
-        return Promise.ofBlocking(executor, () -> {
+        try {
             long start = System.currentTimeMillis();
             metrics.incrementCounter("connector.clickhouse.query", "tenant", tenantId);
 
@@ -394,14 +404,16 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             metrics.recordTimer("connector.clickhouse.duration", duration,
                     "operation", "query", "tenant", tenantId);
 
-            return new QueryResult(entities, entities.size(), limit, offset, duration);
-        });
+            return Promise.of(new QueryResult(entities, entities.size(), limit, offset, duration));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<Entity>> scan(UUID collectionId, String tenantId, String filterExpression, int limit, int offset) {
         Objects.requireNonNull(tenantId, "tenantId must not be null");
-        return Promise.ofBlocking(executor, () -> {
+        try {
             int effectiveLimit = limit > 0 ? limit : 1000;
             int effectiveOffset = offset > 0 ? offset : 0;
 
@@ -423,8 +435,10 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             }
             metrics.recordTimer("connector.clickhouse.duration", duration,
                     "operation", "scan", "tenant", tenantId);
-            return result;
-        });
+            return Promise.of(result);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================
@@ -448,7 +462,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
     @Override
     public Promise<Long> count(UUID collectionId, String tenantId, String filterExpression) {
         Objects.requireNonNull(tenantId, "tenantId must not be null");
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String sql = String.format(
                     "SELECT count() FROM %s PREWHERE tenant_id = '%s'" + QUERY_SETTINGS,
                     TABLE, escapeIdentifier(tenantId));
@@ -462,8 +476,10 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
                     count = row.getValue(0).asLong();
                 }
             }
-            return count;
-        });
+            return Promise.of(count);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -488,7 +504,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
         if (entities.isEmpty()) {
             return Promise.of(List.of());
         }
-        return Promise.ofBlocking(executor, () -> {
+        try {
             List<Entity> created = new ArrayList<>(entities.size());
             for (Entity entity : entities) {
                 UUID id = entity.getId() != null ? entity.getId() : UUID.randomUUID();
@@ -513,8 +529,10 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             metrics.incrementCounter("connector.clickhouse.bulkCreate",
                     "tenant", tenantId, "count", String.valueOf(created.size()));
             log.debug("[ClickHouse] bulk-created {} entities for tenant={}", created.size(), tenantId);
-            return created;
-        });
+            return Promise.of(created);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -538,7 +556,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
         if (entities.isEmpty()) {
             return Promise.of(List.of());
         }
-        return Promise.ofBlocking(executor, () -> {
+        try {
             List<Entity> updated = new ArrayList<>(entities.size());
             for (Entity entity : entities) {
                 Objects.requireNonNull(entity.getId(), "entity.id must not be null for update");
@@ -561,8 +579,10 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             metrics.incrementCounter("connector.clickhouse.bulkUpdate",
                     "tenant", tenantId, "count", String.valueOf(updated.size()));
             log.debug("[ClickHouse] bulk-updated {} entities for tenant={}", updated.size(), tenantId);
-            return updated;
-        });
+            return Promise.of(updated);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -672,7 +692,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
         if (entityIds.isEmpty()) {
             return Promise.of(0L);
         }
-        return Promise.ofBlocking(executor, () -> {
+        try {
             StringBuilder inClause = new StringBuilder();
             for (int i = 0; i < entityIds.size(); i++) {
                 if (i > 0) inClause.append(',');
@@ -684,8 +704,10 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             executeUpdate(sql);
             metrics.incrementCounter("connector.clickhouse.bulkDelete", "tenant", tenantId);
             log.info("[ClickHouse] bulk-deleted {} entities for tenant={}", entityIds.size(), tenantId);
-            return (long) entityIds.size();
-        });
+            return Promise.of((long) entityIds.size());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================
@@ -708,7 +730,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
     @Override
     public Promise<Long> truncate(UUID collectionId, String tenantId) {
         Objects.requireNonNull(tenantId, "tenantId must not be null");
-        return Promise.ofBlocking(executor, () -> {
+        try {
             // Count before delete (best-effort — ClickHouse count is O(1) for MergeTree)
             String countSql = String.format(
                     "SELECT count() FROM %s PREWHERE tenant_id = '%s'" + QUERY_SETTINGS,
@@ -725,8 +747,10 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             metrics.incrementCounter("connector.clickhouse.truncate", "tenant", tenantId);
             log.info("[ClickHouse] truncated tenant={} (approx {} rows scheduled for deletion)",
                     tenantId, countBefore);
-            return countBefore;
-        });
+            return Promise.of(countBefore);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================

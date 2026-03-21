@@ -1,5 +1,5 @@
 /**
- * Mock API client for Collection Entity System
+ * Mock API client for Data Cloud
  *
  * Provides mock endpoints that return demo data for UI testing and E2E scenarios.
  * In production, these would call real API endpoints.

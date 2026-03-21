@@ -1,11 +1,10 @@
 {
   "name": "@data-cloud/ui",
   "version": "0.1.0",
-  "description": "CES Workflow Platform UI - React + TypeScript + Jotai + Tailwind",
+  "description": "Data Cloud Platform UI - React + TypeScript + Jotai + Tailwind",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node ../../../scripts/ensure-lib-built.js utils",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src --max-warnings=0",

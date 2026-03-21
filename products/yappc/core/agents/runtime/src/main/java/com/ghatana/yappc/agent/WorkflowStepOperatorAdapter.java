@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agent;
 
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.types.identity.OperatorId;
 import com.ghatana.platform.workflow.operator.OperatorConfig;
 import com.ghatana.platform.workflow.operator.OperatorResult;
@@ -179,8 +179,12 @@ public final class WorkflowStepOperatorAdapter<I, O> implements UnifiedOperator 
   }
 
   private StepContext extractContext(Event event) {
+    String tenantId = Objects.toString(event.getPayload("tenantId"), null);
+    if (tenantId == null || tenantId.isBlank()) {
+      throw new IllegalArgumentException("Event missing required 'tenantId' payload field");
+    }
     return new StepContext(
-        Objects.toString(event.getPayload("tenantId"), "default"),
+        tenantId,
         Objects.toString(event.getPayload("runId"), "unknown"),
         Objects.toString(event.getPayload("phase"), "unknown"),
         Objects.toString(event.getPayload("configSnapshotId"), ""),

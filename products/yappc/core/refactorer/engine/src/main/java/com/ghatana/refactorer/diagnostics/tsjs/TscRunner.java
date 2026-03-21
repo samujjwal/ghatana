@@ -2,7 +2,7 @@ package com.ghatana.refactorer.diagnostics.tsjs;
 
 import com.ghatana.refactorer.diagnostics.tsjs.model.TscDiagnostic;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import com.ghatana.refactorer.shared.diagnostics.DiagnosticRunner;
 import com.ghatana.refactorer.shared.process.ProcessResult;

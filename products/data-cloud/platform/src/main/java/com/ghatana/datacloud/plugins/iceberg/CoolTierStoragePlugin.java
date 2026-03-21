@@ -172,7 +172,7 @@ public class CoolTierStoragePlugin implements StoragePlugin {
         this.pluginContext = context;
         config.validate();
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             log.info("Initializing Iceberg L2 storage plugin...");
 
             // Initialize metrics
@@ -189,8 +189,10 @@ public class CoolTierStoragePlugin implements StoragePlugin {
 
             state.set(PluginState.INITIALIZED);
             log.info("Iceberg L2 storage plugin initialized: {}", config);
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -200,7 +202,7 @@ public class CoolTierStoragePlugin implements StoragePlugin {
                     "Cannot start plugin in state: " + state.get()));
         }
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             log.info("Starting Iceberg L2 storage plugin...");
 
             // Create or load events table
@@ -209,8 +211,10 @@ public class CoolTierStoragePlugin implements StoragePlugin {
             state.set(PluginState.RUNNING);
             log.info("Iceberg L2 storage plugin started. Table: {}.{}",
                     config.getDatabaseName(), TABLE_NAME);
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -220,16 +224,18 @@ public class CoolTierStoragePlugin implements StoragePlugin {
             return Promise.complete();
         }
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             log.info("Stopping Iceberg L2 storage plugin...");
             state.set(PluginState.STOPPED);
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Void> shutdown() {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             log.info("Shutting down Iceberg L2 storage plugin...");
 
             if (tableManager != null) {
@@ -238,8 +244,10 @@ public class CoolTierStoragePlugin implements StoragePlugin {
 
             state.set(PluginState.STOPPED);
             log.info("Iceberg L2 storage plugin shut down");
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -248,16 +256,14 @@ public class CoolTierStoragePlugin implements StoragePlugin {
             return Promise.of(HealthStatus.error("Plugin not running, state: " + state.get()));
         }
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
-            try {
-                // Verify table is accessible
-                eventsTable.refresh();
-                return HealthStatus.ok("Iceberg table accessible");
-            } catch (Exception e) {
-                log.warn("Health check failed: {}", e.getMessage());
-                return HealthStatus.error("Iceberg health check failed", e);
-            }
-        });
+        try {
+            // Verify table is accessible
+            eventsTable.refresh();
+            return Promise.of(HealthStatus.ok("Iceberg table accessible"));
+        } catch (Exception e) {
+            log.warn("Health check failed: {}", e.getMessage());
+            return Promise.of(HealthStatus.error("Iceberg health check failed", e));
+        }
     }
 
     // ==================== Append Operations ====================
@@ -291,53 +297,52 @@ public class CoolTierStoragePlugin implements StoragePlugin {
 
         Timer.Sample sample = Timer.start(meterRegistry);
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             List<Offset> offsets = new ArrayList<>();
 
-            try {
-                // Group events by partition for efficient writing
-                Map<String, List<Event>> eventsByPartition = groupEventsByPartition(events);
+            // Group events by partition for efficient writing
+            Map<String, List<Event>> eventsByPartition = groupEventsByPartition(events);
 
-                // Write each partition group
-                List<DataFile> dataFiles = new ArrayList<>();
+            // Write each partition group
+            List<DataFile> dataFiles = new ArrayList<>();
 
-                for (Map.Entry<String, List<Event>> entry : eventsByPartition.entrySet()) {
-                    String partitionKey = entry.getKey();
-                    List<Event> partitionEvents = entry.getValue();
+            for (Map.Entry<String, List<Event>> entry : eventsByPartition.entrySet()) {
+                String partitionKey = entry.getKey();
+                List<Event> partitionEvents = entry.getValue();
 
-                    // Write Parquet file for this partition
-                    DataFile dataFile = writeParquetFile(partitionKey, partitionEvents);
-                    if (dataFile != null) {
-                        dataFiles.add(dataFile);
-                    }
-
-                    // Track offsets
-                    for (Event event : partitionEvents) {
-                        offsets.add(new Offset(event.getEventOffset()));
-                    }
+                // Write Parquet file for this partition
+                DataFile dataFile = writeParquetFile(partitionKey, partitionEvents);
+                if (dataFile != null) {
+                    dataFiles.add(dataFile);
                 }
 
-                // Commit all files atomically
-                if (!dataFiles.isEmpty()) {
-                    AppendFiles append = eventsTable.newAppend();
-                    for (DataFile dataFile : dataFiles) {
-                        append.appendFile(dataFile);
-                    }
-                    append.commit();
-
-                    filesWrittenCounter.increment(dataFiles.size());
-                    eventsAppendedCounter.increment(events.size());
-
-                    log.debug("Committed {} data files with {} events to Iceberg",
-                            dataFiles.size(), events.size());
+                // Track offsets
+                for (Event event : partitionEvents) {
+                    offsets.add(new Offset(event.getEventOffset()));
                 }
-
-            } finally {
-                sample.stop(appendTimer);
             }
 
-            return offsets;
-        });
+            // Commit all files atomically
+            if (!dataFiles.isEmpty()) {
+                AppendFiles append = eventsTable.newAppend();
+                for (DataFile dataFile : dataFiles) {
+                    append.appendFile(dataFile);
+                }
+                append.commit();
+
+                filesWrittenCounter.increment(dataFiles.size());
+                eventsAppendedCounter.increment(events.size());
+
+                log.debug("Committed {} data files with {} events to Iceberg",
+                        dataFiles.size(), events.size());
+            }
+
+            return Promise.of(offsets);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        } finally {
+            sample.stop(appendTimer);
+        }
     }
 
     // ==================== Read Operations ====================
@@ -352,30 +357,30 @@ public class CoolTierStoragePlugin implements StoragePlugin {
     public Promise<Optional<Event>> readById(String tenantId, String eventId) {
         requireRunning();
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
-            Timer.Sample sample = Timer.start(meterRegistry);
-            try {
-                List<Record> records = tableManager.scanTable(
-                        eventsTable,
-                        tenantId,
-                        null, // all streams
-                        null, // no time filter
-                        null,
-                        1000 // scan limit
-                ).getResult();
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            List<Record> records = tableManager.scanTable(
+                    eventsTable,
+                    tenantId,
+                    null, // all streams
+                    null, // no time filter
+                    null,
+                    1000 // scan limit
+            ).getResult();
 
-                // Filter by ID (inefficient but works)
-                for (Record record : records) {
-                    if (eventId.equals(record.getField("id"))) {
-                        return Optional.of(mapRecordToEvent(record));
-                    }
+            // Filter by ID (inefficient but works)
+            for (Record record : records) {
+                if (eventId.equals(record.getField("id"))) {
+                    return Promise.of(Optional.of(mapRecordToEvent(record)));
                 }
-
-                return Optional.empty();
-            } finally {
-                sample.stop(queryTimer);
             }
-        });
+
+            return Promise.of(Optional.empty());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        } finally {
+            sample.stop(queryTimer);
+        }
     }
 
     /**
@@ -385,7 +390,7 @@ public class CoolTierStoragePlugin implements StoragePlugin {
     public Promise<Optional<Event>> readByIdempotencyKey(String tenantId, String idempotencyKey) {
         requireRunning();
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             List<Record> records = tableManager.scanTable(
                     eventsTable,
                     tenantId,
@@ -398,12 +403,14 @@ public class CoolTierStoragePlugin implements StoragePlugin {
             for (Record record : records) {
                 String key = (String) record.getField("idempotency_key");
                 if (idempotencyKey.equals(key)) {
-                    return Optional.of(mapRecordToEvent(record));
+                    return Promise.of(Optional.of(mapRecordToEvent(record)));
                 }
             }
 
-            return Optional.empty();
-        });
+            return Promise.of(Optional.empty());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -418,29 +425,29 @@ public class CoolTierStoragePlugin implements StoragePlugin {
             int limit) {
         requireRunning();
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
-            Timer.Sample sample = Timer.start(meterRegistry);
-            try {
-                List<Record> records = tableManager.scanTable(
-                        eventsTable,
-                        tenantId,
-                        streamName,
-                        null,
-                        null,
-                        limit * 10 // Over-fetch then filter
-                ).getResult();
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            List<Record> records = tableManager.scanTable(
+                    eventsTable,
+                    tenantId,
+                    streamName,
+                    null,
+                    null,
+                    limit * 10 // Over-fetch then filter
+            ).getResult();
 
-                // Filter by partition and offset
-                return records.stream()
-                        .filter(r -> ((Integer) r.getField("partition_id")).equals(partitionId.value()))
-                        .filter(r -> ((Long) r.getField("event_offset")) >= startOffset.value())
-                        .limit(limit)
-                        .map(this::mapRecordToEvent)
-                        .toList();
-            } finally {
-                sample.stop(queryTimer);
-            }
-        });
+            // Filter by partition and offset
+            return Promise.of(records.stream()
+                    .filter(r -> ((Integer) r.getField("partition_id")).equals(partitionId.value()))
+                    .filter(r -> ((Long) r.getField("event_offset")) >= startOffset.value())
+                    .limit(limit)
+                    .map(this::mapRecordToEvent)
+                    .toList());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        } finally {
+            sample.stop(queryTimer);
+        }
     }
 
     /**
@@ -459,25 +466,25 @@ public class CoolTierStoragePlugin implements StoragePlugin {
             int limit) {
         requireRunning();
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
-            Timer.Sample sample = Timer.start(meterRegistry);
-            try {
-                List<Record> records = tableManager.scanTable(
-                        eventsTable,
-                        tenantId,
-                        streamName,
-                        startTime,
-                        endTime,
-                        limit
-                ).getResult();
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            List<Record> records = tableManager.scanTable(
+                    eventsTable,
+                    tenantId,
+                    streamName,
+                    startTime,
+                    endTime,
+                    limit
+            ).getResult();
 
-                return records.stream()
-                        .map(this::mapRecordToEvent)
-                        .toList();
-            } finally {
-                sample.stop(queryTimer);
-            }
-        });
+            return Promise.of(records.stream()
+                    .map(this::mapRecordToEvent)
+                    .toList());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        } finally {
+            sample.stop(queryTimer);
+        }
     }
 
     /**
@@ -496,26 +503,26 @@ public class CoolTierStoragePlugin implements StoragePlugin {
             int limit) {
         requireRunning();
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
-            Timer.Sample sample = Timer.start(meterRegistry);
-            try {
-                List<Record> records = tableManager.scanAtSnapshot(
-                        eventsTable,
-                        snapshotTime,
-                        tenantId,
-                        limit
-                ).getResult();
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            List<Record> records = tableManager.scanAtSnapshot(
+                    eventsTable,
+                    snapshotTime,
+                    tenantId,
+                    limit
+            ).getResult();
 
-                // Filter by stream if specified
-                return records.stream()
-                        .filter(r -> streamName == null
-                        || streamName.equals(r.getField("stream_name")))
-                        .map(this::mapRecordToEvent)
-                        .toList();
-            } finally {
-                sample.stop(queryTimer);
-            }
-        });
+            // Filter by stream if specified
+            return Promise.of(records.stream()
+                    .filter(r -> streamName == null
+                    || streamName.equals(r.getField("stream_name")))
+                    .map(this::mapRecordToEvent)
+                    .toList());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        } finally {
+            sample.stop(queryTimer);
+        }
     }
 
     // ==================== Offset Operations ====================
@@ -584,10 +591,12 @@ public class CoolTierStoragePlugin implements StoragePlugin {
      */
     public Promise<Void> refreshTable() {
         requireRunning();
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             eventsTable.refresh();
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // ==================== Capabilities ====================

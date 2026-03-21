@@ -1,0 +1,61 @@
+.canvas-toolbar {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.canvas-toolbar__button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 56px;
+}
+
+.canvas-toolbar__button:hover {
+  background: #f5f5f5;
+}
+
+.canvas-toolbar__button.active {
+  background: #e8f5e9;
+  color: #4caf50;
+}
+
+.canvas-toolbar__icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.canvas-toolbar__label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
+}
+
+.canvas-toolbar__button.active .canvas-toolbar__label {
+  color: #4caf50;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .canvas-toolbar {
+    background: #16213e;
+  }
+  
+  .canvas-toolbar__button:hover {
+    background: #0f3460;
+  }
+  
+  .canvas-toolbar__label {
+    color: #999;
+  }
+}

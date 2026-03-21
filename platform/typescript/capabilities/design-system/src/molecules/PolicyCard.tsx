@@ -200,7 +200,7 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
           <p
             className="text-sm line-clamp-2 mb-3"
             style={{
-              color: surface.text.secondary || surface.text.primary,
+              color: surface.text.secondary,
               fontSize: '13px',
               opacity: 0.75,
               lineHeight: '1.4',

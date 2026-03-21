@@ -9,10 +9,16 @@ import java.util.UUID;
 /**
  * Legacy domain model for audit trail events used by AuditService.
  *
- * <p>
- * Note: Newer application code should prefer the canonical
- * com.ghatana.datacloud.entity.audit.AuditLog type.
+ * @deprecated Use {@link com.ghatana.datacloud.entity.audit.AuditLog} instead.
+ *             This legacy type will be removed once AuditService is migrated
+ *             to the canonical entity.audit domain model.
+ *
+ * @doc.type class
+ * @doc.purpose Audit trail event (deprecated legacy)
+ * @doc.layer product
+ * @doc.pattern ValueObject
  */
+@Deprecated(since = "2026-03-20", forRemoval = true)
 public final class AuditLog {
 
     private final UUID id;

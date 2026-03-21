@@ -5,12 +5,17 @@
 package com.ghatana.products.finance;
 
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.descriptor.KernelCapability;
+import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.extension.KernelExtension;
+import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.modules.authentication.service.AuthenticationService;
 import com.ghatana.kernel.modules.authentication.service.AuthorizationService;
 import com.ghatana.products.finance.rules.service.FinanceRulesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Set;
 
 /**
  * Finance Kernel Extension.
@@ -37,6 +42,36 @@ import org.slf4j.LoggerFactory;
 public final class FinanceKernelExtension implements KernelExtension {
 
     private static final Logger log = LoggerFactory.getLogger(FinanceKernelExtension.class);
+
+    @Override
+    public String getExtensionId() {
+        return "finance-kernel";
+    }
+
+    @Override
+    public String getName() {
+        return "Finance Kernel Extension";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public KernelDescriptor getDescriptor() {
+        return null;
+    }
+
+    @Override
+    public Set<KernelCapability> getContributedCapabilities() {
+        return Set.of();
+    }
+
+    @Override
+    public boolean isCompatible(KernelModule hostModule) {
+        return true;
+    }
 
     @Override
     public void onModuleInitialized(KernelContext context) {
@@ -70,28 +105,30 @@ public final class FinanceKernelExtension implements KernelExtension {
     // ==================== Extension Methods ====================
 
     private void extendAuthentication(KernelContext context) {
-        context.getDependency(AuthenticationService.class).ifPresent(authService -> {
+        AuthenticationService authService = context.getDependency(AuthenticationService.class);
+        if (authService != null) {
             // Add finance-specific authentication policies
             log.debug("Adding finance-specific authentication policies");
-            
+
             // Examples:
             // - Trader authentication policies
             // - Compliance authentication requirements
             // - Risk-based authentication factors
-        });
+        }
     }
 
     private void extendAuthorization(KernelContext context) {
-        context.getDependency(AuthorizationService.class).ifPresent(authzService -> {
+        AuthorizationService authzService = context.getDependency(AuthorizationService.class);
+        if (authzService != null) {
             // Add finance-specific authorization rules
             log.debug("Adding finance-specific authorization rules");
-            
+
             // Examples:
             // - Trade execution permissions
             // - Portfolio management access
             // - Risk management permissions
             // - Compliance officer access
-        });
+        }
     }
 
     private void extendConfiguration(KernelContext context) {

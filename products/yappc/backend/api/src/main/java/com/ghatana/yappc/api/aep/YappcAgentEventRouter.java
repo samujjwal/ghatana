@@ -7,6 +7,7 @@ package com.ghatana.yappc.api.aep;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
+import com.ghatana.platform.governance.security.TenantContext;
 import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.HashMap;
@@ -141,7 +142,10 @@ public class YappcAgentEventRouter {
         AgentContext.builder()
             .turnId(UUID.randomUUID().toString())
             .agentId("yappc-event-router")
-            .tenantId("default")
+            .tenantId(
+                event.containsKey("tenantId")
+                    ? String.valueOf(event.get("tenantId"))
+                    : TenantContext.getCurrentTenantId())
             .userId(null)
             .sessionId(null)
             .startTime(Instant.now())

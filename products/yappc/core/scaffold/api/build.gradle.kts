@@ -21,6 +21,7 @@ dependencies {
     // Internal dependencies
     implementation(project(":products:yappc:core:scaffold:core"))
     implementation(project(":products:yappc:core:scaffold:packs"))
+    implementation(project(":products:yappc:core:scaffold:cli"))
     
     // JSON serialization
     implementation(libs.jackson.databind)

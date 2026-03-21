@@ -138,14 +138,14 @@ describe('AgentRegistryPage', () => {
   it('renders agent table with data', async () => {
     renderWithQuery(<AgentRegistryPage />);
     await waitFor(() => expect(screen.getByText('ValidatorAgent')).toBeInTheDocument());
-    expect(screen.getByText('ACTIVE')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
     expect(screen.getByText('1.0.0')).toBeInTheDocument();
   });
 
   it('shows empty state when no agents', async () => {
     vi.mocked(aepApi.listAgents).mockResolvedValue([]);
     renderWithQuery(<AgentRegistryPage />);
-    await waitFor(() => expect(screen.getByText(/no agents found/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/no agents registered/i)).toBeInTheDocument());
   });
 
   it('shows error state when API fails', async () => {
@@ -254,7 +254,7 @@ describe('MonitoringDashboardPage', () => {
   it('shows empty state when no runs', async () => {
     vi.mocked(aepApi.listPipelineRuns).mockResolvedValue([]);
     renderWithQuery(<MonitoringDashboardPage />);
-    await waitFor(() => expect(screen.getByText(/no runs yet/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/no pipeline runs found/i)).toBeInTheDocument());
   });
 });
 
@@ -393,9 +393,9 @@ describe('LearningPage', () => {
 
   it('renders with Episodes tab active by default', async () => {
     renderWithQuery(<LearningPage />);
-    await waitFor(() => expect(screen.getByText('agent-001')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/agent-001/)).toBeInTheDocument());
     expect(screen.getByText('SUCCESS')).toBeInTheDocument();
-    expect(screen.getByText('45ms')).toBeInTheDocument();
+    expect(screen.getByText(/45.*ms/)).toBeInTheDocument();
   });
 
   it('shows empty episodes state', async () => {

@@ -75,10 +75,6 @@ public final class FinanceDataGovernanceService {
 
     // ── Finance-Specific Value Types ─────────────────────────────────────────────
 
-    public enum FinanceClassification {
-        PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED, REGULATORY_SENSITIVE, PII, TRADE_SECRET
-    }
-
     public enum FinanceRegulatoryBody {
         SEC, FINRA, FCA, ESMA, MAS, HKMA, ASIC, JFSA, GDPR, CCPA
     }
@@ -335,10 +331,10 @@ public final class FinanceDataGovernanceService {
                 regulatoryBody.name(),
                 startDate,
                 endDate,
-                financeClassifiedCounter.count(),
-                financeRetentionEnforcedCounter.count(),
-                financeMaskingAppliedCounter.count(),
-                financeErasureRequestedCounter.count(),
+                (long) financeClassifiedCounter.count(),
+                (long) financeRetentionEnforcedCounter.count(),
+                (long) financeMaskingAppliedCounter.count(),
+                (long) financeErasureRequestedCounter.count(),
                 "COMPLIANT"
             );
         });

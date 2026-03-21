@@ -1,55 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
+import {
+  CollectionSchema,
+  PaginatedCollectionResponseSchema,
+  CreateCollectionRequestSchema,
+  UpdateCollectionRequestSchema,
+} from '../../src/contracts/schemas';
 
 /**
  * Collections API Contract Tests
  * 
  * Validates that API responses match the expected schema.
  * These tests ensure frontend-backend contract compliance.
+ * Schemas are imported from the shared contracts module.
  * 
  * @doc.type test
  * @doc.purpose API contract validation tests
  * @doc.layer testing
  */
-
-// Define the expected schema for Collection
-const CollectionSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  schemaType: z.enum(['entity', 'event', 'timeseries', 'graph', 'document']),
-  status: z.enum(['active', 'draft', 'archived', 'processing']),
-  entityCount: z.number(),
-  schema: z.record(z.unknown()),
-  tags: z.array(z.string()),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  createdBy: z.string(),
-});
-
-const PaginatedCollectionResponseSchema = z.object({
-  items: z.array(CollectionSchema),
-  total: z.number(),
-  page: z.number(),
-  pageSize: z.number(),
-  hasMore: z.boolean(),
-});
-
-const CreateCollectionRequestSchema = z.object({
-  name: z.string().min(1),
-  description: z.string(),
-  schemaType: z.enum(['entity', 'event', 'timeseries', 'graph', 'document']),
-  schema: z.record(z.unknown()),
-  tags: z.array(z.string()).optional(),
-});
-
-const UpdateCollectionRequestSchema = z.object({
-  name: z.string().min(1).optional(),
-  description: z.string().optional(),
-  schema: z.record(z.unknown()).optional(),
-  tags: z.array(z.string()).optional(),
-  status: z.enum(['active', 'draft', 'archived', 'processing']).optional(),
-});
 
 describe('Collections API Contract', () => {
   describe('GET /api/v1/collections', () => {

@@ -2,10 +2,13 @@ package com.ghatana.finance.ai;
 
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.api.OutputGenerator;
+import com.ghatana.agent.framework.memory.Episode;
+import com.ghatana.agent.framework.memory.MemoryFilter;
 import com.ghatana.agent.framework.runtime.BaseAgent;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -154,13 +157,12 @@ public class FraudDetectionAgent extends BaseAgent<TradeEvent, FraudDetectionRes
         // Store in memory for learning
         Episode episode = Episode.builder()
             .agentId(getAgentId())
-            .tradeId(input.getTradeId())
-            .inputFeatures(input.getFeatures())
-            .outputResult(output)
+            .input(input.getTradeId())
+            .output(output.toString())
             .timestamp(Instant.now())
             .build();
 
-        return context.getMemoryStore().storeEpisode(episode);
+        return context.getMemoryStore().storeEpisode(episode).toVoid();
     }
 
     /**
@@ -182,7 +184,7 @@ public class FraudDetectionAgent extends BaseAgent<TradeEvent, FraudDetectionRes
     @Override
     protected Promise<Void> reflect(TradeEvent input, FraudDetectionResult output, AgentContext context) {
         // Fire-and-forget async reflection
-        return context.getMemoryStore().getRecentEpisodes(getAgentId(), 100)
+        return context.getMemoryStore().queryEpisodes(MemoryFilter.builder().agentId(getAgentId()).build(), 100)
             .then(episodes -> patternEngine.extractPatterns(episodes))
             .then(patterns -> {
                 // Only update if we have high confidence patterns
@@ -226,7 +228,7 @@ public class FraudDetectionAgent extends BaseAgent<TradeEvent, FraudDetectionRes
 
     private String analyzeTimePattern(TradeEvent event) {
         // Analyze if trade occurs during suspicious hours
-        int hour = event.getTimestamp().getHour();
+        int hour = event.getTimestamp().atZone(ZoneOffset.UTC).getHour();
         return (hour < 9 || hour > 16) ? "after_hours" : "market_hours";
     }
 

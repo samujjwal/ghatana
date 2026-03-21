@@ -15,6 +15,7 @@ import com.ghatana.kernel.modules.authentication.service.TokenService;
 import com.ghatana.kernel.modules.authentication.service.MfaService;
 import com.ghatana.kernel.modules.authentication.service.OAuthService;
 import io.activej.promise.Promise;
+import java.util.concurrent.ForkJoinPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,7 +110,7 @@ public final class AuthenticationKernelModule implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting Authentication module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Start authentication service
             authService.start();
 
@@ -134,7 +135,7 @@ public final class AuthenticationKernelModule implements KernelModule {
     public Promise<Void> stop() {
         log.info("Stopping Authentication module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Stop services in reverse order
             if (oauthService != null) {
                 oauthService.stop();

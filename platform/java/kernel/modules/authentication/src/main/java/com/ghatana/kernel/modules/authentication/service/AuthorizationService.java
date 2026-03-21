@@ -203,10 +203,15 @@ public final class AuthorizationService {
         // Integration with data storage capability
         // This would query the storage for the principal's roles
         // For now, return a basic authenticated user role
-        return Set.of(new Role("authenticated", Set.of(
-            new Permission("user", "profile", "read"),
-            new Permission("user", "profile", "update")
-        )));
+        Set<Permission> permissions = Set.of(
+            Permission.builder().resource("user").action("profile").build(),
+            Permission.builder().resource("user").action("update").build()
+        );
+        Role authenticatedRole = Role.builder()
+            .name("authenticated")
+            .permissions(permissions)
+            .build();
+        return Set.of(authenticatedRole);
     }
 
     private static String cacheKey(String tenantId, String principalId, String resource, String action) {

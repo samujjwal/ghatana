@@ -1,6 +1,6 @@
 package com.ghatana.refactorer.rewriters;
 
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import com.ghatana.refactorer.shared.util.ProcessExec;
 import java.nio.file.Files;

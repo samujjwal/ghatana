@@ -106,28 +106,26 @@ public class RedisCollectionCacheAdapter {
         java.util.Objects.requireNonNull(tenantId, "Tenant ID must not be null");
         java.util.Objects.requireNonNull(collectionName, "Collection name must not be null");
 
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
+        try {
             String key = buildKey(tenantId, collectionName);
-            
-            try {
-                String json = commands.get(key);
-                
-                if (json != null) {
-                    metrics.incrementCounter("cache.hit", "type", "collection");
-                    MetaCollection collection = objectMapper.readValue(json, MetaCollection.class);
-                    logger.debug("Cache hit for collection: {}", key);
-                    return java.util.Optional.of(collection);
-                } else {
-                    metrics.incrementCounter("cache.miss", "type", "collection");
-                    logger.debug("Cache miss for collection: {}", key);
-                    return java.util.Optional.empty();
-                }
-            } catch (Exception e) {
-                logger.error("Error reading from cache: {}", key, e);
-                metrics.incrementCounter("cache.error", "type", "collection", "operation", "get");
-                return java.util.Optional.empty();
+
+            String json = commands.get(key);
+
+            if (json != null) {
+                metrics.incrementCounter("cache.hit", "type", "collection");
+                MetaCollection collection = objectMapper.readValue(json, MetaCollection.class);
+                logger.debug("Cache hit for collection: {}", key);
+                return Promise.of(java.util.Optional.of(collection));
+            } else {
+                metrics.incrementCounter("cache.miss", "type", "collection");
+                logger.debug("Cache miss for collection: {}", key);
+                return Promise.of(java.util.Optional.empty());
             }
-        });
+        } catch (Exception e) {
+            logger.error("Error reading from cache: {}", buildKey(tenantId, collectionName), e);
+            metrics.incrementCounter("cache.error", "type", "collection", "operation", "get");
+            return Promise.of(java.util.Optional.empty());
+        }
     }
 
     /**
@@ -141,21 +139,20 @@ public class RedisCollectionCacheAdapter {
         java.util.Objects.requireNonNull(collection, "Collection must not be null");
         java.util.Objects.requireNonNull(ttl, "TTL must not be null");
 
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
+        try {
             String key = buildKey(collection.getTenantId(), collection.getName());
             long ttlSeconds = ttl.getSeconds();
-            
-            try {
-                String json = objectMapper.writeValueAsString(collection);
-                commands.setex(key, ttlSeconds, json);
-                metrics.incrementCounter("cache.set", "type", "collection");
-                logger.debug("Cached collection: {} (TTL: {} seconds)", key, ttlSeconds);
-            } catch (Exception e) {
-                logger.error("Error writing to cache: {}", key, e);
-                metrics.incrementCounter("cache.error", "type", "collection", "operation", "set");
-            }
-            return null;
-        });
+
+            String json = objectMapper.writeValueAsString(collection);
+            commands.setex(key, ttlSeconds, json);
+            metrics.incrementCounter("cache.set", "type", "collection");
+            logger.debug("Cached collection: {} (TTL: {} seconds)", key, ttlSeconds);
+            return Promise.of(null);
+        } catch (Exception e) {
+            logger.error("Error writing to cache: {}", buildKey(collection.getTenantId(), collection.getName()), e);
+            metrics.incrementCounter("cache.error", "type", "collection", "operation", "set");
+            return Promise.of(null);
+        }
     }
 
     /**
@@ -169,21 +166,20 @@ public class RedisCollectionCacheAdapter {
         java.util.Objects.requireNonNull(tenantId, "Tenant ID must not be null");
         java.util.Objects.requireNonNull(collectionName, "Collection name must not be null");
 
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
+        try {
             String key = buildKey(tenantId, collectionName);
-            
-            try {
-                long deleted = commands.del(key);
-                if (deleted > 0) {
-                    metrics.incrementCounter("cache.delete", "type", "collection");
-                    logger.debug("Deleted from cache: {}", key);
-                }
-            } catch (Exception e) {
-                logger.error("Error deleting from cache: {}", key, e);
-                metrics.incrementCounter("cache.error", "type", "collection", "operation", "delete");
+
+            long deleted = commands.del(key);
+            if (deleted > 0) {
+                metrics.incrementCounter("cache.delete", "type", "collection");
+                logger.debug("Deleted from cache: {}", key);
             }
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            logger.error("Error deleting from cache: {}", buildKey(tenantId, collectionName), e);
+            metrics.incrementCounter("cache.error", "type", "collection", "operation", "delete");
+            return Promise.of(null);
+        }
     }
 
     /**
@@ -198,35 +194,34 @@ public class RedisCollectionCacheAdapter {
     public Promise<Void> invalidateAll(String tenantId) {
         java.util.Objects.requireNonNull(tenantId, "Tenant ID must not be null");
 
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
+        try {
             String pattern = CACHE_PREFIX + tenantId + ":*";
-            
-            try {
-                ScanCursor cursor = ScanCursor.INITIAL;
-                long deleted = 0;
-                
-                do {
-                    KeyScanCursor<String> scanResult = commands.scan(cursor,
-                            ScanArgs.Builder.matches(pattern).limit(1000));
-                    cursor = scanResult;
-                    
-                    for (String key : scanResult.getKeys()) {
-                        if (key.startsWith(CACHE_PREFIX + tenantId)) {
-                            deleted += commands.del(key);
-                        }
+
+            ScanCursor cursor = ScanCursor.INITIAL;
+            long deleted = 0;
+
+            do {
+                KeyScanCursor<String> scanResult = commands.scan(cursor,
+                        ScanArgs.Builder.matches(pattern).limit(1000));
+                cursor = scanResult;
+
+                for (String key : scanResult.getKeys()) {
+                    if (key.startsWith(CACHE_PREFIX + tenantId)) {
+                        deleted += commands.del(key);
                     }
-                } while (!cursor.isFinished());
-                
-                if (deleted > 0) {
-                    metrics.incrementCounter("cache.invalidate_all", "type", "collection");
-                    logger.info("Invalidated {} collections for tenant: {}", deleted, tenantId);
                 }
-            } catch (Exception e) {
-                logger.error("Error invalidating cache for tenant: {}", tenantId, e);
-                metrics.incrementCounter("cache.error", "type", "collection", "operation", "invalidate_all");
+            } while (!cursor.isFinished());
+
+            if (deleted > 0) {
+                metrics.incrementCounter("cache.invalidate_all", "type", "collection");
+                logger.info("Invalidated {} collections for tenant: {}", deleted, tenantId);
             }
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            logger.error("Error invalidating cache for tenant: {}", tenantId, e);
+            metrics.incrementCounter("cache.error", "type", "collection", "operation", "invalidate_all");
+            return Promise.of(null);
+        }
     }
 
     /**

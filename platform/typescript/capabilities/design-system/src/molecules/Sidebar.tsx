@@ -139,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     padding: '0 4px',
                     borderRadius: tokens.borderRadius.full,
                     backgroundColor: tokens.colors.primary[600],
-                    color: tokens.colors.neutral[0],
+                    color: tokens.colors.neutral[50],
                     fontSize: tokens.typography.fontSize.xs,
                     fontWeight: 600,
                   }}

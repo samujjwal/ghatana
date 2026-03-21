@@ -131,7 +131,7 @@ export const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
     const renderNode = (node: DashboardNode) => (
         <Paper
             key={node.id}
-            className="p-4 mb-2" style={{ borderLeft: `4px solid ${node.type === 'datasource' ? '#3b82f6' : node.type === 'chart' ? '#10b981' : '#f59e0b' }}
+            className="p-4 mb-2" style={{ borderLeft: `4px solid ${node.type === 'datasource' ? '#3b82f6' : node.type === 'chart' ? '#10b981' : '#f59e0b'}`}}
         >
             <Box className="flex items-start gap-2">
                 <Box className="mt-1">{getNodeIcon(node.type)}</Box>

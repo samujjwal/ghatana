@@ -317,7 +317,7 @@ describe('Workflow Instantiation', () => {
                 Object.entries(inputTemplate).map(([key, value]) => {
                     let resolved = value;
                     for (const [varName, varValue] of Object.entries(variables)) {
-                        resolved = resolved.replace(`{{${varName}}}`, varValue);
+                        resolved = resolved.replace(`{{${varName}`}}`, varValue);
                     }
                     return [key, resolved];
                 })

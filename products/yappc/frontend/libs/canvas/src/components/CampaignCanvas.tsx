@@ -90,7 +90,7 @@ export const CampaignCanvas: React.FC<CampaignCanvasProps> = ({
     const renderNode = (node: CampaignNode) => (
         <Paper
             key={node.id}
-            className="p-4 mb-4" style={{ borderLeft: `4px solid ${node.channel === 'email' ? '#3b82f6' : node.channel === 'social' ? '#10b981' : '#f59e0b' }}
+            className="p-4 mb-4" style={{ borderLeft: `4px solid ${node.channel === 'email' ? '#3b82f6' : node.channel === 'social' ? '#10b981' : '#f59e0b'}`}}
         >
             <Box className="flex items-start gap-2">
                 <Box className="mt-1">{getChannelIcon(node.channel)}</Box>

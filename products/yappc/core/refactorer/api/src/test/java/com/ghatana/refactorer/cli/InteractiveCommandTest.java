@@ -7,7 +7,7 @@ import static org.mockito.Mockito.*;
 import com.ghatana.refactorer.orchestrator.PolyfixOrchestrator;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
 import com.ghatana.refactorer.shared.Rule;
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

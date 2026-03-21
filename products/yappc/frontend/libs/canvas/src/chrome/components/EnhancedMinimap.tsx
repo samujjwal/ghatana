@@ -241,7 +241,7 @@ export function EnhancedMinimap({
 
         {/* Viewport Rectangle */}
         <Box
-          className="absolute" style={{ left: viewportRect.x, top: viewportRect.y, width: viewportRect.width, height: viewportRect.height, border: `2px solid ${COLORS.PRIMARY}` }}
+          className="absolute" style={{ left: viewportRect.x, top: viewportRect.y, width: viewportRect.width, height: viewportRect.height, border: `2px solid ${COLORS.PRIMARY}`}}
         />
       </Box>
 

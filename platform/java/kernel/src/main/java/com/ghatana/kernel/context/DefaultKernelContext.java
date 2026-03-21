@@ -9,6 +9,8 @@ import io.activej.eventloop.Eventloop;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * Default implementation of KernelContext.
@@ -219,6 +221,22 @@ public class DefaultKernelContext implements KernelContext {
     @Override
     public String getEnvironment() {
         return environment;
+    }
+
+    @Override
+    public Executor getExecutor(String executorName) {
+        return ForkJoinPool.commonPool();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> Optional<T> getCapability(String capabilityId) {
+        return Optional.ofNullable((T) namedDependencies.get("capability:" + capabilityId));
+    }
+
+    @Override
+    public <T> void registerService(Class<T> type, T service) {
+        dependencies.put(type, service);
     }
 
     // ==================== Registry Access ====================

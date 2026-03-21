@@ -317,37 +317,35 @@ public class PluginHealthCheckFactory {
             int defaultPort,
             Duration timeout) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
-            long start = System.currentTimeMillis();
-            String host = "unknown";
-            int port = defaultPort;
+        long start = System.currentTimeMillis();
+        String host = "unknown";
+        int port = defaultPort;
 
-            try {
-                HostPort hp = parseHostPort(connectionUrl, defaultPort);
-                host = hp.host();
-                port = hp.port();
+        try {
+            HostPort hp = parseHostPort(connectionUrl, defaultPort);
+            host = hp.host();
+            port = hp.port();
 
-                try (Socket socket = new Socket()) {
-                    socket.connect(new InetSocketAddress(host, port),
-                            (int) timeout.toMillis());
-                }
-
-                long elapsedMs = System.currentTimeMillis() - start;
-                return HealthCheckResult.healthy(
-                        backendType + " reachable",
-                        Map.<String, Object>of("host", host, "port", port, "responseTimeMs", elapsedMs),
-                        Duration.ofMillis(elapsedMs));
-
-            } catch (Exception e) {
-                long elapsedMs = System.currentTimeMillis() - start;
-                return HealthCheckResult.unhealthy(
-                        backendType + " unreachable: " + e.getMessage(),
-                        Map.<String, Object>of("host", host, "port", port,
-                                "error", e.getClass().getSimpleName(),
-                                "responseTimeMs", elapsedMs),
-                        Duration.ofMillis(elapsedMs), e);
+            try (Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(host, port),
+                        (int) timeout.toMillis());
             }
-        });
+
+            long elapsedMs = System.currentTimeMillis() - start;
+            return Promise.of(HealthCheckResult.healthy(
+                    backendType + " reachable",
+                    Map.<String, Object>of("host", host, "port", port, "responseTimeMs", elapsedMs),
+                    Duration.ofMillis(elapsedMs)));
+
+        } catch (Exception e) {
+            long elapsedMs = System.currentTimeMillis() - start;
+            return Promise.of(HealthCheckResult.unhealthy(
+                    backendType + " unreachable: " + e.getMessage(),
+                    Map.<String, Object>of("host", host, "port", port,
+                            "error", e.getClass().getSimpleName(),
+                            "responseTimeMs", elapsedMs),
+                    Duration.ofMillis(elapsedMs), e));
+        }
     }
 
     /**
@@ -359,51 +357,49 @@ public class PluginHealthCheckFactory {
             String url,
             Duration timeout) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
-            long start = System.currentTimeMillis();
-            if (url == null || url.isBlank()) {
-                return HealthCheckResult.unhealthy(
-                        backendType + " endpoint URL not configured",
-                        Map.of(),
-                        Duration.ZERO, null);
-            }
+        long start = System.currentTimeMillis();
+        if (url == null || url.isBlank()) {
+            return Promise.of(HealthCheckResult.unhealthy(
+                    backendType + " endpoint URL not configured",
+                    Map.of(),
+                    Duration.ZERO, null));
+        }
 
-            try {
-                HttpClient client = HttpClient.newBuilder()
-                        .connectTimeout(timeout)
-                        .build();
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(url))
-                        .method("HEAD", HttpRequest.BodyPublishers.noBody())
-                        .timeout(timeout)
-                        .build();
+        try {
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(timeout)
+                    .build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                    .timeout(timeout)
+                    .build();
 
-                HttpResponse<Void> response = client.send(
-                        request, HttpResponse.BodyHandlers.discarding());
+            HttpResponse<Void> response = client.send(
+                    request, HttpResponse.BodyHandlers.discarding());
 
-                long elapsedMs = System.currentTimeMillis() - start;
-                int status = response.statusCode();
-                boolean ok = (status >= 200 && status < 400);
+            long elapsedMs = System.currentTimeMillis() - start;
+            int status = response.statusCode();
+            boolean ok = (status >= 200 && status < 400);
 
-                return ok
-                        ? HealthCheckResult.healthy(
-                                backendType + " responded HTTP " + status,
-                                Map.<String, Object>of("url", url, "statusCode", status, "responseTimeMs", elapsedMs),
-                                Duration.ofMillis(elapsedMs))
-                        : HealthCheckResult.unhealthy(
-                                backendType + " returned HTTP " + status,
-                                Map.<String, Object>of("url", url, "statusCode", status, "responseTimeMs", elapsedMs),
-                                Duration.ofMillis(elapsedMs), null);
+            return Promise.of(ok
+                    ? HealthCheckResult.healthy(
+                            backendType + " responded HTTP " + status,
+                            Map.<String, Object>of("url", url, "statusCode", status, "responseTimeMs", elapsedMs),
+                            Duration.ofMillis(elapsedMs))
+                    : HealthCheckResult.unhealthy(
+                            backendType + " returned HTTP " + status,
+                            Map.<String, Object>of("url", url, "statusCode", status, "responseTimeMs", elapsedMs),
+                            Duration.ofMillis(elapsedMs), null));
 
-            } catch (Exception e) {
-                long elapsedMs = System.currentTimeMillis() - start;
-                return HealthCheckResult.unhealthy(
-                        backendType + " unreachable: " + e.getMessage(),
-                        Map.<String, Object>of("url", url, "error", e.getClass().getSimpleName(),
-                                "responseTimeMs", elapsedMs),
-                        Duration.ofMillis(elapsedMs), e);
-            }
-        });
+        } catch (Exception e) {
+            long elapsedMs = System.currentTimeMillis() - start;
+            return Promise.of(HealthCheckResult.unhealthy(
+                    backendType + " unreachable: " + e.getMessage(),
+                    Map.<String, Object>of("url", url, "error", e.getClass().getSimpleName(),
+                            "responseTimeMs", elapsedMs),
+                    Duration.ofMillis(elapsedMs), e));
+        }
     }
 
     /**

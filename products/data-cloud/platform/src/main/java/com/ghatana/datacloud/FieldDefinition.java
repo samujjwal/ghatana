@@ -165,59 +165,6 @@ public class FieldDefinition implements Serializable {
         BINARY
     }
 
-    // ==================== Factory Methods ====================
-//    public static FieldDefinitionBuilder string(String name) {
-//        return builder().name(name).type(FieldType.STRING);
-//    }
-//
-//    public static FieldDefinitionBuilder integer(String name) {
-//        return builder().name(name).type(FieldType.INTEGER);
-//    }
-//
-//    public static FieldDefinitionBuilder long_(String name) {
-//        return builder().name(name).type(FieldType.LONG);
-//    }
-//
-//    public static FieldDefinitionBuilder decimal(String name) {
-//        return builder().name(name).type(FieldType.DECIMAL);
-//    }
-//
-//    public static FieldDefinitionBuilder boolean_(String name) {
-//        return builder().name(name).type(FieldType.BOOLEAN);
-//    }
-//
-//    public static FieldDefinitionBuilder date(String name) {
-//        return builder().name(name).type(FieldType.DATE);
-//    }
-//
-//    public static FieldDefinitionBuilder datetime(String name) {
-//        return builder().name(name).type(FieldType.DATETIME);
-//    }
-//
-//    public static FieldDefinitionBuilder timestamp(String name) {
-//        return builder().name(name).type(FieldType.TIMESTAMP);
-//    }
-//
-//    public static FieldDefinitionBuilder uuid(String name) {
-//        return builder().name(name).type(FieldType.UUID);
-//    }
-//
-//    public static FieldDefinitionBuilder object(String name) {
-//        return builder().name(name).type(FieldType.OBJECT);
-//    }
-//
-//    public static FieldDefinitionBuilder array(String name, FieldType elementType) {
-//        return builder().name(name).type(FieldType.ARRAY).elementType(elementType);
-//    }
-//
-//    public static FieldDefinitionBuilder reference(String name, String collectionName) {
-//        return builder().name(name).type(FieldType.REFERENCE).referenceCollection(collectionName);
-//    }
-//
-//    public static FieldDefinitionBuilder json(String name) {
-//        return builder().name(name).type(FieldType.JSON);
-//    }
-
     // ==================== Fluent Setters ====================
     public FieldDefinition required() {
         this.required = true;

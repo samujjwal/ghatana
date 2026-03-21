@@ -387,7 +387,7 @@ export const PerformanceAnalysis: React.FC<PerformanceAnalysisProps> = ({
                                     <div className="w-full bg-gray-200 rounded-full h-2">
                                         <div
                                             className={`h-2 rounded-full ${compliance >= 99 ? 'bg-green-600' : 'bg-red-600'}`}
-                                            style={{ width: `${compliance}%` }}
+                                            style={{ width: `${compliance}%`}}
                                         />
                                     </div>
                                 </div>

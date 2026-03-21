@@ -4,8 +4,12 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.context.KernelContext;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
+
+import com.ghatana.kernel.util.JsonUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -256,7 +260,7 @@ public class ComplianceService {
             Map.of("retention", "10years")
         )).whenException(e -> {});
 
-        return Promise.all(compliance, alerts, suspicious).map($ -> null);
+        return Promises.all(compliance, alerts, suspicious).map($ -> null);
     }
 
     private Promise<Boolean> detectWashTrade(TradeRecord trade) {

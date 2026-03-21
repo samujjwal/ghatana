@@ -41,7 +41,7 @@ export const List = React.forwardRef<HTMLOListElement | HTMLUListElement, ListPr
 
   return (
     <Component
-      ref={ref as React.Ref<HTMLOListElement | HTMLUListElement>}
+      ref={ref as React.Ref<HTMLOListElement>}
       className={cn('gh-list', className)}
       style={{
         display: 'flex',

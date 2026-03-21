@@ -57,6 +57,8 @@ include(":platform:java:ai-api")
 include(":platform:java:ai-experimental")
 include(":platform:java:governance")
 include(":platform:java:security")
+include(":platform:java:agent-api")
+include(":platform:java:agent-spi")
 include(":platform:java:agent-framework")
 include(":platform:java:agent-memory")
 include(":platform:java:agent-learning")
@@ -81,8 +83,18 @@ include(":platform:java:kernel:modules:secrets")
 // Product: AEP — Autonomous Event Processing
 // =============================================================================
 
-include(":products:aep:platform")
-include(":products:aep:launcher")
+include(":products:aep:contracts")
+include(":products:aep:platform-bundle")
+include(":products:aep:platform-core")
+include(":products:aep:platform-registry")
+include(":products:aep:platform-analytics")
+include(":products:aep:platform-security")
+include(":products:aep:platform-connectors")
+include(":products:aep:platform-agent")
+include(":products:aep:platform-api")
+include(":products:aep:platform-scaling")
+include(":products:aep:orchestrator")
+include(":products:aep:server")
 
 // =============================================================================
 // Product: Data-Cloud — Multi-tenant Metadata Management
@@ -90,6 +102,10 @@ include(":products:aep:launcher")
 
 include(":products:data-cloud:spi")
 include(":products:data-cloud:platform")
+include(":products:data-cloud:platform-entity")
+include(":products:data-cloud:platform-event")
+include(":products:data-cloud:platform-config")
+include(":products:data-cloud:platform-analytics")
 include(":products:data-cloud:launcher")
 include(":products:data-cloud:sdk")
 include(":products:data-cloud:agent-registry")
@@ -213,6 +229,12 @@ include(":products:virtual-org:launcher")
 include(":products:security-gateway:platform:java")
 
 // =============================================================================
+// Product: PHR — Personal Health Records with Nepal Privacy Act 2075 compliance
+// =============================================================================
+
+include(":products:phr")
+
+// =============================================================================
 // Product: Finance — Financial Operating System with Regulatory Compliance
 // Migrated from app-platform with kernel vision compliance
 // =============================================================================
@@ -247,6 +269,15 @@ include(":products:finance:domains:surveillance")
 
 // Finance Product Module (main entry point)
 include(":products:finance:product")
+
+// Finance Domain Pack Extensions
+include(":products:finance:extensions")
+
+// Finance Integration Testing (migrated from app-platform)
+include(":products:finance:integration-testing")
+
+// Finance Client Onboarding with AML (migrated from app-platform)
+include(":products:finance:client-onboarding")
 
 // =============================================================================
 // Shared Services — Cross-product microservices

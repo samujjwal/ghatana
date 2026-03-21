@@ -69,6 +69,9 @@ public class AgentConfigDto {
     @JsonProperty("version")
     private String version = "1.0.0";
 
+    @JsonProperty("implementationRef")
+    private String implementationRef;
+
     @JsonProperty("timeout")
     private String timeout;
 
@@ -139,6 +142,10 @@ public class AgentConfigDto {
 
     public String getVersion() { return version; }
     public void setVersion(String version) { this.version = version; }
+
+    @Nullable
+    public String getImplementationRef() { return implementationRef; }
+    public void setImplementationRef(String implementationRef) { this.implementationRef = implementationRef; }
 
     @Nullable
     public String getTimeout() { return timeout; }

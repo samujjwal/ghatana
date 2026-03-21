@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Executor;
 
 /**
@@ -187,14 +189,14 @@ public final class AuthenticationService {
         Instant now = Instant.now();
         Instant expiresAt = now.plusSeconds(3600); // 1 hour session
 
-        return new UserSession(
-            generateSessionId(),
-            tenantId,
-            principalId,
-            now,
-            expiresAt,
-            Set.of("authenticated") // Generic roles only
-        );
+        return UserSession.builder()
+            .sessionId(generateSessionId())
+            .tenantId(tenantId)
+            .principalId(principalId)
+            .createdAt(now)
+            .expiresAt(expiresAt)
+            .roles(Set.of("authenticated"))
+            .build();
     }
 
     private boolean isSessionValid(String tenantId, String sessionId) {

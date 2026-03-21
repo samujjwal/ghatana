@@ -113,7 +113,7 @@ A more complete collections page should:
 
 ## 7. Coherence with App Creator / Canvas & Platform
 
-- Collections in CES map to **entities/collections** that might appear in App Creator data canvases.
+- Collections in Data Cloud map to **entities/collections** that might appear in App Creator data canvases.
 - Detail view’s schema field badges should conceptually align with schema views in other tools (e.g., AEP event types, data models).
 - In the broader Data Cloud product, this page forms the **collection-centric slice of the Dataset Explorer**: it is where users first see which datasets exist before pivoting into deeper views (sample data, lineage, performance, cost).
 

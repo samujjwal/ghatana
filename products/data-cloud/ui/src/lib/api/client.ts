@@ -39,6 +39,7 @@ export interface ApiError {
     code: string;
     message: string;
     details?: Record<string, unknown>;
+    status?: number;
 }
 
 /**
@@ -85,6 +86,7 @@ function createAxiosInstance(config: ApiClientConfig): AxiosInstance {
                     code: error.response.data?.code ?? 'UNKNOWN_ERROR',
                     message: error.response.data?.message ?? error.message,
                     details: error.response.data?.details,
+                    status: error.response.status,
                 };
                 return Promise.reject(apiError);
             }

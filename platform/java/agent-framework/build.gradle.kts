@@ -9,6 +9,10 @@ version = "2026.3.1-SNAPSHOT"
 description = "Agent Framework - Core abstractions and coordination for AI agents"
 
 dependencies {
+    // Agent API and SPI contracts (re-exported to dependents)
+    api(project(":platform:java:agent-api"))
+    api(project(":platform:java:agent-spi"))
+
     // ActiveJ for async operations
     api(libs.activej.promise)
     api(libs.activej.eventloop)

@@ -10,7 +10,7 @@
  * @doc.layer frontend
  */
 
-import axios, { type AxiosInstance } from 'axios';
+import { apiClient } from '../lib/api/client';
 
 // =============================================================================
 // Types
@@ -101,40 +101,26 @@ export interface RegistryEvent {
  * @doc.pattern Service
  */
 export class AgentRegistryService {
-  private client: AxiosInstance;
-  private readonly base: string;
-
-  constructor(baseURL: string = '/api/v1') {
-    this.base = baseURL;
-    this.client = axios.create({
-      baseURL,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
   // ==================== Agent Registry ====================
 
   /** List all registered agents for a tenant */
   async listAgents(params: AgentListParams = {}): Promise<AgentDefinition[]> {
-    const { data } = await this.client.get<AgentDefinition[]>('/agents', { params });
-    return data;
+    return apiClient.get<AgentDefinition[]>('/agents', { params });
   }
 
   /** Get a specific agent by ID */
   async getAgent(agentId: string): Promise<AgentDefinition> {
-    const { data } = await this.client.get<AgentDefinition>(`/agents/${agentId}`);
-    return data;
+    return apiClient.get<AgentDefinition>(`/agents/${agentId}`);
   }
 
   /** Register a new agent */
   async registerAgent(request: AgentRegistrationRequest): Promise<AgentDefinition> {
-    const { data } = await this.client.post<AgentDefinition>('/agents/register', request);
-    return data;
+    return apiClient.post<AgentDefinition>('/agents/register', request);
   }
 
   /** Deregister an agent by ID */
   async deregisterAgent(agentId: string): Promise<void> {
-    await this.client.delete(`/agents/${agentId}`);
+    await apiClient.delete<void>(`/agents/${agentId}`);
   }
 
   /** Update an agent's capabilities */
@@ -142,11 +128,10 @@ export class AgentRegistryService {
     agentId: string,
     capabilities: Omit<AgentCapability, 'id'>[]
   ): Promise<AgentDefinition> {
-    const { data } = await this.client.put<AgentDefinition>(
+    return apiClient.put<AgentDefinition>(
       `/agents/${agentId}/capabilities`,
       { capabilities }
     );
-    return data;
   }
 
   // ==================== Executions ====================
@@ -156,11 +141,7 @@ export class AgentRegistryService {
     agentId: string,
     params: ExecutionListParams = {}
   ): Promise<AgentExecution[]> {
-    const { data } = await this.client.get<AgentExecution[]>(
-      `/agents/${agentId}/executions`,
-      { params }
-    );
-    return data;
+    return apiClient.get<AgentExecution[]>(`/agents/${agentId}/executions`, { params });
   }
 
   /** Record a new execution event for an agent */
@@ -168,11 +149,7 @@ export class AgentRegistryService {
     agentId: string,
     execution: Partial<AgentExecution>
   ): Promise<AgentExecution> {
-    const { data } = await this.client.post<AgentExecution>(
-      `/agents/${agentId}/executions`,
-      execution
-    );
-    return data;
+    return apiClient.post<AgentExecution>(`/agents/${agentId}/executions`, execution);
   }
 
   // ==================== SSE Stream ====================
@@ -191,7 +168,10 @@ export class AgentRegistryService {
     onEvent: (event: RegistryEvent) => void,
     onError?: (error: Event) => void
   ): EventSource {
-    const url = new URL(`${this.base}/agents/events/stream`, window.location.origin);
+    const url = new URL(
+      `${import.meta.env.VITE_API_URL ?? '/api/v1'}/agents/events/stream`,
+      window.location.origin
+    );
     if (tenantId) url.searchParams.set('tenantId', tenantId);
 
     const source = new EventSource(url.toString());

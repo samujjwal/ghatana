@@ -1,16 +1,14 @@
 import React from 'react';
-import { useParams } from 'react-router';
-import { WorkflowCanvas } from '../../components/workflow/WorkflowCanvas';
+import { WorkflowCanvas } from '../../features/workflow/components/WorkflowCanvas';
 
 /**
  * Workflow Designer Page
  *
- * Loads the workflow canvas for creating (id='new') or editing an existing workflow.
- * The workflow id is sourced from the URL parameter ':id'.
+ * Renders the workflow canvas for creating or editing a workflow.
+ * Workflow identity is managed via the feature workflow store.
  */
 export const WorkflowDesigner: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  return <WorkflowCanvas workflowId={id} />;
+  return <WorkflowCanvas />;
 };
 
 export default WorkflowDesigner;

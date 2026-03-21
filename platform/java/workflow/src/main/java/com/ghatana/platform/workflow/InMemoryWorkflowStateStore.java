@@ -92,4 +92,9 @@ public final class InMemoryWorkflowStateStore implements WorkflowStateStore {
     public void clear() {
         runs.clear();
     }
+
+    @Override
+    public Promise<Void> storeMetrics(@NotNull Object metrics) {
+        return Promise.complete();
+    }
 }

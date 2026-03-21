@@ -1,12 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router';
-import { Provider } from 'jotai';
+import { TestWrapper } from '../test-utils/wrapper';
 import { InsightsPage } from '../../pages/InsightsPage';
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <Provider><BrowserRouter>{children}</BrowserRouter></Provider>
-);
 
 describe('InsightsPage', () => {
   it('renders without crashing', () => {

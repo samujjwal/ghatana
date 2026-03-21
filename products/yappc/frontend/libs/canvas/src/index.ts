@@ -1619,7 +1619,5 @@ export {
 
 // REMOVED: deprecated IDECodeFeatures (deleted — use @ghatana/yappc-ui AITextCompletion instead)
 
-// REMOVED: deprecated @ghatana/yappc-charts
-// REMOVED: deprecated @ghatana/yappc-charts
-// // // Charts (consolidated from @ghatana/yappc-charts)
-export * from '../../charts/src';
+// REMOVED: deprecated @ghatana/yappc-charts — library no longer exists.
+// Consumers should use @yappc/canvas chart components directly if re-introduced.

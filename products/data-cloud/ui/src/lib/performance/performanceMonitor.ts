@@ -1,5 +1,5 @@
 /**
- * Performance monitoring utilities for CES Workflow Platform.
+ * Performance monitoring utilities for Data Cloud Platform.
  *
  * <p><b>Purpose</b><br>
  * Tracks and reports performance metrics including render times,

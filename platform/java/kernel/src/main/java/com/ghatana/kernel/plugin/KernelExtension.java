@@ -7,13 +7,18 @@ package com.ghatana.kernel.plugin;
  * declare extensions. For full kernel module extensions, use
  * {@link com.ghatana.kernel.extension.KernelExtension}.</p>
  *
+ * @deprecated Transitional. Use {@link com.ghatana.kernel.extension.KernelExtension} as the
+ *     canonical extension contract per KERNEL_CANONICALIZATION_DECISIONS.md (Decision D2).
+ *     If a lighter manifest-layer concept is needed, it should be renamed to avoid
+ *     two different interfaces sharing the same simple name. New code MUST NOT depend on this.
  * @doc.type interface
- * @doc.purpose Simplified extension interface for product plugins
+ * @doc.purpose Legacy simplified extension for ProductPlugin — transitional, pending removal
  * @doc.layer core
  * @doc.pattern Service
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
+@Deprecated(forRemoval = true)
 public interface KernelExtension {
 
     /**

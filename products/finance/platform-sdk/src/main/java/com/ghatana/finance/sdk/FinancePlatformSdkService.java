@@ -16,6 +16,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -357,8 +358,8 @@ public final class FinancePlatformSdkService {
         return Promise.ofBlocking(executor, () -> {
             // Implementation would collect finance-specific metrics
             return new FinanceSdkMetrics(
-                financeSdkClientCreatedTotal.count(),
-                financeSdkEndpointRefreshTotal.count(),
+                (long) financeSdkClientCreatedTotal.count(),
+                (long) financeSdkEndpointRefreshTotal.count(),
                 queryActiveServicesCount()
             );
         });

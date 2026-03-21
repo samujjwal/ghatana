@@ -19,22 +19,34 @@
 
 import React, { useCallback, useMemo, memo } from 'react';
 import { FlowCanvas, FlowControls, Panel } from '@ghatana/flow-canvas';
-import type { Node } from '@ghatana/flow-canvas';
+import type { Node, Edge } from '@ghatana/flow-canvas';
 
 import {
     BaseTopologyNode,
     BaseTopologyEdge,
     useTopology,
-    type EventCloudNode,
-    type EventCloudEdge,
-    type EventCloudNodeData,
-    type EventCloudEdgeData,
-    type TopologyVisualizationConfig,
     STATUS_COLORS,
+} from '@ghatana/canvas/topology';
+
+import type {
+    EventCloudNodeData,
+    EventCloudEdgeData,
+    EventCloudNode,
+    EventCloudEdge,
+    TopologyNode,
+    TopologyEdge,
+    TopologyVisualizationConfig,
 } from '@ghatana/canvas/topology';
 
 import { cn, cardStyles, textStyles, bgStyles } from '@/lib/theme';
 import { dataCloudColors } from '@/lib/theme';
+
+// ============================================
+// DATA-CLOUD-SPECIFIC TOPOLOGY TYPES
+// ============================================
+
+// EventCloudNodeData, EventCloudEdgeData, EventCloudNode, EventCloudEdge,
+// TopologyVisualizationConfig are imported from @ghatana/canvas/topology
 
 // ============================================
 // NODE COMPONENTS
@@ -339,48 +351,42 @@ export function EventCloudTopology({
     return (
         <div className={cn('h-full w-full', className)}>
             <FlowCanvas
-                nodes={nodes}
-                edges={edges}
+                nodes={nodes as any}
+                edges={edges as any}
                 onNodesChange={onNodesChange as any}
                 onEdgesChange={onEdgesChange as any}
                 onConnect={readOnly ? undefined : onConnect}
                 onNodeClick={handleNodeClick}
                 onPaneClick={handlePaneClick}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
-                fitView
-                fitViewOptions={{ padding: 0.2 }}
-                proOptions={{ hideAttribution: true }}
+                additionalNodeTypes={nodeTypes as any}
+                additionalEdgeTypes={edgeTypes as any}
                 nodesDraggable={!readOnly}
-                nodesConnectable={!readOnly}
-                elementsSelectable={true}
                 className="bg-gray-50 dark:bg-gray-900"
-            >
-                <FlowControls />
+                controls={{ showMiniMap: false, showControls: true }}
+            />
 
-                {/* Control Panel */}
-                <Panel position="top-right" className="flex gap-2">
-                    <button
-                        onClick={handleApplyLayout}
-                        className="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                        aria-label="Auto-layout"
-                    >
-                        Auto Layout
-                    </button>
-                </Panel>
+            {/* Control Panel */}
+            <div className="absolute top-2 right-2 flex gap-2 z-10">
+                <button
+                    onClick={handleApplyLayout}
+                    className="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    aria-label="Auto-layout"
+                >
+                    Auto Layout
+                </button>
+            </div>
 
-                {/* Legend */}
-                <Panel position="bottom-left" className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-2">
-                    <div className="flex items-center gap-3 text-xs">
-                        {Object.entries(STATUS_COLORS).slice(0, 4).map(([status, colors]) => (
-                            <div key={status} className="flex items-center gap-1">
-                                <span className={cn('w-2 h-2 rounded-full', colors.dot)} />
-                                <span className="capitalize text-gray-600 dark:text-gray-400">{status}</span>
-                            </div>
-                        ))}
-                    </div>
-                </Panel>
-            </FlowCanvas>
+            {/* Legend */}
+            <div className="absolute bottom-2 left-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-2 z-10">
+                <div className="flex items-center gap-3 text-xs">
+                    {(Object.entries(STATUS_COLORS) as [string, { dot: string }][]).slice(0, 4).map(([status, colors]) => (
+                        <div key={status} className="flex items-center gap-1">
+                            <span className={cn('w-2 h-2 rounded-full', colors.dot)} />
+                            <span className="capitalize text-gray-600 dark:text-gray-400">{status}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 }

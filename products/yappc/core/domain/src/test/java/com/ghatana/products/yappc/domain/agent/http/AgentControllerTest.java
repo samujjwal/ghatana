@@ -315,6 +315,9 @@ class AgentControllerTest extends EventloopTestBase {
                             HttpMethod.POST,
                             "http://localhost/api/v1/agents/copilot/chat"
                     )
+                    .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+                    .withHeader(io.activej.http.HttpHeaders.of("X-Organization-ID"), "org-1")
+                    .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "ws-1")
                     .withBody(requestBody.getBytes())
                     .build();
 
@@ -341,6 +344,9 @@ class AgentControllerTest extends EventloopTestBase {
                             HttpMethod.POST,
                             "http://localhost/api/v1/agents/search"
                     )
+                    .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+                    .withHeader(io.activej.http.HttpHeaders.of("X-Organization-ID"), "org-1")
+                    .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "ws-1")
                     .withBody(requestBody.getBytes())
                     .build();
 

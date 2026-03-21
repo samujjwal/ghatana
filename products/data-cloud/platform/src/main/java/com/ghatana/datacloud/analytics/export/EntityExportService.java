@@ -115,11 +115,15 @@ public final class EntityExportService {
         int effectiveLimit = clampLimit(limit);
 
         return fetchAll(tenantId, collectionName, filter, effectiveLimit)
-                .then(entities -> Promise.ofBlocking(executor, () -> {
+                .then(entities -> {
                     LOG.debug("Exporting {} entities as CSV for tenant={} collection={}",
                             entities.size(), tenantId, collectionName);
-                    return buildCsv(entities);
-                }));
+                    try {
+                        return Promise.of(buildCsv(entities));
+                    } catch (Exception e) {
+                        return Promise.ofException(e);
+                    }
+                });
     }
 
     /**
@@ -142,11 +146,15 @@ public final class EntityExportService {
         int effectiveLimit = clampLimit(limit);
 
         return fetchAll(tenantId, collectionName, filter, effectiveLimit)
-                .then(entities -> Promise.ofBlocking(executor, () -> {
+                .then(entities -> {
                     LOG.debug("Exporting {} entities as NDJSON for tenant={} collection={}",
                             entities.size(), tenantId, collectionName);
-                    return buildNdjson(entities);
-                }));
+                    try {
+                        return Promise.of(buildNdjson(entities));
+                    } catch (Exception e) {
+                        return Promise.ofException(e);
+                    }
+                });
     }
 
     // ── Fetching ───────────────────────────────────────────────────────────────

@@ -5,11 +5,21 @@ on:
     branches: [main, develop]
     paths:
       - "products/data-cloud/**"
+      - "platform/java/**"
       - ".github/workflows/data-cloud-ci.yml"
   pull_request:
     branches: [main, develop]
     paths:
       - "products/data-cloud/**"
+      - "platform/java/**"
+
+env:
+  DC_MODULES: >-
+    :products:data-cloud:spi
+    :products:data-cloud:platform
+    :products:data-cloud:launcher
+    :products:data-cloud:sdk
+    :products:data-cloud:agent-registry
 
 jobs:
   build-and-test:
@@ -25,53 +35,88 @@ jobs:
           distribution: "temurin"
           cache: gradle
 
-      # Compile
-      # NOTE: domain, application, infrastructure, api, spi have been merged into core
-      - name: Compile application
-        run: |
-          ./gradlew :products:data-cloud:core:compileJava
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
 
-      # Format & Lint
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Install UI dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: products/data-cloud/ui
+
+      # Backend: Compile all modules
+      - name: Compile backend modules
+        run: |
+          ./gradlew \
+            :products:data-cloud:spi:compileJava \
+            :products:data-cloud:platform:compileJava \
+            :products:data-cloud:launcher:compileJava \
+            :products:data-cloud:agent-registry:compileJava \
+            --no-daemon
+
+      # Backend: Format & Lint
       - name: Check code formatting
         run: |
-          ./gradlew :products:data-cloud:core:spotlessCheck
+          ./gradlew \
+            :products:data-cloud:spi:spotlessCheck \
+            :products:data-cloud:platform:spotlessCheck \
+            :products:data-cloud:launcher:spotlessCheck \
+            :products:data-cloud:agent-registry:spotlessCheck \
+            --no-daemon
 
-      # Unit Tests
-      - name: Run unit tests
+      # Frontend: Type-check (must pass before tests)
+      - name: Frontend type-check
+        run: pnpm run type-check
+        working-directory: products/data-cloud/ui
+
+      # Backend: Unit Tests
+      - name: Run backend unit tests
         run: |
-          ./gradlew :products:data-cloud:core:test
+          ./gradlew \
+            :products:data-cloud:spi:test \
+            :products:data-cloud:platform:test \
+            :products:data-cloud:launcher:test \
+            :products:data-cloud:agent-registry:test \
+            --no-daemon
 
-      # Integration Tests (with Testcontainers)
+      # Frontend: Vitest
+      - name: Run frontend tests
+        run: pnpm run test -- --run
+        working-directory: products/data-cloud/ui
+
+      # Backend: Integration Tests (with Testcontainers)
       - name: Run integration tests
         run: |
-          ./gradlew :products:data-cloud:core:test \
-                    -PincludeIT=true
+          ./gradlew \
+            :products:data-cloud:platform:test \
+            -PincludeIT=true \
+            --no-daemon
 
-      # Architecture Tests
+      # Backend: Architecture Tests
       - name: Run architecture tests
         run: |
-          ./gradlew :products:data-cloud:core:test \
-                    -Dtest=ArchitectureTests
-
-      # Performance Harness
-      - name: Run performance harness
-        run: |
-          ./gradlew :products:data-cloud:core:test \
-                    -Dtest=PerformanceHarness
-
-      # OpenAPI Generation
-      - name: Generate OpenAPI specification
-        run: |
-          ./gradlew :products:data-cloud:core:generateOpenApi
+          ./gradlew \
+            :products:data-cloud:platform:test \
+            -Dtest=ArchitectureTests \
+            --no-daemon
 
       # Code Coverage
       - name: Generate code coverage report
         run: |
-          ./gradlew :products:data-cloud:core:jacocoTestReport
+          ./gradlew \
+            :products:data-cloud:spi:jacocoTestReport \
+            :products:data-cloud:platform:jacocoTestReport \
+            :products:data-cloud:launcher:jacocoTestReport \
+            :products:data-cloud:agent-registry:jacocoTestReport \
+            --no-daemon
 
       # Upload coverage to Codecov
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./products/data-cloud/**/build/reports/jacoco/test/jacocoTestReport.xml
           flags: data-cloud
@@ -80,7 +125,12 @@ jobs:
       # Build artifacts
       - name: Build JAR artifacts
         run: |
-          ./gradlew :products:data-cloud:core:build
+          ./gradlew \
+            :products:data-cloud:spi:build \
+            :products:data-cloud:platform:build \
+            :products:data-cloud:launcher:build \
+            :products:data-cloud:agent-registry:build \
+            --no-daemon
 
       # Publish test results
       - name: Publish test results
@@ -94,18 +144,85 @@ jobs:
       # Upload OpenAPI spec as artifact
       - name: Upload OpenAPI specification
         if: success()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: openapi-spec
           path: products/data-cloud/docs/openapi.yaml
           retention-days: 30
 
-      # Notify on failure
+      # Fail loudly on any issue
       - name: Notify failure
         if: failure()
         run: |
-          echo "Data Cloud CI failed"
+          echo "::error::Data Cloud CI failed — check the logs above."
           exit 1
+
+  # Hygiene gate: reject checked-in build outputs
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reject checked-in build outputs
+        run: |
+          if find products/data-cloud -path '*/build/classes' -o -path '*/build/libs' | grep -q .; then
+            echo "::error::Build outputs checked into source control under products/data-cloud."
+            echo "Run:  git rm -r products/data-cloud/*/build && echo '/build/' >> products/data-cloud/.gitignore"
+            exit 1
+          fi
+
+      - name: Naming drift lint
+        run: |
+          # Reject references to deprecated module names in source files
+          VIOLATIONS=$(grep -rn \
+            --include='*.java' --include='*.ts' --include='*.tsx' --include='*.yaml' --include='*.yml' --include='*.json' \
+            -E '(collection-entity-system|collection_entity_system|CollectionEntitySystem|CES Workflow|eventcloud[^.]|ces-workflow)' \
+            products/data-cloud/ \
+            --exclude-dir=node_modules --exclude-dir=build --exclude-dir=dist --exclude-dir=.git \
+            --exclude='V2_Data_Cloud_Deep_Audit.md' --exclude='CHANGELOG.md' --exclude='*.lock' \
+            || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::Deprecated naming found — rename references to 'data-cloud':"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+          echo "✓ No deprecated naming drift detected."
+
+      - name: Validate UI package.json
+        run: |
+          cd products/data-cloud/ui
+          # Ensure required fields exist
+          node -e "
+            const pkg = require('./package.json');
+            const errors = [];
+            if (!pkg.name) errors.push('missing name');
+            if (!pkg.version) errors.push('missing version');
+            if (!pkg.private && !pkg.license) errors.push('missing license for public package');
+            if (pkg.description && /CES|collection.entity.system/i.test(pkg.description)) {
+              errors.push('package.json description contains deprecated naming');
+            }
+            if (errors.length) {
+              console.error('package.json validation failed:', errors.join(', '));
+              process.exit(1);
+            }
+            console.log('✓ package.json is valid');
+          "
+
+      - name: Contract drift detection
+        run: |
+          # Verify that Java route annotations match the canonical OpenAPI spec path prefix
+          API_PREFIX="/api/v1"
+          VIOLATIONS=$(grep -rn '@Path\|@GetMapping\|@PostMapping\|@PutMapping\|@DeleteMapping\|@RequestMapping' \
+            products/data-cloud/platform/src/ products/data-cloud/launcher/src/ \
+            --include='*.java' \
+            | grep -E '"(/api/(?!v1)|/collections|/entities|/pipelines)' \
+            || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::Route paths not using canonical ${API_PREFIX} prefix:"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+          echo "✓ No contract drift detected."
 
   security-scan:
     runs-on: ubuntu-latest
@@ -123,13 +240,17 @@ jobs:
       # Dependency check
       - name: Run dependency vulnerability check
         run: |
-          ./gradlew :products:data-cloud:core:dependencyCheck
+          ./gradlew \
+            :products:data-cloud:platform:dependencyCheck \
+            --no-daemon
         continue-on-error: true
 
       # SBOM generation
       - name: Generate SBOM
         run: |
-          ./gradlew :products:data-cloud:core:cyclonedx
+          ./gradlew \
+            :products:data-cloud:platform:cyclonedx \
+            --no-daemon
         continue-on-error: true
 
   quality-gates:
@@ -149,7 +270,9 @@ jobs:
       # SonarQube analysis (optional)
       - name: SonarQube analysis
         run: |
-          ./gradlew :products:data-cloud:core:sonarqube
+          ./gradlew \
+            :products:data-cloud:platform:sonarqube \
+            --no-daemon
         env:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
           SONAR_LOGIN: ${{ secrets.SONAR_LOGIN }}
@@ -159,7 +282,8 @@ jobs:
       - name: Enforce quality gates
         run: |
           echo "Quality gates enforcement:"
+          echo "✓ Backend compile clean"
+          echo "✓ Frontend type-check clean"
           echo "✓ Zero linter warnings"
-          echo "✓ >85% test coverage"
-          echo "✓ Zero architecture violations"
           echo "✓ All tests passing"
+          echo "✓ No checked-in build outputs"

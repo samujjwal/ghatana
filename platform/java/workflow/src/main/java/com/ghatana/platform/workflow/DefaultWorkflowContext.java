@@ -76,6 +76,12 @@ public class DefaultWorkflowContext implements WorkflowContext {
     }
 
     @Override
+    @NotNull
+    public String getRunId() {
+        return correlationId;
+    }
+
+    @Override
     @Nullable
     public String getCurrentStep() {
         return currentStep;

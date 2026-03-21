@@ -10,6 +10,7 @@ import com.ghatana.phr.kernel.service.PatientRecordService;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.DocumentService;
 import com.ghatana.phr.kernel.service.AppointmentService;
+// PhrCapabilities owns all PHR capability constants — per CODE_ALIGNMENT_SPECIFICATION §2.2
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -27,6 +28,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>This module implements the PHR-specific kernel integration following
  * Nepal healthcare regulations (Directive 2081, Privacy Act 2075) and
  * FHIR R4 standards.</p>
+ *
+ * <p>PHR-domain capabilities are declared in {@link PhrCapabilities}, not in
+ * {@code KernelCapability.Products} (which is deprecated — per
+ * KERNEL_CANONICALIZATION_DECISIONS.md §D1 and CODE_ALIGNMENT_SPECIFICATION §2.2).</p>
  *
  * @doc.type class
  * @doc.purpose PHR product kernel module — healthcare-specific composition root
@@ -58,19 +63,19 @@ public class PhrKernelModule implements KernelModule {
     @Override
     public Set<KernelCapability> getCapabilities() {
         return Set.of(
-            // PHR-specific capabilities (healthcare domain)
-            KernelCapability.Products.PATIENT_RECORDS,
-            KernelCapability.Products.CONSENT_MANAGEMENT,
-            KernelCapability.Products.FHIR_INTEROP,
-            KernelCapability.Products.CLINICAL_DOCUMENTS,
-            KernelCapability.Products.MEDICATION_MANAGEMENT,
+            // PHR-owned healthcare capabilities — defined in PhrCapabilities, NOT in the
+            // deprecated KernelCapability.Products (per KERNEL_CANONICALIZATION_DECISIONS §D1).
+            PhrCapabilities.PATIENT_RECORDS,
+            PhrCapabilities.CONSENT_MANAGEMENT,
+            PhrCapabilities.FHIR_INTEROP,
+            PhrCapabilities.CLINICAL_DOCUMENTS,
+            PhrCapabilities.MEDICATION_MANAGEMENT,
 
-            // Shared capabilities used by PHR
-            KernelCapability.Products.USER_AUTHENTICATION,
-            KernelCapability.Products.DATA_STORAGE,
-            KernelCapability.Products.API_FRAMEWORK,
-            KernelCapability.Products.WORKFLOW_ENGINE,
-            KernelCapability.Products.NOTIFICATION_SERVICE
+            // Core kernel capabilities reused by PHR (from KernelCapability.Core)
+            KernelCapability.Core.USER_AUTHENTICATION,
+            KernelCapability.Core.DATA_STORAGE,
+            KernelCapability.Core.API_FRAMEWORK,
+            KernelCapability.Core.WORKFLOW_ENGINE
         );
     }
 

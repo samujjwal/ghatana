@@ -155,7 +155,7 @@ export const AppListItem = React.forwardRef<HTMLDivElement, AppListItemProps>(
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === 'dark';
     const surface = isDark ? darkColors : lightColors;
-    const bgColor = surface.background.elevated || surface.background.paper;
+    const bgColor = surface.background.elevated;
     const textColor = surface.text.primary;
     const borderColor = surface.border;
     const _hoverBgColor = isDark ? '#2c2c2c' : '#f5f5f5';

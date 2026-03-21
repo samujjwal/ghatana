@@ -1,7 +1,7 @@
 package com.ghatana.datacloud.entity;
 
 /**
- * Enumeration of supported field data types in the collection entity system.
+ * Enumeration of supported field data types in the Data Cloud.
  *
  * <p><b>Purpose</b><br>
  * Defines the canonical set of data types for dynamic schema fields, supporting primitive types,

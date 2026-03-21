@@ -195,7 +195,7 @@ public class RealtimeExecutionMonitor {
      * @return promise of sync completion
      */
     public Promise<Void> syncOfflineEvents() {
-        return Promise.ofBlocking(blockingExecutor(), () -> {
+        try {
             List<ExecutionEvent> events = getOfflineEvents();
             logger.info("Syncing {} offline events", events.size());
 
@@ -205,8 +205,10 @@ public class RealtimeExecutionMonitor {
 
             isOnline = true;
             logger.info("Offline events synced successfully");
-            return null;
-        });
+            return Promise.complete();
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**

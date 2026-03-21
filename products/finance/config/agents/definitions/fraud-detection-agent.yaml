@@ -1,0 +1,28 @@
+id: agent.finance.fraud-detection
+name: Fraud Detection Agent
+version: "1.0.0"
+description: >
+  Monitors trade events for suspicious patterns and potential fraud.
+  Uses real-time analysis of trade data with configurable detection rules.
+
+metadata:
+  level: expert
+  domain: finance
+  tags:
+    - fraud-detection
+    - trade-monitoring
+    - compliance
+
+capabilities:
+  - fraud-detection
+  - trade-monitoring
+  - anomaly-detection
+
+implementationRef: "finance:fraud-detection"
+
+generator:
+  type: gaa-lifecycle
+  steps:
+    - perceive
+    - reason
+    - act

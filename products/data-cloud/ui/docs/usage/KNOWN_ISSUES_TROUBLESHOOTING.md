@@ -1,4 +1,4 @@
-# CES UI – Known Issues & Troubleshooting
+# Data Cloud UI – Known Issues & Troubleshooting
 
 ## 1. Known Issues
 
@@ -7,6 +7,6 @@
 ## 2. Troubleshooting
 
 - Check browser console and network logs.
-- Verify CES API availability and configuration.
+- Verify Data Cloud API availability and configuration.
 
-This document is self-contained and lists common issues and mitigations for the CES UI module.
+This document is self-contained and lists common issues and mitigations for the Data Cloud UI module.

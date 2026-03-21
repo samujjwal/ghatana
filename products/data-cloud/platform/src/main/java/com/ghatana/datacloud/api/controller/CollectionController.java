@@ -37,11 +37,11 @@ import java.util.stream.Collectors;
  * <p>
  * <b>Endpoints</b><br>
  * <ul>
- * <li><b>POST /api/collections:</b> Create collection
- * <li><b>GET /api/collections/{collectionId}:</b> Get collection by ID
- * <li><b>PUT /api/collections/{collectionId}:</b> Update collection
- * <li><b>DELETE /api/collections/{collectionId}:</b> Delete collection
- * <li><b>GET /api/collections:</b> List collections with pagination
+ * <li><b>POST /api/v1/collections:</b> Create collection
+ * <li><b>GET /api/v1/collections/{collectionId}:</b> Get collection by ID
+ * <li><b>PUT /api/v1/collections/{collectionId}:</b> Update collection
+ * <li><b>DELETE /api/v1/collections/{collectionId}:</b> Delete collection
+ * <li><b>GET /api/v1/collections:</b> List collections with pagination
  * </ul>
  *
  * <p>
@@ -72,8 +72,8 @@ public class CollectionController {
 
         private static final Logger logger = LoggerFactory.getLogger(CollectionController.class);
 
-        private static final HttpHeader HEADER_TENANT_ID = HttpHeaders.of("X-Tenant-Id");
-        private static final HttpHeader HEADER_USER_ID = HttpHeaders.of("X-User-Id");
+        private static final HttpHeader HEADER_TENANT_ID = HttpHeaders.of("X-Tenant-ID");
+        private static final HttpHeader HEADER_USER_ID = HttpHeaders.of("X-User-ID");
 
         private final CollectionService collectionService;
         private final MetricsCollector metrics;
@@ -120,17 +120,17 @@ public class CollectionController {
                 HttpMethod method = request.getMethod();
 
                 try {
-                        if (method == HttpMethod.POST && path.equals("/api/collections")) {
+                        if (method == HttpMethod.POST && path.equals("/api/v1/collections")) {
                                 return createCollection(request, tenantId);
-                        } else if (method == HttpMethod.GET && path.equals("/api/collections")) {
+                        } else if (method == HttpMethod.GET && path.equals("/api/v1/collections")) {
                                 return listCollections(request, tenantId);
-                        } else if (method == HttpMethod.GET && path.matches("/api/collections/[a-f0-9-]+")) {
+                        } else if (method == HttpMethod.GET && path.matches("/api/v1/collections/[a-f0-9-]+")) {
                                 String collectionId = extractIdFromPath(path);
                                 return getCollection(collectionId, tenantId);
-                        } else if (method == HttpMethod.PUT && path.matches("/api/collections/[a-f0-9-]+")) {
+                        } else if (method == HttpMethod.PUT && path.matches("/api/v1/collections/[a-f0-9-]+")) {
                                 String collectionId = extractIdFromPath(path);
                                 return updateCollection(request, collectionId, tenantId);
-                        } else if (method == HttpMethod.DELETE && path.matches("/api/collections/[a-f0-9-]+")) {
+                        } else if (method == HttpMethod.DELETE && path.matches("/api/v1/collections/[a-f0-9-]+")) {
                                 String collectionId = extractIdFromPath(path);
                                 return deleteCollection(collectionId, tenantId);
                         } else {

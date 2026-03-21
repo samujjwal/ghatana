@@ -13,16 +13,6 @@
   "scripts": {
     "type-check": "tsc --noEmit"
   },
-  "dependencies": {
-    "@yappc/ui": "workspace:*"
-  },
-  "devDependencies": {
-    "typescript": "^5.9.3"
-  },
-  "author": "YAPPC Team",
-  "license": "MIT"
-}
-
   "keywords": [
     "traceability",
     "component",
@@ -30,6 +20,12 @@
     "coverage",
     "analysis"
   ],
+  "dependencies": {
+    "@yappc/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
   "author": "YAPPC Team",
   "license": "MIT"
 }

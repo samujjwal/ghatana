@@ -36,6 +36,20 @@ dependencies {
     implementation(libs.activej.eventloop)
 
     // Testing
+
+    // ─── Cross-Domain Dependencies (migrated from app-platform) ────────────
+    implementation(project(":products:finance:domains:oms"))
+    implementation(project(":products:finance:domains:ems"))
+    implementation(project(":products:finance:domains:reference-data"))
+
+    // ─── Infrastructure Dependencies (migrated from app-platform) ──────────
+    implementation(libs.activej.promise)
+    implementation(libs.postgresql)
+    implementation(libs.flyway.core)
+    implementation(libs.hikaricp)
+    implementation(libs.micrometer.core)
+    implementation(libs.slf4j.api)
+
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

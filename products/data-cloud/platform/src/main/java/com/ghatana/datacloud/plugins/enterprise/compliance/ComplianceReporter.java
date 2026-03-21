@@ -102,7 +102,7 @@ public class ComplianceReporter {
             String subjectId,
             String requestedBy) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             String requestId = UUID.randomUUID().toString();
 
             DSARRequest request = DSARRequest.builder()
@@ -119,8 +119,10 @@ public class ComplianceReporter {
             logAudit(AuditAction.DSAR_CREATED, requestedBy,
                     Map.of("requestId", requestId, "subjectEmail", subjectEmail));
 
-            return request;
-        });
+            return Promise.of(request);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -134,7 +136,7 @@ public class ComplianceReporter {
             String requestId,
             DataCollector dataCollector) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             DSARRequest request = dsarRequests.get(requestId);
             if (request == null) {
                 throw new IllegalArgumentException("DSAR not found: " + requestId);
@@ -175,8 +177,10 @@ public class ComplianceReporter {
             logAudit(AuditAction.DSAR_COMPLETED, "system",
                     Map.of("requestId", requestId, "recordCount", response.getTotalRecords()));
 
-            return response;
-        });
+            return Promise.of(response);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // --- GDPR Right to Erasure (RTBF) ---
@@ -195,7 +199,7 @@ public class ComplianceReporter {
             String requestedBy,
             ErasureScope scope) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             String requestId = UUID.randomUUID().toString();
 
             ErasureRequest request = ErasureRequest.builder()
@@ -212,8 +216,10 @@ public class ComplianceReporter {
             logAudit(AuditAction.ERASURE_REQUESTED, requestedBy,
                     Map.of("requestId", requestId, "scope", scope.name()));
 
-            return request;
-        });
+            return Promise.of(request);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -227,7 +233,7 @@ public class ComplianceReporter {
             String requestId,
             DataEraser dataEraser) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             ErasureRequest request = erasureRequests.get(requestId);
             if (request == null) {
                 throw new IllegalArgumentException("Erasure request not found: " + requestId);
@@ -260,8 +266,10 @@ public class ComplianceReporter {
                             "deletedRecords", result.getDeletedRecords()
                     ));
 
-            return result;
-        });
+            return Promise.of(result);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // --- HIPAA Audit Log ---
@@ -308,14 +316,16 @@ public class ComplianceReporter {
             Instant startDate,
             Instant endDate) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             synchronized (auditLog) {
-                return auditLog.stream()
+                return Promise.of(auditLog.stream()
                         .filter(e -> e.getComplianceFramework() == ComplianceFramework.HIPAA)
                         .filter(e -> !e.getTimestamp().isBefore(startDate) && !e.getTimestamp().isAfter(endDate))
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toList()));
             }
-        });
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // --- SOC2 Compliance ---
@@ -325,7 +335,7 @@ public class ComplianceReporter {
      * @return Promise of SOC2 dashboard
      */
     public Promise<SOC2Dashboard> getSOC2Dashboard() {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             List<SOC2Control> controls = new ArrayList<>(soc2Controls.values());
 
             long compliant = controls.stream()
@@ -340,7 +350,7 @@ public class ComplianceReporter {
 
             double complianceScore = (double) compliant / controls.size() * 100;
 
-            return SOC2Dashboard.builder()
+            return Promise.of(SOC2Dashboard.builder()
                     .totalControls(controls.size())
                     .compliantControls((int) compliant)
                     .nonCompliantControls((int) nonCompliant)
@@ -348,8 +358,10 @@ public class ComplianceReporter {
                     .complianceScore(complianceScore)
                     .controls(controls)
                     .lastAssessmentDate(Instant.now())
-                    .build();
-        });
+                    .build());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -367,7 +379,7 @@ public class ComplianceReporter {
             String assessedBy,
             String notes) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             SOC2Control control = soc2Controls.get(controlId);
             if (control == null) {
                 throw new IllegalArgumentException("Control not found: " + controlId);
@@ -385,8 +397,10 @@ public class ComplianceReporter {
             logAudit(AuditAction.SOC2_CONTROL_UPDATED, assessedBy,
                     Map.of("controlId", controlId, "status", status.name()));
 
-            return control;
-        });
+            return Promise.of(control);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // --- Retention Policy ---
@@ -401,7 +415,7 @@ public class ComplianceReporter {
             String datasetId,
             RetentionPolicy policy) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             retentionPolicies.put(datasetId, policy);
 
             logAudit(AuditAction.RETENTION_POLICY_SET, "system",
@@ -410,8 +424,10 @@ public class ComplianceReporter {
                             "retentionDays", policy.getRetentionDays()
                     ));
 
-            return policy;
-        });
+            return Promise.of(policy);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -423,7 +439,7 @@ public class ComplianceReporter {
     public Promise<List<RetentionEnforcementResult>> enforceRetentionPolicies(
             DataDeleter dataDeleter) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             List<RetentionEnforcementResult> results = new ArrayList<>();
             Instant now = Instant.now();
 
@@ -449,8 +465,10 @@ public class ComplianceReporter {
                         ));
             }
 
-            return results;
-        });
+            return Promise.of(results);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // --- Private Helper Methods ---

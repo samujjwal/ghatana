@@ -10,10 +10,11 @@ dependencies {
     // Platform modules
     api(project(":platform:java:core"))
     api(project(":platform:java:domain"))
+    api(project(":platform:java:agent-spi"))
     
     // Contracts - software-org contracts
     api(project(":platform:contracts"))  // Common types
-    api(project(":products:aep:platform"))  // Agent contracts (for DevSecOps)
+    api(project(":products:aep:platform-bundle"))  // Agent contracts (for DevSecOps)
     
     // Virtual-Org Framework
     api(project(":products:virtual-org:modules:framework"))

@@ -11,6 +11,7 @@ import com.ghatana.kernel.health.HealthStatus;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.modules.secrets.service.SecretsService;
 import io.activej.promise.Promise;
+import java.util.concurrent.ForkJoinPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +92,7 @@ public final class SecretsKernelModule implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting Secrets Management module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Start secrets service
             secretsService.start();
 
@@ -104,7 +105,7 @@ public final class SecretsKernelModule implements KernelModule {
     public Promise<Void> stop() {
         log.info("Stopping Secrets Management module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Stop secrets service
             if (secretsService != null) {
                 secretsService.stop();

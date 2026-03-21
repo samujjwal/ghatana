@@ -48,7 +48,7 @@ dependencies {
     api(project(":platform:java:testing"))
 
     // ─── AEP and Data Cloud SPI ───────────────────────────────────────────────
-    api(project(":products:aep:platform"))
+    api(project(":products:aep:platform-bundle"))
     api(project(":products:data-cloud:spi"))
 
     // ─── Kernel aggregation ───────────────────────────────────────────────────

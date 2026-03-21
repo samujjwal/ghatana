@@ -13,6 +13,7 @@ import java.util.Base64;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * Plugin Security Manager with Ed25519 signature verification.
@@ -70,7 +71,7 @@ public class PluginSecurityManagerImpl implements PluginSecurityManager {
     public Promise<Boolean> verifyPluginSignature(Path pluginJar) {
         Objects.requireNonNull(pluginJar, "pluginJar cannot be null");
 
-        return Promise.ofBlocking(
+        return Promise.ofBlocking(ForkJoinPool.commonPool(),
             () -> {
                 // Check blacklist
                 String pluginId = pluginJar.getFileName().toString();
@@ -100,12 +101,7 @@ public class PluginSecurityManagerImpl implements PluginSecurityManager {
                 }
 
                 return false;
-            },
-            e -> {
-                // Log verification failure
-                return false;
-            }
-        );
+            });
     }
 
     /**
@@ -169,7 +165,7 @@ public class PluginSecurityManagerImpl implements PluginSecurityManager {
      * @return Promise containing the key pair
      */
     public Promise<KeyPair> generateSigningKeyPair() {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             java.security.KeyPairGenerator keyGen = java.security.KeyPairGenerator
                 .getInstance(KEY_ALGORITHM);
             java.security.KeyPair pair = keyGen.generateKeyPair();
@@ -189,7 +185,7 @@ public class PluginSecurityManagerImpl implements PluginSecurityManager {
      * @return Promise containing the signature
      */
     public Promise<byte[]> signPlugin(Path pluginJar, String privateKeyBase64) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             byte[] jarBytes = Files.readAllBytes(pluginJar);
             byte[] privateKeyBytes = Base64.getDecoder().decode(privateKeyBase64);
 

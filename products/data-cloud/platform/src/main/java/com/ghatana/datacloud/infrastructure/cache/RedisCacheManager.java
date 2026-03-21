@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * RedisCacheManager cacheManager = new RedisCacheManager(
  *     redisClient,
  *     metrics,
- *     "collection-entity-system"
+ *     "data-cloud"
  * );
  *
  * // Cache-aside pattern

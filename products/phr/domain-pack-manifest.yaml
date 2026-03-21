@@ -1,0 +1,136 @@
+# PHR Domain Pack Manifest
+# Per KERNEL_CANONICALIZATION_DECISIONS.md - Domain packs declare their own capabilities
+
+pack:
+  id: phr
+  name: "PHR Domain Pack"
+  version: "1.0.0"
+  description: "Personal Health Records domain pack with FHIR interoperability and Nepal-2081 compliance"
+
+  # Domain classification
+  domain:
+    type: healthcare
+    region: nepal
+    regulatory_frameworks:
+      - nepal-2081
+      - nepal-privacy-act-2075
+      - fhir-r4
+      - hipaa
+
+  # Capabilities provided by this domain pack
+  capabilities:
+    - id: phr.patient-records
+      name: "Patient Records"
+      type: BUSINESS_LOGIC
+      description: "Healthcare patient record management with FHIR R4 and Nepal Directive 2081 support"
+      metadata:
+        standards: fhir-r4,nepal-2081
+        retention_years: "25"
+
+    - id: phr.consent-management
+      name: "Consent Management"
+      type: COMPLIANCE
+      description: "Patient consent lifecycle with granular field-level consent"
+      metadata:
+        regulations: nepal-2081,privacy-act-2075,fhir-consent
+        granularity: field-level
+
+    - id: phr.fhir-interop
+      name: "FHIR Interoperability"
+      type: INTEGRATION
+      description: "FHIR R4 resource processing, validation, and exchange"
+      metadata:
+        version: r4
+        resources: patient,observation,medication,appointment,consent,document
+
+    - id: phr.clinical-documents
+      name: "Clinical Documents"
+      type: DATA_MANAGEMENT
+      description: "Medical document storage with OCR and imaging support"
+      metadata:
+        types: lab-reports,imaging,discharge-summary,prescriptions
+        ocr: true
+
+    - id: phr.medication-management
+      name: "Medication Management"
+      type: BUSINESS_LOGIC
+      description: "Prescription management, dispensing history, and interaction checks"
+      metadata:
+        features: prescriptions,refills,interactions
+
+    - id: phr.appointment-scheduling
+      name: "Appointment Scheduling"
+      type: WORKFLOW
+      description: "Appointment scheduling, rescheduling, reminders, and attendance tracking"
+      metadata:
+        scheduling_types: in-person,virtual,phone
+        notifications: email,sms,push
+
+  # Required kernel capabilities
+  requires:
+    - data.storage
+    - user.authentication
+    - workflow.engine
+    - security.framework
+    - audit.immutable-trail
+    - tenant.isolation
+
+  # Extensions provided by this pack
+  extensions:
+    - id: phr.healthcare-consent
+      name: "Healthcare Consent Extension"
+      description: "Healthcare-specific consent management extension"
+      target_capability: phr.consent-management
+
+    - id: phr.fhir-interop
+      name: "FHIR Interop Extension"
+      description: "FHIR interoperability extension"
+      target_capability: phr.fhir-interop
+
+    - id: phr.hipaa-compliance
+      name: "HIPAA Compliance Extension"
+      description: "HIPAA compliance and audit extension"
+      target_capability: security.framework
+
+    - id: phr.appointment-notification
+      name: "Appointment Notification Extension"
+      description: "Appointment notification and reminder extension"
+      target_capability: phr.appointment-scheduling
+
+  # Sub-domains/modules within this pack
+  modules:
+    - name: patient-records
+      description: "Patient record management with FHIR support"
+    - name: consent-management
+      description: "Consent lifecycle management"
+    - name: fhir-gateway
+      description: "FHIR R4 API gateway"
+    - name: clinical-documents
+      description: "Document management with OCR"
+    - name: medication-tracking
+      description: "Medication and prescription tracking"
+    - name: appointment-scheduling
+      description: "Appointment scheduling and reminders"
+    - name: provider-directory
+      description: "Healthcare provider directory"
+    - name: lab-integration
+      description: "Laboratory system integration"
+    - name: imaging-integration
+      description: "Medical imaging integration"
+    - name: pharmacy-integration
+      description: "Pharmacy system integration"
+
+  # Deployment configuration
+  deployment:
+    type: domain-pack
+    dependencies:
+      - platform:java:kernel
+      - platform:java:kernel:modules:authentication
+      - platform:java:kernel:modules:audit
+      - platform:java:kernel:modules:event-store
+
+  # Metadata
+  metadata:
+    created: "2026-03-19"
+    author: "Ghatana PHR Team"
+    documentation: "docs/README.md"

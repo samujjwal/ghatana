@@ -1,0 +1,124 @@
+name: Platform Module Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'platform/java/**'
+      - 'products/aep/**'
+      - 'products/data-cloud/**'
+      - 'products/yappc/**'
+      - 'products/virtual-org/**'
+      - 'products/software-org/**'
+      - 'products/app-platform/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    name: Detect Changed Modules
+    runs-on: ubuntu-latest
+    outputs:
+      platform: ${{ steps.changes.outputs.platform }}
+      aep: ${{ steps.changes.outputs.aep }}
+      data-cloud: ${{ steps.changes.outputs.data-cloud }}
+      yappc: ${{ steps.changes.outputs.yappc }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            platform:
+              - 'platform/java/**'
+            aep:
+              - 'products/aep/**'
+            data-cloud:
+              - 'products/data-cloud/**'
+            yappc:
+              - 'products/yappc/**'
+
+  platform-tests:
+    name: Platform Library Tests
+    needs: detect-changes
+    if: needs.detect-changes.outputs.platform == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Test platform modules
+        run: |
+          ./gradlew \
+            :platform:java:agent-api:test \
+            :platform:java:agent-spi:test \
+            :platform:java:agent-framework:test \
+            :platform:java:domain:test \
+            :platform:java:core:test \
+            :platform:java:testing:test \
+            --no-daemon --continue
+
+  aep-tests:
+    name: AEP Module Tests
+    needs: detect-changes
+    if: needs.detect-changes.outputs.aep == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Test AEP modules
+        run: |
+          ./gradlew \
+            :products:aep:platform-bundle:test \
+            :products:aep:platform-core:test \
+            :products:aep:platform-connectors:test \
+            :products:aep:orchestrator:test \
+            --no-daemon --continue
+
+  data-cloud-tests:
+    name: Data Cloud Module Tests
+    needs: detect-changes
+    if: needs.detect-changes.outputs.data-cloud == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Test data-cloud modules
+        run: |
+          ./gradlew \
+            :products:data-cloud:platform-entity:test \
+            :products:data-cloud:platform-event:test \
+            :products:data-cloud:platform-config:test \
+            --no-daemon --continue
+
+  yappc-tests:
+    name: YAPPC Module Tests
+    needs: detect-changes
+    if: needs.detect-changes.outputs.yappc == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Test YAPPC modules
+        run: |
+          ./gradlew \
+            :products:yappc:core:agents:runtime:test \
+            :products:yappc:services:lifecycle:test \
+            --no-daemon --continue

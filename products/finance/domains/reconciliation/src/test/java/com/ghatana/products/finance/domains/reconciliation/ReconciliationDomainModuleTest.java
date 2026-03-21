@@ -63,11 +63,11 @@ class ReconciliationDomainModuleTest {
 
         assertThat(capabilities).isNotEmpty();
         assertThat(capabilities.stream()
-            .map(KernelCapability::getId)
+            .map(KernelCapability::getCapabilityId)
             .anyMatch(id -> id.equals("finance.trade.reconciliation")))
             .isTrue();
         assertThat(capabilities.stream()
-            .map(KernelCapability::getId)
+            .map(KernelCapability::getCapabilityId)
             .anyMatch(id -> id.equals("finance.position.reconciliation")))
             .isTrue();
     }
@@ -90,7 +90,7 @@ class ReconciliationDomainModuleTest {
     @DisplayName("Should start successfully and update health status")
     void shouldStartSuccessfullyAndUpdateHealthStatus() {
         module.initialize(mockContext);
-        module.start().get();
+        module.start();
 
         HealthStatus status = module.getHealthStatus();
         assertThat(status.isHealthy()).isTrue();
@@ -100,8 +100,8 @@ class ReconciliationDomainModuleTest {
     @DisplayName("Should stop successfully and update health status")
     void shouldStopSuccessfullyAndUpdateHealthStatus() {
         module.initialize(mockContext);
-        module.start().get();
-        module.stop().get();
+        module.start();
+        module.stop();
 
         HealthStatus status = module.getHealthStatus();
         assertThat(status.isHealthy()).isFalse();

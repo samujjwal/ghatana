@@ -87,13 +87,13 @@ scrape_configs:
     metrics_path: '/metrics'
 
   # AEP Services
-  - job_name: 'aep-unified-launcher'
+  - job_name: 'aep-server'
     static_configs:
       - targets: ['host.docker.internal:8090']
         labels:
-          service: 'aep-unified-launcher'
+          service: 'aep-server'
           product: 'aep'
-          layer: 'launcher'
+          layer: 'server'
     metrics_path: '/metrics'
 
   # Data Cloud Services

@@ -69,6 +69,13 @@ public class AgentConfig {
     @Builder.Default
     String version = "1.0.0";
 
+    /**
+     * Reference used by {@code AgentLogicProvider} to resolve the concrete
+     * implementation for this agent.
+     * Format: {@code <provider-id>:<qualified-agent-id>}.
+     */
+    String implementationRef;
+
     // ═══════════════════════════════════════════════════════════════════════════
     // SLA
     // ═══════════════════════════════════════════════════════════════════════════

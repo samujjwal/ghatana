@@ -17,7 +17,7 @@
 package com.ghatana.yappc.core.buildgen;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;

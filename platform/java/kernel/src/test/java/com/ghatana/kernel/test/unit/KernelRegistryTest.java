@@ -81,10 +81,9 @@ class KernelRegistryTest extends EventloopTestBase {
     void testMissingDependency() {
         // Given
         KernelModule module = new TestKernelModule("module-with-deps", "1.0.0", "missing-dependency");
-        registry.registerModule(module);
 
         // When/Then
-        assertThatThrownBy(() -> registry.validateDependencies(module))
+        assertThatThrownBy(() -> registry.registerModule(module))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("missing-dependency");
     }

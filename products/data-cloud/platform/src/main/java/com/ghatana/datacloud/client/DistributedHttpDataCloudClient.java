@@ -76,210 +76,237 @@ public class DistributedHttpDataCloudClient implements DataCloudClient {
     // ── HTTP helpers ────────────────────────────────────────────────────
 
     private <T> Promise<T> post(String path, Object body, Class<T> responseType) {
-        return Promise.ofBlocking(executor, () -> {
+        return post(path, body, responseType, null);
+    }
+
+    private <T> Promise<T> post(String path, Object body, Class<T> responseType, String tenantId) {
+        try {
             String json = MAPPER.writeValueAsString(body);
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url(path)))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .timeout(Duration.ofSeconds(30))
-                    .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    .timeout(Duration.ofSeconds(30));
+            if (tenantId != null) {
+                builder.header("X-Tenant-ID", tenantId);
+            }
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 400) {
                 throw new RuntimeException("HTTP " + response.statusCode() + ": " + response.body());
             }
-            if (responseType == Void.class) return null;
-            return MAPPER.readValue(response.body(), responseType);
-        });
+            if (responseType == Void.class) return Promise.of(null);
+            return Promise.of(MAPPER.readValue(response.body(), responseType));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @SuppressWarnings("unchecked")
     private <T> Promise<T> get(String path, Class<T> responseType) {
-        return Promise.ofBlocking(executor, () -> {
-            HttpRequest request = HttpRequest.newBuilder()
+        return get(path, responseType, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Promise<T> get(String path, Class<T> responseType, String tenantId) {
+        try {
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url(path)))
                     .GET()
-                    .timeout(Duration.ofSeconds(30))
-                    .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 404) return null;
+                    .timeout(Duration.ofSeconds(30));
+            if (tenantId != null) {
+                builder.header("X-Tenant-ID", tenantId);
+            }
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 404) return Promise.of(null);
             if (response.statusCode() >= 400) {
                 throw new RuntimeException("HTTP " + response.statusCode() + ": " + response.body());
             }
-            return MAPPER.readValue(response.body(), responseType);
-        });
+            return Promise.of(MAPPER.readValue(response.body(), responseType));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     private Promise<Void> delete(String path) {
-        return Promise.ofBlocking(executor, () -> {
-            HttpRequest request = HttpRequest.newBuilder()
+        return delete(path, null);
+    }
+
+    private Promise<Void> delete(String path, String tenantId) {
+        try {
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url(path)))
                     .DELETE()
-                    .timeout(Duration.ofSeconds(30))
-                    .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    .timeout(Duration.ofSeconds(30));
+            if (tenantId != null) {
+                builder.header("X-Tenant-ID", tenantId);
+            }
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 400 && response.statusCode() != 404) {
                 throw new RuntimeException("HTTP " + response.statusCode() + ": " + response.body());
             }
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // ============ Entity Operations ============
 
     @Override
     public Promise<EntityInterface> createEntity(String tenantId, String collectionName, Map<String, Object> data) {
-        String path = String.format("/api/v1/tenants/%s/collections/%s/entities", tenantId, collectionName);
-        return post(path, data, EntityInterface.class);
+        String path = String.format("/api/v1/entities/%s", collectionName);
+        return post(path, data, EntityInterface.class, tenantId);
     }
 
     @Override
     public Promise<Optional<EntityInterface>> getEntity(String tenantId, String collectionName, UUID entityId) {
-        String path = String.format("/api/v1/tenants/%s/collections/%s/entities/%s", tenantId, collectionName, entityId);
-        return get(path, EntityInterface.class).map(Optional::ofNullable);
+        String path = String.format("/api/v1/entities/%s/%s", collectionName, entityId);
+        return get(path, EntityInterface.class, tenantId).map(Optional::ofNullable);
     }
 
     @Override
     public Promise<EntityInterface> updateEntity(String tenantId, String collectionName, UUID entityId, Map<String, Object> data) {
-        String path = String.format("/api/v1/tenants/%s/collections/%s/entities/%s", tenantId, collectionName, entityId);
-        return Promise.ofBlocking(executor, () -> {
+        String path = String.format("/api/v1/entities/%s/%s", collectionName, entityId);
+        try {
             String json = MAPPER.writeValueAsString(data);
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url(path)))
                     .header("Content-Type", "application/json")
+                    .header("X-Tenant-ID", tenantId)
                     .PUT(HttpRequest.BodyPublishers.ofString(json))
-                    .timeout(Duration.ofSeconds(30))
-                    .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    .timeout(Duration.ofSeconds(30));
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 400) {
                 throw new RuntimeException("HTTP " + response.statusCode() + ": " + response.body());
             }
-            return MAPPER.readValue(response.body(), EntityInterface.class);
-        });
+            return Promise.of(MAPPER.readValue(response.body(), EntityInterface.class));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Void> deleteEntity(String tenantId, String collectionName, UUID entityId) {
-        return delete(String.format("/api/v1/tenants/%s/collections/%s/entities/%s", tenantId, collectionName, entityId));
+        return delete(String.format("/api/v1/entities/%s/%s", collectionName, entityId), tenantId);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Promise<List<EntityInterface>> queryEntities(String tenantId, String collectionName, QuerySpecInterface query) {
-        String path = String.format("/api/v1/tenants/%s/collections/%s/entities/query", tenantId, collectionName);
-        return (Promise<List<EntityInterface>>) (Promise<?>) post(path, query, List.class);
+        String path = String.format("/api/v1/entities/%s/query", collectionName);
+        return (Promise<List<EntityInterface>>) (Promise<?>) post(path, query, List.class, tenantId);
     }
 
     @Override
     public Promise<Long> countEntities(String tenantId, String collectionName, String filterExpression) {
-        String path = String.format("/api/v1/tenants/%s/collections/%s/entities/count?filter=%s", tenantId, collectionName, filterExpression);
-        return get(path, Long.class);
+        String path = String.format("/api/v1/entities/%s/count?filter=%s", collectionName, filterExpression);
+        return get(path, Long.class, tenantId);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Promise<List<EntityInterface>> bulkCreateEntities(String tenantId, String collectionName, List<EntityInterface> entities) {
-        String path = String.format("/api/v1/tenants/%s/collections/%s/entities/bulk", tenantId, collectionName);
-        return (Promise<List<EntityInterface>>) (Promise<?>) post(path, entities, List.class);
+        String path = String.format("/api/v1/entities/%s/batch", collectionName);
+        return (Promise<List<EntityInterface>>) (Promise<?>) post(path, entities, List.class, tenantId);
     }
 
     @Override
     public Promise<Long> bulkDeleteEntities(String tenantId, String collectionName, List<UUID> entityIds) {
-        String path = String.format("/api/v1/tenants/%s/collections/%s/entities/bulk-delete", tenantId, collectionName);
-        return post(path, entityIds, Long.class);
+        String path = String.format("/api/v1/entities/%s/batch", collectionName);
+        return post(path, entityIds, Long.class, tenantId);
     }
 
     // ============ Event Operations ============
 
     @Override
     public Promise<Long> appendEvent(String tenantId, String streamName, DataRecord event) {
-        String path = String.format("/api/v1/tenants/%s/streams/%s/events", tenantId, streamName);
-        return post(path, event, Long.class);
+        String path = "/api/v1/events";
+        return post(path, event, Long.class, tenantId);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Promise<List<DataRecord>> readEvents(String tenantId, String streamName, long fromOffset, int limit) {
-        String path = String.format("/api/v1/tenants/%s/streams/%s/events?from=%d&limit=%d", tenantId, streamName, fromOffset, limit);
-        return (Promise<List<DataRecord>>) (Promise<?>) get(path, List.class);
+        String path = String.format("/api/v1/events?stream=%s&from=%d&limit=%d", streamName, fromOffset, limit);
+        return (Promise<List<DataRecord>>) (Promise<?>) get(path, List.class, tenantId);
     }
 
     public Promise<DataRecord> getEventByOffset(String tenantId, String streamName, long offset) {
-        String path = String.format("/api/v1/tenants/%s/streams/%s/events/%d", tenantId, streamName, offset);
-        return get(path, DataRecord.class);
+        String path = String.format("/api/v1/events?stream=%s&offset=%d", streamName, offset);
+        return get(path, DataRecord.class, tenantId);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Promise<List<DataRecord>> readEventsByTimeRange(String tenantId, String streamName, String startTime, String endTime) {
-        String path = String.format("/api/v1/tenants/%s/streams/%s/events?start=%s&end=%s", tenantId, streamName, startTime, endTime);
-        return (Promise<List<DataRecord>>) (Promise<?>) get(path, List.class);
+        String path = String.format("/api/v1/events?stream=%s&start=%s&end=%s", streamName, startTime, endTime);
+        return (Promise<List<DataRecord>>) (Promise<?>) get(path, List.class, tenantId);
     }
 
     @Override
     public Promise<Long> getLatestOffset(String tenantId, String streamName) {
-        return get(String.format("/api/v1/tenants/%s/streams/%s/latest-offset", tenantId, streamName), Long.class);
+        return get(String.format("/api/v1/events?stream=%s&meta=latest-offset", streamName), Long.class, tenantId);
     }
 
     @Override
     public Promise<Long> countEvents(String tenantId, String streamName) {
-        return get(String.format("/api/v1/tenants/%s/streams/%s/count", tenantId, streamName), Long.class);
+        return get(String.format("/api/v1/events?stream=%s&meta=count", streamName), Long.class, tenantId);
     }
 
     // ============ Search Operations ============
 
     @Override
     public Promise<SearchResults> search(String tenantId, SearchQuery query) {
-        return post(String.format("/api/v1/tenants/%s/search", tenantId), query, SearchResults.class);
+        return post("/api/v1/entities/" + query.getCollectionName() + "/search", query, SearchResults.class, tenantId);
     }
 
     @Override
     public Promise<SearchResults> fullTextSearch(String tenantId, String collectionName, String queryText, int limit) {
-        String path = String.format("/api/v1/tenants/%s/collections/%s/search?q=%s&limit=%d", tenantId, collectionName, queryText, limit);
-        return get(path, SearchResults.class);
+        String path = String.format("/api/v1/entities/%s/search?q=%s&limit=%d", collectionName, queryText, limit);
+        return get(path, SearchResults.class, tenantId);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Promise<Map<String, Long>> getFacets(String tenantId, String collectionName, String fieldName) {
-        String path = String.format("/api/v1/tenants/%s/collections/%s/facets/%s", tenantId, collectionName, fieldName);
-        return (Promise<Map<String, Long>>) (Promise<?>) get(path, Map.class);
+        String path = String.format("/api/v1/entities/%s/facets/%s", collectionName, fieldName);
+        return (Promise<Map<String, Long>>) (Promise<?>) get(path, Map.class, tenantId);
     }
 
     // ============ Analytics Operations ============
 
     @Override
     public Promise<QualityMetrics> getQualityMetrics(String tenantId, String collectionName) {
-        return get(String.format("/api/v1/tenants/%s/collections/%s/quality", tenantId, collectionName), QualityMetrics.class);
+        return get(String.format("/api/v1/analytics/quality?collection=%s", collectionName), QualityMetrics.class, tenantId);
     }
 
     @Override
     public Promise<CostAnalysis> getCostAnalysis(String tenantId, int daysBack) {
-        return get(String.format("/api/v1/tenants/%s/cost?days=%d", tenantId, daysBack), CostAnalysis.class);
+        return get(String.format("/api/v1/analytics/cost?days=%d", daysBack), CostAnalysis.class, tenantId);
     }
 
     @Override
     public Promise<LineageGraph> getLineage(String tenantId, String collectionName) {
-        return get(String.format("/api/v1/tenants/%s/collections/%s/lineage", tenantId, collectionName), LineageGraph.class);
+        return get(String.format("/api/v1/analytics/lineage?collection=%s", collectionName), LineageGraph.class, tenantId);
     }
 
     // ============ AI Operations ============
 
     @Override
     public Promise<AIProcessingResult> processWithAI(String tenantId, DataRecord record) {
-        return post(String.format("/api/v1/tenants/%s/ai/process", tenantId), record, AIProcessingResult.class);
+        return post("/api/v1/brain/process", record, AIProcessingResult.class, tenantId);
     }
 
     @Override
     public Promise<AIModelInfo> getAIModelInfo(String tenantId, String modelName) {
-        return get(String.format("/api/v1/tenants/%s/ai/models/%s", tenantId, modelName), AIModelInfo.class);
+        return get(String.format("/api/v1/brain/models/%s", modelName), AIModelInfo.class, tenantId);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Promise<Map<String, Double>> getFeatures(String tenantId, String entityId, List<String> featureNames) {
-        String path = String.format("/api/v1/tenants/%s/features/%s?names=%s", tenantId, entityId, String.join(",", featureNames));
-        return (Promise<Map<String, Double>>) (Promise<?>) get(path, Map.class);
+        String path = String.format("/api/v1/learning/features/%s?names=%s", entityId, String.join(",", featureNames));
+        return (Promise<Map<String, Double>>) (Promise<?>) get(path, Map.class, tenantId);
     }
 
     // ============ Health & Status ============

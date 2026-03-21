@@ -67,6 +67,18 @@
 /products/audio-video/              @ghatana/av-team
 /products/aura/                     @ghatana/aura-team
 /products/data-cloud/               @ghatana/data-team
+/products/data-cloud/spi/           @ghatana/data-team @ghatana/platform-team
+/products/data-cloud/platform/      @ghatana/data-team
+/products/data-cloud/launcher/      @ghatana/data-team
+/products/data-cloud/agent-registry/ @ghatana/data-team @ghatana/agent-team
+/products/data-cloud/sdk/           @ghatana/data-team @ghatana/platform-team
+/products/data-cloud/ui/            @ghatana/data-team @ghatana/frontend-team
+/products/data-cloud/ui/src/api/    @ghatana/data-team @ghatana/frontend-team
+/products/data-cloud/k8s/           @ghatana/data-team @ghatana/devops-team
+/products/data-cloud/helm/          @ghatana/data-team @ghatana/devops-team
+/products/data-cloud/terraform/     @ghatana/data-team @ghatana/devops-team
+/products/data-cloud/docs/          @ghatana/data-team
+/products/data-cloud/docs/openapi.yaml  @ghatana/data-team @ghatana/platform-team
 /products/dcmaar/                   @ghatana/dcmaar-team
 /products/flashit/                  @ghatana/flashit-team
 /products/phr/                      @ghatana/phr-team

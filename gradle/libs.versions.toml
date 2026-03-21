@@ -2,6 +2,9 @@
 # ActiveJ
 activej = "6.0-rc2"
 
+# Drools Rules Engine
+drools = "9.44.0.Final"
+
 # Alert Management
 
 # Observability
@@ -226,6 +229,11 @@ jmh = { id = "me.champeau.jmh", version.ref = "jmh-plugin" }
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator-plugin" }
 
 [libraries]
+# Drools Rules Engine
+drools-core = { module = "org.drools:drools-core", version.ref = "drools" }
+drools-compiler = { module = "org.drools:drools-compiler", version.ref = "drools" }
+drools-mvel = { module = "org.drools:drools-compiler", version.ref = "drools" }
+
 # Apache Commons
 commons-collections4 = { module = "org.apache.commons:commons-collections4", version.ref = "commons-collections4" }
 pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
@@ -299,6 +307,7 @@ javax-mail = { module = "com.sun.mail:javax.mail", version = "1.6.2" }
 nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus-jose-jwt" }
 nimbus-oauth2-sdk = { module = "com.nimbusds:oauth2-oidc-sdk", version.ref = "nimbus-oauth2-sdk" }
 bouncycastle-provider = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
 
 # Logging - Using Log4j2 with SLF4J bridge
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -553,6 +562,9 @@ docker-java-transport-httpclient5 = { module = "com.github.docker-java:docker-ja
 # Resilience4j
 resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "resilience4j" }
 resilience4j-retry = { module = "io.github.resilience4j:resilience4j-retry", version.ref = "resilience4j" }
+resilience4j-bulkhead = { module = "io.github.resilience4j:resilience4j-bulkhead", version.ref = "resilience4j" }
+resilience4j-timelimiter = { module = "io.github.resilience4j:resilience4j-timelimiter", version.ref = "resilience4j" }
+resilience4j-cache = { module = "io.github.resilience4j:resilience4j-cache", version.ref = "resilience4j" }
 
 # ActiveJ Framework - hyphenated names generate dotted accessors (libs.activej.core, libs.activej.eventloop, ...)
 activej-core = { group = "io.activej", name = "activej", version.ref = "activej" }

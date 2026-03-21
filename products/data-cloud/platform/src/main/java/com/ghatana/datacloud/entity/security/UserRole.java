@@ -3,7 +3,7 @@ package com.ghatana.datacloud.entity.security;
 import java.util.Set;
 
 /**
- * User roles in collection entity system.
+ * User roles in Data Cloud.
  *
  * <p><b>Purpose</b><br>
  * Defines role-based access control (RBAC) hierarchy for the system.

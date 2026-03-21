@@ -58,7 +58,7 @@ Configured in [prometheus/prometheus.yml](prometheus/prometheus.yml):
 - backend-api: `localhost:8000/metrics`
 
 **AEP Services:**
-- aep-unified-launcher: `localhost:8090/metrics`
+- aep-server: `localhost:8090/metrics`
 
 **Data Cloud:**
 - data-cloud-event: `localhost:8100/metrics`

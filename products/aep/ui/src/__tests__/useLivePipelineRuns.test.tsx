@@ -51,7 +51,6 @@ function makeWrapper() {
   function Wrapper({ children }: React.PropsWithChildren) {
     return (
       <JotaiProvider>
-        {/* @ts-expect-error: @types/react version mismatch in pnpm workspace */}
         <QueryClientProvider client={client}>{children}</QueryClientProvider>
       </JotaiProvider>
     );

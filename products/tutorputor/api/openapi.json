@@ -1,0 +1,511 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "TutorPutor API",
+    "description": "Educational content generation and simulation platform API",
+    "version": "1.0.0",
+    "contact": {
+      "name": "TutorPutor Team",
+      "email": "api@tutorputor.ghatana.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.tutorputor.ghatana.com/v1",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:7105/v1",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/generate/animation": {
+      "post": {
+        "summary": "Generate educational animation",
+        "description": "Creates an animation from natural language description or learning objective",
+        "operationId": "generateAnimation",
+        "tags": ["Content Generation"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateAnimationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Animation generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateAnimationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generate/simulation": {
+      "post": {
+        "summary": "Generate educational simulation",
+        "description": "Creates a simulation from natural language description or learning objective",
+        "operationId": "generateSimulation",
+        "tags": ["Content Generation"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateSimulationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Simulation generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateSimulationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/simulations": {
+      "get": {
+        "summary": "List simulations",
+        "description": "Returns a list of available simulations",
+        "operationId": "listSimulations",
+        "tags": ["Simulations"],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "query",
+            "description": "Filter by domain (physics, chemistry, biology, cs, math)",
+            "schema": {
+              "type": "string",
+              "enum": ["physics", "chemistry", "biology", "cs", "math"]
+            }
+          },
+          {
+            "name": "difficulty",
+            "in": "query",
+            "description": "Filter by difficulty level",
+            "schema": {
+              "type": "string",
+              "enum": ["beginner", "intermediate", "advanced"]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of simulations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/simulations/{id}/run": {
+      "post": {
+        "summary": "Run simulation",
+        "description": "Starts a simulation session",
+        "operationId": "runSimulation",
+        "tags": ["Simulations"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Simulation ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunSimulationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Simulation started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunSimulationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assessments": {
+      "post": {
+        "summary": "Submit assessment",
+        "description": "Submits an assessment for grading",
+        "operationId": "submitAssessment",
+        "tags": ["Assessments"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAssessmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assessment submitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitAssessmentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GenerateAnimationRequest": {
+        "type": "object",
+        "required": ["description"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Natural language description of the desired animation"
+          },
+          "target": {
+            "type": "string",
+            "description": "CSS selector for target element"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": ["educational", "decorative", "functional"]
+          },
+          "domain": {
+            "type": "string",
+            "enum": ["physics", "chemistry", "biology", "math", "cs", "general"]
+          },
+          "duration": {
+            "type": "integer",
+            "description": "Preferred duration in milliseconds"
+          },
+          "style": {
+            "type": "string",
+            "enum": ["subtle", "moderate", "dramatic"]
+          },
+          "complexity": {
+            "type": "string",
+            "enum": ["simple", "medium", "complex"]
+          }
+        }
+      },
+      "GenerateAnimationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tracks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnimationTrack"
+            }
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "narration": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "AnimationTrack": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "property": {
+            "type": "string"
+          },
+          "from": {},
+          "to": {},
+          "duration": {
+            "type": "integer"
+          },
+          "delay": {
+            "type": "integer"
+          },
+          "easing": {
+            "type": "string"
+          }
+        }
+      },
+      "GenerateSimulationRequest": {
+        "type": "object",
+        "required": ["description", "domain"],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string",
+            "enum": ["physics", "chemistry", "biology", "medicine", "cs", "math"]
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": ["beginner", "intermediate", "advanced"]
+          },
+          "entityCount": {
+            "type": "integer"
+          },
+          "duration": {
+            "type": "integer",
+            "description": "Simulation duration in seconds"
+          }
+        }
+      },
+      "GenerateSimulationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/SimulationManifest"
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number"
+          }
+        }
+      },
+      "SimulationManifest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "entities": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "SimulationListResponse": {
+        "type": "object",
+        "properties": {
+          "simulations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulationSummary"
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
+      "SimulationSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string"
+          },
+          "difficulty": {
+            "type": "string"
+          }
+        }
+      },
+      "RunSimulationRequest": {
+        "type": "object",
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "speed": {
+            "type": "number",
+            "default": 1
+          }
+        }
+      },
+      "RunSimulationResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["running", "paused", "completed", "error"]
+          },
+          "websocketUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "SubmitAssessmentRequest": {
+        "type": "object",
+        "required": ["assessmentId", "answers"],
+        "properties": {
+          "assessmentId": {
+            "type": "string"
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "userId": {
+            "type": "string"
+          }
+        }
+      },
+      "SubmitAssessmentResponse": {
+        "type": "object",
+        "properties": {
+          "submissionId": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          },
+          "feedback": {
+            "type": "string"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

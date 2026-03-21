@@ -6,6 +6,7 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadReque
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.util.JsonUtils;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -109,11 +110,12 @@ public class ConsentManagementService {
                     )
                 );
 
-                return dataCloud.writeData(request)
-                    .then($ -> invalidateConsentCache(toStore.getRecipientId(), toStore.getPatientId()))
-                    .then($ -> audit("GRANT_CREATE", toStore.getPatientId(),
-                        "Grant created for " + toStore.getRecipientId()))
-                    .map($ -> toStore);
+                ConsentGrant stored = toStore;
+                Promise<Void> writeChain = dataCloud.writeData(request)
+                    .then($ -> invalidateConsentCache(stored.getRecipientId(), stored.getPatientId()))
+                    .then($ -> audit("GRANT_CREATE", stored.getPatientId(),
+                        "Grant created for " + stored.getRecipientId()));
+                return writeChain.map($ -> stored);
             });
     }
 
@@ -131,15 +133,16 @@ public class ConsentManagementService {
         return getGrant(grantId)
             .then(opt -> {
                 if (opt.isEmpty()) {
-                    return Promise.of(null); // Idempotent
+                    return Promise.complete(); // Idempotent
                 }
                 ConsentGrant grant = opt.get();
                 if (!"ACTIVE".equals(grant.getStatus())) {
-                    return Promise.of(null); // Already not active
+                    return Promise.complete(); // Already not active
                 }
 
                 ConsentGrant revoked = grant.withStatus("REVOKED").withRevokedAt(Instant.now());
-                return updateGrant(revoked);
+                Promise<ConsentGrant> updated = updateGrant(revoked);
+                return updated.then($ -> Promise.complete());
             });
     }
 

@@ -2,7 +2,7 @@ package com.ghatana.yappc.services.lifecycle;
 
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.orchestrator.subsys.TriggerListener;
-import com.ghatana.platform.domain.domain.event.GEvent;
+import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
@@ -67,6 +67,7 @@ public class TriggerListenerBootstrap {
     private final YappcAepPipelineBootstrapper pipelineBootstrapper;
     private final DlqPublisher dlqPublisher;
     private final ObjectMapper objectMapper;
+    private final List<String> tenantIds;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final Map<String, EventCloud.Subscription> subscriptions = new ConcurrentHashMap<>();
@@ -86,11 +87,32 @@ public class TriggerListenerBootstrap {
             YappcAepPipelineBootstrapper pipelineBootstrapper,
             DlqPublisher dlqPublisher,
             ObjectMapper objectMapper) {
+        this(triggerListener, eventCloud, pipelineBootstrapper, dlqPublisher, objectMapper, List.of());
+    }
+
+    /**
+     * Initialize TriggerListenerBootstrap with explicit tenant scoping.
+     *
+     * @param triggerListener AEP trigger listener for enqueueing pipeline executions
+     * @param eventCloud AEP event cloud for subscribing to phase transition events
+     * @param pipelineBootstrapper bootstrapper that starts the lifecycle pipeline
+     * @param dlqPublisher publishes failed events to dead-letter queue
+     * @param objectMapper Jackson mapper for JSON deserialization
+     * @param tenantIds list of tenant IDs to subscribe to; must not be empty
+     */
+    public TriggerListenerBootstrap(
+            TriggerListener triggerListener,
+            EventCloud eventCloud,
+            YappcAepPipelineBootstrapper pipelineBootstrapper,
+            DlqPublisher dlqPublisher,
+            ObjectMapper objectMapper,
+            List<String> tenantIds) {
         this.triggerListener = Objects.requireNonNull(triggerListener, "triggerListener");
         this.eventCloud = Objects.requireNonNull(eventCloud, "eventCloud");
         this.pipelineBootstrapper = Objects.requireNonNull(pipelineBootstrapper, "pipelineBootstrapper");
         this.dlqPublisher = Objects.requireNonNull(dlqPublisher, "dlqPublisher");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+        this.tenantIds = Objects.requireNonNull(tenantIds, "tenantIds");
     }
 
     /**
@@ -108,16 +130,25 @@ public class TriggerListenerBootstrap {
 
         logger.info("Starting TriggerListenerBootstrap — subscribing to phase.transition.* events");
 
-        try {
-            // Subscribe to phase transition requested events
-            EventCloud.Subscription subscription = eventCloud.subscribe(
-                null, // null tenantId means subscribe globally for all tenants
-                PHASE_TRANSITION_REQUESTED,
-                this::handleEvent
-            );
+        if (tenantIds.isEmpty()) {
+            logger.error("No tenant IDs configured — cannot start TriggerListenerBootstrap without explicit tenant scoping");
+            started.set(false);
+            return Promise.ofException(new IllegalStateException(
+                    "TriggerListenerBootstrap requires at least one tenant ID. "
+                    + "Configure YAPPC_LIFECYCLE_TENANT_IDS to scope event subscriptions."));
+        }
 
-            subscriptions.put(PHASE_TRANSITION_REQUESTED, subscription);
-            logger.info("✓ Subscribed to {} events", PHASE_TRANSITION_REQUESTED);
+        try {
+            for (String tenantId : tenantIds) {
+                EventCloud.Subscription subscription = eventCloud.subscribe(
+                    tenantId,
+                    PHASE_TRANSITION_REQUESTED,
+                    this::handleEvent
+                );
+
+                subscriptions.put(PHASE_TRANSITION_REQUESTED + ":" + tenantId, subscription);
+                logger.info("✓ Subscribed to {} events for tenant {}", PHASE_TRANSITION_REQUESTED, tenantId);
+            }
 
             return Promise.complete();
         } catch (Exception e) {

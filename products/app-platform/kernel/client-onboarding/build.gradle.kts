@@ -40,7 +40,7 @@ dependencies {
     implementation(project(":products:app-platform:kernel:calendar-service"))
 
     // ─── AEP (event processing layer) ────────────────────────────────────────
-    implementation(project(":products:aep:platform"))
+    implementation(project(":products:aep:platform-bundle"))
 
     // ─── ActiveJ async ────────────────────────────────────────────────────────
     api(libs.activej.promise)

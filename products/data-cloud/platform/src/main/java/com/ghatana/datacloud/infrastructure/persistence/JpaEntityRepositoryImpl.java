@@ -106,7 +106,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(collectionName, "Collection name must not be null");
         Objects.requireNonNull(entityId, "Entity ID must not be null");
 
-        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+        try {
             TypedQuery<Entity> query = entityManager.createQuery(
                 "SELECT e FROM Entity e WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.id = :id AND e.active = true",
@@ -122,8 +122,10 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             logger.debug("findById: tenantId={}, collection={}, id={}, found={}",
                 tenantId, collectionName, entityId, result.isPresent());
 
-            return result;
-        });
+            return Promise.of(result);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -154,7 +156,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(tenantId, "Tenant ID must not be null");
         Objects.requireNonNull(collectionName, "Collection name must not be null");
 
-        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+        try {
             StringBuilder jpql = new StringBuilder(
                 "SELECT e FROM Entity e WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.active = true"
@@ -196,8 +198,10 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             logger.debug("findAll: tenantId={}, collection={}, offset={}, limit={}, found={}",
                 tenantId, collectionName, offset, limit, results.size());
 
-            return results;
-        });
+            return Promise.of(results);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -222,10 +226,10 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(collectionName, "Collection name must not be null");
         Objects.requireNonNull(querySpec, "Query spec must not be null");
 
-        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+        try {
             if (!(querySpec instanceof QuerySpec spec)) {
                 logger.warn("Unsupported querySpec type: {}", querySpec.getClass());
-                return Collections.emptyList();
+                return Promise.of(Collections.emptyList());
             }
 
             // Base SQL built by DynamicQueryBuilder (selects from 'entities')
@@ -251,8 +255,10 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             List<Entity> results = nativeQuery.getResultList();
 
             logger.debug("findByQuery: tenantId={}, collection={}, returned={}", tenantId, collectionName, results.size());
-            return results;
-        });
+            return Promise.of(results);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -278,15 +284,17 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             throw new IllegalArgumentException("Entity tenant ID must match request tenant");
         }
 
-        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+        try {
             Entity saved = entityManager.merge(entity);
             entityManager.flush();
 
             logger.debug("save: tenantId={}, collection={}, id={}, version={}",
                 tenantId, saved.getCollectionName(), saved.getId(), saved.getVersion());
 
-            return saved;
-        });
+            return Promise.of(saved);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -306,7 +314,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(collectionName, "Collection name must not be null");
         Objects.requireNonNull(entityId, "Entity ID must not be null");
 
-        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+        try {
             Query query = entityManager.createQuery(
                 "UPDATE Entity e SET e.active = false WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.id = :id"
@@ -320,8 +328,10 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             logger.debug("delete: tenantId={}, collection={}, id={}, updated={}",
                 tenantId, collectionName, entityId, updated);
 
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -338,7 +348,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(collectionName, "Collection name must not be null");
         Objects.requireNonNull(entityId, "Entity ID must not be null");
 
-        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+        try {
             TypedQuery<Long> query = entityManager.createQuery(
                 "SELECT COUNT(e) FROM Entity e WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.id = :id AND e.active = true",
@@ -349,8 +359,10 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             query.setParameter("id", entityId);
 
             Long count = query.getSingleResult();
-            return count > 0;
-        });
+            return Promise.of(count > 0);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -365,7 +377,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(tenantId, "Tenant ID must not be null");
         Objects.requireNonNull(collectionName, "Collection name must not be null");
 
-        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+        try {
             TypedQuery<Long> query = entityManager.createQuery(
                 "SELECT COUNT(e) FROM Entity e WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.active = true",
@@ -374,8 +386,10 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             query.setParameter("tenantId", tenantId);
             query.setParameter("collectionName", collectionName);
 
-            return query.getSingleResult();
-        });
+            return Promise.of(query.getSingleResult());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -391,7 +405,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(tenantId, "Tenant ID must not be null");
         Objects.requireNonNull(collectionName, "Collection name must not be null");
 
-        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+        try {
             // Simplified implementation - in production would use JSONB filtering
             TypedQuery<Long> query = entityManager.createQuery(
                 "SELECT COUNT(e) FROM Entity e WHERE e.tenantId = :tenantId " +
@@ -401,8 +415,10 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             query.setParameter("tenantId", tenantId);
             query.setParameter("collectionName", collectionName);
 
-            return query.getSingleResult();
-        });
+            return Promise.of(query.getSingleResult());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -430,7 +446,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             return Promise.of(List.of());
         }
 
-        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+        try {
             List<Entity> saved = new ArrayList<>();
             int count = 0;
 
@@ -454,8 +470,10 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
 
             logger.debug("saveAll: tenantId={}, count={}", tenantId, saved.size());
 
-            return saved;
-        });
+            return Promise.of(saved);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -476,7 +494,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             return Promise.of(null);
         }
 
-        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+        try {
             Query query = entityManager.createQuery(
                 "UPDATE Entity e SET e.active = false WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.id IN :ids"
@@ -490,7 +508,9 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             logger.debug("deleteAll: tenantId={}, collection={}, ids={}, updated={}",
                 tenantId, collectionName, entityIds.size(), updated);
 
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 }

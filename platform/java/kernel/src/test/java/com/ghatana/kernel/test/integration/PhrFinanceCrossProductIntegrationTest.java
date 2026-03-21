@@ -1,374 +1,434 @@
 package com.ghatana.kernel.test.integration;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapterImpl;
-import com.ghatana.kernel.audit.CrossProductAuditService;
-import com.ghatana.kernel.boundary.ProductBoundaryEnforcer;
-import com.ghatana.kernel.communication.KernelInterProductBus;
+import com.ghatana.kernel.audit.CrossScopeAuditService;
+import com.ghatana.kernel.audit.CrossScopeAuditService.AuditEventStore;
+import com.ghatana.kernel.audit.CrossScopeAuditService.CrossScopeAuditEvent;
+import com.ghatana.kernel.audit.CrossScopeAuditService.ScopeAuditRecord;
+import com.ghatana.kernel.boundary.BoundaryPolicyResolver;
+import com.ghatana.kernel.boundary.DefaultBoundaryPolicyResolver;
+import com.ghatana.kernel.boundary.ScopeBoundaryEnforcer;
 import com.ghatana.kernel.context.KernelTenantContext;
-import com.ghatana.kernel.registry.KernelRegistryImpl;
-import com.ghatana.platform.testing.PlatformIntegrationTestBase;
+import com.ghatana.kernel.context.KernelTenantContext.SecurityContext;
+import com.ghatana.kernel.context.KernelTenantContext.TenantType;
+import com.ghatana.kernel.policy.ClassificationDescriptor;
+import com.ghatana.kernel.policy.ClassificationDescriptor.SensitivityLevel;
+import com.ghatana.kernel.policy.DefaultAuditPolicyResolver;
+import com.ghatana.kernel.scope.ScopeDescriptor;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration tests for PHR-Finance cross-product data sharing.
+ * PHR-Finance Cross-Scope Integration Tests.
  *
- * <p>Uses {@link PlatformIntegrationTestBase} for tests requiring
- * PostgreSQL and Redis containers alongside ActiveJ Eventloop.</p>
+ * <p>Validates the canonical cross-scope boundary enforcement and audit pipeline
+ * using {@link ScopeBoundaryEnforcer} and {@link CrossScopeAuditService}.
+ * These tests replaced the disabled placeholder that referenced the legacy
+ * {@code CrossProductAuditService} and {@code ProductBoundaryEnforcer} APIs.</p>
  *
- * @doc.type class
- * @doc.purpose Cross-product integration tests with real infrastructure
+ * <p>Test scenarios cover the two most representative cross-domain access patterns:
+ * <ul>
+ *   <li>PHR data sharing (healthcare domain, RESTRICTED sensitivity, Nepal-2081 compliance)</li>
+ *   <li>Finance trade data access (finance domain, CONFIDENTIAL sensitivity, SEBON compliance)</li>
+ * </ul></p>
+ *
+ * @doc.type test
+ * @doc.purpose Cross-scope boundary and audit integration tests using canonical scope-aware APIs
  * @doc.layer test
  * @doc.pattern Integration Test
  * @author Ghatana Kernel Team
- * @since 1.0.0
+ * @since 1.1.0
  */
-@DisplayName("PHR-Finance Cross-Product Integration Tests")
-class PhrFinanceCrossProductIntegrationTest extends PlatformIntegrationTestBase {
+@DisplayName("PHR-Finance Cross-Scope Integration Tests")
+class PhrFinanceCrossProductIntegrationTest {
 
-    private DataCloudKernelAdapterImpl dataCloudAdapter;
-    private CrossProductAuditService auditService;
-    private ProductBoundaryEnforcer boundaryEnforcer;
-    private KernelInterProductBus interProductBus;
+    private ScopeBoundaryEnforcer boundaryEnforcer;
+    private CrossScopeAuditService auditService;
+    private InMemoryAuditStore auditStore;
 
-    @Override
-    protected boolean requiresPostgres() {
-        return true;
-    }
+    // Canonical scope descriptors — no product-id literal strings
+    private static final ScopeDescriptor PHR_SCOPE      = ScopeDescriptor.domainPack("phr");
+    private static final ScopeDescriptor FINANCE_SCOPE  = ScopeDescriptor.domainPack("finance");
+    private static final ScopeDescriptor PLATFORM_SCOPE = ScopeDescriptor.product("platform");
 
-    @Override
-    protected boolean requiresRedis() {
-        return true;
-    }
-
-    @Override
-    protected Duration eventloopTimeout() {
-        return Duration.ofSeconds(60); // Longer timeout for integration tests
-    }
+    // Classification descriptors — replaces hardcoded product-id branching
+    private static final ClassificationDescriptor PHR_PROTECTED =
+            ClassificationDescriptor.of("healthcare", SensitivityLevel.RESTRICTED, "nepal-2081");
+    private static final ClassificationDescriptor FINANCE_TRADE =
+            ClassificationDescriptor.of("regulatory", SensitivityLevel.CONFIDENTIAL, "sebon");
+    private static final ClassificationDescriptor GENERAL_DATA =
+            ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL);
+    private static final ClassificationDescriptor RESIDENCY_LOCKED =
+            ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL, "data-residency-restricted");
 
     @BeforeEach
     void setUp() {
-        // Initialize with test containers
-        var registry = new KernelRegistryImpl();
-        boundaryEnforcer = new ProductBoundaryEnforcer(registry);
+        BoundaryPolicyResolver policyResolver = DefaultBoundaryPolicyResolver.withStandardRules();
+        boundaryEnforcer = new ScopeBoundaryEnforcer(policyResolver);
 
-        // Setup mock Data-Cloud client for testing
-        dataCloudAdapter = new DataCloudKernelAdapterImpl(new MockDataCloudClient());
-        auditService = new CrossProductAuditService(dataCloudAdapter);
-        interProductBus = new KernelInterProductBus(registry, auditService, boundaryEnforcer);
+        auditStore = new InMemoryAuditStore();
+        auditService = new CrossScopeAuditService(
+                DefaultAuditPolicyResolver.withStandardMappings(), auditStore);
     }
 
-    @Test
-    @DisplayName("should allow PHR to access Finance billing data with proper consent")
-    void testPhrToFinanceBillingAccess() {
-        // Given
-        KernelTenantContext context = createHealthcareContextWithConsent();
+    // ── PHR Boundary Tests ───────────────────────────────────────────────────
 
-        // When
-        boolean allowed = boundaryEnforcer.canAccess(
-            "phr", "finance", "billing.records", "read", context
-        );
+    @Nested
+    @DisplayName("PHR data access boundary enforcement")
+    class PhrBoundaryTests {
 
-        // Then
-        assertThat(allowed).isTrue();
+        @Test
+        @DisplayName("Finance cannot read PHR restricted patient records without consent")
+        void financeCannotReadPhrRestrictedDataWithoutConsentFeature() {
+            // No permissions, no consent feature → Layer 2 and Layer 3 both fail
+            KernelTenantContext tenant = tenantContext("tenant-1",
+                    Set.of("read:patient.records"),
+                    Set.of() /* no consent feature */);
+
+            boolean allowed = boundaryEnforcer.canAccess(
+                    FINANCE_SCOPE, PHR_SCOPE,
+                    "patient.records", "read",
+                    PHR_PROTECTED,
+                    tenant);
+
+            assertFalse(allowed,
+                "Finance must not read PHR restricted records without the consent feature enabled");
+        }
+
+        @Test
+        @DisplayName("Finance can read PHR restricted records when tenant has consent feature")
+        void financeCanReadPhrRestrictedDataWithConsentFeature() {
+            // Layer 2: has permission; Layer 3: has consent feature for DOMAIN_PACK target
+            KernelTenantContext tenant = tenantContext("tenant-1",
+                    Set.of("read:patient.records"),
+                    Set.of("cross-scope.consent.domain_pack"));
+
+            boolean allowed = boundaryEnforcer.canAccess(
+                    FINANCE_SCOPE, PHR_SCOPE,
+                    "patient.records", "read",
+                    PHR_PROTECTED,
+                    tenant);
+
+            assertTrue(allowed,
+                "Finance should read PHR restricted records when consent feature is enabled");
+        }
+
+        @Test
+        @DisplayName("PHR internal data allows cross-scope read with permission but no consent")
+        void phrInternalDataAllowsReadWithoutConsent() {
+            // INTERNAL sensitivity → no consent required, only permission
+            KernelTenantContext tenant = tenantContext("tenant-2",
+                    Set.of("read:patient.records"),
+                    Set.of());
+
+            boolean allowed = boundaryEnforcer.canAccess(
+                    PLATFORM_SCOPE, PHR_SCOPE,
+                    "patient.records", "read",
+                    GENERAL_DATA,
+                    tenant);
+
+            assertTrue(allowed,
+                "Platform should read INTERNAL PHR data with permission alone (no consent required)");
+        }
+
+        @Test
+        @DisplayName("PHR data with residency restriction is blocked cross-scope even with consent")
+        void phrResidencyLockedDataBlockedCrossScope() {
+            KernelTenantContext tenant = tenantContext("tenant-1",
+                    Set.of("read:patient.records"),
+                    Set.of("cross-scope.consent.domain_pack"));
+
+            boolean allowed = boundaryEnforcer.canAccess(
+                    FINANCE_SCOPE, PHR_SCOPE,
+                    "patient.records", "read",
+                    RESIDENCY_LOCKED,
+                    tenant);
+
+            assertFalse(allowed,
+                "Data-residency-restricted data must be blocked at Layer 1 regardless of consent or permissions");
+        }
     }
 
-    @Test
-    @DisplayName("should deny PHR access without proper consent")
-    void testPhrAccessDeniedWithoutConsent() {
-        // Given
-        KernelTenantContext context = createContextWithoutConsent();
+    // ── Finance Boundary Tests ───────────────────────────────────────────────
 
-        // When
-        boolean allowed = boundaryEnforcer.canAccess(
-            "phr", "finance", "patient.records", "read", context
-        );
+    @Nested
+    @DisplayName("Finance trade data access boundary enforcement")
+    class FinanceBoundaryTests {
 
-        // Then
-        assertThat(allowed).isFalse();
+        @Test
+        @DisplayName("PHR can write finance trade records when it holds the write permission")
+        void phrCanWriteFinanceTradeRecordsWithPermission() {
+            // CONFIDENTIAL data → no consent required, Layer 2 permission sufficient
+            KernelTenantContext tenant = tenantContext("tenant-3",
+                    Set.of("write:trade.records"),
+                    Set.of());
+
+            boolean allowed = boundaryEnforcer.canAccess(
+                    PHR_SCOPE, FINANCE_SCOPE,
+                    "trade.records", "write",
+                    FINANCE_TRADE,
+                    tenant);
+
+            assertTrue(allowed,
+                "PHR with write permission can write finance CONFIDENTIAL trade records (requires audit, not consent)");
+        }
+
+        @Test
+        @DisplayName("Cross-scope write is denied without the required permission")
+        void crossScopeWriteDeniedWithoutPermission() {
+            KernelTenantContext tenant = tenantContext("tenant-3", Set.of(), Set.of());
+
+            boolean allowed = boundaryEnforcer.canAccess(
+                    PHR_SCOPE, FINANCE_SCOPE,
+                    "trade.records", "write",
+                    FINANCE_TRADE,
+                    tenant);
+
+            assertFalse(allowed,
+                "Cross-scope write should be denied when the tenant lacks write:trade.records permission");
+        }
+
+        @Test
+        @DisplayName("Same-scope access with valid permission is allowed without consent")
+        void sameScopeAccessAllowed() {
+            // Source == target → Layer 1 returns allow(false); Layers 2+3 still gate on permission
+            KernelTenantContext tenant = tenantContext("tenant-4",
+                    Set.of("write:trade.records"),
+                    Set.of());
+
+            boolean allowed = boundaryEnforcer.canAccess(
+                    FINANCE_SCOPE, FINANCE_SCOPE,
+                    "trade.records", "write",
+                    FINANCE_TRADE,
+                    tenant);
+
+            assertTrue(allowed, "Same-scope access with valid permission should be allowed");
+        }
     }
 
-    @Test
-    @DisplayName("should publish audit event for cross-product access")
-    void testAuditEventPublished() {
-        // Given
-        String auditId = "audit-" + System.currentTimeMillis();
-        var record = CrossProductAuditService.AuditRecord.builder()
-            .auditId(auditId)
-            .sourceProduct("phr")
-            .targetProduct("finance")
-            .action("read")
-            .resource("billing.records")
-            .tenantId("tenant-123")
-            .userId("user-456")
-            .timestamp(Instant.now())
-            .retentionPeriod(CrossProductAuditService.RetentionPeriod.FINANCE_10_YEARS)
-            .success(true)
-            .build();
+    // ── Audit Policy Tests ───────────────────────────────────────────────────
 
-        // When - using runPromise for async operation
-        Void result = runPromise(() -> auditService.publishAuditEvent(record));
+    @Nested
+    @DisplayName("Scope-aware audit service policy resolution")
+    class AuditPolicyTests {
 
-        // Then
-        assertThat(result).isNull(); // Void return
+        @Test
+        @DisplayName("PHR audit record uses Nepal-2081 25-year retention")
+        void phrAuditUsesNepal2081Retention() {
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(FINANCE_SCOPE)
+                    .targetScope(PHR_SCOPE)
+                    .action("data.share")
+                    .userId("user-101")
+                    .tenantId("tenant-nep")
+                    .classification(PHR_PROTECTED)
+                    .build();
+
+            auditService.auditCrossScopeAction(event).getResult();
+
+            assertEquals(1, auditStore.records.size());
+            ScopeAuditRecord stored = auditStore.records.get(0);
+            assertEquals(25, stored.getRetentionYears(),
+                "PHR data under nepal-2081 compliance tag should use 25-year retention");
+            assertEquals("archive", stored.getStorageTier(),
+                "25-year retention should use 'archive' storage tier");
+        }
+
+        @Test
+        @DisplayName("Finance audit record uses SEBON 10-year retention")
+        void financeAuditUsesSebon10YearRetention() {
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(PHR_SCOPE)
+                    .targetScope(FINANCE_SCOPE)
+                    .action("compliance.query")
+                    .userId("user-202")
+                    .tenantId("tenant-fin")
+                    .classification(FINANCE_TRADE)
+                    .build();
+
+            auditService.auditCrossScopeAction(event).getResult();
+
+            assertEquals(1, auditStore.records.size());
+            ScopeAuditRecord stored = auditStore.records.get(0);
+            assertEquals(10, stored.getRetentionYears(),
+                "Finance data under sebon compliance tag should use 10-year retention");
+            assertEquals("compliance", stored.getStorageTier(),
+                "10-year retention should use 'compliance' storage tier");
+        }
+
+        @Test
+        @DisplayName("RESTRICTED audit record includes a cryptographic signature")
+        void restrictedAuditRecordIncludesSignature() {
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(PLATFORM_SCOPE)
+                    .targetScope(PHR_SCOPE)
+                    .action("patient.export")
+                    .userId("user-303")
+                    .tenantId("tenant-1")
+                    .classification(PHR_PROTECTED)
+                    .build();
+
+            auditService.auditCrossScopeAction(event).getResult();
+
+            ScopeAuditRecord stored = auditStore.records.get(0);
+            assertNotNull(stored.getSignature(),
+                "RESTRICTED data audit records must include a cryptographic signature for tamper evidence");
+        }
+
+        @Test
+        @DisplayName("Audit event type uses 'cross-scope.' prefix, not legacy 'cross-product.'")
+        void auditEventTypeUsesScopePrefix() {
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(FINANCE_SCOPE)
+                    .targetScope(PHR_SCOPE)
+                    .action("data.check")
+                    .userId("usr")
+                    .tenantId("t1")
+                    .classification(GENERAL_DATA)
+                    .build();
+
+            auditService.auditCrossScopeAction(event).getResult();
+
+            ScopeAuditRecord stored = auditStore.records.get(0);
+            String eventType = stored.getEventType();
+            assertNotNull(eventType);
+            assertTrue(eventType.startsWith("cross-scope."),
+                "Audit event type must start with 'cross-scope.' (got: " + eventType + ")");
+            assertFalse(eventType.startsWith("cross-product."),
+                "Audit event type must NOT use legacy 'cross-product.' prefix");
+        }
+
+        @Test
+        @DisplayName("Audit record stores ScopeDescriptor objects, not raw product-id strings")
+        void auditRecordCarriesScopeDescriptors() {
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(FINANCE_SCOPE)
+                    .targetScope(PHR_SCOPE)
+                    .action("analytics.query")
+                    .userId("analyst")
+                    .tenantId("t-123")
+                    .classification(FINANCE_TRADE)
+                    .build();
+
+            auditService.auditCrossScopeAction(event).getResult();
+
+            ScopeAuditRecord stored = auditStore.records.get(0);
+            assertEquals(FINANCE_SCOPE, stored.getSourceScope(),
+                "Source scope must be stored as a ScopeDescriptor");
+            assertEquals(PHR_SCOPE, stored.getTargetScope(),
+                "Target scope must be stored as a ScopeDescriptor");
+        }
     }
 
-    @Test
-    @DisplayName("should share data between PHR and Finance with proper encryption")
-    void testDataSharingWithEncryption() {
-        // Given
-        KernelInterProductBus.SharedDataRecord record = KernelInterProductBus.SharedDataRecord.builder()
-            .dataId("shared-data-123")
-            .sourceProduct("phr")
-            .targetProduct("finance")
-            .data(Map.of("billing_amount", 1000.00, "patient_id", "P-123"))
-            .accessPolicy("billing-only")
-            .retentionPeriod(Duration.ofDays(30))
-            .encryptionRequired(true)
-            .auditRequired(true)
-            .createdAt(Instant.now())
-            .build();
+    // ── Boundary + Audit Integration ─────────────────────────────────────────
 
-        // When
-        Void result = runPromise(() -> interProductBus.shareData(record));
+    @Nested
+    @DisplayName("Boundary enforcement + audit trail integration")
+    class BoundaryAuditIntegrationTests {
 
-        // Then
-        assertThat(result).isNull();
+        @Test
+        @DisplayName("Denied access creates no audit record — boundary gate fires before audit")
+        void deniedAccessProducesNoAuditRecord() {
+            KernelTenantContext tenant = tenantContext("t-denied", Set.of(), Set.of());
 
-        // Verify data can be retrieved
-        var retrieved = runPromise(() -> interProductBus.retrieveData("shared-data-123", "finance"));
-        assertThat(retrieved).isNotNull();
+            boolean allowed = boundaryEnforcer.canAccess(
+                    PHR_SCOPE, FINANCE_SCOPE,
+                    "trade.records", "write",
+                    FINANCE_TRADE,
+                    tenant);
+
+            assertFalse(allowed);
+            assertEquals(0, auditStore.records.size(),
+                "No audit record should be written when boundary enforcement denies access");
+        }
+
+        @Test
+        @DisplayName("Policy engine is product-agnostic — same rules apply to any domain-pack pair")
+        void policyDrivenAccessIsProductAgnostic() {
+            ScopeDescriptor alpha = ScopeDescriptor.domainPack("domain-alpha");
+            ScopeDescriptor beta  = ScopeDescriptor.domainPack("domain-beta");
+            ClassificationDescriptor restricted =
+                    ClassificationDescriptor.of("general", SensitivityLevel.RESTRICTED, "nepal-2081");
+
+            KernelTenantContext tenantWithConsent = tenantContext("t-alpha",
+                    Set.of("read:patient.records"),
+                    Set.of("cross-scope.consent.domain_pack"));
+
+            boolean allowed = boundaryEnforcer.canAccess(
+                    alpha, beta,
+                    "patient.records", "read",
+                    restricted,
+                    tenantWithConsent);
+
+            assertTrue(allowed,
+                "Policy-driven access must work for any domain-pack pair, not just phr/finance-named scopes");
+        }
     }
 
-    @Test
-    @DisplayName("should respect different retention periods for Finance vs PHR")
-    void testRetentionPeriods() {
-        // Given - Finance record (10 years)
-        var financeRecord = CrossProductAuditService.AuditRecord.builder()
-            .auditId("finance-audit-1")
-            .sourceProduct("finance")
-            .targetProduct("phr")
-            .action("read")
-            .retentionPeriod(CrossProductAuditService.RetentionPeriod.FINANCE_10_YEARS)
-            .build();
-
-        // Given - PHR record (7 years)
-        var phrRecord = CrossProductAuditService.AuditRecord.builder()
-            .auditId("phr-audit-1")
-            .sourceProduct("phr")
-            .targetProduct("finance")
-            .action("read")
-            .retentionPeriod(CrossProductAuditService.RetentionPeriod.HEALTHCARE_7_YEARS)
-            .build();
-
-        // Then
-        assertThat(financeRecord.getRetentionPeriod().getYears()).isEqualTo(10);
-        assertThat(phrRecord.getRetentionPeriod().getYears()).isEqualTo(7);
-    }
-
-    @Test
-    @DisplayName("should enforce data isolation between tenants")
-    void testTenantIsolation() {
-        // Given
-        KernelTenantContext tenantA = createTenantContext("tenant-a");
-        KernelTenantContext tenantB = createTenantContext("tenant-b");
-
-        // Create data for tenant A
-        var recordA = KernelInterProductBus.SharedDataRecord.builder()
-            .dataId("tenant-a-data")
-            .sourceProduct("phr")
-            .targetProduct("finance")
-            .tenantId("tenant-a")
-            .data(Map.of("value", "tenant-a-value"))
-            .accessPolicy("tenant-isolated")
-            .retentionPeriod(Duration.ofDays(7))
-            .encryptionRequired(true)
-            .auditRequired(true)
-            .createdAt(Instant.now())
-            .build();
-
-        // When
-        runPromise(() -> interProductBus.shareData(recordA));
-
-        // Then - tenant B should not access tenant A's data
-        // (This would require actual Data-Cloud implementation to verify)
-    }
-
-    // ==================== Test Fixtures ====================
-
-    private KernelTenantContext createHealthcareContextWithConsent() {
-        return new TestTenantContext(
-            "tenant-123",
-            Set.of("healthcare.data.access", "billing.read"),
-            Map.of("phr.cross-product.access", true, "finance.audit.enabled", true)
-        );
-    }
-
-    private KernelTenantContext createContextWithoutConsent() {
-        return new TestTenantContext(
-            "tenant-456",
-            Set.of(), // No permissions
-            Map.of()
-        );
-    }
-
-    private KernelTenantContext createTenantContext(String tenantId) {
-        return new TestTenantContext(
-            tenantId,
-            Set.of("read", "write"),
-            Map.of()
-        );
-    }
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     /**
-     * Test implementation of KernelTenantContext.
+     * Builds a {@link KernelTenantContext} for testing.
+     *
+     * @param tenantId        tenant id
+     * @param permissions     permissions checked via {@link SecurityContext#hasPermission}
+     * @param enabledFeatures feature flags checked via {@link KernelTenantContext#isFeatureEnabled}
      */
-    static class TestTenantContext implements KernelTenantContext {
-        private final String tenantId;
-        private final Set<String> permissions;
-        private final Map<String, Object> config;
-
-        TestTenantContext(String tenantId, Set<String> permissions, Map<String, Object> config) {
-            this.tenantId = tenantId;
-            this.permissions = permissions;
-            this.config = config;
-        }
-
-        @Override
-        public String getTenantId() { return tenantId; }
-
-        @Override
-        public String getCurrentProduct() { return "test"; }
-
-        @Override
-        public boolean hasPermission(String permission) {
-            return permissions.contains(permission);
-        }
-
-        @Override
-        public boolean isFeatureEnabled(String feature) {
-            return config.getOrDefault(feature, Boolean.FALSE).equals(Boolean.TRUE);
-        }
-
-        @Override
-        public <T> T getConfig(String key, Class<T> type) {
-            Object value = config.get(key);
-            return type.isInstance(value) ? type.cast(value) : null;
-        }
-
-        @Override
-        public boolean hasConsent(String purpose, String target) {
-            return permissions.contains("healthcare.data.access");
-        }
-
-        @Override
-        public boolean hasComplianceApproval(String regulation) {
-            return true;
-        }
+    private static KernelTenantContext tenantContext(String tenantId,
+                                                     Set<String> permissions,
+                                                     Set<String> enabledFeatures) {
+        SecurityContext secCtx = new SecurityContext() {
+            @Override public String getUserId() { return "test-user"; }
+            @Override public Set<String> getRoles() { return Set.of(); }
+            @Override public Set<String> getPermissions() { return Set.copyOf(permissions); }
+            @Override public boolean isAuthenticated() { return true; }
+            @Override public boolean hasRole(String role) { return false; }
+            @Override public boolean hasPermission(String permission) { return permissions.contains(permission); }
+        };
+        return new KernelTenantContext(
+                tenantId,
+                TenantType.STANDARD,
+                Map.of(),
+                Set.copyOf(enabledFeatures),
+                secCtx,
+                null
+        );
     }
 
-    /**
-     * Mock Data-Cloud client for testing.
-     */
-    static class MockDataCloudClient implements DataCloudKernelAdapterImpl.DataCloudClient {
-        private final Map<String, byte[]> storage = new java.util.concurrent.ConcurrentHashMap<>();
+    private static class InMemoryAuditStore implements AuditEventStore {
+        final List<ScopeAuditRecord> records = new CopyOnWriteArrayList<>();
 
         @Override
-        public java.util.concurrent.CompletableFuture<DataCloudKernelAdapterImpl.DataResult> read(
-                String datasetId, String recordId, Map<String, String> options) {
-            byte[] data = storage.get(datasetId + ":" + recordId);
-            if (data == null) {
-                return java.util.concurrent.CompletableFuture.failedFuture(
-                    new IllegalStateException("Not found"));
+        public Promise<Void> store(ScopeAuditRecord record) {
+            records.add(record);
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Set<ScopeAuditRecord>> query(Instant start, Instant end,
+                                                     ScopeDescriptor source,
+                                                     ScopeDescriptor target) {
+            Set<ScopeAuditRecord> result = new HashSet<>();
+            for (ScopeAuditRecord r : records) {
+                if (r.getTimestamp() != null
+                        && !r.getTimestamp().isBefore(start)
+                        && !r.getTimestamp().isAfter(end)) {
+                    if (source == null || source.equals(r.getSourceScope())) {
+                        if (target == null || target.equals(r.getTargetScope())) {
+                            result.add(r);
+                        }
+                    }
+                }
             }
-            return java.util.concurrent.CompletableFuture.completedFuture(
-                new DataCloudKernelAdapterImpl.DataResult(recordId, data, Map.of()));
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<Void> write(
-                String datasetId, String recordId, byte[] data, Map<String, String> metadata) {
-            storage.put(datasetId + ":" + recordId, data);
-            return java.util.concurrent.CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<Void> delete(String datasetId, String recordId) {
-            storage.remove(datasetId + ":" + recordId);
-            return java.util.concurrent.CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<java.util.List<DataCloudKernelAdapterImpl.DataResult>> query(
-                String datasetId, String query, Map<String, Object> params, int limit, int offset) {
-            return java.util.concurrent.CompletableFuture.completedFuture(java.util.List.of());
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<Void> createDataset(
-                String datasetId, Map<String, String> schema, Map<String, String> options) {
-            return java.util.concurrent.CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<DataCloudKernelAdapterImpl.SchemaInfo> getSchema(String datasetId) {
-            return java.util.concurrent.CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<java.util.List<DataCloudKernelAdapterImpl.DatasetInfo>> listDatasets() {
-            return java.util.concurrent.CompletableFuture.completedFuture(java.util.List.of());
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<Object> beginTransaction() {
-            return java.util.concurrent.CompletableFuture.completedFuture(new Object());
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<Void> commitTransaction(Object transaction) {
-            return java.util.concurrent.CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<Void> rollbackTransaction(Object transaction) {
-            return java.util.concurrent.CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<Object> openReadStream(
-                String datasetId, Map<String, String> options) {
-            return java.util.concurrent.CompletableFuture.completedFuture(new Object());
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<Object> openWriteStream(
-                String datasetId, Map<String, String> options) {
-            return java.util.concurrent.CompletableFuture.completedFuture(new Object());
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<byte[]> readStreamChunk(Object stream) {
-            return java.util.concurrent.CompletableFuture.completedFuture(new byte[0]);
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<Void> writeStreamChunk(Object stream, byte[] data) {
-            return java.util.concurrent.CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public java.util.concurrent.CompletableFuture<Void> closeStream(Object stream) {
-            return java.util.concurrent.CompletableFuture.completedFuture(null);
+            return Promise.of(result);
         }
     }
 }

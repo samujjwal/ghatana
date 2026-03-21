@@ -237,12 +237,12 @@ if (isStandaloneBuild) {
     }
 
     val aepRoot = File(monorepoRoot, "products/aep")
-    val aepPlatform = File(aepRoot, "platform")
+    val aepPlatform = File(aepRoot, "platform-bundle")
     if (aepRoot.exists() && aepPlatform.exists()) {
         include("products:aep")
         project(":products:aep").projectDir = aepRoot
-        include("products:aep:platform")
-        project(":products:aep:platform").projectDir = aepPlatform
+        include("products:aep:platform-bundle")
+        project(":products:aep:platform-bundle").projectDir = aepPlatform
     }
 
     val sharedServicesRoot = File(monorepoRoot, "shared-services")

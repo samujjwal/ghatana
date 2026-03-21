@@ -116,23 +116,35 @@ public final class JobMappers {
 
     public static TenantContext tenantContextFromProto(RunRequest request) {
         DiagnoseRequest config = request.getConfig();
-        String tenantId = config != null ? config.getTenantId() : "default";
+        String tenantId = config != null && !config.getTenantId().isBlank() ? config.getTenantId() : null;
+        if (tenantId == null) {
+            throw new IllegalArgumentException("Missing required tenant_id in RunRequest config");
+        }
         return TenantContext.of(tenantId, "grpc-client", Set.of(), Map.of());
     }
 
     public static TenantContext tenantContextFromRest(RestModels.RunRequest request) {
         RestModels.DiagnoseRequest config = request.config();
-        String tenantId = config != null ? config.tenantId() : "default";
+        String tenantId = config != null ? config.tenantId() : null;
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("Missing required tenantId in RunRequest config");
+        }
         return TenantContext.of(tenantId, "rest-client", Set.of(), Map.of());
     }
 
     public static TenantContext tenantContextFromRest(RestModels.DiagnoseRequest request) {
-        String tenantId = request.tenantId() != null ? request.tenantId() : "default";
+        String tenantId = request.tenantId();
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("Missing required tenantId in DiagnoseRequest");
+        }
         return TenantContext.of(tenantId, "rest-client", Set.of(), Map.of());
     }
 
     public static TenantContext tenantContextFromProto(DiagnoseRequest request) {
-        String tenantId = request.getTenantId().isBlank() ? "default" : request.getTenantId();
+        String tenantId = request.getTenantId();
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("Missing required tenant_id in DiagnoseRequest");
+        }
         return TenantContext.of(tenantId, "grpc-client", Set.of(), Map.of());
     }
 

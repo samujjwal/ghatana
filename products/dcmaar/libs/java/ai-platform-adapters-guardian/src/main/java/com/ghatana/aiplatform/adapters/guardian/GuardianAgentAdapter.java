@@ -1,6 +1,6 @@
 package com.ghatana.aiplatform.adapters.guardian;
 
-import com.ghatana.platform.domain.domain.models.agent.AgentInfo;
+import com.ghatana.platform.domain.models.agent.AgentInfo;
 import com.ghatana.platform.observability.MetricsCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

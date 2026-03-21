@@ -53,12 +53,14 @@ public class AIModelManager {
             throw new IllegalArgumentException("model.tenantId is required");
         }
 
-        return Promise.ofBlocking(Runnable::run, () -> {
+        try {
             modelRegistry.register(model);
             String cacheKey = tenantId + ":" + model.getName();
             modelCache.put(cacheKey, model);
-            return model;
-        });
+            return Promise.of(model);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -74,13 +76,16 @@ public class AIModelManager {
             return Promise.of(cached);
         }
 
-        return Promise.ofBlocking(Runnable::run, () -> {
+        try {
             List<ModelMetadata> models = modelRegistry.findByStatus(tenantId, DeploymentStatus.PRODUCTION);
-            return models.stream()
+            ModelMetadata result = models.stream()
                     .filter(m -> modelName.equals(m.getName()))
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("No active model found"));
-        });
+            return Promise.of(result);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -89,13 +94,15 @@ public class AIModelManager {
     public Promise<List<ModelMetadata>> getAllModels(String tenantId) {
         Objects.requireNonNull(tenantId, "tenantId is required");
 
-        return Promise.ofBlocking(Runnable::run, () -> {
+        try {
             List<ModelMetadata> allModels = new ArrayList<>();
             allModels.addAll(modelRegistry.findByStatus(tenantId, DeploymentStatus.PRODUCTION));
             allModels.addAll(modelRegistry.findByStatus(tenantId, DeploymentStatus.STAGED));
             allModels.addAll(modelRegistry.findByStatus(tenantId, DeploymentStatus.RETIRED));
-            return allModels;
-        });
+            return Promise.of(allModels);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -106,7 +113,7 @@ public class AIModelManager {
         Objects.requireNonNull(modelName, "modelName is required");
         Objects.requireNonNull(version, "version is required");
 
-        return Promise.ofBlocking(Runnable::run, () -> {
+        try {
             ModelMetadata model = modelRegistry.findByName(tenantId, modelName, version)
                     .orElseThrow(() -> new IllegalStateException("Model not found"));
 
@@ -119,9 +126,12 @@ public class AIModelManager {
             String cacheKey = tenantId + ":" + modelName;
             modelCache.remove(cacheKey);
 
-            return modelRegistry.findByName(tenantId, modelName, version)
+            ModelMetadata result = modelRegistry.findByName(tenantId, modelName, version)
                     .orElseThrow(() -> new IllegalStateException("Model not found after promotion"));
-        });
+            return Promise.of(result);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**

@@ -19,6 +19,27 @@ dependencies {
     api(project(":platform:java:kernel"))
     api(project(":products:finance:domains:oms"))
     api(libs.activej.promise)
+
+    // ─── Cross-Domain Dependencies (migrated from app-platform) ────────────
+    implementation(project(":products:finance:domains:reference-data"))
+    implementation(project(":products:finance:domains:market-data"))
+    implementation(project(":products:finance:domains:pricing"))
+
+    // ─── Infrastructure Dependencies (migrated from app-platform) ──────────
+    api(project(":platform:java:kernel:modules:authentication"))
+    api(project(":platform:java:kernel:modules:event-store"))
+    api(project(":platform:java:kernel:modules:audit"))
+    api(project(":platform:java:kernel:modules:resilience"))
+    api(project(":platform:java:security"))
+    api(project(":platform:java:database"))
+    api(project(":platform:java:http"))
+    implementation(libs.activej.eventloop)
+    implementation(libs.postgresql)
+    implementation(libs.flyway.core)
+    implementation(libs.hikaricp)
+    implementation(libs.micrometer.core)
+    implementation(libs.slf4j.api)
+
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
 }

@@ -25,6 +25,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>Loads agent definitions from YAML files, parses them into raw maps,
  * and registers them in an internal registry for lookup during execution.
  *
+ * <p><b>Migration note (v2.4):</b> For new code, prefer using the central
+ * {@code AepCentralCatalogService} which discovers YAPPC definitions from
+ * the canonical product root ({@code products/yappc/config/agents/}) automatically.
+ * This bootstrap class remains for backward compatibility with existing callers.
+ *
  * @doc.type class
  * @doc.purpose Bootstrap YAPPC agents from YAML definitions
  * @doc.layer product

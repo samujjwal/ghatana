@@ -39,7 +39,7 @@
  * @doc.pattern API Client
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import { apiClient, type ApiError } from './client';
 
 /**
  * Collection record type - flexible structure for any collection data.
@@ -109,47 +109,29 @@ export interface BulkCreateResponse {
 }
 
 /**
- * API error response.
+ * Re-export ApiError from central client.
  */
-export interface ApiError {
-  code: string;
-  message: string;
-  details?: unknown;
-}
+export type { ApiError } from './client';
 
 /**
  * Collection Data API Client.
  */
 class CollectionDataClient {
-  private client: AxiosInstance;
   private baseURL: string;
   private maxRetries = 3;
   private retryDelay = 1000;
 
-  constructor(baseURL: string = 'http://localhost:8080/api') {
+  constructor(baseURL: string = import.meta.env.VITE_API_URL ?? '/api') {
     this.baseURL = baseURL;
-    this.client = axios.create({
-      baseURL,
-      timeout: 30000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+  }
 
-    // Add request interceptor to include tenant ID
-    this.client.interceptors.request.use((config) => {
-      const tenantId = localStorage.getItem('tenantId');
-      if (tenantId) {
-        config.headers['X-Tenant-ID'] = tenantId;
-      }
-      return config;
-    });
-
-    // Add response interceptor for error handling
-    this.client.interceptors.response.use(
-      (response) => response,
-      (error) => this.handleError(error)
-    );
+  private getRequestConfig() {
+    const tenantId = localStorage.getItem('tenantId');
+    const headers: Record<string, string> = {};
+    if (tenantId) {
+      headers['X-Tenant-ID'] = tenantId;
+    }
+    return { baseURL: this.baseURL, headers };
   }
 
   /**
@@ -166,13 +148,13 @@ class CollectionDataClient {
     collectionId: string,
     request: CreateRecordRequest
   ): Promise<CollectionRecord> {
-    return this.retryRequest(async () => {
-      const response = await this.client.post<CollectionRecord>(
+    return this.retryRequest(() =>
+      apiClient.post<CollectionRecord>(
         `/tenants/${tenantId}/collections/${collectionId}/records`,
-        request
-      );
-      return response.data;
-    });
+        request,
+        this.getRequestConfig()
+      )
+    );
   }
 
   /**
@@ -189,12 +171,12 @@ class CollectionDataClient {
     collectionId: string,
     recordId: string
   ): Promise<CollectionRecord> {
-    return this.retryRequest(async () => {
-      const response = await this.client.get<CollectionRecord>(
-        `/tenants/${tenantId}/collections/${collectionId}/records/${recordId}`
-      );
-      return response.data;
-    });
+    return this.retryRequest(() =>
+      apiClient.get<CollectionRecord>(
+        `/tenants/${tenantId}/collections/${collectionId}/records/${recordId}`,
+        this.getRequestConfig()
+      )
+    );
   }
 
   /**
@@ -211,7 +193,7 @@ class CollectionDataClient {
     collectionId: string,
     request: ListRecordsRequest = {}
   ): Promise<ListRecordsResponse> {
-    return this.retryRequest(async () => {
+    return this.retryRequest(() => {
       const params = new URLSearchParams();
 
       if (request.offset !== undefined) params.append('offset', String(request.offset));
@@ -220,11 +202,10 @@ class CollectionDataClient {
       if (request.filter) params.append('filter', JSON.stringify(request.filter));
       if (request.sort) params.append('sort', JSON.stringify(request.sort));
 
-      const response = await this.client.get<ListRecordsResponse>(
+      return apiClient.get<ListRecordsResponse>(
         `/tenants/${tenantId}/collections/${collectionId}/records`,
-        { params: Object.fromEntries(params) }
+        { ...this.getRequestConfig(), params: Object.fromEntries(params) }
       );
-      return response.data;
     });
   }
 
@@ -244,13 +225,13 @@ class CollectionDataClient {
     recordId: string,
     request: UpdateRecordRequest
   ): Promise<CollectionRecord> {
-    return this.retryRequest(async () => {
-      const response = await this.client.put<CollectionRecord>(
+    return this.retryRequest(() =>
+      apiClient.put<CollectionRecord>(
         `/tenants/${tenantId}/collections/${collectionId}/records/${recordId}`,
-        request
-      );
-      return response.data;
-    });
+        request,
+        this.getRequestConfig()
+      )
+    );
   }
 
   /**
@@ -266,11 +247,12 @@ class CollectionDataClient {
     collectionId: string,
     recordId: string
   ): Promise<void> {
-    return this.retryRequest(async () => {
-      await this.client.delete(
-        `/tenants/${tenantId}/collections/${collectionId}/records/${recordId}`
-      );
-    });
+    return this.retryRequest(() =>
+      apiClient.delete(
+        `/tenants/${tenantId}/collections/${collectionId}/records/${recordId}`,
+        this.getRequestConfig()
+      )
+    );
   }
 
   /**
@@ -287,13 +269,13 @@ class CollectionDataClient {
     collectionId: string,
     request: BulkCreateRequest
   ): Promise<BulkCreateResponse> {
-    return this.retryRequest(async () => {
-      const response = await this.client.post<BulkCreateResponse>(
+    return this.retryRequest(() =>
+      apiClient.post<BulkCreateResponse>(
         `/tenants/${tenantId}/collections/${collectionId}/records/bulk`,
-        request
-      );
-      return response.data;
-    });
+        request,
+        this.getRequestConfig()
+      )
+    );
   }
 
   /**
@@ -311,11 +293,12 @@ class CollectionDataClient {
     recordIds: string[]
   ): Promise<number> {
     return this.retryRequest(async () => {
-      const response = await this.client.post<{ deleted: number }>(
+      const result = await apiClient.post<{ deleted: number }>(
         `/tenants/${tenantId}/collections/${collectionId}/records/bulk-delete`,
-        { ids: recordIds }
+        { ids: recordIds },
+        this.getRequestConfig()
       );
-      return response.data.deleted;
+      return result.deleted;
     });
   }
 
@@ -357,18 +340,18 @@ class CollectionDataClient {
     format: 'csv' | 'json',
     filter?: Record<string, unknown>
   ): Promise<Blob> {
-    return this.retryRequest(async () => {
+    return this.retryRequest(() => {
       const params: Record<string, string> = { format };
       if (filter) params.filter = JSON.stringify(filter);
 
-      const response = await this.client.get<Blob>(
+      return apiClient.get<Blob>(
         `/tenants/${tenantId}/collections/${collectionId}/records/export`,
         {
+          ...this.getRequestConfig(),
           params,
           responseType: 'blob',
         }
       );
-      return response.data;
     });
   }
 
@@ -380,21 +363,21 @@ class CollectionDataClient {
    * @throws last error if all retries fail
    */
   private async retryRequest<T>(fn: () => Promise<T>): Promise<T> {
-    let lastError: Error | undefined;
+    let lastError: unknown;
 
     for (let i = 0; i < this.maxRetries; i++) {
       try {
         return await fn();
       } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
+        lastError = error;
 
         // Don't retry on client errors (4xx) except 408, 429
+        const apiError = error as ApiError;
         if (
-          axios.isAxiosError(error) &&
-          error.response?.status &&
-          error.response.status >= 400 &&
-          error.response.status < 500 &&
-          ![408, 429].includes(error.response.status)
+          apiError.status &&
+          apiError.status >= 400 &&
+          apiError.status < 500 &&
+          ![408, 429].includes(apiError.status)
         ) {
           throw error;
         }
@@ -407,40 +390,6 @@ class CollectionDataClient {
     }
 
     throw lastError || new Error('Request failed after retries');
-  }
-
-  /**
-   * Handle API errors.
-   *
-   * @param error the axios error
-   * @returns rejected promise
-   */
-  private handleError(error: AxiosError): Promise<never> {
-    const apiError: ApiError = {
-      code: 'UNKNOWN_ERROR',
-      message: 'An unknown error occurred',
-    };
-
-    if (axios.isAxiosError(error)) {
-      if (error.response) {
-        const data = error.response.data as Record<string, unknown>;
-        apiError.code = (data.code as string) || `HTTP_${error.response.status}`;
-        apiError.message = (data.message as string) || error.message;
-        apiError.details = data;
-      } else if (error.request) {
-        apiError.code = 'NO_RESPONSE';
-        apiError.message = 'No response from server';
-      } else {
-        apiError.code = 'REQUEST_ERROR';
-        apiError.message = error.message;
-      }
-    }
-
-    const error_ = new Error(apiError.message);
-    (error_ as any).code = apiError.code;
-    (error_ as any).details = apiError.details;
-
-    return Promise.reject(error_);
   }
 
   /**
@@ -468,7 +417,6 @@ class CollectionDataClient {
    */
   setBaseURL(baseURL: string): void {
     this.baseURL = baseURL;
-    this.client.defaults.baseURL = baseURL;
   }
 }
 

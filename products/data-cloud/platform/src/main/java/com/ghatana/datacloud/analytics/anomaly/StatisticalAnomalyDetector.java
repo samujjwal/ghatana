@@ -169,19 +169,20 @@ public final class StatisticalAnomalyDetector implements AnomalyDetectionCapabil
                 MAX_SAMPLE_SIZE
         )
         // Step 2 — do CPU-bound statistics in a virtual-thread executor
-        .then(entities -> Promise.ofBlocking(executor, () -> {
+        .then(entities -> {
             Timer.Sample sample = Timer.start();
             try {
-                return detectSync(context, entities, threshold);
+                List<Anomaly> anomalies = detectSync(context, entities, threshold);
+                return Promise.of(anomalies);
             } catch (Exception e) {
                 detectionErrorCounter.increment();
                 LOG.error("Anomaly detection failed for tenant={} collection={}",
                         context.getTenantId(), context.getCollectionName(), e);
-                throw e;
+                return Promise.ofException(e);
             } finally {
                 sample.stop(detectionTimer);
             }
-        }));
+        });
     }
 
     /**
@@ -201,7 +202,7 @@ public final class StatisticalAnomalyDetector implements AnomalyDetectionCapabil
                 Collections.emptyMap(), "createdAt:DESC",
                 0, MAX_SAMPLE_SIZE
         )
-        .then(entities -> Promise.ofBlocking(executor, () -> {
+        .then(entities -> {
             Map<String, List<Double>> fieldValues = collectNumericFields(entities);
             int updated = 0;
             for (Map.Entry<String, List<Double>> e : fieldValues.entrySet()) {
@@ -214,8 +215,8 @@ public final class StatisticalAnomalyDetector implements AnomalyDetectionCapabil
             }
             baselineUpdateCounter.increment();
             LOG.debug("Baseline updated tenant={} collection={} fields={}", tenantId, collectionName, updated);
-            return (Void) null;
-        }));
+            return Promise.complete();
+        });
     }
 
     /**

@@ -3,7 +3,7 @@ package com.ghatana.refactorer.shared;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 
 import org.junit.jupiter.api.Test;
 

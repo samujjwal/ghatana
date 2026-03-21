@@ -50,13 +50,18 @@ public class HealthcareConsentKernelExtension implements KernelExtension {
     }
 
     @Override
+    public String getVersion() {
+        return VERSION;
+    }
+
+    @Override
     public KernelDescriptor getDescriptor() {
-        return KernelDescriptor.builder()
-            .descriptorId(EXTENSION_ID)
-            .name(getName())
-            .version(VERSION)
-            .description("Healthcare consent management following Nepal Health Service Directive 2081")
-            .type(KernelDescriptor.ComponentType.PLUGIN)
+        return new KernelDescriptor.Builder()
+            .withDescriptorId(EXTENSION_ID)
+            .withName(getName())
+            .withVersion(VERSION)
+            .withDescription("Healthcare consent management following Nepal Health Service Directive 2081")
+            .withType(KernelDescriptor.DescriptorType.EXTENSION)
             .build();
     }
 

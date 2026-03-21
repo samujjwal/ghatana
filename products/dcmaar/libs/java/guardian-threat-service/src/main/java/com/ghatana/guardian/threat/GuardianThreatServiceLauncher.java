@@ -3,7 +3,7 @@ package com.ghatana.guardian.threat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.aiplatform.adapters.guardian.GuardianAgentAdapter;
-import com.ghatana.platform.domain.domain.models.agent.AgentInfo;
+import com.ghatana.platform.domain.models.agent.AgentInfo;
 import com.ghatana.platform.governance.security.TenantExtractionFilter;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.platform.http.server.server.HttpServerBuilder;

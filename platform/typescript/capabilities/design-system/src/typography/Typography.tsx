@@ -95,7 +95,7 @@ export const Typography = React.forwardRef<HTMLElement, TypographyProps>((props,
     const level = Number(variant[1]) as HeadingProps['level'];
     return (
       <Heading
-        ref={ref as React.Ref<HTMLElement>}
+        ref={ref as React.Ref<HTMLHeadingElement>}
         as={component}
         level={level}
         tone={tone}
@@ -112,7 +112,7 @@ export const Typography = React.forwardRef<HTMLElement, TypographyProps>((props,
     const level = variant === 'subtitle1' ? 5 : 6;
     return (
       <Heading
-        ref={ref as React.Ref<HTMLElement>}
+        ref={ref as React.Ref<HTMLHeadingElement>}
         as={component}
         level={level}
         tone={tone}

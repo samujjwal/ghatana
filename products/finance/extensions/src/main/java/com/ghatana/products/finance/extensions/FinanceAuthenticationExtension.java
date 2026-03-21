@@ -5,10 +5,15 @@
 package com.ghatana.products.finance.extensions;
 
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.descriptor.KernelCapability;
+import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.extension.KernelExtension;
+import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.modules.authentication.service.AuthenticationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Set;
 
 /**
  * Finance Authentication Extension.
@@ -42,15 +47,35 @@ public final class FinanceAuthenticationExtension implements KernelExtension {
     }
 
     @Override
+    public String getName() {
+        return "Finance Authentication Extension";
+    }
+
+    @Override
     public String getVersion() {
         return "1.0.0";
+    }
+
+    @Override
+    public KernelDescriptor getDescriptor() {
+        return null;
+    }
+
+    @Override
+    public Set<KernelCapability> getContributedCapabilities() {
+        return Set.of();
+    }
+
+    @Override
+    public boolean isCompatible(KernelModule hostModule) {
+        return true;
     }
 
     @Override
     public void onModuleInitialized(KernelContext context) {
         log.info("Initializing Finance Authentication Extension");
 
-        AuthenticationService authService = context.getService(AuthenticationService.class);
+        AuthenticationService authService = context.getDependency(AuthenticationService.class);
         if (authService == null) {
             log.warn("Authentication service not available, skipping extension");
             return;
@@ -65,13 +90,13 @@ public final class FinanceAuthenticationExtension implements KernelExtension {
     }
 
     @Override
-    public void onKernelStarted(KernelContext context) {
-        log.info("Finance Authentication Extension: kernel started");
+    public void onModuleStarted(KernelContext context) {
+        log.info("Finance Authentication Extension: module started");
     }
 
     @Override
-    public void onKernelStopping(KernelContext context) {
-        log.info("Finance Authentication Extension: kernel stopping");
+    public void onModuleStopped(KernelContext context) {
+        log.info("Finance Authentication Extension: module stopped");
     }
 
     // ==================== Private Methods ====================

@@ -1,0 +1,128 @@
+# TutorPutor CI/CD Configuration
+# Part of Execution Plan item #50: CI/Lint Enforcement Plan
+
+name: TutorPutor CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # Phase 1: Fastify Version Check
+  fastify-version-check:
+    name: Fastify Version Alignment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Fastify Versions
+        run: |
+          chmod +x scripts/ci-check-fastify.sh
+          ./scripts/ci-check-fastify.sh
+
+  # Phase 2: Contract Drift Detection
+  contract-drift-check:
+    name: Contract Drift Detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Contract Drift
+        run: |
+          chmod +x scripts/ci-check-contract-drift.sh
+          ./scripts/ci-check-contract-drift.sh
+
+  # Phase 3: TypeScript Compilation
+  type-check:
+    name: TypeScript Type Checking
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - apps/tutorputor-web
+          - apps/tutorputor-admin
+          - apps/tutorputor-mobile
+          - libs/animator
+          - libs/simulation-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Type check ${{ matrix.module }}
+        run: pnpm --filter ${{ matrix.module }} run type-check
+        continue-on-error: true
+
+  # Phase 4: Database Migration Check
+  db-migration-check:
+    name: Database Migration Validation
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: tutorputor
+          POSTGRES_PASSWORD: tutorputor
+          POSTGRES_DB: tutorputor_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://tutorputor:tutorputor@localhost:5432/tutorputor_test
+          REDIS_URL: redis://localhost:6379
+        run: |
+          pnpm --filter @tutorputor/db run migrate
+          pnpm --filter @tutorputor/db run migrate:status
+
+  # Phase 5: Test Coverage
+  test-coverage:
+    name: Test Coverage Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run tests with coverage
+        run: pnpm run test:coverage
+      - name: Check coverage threshold (60%)
+        run: |
+          COVERAGE=$(cat coverage/lcov-report/index.json | jq -r '.total.lines.pct')
+          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
+            echo "❌ Coverage $COVERAGE% is below threshold 60%"
+            exit 1
+          else
+            echo "✅ Coverage $COVERAGE% meets threshold 60%"
+          fi

@@ -1,0 +1,21 @@
+# Finance Agent Catalog
+#
+# Defines agent definitions for the Finance product.
+# Extends the platform catalog with financial domain agents.
+
+catalog:
+  id: "finance"
+  name: "Finance Agent Catalog"
+  version: "1.0.0"
+
+  extends:
+    - "platform"
+
+  agents:
+    - "definitions/**/*-agent.yaml"
+
+  metadata:
+    maintainer: "finance-team@ghatana.ai"
+    scope: "financial-services"
+    stability: "stable"
+    priority: 200

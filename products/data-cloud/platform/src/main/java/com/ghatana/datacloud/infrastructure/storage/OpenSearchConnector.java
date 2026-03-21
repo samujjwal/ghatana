@@ -142,46 +142,42 @@ public class OpenSearchConnector implements StorageConnector {
         if (entity.getId() == null) {
             entity.setId(UUID.randomUUID());
         }
-        return Promise.ofBlocking(executor, () -> {
-            Timer.Sample sample = Timer.start();
-            try {
-                String index = tenantIndex(entity.getTenantId());
-                ensureIndex(index);
-                Map<String, Object> source = docFrom(entity);
-                client.index(IndexRequest.of(req -> req
-                        .index(index)
-                        .id(entity.getId().toString())
-                        .document(source)));
-                indexCounter.increment();
-                log.debug("OpenSearch: indexed entity {} in {}", entity.getId(), index);
-                return entity;
-            } catch (IOException e) {
-                indexErrorCounter.increment();
-                log.error("OpenSearch: index failed for entity {}", entity.getId(), e);
-                throw new RuntimeException("OpenSearch index failed", e);
-            } finally {
-                sample.stop(indexTimer);
-            }
-        });
+        Timer.Sample sample = Timer.start();
+        try {
+            String index = tenantIndex(entity.getTenantId());
+            ensureIndex(index);
+            Map<String, Object> source = docFrom(entity);
+            client.index(IndexRequest.of(req -> req
+                    .index(index)
+                    .id(entity.getId().toString())
+                    .document(source)));
+            indexCounter.increment();
+            log.debug("OpenSearch: indexed entity {} in {}", entity.getId(), index);
+            return Promise.of(entity);
+        } catch (IOException e) {
+            indexErrorCounter.increment();
+            log.error("OpenSearch: index failed for entity {}", entity.getId(), e);
+            return Promise.ofException(new RuntimeException("OpenSearch index failed", e));
+        } finally {
+            sample.stop(indexTimer);
+        }
     }
 
     @Override
     public Promise<Optional<Entity>> read(UUID collectionId, String tenantId, UUID entityId) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             readCounter.increment();
             String index = tenantIndex(tenantId);
-            try {
-                @SuppressWarnings("unchecked")
-                GetResponse<Map> resp = client.get(
-                        GetRequest.of(req -> req.index(index).id(entityId.toString())),
-                        (Class<Map>) (Class<?>) Map.class);
-                if (!resp.found() || resp.source() == null) return Optional.empty();
-                return Optional.of(entityFrom(resp.source()));
-            } catch (Exception e) {
-                log.warn("OpenSearch: read failed for entity {}: {}", entityId, e.getMessage());
-                return Optional.empty();
-            }
-        });
+            @SuppressWarnings("unchecked")
+            GetResponse<Map> resp = client.get(
+                    GetRequest.of(req -> req.index(index).id(entityId.toString())),
+                    (Class<Map>) (Class<?>) Map.class);
+            if (!resp.found() || resp.source() == null) return Promise.of(Optional.empty());
+            return Promise.of(Optional.of(entityFrom(resp.source())));
+        } catch (Exception e) {
+            log.warn("OpenSearch: read failed for entity {}: {}", entityId, e.getMessage());
+            return Promise.of(Optional.empty());
+        }
     }
 
     @Override
@@ -192,51 +188,51 @@ public class OpenSearchConnector implements StorageConnector {
 
     @Override
     public Promise<Void> delete(UUID collectionId, String tenantId, UUID entityId) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String index = tenantIndex(tenantId);
             client.delete(DeleteRequest.of(req -> req.index(index).id(entityId.toString())));
             deleteCounter.increment();
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<QueryResult> query(UUID collectionId, String tenantId, QuerySpec spec) {
-        return Promise.ofBlocking(executor, () -> {
-            Timer.Sample sample = Timer.start();
-            try {
-                String index = tenantIndex(tenantId);
-                int limit  = spec.getLimit()  > 0 ? spec.getLimit()  : 1_000;
-                int offset = spec.getOffset() > 0 ? spec.getOffset() : 0;
-                Query query = buildQuery(tenantId, spec);
+        Timer.Sample sample = Timer.start();
+        try {
+            String index = tenantIndex(tenantId);
+            int limit  = spec.getLimit()  > 0 ? spec.getLimit()  : 1_000;
+            int offset = spec.getOffset() > 0 ? spec.getOffset() : 0;
+            Query query = buildQuery(tenantId, spec);
 
-                @SuppressWarnings("unchecked")
-                SearchResponse<Map> resp = client.search(
-                        SearchRequest.of(req -> req
-                                .index(index)
-                                .from(offset)
-                                .size(limit)
-                                .query(query)),
-                        (Class<Map>) (Class<?>) Map.class);
+            @SuppressWarnings("unchecked")
+            SearchResponse<Map> resp = client.search(
+                    SearchRequest.of(req -> req
+                            .index(index)
+                            .from(offset)
+                            .size(limit)
+                            .query(query)),
+                    (Class<Map>) (Class<?>) Map.class);
 
-                List<Entity> entities = new ArrayList<>();
-                for (Hit<Map> hit : resp.hits().hits()) {
-                    if (hit.source() != null) entities.add(entityFrom(hit.source()));
-                }
-                long total = resp.hits().total() != null ? resp.hits().total().value() : entities.size();
-                long duration = sample.stop(searchTimer);
-                return new QueryResult(entities, total, limit, offset, duration);
-            } catch (IOException e) {
-                log.error("OpenSearch: query failed for tenant {}", tenantId, e);
-                return QueryResult.empty();
+            List<Entity> entities = new ArrayList<>();
+            for (Hit<Map> hit : resp.hits().hits()) {
+                if (hit.source() != null) entities.add(entityFrom(hit.source()));
             }
-        });
+            long total = resp.hits().total() != null ? resp.hits().total().value() : entities.size();
+            long duration = sample.stop(searchTimer);
+            return Promise.of(new QueryResult(entities, total, limit, offset, duration));
+        } catch (IOException e) {
+            log.error("OpenSearch: query failed for tenant {}", tenantId, e);
+            return Promise.of(QueryResult.empty());
+        }
     }
 
     @Override
     public Promise<List<Entity>> scan(UUID collectionId, String tenantId,
                                       String filterExpression, int limit, int offset) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             int effectiveLimit  = limit  > 0 ? limit  : 1_000;
             int effectiveOffset = offset > 0 ? offset : 0;
             String index = tenantIndex(tenantId);
@@ -255,25 +251,29 @@ public class OpenSearchConnector implements StorageConnector {
             for (Hit<Map> hit : resp.hits().hits()) {
                 if (hit.source() != null) results.add(entityFrom(hit.source()));
             }
-            return results;
-        });
+            return Promise.of(results);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Long> count(UUID collectionId, String tenantId, String filterExpression) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             String index = tenantIndex(tenantId);
             Query tenantFilter = Query.of(q -> q.term(t -> t.field(FIELD_TENANT_ID).value(FieldValue.of(tenantId))));
             CountResponse resp = client.count(
                     CountRequest.of(req -> req.index(index).query(tenantFilter)));
-            return resp.count();
-        });
+            return Promise.of(resp.count());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<List<Entity>> bulkCreate(UUID collectionId, String tenantId, List<Entity> entities) {
-        return Promise.ofBlocking(executor, () -> {
-            if (entities.isEmpty()) return entities;
+        if (entities.isEmpty()) return Promise.of(entities);
+        try {
             String index = tenantIndex(tenantId);
             ensureIndex(index);
 
@@ -292,8 +292,10 @@ public class OpenSearchConnector implements StorageConnector {
                 log.warn("OpenSearch: bulkCreate had partial failures for tenant {}", tenantId);
             }
             indexCounter.increment(entities.size());
-            return entities;
-        });
+            return Promise.of(entities);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -303,8 +305,8 @@ public class OpenSearchConnector implements StorageConnector {
 
     @Override
     public Promise<Long> bulkDelete(UUID collectionId, String tenantId, List<UUID> entityIds) {
-        return Promise.ofBlocking(executor, () -> {
-            if (entityIds.isEmpty()) return 0L;
+        if (entityIds.isEmpty()) return Promise.of(0L);
+        try {
             String index = tenantIndex(tenantId);
             List<BulkOperation> ops = new ArrayList<>();
             for (UUID id : entityIds) {
@@ -313,13 +315,15 @@ public class OpenSearchConnector implements StorageConnector {
             }
             client.bulk(BulkRequest.of(req -> req.operations(ops)));
             deleteCounter.increment(entityIds.size());
-            return (long) entityIds.size();
-        });
+            return Promise.of((long) entityIds.size());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<Long> truncate(UUID collectionId, String tenantId) {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             // Count then delete-all using a match-all query via scroll is heavy;
             // For simplicity, delete the tenant index and recreate it.
             String index = tenantIndex(tenantId);
@@ -335,8 +339,10 @@ public class OpenSearchConnector implements StorageConnector {
             } catch (Exception e) {
                 log.error("OpenSearch: truncate failed for tenant {}", tenantId, e);
             }
-            return counted;
-        });
+            return Promise.of(counted);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -354,10 +360,12 @@ public class OpenSearchConnector implements StorageConnector {
 
     @Override
     public Promise<Void> healthCheck() {
-        return Promise.ofBlocking(executor, () -> {
+        try {
             client.cluster().health(req -> req);
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     // =========================================================================

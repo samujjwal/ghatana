@@ -7,7 +7,7 @@ import com.ghatana.security.keys.KeyManager;
 import com.ghatana.platform.security.rbac.PolicyService;
 import com.ghatana.security.storage.EncryptedStorageService;
 import com.ghatana.platform.observability.Metrics;
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import io.activej.promise.Promise;

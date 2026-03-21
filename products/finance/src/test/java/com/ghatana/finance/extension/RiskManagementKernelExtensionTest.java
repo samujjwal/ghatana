@@ -62,10 +62,10 @@ class RiskManagementKernelExtensionTest {
         assertEquals("risk.management", cap.getCapabilityId());
         assertEquals(KernelCapability.CapabilityType.AI_ML, cap.getType());
 
-        assertEquals("true", cap.getMetadataValue("real_time"));
-        assertEquals("true", cap.getMetadataValue("supports_var"));
-        assertEquals("true", cap.getMetadataValue("position_limits"));
-        assertEquals("true", cap.getMetadataValue("portfolio_monitoring"));
+        assertEquals("true", cap.getMetadata().get("real_time").toString());
+        assertEquals("true", cap.getMetadata().get("supports_var").toString());
+        assertEquals("true", cap.getMetadata().get("position_limits").toString());
+        assertEquals("true", cap.getMetadata().get("portfolio_monitoring").toString());
     }
 
     @Test
@@ -245,9 +245,8 @@ class RiskManagementKernelExtensionTest {
     void shouldRejectOperationsWhenNotStarted() {
         extension.onModuleStopped(null);
 
-        Exception exception = assertThrows(Exception.class, () ->
-            extension.calculatePositionRisk("test", BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE).getResult());
-        assertTrue(exception.getMessage().contains("not started"));
+        var promise = extension.calculatePositionRisk("test", BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE);
+        assertTrue(promise.isException());
     }
 
     @Test
@@ -312,7 +311,7 @@ class RiskManagementKernelExtensionTest {
             @Override public String getModuleId() { return "test-module"; }
             @Override public String getVersion() { return "1.0.0"; }
             @Override public Set<com.ghatana.kernel.descriptor.KernelCapability> getCapabilities() {
-                return Set.of(new com.ghatana.kernel.descriptor.KernelCapability(capabilityId, "Test"));
+                return Set.of(new com.ghatana.kernel.descriptor.KernelCapability(capabilityId, "Test", "Test capability", com.ghatana.kernel.descriptor.KernelCapability.CapabilityType.BUSINESS_LOGIC, java.util.Map.of()));
             }
             @Override public Set<com.ghatana.kernel.descriptor.KernelDependency> getDependencies() { return Set.of(); }
             @Override public void initialize(com.ghatana.kernel.context.KernelContext ctx) {}

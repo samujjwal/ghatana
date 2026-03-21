@@ -107,10 +107,10 @@ public class LineageTracker {
             DataTier tier,
             Map<String, String> metadata) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             LineageNode existingNode = nodeIndex.get(datasetId);
             if (existingNode != null) {
-                return existingNode;
+                return Promise.of(existingNode);
             }
 
             LineageNode node = LineageNode.builder()
@@ -132,8 +132,10 @@ public class LineageTracker {
                     .nodeId(datasetId)
                     .build());
 
-            return node;
-        });
+            return Promise.of(node);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -151,7 +153,7 @@ public class LineageTracker {
             TransformationType transformationType,
             Map<String, Object> transformationDetails) {
 
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             LineageNode sourceNode = nodeIndex.get(sourceId);
             LineageNode targetNode = nodeIndex.get(targetId);
 
@@ -189,8 +191,10 @@ public class LineageTracker {
                     .targetNodeId(targetId)
                     .build());
 
-            return edge;
-        });
+            return Promise.of(edge);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -201,10 +205,10 @@ public class LineageTracker {
      * @return Promise of upstream lineage result
      */
     public Promise<LineageResult> getUpstreamLineage(String datasetId, int maxDepth) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             LineageNode startNode = nodeIndex.get(datasetId);
             if (startNode == null) {
-                return LineageResult.empty(datasetId);
+                return Promise.of(LineageResult.empty(datasetId));
             }
 
             Set<LineageNode> visitedNodes = new HashSet<>();
@@ -213,15 +217,17 @@ public class LineageTracker {
 
             traverseUpstream(startNode, 0, maxDepth, visitedNodes, visitedEdges, nodeDepths);
 
-            return LineageResult.builder()
+            return Promise.of(LineageResult.builder()
                     .rootNodeId(datasetId)
                     .direction(LineageDirection.UPSTREAM)
                     .nodes(new ArrayList<>(visitedNodes))
                     .edges(new ArrayList<>(visitedEdges))
                     .nodeDepths(nodeDepths)
                     .maxDepthReached(calculateMaxDepth(nodeDepths))
-                    .build();
-        });
+                    .build());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -232,8 +238,11 @@ public class LineageTracker {
      * @return Promise of downstream lineage result
      */
     public Promise<LineageResult> getDownstreamLineage(String datasetId, int maxDepth) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> 
-            getDownstreamLineageSync(datasetId, maxDepth));
+        try {
+            return Promise.of(getDownstreamLineageSync(datasetId, maxDepth));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -274,10 +283,10 @@ public class LineageTracker {
      * @return Promise of impact analysis result
      */
     public Promise<ImpactAnalysis> analyzeImpact(String datasetId, ChangeType changeType) {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             LineageNode changedNode = nodeIndex.get(datasetId);
             if (changedNode == null) {
-                return ImpactAnalysis.noImpact(datasetId);
+                return Promise.of(ImpactAnalysis.noImpact(datasetId));
             }
 
             // Get all downstream nodes that would be affected (use sync version to avoid nested blocking)
@@ -303,7 +312,7 @@ public class LineageTracker {
             // Sort by severity (highest first)
             impactedDatasets.sort((a, b) -> b.getSeverity().compareTo(a.getSeverity()));
 
-            return ImpactAnalysis.builder()
+            return Promise.of(ImpactAnalysis.builder()
                     .changedDatasetId(datasetId)
                     .changeType(changeType)
                     .totalImpactedDatasets(impactedDatasets.size())
@@ -312,8 +321,10 @@ public class LineageTracker {
                     .highImpacts(countBySeverity(impactedDatasets, ImpactSeverity.HIGH))
                     .mediumImpacts(countBySeverity(impactedDatasets, ImpactSeverity.MEDIUM))
                     .lowImpacts(countBySeverity(impactedDatasets, ImpactSeverity.LOW))
-                    .build();
-        });
+                    .build());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -322,7 +333,7 @@ public class LineageTracker {
      * @return Promise of graph representation
      */
     public Promise<LineageGraphSnapshot> getGraphSnapshot() {
-        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
+        try {
             List<LineageNode> nodes;
             List<LineageEdge> edges;
 
@@ -331,14 +342,16 @@ public class LineageTracker {
                 edges = new ArrayList<>(lineageGraph.edgeSet());
             }
 
-            return LineageGraphSnapshot.builder()
+            return Promise.of(LineageGraphSnapshot.builder()
                     .nodes(nodes)
                     .edges(edges)
                     .nodeCount(nodes.size())
                     .edgeCount(edges.size())
                     .snapshotTime(Instant.now())
-                    .build();
-        });
+                    .build());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**

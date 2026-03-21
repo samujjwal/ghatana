@@ -1,6 +1,6 @@
 # 15. AI Assistant & Semantic Search – Deep-Dive Spec
 
-> **Status:** Planned cross-cutting feature – no concrete implementation in CES UI yet. This spec captures the AI Assistant and semantic search capabilities from `frontend_todo (1).md`.
+> **Status:** Planned cross-cutting feature – no concrete implementation in Data Cloud UI yet. This spec captures the AI Assistant and semantic search capabilities from `frontend_todo (1).md`.
 
 ---
 
@@ -109,7 +109,7 @@ A robust AI Assistant should:
 
 ## 7. Coherence with App Creator / Canvas & Platform
 
-- The assistant should be consistent across Data Cloud workspaces (CES, SQL, App Creator, AEP).
+- The assistant should be consistent across Data Cloud workspaces (Collections, SQL, App Creator, AEP).
 - It can help generate **app schemas and flows** in App Creator, similar to workflows here.
 - Semantic search should share a unified embedding/index service with other products.
 

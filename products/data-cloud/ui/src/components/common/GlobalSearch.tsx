@@ -12,6 +12,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
 import {
     Search,
     Database,
@@ -21,10 +22,12 @@ import {
     BarChart3,
     Shield,
     Bell,
-    Command,
     ArrowRight,
+    Loader2,
 } from 'lucide-react';
-import { cn, textStyles, bgStyles, inputStyles } from '../../lib/theme';
+import { cn, textStyles, bgStyles } from '../../lib/theme';
+import { collectionsApi } from '../../lib/api/collections';
+import { workflowsApi } from '../../lib/api/workflows';
 
 /**
  * Search result item
@@ -40,7 +43,7 @@ interface SearchResult {
 }
 
 /**
- * Quick navigation items
+ * Quick navigation items (static)
  */
 const quickNavItems: SearchResult[] = [
     { id: 'nav-dashboard', title: 'Dashboard', type: 'page', icon: <BarChart3 className="h-4 w-4" />, path: '/dashboard' },
@@ -51,20 +54,6 @@ const quickNavItems: SearchResult[] = [
     { id: 'nav-governance', title: 'Governance', type: 'page', icon: <Shield className="h-4 w-4" />, path: '/governance' },
     { id: 'nav-alerts', title: 'Alerts', type: 'page', icon: <Bell className="h-4 w-4" />, path: '/alerts' },
     { id: 'nav-settings', title: 'Settings', type: 'page', icon: <Settings className="h-4 w-4" />, path: '/settings' },
-];
-
-/**
- * Mock search results
- */
-const mockCollections: SearchResult[] = [
-    { id: 'col-1', title: 'user_events', description: 'User activity events', type: 'collection', icon: <Database className="h-4 w-4" />, path: '/collections/col-1' },
-    { id: 'col-2', title: 'transactions', description: 'Payment transactions', type: 'collection', icon: <Database className="h-4 w-4" />, path: '/collections/col-2' },
-    { id: 'col-3', title: 'analytics_data', description: 'Analytics aggregates', type: 'collection', icon: <Database className="h-4 w-4" />, path: '/collections/col-3' },
-];
-
-const mockWorkflows: SearchResult[] = [
-    { id: 'wf-1', title: 'ETL Pipeline', description: 'Daily data transformation', type: 'workflow', icon: <Workflow className="h-4 w-4" />, path: '/workflows/wf-1' },
-    { id: 'wf-2', title: 'Fraud Detection', description: 'Real-time fraud analysis', type: 'workflow', icon: <Workflow className="h-4 w-4" />, path: '/workflows/wf-2' },
 ];
 
 interface GlobalSearchProps {
@@ -81,21 +70,57 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps): React.Reac
     const inputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
 
-    // Filter results based on query
+    const searchEnabled = query.length >= 2;
+
+    const { data: collectionsPage, isFetching: collectionsLoading } = useQuery({
+        queryKey: ['global-search-collections', query],
+        queryFn: () => collectionsApi.list({ search: query, pageSize: 5 }),
+        enabled: searchEnabled,
+        staleTime: 30_000,
+    });
+
+    const { data: workflowsPage, isFetching: workflowsLoading } = useQuery({
+        queryKey: ['global-search-workflows', query],
+        queryFn: () => workflowsApi.list({ search: query, pageSize: 5 }),
+        enabled: searchEnabled,
+        staleTime: 30_000,
+    });
+
+    const isLoading = collectionsLoading || workflowsLoading;
+
+    // Build results from API data + static quick nav items
     const getResults = useCallback((): SearchResult[] => {
         if (!query.trim()) {
             return quickNavItems;
         }
 
         const lowerQuery = query.toLowerCase();
-        const allItems = [...quickNavItems, ...mockCollections, ...mockWorkflows];
-
-        return allItems.filter(
+        const matchedNav = quickNavItems.filter(
             (item) =>
                 item.title.toLowerCase().includes(lowerQuery) ||
                 item.description?.toLowerCase().includes(lowerQuery)
         );
-    }, [query]);
+
+        const collectionResults: SearchResult[] = (collectionsPage?.items ?? []).map((col) => ({
+            id: col.id,
+            title: col.name,
+            description: col.description,
+            type: 'collection' as const,
+            icon: <Database className="h-4 w-4" />,
+            path: `/collections/${col.id}`,
+        }));
+
+        const workflowResults: SearchResult[] = (workflowsPage?.items ?? []).map((wf) => ({
+            id: wf.id,
+            title: wf.name,
+            description: wf.description,
+            type: 'workflow' as const,
+            icon: <Workflow className="h-4 w-4" />,
+            path: `/workflows/${wf.id}`,
+        }));
+
+        return [...matchedNav, ...collectionResults, ...workflowResults];
+    }, [query, collectionsPage, workflowsPage]);
 
     const results = getResults();
 
@@ -193,7 +218,12 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps): React.Reac
 
                     {/* Results */}
                     <div className="max-h-[400px] overflow-y-auto py-2">
-                        {results.length === 0 ? (
+                        {isLoading && searchEnabled ? (
+                            <div className="px-4 py-6 flex items-center justify-center gap-2 text-gray-400">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span className="text-sm">Searching…</span>
+                            </div>
+                        ) : results.length === 0 ? (
                             <div className="px-4 py-8 text-center">
                                 <p className={textStyles.muted}>No results found for "{query}"</p>
                             </div>

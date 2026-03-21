@@ -9,7 +9,7 @@
  * @doc.pattern Service
  */
 
-import axios from "axios";
+import { apiClient } from "@/lib/api/client";
 import type {
   StorageProfile,
   StorageProfileFormInput,
@@ -18,8 +18,6 @@ import type {
   StorageMetrics,
   SyncStatistics,
 } from "../types";
-
-const API_BASE = "/api/v1/data-fabric";
 
 /**
  * Storage profile API client.
@@ -31,10 +29,7 @@ export const storageProfileApi = {
    * @returns Promise resolving to array of storage profiles
    */
   async getAll(): Promise<StorageProfile[]> {
-    const response = await axios.get<StorageProfile[]>(
-      `${API_BASE}/profiles`
-    );
-    return response.data;
+    return apiClient.get<StorageProfile[]>('/data-fabric/profiles');
   },
 
   /**
@@ -44,10 +39,7 @@ export const storageProfileApi = {
    * @returns Promise resolving to storage profile
    */
   async getById(profileId: string): Promise<StorageProfile> {
-    const response = await axios.get<StorageProfile>(
-      `${API_BASE}/profiles/${profileId}`
-    );
-    return response.data;
+    return apiClient.get<StorageProfile>(`/data-fabric/profiles/${profileId}`);
   },
 
   /**
@@ -57,11 +49,7 @@ export const storageProfileApi = {
    * @returns Promise resolving to created profile
    */
   async create(input: StorageProfileFormInput): Promise<StorageProfile> {
-    const response = await axios.post<StorageProfile>(
-      `${API_BASE}/profiles`,
-      input
-    );
-    return response.data;
+    return apiClient.post<StorageProfile>('/data-fabric/profiles', input);
   },
 
   /**
@@ -75,11 +63,7 @@ export const storageProfileApi = {
     profileId: string,
     input: Partial<StorageProfileFormInput>
   ): Promise<StorageProfile> {
-    const response = await axios.put<StorageProfile>(
-      `${API_BASE}/profiles/${profileId}`,
-      input
-    );
-    return response.data;
+    return apiClient.put<StorageProfile>(`/data-fabric/profiles/${profileId}`, input);
   },
 
   /**
@@ -89,7 +73,7 @@ export const storageProfileApi = {
    * @returns Promise resolving when deletion complete
    */
   async delete(profileId: string): Promise<void> {
-    await axios.delete(`${API_BASE}/profiles/${profileId}`);
+    await apiClient.delete(`/data-fabric/profiles/${profileId}`);
   },
 
   /**
@@ -99,10 +83,7 @@ export const storageProfileApi = {
    * @returns Promise resolving to updated profile
    */
   async setDefault(profileId: string): Promise<StorageProfile> {
-    const response = await axios.post<StorageProfile>(
-      `${API_BASE}/profiles/${profileId}/set-default`
-    );
-    return response.data;
+    return apiClient.post<StorageProfile>(`/data-fabric/profiles/${profileId}/set-default`);
   },
 
   /**
@@ -112,10 +93,7 @@ export const storageProfileApi = {
    * @returns Promise resolving to storage metrics
    */
   async getMetrics(profileId: string): Promise<StorageMetrics> {
-    const response = await axios.get<StorageMetrics>(
-      `${API_BASE}/profiles/${profileId}/metrics`
-    );
-    return response.data;
+    return apiClient.get<StorageMetrics>(`/data-fabric/profiles/${profileId}/metrics`);
   },
 };
 
@@ -129,10 +107,7 @@ export const dataConnectorApi = {
    * @returns Promise resolving to array of data connectors
    */
   async getAll(): Promise<DataConnector[]> {
-    const response = await axios.get<DataConnector[]>(
-      `${API_BASE}/connectors`
-    );
-    return response.data;
+    return apiClient.get<DataConnector[]>('/data-fabric/connectors');
   },
 
   /**
@@ -142,10 +117,7 @@ export const dataConnectorApi = {
    * @returns Promise resolving to data connector
    */
   async getById(connectorId: string): Promise<DataConnector> {
-    const response = await axios.get<DataConnector>(
-      `${API_BASE}/connectors/${connectorId}`
-    );
-    return response.data;
+    return apiClient.get<DataConnector>(`/data-fabric/connectors/${connectorId}`);
   },
 
   /**
@@ -155,11 +127,7 @@ export const dataConnectorApi = {
    * @returns Promise resolving to created connector
    */
   async create(input: DataConnectorFormInput): Promise<DataConnector> {
-    const response = await axios.post<DataConnector>(
-      `${API_BASE}/connectors`,
-      input
-    );
-    return response.data;
+    return apiClient.post<DataConnector>('/data-fabric/connectors', input);
   },
 
   /**
@@ -173,11 +141,7 @@ export const dataConnectorApi = {
     connectorId: string,
     input: Partial<DataConnectorFormInput>
   ): Promise<DataConnector> {
-    const response = await axios.put<DataConnector>(
-      `${API_BASE}/connectors/${connectorId}`,
-      input
-    );
-    return response.data;
+    return apiClient.put<DataConnector>(`/data-fabric/connectors/${connectorId}`, input);
   },
 
   /**
@@ -187,7 +151,7 @@ export const dataConnectorApi = {
    * @returns Promise resolving when deletion complete
    */
   async delete(connectorId: string): Promise<void> {
-    await axios.delete(`${API_BASE}/connectors/${connectorId}`);
+    await apiClient.delete(`/data-fabric/connectors/${connectorId}`);
   },
 
   /**
@@ -197,10 +161,9 @@ export const dataConnectorApi = {
    * @returns Promise resolving to test result
    */
   async test(connectorId: string): Promise<{ success: boolean; message?: string }> {
-    const response = await axios.post<{ success: boolean; message?: string }>(
-      `${API_BASE}/connectors/${connectorId}/test`
+    return apiClient.post<{ success: boolean; message?: string }>(
+      `/data-fabric/connectors/${connectorId}/test`
     );
-    return response.data;
   },
 
   /**
@@ -210,10 +173,9 @@ export const dataConnectorApi = {
    * @returns Promise resolving when sync starts
    */
   async triggerSync(connectorId: string): Promise<{ jobId: string }> {
-    const response = await axios.post<{ jobId: string }>(
-      `${API_BASE}/connectors/${connectorId}/sync`
+    return apiClient.post<{ jobId: string }>(
+      `/data-fabric/connectors/${connectorId}/sync`
     );
-    return response.data;
   },
 
   /**
@@ -223,10 +185,9 @@ export const dataConnectorApi = {
    * @returns Promise resolving to sync statistics
    */
   async getSyncStatistics(connectorId: string): Promise<SyncStatistics> {
-    const response = await axios.get<SyncStatistics>(
-      `${API_BASE}/connectors/${connectorId}/statistics`
+    return apiClient.get<SyncStatistics>(
+      `/data-fabric/connectors/${connectorId}/statistics`
     );
-    return response.data;
   },
 
   /**
@@ -236,9 +197,8 @@ export const dataConnectorApi = {
    * @returns Promise resolving to array of connectors
    */
   async getByProfile(profileId: string): Promise<DataConnector[]> {
-    const response = await axios.get<DataConnector[]>(
-      `${API_BASE}/connectors?profileId=${profileId}`
+    return apiClient.get<DataConnector[]>(
+      `/data-fabric/connectors?profileId=${profileId}`
     );
-    return response.data;
   },
 };

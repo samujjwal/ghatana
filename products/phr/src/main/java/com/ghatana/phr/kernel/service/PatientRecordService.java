@@ -7,6 +7,7 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataResult;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.util.JsonUtils;
 import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
@@ -115,9 +116,7 @@ public class PatientRecordService {
             .map(result -> Optional.ofNullable(deserialize(result.getData())))
             .whenException(e -> {
                 // Patient not found
-            })
-            .map(Optional::ofNullable)
-            .then(opt -> opt.isPresent() ? Promise.of(opt) : Promise.of(Optional.empty()));
+            });
     }
 
     /**

@@ -1,6 +1,6 @@
 package com.ghatana.refactorer.consistency;
 
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import io.activej.promise.Promise;

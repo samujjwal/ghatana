@@ -1,6 +1,6 @@
 package com.ghatana.flashit.plugin;
 
-import com.ghatana.kernel.capability.KernelCapability;
+import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.plugin.ProductPlugin;
 import com.ghatana.kernel.plugin.PluginContext;

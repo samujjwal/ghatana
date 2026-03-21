@@ -1,6 +1,6 @@
 package com.ghatana.kernel.plugin;
 
-import com.ghatana.kernel.capability.KernelCapability;
+import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.registry.CapabilityRegistry;
 import com.ghatana.kernel.registry.ServiceRegistry;
 import com.ghatana.kernel.context.KernelContext;
@@ -9,9 +9,19 @@ import java.util.Optional;
 
 /**
  * Plugin context provides access to kernel services.
- * 
- * This interface gives plugins access to kernel capabilities and services
- * without exposing internal kernel implementation details.
+ *
+ * <p>This interface gives plugins access to kernel capabilities and services
+ * through typed accessor methods ({@link #getCapability}, {@link #registerService}, etc.)
+ * without exposing internal kernel implementation details.</p>
+ *
+ * <p>The sub-registry accessor methods ({@link #getCapabilityRegistry()},
+ * {@link #getServiceRegistry()}) are deprecated per Decision D4.
+ * Use the typed methods on this interface instead.</p>
+ *
+ * @doc.type interface
+ * @doc.purpose Plugin context for accessing kernel capabilities and services
+ * @doc.layer core
+ * @doc.pattern Context
  */
 public interface PluginContext {
     
@@ -22,12 +32,20 @@ public interface PluginContext {
     
     /**
      * Get the capability registry for discovering capabilities.
+     *
+     * @deprecated Per Decision D4, sub-registries are internal. Use
+     *             {@link #getCapability(KernelCapability, Class)} instead.
      */
+    @Deprecated(forRemoval = true)
     CapabilityRegistry getCapabilityRegistry();
     
     /**
      * Get the service registry for accessing services.
+     *
+     * @deprecated Per Decision D4, sub-registries are internal. Use
+     *             {@link #registerService(String, Object)} and typed methods instead.
      */
+    @Deprecated(forRemoval = true)
     ServiceRegistry getServiceRegistry();
     
     /**

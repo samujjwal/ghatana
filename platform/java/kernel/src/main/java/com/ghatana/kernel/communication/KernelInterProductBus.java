@@ -26,7 +26,10 @@ import java.util.Objects;
  * @doc.pattern Service
  * @author Ghatana Kernel Team
  * @since 1.0.0
+ * @deprecated Use {@link KernelInterScopeBus} instead. This class uses product id
+ *             strings that violate kernel purity. Scheduled for removal after Day 10 migration.
  */
+@Deprecated(forRemoval = true)
 public class KernelInterProductBus {
 
     private final AepKernelAdapter aepAdapter;

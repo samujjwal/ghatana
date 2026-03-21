@@ -17,7 +17,7 @@
 
 package com.ghatana.yappc.cli.commands;
 
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.yappc.core.ci.CIPipelineSpec;
 import com.ghatana.yappc.core.policy.PolicyEnforcementEngine;
 import com.ghatana.yappc.core.policy.PolicyEnforcementEngine.*;

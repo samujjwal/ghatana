@@ -18,7 +18,7 @@ dependencies {
 
     // AEP platform (provides com.ghatana.core.operator.* and com.ghatana.core.pipeline.*)
     // TODO: Migrate core operator/pipeline types to platform:java:workflow
-    implementation(project(":products:aep:platform"))
+    implementation(project(":products:aep:platform-bundle"))
 
     // ActiveJ
     implementation(libs.activej.eventloop)

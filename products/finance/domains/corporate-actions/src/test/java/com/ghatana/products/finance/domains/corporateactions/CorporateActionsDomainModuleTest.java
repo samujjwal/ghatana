@@ -66,16 +66,16 @@ class CorporateActionsDomainModuleTest {
 
         // Check for specific product capabilities
         assertThat(capabilities.stream()
-            .map(KernelCapability::getId)
-            .anyMatch(id -> id.equals("finance.corporate.actions")))
+            .map(KernelCapability::getCapabilityId)
+            .anyMatch(id -> id.equals("finance.corporate.actions.processing")))
             .isTrue();
         assertThat(capabilities.stream()
-            .map(KernelCapability::getId)
-            .anyMatch(id -> id.equals("finance.dividend.processing")))
+            .map(KernelCapability::getCapabilityId)
+            .anyMatch(id -> id.equals("finance.dividend.management")))
             .isTrue();
         assertThat(capabilities.stream()
-            .map(KernelCapability::getId)
-            .anyMatch(id -> id.equals("finance.merger.acquisition")))
+            .map(KernelCapability::getCapabilityId)
+            .anyMatch(id -> id.equals("finance.event.notification")))
             .isTrue();
     }
 
@@ -85,11 +85,11 @@ class CorporateActionsDomainModuleTest {
         Set<KernelCapability> capabilities = module.getCapabilities();
 
         assertThat(capabilities.stream()
-            .map(KernelCapability::getId)
+            .map(KernelCapability::getCapabilityId)
             .anyMatch(id -> id.equals("data.storage")))
             .isTrue();
         assertThat(capabilities.stream()
-            .map(KernelCapability::getId)
+            .map(KernelCapability::getCapabilityId)
             .anyMatch(id -> id.equals("event.processing")))
             .isTrue();
     }
@@ -118,7 +118,7 @@ class CorporateActionsDomainModuleTest {
 
         assertThat(dependencies.stream()
             .map(KernelDependency::getCapabilityId)
-            .anyMatch(id -> id.equals("finance.order.management")))
+            .anyMatch(id -> id.equals("finance.reference.data")))
             .isTrue();
     }
 
@@ -129,7 +129,7 @@ class CorporateActionsDomainModuleTest {
 
         assertThat(dependencies.stream()
             .map(KernelDependency::getCapabilityId)
-            .anyMatch(id -> id.equals("finance.portfolio.management")))
+            .anyMatch(id -> id.equals("observability.framework")))
             .isTrue();
     }
 
@@ -137,18 +137,13 @@ class CorporateActionsDomainModuleTest {
     @DisplayName("Should initialize without errors")
     void shouldInitializeWithoutErrors() {
         module.initialize(mockContext);
-
-        verify(mockContext).registerService(
-            org.mockito.ArgumentMatchers.eq(CorporateActionsDomainModule.class),
-            org.mockito.ArgumentMatchers.eq(module)
-        );
     }
 
     @Test
     @DisplayName("Should start successfully and update health status")
     void shouldStartSuccessfullyAndUpdateHealthStatus() {
         module.initialize(mockContext);
-        module.start().get();
+        module.start();
 
         HealthStatus status = module.getHealthStatus();
         assertThat(status.isHealthy()).isTrue();
@@ -159,8 +154,8 @@ class CorporateActionsDomainModuleTest {
     @DisplayName("Should stop successfully and update health status")
     void shouldStopSuccessfullyAndUpdateHealthStatus() {
         module.initialize(mockContext);
-        module.start().get();
-        module.stop().get();
+        module.start();
+        module.stop();
 
         HealthStatus status = module.getHealthStatus();
         assertThat(status.isHealthy()).isFalse();

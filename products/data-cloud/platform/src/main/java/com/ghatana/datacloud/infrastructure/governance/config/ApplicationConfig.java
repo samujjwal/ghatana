@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Immutable configuration for Collection Entity System governance layer.
+ * Immutable configuration for Data Cloud governance layer.
  *
  * <p><b>Purpose</b><br>
  * Holds all governance-related configuration including RBAC settings,

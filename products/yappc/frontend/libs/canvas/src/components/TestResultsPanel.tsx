@@ -172,7 +172,7 @@ export const TestResultsPanel: React.FC<TestResultsPanelProps> = ({
                                     key={test.id}
                                     variant="raised"
                                     className="mb-2"
-                                    style={{ border: `2px solid ${isSelected ? '#1976d2' : '#e0e0e0'}` }}
+                                    style={{ border: `2px solid ${isSelected ? '#1976d2' : '#e0e0e0'}`}}
                                 >
                                     <ListItem
                                         disablePadding

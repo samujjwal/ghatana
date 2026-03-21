@@ -6,6 +6,7 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.health.HealthStatus;
 import com.ghatana.kernel.module.KernelModule;
+import com.ghatana.products.finance.FinanceCapabilities;
 import com.ghatana.finance.kernel.service.OrderManagementService;
 import com.ghatana.finance.kernel.service.RiskManagementService;
 import com.ghatana.finance.kernel.service.ComplianceService;
@@ -57,18 +58,18 @@ public class FinanceKernelModule implements KernelModule {
     public Set<KernelCapability> getCapabilities() {
         return Set.of(
             // Finance-specific capabilities (trading/risk/compliance domain)
-            KernelCapability.Products.TRADE_PROCESSING,
-            KernelCapability.Products.RISK_MANAGEMENT,
-            KernelCapability.Products.COMPLIANCE_CHECKING,
-            KernelCapability.Products.LEDGER_MANAGEMENT,
-            KernelCapability.Products.PORTFOLIO_MANAGEMENT,
+            FinanceCapabilities.TRADE_PROCESSING,
+            FinanceCapabilities.RISK_MANAGEMENT,
+            FinanceCapabilities.COMPLIANCE_CHECKING,
+            FinanceCapabilities.LEDGER_MANAGEMENT,
+            FinanceCapabilities.PORTFOLIO_MANAGEMENT,
 
             // Shared capabilities used by Finance
-            KernelCapability.Products.USER_AUTHENTICATION,
-            KernelCapability.Products.DATA_STORAGE,
-            KernelCapability.Products.API_FRAMEWORK,
-            KernelCapability.Products.WORKFLOW_ENGINE,
-            KernelCapability.Products.NOTIFICATION_SERVICE
+            KernelCapability.Core.USER_AUTHENTICATION,
+            KernelCapability.Core.DATA_STORAGE,
+            KernelCapability.Core.API_FRAMEWORK,
+            KernelCapability.Core.WORKFLOW_ENGINE,
+            KernelCapability.Core.OBSERVABILITY_FRAMEWORK
         );
     }
 

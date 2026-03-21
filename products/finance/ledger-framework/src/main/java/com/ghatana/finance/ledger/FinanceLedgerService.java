@@ -11,6 +11,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -462,7 +463,8 @@ public final class FinanceLedgerService {
     }
 
     private Promise<MonetaryAmount> convertToBaseCurrency(MonetaryAmount amount) {
-        return currencyService.convertAmount(amount, "USD", Instant.now());
+        return currencyService.convertAmount(amount, "USD", Instant.now())
+            .map(bd -> new MonetaryAmount(bd, "USD", Instant.now()));
     }
 
     // ── Supporting Records ─────────────────────────────────────────────────────

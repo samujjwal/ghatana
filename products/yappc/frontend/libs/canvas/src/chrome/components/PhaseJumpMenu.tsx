@@ -110,7 +110,7 @@ function PhaseMenuItem({
             {/* Phase icon and name */}
             <Box className="flex items-center flex-1 gap-2" >
                 <Box
-                    className="text-[24px] flex items-center justify-center w-[40px] h-[40px]" style={{ borderRadius: RADIUS.MD, backgroundColor: `${phaseConfig.color}15` }}
+                    className="text-[24px] flex items-center justify-center w-[40px] h-[40px]" style={{ borderRadius: RADIUS.MD, backgroundColor: `${phaseConfig.color}15`}}
                 >
                     {phaseConfig.emoji}
                 </Box>

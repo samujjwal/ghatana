@@ -22,7 +22,7 @@ Related routes & files:
 
 ## 2. Users, Personas, and Real-World Scenarios
 
-- Any user hitting an invalid CES URL (typo, outdated bookmark, or removed route).
+- Any user hitting an invalid Data Cloud URL (typo, outdated bookmark, or removed route).
 
 ---
 
@@ -51,7 +51,7 @@ From `NotFound/index.tsx`:
 
 Optionally, a richer 404 page could:
 
-1. Show useful links to key CES areas (Dashboard, Collections, Workflows).
+1. Show useful links to key Data Cloud areas (Dashboard, Collections, Workflows).
 2. Provide a search box.
 
 ---

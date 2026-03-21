@@ -12,7 +12,7 @@ import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.core.operator.UnifiedOperator;
 import com.ghatana.core.operator.spi.OperatorProvider;
 import com.ghatana.governance.PolicyEngine;
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import com.ghatana.yappc.services.lifecycle.operators.AgentDispatchOperator;
 import com.ghatana.yappc.services.lifecycle.operators.AgentDispatchValidatorOperator;
 import com.ghatana.yappc.services.lifecycle.operators.AgentExecutorOperator;
@@ -361,7 +361,7 @@ public class YappcOperatorProvider implements OperatorProvider {
      * (AEP type), converting all value-object arguments and return types on the fly.
      *
      * <p>Both operator interfaces share the same {@code Event} type
-     * ({@code com.ghatana.platform.domain.domain.event.Event}), so event data passes
+     * ({@code com.ghatana.platform.domain.event.Event}), so event data passes
      * through without boxing or copying.
      *
      * @doc.type class

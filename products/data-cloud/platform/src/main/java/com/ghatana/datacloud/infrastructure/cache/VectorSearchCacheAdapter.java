@@ -92,36 +92,34 @@ public class VectorSearchCacheAdapter {
         long startTime = System.currentTimeMillis();
         String cacheKeyStr = buildCacheKey(queryVector, collectionId);
 
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
-            try {
-                // Check if schema has been updated
-                String schemaVersion = commands.get(SCHEMA_VERSION_PREFIX + collectionId);
-                String cachedVersion = commands.get(cacheKeyStr + ":version");
-                
-                if (schemaVersion != null && schemaVersion.equals(cachedVersion)) {
-                    // Cache is valid
-                    String cached = commands.get(cacheKeyStr);
-                    if (cached != null) {
-                        long duration = System.currentTimeMillis() - startTime;
-                        metricsCollector.recordTimer("cache.vector_search.hit", duration);
-                        metricsCollector.incrementCounter("cache.vector_search.hits");
-                        logger.debug("Vector search cache hit ({}ms)", duration);
-                        
-                        @SuppressWarnings("unchecked")
-                        List<SearchResult> results = objectMapper.readValue(cached, List.class);
-                        return results;
-                    }
+        try {
+            // Check if schema has been updated
+            String schemaVersion = commands.get(SCHEMA_VERSION_PREFIX + collectionId);
+            String cachedVersion = commands.get(cacheKeyStr + ":version");
+
+            if (schemaVersion != null && schemaVersion.equals(cachedVersion)) {
+                // Cache is valid
+                String cached = commands.get(cacheKeyStr);
+                if (cached != null) {
+                    long duration = System.currentTimeMillis() - startTime;
+                    metricsCollector.recordTimer("cache.vector_search.hit", duration);
+                    metricsCollector.incrementCounter("cache.vector_search.hits");
+                    logger.debug("Vector search cache hit ({}ms)", duration);
+
+                    @SuppressWarnings("unchecked")
+                    List<SearchResult> results = objectMapper.readValue(cached, List.class);
+                    return Promise.of(results);
                 }
-                
-                metricsCollector.incrementCounter("cache.vector_search.misses");
-                logger.debug("Vector search cache miss");
-                return null;
-            } catch (Exception e) {
-                logger.error("Error reading from cache: {}", cacheKeyStr, e);
-                metricsCollector.incrementCounter("cache.vector_search.errors");
-                return null;
             }
-        });
+
+            metricsCollector.incrementCounter("cache.vector_search.misses");
+            logger.debug("Vector search cache miss");
+            return Promise.of(null);
+        } catch (Exception e) {
+            logger.error("Error reading from cache: {}", cacheKeyStr, e);
+            metricsCollector.incrementCounter("cache.vector_search.errors");
+            return Promise.of(null);
+        }
     }
 
     /**
@@ -133,20 +131,19 @@ public class VectorSearchCacheAdapter {
      * @return void promise
      */
     public Promise<Void> invalidateCollection(UUID collectionId) {
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
-            try {
-                // Update schema version to invalidate all cached searches for this collection
-                String newVersion = String.valueOf(System.currentTimeMillis());
-                commands.set(SCHEMA_VERSION_PREFIX + collectionId, newVersion);
-                
-                logger.info("Invalidated vector search cache for collection: {}", collectionId);
-                metricsCollector.incrementCounter("cache.vector_search.invalidations");
-            } catch (Exception e) {
-                logger.error("Error invalidating cache for collection: {}", collectionId, e);
-                metricsCollector.incrementCounter("cache.vector_search.errors");
-            }
-            return null;
-        });
+        try {
+            // Update schema version to invalidate all cached searches for this collection
+            String newVersion = String.valueOf(System.currentTimeMillis());
+            commands.set(SCHEMA_VERSION_PREFIX + collectionId, newVersion);
+
+            logger.info("Invalidated vector search cache for collection: {}", collectionId);
+            metricsCollector.incrementCounter("cache.vector_search.invalidations");
+            return Promise.of(null);
+        } catch (Exception e) {
+            logger.error("Error invalidating cache for collection: {}", collectionId, e);
+            metricsCollector.incrementCounter("cache.vector_search.errors");
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -155,20 +152,19 @@ public class VectorSearchCacheAdapter {
      * @return void promise
      */
     public Promise<Void> clear() {
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
-            try {
-                List<String> keys = commands.keys(CACHE_PREFIX + "*");
-                if (!keys.isEmpty()) {
-                    commands.del(keys.toArray(new String[0]));
-                    logger.info("Cleared {} search results from cache", keys.size());
-                    metricsCollector.incrementCounter("cache.vector_search.clears");
-                }
-            } catch (Exception e) {
-                logger.error("Error clearing cache", e);
-                metricsCollector.incrementCounter("cache.vector_search.errors");
+        try {
+            List<String> keys = commands.keys(CACHE_PREFIX + "*");
+            if (!keys.isEmpty()) {
+                commands.del(keys.toArray(new String[0]));
+                logger.info("Cleared {} search results from cache", keys.size());
+                metricsCollector.incrementCounter("cache.vector_search.clears");
             }
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            logger.error("Error clearing cache", e);
+            metricsCollector.incrementCounter("cache.vector_search.errors");
+            return Promise.ofException(e);
+        }
     }
 
     /**
@@ -177,29 +173,27 @@ public class VectorSearchCacheAdapter {
      * @return cache stats promise
      */
     public Promise<CacheStats> getStats() {
-        return Promise.ofBlocking(new ForkJoinPool(), () -> {
-            try {
-                List<String> keys = commands.keys(CACHE_PREFIX + "*");
-                long totalMemory = 0;
-                for (String key : keys) {
-                    Long strlen = commands.strlen(key);
-                    if (strlen != null) {
-                        totalMemory += strlen;
-                    }
+        try {
+            List<String> keys = commands.keys(CACHE_PREFIX + "*");
+            long totalMemory = 0;
+            for (String key : keys) {
+                Long strlen = commands.strlen(key);
+                if (strlen != null) {
+                    totalMemory += strlen;
                 }
-                
-                return new CacheStats(
-                        keys.size(),
-                        totalMemory,
-                        TTL_SECONDS,
-                        MAX_CACHE_SIZE
-                );
-            } catch (Exception e) {
-                logger.error("Error getting cache stats", e);
-                metricsCollector.incrementCounter("cache.vector_search.errors");
-                return new CacheStats(0, 0, TTL_SECONDS, MAX_CACHE_SIZE);
             }
-        });
+
+            return Promise.of(new CacheStats(
+                    keys.size(),
+                    totalMemory,
+                    TTL_SECONDS,
+                    MAX_CACHE_SIZE
+            ));
+        } catch (Exception e) {
+            logger.error("Error getting cache stats", e);
+            metricsCollector.incrementCounter("cache.vector_search.errors");
+            return Promise.of(new CacheStats(0, 0, TTL_SECONDS, MAX_CACHE_SIZE));
+        }
     }
 
     /**

@@ -21,7 +21,7 @@ import com.ghatana.products.finance.domains.reconciliation.ReconciliationDomainM
 import com.ghatana.products.finance.domains.referencedata.ReferenceDataDomainModule;
 import com.ghatana.products.finance.domains.regulatoryreporting.RegulatoryReportingDomainModule;
 import com.ghatana.products.finance.domains.risk.RiskDomainModule;
-import com.ghatana.products.finance.domains.rules.RulesDomainModule;
+import com.ghatana.products.finance.rules.FinanceRulesDomain;
 import com.ghatana.products.finance.domains.sanctions.SanctionsDomainModule;
 import com.ghatana.products.finance.domains.surveillance.SurveillanceDomainModule;
 import com.ghatana.products.finance.shell.FinanceProductShell;
@@ -77,7 +77,7 @@ public final class FinanceProductModule implements KernelModule {
     private EmsDomainModule emsModule;
     private PmsDomainModule pmsModule;
     private RiskDomainModule riskModule;
-    private RulesDomainModule rulesModule;
+    private FinanceRulesDomain rulesModule;
     private CorporateActionsDomainModule corporateActionsModule;
     private MarketDataDomainModule marketDataModule;
     private PostTradeDomainModule postTradeModule;
@@ -102,17 +102,17 @@ public final class FinanceProductModule implements KernelModule {
     public Set<KernelCapability> getCapabilities() {
         return Set.of(
             // Finance-specific capabilities
-            KernelCapability.Products.TRADE_EXECUTION,
-            KernelCapability.Products.PORTFOLIO_MANAGEMENT,
-            KernelCapability.Products.RISK_ASSESSMENT,
-            KernelCapability.Products.COMPLIANCE_CHECKING,
-            KernelCapability.Products.FINANCIAL_REPORTING,
+            FinanceCapabilities.TRADE_PROCESSING,
+            FinanceCapabilities.PORTFOLIO_MANAGEMENT,
+            FinanceCapabilities.RISK_MANAGEMENT,
+            FinanceCapabilities.COMPLIANCE_CHECKING,
+            FinanceCapabilities.LEDGER_MANAGEMENT,
             
             // Reused kernel capabilities
             KernelCapability.Core.USER_AUTHENTICATION,
-            KernelCapability.Core.CONFIGURATION_MANAGEMENT,
+            KernelCapability.Core.CONFIG_MANAGEMENT,
             KernelCapability.Core.EVENT_PROCESSING,
-            KernelCapability.Core.AUDIT_LOGGING,
+            KernelCapability.Core.OBSERVABILITY_FRAMEWORK,
             KernelCapability.Core.RESILIENCE_PATTERNS
         );
     }
@@ -150,7 +150,7 @@ public final class FinanceProductModule implements KernelModule {
         this.emsModule = new EmsDomainModule();
         this.pmsModule = new PmsDomainModule();
         this.riskModule = new RiskDomainModule();
-        this.rulesModule = new RulesDomainModule();
+        this.rulesModule = new FinanceRulesDomain();
         this.corporateActionsModule = new CorporateActionsDomainModule();
         this.marketDataModule = new MarketDataDomainModule();
         this.postTradeModule = new PostTradeDomainModule();
@@ -196,7 +196,7 @@ public final class FinanceProductModule implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting Finance product module with all domains");
 
-        return Promise.ofBlocking(() -> {
+        
             // Start all domain modules first
             startDomainModules();
 
@@ -207,8 +207,7 @@ public final class FinanceProductModule implements KernelModule {
             bff.start();
 
             log.info("Finance product module started successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     private void startDomainModules() {
@@ -236,7 +235,7 @@ public final class FinanceProductModule implements KernelModule {
     public Promise<Void> stop() {
         log.info("Stopping Finance product module");
 
-        return Promise.ofBlocking(() -> {
+        
             // Stop services in reverse order
             if (bff != null) {
                 bff.stop();
@@ -249,8 +248,7 @@ public final class FinanceProductModule implements KernelModule {
             stopDomainModules();
 
             log.info("Finance product module stopped successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     private void stopDomainModules() {

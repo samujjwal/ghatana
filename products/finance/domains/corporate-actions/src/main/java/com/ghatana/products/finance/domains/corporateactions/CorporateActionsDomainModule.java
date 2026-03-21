@@ -78,12 +78,12 @@ public final class CorporateActionsDomainModule implements KernelModule {
                 "finance.event.notification",
                 "Corporate Event Notification",
                 "Automated notification for corporate events and elections",
-                KernelCapability.CapabilityType.NOTIFICATION,
+                KernelCapability.CapabilityType.INTEGRATION,
                 Map.of("domain", "corporate-actions", "product", "finance")
             ),
             KernelCapability.Core.DATA_STORAGE,
             KernelCapability.Core.EVENT_PROCESSING,
-            KernelCapability.Core.AUDIT_LOGGING
+            KernelCapability.Core.OBSERVABILITY_FRAMEWORK
         );
     }
 
@@ -109,21 +109,19 @@ public final class CorporateActionsDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Corporate Actions Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = true;
             log.info("Corporate Actions Domain module started successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Corporate Actions Domain module");
-        return Promise.ofBlocking(() -> {
+        
             started = false;
             log.info("Corporate Actions Domain module stopped successfully");
-            return null;
-        });
+        return Promise.complete();
     }
 
     @Override

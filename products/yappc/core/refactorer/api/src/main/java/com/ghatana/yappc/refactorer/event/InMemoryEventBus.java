@@ -1,6 +1,6 @@
 package com.ghatana.yappc.refactorer.event;
 
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import java.util.ArrayList;

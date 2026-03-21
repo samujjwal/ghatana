@@ -3,15 +3,17 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 const workspaceAliases = {
-  '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/design-system/src/index.ts'),
-  '@ghatana/flow-canvas': path.resolve(__dirname, '../../../platform/typescript/canvas/flow-canvas/src/index.ts'),
+  '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/capabilities/design-system/src/index.ts'),
+  '@ghatana/flow-canvas': path.resolve(__dirname, '../../../platform/typescript/capabilities/canvas-core/flow-canvas/src/index.ts'),
   '@ghatana/theme': path.resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
   '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
-  '@ghatana/utils': path.resolve(__dirname, '../../../platform/typescript/utils/src/index.ts'),
+  '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
+  '@ghatana/utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
+  '@ghatana/canvas': path.resolve(__dirname, '../../../platform/typescript/capabilities/canvas-core'),
 }
 
 /**
- * Vite configuration for CES Workflow Platform UI.
+ * Vite configuration for Data Cloud Platform UI.
  *
  * @doc.type config
  * @doc.purpose Vite build and dev server configuration
@@ -36,9 +38,8 @@ export default defineConfig({
     strictPort: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8082',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
       },
     },
   },

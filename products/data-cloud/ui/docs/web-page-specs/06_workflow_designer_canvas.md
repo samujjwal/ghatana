@@ -99,7 +99,7 @@ Planned enhancements (Workflow Builder alignment):
 For production use, the canvas should:
 
 1. Support **save/publish flows** for workflows.
-2. Integrate with CES backend workflow definitions.
+2. Integrate with Data Cloud backend workflow definitions.
 3. Show **validation feedback** for invalid or incomplete workflows.
 4. Offer a **node palette** aligned with Workflow Builder node types (Ingest, Transform, ML Training, Publish, Condition, etc.).
 5. Allow workflows to be instantiated from **templates** (e.g., pre-built ingestion or BI pipelines) and then customized.

@@ -103,7 +103,7 @@ export function EmptyCanvasState({
               e.stopPropagation();
               handleTemplateClick(template.id);
             }}
-            className="w-[120px] h-[80px] flex flex-col items-center justify-center" style={{ gap: SPACING.XS, backgroundColor: COLORS.NEUTRAL_50, border: `1px solid ${COLORS.BORDER_LIGHT}` }}
+            className="w-[120px] h-[80px] flex flex-col items-center justify-center" style={{ gap: SPACING.XS, backgroundColor: COLORS.NEUTRAL_50, border: `1px solid ${COLORS.BORDER_LIGHT}`}}
           >
             {/* Emoji icon */}
             <Box

@@ -17,6 +17,11 @@ import java.util.Optional;
  *   <li>Kernel default config</li>
  * </ol></p>
  *
+ * @deprecated Use {@link HierarchicalKernelConfigResolver} instead. This class uses
+ *             product id strings for config resolution. The canonical replacement uses
+ *             scope-aware hierarchical resolution with tenant/product/kernel priority.
+ *             Per KERNEL_CANONICALIZATION_DECISIONS.md Day 10 cleanup.
+ *
  * @doc.type class
  * @doc.purpose Cross-product config resolution with hierarchical fallback chain
  * @doc.layer core
@@ -24,6 +29,7 @@ import java.util.Optional;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
+@Deprecated(forRemoval = true)
 public class CrossProductConfigResolver implements KernelConfigResolver {
 
     private final Map<String, KernelConfigResolver> productResolvers;
@@ -58,10 +64,10 @@ public class CrossProductConfigResolver implements KernelConfigResolver {
         String productId = context.getCurrentProduct();
         if (productId != null && productResolvers.containsKey(productId)) {
             String productKey = productId + "." + configKey;
-            Optional<T> productValue = productResolvers.get(productId)
+            T productValue = productResolvers.get(productId)
                 .resolve(productKey, type, context);
-            if (productValue.isPresent()) {
-                return productValue.get();
+            if (productValue != null) {
+                return productValue;
             }
         }
 
@@ -77,10 +83,7 @@ public class CrossProductConfigResolver implements KernelConfigResolver {
 
     @Override
     public void addConfigProvider(ConfigProvider provider) {
-        // Register config provider for specific products
-        provider.getSupportedProducts().forEach(productId -> {
-            productResolvers.computeIfAbsent(productId, k -> new ProductConfigResolver(productId, dataCloud));
-        });
+        // Store global provider (product-specific routing handled by resolve logic)
     }
 
     @Override
@@ -158,7 +161,18 @@ public class CrossProductConfigResolver implements KernelConfigResolver {
 
     // ==================== Inner Types ====================
 
-    /**
+    @Override
+    public <T> Optional<T> resolveOptional(String configKey, Class<T> type, KernelTenantContext context) {
+        T value = resolve(configKey, type, context);
+        return Optional.ofNullable(value);
+    }
+
+    @Override
+    public java.util.List<String> getAvailableKeys(KernelTenantContext context) {
+        return new java.util.ArrayList<>(kernelDefaults.keySet());
+    }
+
+        /**
      * Data-Cloud platform interface for config access.
      */
     public interface DataCloudPlatform {
@@ -209,7 +223,17 @@ public class CrossProductConfigResolver implements KernelConfigResolver {
             return Promise.complete();
         }
 
-        @SuppressWarnings("unchecked")
+        @Override
+        public <T> Optional<T> resolveOptional(String configKey, Class<T> type, KernelTenantContext context) {
+            return Optional.ofNullable(resolve(configKey, type, context));
+        }
+
+        @Override
+        public java.util.List<String> getAvailableKeys(KernelTenantContext context) {
+            return java.util.Collections.emptyList();
+        }
+
+                @SuppressWarnings("unchecked")
         private <T> T resolveDefault(String configKey, Class<T> type) {
             Object value = defaults.get(configKey);
             if (value != null && type.isInstance(value)) {

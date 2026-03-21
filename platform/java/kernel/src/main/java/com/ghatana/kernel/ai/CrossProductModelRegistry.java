@@ -18,6 +18,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Version management with A/B rollout support</li>
  * </ul></p>
  *
+ * @deprecated This class uses product id strings ({@code sourceProduct}, {@code targetProducts})
+ *             which violate kernel purity. A scope-aware model registry should use
+ *             {@link com.ghatana.kernel.scope.ScopeDescriptor} for scope identification.
+ *             Per KERNEL_CANONICALIZATION_DECISIONS.md Day 10 cleanup.
+ *
  * @doc.type class
  * @doc.purpose Cross-product ML model registry with privacy, fairness, and compliance validation
  * @doc.layer core
@@ -25,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
+@Deprecated(forRemoval = true)
 public class CrossProductModelRegistry {
 
     private final Map<String, ProductModelRegistry> productRegistries;

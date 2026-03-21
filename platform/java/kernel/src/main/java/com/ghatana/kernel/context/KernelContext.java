@@ -6,6 +6,7 @@ import io.activej.eventloop.Eventloop;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 /**
  * Runtime context passed to every module during initialization.
@@ -188,4 +189,30 @@ public interface KernelContext {
      * @return the environment name (e.g., "development", "production")
      */
     String getEnvironment();
+
+    /**
+     * Gets a named executor for async work offloading.
+     *
+     * @param executorName the logical name of the executor
+     * @return the executor
+     */
+    Executor getExecutor(String executorName);
+
+    /**
+     * Gets a capability by ID.
+     *
+     * @param capabilityId the capability ID
+     * @param <T> the expected capability type
+     * @return optional containing the capability if available
+     */
+    <T> Optional<T> getCapability(String capabilityId);
+
+    /**
+     * Registers a service instance with the kernel context.
+     *
+     * @param type the service class/interface
+     * @param service the service instance
+     * @param <T> the service type
+     */
+    <T> void registerService(Class<T> type, T service);
 }

@@ -2,7 +2,7 @@
 
 Related docs:
 
-- CES UI design overview: `../DESIGN_ARCHITECTURE.md`
+- Data Cloud UI design overview: `../DESIGN_ARCHITECTURE.md`
 
 **Code files:**
 
@@ -15,7 +15,7 @@ Related docs:
 
 **One-sentence intent:**
 
-> Provide the **root React shell and route configuration** so all CES pages (Dashboard, Collections, Workflows, Designer) run inside a consistent, provider-wrapped app.
+> Provide the **root React shell and route configuration** so all Data Cloud pages (Dashboard, Collections, Workflows, Designer) run inside a consistent, provider-wrapped app.
 
 **Primary goals:**
 
@@ -36,12 +36,12 @@ Related docs:
 
 **Personas:**
 
-- **Data engineer / platform operator** using CES dashboard and workflows.
-- **Implementer / integrator** wiring CES UI into a larger app.
+- **Data engineer / platform operator** using Data Cloud dashboard and workflows.
+- **Implementer / integrator** wiring Data Cloud UI into a larger app.
 
 **Key scenarios:**
 
-1. **Opening CES UI**
+1. **Opening Data Cloud UI**
    - User hits `/` and is routed to `DashboardPage`.
 
 2. **Navigating between core pages**
@@ -95,7 +95,7 @@ This shell should support:
 
 1. Adding new pages (e.g., `Executions`, `Compliance`) without major refactors.
 2. Embedding **canvas-like designers** (WorkflowDesigner) that may have complex internal state.
-3. Potential integration with **global app shells** (e.g., App Creator) by treating CES as a sub-app routed under a parent.
+3. Potential integration with **global app shells** (e.g., App Creator) by treating Data Cloud as a sub-app routed under a parent.
 4. Being hosted in both **browser** and **desktop (Tauri)** containers with minimal conditional logic in the App itself.
 5. Attaching cross-cutting providers (e.g., realtime events, notifications, AI assistant) at the shell or host level without breaking existing page contracts.
 
@@ -114,17 +114,17 @@ This shell should support:
 
 ## 7. Coherence with App Creator / Canvas & Platform
 
-- Like App Creator and AEP shells, CES uses:
+- Like App Creator and AEP shells, Data Cloud uses:
   - A slim App component as a **routing + provider shell**.
   - Pages responsible for their own content and local layout.
 - `WorkflowDesigner` is the bridge into **canvas-based editing**; the shell must support mounting such experiences under `/workflows/...`.
-- Within the broader Data Cloud product, this App can be treated as the **"CES workspace module"**, alongside other workspaces (Dataset Explorer, SQL Workspace, Governance), each mounted by a higher-level host shell.
+- Within the broader Data Cloud product, this App can be treated as the **"Data Cloud workspace module"**, alongside other workspaces (Dataset Explorer, SQL Workspace, Governance), each mounted by a higher-level host shell.
 
 ---
 
 ## 8. Links to More Detail & Working Entry Points
 
-- CES design overview: `../DESIGN_ARCHITECTURE.md`
+- Data Cloud design overview: `../DESIGN_ARCHITECTURE.md`
 - Workflow canvas component: `src/components/workflow/WorkflowCanvas.tsx`
 - Data fabric feature integration: `src/features/data-fabric/INTEGRATION_GUIDE.md`
 

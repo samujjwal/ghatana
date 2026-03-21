@@ -85,7 +85,11 @@ public class JdbcAuditLogger implements AuditLogger {
     public Promise<Void> log(Map<String, Object> event) {
         return Promise.ofBlocking(EXECUTOR, () -> {
             String id       = UUID.randomUUID().toString();
-            String tenantId = extractString(event, "tenant_id", "default");
+            String tenantId = extractString(event, "tenant_id", null);
+            if (tenantId == null || tenantId.isBlank()) {
+                log.warn("Audit event missing tenant_id, skipping persistence: type={}", event.get("type"));
+                return;
+            }
             String type     = extractString(event, "type", "UNKNOWN");
             String payload  = toJson(event);
 

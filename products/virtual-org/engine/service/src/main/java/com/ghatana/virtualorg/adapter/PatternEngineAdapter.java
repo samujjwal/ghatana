@@ -1,11 +1,11 @@
 package com.ghatana.virtualorg.adapter;
 
-import com.ghatana.platform.domain.domain.event.Event;
-import com.ghatana.platform.domain.domain.event.EventId;
-import com.ghatana.platform.domain.domain.event.EventTime;
-import com.ghatana.platform.domain.domain.event.EventStats;
-import com.ghatana.platform.domain.domain.event.EventRelations;
-import com.ghatana.platform.domain.domain.event.GEvent;
+import com.ghatana.platform.domain.event.Event;
+import com.ghatana.platform.domain.event.EventId;
+import com.ghatana.platform.domain.event.EventTime;
+import com.ghatana.platform.domain.event.EventStats;
+import com.ghatana.platform.domain.event.EventRelations;
+import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.virtualorg.v1.*;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;

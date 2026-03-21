@@ -1,7 +1,7 @@
 import type { StorybookConfig } from '@storybook/react-vite';
 
 /**
- * Storybook configuration for CES Workflow Platform.
+ * Storybook configuration for Data Cloud Platform.
  *
  * @doc.type config
  * @doc.purpose Storybook setup and configuration

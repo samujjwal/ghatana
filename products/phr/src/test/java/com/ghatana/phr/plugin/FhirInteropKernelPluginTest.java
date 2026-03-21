@@ -45,7 +45,7 @@ class FhirInteropKernelPluginTest {
         assertEquals("FHIR R4 interoperability plugin for healthcare data exchange", manifest.getDescription());
         assertEquals("Ghatana PHR Team", manifest.getAuthor());
         assertEquals("Apache-2.0", manifest.getLicense());
-        assertEquals("1.0.0", manifest.getRequiredKernelVersion());
+        assertTrue(manifest.getRequiredKernelVersions().contains("1.0.0"));
     }
 
     @Test
@@ -73,11 +73,15 @@ class FhirInteropKernelPluginTest {
     void shouldHaveFhirCapabilityInManifest() {
         PluginManifest manifest = plugin.getManifest();
 
-        assertNotNull(manifest.getCapability());
-        assertEquals("fhir.r4.interop", manifest.getCapability().getCapabilityId());
-        assertEquals(com.ghatana.kernel.descriptor.KernelCapability.CapabilityType.INTEGRATION, 
-            manifest.getCapability().getType());
-        assertEquals("R4", manifest.getCapability().getMetadataValue("fhir_version"));
+        assertNotNull(manifest.getCapabilities());
+        com.ghatana.kernel.descriptor.KernelCapability fhirCap = manifest.getCapabilities().stream()
+            .filter(c -> "fhir.r4.interop".equals(c.getCapabilityId()))
+            .findFirst().orElse(null);
+        assertNotNull(fhirCap);
+        assertEquals("fhir.r4.interop", fhirCap.getCapabilityId());
+        assertEquals(com.ghatana.kernel.descriptor.KernelCapability.CapabilityType.INTEGRATION,
+            fhirCap.getType());
+        assertEquals("R4", fhirCap.getMetadata().get("fhir_version"));
     }
 
     @Test
@@ -261,8 +265,8 @@ class FhirInteropKernelPluginTest {
         Promise<FhirInteropKernelPlugin.ValidationResult> promise = 
             plugin.validateResource("Patient", "{\"test\":\"data\"}");
 
-        Exception exception = assertThrows(Exception.class, promise::getResult);
-        assertTrue(exception.getMessage().contains("not started"));
+        assertTrue(promise.isException());
+        assertTrue(promise.getException().getMessage().contains("not started"));
     }
 
     @Test
@@ -355,6 +359,9 @@ class FhirInteropKernelPluginTest {
             @Override public <T> java.util.Optional<T> getOptionalConfig(String key, Class<T> type) { return java.util.Optional.empty(); }
             @Override public String getKernelVersion() { return "1.0.0"; }
             @Override public String getEnvironment() { return "test"; }
+            @Override public java.util.concurrent.Executor getExecutor(String executorName) { return Runnable::run; }
+            @Override public <T> java.util.Optional<T> getCapability(String capabilityId) { return java.util.Optional.empty(); }
+            @Override public <T> void registerService(Class<T> type, T service) {}
         };
     }
 }

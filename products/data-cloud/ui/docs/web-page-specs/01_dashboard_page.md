@@ -1,4 +1,4 @@
-# 1. Dashboard Page – CES Overview – Deep-Dive Spec
+# 1. Dashboard Page – Data Cloud Overview – Deep-Dive Spec
 
 Related routes & files:
 
@@ -13,7 +13,7 @@ Related routes & files:
 
 **One-sentence intent:**
 
-> Give operators a **control-tower style overview** of collections, workflows, executions, audit logs, and compliance status, with quick actions into deeper CES functionality.
+> Give operators a **control-tower style overview** of collections, workflows, executions, audit logs, and compliance status, with quick actions into deeper Data Cloud functionality.
 
 **Primary goals:**
 
@@ -21,7 +21,7 @@ Related routes & files:
 - Surface recent collections and workflows.
 - Display high-level **audit log activity** and **compliance** status.
 - Offer quick navigation to creating workflows, viewing executions, and exploring API docs.
- - Act as the **home dashboard** for Data Cloud’s CES slice, and a foundation for richer storage/query/optimizer/cost/health views described in the frontend TODOs.
+ - Act as the **home dashboard** for Data Cloud’s Data Cloud slice, and a foundation for richer storage/query/optimizer/cost/health views described in the frontend TODOs.
 
 **Non-goals:**
 
@@ -156,7 +156,7 @@ A full production dashboard should:
 ## 9. Gaps & Enhancement Plan
 
 1. **Real data integration:**
-   - Replace `mockApiClient` with real CES API integration via `@ghatana/api`.
+   - Replace `mockApiClient` with real Data Cloud API integration via `@ghatana/api`.
 
 2. **Time-range and tenant filters:**
    - Top-level filters to scope dashboard metrics.

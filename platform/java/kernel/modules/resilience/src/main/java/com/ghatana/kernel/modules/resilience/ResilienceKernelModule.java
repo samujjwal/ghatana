@@ -11,6 +11,7 @@ import com.ghatana.kernel.health.HealthStatus;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.modules.resilience.service.ResilienceService;
 import io.activej.promise.Promise;
+import java.util.concurrent.ForkJoinPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +93,7 @@ public final class ResilienceKernelModule implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting Resilience module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Start resilience service
             resilienceService.start();
 
@@ -105,7 +106,7 @@ public final class ResilienceKernelModule implements KernelModule {
     public Promise<Void> stop() {
         log.info("Stopping Resilience module");
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
             // Stop resilience service
             if (resilienceService != null) {
                 resilienceService.stop();

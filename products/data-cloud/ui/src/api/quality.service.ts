@@ -8,7 +8,7 @@
  * @doc.layer frontend
  */
 
-import axios, { AxiosInstance } from 'axios';
+import { apiClient } from '../lib/api/client';
 
 export interface QualityMetric {
   datasetId: string;
@@ -68,74 +68,53 @@ export interface AnomalyEvent {
  * Data Quality Service Client
  */
 export class QualityService {
-  private client: AxiosInstance;
-
-  constructor(baseURL: string = '/api') {
-    this.client = axios.create({
-      baseURL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-  }
-
   /**
    * Get quality metrics for all datasets
    */
   async getQualityMetrics(): Promise<QualityMetric[]> {
-    const response = await this.client.get<QualityMetric[]>('/quality/metrics');
-    return response.data;
+    return apiClient.get<QualityMetric[]>('/quality/metrics');
   }
 
   /**
    * Get quality metrics for a specific dataset
    */
   async getDatasetQuality(datasetId: string): Promise<QualityMetric> {
-    const response = await this.client.get<QualityMetric>(`/quality/metrics/${datasetId}`);
-    return response.data;
+    return apiClient.get<QualityMetric>(`/quality/metrics/${datasetId}`);
   }
 
   /**
    * Run PII scan on a dataset
    */
   async scanForPII(datasetId: string): Promise<PIIDetection[]> {
-    const response = await this.client.post<PIIDetection[]>('/pii/scan', { datasetId });
-    return response.data;
+    return apiClient.post<PIIDetection[]>('/pii/scan', { datasetId });
   }
 
   /**
    * Get PII detection results
    */
   async getPIIDetections(datasetId?: string): Promise<PIIDetection[]> {
-    const response = await this.client.get<PIIDetection[]>('/pii/scan', {
-      params: { datasetId },
-    });
-    return response.data;
+    return apiClient.get<PIIDetection[]>('/pii/scan', { params: { datasetId } });
   }
 
   /**
    * Mask PII fields
    */
   async maskPII(datasetId: string, fields: string[]): Promise<void> {
-    await this.client.post('/pii/mask', { datasetId, fields });
+    await apiClient.post<void>('/pii/mask', { datasetId, fields });
   }
 
   /**
    * Get validation rules
    */
   async getValidationRules(datasetId?: string): Promise<ValidationRule[]> {
-    const response = await this.client.get<ValidationRule[]>('/validation/rules', {
-      params: { datasetId },
-    });
-    return response.data;
+    return apiClient.get<ValidationRule[]>('/validation/rules', { params: { datasetId } });
   }
 
   /**
    * Create validation rule
    */
   async createValidationRule(rule: Partial<ValidationRule>): Promise<ValidationRule> {
-    const response = await this.client.post<ValidationRule>('/validation/rules', rule);
-    return response.data;
+    return apiClient.post<ValidationRule>('/validation/rules', rule);
   }
 
   /**
@@ -145,28 +124,21 @@ export class QualityService {
     ruleId: string,
     rule: Partial<ValidationRule>
   ): Promise<ValidationRule> {
-    const response = await this.client.put<ValidationRule>(
-      `/validation/rules/${ruleId}`,
-      rule
-    );
-    return response.data;
+    return apiClient.put<ValidationRule>(`/validation/rules/${ruleId}`, rule);
   }
 
   /**
    * Delete validation rule
    */
   async deleteValidationRule(ruleId: string): Promise<void> {
-    await this.client.delete(`/validation/rules/${ruleId}`);
+    await apiClient.delete<void>(`/validation/rules/${ruleId}`);
   }
 
   /**
    * Get anomaly events
    */
   async getAnomalies(datasetId?: string, limit: number = 50): Promise<AnomalyEvent[]> {
-    const response = await this.client.get<AnomalyEvent[]>('/quality/anomalies', {
-      params: { datasetId, limit },
-    });
-    return response.data;
+    return apiClient.get<AnomalyEvent[]>('/quality/anomalies', { params: { datasetId, limit } });
   }
 
   /**
@@ -176,11 +148,7 @@ export class QualityService {
     datasetId: string,
     timestamp: string
   ): Promise<{ events: any[]; rootCause?: string }> {
-    const response = await this.client.post('/quality/correlate', {
-      datasetId,
-      timestamp,
-    });
-    return response.data;
+    return apiClient.post('/quality/correlate', { datasetId, timestamp });
   }
 }
 

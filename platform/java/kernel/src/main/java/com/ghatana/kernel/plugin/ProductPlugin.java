@@ -1,16 +1,28 @@
 package com.ghatana.kernel.plugin;
 
-import com.ghatana.kernel.capability.KernelCapability;
+import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 
 import java.util.Set;
 
 /**
- * Product plugin interface - decoupled from kernel.
- * 
- * Products implement this interface to register their capabilities
- * dynamically with the kernel without creating tight coupling.
+ * Product plugin interface — decoupled from kernel.
+ *
+ * <p>Products implement this interface to register their capabilities
+ * dynamically with the kernel without creating tight coupling.</p>
+ *
+ * @deprecated Transitional. Per KERNEL_CANONICALIZATION_DECISIONS.md (Decision D3),
+ *     {@link KernelPlugin} is the canonical runtime plugin model. ProductPlugin should
+ *     either become a manifest-level descriptor compiled into KernelPlugin registrations,
+ *     or be replaced entirely. No new product runtime features should target this interface.
+ * @doc.type interface
+ * @doc.purpose Legacy product plugin — transitional, pending migration to KernelPlugin
+ * @doc.layer core
+ * @doc.pattern Service
+ * @author Ghatana Kernel Team
+ * @since 1.0.0
  */
+@Deprecated(forRemoval = true)
 public interface ProductPlugin {
     
     /**

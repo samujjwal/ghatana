@@ -5,7 +5,7 @@
 package com.ghatana.yappc.knowledge.retrieval;
 
 import com.ghatana.agent.memory.retrieval.RetrievalPipeline;
-import com.ghatana.platform.domain.domain.memory.MemoryItem;
+import com.ghatana.platform.domain.memory.MemoryItem;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

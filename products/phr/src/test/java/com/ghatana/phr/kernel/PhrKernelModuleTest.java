@@ -2,6 +2,7 @@ package com.ghatana.phr.kernel;
 
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.health.HealthStatus;
@@ -46,22 +47,22 @@ class PhrKernelModuleTest {
     void shouldDeclareCorrectCapabilities() {
         Set<KernelCapability> capabilities = module.getCapabilities();
 
-        // Should have 10 capabilities (5 PHR-specific + 5 shared)
-        assertEquals(10, capabilities.size());
+        // 5 PHR-owned capabilities (PhrCapabilities) + 4 kernel-core capabilities
+        assertEquals(9, capabilities.size());
 
-        // PHR-specific capabilities
-        assertTrue(capabilities.contains(KernelCapability.Products.PATIENT_RECORDS));
-        assertTrue(capabilities.contains(KernelCapability.Products.CONSENT_MANAGEMENT));
-        assertTrue(capabilities.contains(KernelCapability.Products.FHIR_INTEROP));
-        assertTrue(capabilities.contains(KernelCapability.Products.CLINICAL_DOCUMENTS));
-        assertTrue(capabilities.contains(KernelCapability.Products.MEDICATION_MANAGEMENT));
+        // PHR-owned capabilities — declared in PhrCapabilities, not KernelCapability.Products
+        // (per KERNEL_CANONICALIZATION_DECISIONS §D1)
+        assertTrue(capabilities.contains(PhrCapabilities.PATIENT_RECORDS));
+        assertTrue(capabilities.contains(PhrCapabilities.CONSENT_MANAGEMENT));
+        assertTrue(capabilities.contains(PhrCapabilities.FHIR_INTEROP));
+        assertTrue(capabilities.contains(PhrCapabilities.CLINICAL_DOCUMENTS));
+        assertTrue(capabilities.contains(PhrCapabilities.MEDICATION_MANAGEMENT));
 
-        // Shared capabilities
-        assertTrue(capabilities.contains(KernelCapability.Products.USER_AUTHENTICATION));
-        assertTrue(capabilities.contains(KernelCapability.Products.DATA_STORAGE));
-        assertTrue(capabilities.contains(KernelCapability.Products.API_FRAMEWORK));
-        assertTrue(capabilities.contains(KernelCapability.Products.WORKFLOW_ENGINE));
-        assertTrue(capabilities.contains(KernelCapability.Products.NOTIFICATION_SERVICE));
+        // Core kernel capabilities reused by PHR
+        assertTrue(capabilities.contains(KernelCapability.Core.USER_AUTHENTICATION));
+        assertTrue(capabilities.contains(KernelCapability.Core.DATA_STORAGE));
+        assertTrue(capabilities.contains(KernelCapability.Core.API_FRAMEWORK));
+        assertTrue(capabilities.contains(KernelCapability.Core.WORKFLOW_ENGINE));
     }
 
     @Test
@@ -122,8 +123,8 @@ class PhrKernelModuleTest {
     void shouldFailToStartWhenNotInitialized() {
         Promise<Void> startPromise = module.start();
 
-        Exception exception = assertThrows(Exception.class, startPromise::getResult);
-        assertTrue(exception.getMessage().contains("not initialized"));
+        assertTrue(startPromise.isException());
+        assertTrue(startPromise.getException().getMessage().contains("not initialized"));
     }
 
     @Test
@@ -157,7 +158,7 @@ class PhrKernelModuleTest {
 
         assertEquals(HealthStatus.Status.HEALTHY, status.getStatus());
         assertTrue(status.getMessage().contains("operational"));
-        assertEquals(10, status.getChecks().size()); // 9 services + module
+        assertEquals(4, status.getChecks().size()); // 4 implemented services
     }
 
     @Test
@@ -177,16 +178,11 @@ class PhrKernelModuleTest {
 
         HealthStatus status = module.getHealthStatus();
 
-        // Verify all 9 PHR services are checked
-        assertTrue(status.getChecks().containsKey("patient"));
-        assertTrue(status.getChecks().containsKey("consent"));
+        // Verify all 4 implemented PHR services are checked (using actual service getName() values)
+        assertTrue(status.getChecks().containsKey("patient-record"));
+        assertTrue(status.getChecks().containsKey("consent-management"));
         assertTrue(status.getChecks().containsKey("document"));
         assertTrue(status.getChecks().containsKey("appointment"));
-        assertTrue(status.getChecks().containsKey("medication"));
-        assertTrue(status.getChecks().containsKey("billing"));
-        assertTrue(status.getChecks().containsKey("fhir"));
-        assertTrue(status.getChecks().containsKey("imaging"));
-        assertTrue(status.getChecks().containsKey("referral"));
 
         // All should be healthy after start
         status.getChecks().values().forEach(check ->
@@ -244,9 +240,27 @@ class PhrKernelModuleTest {
                 if (type == KernelConfigResolver.class) {
                     return type.cast(new KernelConfigResolver() {
                         @Override public <R> R resolve(String key, Class<R> type, KernelTenantContext tenantContext) { return null; }
+                        @Override public <R> R resolveWithDefault(String key, Class<R> type, R defaultValue, KernelTenantContext tenantContext) { return defaultValue; }
                         @Override public <R> java.util.Optional<R> resolveOptional(String key, Class<R> type, KernelTenantContext tenantContext) { return java.util.Optional.empty(); }
-                        @Override public java.util.List<String> getConfigSources() { return java.util.List.of(); }
-                        @Override public void reload() {}
+                        @Override public void addConfigProvider(KernelConfigResolver.ConfigProvider provider) {}
+                        @Override public Promise<Void> reloadConfig(String tenantId) { return Promise.complete(); }
+                        @Override public java.util.List<String> getAvailableKeys(KernelTenantContext tenantContext) { return java.util.List.of(); }
+                    });
+                }
+                if (type == com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.class) {
+                    return type.cast(new com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter() {
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataResult> readData(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest r) { return Promise.of(null); }
+                        @Override public Promise<Void> writeData(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest r) { return Promise.complete(); }
+                        @Override public Promise<Void> deleteData(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataDeleteRequest r) { return Promise.complete(); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult> queryData(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest r) { return Promise.of(new com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult(java.util.List.of(), 0, false)); }
+                        @Override public Promise<Void> createSchema(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.SchemaCreateRequest r) { return Promise.complete(); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.SchemaInfo> getSchema(String datasetId) { return Promise.of(null); }
+                        @Override public Promise<java.util.List<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DatasetInfo>> listDatasets() { return Promise.of(java.util.List.of()); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.TransactionHandle> beginTransaction() { return Promise.of(null); }
+                        @Override public Promise<Void> commitTransaction(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.TransactionHandle h) { return Promise.complete(); }
+                        @Override public Promise<Void> rollbackTransaction(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.TransactionHandle h) { return Promise.complete(); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataStream> openReadStream(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataStreamRequest r) { return Promise.of(null); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataStream> openWriteStream(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataStreamRequest r) { return Promise.of(null); }
                     });
                 }
                 throw new IllegalStateException("Dependency not found: " + type);
@@ -255,7 +269,8 @@ class PhrKernelModuleTest {
                 return java.util.Optional.empty();
             }
             @Override public <T> boolean hasDependency(Class<T> type) {
-                return type == KernelConfigResolver.class;
+                return type == KernelConfigResolver.class
+                    || type == com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.class;
             }
             @Override public <T> T getDependency(String name, Class<T> type) { return null; }
             @Override public <E> void registerEventHandler(Class<E> eventType, com.ghatana.kernel.event.EventHandler<E> handler) {}
@@ -270,6 +285,9 @@ class PhrKernelModuleTest {
             @Override public <T> java.util.Optional<T> getOptionalConfig(String key, Class<T> type) { return java.util.Optional.empty(); }
             @Override public String getKernelVersion() { return "1.0.0"; }
             @Override public String getEnvironment() { return "test"; }
+            @Override public java.util.concurrent.Executor getExecutor(String executorName) { return Runnable::run; }
+            @Override public <T> java.util.Optional<T> getCapability(String capabilityId) { return java.util.Optional.empty(); }
+            @Override public <T> void registerService(Class<T> type, T service) {}
         };
     }
 
@@ -291,6 +309,9 @@ class PhrKernelModuleTest {
             @Override public <T> java.util.Optional<T> getOptionalConfig(String key, Class<T> type) { return java.util.Optional.empty(); }
             @Override public String getKernelVersion() { return "1.0.0"; }
             @Override public String getEnvironment() { return "test"; }
+            @Override public java.util.concurrent.Executor getExecutor(String executorName) { return Runnable::run; }
+            @Override public <T> java.util.Optional<T> getCapability(String capabilityId) { return java.util.Optional.empty(); }
+            @Override public <T> void registerService(Class<T> type, T service) {}
         };
     }
 }

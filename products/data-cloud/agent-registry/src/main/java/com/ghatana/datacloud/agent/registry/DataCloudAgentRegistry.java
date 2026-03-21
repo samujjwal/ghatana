@@ -56,6 +56,13 @@ import java.util.stream.Collectors;
  * backed by {@link ConcurrentHashMap}. Data-Cloud writes are async and
  * non-blocking with respect to the local maps.
  *
+ * <h2>Migration note (v2.4)</h2>
+ * <p>Agent <em>discovery</em> is now centralised in {@code AepCentralRegistryService}.
+ * This class retains its role as the durable <strong>persistence backend</strong>
+ * for agent descriptors and lifecycle events. Products should no longer use this
+ * class directly for agent lookup or capability search; instead, query through
+ * the AEP runtime APIs. See {@code docs/AGENT_REGISTRY_MIGRATION_GUIDE.md}.
+ *
  * @doc.type class
  * @doc.purpose Data-Cloud-backed agent registry with in-memory write-through cache
  * @doc.layer registry

@@ -73,11 +73,16 @@ import java.util.UUID;
  *         .get();
  * }</pre>
  * 
+ * @deprecated Use {@link com.ghatana.datacloud.DataCloudClient} instead.
+ *             The root-package interface is the canonical product API with 17+ consumers.
+ *             This embedded-client variant has only 3 consumers and should be migrated.
+ *
  * @doc.type interface
- * @doc.purpose Unified client API for embedded Data-Cloud usage
+ * @doc.purpose Unified client API for embedded Data-Cloud usage (deprecated)
  * @doc.layer core
  * @doc.pattern Client, Facade
  */
+@Deprecated(since = "2026-03-20", forRemoval = true)
 public interface DataCloudClient {
 
     // ============ Entity Operations ============

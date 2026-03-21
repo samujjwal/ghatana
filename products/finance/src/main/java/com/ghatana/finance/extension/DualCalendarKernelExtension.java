@@ -52,13 +52,18 @@ public class DualCalendarKernelExtension implements KernelExtension {
     }
 
     @Override
+    public String getVersion() {
+        return VERSION;
+    }
+
+    @Override
     public KernelDescriptor getDescriptor() {
-        return KernelDescriptor.builder()
-            .descriptorId(EXTENSION_ID)
-            .name(getName())
-            .version(VERSION)
-            .description("Dual calendar support for Nepal: Gregorian (AD) and Bikram Sambat (BS)")
-            .type(KernelDescriptor.ComponentType.EXTENSION)
+        return new KernelDescriptor.Builder()
+            .withDescriptorId(EXTENSION_ID)
+            .withName(getName())
+            .withVersion(VERSION)
+            .withDescription("Dual calendar support for Nepal: Gregorian (AD) and Bikram Sambat (BS)")
+            .withType(KernelDescriptor.DescriptorType.EXTENSION)
             .build();
     }
 
@@ -184,6 +189,10 @@ public class DualCalendarKernelExtension implements KernelExtension {
     public Object parseDate(String dateString, String pattern, CalendarType calendarType) {
         if (!started.get()) {
             throw new IllegalStateException("Extension not started");
+        }
+
+        if (calendarType == null) {
+            throw new IllegalArgumentException("calendarType cannot be null");
         }
 
         if (calendarType == CalendarType.AD) {

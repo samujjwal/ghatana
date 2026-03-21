@@ -295,7 +295,7 @@ export const CICDPipelineCanvas: React.FC<CICDPipelineCanvasProps> = ({
                                                         key={stage.id}
                                                         elevation={3}
                                                         className="min-w-[250px] p-4"
-                                                        style={{ borderTop: `4px solid ${typeConfig.color}` }}
+                                                        style={{ borderTop: `4px solid ${typeConfig.color}`}}
                                                     >
                                                         <IconButton
                                                             size="sm"
@@ -455,7 +455,7 @@ export const CICDPipelineCanvas: React.FC<CICDPipelineCanvasProps> = ({
                                                 <Paper
                                                     key={type.id}
                                                     className="p-3"
-                                                    style={{ borderLeft: `4px solid ${type.color}` }}
+                                                    style={{ borderLeft: `4px solid ${type.color}`}}
                                                 >
                                                     <Stack direction="row" spacing={1} alignItems="center">
                                                         {type.icon}

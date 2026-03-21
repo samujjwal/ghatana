@@ -133,7 +133,10 @@ export const properties = {
 } as const;
 
 /**
- * Semantic transitions for common use cases
+ * Semantic transitions for common use cases.
+ *
+ * Also exposes {@link durations} as `.duration` and {@link easings} as `.easing`
+ * so that design-system components can use the concise `transitions.duration.fast` pattern.
  */
 export const transitions = {
   /**
@@ -185,6 +188,18 @@ export const transitions = {
    * Layout transitions (use sparingly - can cause reflows)
    */
   layout: `${properties.layout} ${durations.slow}ms ${easings.easeInOut}`,
+
+  /** Alias for {@link durations} — enables `transitions.duration.fast` usage. */
+  duration: durations,
+
+  /** Alias for {@link easings} — enables `transitions.easing.easeInOut` usage. */
+  easing: easings,
+
+  /** Alias for {@link durations} — enables `transitions.durations.fast` usage. */
+  durations,
+
+  /** Alias for {@link easings} — enables `transitions.easings.easeInOut` usage. */
+  easings,
 } as const;
 
 /**
@@ -303,3 +318,6 @@ export type EasingKey = keyof typeof easings;
 export type PropertyKey = keyof typeof properties;
 export type TransitionKey = keyof typeof transitions;
 export type AnimationKey = keyof typeof animations;
+
+// Singular aliases for backward compatibility with design-system components
+export { durations as duration, easings as easing };

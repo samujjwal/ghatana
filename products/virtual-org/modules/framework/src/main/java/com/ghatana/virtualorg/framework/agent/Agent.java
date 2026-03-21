@@ -4,7 +4,7 @@ import com.ghatana.contracts.agent.v1.AgentInputProto;
 import com.ghatana.contracts.agent.v1.AgentResultProto;
 import com.ghatana.platform.domain.agent.registry.AgentExecutionContext;
 import com.ghatana.platform.domain.agent.registry.AgentMetrics;
-import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.domain.event.Event;
 import com.ghatana.virtualorg.framework.hierarchy.Authority;
 import com.ghatana.virtualorg.framework.hierarchy.EscalationPath;
 import com.ghatana.virtualorg.framework.hierarchy.Role;

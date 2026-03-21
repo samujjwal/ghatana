@@ -19,6 +19,14 @@
  */
 
 import { http, HttpResponse, delay } from 'msw';
+import { MOCK_COLLECTIONS, MOCK_WORKFLOWS } from '../lib/mock-data';
+import {
+  CollectionSchema,
+  PaginatedCollectionResponseSchema,
+  StorageProfileSchema,
+  ConnectorSchema,
+} from '../contracts/schemas';
+import type { z } from 'zod';
 
 // ---------------------------------------------------------------------------
 // Shared constants
@@ -28,105 +36,86 @@ const BASE = '/api/v1';
 const SIMULATED_DELAY_MS = 80;
 
 // ---------------------------------------------------------------------------
-// Seed data
+// Contract validation helper — validates MSW mock responses against schemas
+// to ensure mock data stays aligned with API contracts.
 // ---------------------------------------------------------------------------
 
-interface Field {
+function contractJson<T extends z.ZodTypeAny>(
+  schema: T,
+  data: unknown,
+  init?: { status?: number }
+): ReturnType<typeof HttpResponse.json> {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    console.warn(
+      '[MSW contract violation]',
+      result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`)
+    );
+  }
+  return HttpResponse.json(data as Record<string, unknown>, init);
+}
+
+// ---------------------------------------------------------------------------
+// Seed data — derived from the canonical mock-data library so tests and
+// handlers share a single source of truth.
+// ---------------------------------------------------------------------------
+
+const mockCollections = MOCK_COLLECTIONS.map((c) => ({
+  id: c.id,
+  name: c.name,
+  description: c.description,
+  schemaType: 'entity' as const,
+  status: (c.isActive ? 'active' : 'draft') as 'active' | 'draft',
+  isActive: c.isActive,
+  entityCount: c.entityCount,
+  schema: {
+    id: c.schema.id,
+    name: c.schema.name,
+    fields: c.schema.fields.map((f) => ({
+      id: f.id,
+      name: f.name,
+      type: f.type as string,
+      required: f.required,
+      description: f.description ?? '',
+    })),
+    constraints: c.schema.constraints.map((con) => ({ ...con } as Record<string, unknown>)),
+  },
+  tags: [] as string[],
+  createdAt: c.createdAt,
+  updatedAt: c.updatedAt,
+  createdBy: 'mock-user',
+}));
+
+const mockWorkflows = MOCK_WORKFLOWS.map((w) => ({
+  id: w.id,
+  name: w.name,
+  description: w.description,
+  status: w.status as 'draft' | 'active' | 'paused' | 'archived',
+  nodes: w.nodes.map((n) => ({
+    id: n.id,
+    type: n.type,
+    label: n.label,
+    position: n.position,
+    data: { ...n.data } as Record<string, unknown>,
+  })),
+  edges: w.edges.map((e) => ({ id: e.id, source: e.source, target: e.target, label: e.label ?? '' })),
+  tags: [] as string[],
+  createdAt: w.createdAt,
+  updatedAt: w.updatedAt,
+  createdBy: 'mock-user',
+  lastExecutedAt: w.lastExecutedAt,
+}));
+
+const mockStorageProfiles: Array<{
   id: string;
   name: string;
   type: string;
-  required: boolean;
-  description: string;
-}
-
-const mockCollections = [
-  {
-    id: 'col-001',
-    name: 'Products',
-    description: 'Product catalog entities',
-    schemaType: 'entity',
-    status: 'active',
-    entityCount: 1450,
-    schema: {
-      id: 'schema-001',
-      name: 'ProductSchema',
-      fields: [
-        { id: 'f-1', name: 'id', type: 'string', required: true, description: 'Primary identifier' },
-        { id: 'f-2', name: 'name', type: 'string', required: true, description: 'Product name' },
-        { id: 'f-3', name: 'price', type: 'number', required: true, description: 'Unit price' },
-        { id: 'f-4', name: 'category', type: 'string', required: false, description: 'Product category' },
-      ] as Field[],
-      constraints: [],
-    },
-    tags: ['catalog', 'commerce'],
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-06-01T08:30:00Z',
-    createdBy: 'user-admin',
-  },
-  {
-    id: 'col-002',
-    name: 'OrderEvents',
-    description: 'Order lifecycle events stream',
-    schemaType: 'event',
-    status: 'active',
-    entityCount: 42000,
-    schema: {
-      id: 'schema-002',
-      name: 'OrderEventSchema',
-      fields: [
-        { id: 'f-5', name: 'orderId', type: 'string', required: true, description: 'Order reference' },
-        { id: 'f-6', name: 'eventType', type: 'string', required: true, description: 'Event type' },
-        { id: 'f-7', name: 'timestamp', type: 'timestamp', required: true, description: 'Event time' },
-      ] as Field[],
-      constraints: [],
-    },
-    tags: ['orders', 'events'],
-    createdAt: '2024-02-10T12:00:00Z',
-    updatedAt: '2024-06-15T14:00:00Z',
-    createdBy: 'user-admin',
-  },
-];
-
-const mockWorkflows = [
-  {
-    id: 'wf-001',
-    name: 'Product Sync Pipeline',
-    description: 'Syncs product catalog from ERP to data cloud',
-    status: 'active',
-    nodes: [
-      { id: 'n-1', type: 'source', label: 'ERP Source', position: { x: 100, y: 100 }, data: {} },
-      { id: 'n-2', type: 'transform', label: 'Map Fields', position: { x: 300, y: 100 }, data: {} },
-      { id: 'n-3', type: 'sink', label: 'Data Cloud', position: { x: 500, y: 100 }, data: {} },
-    ],
-    edges: [
-      { id: 'e-1', source: 'n-1', target: 'n-2', label: 'raw' },
-      { id: 'e-2', source: 'n-2', target: 'n-3', label: 'mapped' },
-    ],
-    schedule: '0 */6 * * *',
-    tags: ['etl', 'product'],
-    createdAt: '2024-03-01T09:00:00Z',
-    updatedAt: '2024-06-10T11:00:00Z',
-    createdBy: 'user-admin',
-    lastExecutedAt: '2024-06-20T00:00:00Z',
-  },
-  {
-    id: 'wf-002',
-    name: 'Order Event Processor',
-    description: 'Processes and enriches order events in real-time',
-    status: 'active',
-    nodes: [
-      { id: 'n-4', type: 'source', label: 'Kafka Source', position: { x: 100, y: 200 }, data: {} },
-      { id: 'n-5', type: 'sink', label: 'Event Store', position: { x: 300, y: 200 }, data: {} },
-    ],
-    edges: [{ id: 'e-3', source: 'n-4', target: 'n-5', label: '' }],
-    tags: ['streaming', 'orders'],
-    createdAt: '2024-04-01T10:00:00Z',
-    updatedAt: '2024-06-15T09:00:00Z',
-    createdBy: 'user-admin',
-  },
-];
-
-const mockStorageProfiles = [
+  isDefault: boolean;
+  status: string;
+  config: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}> = [
   {
     id: 'sp-001',
     name: 'Primary RocksDB',
@@ -207,7 +196,7 @@ const collectionHandlers = [
             c.description.toLowerCase().includes(search.toLowerCase())
         )
       : collections;
-    return HttpResponse.json(paginate(filtered, page, pageSize));
+    return contractJson(PaginatedCollectionResponseSchema, paginate(filtered, page, pageSize));
   }),
 
   // POST /api/v1/collections
@@ -226,7 +215,7 @@ const collectionHandlers = [
       ...body,
     } as (typeof collections)[0];
     collections = [...collections, created];
-    return HttpResponse.json(created, { status: 201 });
+    return contractJson(CollectionSchema, created, { status: 201 });
   }),
 
   // GET /api/v1/collections/:id
@@ -236,7 +225,7 @@ const collectionHandlers = [
     if (!col) {
       return HttpResponse.json({ code: 'NOT_FOUND', message: 'Collection not found' }, { status: 404 });
     }
-    return HttpResponse.json(col);
+    return contractJson(CollectionSchema, col);
   }),
 
   // PUT /api/v1/collections/:id
@@ -249,7 +238,7 @@ const collectionHandlers = [
     const body = (await request.json()) as Partial<(typeof collections)[0]>;
     const updated = { ...collections[idx], ...body, updatedAt: new Date().toISOString() };
     collections = collections.map((c, i) => (i === idx ? updated : c));
-    return HttpResponse.json(updated);
+    return contractJson(CollectionSchema, updated);
   }),
 
   // DELETE /api/v1/collections/:id

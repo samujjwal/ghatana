@@ -10,12 +10,17 @@ import java.util.Optional;
 /**
  * Central registry for module/plugin discovery and dependency resolution.
  *
- * <p>The kernel registry is the central authority for managing kernel components.
- * It handles registration, discovery, and dependency resolution for all
- * kernel modules, plugins, and capabilities.</p>
+ * <p><b>This is the ONLY public root registry contract.</b> Per Decision D4
+ * (KERNEL_CANONICALIZATION_DECISIONS.md), all external consumers (products,
+ * plugins, adapters) MUST use this interface for registration, discovery,
+ * and lifecycle management.</p>
+ *
+ * <p>Internal sub-registries ({@code CapabilityRegistry}, {@code ServiceRegistry},
+ * {@code PluginRegistry}) are annotated with {@code @KernelInternal} and must not
+ * be referenced by code outside the kernel implementation.</p>
  *
  * @doc.type interface
- * @doc.purpose Central registry for module/plugin/capability discovery and dependency resolution
+ * @doc.purpose Canonical public registry contract for module/plugin/capability discovery (D4)
  * @doc.layer core
  * @doc.pattern Service, Registry
  * @author Ghatana Kernel Team

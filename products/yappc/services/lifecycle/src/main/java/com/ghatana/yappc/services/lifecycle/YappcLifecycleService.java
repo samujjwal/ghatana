@@ -332,16 +332,20 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                                         (String) json.get("projectId"),
                                         (String) json.get("fromPhase"),
                                         (String) json.get("toPhase"),
-                                        (String) json.getOrDefault("tenantId", "default"),
+                                        (String) json.get("tenantId"),
                                         (String) json.get("requestedBy"));
+                                if (tr.tenantId() == null || tr.tenantId().isBlank()) {
+                                    return Promise.of(HttpResponse.ofCode(400)
+                                            .withJson("{\"error\":\"Missing required tenantId field\"}")
+                                            .build());
+                                }
                                 return advancePhaseUseCase.execute(tr)
                                         .map(result -> {
                                             // Fire-and-forget AEP event (3.4/Ph1c)
                                             String eventType = result.isSuccess()
                                                     ? "lifecycle.phase.advanced"
                                                     : "lifecycle.phase.blocked";
-                                            String tid = tr.tenantId() != null
-                                                    ? tr.tenantId() : "default";
+                                            String tid = tr.tenantId();
                                             aepPublisher.publish(eventType, tid,
                                                     buildTransitionPayload(tr, result))
                                                     .whenComplete((v, e) -> {
@@ -391,7 +395,11 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 .with(GET, "/api/v1/approvals/pending", request -> {
                     String tenantId = request.getHeader(
                             io.activej.http.HttpHeaders.of("X-Tenant-Id"));
-                    if (tenantId == null) tenantId = "default";
+                    if (tenantId == null || tenantId.isBlank()) {
+                        return Promise.of(HttpResponse.ofCode(400)
+                                .withJson("{\"error\":\"Missing required X-Tenant-Id header\"}")
+                                .build());
+                    }
                     try {
                         String json = objectMapper.writeValueAsString(
                                 humanApprovalService.allPending(tenantId));
@@ -404,7 +412,12 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                     String requestId = request.getPathParameter("id");
                     String rawTenantId  = request.getHeader(
                             io.activej.http.HttpHeaders.of("X-Tenant-Id"));
-                    final String tenantId = rawTenantId != null ? rawTenantId : "default";
+                    if (rawTenantId == null || rawTenantId.isBlank()) {
+                        return Promise.of(HttpResponse.ofCode(400)
+                                .withJson("{\"error\":\"Missing required X-Tenant-Id header\"}")
+                                .build());
+                    }
+                    final String tenantId = rawTenantId;
                     return request.loadBody().then(body -> {
                         try {
                             @SuppressWarnings("unchecked")
@@ -438,7 +451,12 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                     String requestId = request.getPathParameter("id");
                     String rawTenantId  = request.getHeader(
                             io.activej.http.HttpHeaders.of("X-Tenant-Id"));
-                    final String tenantId = rawTenantId != null ? rawTenantId : "default";
+                    if (rawTenantId == null || rawTenantId.isBlank()) {
+                        return Promise.of(HttpResponse.ofCode(400)
+                                .withJson("{\"error\":\"Missing required X-Tenant-Id header\"}")
+                                .build());
+                    }
+                    final String tenantId = rawTenantId;
                     return request.loadBody().then(body -> {
                         try {
                             @SuppressWarnings("unchecked")
@@ -497,7 +515,12 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                     String templateId = request.getPathParameter("templateId");
                     String rawTenantId = request.getHeader(
                             io.activej.http.HttpHeaders.of("X-Tenant-Id"));
-                    final String tenantId = rawTenantId != null ? rawTenantId : "default";
+                    if (rawTenantId == null || rawTenantId.isBlank()) {
+                        return Promise.of(HttpResponse.ofCode(400)
+                                .withJson("{\"error\":\"Missing required X-Tenant-Id header\"}")
+                                .build());
+                    }
+                    final String tenantId = rawTenantId;
                     return request.loadBody().then(body -> {
                         try {
                             @SuppressWarnings("unchecked")

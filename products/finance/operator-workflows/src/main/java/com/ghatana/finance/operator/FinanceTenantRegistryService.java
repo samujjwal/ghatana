@@ -7,12 +7,14 @@ package com.ghatana.finance.operator;
 import com.ghatana.platform.audit.AuditBusPort;
 import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
+import javax.sql.DataSource;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.sql.*;
 import java.time.Instant;
+import java.util.Map;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -208,8 +210,13 @@ public final class FinanceTenantRegistryService {
                         reg.submitterId(), compliance
                     );
                     
-                    audit.record(reg.submitterId(), "FINANCE_TENANT_REGISTER_SUBMITTED", tenantId,
-                        "Compliance approval requested: " + approvalId);
+                    audit.emit(AuditEvent.builder()
+                        .tenantId(tenantId)
+                        .principal(reg.submitterId())
+                        .eventType("FINANCE_TENANT_REGISTER_SUBMITTED")
+                        .resourceId(tenantId)
+                        .detail("message", "Compliance approval requested: " + approvalId)
+                        .build());
                     return approvalId;
                 });
             });
@@ -246,8 +253,13 @@ public final class FinanceTenantRegistryService {
                 "licenseNumber", active.regulatoryLicenseNumber()
             ), compliance);
             
-            audit.record(approverId, "FINANCE_TENANT_ACTIVATED", tenantId, 
-                "Namespace provisioned with compliance: " + tenantId);
+            audit.emit(AuditEvent.builder()
+                .tenantId(tenantId)
+                .principal(approverId)
+                .eventType("FINANCE_TENANT_ACTIVATED")
+                .resourceId(tenantId)
+                .detail("message", "Namespace provisioned with compliance: " + tenantId)
+                .build());
             return active;
         });
     }
@@ -266,7 +278,13 @@ public final class FinanceTenantRegistryService {
             String approvalId = financeMakerChecker.submit("FINANCE_TENANT_SUSPEND", tenantId,
                 Map.of("reason", reason, "regulatoryImpact", "HIGH"), submitterId, compliance);
             
-            audit.record(submitterId, "FINANCE_TENANT_SUSPEND_SUBMITTED", tenantId, reason);
+            audit.emit(AuditEvent.builder()
+                .tenantId(tenantId)
+                .principal(submitterId)
+                .eventType("FINANCE_TENANT_SUSPEND_SUBMITTED")
+                .resourceId(tenantId)
+                .detail("message", reason)
+                .build());
             return approvalId;
         });
     }
@@ -288,7 +306,13 @@ public final class FinanceTenantRegistryService {
                 "tenantId", tenantId, "suspensionReason", "Regulatory compliance"
             ), compliance);
             
-            audit.record(approverId, "FINANCE_TENANT_SUSPENDED", tenantId, "Status → SUSPENDED");
+            audit.emit(AuditEvent.builder()
+                .tenantId(tenantId)
+                .principal(approverId)
+                .eventType("FINANCE_TENANT_SUSPENDED")
+                .resourceId(tenantId)
+                .detail("message", "Status → SUSPENDED")
+                .build());
             return null;
         });
     }
@@ -317,8 +341,13 @@ public final class FinanceTenantRegistryService {
                 "dataRetained", String.valueOf(retention.archiveData())
             ), compliance);
             
-            audit.record(approverId, "FINANCE_TENANT_OFFBOARDED", tenantId, 
-                "Namespace deprovisioned with data retention");
+            audit.emit(AuditEvent.builder()
+                .tenantId(tenantId)
+                .principal(approverId)
+                .eventType("FINANCE_TENANT_OFFBOARDED")
+                .resourceId(tenantId)
+                .detail("message", "Namespace deprovisioned with data retention")
+                .build());
             return null;
         });
     }

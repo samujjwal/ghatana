@@ -5,13 +5,17 @@
 package com.ghatana.products.finance.extensions;
 
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.descriptor.KernelCapability;
+import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.extension.KernelExtension;
+import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.modules.eventstore.service.EventStoreService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Finance Compliance Extension.
@@ -46,15 +50,35 @@ public final class FinanceComplianceExtension implements KernelExtension {
     }
 
     @Override
+    public String getName() {
+        return "Finance Compliance Extension";
+    }
+
+    @Override
     public String getVersion() {
         return "1.0.0";
+    }
+
+    @Override
+    public KernelDescriptor getDescriptor() {
+        return null;
+    }
+
+    @Override
+    public Set<KernelCapability> getContributedCapabilities() {
+        return Set.of();
+    }
+
+    @Override
+    public boolean isCompatible(KernelModule hostModule) {
+        return true;
     }
 
     @Override
     public void onModuleInitialized(KernelContext context) {
         log.info("Initializing Finance Compliance Extension");
 
-        eventStoreService = context.getService(EventStoreService.class);
+        eventStoreService = context.getDependency(EventStoreService.class);
         if (eventStoreService == null) {
             log.warn("Event store service not available, compliance auditing disabled");
             return;
@@ -64,8 +88,8 @@ public final class FinanceComplianceExtension implements KernelExtension {
     }
 
     @Override
-    public void onKernelStarted(KernelContext context) {
-        log.info("Finance Compliance Extension: kernel started, publishing startup audit event");
+    public void onModuleStarted(KernelContext context) {
+        log.info("Finance Compliance Extension: module started, publishing startup audit event");
 
         if (eventStoreService != null) {
             publishAuditEvent("compliance.extension.started", Map.of(
@@ -77,8 +101,8 @@ public final class FinanceComplianceExtension implements KernelExtension {
     }
 
     @Override
-    public void onKernelStopping(KernelContext context) {
-        log.info("Finance Compliance Extension: kernel stopping, publishing shutdown audit event");
+    public void onModuleStopped(KernelContext context) {
+        log.info("Finance Compliance Extension: module stopped, publishing shutdown audit event");
 
         if (eventStoreService != null) {
             publishAuditEvent("compliance.extension.stopping", Map.of(

@@ -198,7 +198,7 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
                     .build();
         }
 
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             LOG.info("Initializing Kafka streaming plugin with bootstrap servers: {}",
                     config.getBootstrapServers());
 
@@ -238,8 +238,10 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
             running.set(true);
             state.set(PluginState.INITIALIZED);
             LOG.info("Kafka streaming plugin initialized successfully");
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
@@ -251,7 +253,7 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
 
     @Override
     public Promise<Void> stop() {
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        try {
             LOG.info("Stopping Kafka streaming plugin");
             state.set(PluginState.STOPPED);
             running.set(false);
@@ -286,22 +288,22 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
             }
 
             LOG.info("Kafka streaming plugin stopped");
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override
     public Promise<HealthStatus> healthCheck() {
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            try {
-                // Check if we can list topics
-                adminClient.listTopics().names().get(5, TimeUnit.SECONDS);
-                return HealthStatus.ok("Kafka cluster reachable");
-            } catch (Exception e) {
-                LOG.warn("Kafka health check failed: {}", e.getMessage());
-                return HealthStatus.error("Kafka health check failed", e);
-            }
-        });
+        try {
+            // Check if we can list topics
+            adminClient.listTopics().names().get(5, TimeUnit.SECONDS);
+            return Promise.of(HealthStatus.ok("Kafka cluster reachable"));
+        } catch (Exception e) {
+            LOG.warn("Kafka health check failed: {}", e.getMessage());
+            return Promise.of(HealthStatus.error("Kafka health check failed", e));
+        }
     }
 
     @Override
@@ -330,36 +332,40 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
         String subscriptionId = generateSubscriptionId(tenantId, streamName, null);
 
         return ensureTopicExists(topic)
-                .then(() -> Promise.ofBlocking(blockingExecutor, () -> {
-            LOG.info("Creating subscription for topic: {}, partition: {}, offset: {}",
-                    topic, partitionId, startOffset);
+                .then(() -> {
+                    try {
+                        LOG.info("Creating subscription for topic: {}, partition: {}, offset: {}",
+                                topic, partitionId, startOffset);
 
-            Properties props = config.toConsumerProperties(subscriptionId);
-            KafkaConsumer<String, byte[]> kafkaConsumer = new KafkaConsumer<>(props);
+                        Properties props = config.toConsumerProperties(subscriptionId);
+                        KafkaConsumer<String, byte[]> kafkaConsumer = new KafkaConsumer<>(props);
 
-            // Assign specific partition(s)
-            List<TopicPartition> partitions = new ArrayList<>();
-            if (partitionId == null || partitionId.equals(PartitionId.ALL)) {
-                // Get all partitions
-                kafkaConsumer.partitionsFor(topic).forEach(info
-                        -> partitions.add(new TopicPartition(topic, info.partition())));
-            } else {
-                partitions.add(new TopicPartition(topic, partitionId.value()));
-            }
-            kafkaConsumer.assign(partitions);
+                        // Assign specific partition(s)
+                        List<TopicPartition> partitions = new ArrayList<>();
+                        if (partitionId == null || partitionId.equals(PartitionId.ALL)) {
+                            // Get all partitions
+                            kafkaConsumer.partitionsFor(topic).forEach(info
+                                    -> partitions.add(new TopicPartition(topic, info.partition())));
+                        } else {
+                            partitions.add(new TopicPartition(topic, partitionId.value()));
+                        }
+                        kafkaConsumer.assign(partitions);
 
-            // Seek to start offset
-            seekToOffset(kafkaConsumer, partitions, startOffset);
+                        // Seek to start offset
+                        seekToOffset(kafkaConsumer, partitions, startOffset);
 
-            KafkaSubscription subscription = new KafkaSubscription(
-                    subscriptionId, kafkaConsumer, consumer, topic, tenantId, false);
-            subscriptions.put(subscriptionId, subscription);
+                        KafkaSubscription subscription = new KafkaSubscription(
+                                subscriptionId, kafkaConsumer, consumer, topic, tenantId, false);
+                        subscriptions.put(subscriptionId, subscription);
 
-            // Start consumer loop
-            consumerExecutor.submit(subscription::run);
+                        // Start consumer loop
+                        consumerExecutor.submit(subscription::run);
 
-            return (Subscription) subscription;
-        }));
+                        return Promise.of((Subscription) subscription);
+                    } catch (Exception e) {
+                        return Promise.ofException(e);
+                    }
+                });
     }
 
     @Override
@@ -374,28 +380,32 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
         String subscriptionId = generateSubscriptionId(tenantId, streamName, consumerGroup);
 
         return ensureTopicExists(topic)
-                .then(() -> Promise.ofBlocking(blockingExecutor, () -> {
-            LOG.info("Creating consumer group subscription for topic: {}, group: {}",
-                    topic, groupId);
+                .then(() -> {
+                    try {
+                        LOG.info("Creating consumer group subscription for topic: {}, group: {}",
+                                topic, groupId);
 
-            Properties props = config.toConsumerProperties(groupId);
-            KafkaConsumer<String, byte[]> kafkaConsumer = new KafkaConsumer<>(props);
+                        Properties props = config.toConsumerProperties(groupId);
+                        KafkaConsumer<String, byte[]> kafkaConsumer = new KafkaConsumer<>(props);
 
-            // Subscribe (allows dynamic partition assignment)
-            kafkaConsumer.subscribe(Collections.singletonList(topic));
+                        // Subscribe (allows dynamic partition assignment)
+                        kafkaConsumer.subscribe(Collections.singletonList(topic));
 
-            KafkaSubscription subscription = new KafkaSubscription(
-                    subscriptionId, kafkaConsumer, consumer, topic, tenantId, true);
-            subscriptions.put(subscriptionId, subscription);
+                        KafkaSubscription subscription = new KafkaSubscription(
+                                subscriptionId, kafkaConsumer, consumer, topic, tenantId, true);
+                        subscriptions.put(subscriptionId, subscription);
 
-            // Register with consumer group manager
-            consumerGroupManager.registerConsumer(groupId, subscriptionId);
+                        // Register with consumer group manager
+                        consumerGroupManager.registerConsumer(groupId, subscriptionId);
 
-            // Start consumer loop
-            consumerExecutor.submit(subscription::run);
+                        // Start consumer loop
+                        consumerExecutor.submit(subscription::run);
 
-            return (Subscription) subscription;
-        }));
+                        return Promise.of((Subscription) subscription);
+                    } catch (Exception e) {
+                        return Promise.ofException(e);
+                    }
+                });
     }
 
     @Override
@@ -412,39 +422,43 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
         String subscriptionId = generateSubscriptionId(tenantId, streamName, options.consumerGroup());
 
         return ensureTopicExists(topic)
-                .then(() -> Promise.ofBlocking(blockingExecutor, () -> {
-            LOG.info("Creating batch subscription for topic: {}, batchSize: {}",
-                    topic, options.batchSize());
+                .then(() -> {
+                    try {
+                        LOG.info("Creating batch subscription for topic: {}, batchSize: {}",
+                                topic, options.batchSize());
 
-            Properties props = config.toConsumerProperties(groupId);
-            props.put("max.poll.records", options.batchSize());
+                        Properties props = config.toConsumerProperties(groupId);
+                        props.put("max.poll.records", options.batchSize());
 
-            KafkaConsumer<String, byte[]> kafkaConsumer = new KafkaConsumer<>(props);
+                        KafkaConsumer<String, byte[]> kafkaConsumer = new KafkaConsumer<>(props);
 
-            if (options.consumerGroup() != null) {
-                kafkaConsumer.subscribe(Collections.singletonList(topic));
-            } else {
-                List<TopicPartition> partitions = new ArrayList<>();
-                if (options.partitionId() == null || options.partitionId().equals(PartitionId.ALL)) {
-                    kafkaConsumer.partitionsFor(topic).forEach(info
-                            -> partitions.add(new TopicPartition(topic, info.partition())));
-                } else {
-                    partitions.add(new TopicPartition(topic, options.partitionId().value()));
-                }
-                kafkaConsumer.assign(partitions);
-                seekToOffset(kafkaConsumer, partitions, options.startOffset());
-            }
+                        if (options.consumerGroup() != null) {
+                            kafkaConsumer.subscribe(Collections.singletonList(topic));
+                        } else {
+                            List<TopicPartition> partitions = new ArrayList<>();
+                            if (options.partitionId() == null || options.partitionId().equals(PartitionId.ALL)) {
+                                kafkaConsumer.partitionsFor(topic).forEach(info
+                                        -> partitions.add(new TopicPartition(topic, info.partition())));
+                            } else {
+                                partitions.add(new TopicPartition(topic, options.partitionId().value()));
+                            }
+                            kafkaConsumer.assign(partitions);
+                            seekToOffset(kafkaConsumer, partitions, options.startOffset());
+                        }
 
-            KafkaBatchSubscription subscription = new KafkaBatchSubscription(
-                    subscriptionId, kafkaConsumer, batchConsumer, topic, tenantId,
-                    options.batchSize(), options.batchTimeout(),
-                    options.autoCommit(), options.consumerGroup() != null);
-            subscriptions.put(subscriptionId, subscription);
+                        KafkaBatchSubscription subscription = new KafkaBatchSubscription(
+                                subscriptionId, kafkaConsumer, batchConsumer, topic, tenantId,
+                                options.batchSize(), options.batchTimeout(),
+                                options.autoCommit(), options.consumerGroup() != null);
+                        subscriptions.put(subscriptionId, subscription);
 
-            consumerExecutor.submit(subscription::run);
+                        consumerExecutor.submit(subscription::run);
 
-            return (Subscription) subscription;
-        }));
+                        return Promise.of((Subscription) subscription);
+                    } catch (Exception e) {
+                        return Promise.ofException(e);
+                    }
+                });
     }
 
     // ==================== Publish Operations ====================
@@ -454,42 +468,40 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
         byte[] value = eventSerializer.serialize(event);
         String key = event.getCorrelationId() != null ? event.getCorrelationId() : event.getId().toString();
 
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            Timer.Sample sample = Timer.start(meterRegistry);
+        Timer.Sample sample = Timer.start(meterRegistry);
 
-            try {
-                ProducerRecord<String, byte[]> record = new ProducerRecord<>(topic, key, value);
+        try {
+            ProducerRecord<String, byte[]> record = new ProducerRecord<>(topic, key, value);
 
-                // Add event metadata as headers
-                record.headers()
-                        .add("event-id", event.getId().toString().getBytes())
-                        .add("event-type", event.getEventTypeName().getBytes())
-                        .add("tenant-id", event.getTenantId().getBytes());
+            // Add event metadata as headers
+            record.headers()
+                    .add("event-id", event.getId().toString().getBytes())
+                    .add("event-type", event.getEventTypeName().getBytes())
+                    .add("tenant-id", event.getTenantId().getBytes());
 
-                if (config.isExactlyOnceEnabled()) {
-                    producer.beginTransaction();
-                    try {
-                        producer.send(record).get();
-                        producer.commitTransaction();
-                    } catch (Exception e) {
-                        producer.abortTransaction();
-                        throw e;
-                    }
-                } else {
+            if (config.isExactlyOnceEnabled()) {
+                producer.beginTransaction();
+                try {
                     producer.send(record).get();
+                    producer.commitTransaction();
+                } catch (Exception e) {
+                    producer.abortTransaction();
+                    throw e;
                 }
-
-                publishedEvents.increment();
-                sample.stop(publishLatency);
-
-                LOG.debug("Published event {} to topic {}", event.getId(), topic);
-                return null;
-            } catch (Exception e) {
-                publishErrors.increment();
-                LOG.error("Failed to publish event {} to topic {}: {}", event.getId(), topic, e.getMessage());
-                throw new RuntimeException("Failed to publish event", e);
+            } else {
+                producer.send(record).get();
             }
-        });
+
+            publishedEvents.increment();
+            sample.stop(publishLatency);
+
+            LOG.debug("Published event {} to topic {}", event.getId(), topic);
+            return Promise.of(null);
+        } catch (Exception e) {
+            publishErrors.increment();
+            LOG.error("Failed to publish event {} to topic {}: {}", event.getId(), topic, e.getMessage());
+            return Promise.ofException(new RuntimeException("Failed to publish event", e));
+        }
     }
 
     @Override
@@ -498,52 +510,50 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
             return Promise.complete();
         }
 
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            Timer.Sample sample = Timer.start(meterRegistry);
+        Timer.Sample sample = Timer.start(meterRegistry);
+
+        try {
+            if (config.isExactlyOnceEnabled()) {
+                producer.beginTransaction();
+            }
 
             try {
+                for (Event event : events) {
+                    String topic = config.buildTopicName(event.getTenantId(), event.getStreamName());
+                    byte[] value = eventSerializer.serialize(event);
+                    String key = event.getCorrelationId() != null ? event.getCorrelationId() : event.getId().toString();
+
+                    ProducerRecord<String, byte[]> record = new ProducerRecord<>(topic, key, value);
+                    record.headers()
+                            .add("event-id", event.getId().toString().getBytes())
+                            .add("event-type", event.getEventTypeName().getBytes())
+                            .add("tenant-id", event.getTenantId().getBytes());
+
+                    producer.send(record);
+                }
+
+                producer.flush();
+
                 if (config.isExactlyOnceEnabled()) {
-                    producer.beginTransaction();
+                    producer.commitTransaction();
                 }
 
-                try {
-                    for (Event event : events) {
-                        String topic = config.buildTopicName(event.getTenantId(), event.getStreamName());
-                        byte[] value = eventSerializer.serialize(event);
-                        String key = event.getCorrelationId() != null ? event.getCorrelationId() : event.getId().toString();
+                publishedEvents.increment(events.size());
+                sample.stop(publishLatency);
 
-                        ProducerRecord<String, byte[]> record = new ProducerRecord<>(topic, key, value);
-                        record.headers()
-                                .add("event-id", event.getId().toString().getBytes())
-                                .add("event-type", event.getEventTypeName().getBytes())
-                                .add("tenant-id", event.getTenantId().getBytes());
-
-                        producer.send(record);
-                    }
-
-                    producer.flush();
-
-                    if (config.isExactlyOnceEnabled()) {
-                        producer.commitTransaction();
-                    }
-
-                    publishedEvents.increment(events.size());
-                    sample.stop(publishLatency);
-
-                    LOG.debug("Published {} events in batch", events.size());
-                    return null;
-                } catch (Exception e) {
-                    if (config.isExactlyOnceEnabled()) {
-                        producer.abortTransaction();
-                    }
-                    throw e;
-                }
+                LOG.debug("Published {} events in batch", events.size());
+                return Promise.of(null);
             } catch (Exception e) {
-                publishErrors.increment(events.size());
-                LOG.error("Failed to publish batch of {} events: {}", events.size(), e.getMessage());
-                throw new RuntimeException("Failed to publish batch", e);
+                if (config.isExactlyOnceEnabled()) {
+                    producer.abortTransaction();
+                }
+                throw e;
             }
-        });
+        } catch (Exception e) {
+            publishErrors.increment(events.size());
+            LOG.error("Failed to publish batch of {} events: {}", events.size(), e.getMessage());
+            return Promise.ofException(new RuntimeException("Failed to publish batch", e));
+        }
     }
 
     // ==================== Capabilities ====================
@@ -588,23 +598,22 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
     }
 
     private Promise<Void> ensureTopicExists(String topic) {
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            try {
-                if (!adminClient.listTopics().names().get(5, TimeUnit.SECONDS).contains(topic)) {
-                    LOG.info("Creating topic: {}", topic);
-                    NewTopic newTopic = new NewTopic(topic, config.getDefaultPartitions(),
-                            config.getDefaultReplicationFactor());
-                    newTopic.configs(Map.of(
-                            "retention.ms", String.valueOf(config.getTopicRetention().toMillis())
-                    ));
-                    adminClient.createTopics(Collections.singletonList(newTopic)).all().get();
-                    LOG.info("Topic created: {}", topic);
-                }
-            } catch (Exception e) {
-                LOG.warn("Could not ensure topic exists: {} - {}", topic, e.getMessage());
+        try {
+            if (!adminClient.listTopics().names().get(5, TimeUnit.SECONDS).contains(topic)) {
+                LOG.info("Creating topic: {}", topic);
+                NewTopic newTopic = new NewTopic(topic, config.getDefaultPartitions(),
+                        config.getDefaultReplicationFactor());
+                newTopic.configs(Map.of(
+                        "retention.ms", String.valueOf(config.getTopicRetention().toMillis())
+                ));
+                adminClient.createTopics(Collections.singletonList(newTopic)).all().get();
+                LOG.info("Topic created: {}", topic);
             }
-            return null;
-        });
+            return Promise.of(null);
+        } catch (Exception e) {
+            LOG.warn("Could not ensure topic exists: {} - {}", topic, e.getMessage());
+            return Promise.of(null);
+        }
     }
 
     private void seekToOffset(KafkaConsumer<String, byte[]> consumer,
@@ -736,38 +745,32 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
 
         @Override
         public Promise<Map<PartitionId, Offset>> getCurrentOffsets() {
-            return Promise.ofBlocking(blockingExecutor, () -> {
-                Map<PartitionId, Offset> offsets = new HashMap<>();
-                for (TopicPartition tp : consumer.assignment()) {
-                    offsets.put(PartitionId.of(tp.partition()), Offset.of(consumer.position(tp)));
-                }
-                return offsets;
-            });
+            Map<PartitionId, Offset> offsets = new HashMap<>();
+            for (TopicPartition tp : consumer.assignment()) {
+                offsets.put(PartitionId.of(tp.partition()), Offset.of(consumer.position(tp)));
+            }
+            return Promise.of(offsets);
         }
 
         @Override
         public Promise<Void> commitOffsets(Map<PartitionId, Offset> offsets) {
-            return Promise.ofBlocking(blockingExecutor, () -> {
-                Map<TopicPartition, OffsetAndMetadata> kafkaOffsets = new HashMap<>();
-                for (Map.Entry<PartitionId, Offset> entry : offsets.entrySet()) {
-                    TopicPartition tp = new TopicPartition(topic, entry.getKey().value());
-                    kafkaOffsets.put(tp, new OffsetAndMetadata(entry.getValue().value()));
-                }
-                consumer.commitSync(kafkaOffsets);
-                LOG.debug("Committed offsets for subscription: {}", id);
-                return null;
-            });
+            Map<TopicPartition, OffsetAndMetadata> kafkaOffsets = new HashMap<>();
+            for (Map.Entry<PartitionId, Offset> entry : offsets.entrySet()) {
+                TopicPartition tp = new TopicPartition(topic, entry.getKey().value());
+                kafkaOffsets.put(tp, new OffsetAndMetadata(entry.getValue().value()));
+            }
+            consumer.commitSync(kafkaOffsets);
+            LOG.debug("Committed offsets for subscription: {}", id);
+            return Promise.of(null);
         }
 
         @Override
         public Promise<List<PartitionId>> getAssignedPartitions() {
-            return Promise.ofBlocking(blockingExecutor, () -> {
-                List<PartitionId> partitions = new ArrayList<>();
-                for (TopicPartition tp : consumer.assignment()) {
-                    partitions.add(PartitionId.of(tp.partition()));
-                }
-                return partitions;
-            });
+            List<PartitionId> partitions = new ArrayList<>();
+            for (TopicPartition tp : consumer.assignment()) {
+                partitions.add(PartitionId.of(tp.partition()));
+            }
+            return Promise.of(partitions);
         }
 
         @Override

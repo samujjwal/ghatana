@@ -477,7 +477,7 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
     public Promise<BrainStats> getStats(BrainContext context) {
         String tenantId = context.getTenantId();
 
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, () -> {
+        try {
             long processed = totalProcessed.get();
             long uptime = java.time.Duration.between(startTime, Instant.now()).getSeconds();
 
@@ -496,7 +496,7 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
                 LOG.warn("Failed to get active rules: {}", e.getMessage());
             }
 
-            return BrainStats.builder()
+            return Promise.of(BrainStats.builder()
                     .totalRecordsProcessed(processed)
                     .activePatterns(activePatterns)
                     .activeRules(activeRules)
@@ -504,8 +504,10 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
                     .warmTierRecords(0)
                     .avgProcessingTimeMs(processed > 0 ? totalProcessingTime / processed : 0)
                     .uptimeSeconds(uptime)
-                    .build();
-        });
+                    .build());
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override

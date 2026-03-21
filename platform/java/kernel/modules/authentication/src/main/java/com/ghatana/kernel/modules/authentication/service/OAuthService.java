@@ -12,6 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -171,13 +174,13 @@ public final class OAuthService {
         Instant now = Instant.now();
         Instant expiresAt = now.plusSeconds(3600); // 1 hour expiry
 
-        return new TokenResponse(
-            generateAccessToken(),
-            "Bearer",
-            expiresAt.getEpochSecond() - now.getEpochSecond(),
-            generateRefreshToken(),
-            scopes
-        );
+        return TokenResponse.builder()
+            .accessToken(generateAccessToken())
+            .tokenType("Bearer")
+            .expiresIn(expiresAt.getEpochSecond() - now.getEpochSecond())
+            .refreshToken(generateRefreshToken())
+            .scopes(new HashSet<>(Arrays.asList(scopes)))
+            .build();
     }
 
     private boolean isTokenValid(String tenantId, String token) {

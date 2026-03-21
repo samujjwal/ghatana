@@ -154,7 +154,7 @@ export function PhaseSwimLanes({
           {/* Separator (between lanes) */}
           {index < Object.keys(LIFECYCLE_PHASES).length - 1 && (
             <Box
-              className="absolute top-[0px]" style={{ left: x + LANE_WIDTH, width: SEPARATOR_WIDTH, height: laneHeight, backgroundColor: COLORS.NEUTRAL_100, borderLeft: `1px dashed ${COLORS.BORDER_LIGHT}`, borderRight: `1px dashed ${COLORS.BORDER_LIGHT}` }}
+              className="absolute top-[0px]" style={{ left: x + LANE_WIDTH, width: SEPARATOR_WIDTH, height: laneHeight, backgroundColor: COLORS.NEUTRAL_100, borderLeft: `1px dashed ${COLORS.BORDER_LIGHT}`, borderRight: `1px dashed ${COLORS.BORDER_LIGHT}`}}
             >
               {/* Connector Arrow (if enabled) */}
               {showConnectors && zoom < 0.5 && (

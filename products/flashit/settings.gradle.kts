@@ -99,6 +99,7 @@ if (contractsPlatformDir.exists()) {
 // Platform Java modules required by the agent (governance + its transitive deps)
 listOf(
     "core",
+    "kernel",
     "runtime",
     "config",
     "observability",

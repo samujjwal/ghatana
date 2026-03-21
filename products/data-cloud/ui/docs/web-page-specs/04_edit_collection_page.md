@@ -87,7 +87,7 @@ From `EditCollectionPage.tsx`:
 
 For production:
 
-1. Integrate with real CES backend updates.
+1. Integrate with real Data Cloud backend updates.
 2. Handle validation errors from the server (e.g., incompatible schema changes).
 3. Provide more guidance when making breaking changes.
 

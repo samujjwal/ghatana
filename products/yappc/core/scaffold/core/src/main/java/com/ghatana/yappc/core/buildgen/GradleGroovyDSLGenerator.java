@@ -15,7 +15,7 @@
  */
 package com.ghatana.yappc.core.buildgen;
 
-import com.ghatana.platform.domain.domain.Severity;
+import com.ghatana.platform.domain.Severity;
 import com.ghatana.yappc.core.rca.RCAResult;
 import java.time.Instant;
 import java.util.*;
