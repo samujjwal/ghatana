@@ -872,10 +872,10 @@ export function usePhysics3DState(): UsePhysics3DStateReturn {
         setHoveredEntityId,
         setSelectedEntityId,
         setMode,
-        toggleGrid: () => setShowGrid((v) => !v),
-        toggleAxes: () => setShowAxes((v) => !v),
-        toggleLabels: () => setShowLabels((v) => !v),
-        toggleTrails: () => setShowTrails((v) => !v),
+        toggleGrid: () => setShowGrid((v: boolean) => !v),
+        toggleAxes: () => setShowAxes((v: boolean) => !v),
+        toggleLabels: () => setShowLabels((v: boolean) => !v),
+        toggleTrails: () => setShowTrails((v: boolean) => !v),
     };
 }
 

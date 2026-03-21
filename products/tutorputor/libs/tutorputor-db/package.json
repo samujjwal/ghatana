@@ -29,9 +29,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:db:push": "prisma db push --accept-data-loss",
-    "db:init": "node init-db.js",
     "prisma:db:push": "prisma db push",
+    "db:init": "node init-db.js",
     "prisma:seed": "prisma db seed",
     "seed:admin": "TUTORPUTOR_SEED_PROFILE=demo prisma db seed"
   },
@@ -39,9 +38,11 @@
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "7.3.0",
+    "@libsql/client": "^0.17.0",
     "@prisma/adapter-libsql": "^7.3.0",
-    "@libsql/client": "^0.17.0"
+    "@prisma/client": "7.3.0",
+    "ioredis": "^5.10.1",
+    "prisma-redis-cache": "^1.0.0"
   },
   "devDependencies": {
     "prisma": "7.3.0",

@@ -34,7 +34,10 @@ import type { Difficulty } from "@tutorputor/contracts/v1";
  * Default skills for each simulation domain.
  * Used when no explicit skills are provided.
  */
-const DOMAIN_DEFAULT_SKILLS: Record<SimulationDomain, Array<{ name: string; weight: number }>> = {
+const DOMAIN_DEFAULT_SKILLS: Record<
+  SimulationDomain,
+  Array<{ name: string; weight: number }>
+> = {
   CS_DISCRETE: [
     { name: "Algorithm Analysis", weight: 0.8 },
     { name: "Data Structures", weight: 0.7 },
@@ -98,7 +101,7 @@ export function inferDifficulty(manifest: SimulationManifest): Difficulty {
   const stepCount = manifest.steps.length;
   const totalActions = manifest.steps.reduce(
     (sum, step) => sum + step.actions.length,
-    0
+    0,
   );
 
   // Calculate complexity score (0-100)
@@ -132,7 +135,7 @@ export function inferDifficulty(manifest: SimulationManifest): Difficulty {
  */
 function getDomainComplexityBonus(
   domain: SimulationDomain,
-  manifest: SimulationManifest
+  manifest: SimulationManifest,
 ): number {
   switch (domain) {
     case "MEDICINE":
@@ -182,6 +185,7 @@ export function inferSkills(manifest: SimulationManifest): SimulationSkill[] {
       skills.push({
         skillId: skillId as SkillId,
         name: skill.name,
+        level: 1,
         weight: skill.weight,
       });
       seenSkills.add(skill.name);
@@ -248,6 +252,7 @@ function inferSkillsFromEntities(entities: SimEntity[]): SimulationSkill[] {
       skills.push({
         skillId: generateSkillId(skillDef.name) as SkillId,
         name: skillDef.name,
+        level: 1,
         weight: skillDef.weight,
       });
     }
@@ -289,6 +294,7 @@ function inferSkillsFromActions(steps: SimulationStep[]): SimulationSkill[] {
       skills.push({
         skillId: generateSkillId(skillDef.name) as SkillId,
         name: skillDef.name,
+        level: 1,
         weight: skillDef.weight,
       });
     }
@@ -312,7 +318,7 @@ export function estimateCompletionTime(manifest: SimulationManifest): number {
   const entityCount = manifest.initialEntities.length;
   const totalActions = manifest.steps.reduce(
     (sum, step) => sum + step.actions.length,
-    0
+    0,
   );
 
   // Base time per step (30 seconds)
@@ -364,10 +370,17 @@ export function toSimulationStep(
     stepId?: LearningPathStepId;
     overrideDifficulty?: Difficulty;
     additionalSkills?: SimulationSkill[];
-    prerequisites?: Array<{ stepId: LearningPathStepId; type: "required" | "recommended" }>;
-    assessmentRefs?: Array<{ assessmentId: string; position: "pre" | "post" | "inline"; required: boolean }>;
+    prerequisites?: Array<{
+      stepId: LearningPathStepId;
+      type: "required" | "recommended";
+    }>;
+    assessmentRefs?: Array<{
+      assessmentId: string;
+      position: "pre" | "post" | "inline";
+      required: boolean;
+    }>;
     learningObjectives?: string[];
-  }
+  },
 ): SimulationLearningStep {
   const difficulty = options?.overrideDifficulty ?? inferDifficulty(manifest);
   const baseSkills = inferSkills(manifest);
@@ -376,16 +389,19 @@ export function toSimulationStep(
     : baseSkills;
   const estimatedTime = estimateCompletionTime(manifest);
 
-  const metadata: SimulationStepMetadata = {
-    title: manifest.title,
-    description: manifest.description,
-    tags: extractTags(manifest),
-    keywords: extractKeywords(manifest),
-  };
-
   const completionCriteria: SimulationCompletionCriteria = {
     minTimeSpentSeconds: Math.max(60, estimatedTime * 30), // At least 50% of estimated time
     minInteractions: Math.max(1, manifest.steps.length),
+  };
+
+  const metadata: SimulationStepMetadata = {
+    title: manifest.title || "Untitled Simulation",
+    description: manifest.description || "",
+    estimatedDuration: estimatedTime,
+    difficulty: difficulty as any,
+    prerequisites: [],
+    tags: extractTags(manifest),
+    keywords: extractKeywords(manifest),
   };
 
   return {
@@ -394,20 +410,20 @@ export function toSimulationStep(
     simulationId: manifest.id,
     manifestId: manifest.id,
     domain: manifest.domain,
-    difficulty,
+    difficulty: difficulty as any,
     skills,
-    prerequisites: options?.prerequisites?.map((p) => ({
-      stepId: p.stepId,
-      type: p.type,
-      minScore: p.type === "required" ? 70 : undefined,
-    })) ?? [],
+    prerequisites:
+      options?.prerequisites?.map((p) => ({
+        stepId: p.stepId,
+        type: p.type,
+        minScore: p.type === "required" ? 70 : undefined,
+      })) ?? [],
     estimatedTimeMinutes: estimatedTime,
     assessmentRefs: (options?.assessmentRefs ?? []).map((ref) => ({
       assessmentId: ref.assessmentId as any, // Will be cast properly at runtime
       position: ref.position,
       required: ref.required,
     })),
-    learningObjectives: options?.learningObjectives,
     metadata,
     completionCriteria,
   };
@@ -450,12 +466,28 @@ function extractKeywords(manifest: SimulationManifest): string[] {
 
   // Add description words (if any)
   if (manifest.description) {
-    keywords.push(...manifest.description.toLowerCase().split(/\s+/).slice(0, 10));
+    keywords.push(
+      ...manifest.description.toLowerCase().split(/\s+/).slice(0, 10),
+    );
   }
 
   // Filter out common words and duplicates
-  const stopWords = new Set(["the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for"]);
-  return [...new Set(keywords.filter((w) => w.length > 2 && !stopWords.has(w)))];
+  const stopWords = new Set([
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "but",
+    "in",
+    "on",
+    "at",
+    "to",
+    "for",
+  ]);
+  return [
+    ...new Set(keywords.filter((w) => w.length > 2 && !stopWords.has(w))),
+  ];
 }
 
 // =============================================================================
@@ -473,18 +505,24 @@ export function toSimulationSteps(
   manifests: SimulationManifest[],
   options?: {
     sortByDifficulty?: boolean;
-  }
+  },
 ): SimulationLearningStep[] {
   const steps = manifests.map((manifest) => toSimulationStep(manifest));
 
   if (options?.sortByDifficulty) {
-    const difficultyOrder: Record<Difficulty, number> = {
+    const difficultyOrder: Record<string, number> = {
       INTRO: 0,
+      beginner: 0,
       INTERMEDIATE: 1,
+      intermediate: 1,
       ADVANCED: 2,
+      advanced: 2,
+      expert: 3,
     };
     steps.sort(
-      (a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]
+      (a, b) =>
+        (difficultyOrder[a.difficulty as string] ?? 0) -
+        (difficultyOrder[b.difficulty as string] ?? 0),
     );
   }
 

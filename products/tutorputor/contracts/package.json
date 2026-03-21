@@ -66,6 +66,14 @@
     "./v1/telemetry-events": {
       "types": "./dist/telemetry-events.d.ts",
       "import": "./dist/telemetry-events.js"
+    },
+    "./v1/learning-path": {
+      "types": "./dist/learning-path.d.ts",
+      "import": "./dist/learning-path.js"
+    },
+    "./v1/content-studio": {
+      "types": "./dist/content-studio.d.ts",
+      "import": "./dist/content-studio.js"
     }
   },
   "files": [

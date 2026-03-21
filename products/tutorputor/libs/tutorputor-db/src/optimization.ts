@@ -1,24 +1,25 @@
 /**
  * Database Query Optimization Configuration
  * Part of Execution Plan item #11: Performance Optimization
- * 
+ *
  * Provides Prisma query optimization strategies including
  * connection pooling, query caching, and performance monitoring.
  */
 
-import { PrismaClient } from '@prisma/client';
-import { createPrismaRedisCache } from 'prisma-redis-cache';
-import Redis from 'ioredis';
+import { PrismaClient } from "@prisma/client";
+import { createPrismaRedisCache } from "prisma-redis-cache";
+import Redis from "ioredis";
 
 /**
  * Optimized Prisma client configuration
  */
 export function createOptimizedPrismaClient(): PrismaClient {
   const prisma = new PrismaClient({
-    log: process.env.NODE_ENV === 'development' 
-      ? ['query', 'info', 'warn', 'error']
-      : ['error'],
-    
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "info", "warn", "error"]
+        : ["error"],
+
     // Connection pool optimization
     datasources: {
       db: {
@@ -28,18 +29,25 @@ export function createOptimizedPrismaClient(): PrismaClient {
   });
 
   // Apply query logging for performance monitoring
-  prisma.$use(async (params, next) => {
-    const start = Date.now();
-    const result = await next(params);
-    const duration = Date.now() - start;
+  prisma.$use(
+    async (
+      params: { model?: string; action: string },
+      next: (params: any) => Promise<any>,
+    ) => {
+      const start = Date.now();
+      const result = await next(params);
+      const duration = Date.now() - start;
 
-    // Log slow queries (> 100ms)
-    if (duration > 100) {
-      console.warn(`[SLOW QUERY] ${params.model}.${params.action} took ${duration}ms`);
-    }
+      // Log slow queries (> 100ms)
+      if (duration > 100) {
+        console.warn(
+          `[SLOW QUERY] ${params.model}.${params.action} took ${duration}ms`,
+        );
+      }
 
-    return result;
-  });
+      return result;
+    },
+  );
 
   return prisma;
 }
@@ -50,17 +58,17 @@ export function createOptimizedPrismaClient(): PrismaClient {
 export function createPrismaCache(prisma: PrismaClient, redis: Redis) {
   return createPrismaRedisCache({
     models: [
-      { model: 'Simulation', ttl: 300 }, // 5 minutes
-      { model: 'Animation', ttl: 300 },
-      { model: 'Assessment', ttl: 600 }, // 10 minutes
-      { model: 'Content', ttl: 600 },
-      { model: 'User', ttl: 60 }, // 1 minute
+      { model: "Simulation", ttl: 300 }, // 5 minutes
+      { model: "Animation", ttl: 300 },
+      { model: "Assessment", ttl: 600 }, // 10 minutes
+      { model: "Content", ttl: 600 },
+      { model: "User", ttl: 60 }, // 1 minute
     ],
     redis,
-    onHit: (key) => {
+    onHit: (key: string) => {
       console.log(`[CACHE HIT] ${key}`);
     },
-    onMiss: (key) => {
+    onMiss: (key: string) => {
       console.log(`[CACHE MISS] ${key}`);
     },
   });
@@ -88,7 +96,7 @@ export const queryOptimization = {
     take: limit,
     skip: cursor ? 1 : 0,
     cursor: cursor ? { id: cursor } : undefined,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   }),
 
   /**
@@ -113,7 +121,7 @@ export const queryOptimization = {
   batchQuery: async <T, R>(
     items: T[],
     batchSize: number,
-    queryFn: (batch: T[]) => Promise<R>
+    queryFn: (batch: T[]) => Promise<R>,
   ): Promise<R[]> => {
     const results: R[] = [];
     for (let i = 0; i < items.length; i += batchSize) {
@@ -144,8 +152,9 @@ export class QueryPerformanceMonitor {
   }
 
   getStats() {
-    const stats: Record<string, { avg: number; max: number; count: number }> = {};
-    
+    const stats: Record<string, { avg: number; max: number; count: number }> =
+      {};
+
     this.queryTimes.forEach((times, query) => {
       const avg = times.reduce((a, b) => a + b, 0) / times.length;
       const max = Math.max(...times);
@@ -157,11 +166,11 @@ export class QueryPerformanceMonitor {
 
   getSlowQueries() {
     const slow: Array<{ query: string; avg: number; max: number }> = [];
-    
+
     this.queryTimes.forEach((times, query) => {
       const avg = times.reduce((a, b) => a + b, 0) / times.length;
       const max = Math.max(...times);
-      
+
       if (avg > this.slowQueryThreshold || max > this.slowQueryThreshold * 2) {
         slow.push({ query, avg: Math.round(avg), max });
       }
@@ -177,18 +186,50 @@ export class QueryPerformanceMonitor {
 export const indexRecommendations = {
   // High-frequency query indexes
   requiredIndexes: [
-    { table: 'Simulation', columns: ['domain', 'difficulty'], reason: 'Filter by domain and difficulty' },
-    { table: 'Simulation', columns: ['createdAt'], reason: 'Sort by creation date' },
-    { table: 'Animation', columns: ['domain', 'tags'], reason: 'Filter and search by tags' },
-    { table: 'Assessment', columns: ['userId', 'status'], reason: 'User assessment queries' },
-    { table: 'Content', columns: ['type', 'published'], reason: 'Content listing' },
-    { table: 'LearningPath', columns: ['userId', 'progress'], reason: 'User progress tracking' },
+    {
+      table: "Simulation",
+      columns: ["domain", "difficulty"],
+      reason: "Filter by domain and difficulty",
+    },
+    {
+      table: "Simulation",
+      columns: ["createdAt"],
+      reason: "Sort by creation date",
+    },
+    {
+      table: "Animation",
+      columns: ["domain", "tags"],
+      reason: "Filter and search by tags",
+    },
+    {
+      table: "Assessment",
+      columns: ["userId", "status"],
+      reason: "User assessment queries",
+    },
+    {
+      table: "Content",
+      columns: ["type", "published"],
+      reason: "Content listing",
+    },
+    {
+      table: "LearningPath",
+      columns: ["userId", "progress"],
+      reason: "User progress tracking",
+    },
   ],
 
   // Composite indexes for complex queries
   compositeIndexes: [
-    { table: 'Simulation', columns: ['domain', 'difficulty', 'createdAt'], reason: 'Combined filter and sort' },
-    { table: 'Content', columns: ['type', 'domain', 'published'], reason: 'Content explorer filters' },
+    {
+      table: "Simulation",
+      columns: ["domain", "difficulty", "createdAt"],
+      reason: "Combined filter and sort",
+    },
+    {
+      table: "Content",
+      columns: ["type", "domain", "published"],
+      reason: "Content explorer filters",
+    },
   ],
 };
 
@@ -256,7 +297,7 @@ export class OptimizedQueryBuilder {
       where: { userId },
       include: {
         modules: {
-          orderBy: { order: 'asc' },
+          orderBy: { order: "asc" },
           include: {
             content: {
               select: {
