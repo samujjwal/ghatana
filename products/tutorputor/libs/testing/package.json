@@ -1,0 +1,25 @@
+{
+  "name": "@tutorputor/testing",
+  "version": "0.1.0",
+  "description": "TutorPutor testing utilities and shared test infrastructure",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "vitest": "^4.0.18"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

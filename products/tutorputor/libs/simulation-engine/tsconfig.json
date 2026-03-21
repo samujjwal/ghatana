@@ -2,7 +2,6 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
     "skipLibCheck": true
   },
   "include": ["src/**/*"],
@@ -11,7 +10,6 @@
     "dist",
     "**/*.test.ts",
     "**/*.spec.ts",
-    "**/__tests__/**",
-    "src/**/__tests__/**"
+    "**/__tests__/**"
   ]
 }

@@ -2,17 +2,41 @@
   "name": "@tutorputor/physics-simulation",
   "version": "1.0.0",
   "description": "Cross-product physics simulation library with Konva rendering, entity management, and serialization",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./entities": "./src/entities/index.ts",
-    "./rendering": "./src/rendering/index.ts",
-    "./serialization": "./src/serialization/index.ts",
-    "./hooks": "./src/hooks/index.ts",
-    "./components": "./src/components/index.ts",
-    "./adapters": "./src/adapters/index.ts",
-    "./collaboration": "./src/collaboration/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./entities": {
+      "types": "./dist/entities/index.d.ts",
+      "import": "./dist/entities/index.js"
+    },
+    "./rendering": {
+      "types": "./dist/rendering/index.d.ts",
+      "import": "./dist/rendering/index.js"
+    },
+    "./serialization": {
+      "types": "./dist/serialization/index.d.ts",
+      "import": "./dist/serialization/index.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js"
+    },
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "import": "./dist/components/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js"
+    },
+    "./collaboration": {
+      "types": "./dist/collaboration/index.d.ts",
+      "import": "./dist/collaboration/index.js"
+    }
   },
   "scripts": {
     "build": "tsc",
