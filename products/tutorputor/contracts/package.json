@@ -1,7 +1,6 @@
 {
   "name": "@tutorputor/contracts",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "description": "Shared TutorPutor contracts for frontend, API gateway, and backend services",
   "main": "./dist/index.js",

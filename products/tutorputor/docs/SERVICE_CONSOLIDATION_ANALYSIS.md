@@ -14,44 +14,66 @@ This document provides a detailed analysis of service consolidation candidates t
 
 ---
 
+### Technology Stack Standardization
+
+**Current State:** Mixed frameworks (Fastify, Hono, Express)
+**Target:** Standardize on Fastify for all Node.js services
+
+**Services Requiring Migration:**
+
+- tutorputor-kernel-registry (Hono → Fastify)
+- tutorputor-ai-proxy (if using other frameworks)
+
+**Rationale:**
+
+- Platform service already uses Fastify successfully
+- Consistent middleware patterns
+- Unified logging and observability
+- Single framework expertise required across team
+
+**Migration Effort:** Medium (1-2 days per service)
+**Priority:** P2 (after critical build fixes)
+
+---
+
 ## Current Service Inventory
 
 ### Backend Services (9)
 
-| Service | Purpose | Status | Consolidation Target |
-|---------|---------|--------|---------------------|
-| tutorputor-platform | Core business logic | ✅ Active | **CORE** |
-| api-gateway | API routing/layer | ✅ Active | **GATEWAY** |
-| tutorputor-ai-proxy | AI provider abstraction | ❌ Failing | → platform |
-| tutorputor-kernel-registry | Plugin management | ❌ Failing | → platform |
-| tutorputor-db | Data access layer | ⚠️ Partial | → platform |
-| tutorputor-lti | LTI 1.3 integration | ❌ Failing | → platform |
-| tutorputor-payments | Stripe billing | ❌ Failing | → platform |
-| tutorputor-content-studio | Content generation | ❌ Failing | → platform |
-| tutorputor-sim-author | Simulation authoring | ❌ Failing | → platform |
+| Service                    | Purpose                 | Status     | Consolidation Target |
+| -------------------------- | ----------------------- | ---------- | -------------------- |
+| tutorputor-platform        | Core business logic     | ✅ Active  | **CORE**             |
+| api-gateway                | API routing/layer       | ✅ Active  | **GATEWAY**          |
+| tutorputor-ai-proxy        | AI provider abstraction | ❌ Failing | → platform           |
+| tutorputor-kernel-registry | Plugin management       | ❌ Failing | → platform           |
+| tutorputor-db              | Data access layer       | ⚠️ Partial | → platform           |
+| tutorputor-lti             | LTI 1.3 integration     | ❌ Failing | → platform           |
+| tutorputor-payments        | Stripe billing          | ❌ Failing | → platform           |
+| tutorputor-content-studio  | Content generation      | ❌ Failing | → platform           |
+| tutorputor-sim-author      | Simulation authoring    | ❌ Failing | → platform           |
 
 ### Frontend Applications (4)
 
-| Application | Purpose | Status | Consolidation Target |
-|-------------|---------|--------|---------------------|
-| tutorputor-web | Main learning platform | ❌ Failing | **WEB** |
-| tutorputor-admin | Admin dashboard | ❌ Failing | → web |
-| tutorputor-explorer | Content discovery | ❌ Failing | → web |
-| tutorputor-mobile | Mobile app | ❌ Failing | **MOBILE** |
+| Application         | Purpose                | Status     | Consolidation Target |
+| ------------------- | ---------------------- | ---------- | -------------------- |
+| tutorputor-web      | Main learning platform | ❌ Failing | **WEB**              |
+| tutorputor-admin    | Admin dashboard        | ❌ Failing | → web                |
+| tutorputor-explorer | Content discovery      | ❌ Failing | → web                |
+| tutorputor-mobile   | Mobile app             | ❌ Failing | **MOBILE**           |
 
 ### Shared Libraries (15+)
 
-| Library | Purpose | Status | Consolidation Target |
-|---------|---------|--------|---------------------|
-| learning-kernel | Core learning engine | ✅ Active | **CORE** |
-| physics-simulation | Simulation runtime | ✅ Active | **SIMULATION** |
-| simulation-engine | Authoring tools | ❌ Failing | → physics-simulation |
-| sim-renderer | Rendering components | ❌ Failing | → physics-simulation |
-| sim-sdk | Simulation SDK | ✅ Active | **SIMULATION** |
-| tutorputor-ui-shared | Shared UI components | ✅ Active | **UI** |
-| animator | Animation library | ✅ Active | → ui-shared |
-| assessments | Assessment engine | ✅ Active | **ASSESSMENT** |
-| contracts | API contracts | ✅ Active | **CORE** |
+| Library              | Purpose              | Status     | Consolidation Target |
+| -------------------- | -------------------- | ---------- | -------------------- |
+| learning-kernel      | Core learning engine | ✅ Active  | **CORE**             |
+| physics-simulation   | Simulation runtime   | ✅ Active  | **SIMULATION**       |
+| simulation-engine    | Authoring tools      | ❌ Failing | → physics-simulation |
+| sim-renderer         | Rendering components | ❌ Failing | → physics-simulation |
+| sim-sdk              | Simulation SDK       | ✅ Active  | **SIMULATION**       |
+| tutorputor-ui-shared | Shared UI components | ✅ Active  | **UI**               |
+| animator             | Animation library    | ✅ Active  | → ui-shared          |
+| assessments          | Assessment engine    | ✅ Active  | **ASSESSMENT**       |
+| contracts            | API contracts        | ✅ Active  | **CORE**             |
 
 ---
 
@@ -100,11 +122,11 @@ This document provides a detailed analysis of service consolidation candidates t
 **Merge into `tutorputor-web`:**
 
 1. **tutorputor-admin** → web/src/admin/
-   - Route: /admin/*
+   - Route: /admin/\*
    - Role-based access control
 
 2. **tutorputor-explorer** → web/src/explorer/
-   - Route: /explore/*
+   - Route: /explore/\*
    - Public content discovery
 
 **Rationale:** Admin and explorer are essentially different views of the same data. Unified deployment reduces infrastructure costs and simplifies authentication.
@@ -117,6 +139,7 @@ This document provides a detailed analysis of service consolidation candidates t
 2. **sim-renderer** → physics-simulation/src/rendering/
 
 **Result:** Single `@tutorputor/physics-simulation` package with:
+
 - Runtime simulation execution
 - Authoring tools
 - Rendering components
@@ -187,12 +210,12 @@ This document provides a detailed analysis of service consolidation candidates t
 
 ## Risk Assessment
 
-| Risk | Severity | Mitigation |
-|------|----------|------------|
-| Build failures block consolidation | High | Fix P0 build issues first |
-| Service coupling increases | Medium | Maintain clear internal module boundaries |
-| Deployment complexity | Low | Use feature flags for gradual migration |
-| Team coordination | Medium | Assign clear ownership per consolidation |
+| Risk                               | Severity | Mitigation                                |
+| ---------------------------------- | -------- | ----------------------------------------- |
+| Build failures block consolidation | High     | Fix P0 build issues first                 |
+| Service coupling increases         | Medium   | Maintain clear internal module boundaries |
+| Deployment complexity              | Low      | Use feature flags for gradual migration   |
+| Team coordination                  | Medium   | Assign clear ownership per consolidation  |
 
 ---
 

@@ -1,7 +1,7 @@
 {
-  "name": "@tutorputor/testing",
+  "name": "@ghatana/charts",
   "version": "0.1.0",
-  "description": "TutorPutor testing utilities and shared test infrastructure",
+  "description": "Charting components for Ghatana products using Recharts",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,9 +18,15 @@
     "build": "tsc",
     "dev": "tsc --watch"
   },
+  "dependencies": {
+    "react": "^19.2.4",
+    "recharts": "^3.8.0"
+  },
   "devDependencies": {
-    "@types/node": "^25.5.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.0"
+    "@types/react": "^19.0.12",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
   }
 }

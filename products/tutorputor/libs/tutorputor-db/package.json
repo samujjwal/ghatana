@@ -40,12 +40,12 @@
   "dependencies": {
     "@libsql/client": "^0.17.0",
     "@prisma/adapter-libsql": "^7.3.0",
-    "@prisma/client": "7.3.0",
+    "@prisma/client": "^7.3.0",
     "ioredis": "^5.10.1",
     "prisma-redis-cache": "^1.0.0"
   },
   "devDependencies": {
-    "prisma": "7.3.0",
+    "prisma": "^7.3.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
