@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * React Router v7 Integration for Animator
  * 

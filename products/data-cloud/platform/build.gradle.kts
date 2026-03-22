@@ -25,13 +25,6 @@ dependencies {
     // impl = internal usage only (not leaked to downstream consumers)
     // =========================================================================
 
-    // Phase 7 (P7-2a): New bounded-context sub-modules — re-exported for backward compat
-    // As packages are moved to sub-modules, downstream consumers remain unaffected.
-    api(project(":products:data-cloud:platform-entity"))
-    api(project(":products:data-cloud:platform-event"))
-    api(project(":products:data-cloud:platform-config"))
-    api(project(":products:data-cloud:platform-analytics"))
-
     api(project(":products:data-cloud:spi"))         // SPI types in public API
     api(project(":platform:java:core"))              // Core types in public API
     api(project(":platform:java:domain"))            // Domain types in public API

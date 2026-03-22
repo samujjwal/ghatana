@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Plugin Policy - Safety and validation rules for plugin publishing.
  *

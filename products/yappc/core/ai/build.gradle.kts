@@ -12,7 +12,7 @@ dependencies {
     api(project(":platform:java:ai-integration"))
     
     // Agent Framework
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
     
     // Platform libs
     implementation(project(":platform:java:observability"))

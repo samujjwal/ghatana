@@ -89,7 +89,7 @@ listOf(
     "event-runtime",
     "event-spi",
     "audit",
-    "agent-api",
+    "agent-core",
     "workflow-api",
     "operator",
     "operator-catalog"

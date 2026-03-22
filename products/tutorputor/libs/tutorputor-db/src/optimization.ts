@@ -6,7 +6,7 @@
  * connection pooling, query caching, and performance monitoring.
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../generated/prisma";
 import { createPrismaRedisCache } from "prisma-redis-cache";
 import Redis from "ioredis";
 

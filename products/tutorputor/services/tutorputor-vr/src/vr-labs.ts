@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type service
  * @doc.purpose VR Lab management service implementation

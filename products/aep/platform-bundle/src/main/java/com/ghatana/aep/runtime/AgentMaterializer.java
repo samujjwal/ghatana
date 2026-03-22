@@ -4,9 +4,9 @@
  */
 package com.ghatana.aep.runtime;
 
-import com.ghatana.agent.api.AgentType;
-import com.ghatana.agent.api.FailureMode;
-import com.ghatana.agent.api.TypedAgent;
+import com.ghatana.agent.AgentType;
+import com.ghatana.agent.FailureMode;
+import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.config.AgentConfigMaterializer;
 import com.ghatana.agent.spi.AgentLogicProvider;
 import com.ghatana.agent.spi.AgentLogicProviderRegistry;
@@ -78,7 +78,7 @@ public class AgentMaterializer {
     public TypedAgent<?, ?> materialize(Path agentDefinitionYaml) throws IOException {
         com.ghatana.agent.AgentConfig frameworkConfig =
                 configMaterializer.materialize(agentDefinitionYaml);
-        com.ghatana.agent.api.AgentConfig apiConfig = adaptConfig(frameworkConfig);
+        com.ghatana.agent.AgentConfig apiConfig = adaptConfig(frameworkConfig);
         String ref = resolveRef(apiConfig);
 
         log.info("Materializing agent '{}' via ref '{}' from {}",
@@ -88,14 +88,14 @@ public class AgentMaterializer {
     }
 
     /**
-     * Materializes an agent from an already-parsed API {@link com.ghatana.agent.api.AgentConfig}.
+     * Materializes an agent from an already-parsed API {@link com.ghatana.agent.AgentConfig}.
      *
      * @param config agent configuration (must contain implementationRef)
      * @return a fully initialized agent
      * @throws IllegalArgumentException if no provider supports the ref
      * @throws IllegalStateException    if implementationRef is missing
      */
-    public TypedAgent<?, ?> materialize(com.ghatana.agent.api.AgentConfig config) {
+    public TypedAgent<?, ?> materialize(com.ghatana.agent.AgentConfig config) {
         String ref = resolveRef(config);
 
         log.info("Materializing agent '{}' via ref '{}'",
@@ -114,7 +114,7 @@ public class AgentMaterializer {
      * @throws IllegalArgumentException if no provider supports the ref
      */
     public TypedAgent<?, ?> materialize(String implementationRef,
-                                         com.ghatana.agent.api.AgentConfig config) {
+                                         com.ghatana.agent.AgentConfig config) {
         Objects.requireNonNull(implementationRef, "implementationRef must not be null");
         log.info("Materializing agent '{}' via explicit ref '{}'",
                 config.getAgentId(), implementationRef);
@@ -143,7 +143,7 @@ public class AgentMaterializer {
     // Internal
     // ═══════════════════════════════════════════════════════════════════════════
 
-    private String resolveRef(com.ghatana.agent.api.AgentConfig config) {
+    private String resolveRef(com.ghatana.agent.AgentConfig config) {
         String ref = config.getImplementationRef();
 
         // Fallback: check properties map (for YAML parsed via @JsonAnySetter)
@@ -165,9 +165,9 @@ public class AgentMaterializer {
     /**
      * Adapts the framework's AgentConfig to the API module's AgentConfig.
      */
-    private com.ghatana.agent.api.AgentConfig adaptConfig(
+    private com.ghatana.agent.AgentConfig adaptConfig(
             com.ghatana.agent.AgentConfig fw) {
-        return com.ghatana.agent.api.AgentConfig.builder()
+        return com.ghatana.agent.AgentConfig.builder()
                 .agentId(fw.getAgentId())
                 .type(AgentType.valueOf(fw.getType().name()))
                 .version(fw.getVersion())

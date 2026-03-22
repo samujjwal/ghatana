@@ -10,7 +10,7 @@ description = "YAPPC Services: Scaffold — Code generation and project scaffold
 
 dependencies {
     // Internal domain (full monorepo paths)
-    implementation(project(":products:yappc:services:domain"))
+    implementation(project(":products:yappc:services:platform"))
     implementation(project(":products:yappc:libs:java:yappc-domain"))
 
     // Core Platform Libraries
@@ -20,8 +20,6 @@ dependencies {
 
     // YAPPC scaffold modules (full monorepo paths)
     implementation(project(":products:yappc:core:scaffold:core"))
-    implementation(project(":products:yappc:core:scaffold:adapters"))
-    implementation(project(":products:yappc:core:scaffold:schemas"))
     implementation(project(":products:yappc:core:scaffold:packs"))
 
     // YAPPC framework (plugin system)

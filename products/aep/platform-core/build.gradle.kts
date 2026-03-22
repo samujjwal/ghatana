@@ -41,7 +41,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.activej.test)
     testImplementation(project(":platform:java:testing"))
-    testImplementation(project(":platform:java:agent-framework"))
+    testImplementation(project(":platform:java:agent-core"))
     testImplementation(project(":platform:java:agent-memory"))
     testImplementation(project(":platform:java:security"))
     testImplementation(project(":products:aep:platform-registry"))

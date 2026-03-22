@@ -29,7 +29,7 @@ java {
 dependencies {
     // ─── Platform AI integration (80% reuse) ─────────────────────────────────
     api(project(":platform:java:ai-integration"))
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
     api(project(":platform:java:agent-learning"))
 
     // ─── Platform core ────────────────────────────────────────────────────────

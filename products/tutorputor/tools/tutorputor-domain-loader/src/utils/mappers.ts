@@ -25,17 +25,17 @@ export function parseTimeToMinutes(timeStr: string): number {
 
   if (rangeMatch) {
     // For ranges like "2–3 hours", take the average
-    const low = parseFloat(rangeMatch[1]);
-    const high = parseFloat(rangeMatch[2]);
+    const low = parseFloat(rangeMatch[1]!);
+    const high = parseFloat(rangeMatch[2]!);
     return Math.round(((low + high) / 2) * 60);
   }
 
   if (hourMatch) {
-    return Math.round(parseFloat(hourMatch[1]) * 60);
+    return Math.round(parseFloat(hourMatch[1]!) * 60);
   }
 
   if (minMatch) {
-    return parseInt(minMatch[1], 10);
+    return parseInt(minMatch[1]!, 10);
   }
 
   // Try to parse as a plain number (assume minutes)
@@ -171,7 +171,7 @@ export function isValidConceptId(id: string): boolean {
 export function extractDomainFromId(id: string): string | null {
   const match = id.match(/^([a-z]+)_/i);
   if (match) {
-    const prefix = match[1].toLowerCase();
+    const prefix = match[1]!.toLowerCase();
     if (prefix === "phy" || prefix === "physics") return "PHYSICS";
     if (prefix === "chem" || prefix === "chemistry") return "CHEMISTRY";
     if (prefix === "bio" || prefix === "biology") return "BIOLOGY";

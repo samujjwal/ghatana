@@ -71,7 +71,7 @@ export async function generateSimulationTemplates(
     const conceptKey = conceptKeyRaw as string;
     const [baseConceptId, requirementId] = conceptKey.split("::");
 
-    const concept = conceptById.get(baseConceptId);
+    const concept = conceptById.get(baseConceptId!);
     if (!concept) {
       warnings.push(`No concept found for manifest conceptId=${baseConceptId}`);
       continue;

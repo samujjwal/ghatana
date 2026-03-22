@@ -25,7 +25,7 @@ dependencies {
     api(project(":platform:java:workflow"))
     api(project(":products:aep:platform-core"))
     api(project(":products:aep:platform-agent"))
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
     api(project(":platform:java:agent-dispatch"))
     api(project(":platform:java:agent-learning"))
     api(project(":platform:java:agent-memory"))

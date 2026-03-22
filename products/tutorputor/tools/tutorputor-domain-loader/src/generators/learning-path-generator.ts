@@ -92,7 +92,7 @@ export async function generateLearningPaths(
         prisma,
         groupConcepts,
         conceptToModule,
-        domain,
+        domain!,
         level as CurriculumLevel,
         options
       );
@@ -282,7 +282,7 @@ async function createPathNodes(
   conceptToModule: Map<string, string>
 ): Promise<void> {
   for (let i = 0; i < concepts.length; i++) {
-    const concept = concepts[i];
+    const concept = concepts[i]!;
     const moduleId = conceptToModule.get(concept.id);
 
     if (!moduleId) continue;

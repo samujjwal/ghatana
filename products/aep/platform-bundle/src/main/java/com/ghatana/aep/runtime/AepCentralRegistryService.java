@@ -4,8 +4,8 @@
  */
 package com.ghatana.aep.runtime;
 
-import com.ghatana.agent.api.AgentConfig;
-import com.ghatana.agent.api.TypedAgent;
+import com.ghatana.agent.AgentConfig;
+import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.catalog.CatalogAgentEntry;
 import com.ghatana.agent.spi.AgentLogicProviderRegistry;
 import com.ghatana.aep.catalog.AepCentralCatalogService;
@@ -135,8 +135,8 @@ public class AepCentralRegistryService {
             return Promise.of(false);
         }
         return agent.healthCheck()
-                .map(status -> status == com.ghatana.agent.api.HealthStatus.HEALTHY
-                        || status == com.ghatana.agent.api.HealthStatus.DEGRADED);
+                .map(status -> status == com.ghatana.agent.HealthStatus.HEALTHY
+                        || status == com.ghatana.agent.HealthStatus.DEGRADED);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

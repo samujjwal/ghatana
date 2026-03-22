@@ -10,7 +10,7 @@ description = "Agent Dispatch — Three-tier dispatcher (Tier-J/Tier-S/Tier-L) b
 
 dependencies {
     // Agent framework (TypedAgent, CatalogRegistry, CatalogAgentEntry, AgentResult, AgentConfig)
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
 
     // Agent resilience (ResilientTypedAgent, AgentBulkhead)
     api(project(":platform:java:agent-resilience"))

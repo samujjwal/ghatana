@@ -15,7 +15,7 @@ dependencies {
     // Core API dependencies - exposed to consumers
     api(project(":platform:java:ai-integration"))
     api(project(":platform:java:observability"))
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
     api(project(":products:yappc:core:agents"))
     api(project(":products:yappc:libs:java:yappc-domain"))  // canonical domain model (Metric, etc.)
     // api(project(":libs:validation-api")) - path needs verification

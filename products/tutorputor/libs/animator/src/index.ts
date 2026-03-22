@@ -181,7 +181,7 @@ export function getEasingFunction(name: EasingFunction | string): (t: number) =>
   if (typeof name === 'string' && name.startsWith('cubic-bezier')) {
     const match = name.match(/cubic-bezier\(([^)]+)\)/);
     if (match) {
-      const [x1, y1, x2, y2] = match[1].split(',').map(Number);
+      const [x1, y1, x2, y2] = match[1]!.split(',').map(Number) as [number, number, number, number];
       return cubicBezier(x1, y1, x2, y2);
     }
   }
@@ -459,7 +459,7 @@ export class Animator {
       const fromMatch = from.match(/^([\d.]+)(.*)$/);
       const toMatch = to.match(/^([\d.]+)(.*)$/);
       if (fromMatch && toMatch && fromMatch[2] === toMatch[2]) {
-        const val = parseFloat(fromMatch[1]) + (parseFloat(toMatch[1]) - parseFloat(fromMatch[1])) * progress;
+        const val = parseFloat(fromMatch[1]!) + (parseFloat(toMatch[1]!) - parseFloat(fromMatch[1]!)) * progress;
         return `${val}${fromMatch[2]}`;
       }
     }
@@ -481,9 +481,9 @@ export class Animator {
   private hexToRGB(hex: string): { r: number; g: number; b: number } {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16),
+      r: parseInt(result[1]!, 16),
+      g: parseInt(result[2]!, 16),
+      b: parseInt(result[3]!, 16),
     } : { r: 0, g: 0, b: 0 };
   }
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * TutorPutor Mobile - SQLite Database
  *

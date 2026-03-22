@@ -29,7 +29,7 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:database"))
     api(project(":platform:java:observability"))
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
 
     // ─── Platform workflow ────────────────────────────────────────────────────
     implementation(project(":platform:java:workflow-runtime"))

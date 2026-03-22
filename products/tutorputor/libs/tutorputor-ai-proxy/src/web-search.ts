@@ -329,7 +329,7 @@ export class WebSearchService {
       _message: cached 
         ? 'Using cached web search results'
         : 'Retrieved from web search (AI service unavailable)',
-    };
+    } as any;
   }
 
   /**
@@ -354,7 +354,7 @@ export class WebSearchService {
   private extractConceptDescription(results: SearchResult[]): string {
     if (results.length === 0) return '';
     
-    const firstResult = results[0];
+    const firstResult = results[0]!;
     // Use first 2-3 sentences of the snippet
     const sentences = firstResult.snippet.split('.').slice(0, 2).join('.') + '.';
     return sentences;
@@ -410,7 +410,7 @@ export class WebSearchService {
     patterns.forEach(pattern => {
       let match;
       while ((match = pattern.exec(text)) !== null) {
-        const phrase = match[1].trim();
+        const phrase = match[1]!.trim();
         if (phrase.length > 3 && phrase.length < 100) {
           phrases.push(`Understand ${phrase}`);
         }
@@ -496,7 +496,7 @@ export class WebSearchService {
       },
       _dataSource: 'fallback',
       _message: message,
-    };
+    } as any;
   }
 
   /**

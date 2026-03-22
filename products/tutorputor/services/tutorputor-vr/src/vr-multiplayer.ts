@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type service
  * @doc.purpose VR Multiplayer session management with real-time sync

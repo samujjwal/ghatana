@@ -8,7 +8,7 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:workflow"))
     api(project(":platform:java:observability"))
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
 
     // Virtual-org modules
     api(project(":products:virtual-org:modules:agent"))

@@ -9,7 +9,7 @@ dependencies {
     
     // Agent framework and domain
     implementation(project(":products:yappc:core:domain"))
-    implementation(project(":platform:java:agent-framework"))
+    implementation(project(":platform:java:agent-core"))
     
     // ActiveJ for async operations
     implementation(libs.activej.promise)

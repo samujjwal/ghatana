@@ -379,7 +379,7 @@ export class TemplateMarketplace {
     // Update version download count
     const currentVersion =
       template.marketplace.versions[template.marketplace.versions.length - 1];
-    currentVersion.downloadCount++;
+    currentVersion!.downloadCount++;
 
     // Track user download history
     this.trackUserDownload(userId, marketplaceId);
@@ -671,7 +671,7 @@ export class TemplateMarketplace {
     for (const metric of criteria.requiredQualityMetrics) {
       if (
         !(metric in qualityResult.metrics) ||
-        qualityResult.metrics[metric] < 0.8
+        qualityResult.metrics[metric]! < 0.8
       ) {
         return false;
       }

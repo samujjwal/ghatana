@@ -15,7 +15,8 @@ import NetInfo from '@react-native-community/netinfo';
 import { database } from '../storage/SQLiteStorage';
 import { cacheStorage, syncStorage, CacheKeys } from '../storage/MMKVStorage';
 import { syncService, SyncResult } from '../services/BackgroundSyncService';
-import type { Module } from '@tutorputor/contracts';
+// Module type not yet exported from contracts — using local alias
+type Module = any;
 
 // ============================================================================
 // Network Status Hook

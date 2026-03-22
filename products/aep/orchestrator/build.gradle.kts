@@ -41,7 +41,7 @@ dependencies {
     // Core platform libs
     api(project(":platform:java:core"))
     api(project(":platform:java:domain"))
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
     api(project(":platform:java:agent-dispatch"))
     api(project(":platform:java:agent-registry"))
     api(project(":platform:java:observability"))

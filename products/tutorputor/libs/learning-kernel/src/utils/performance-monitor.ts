@@ -87,7 +87,7 @@ class MetricStore {
     
     if (matching.length === 0) return 0;
     const index = Math.floor(matching.length * 0.95);
-    return matching[index];
+    return matching[index] ?? 0;
   }
 }
 

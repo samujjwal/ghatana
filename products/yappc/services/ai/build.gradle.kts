@@ -10,14 +10,14 @@ description = "YAPPC Services: AI — AI agents, workflows, and model integratio
 
 dependencies {
     // Internal domain (full monorepo paths)
-    implementation(project(":products:yappc:services:domain"))
+    implementation(project(":products:yappc:services:platform"))
     implementation(project(":products:yappc:libs:java:yappc-domain"))
 
     // Core Platform Libraries
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:runtime"))
     implementation(project(":platform:java:ai-integration"))
-    implementation(project(":platform:java:agent-framework"))
+    implementation(project(":platform:java:agent-core"))
     implementation(project(":platform:java:observability"))
 
     // YAPPC AI modules (merged)

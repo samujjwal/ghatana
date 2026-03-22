@@ -58,7 +58,7 @@ dependencies {
     implementation(project(":platform:java:ai-integration:feature-store"))
     implementation(project(":platform:java:ai-integration:registry"))
     implementation(project(":platform:java:security"))
-    implementation(project(":platform:java:agent-framework"))
+    implementation(project(":platform:java:agent-core"))
     implementation(project(":platform:java:agent-memory"))
     implementation(project(":platform:java:agent-registry"))
     

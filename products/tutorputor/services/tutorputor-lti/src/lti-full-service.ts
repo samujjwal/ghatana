@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@tutorputor/db';
 import * as jose from 'jose';
 import { v4 as uuid } from 'uuid';
 import type {
@@ -44,7 +44,7 @@ import type {
   OidcState,
   LtiAccessToken,
   ToolConfiguration,
-} from './types.js.js';
+} from './types.js';
 
 // In-memory state store (use Redis in production)
 const oidcStateStore = new Map<string, OidcState>();
@@ -77,7 +77,7 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return platforms.map((p) => this.mapToPlatform(p));
+    return platforms.map((p: any) => this.mapToPlatform(p));
   }
 
   async getPlatform(args: {
@@ -608,7 +608,7 @@ export class LtiDeepLinkingServiceImpl implements LtiDeepLinkingService {
   }): Promise<LtiDeepLinkingRequest> {
     // Decode token (assume already validated)
     const [, payloadB64] = args.idToken.split('.');
-    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString()) as LtiIdTokenClaims;
+    const payload = JSON.parse(Buffer.from(payloadB64!, 'base64url').toString()) as LtiIdTokenClaims;
 
     const settings = payload['https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings'];
     if (!settings) {
@@ -675,7 +675,7 @@ export class LtiDeepLinkingServiceImpl implements LtiDeepLinkingService {
     ]);
 
     return {
-      items: modules.map((m) => ({
+      items: modules.map((m: any) => ({
         moduleId: m.id as ModuleId,
         title: m.title,
         description: m.description ?? '',
@@ -796,7 +796,7 @@ export class LtiGradeServiceImpl implements LtiGradeService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return lineItems.map((li) => ({
+    return lineItems.map((li: any) => ({
       scoreMaximum: li.scoreMaximum,
       label: li.label,
       resourceId: li.resourceId ?? undefined,
@@ -849,7 +849,7 @@ export class LtiGradeServiceImpl implements LtiGradeService {
       throw new Error(`Failed to create line item: ${response.statusText}`);
     }
 
-    const result = await response.json();
+    const result: any = await response.json();
 
     // Store locally
     const lineItem = await this.prisma.ltiLineItem.create({
@@ -1046,7 +1046,7 @@ export class LtiGradeServiceImpl implements LtiGradeService {
       orderBy: { submittedAt: 'desc' },
     });
 
-    return scores.map((s) => ({
+    return scores.map((s: any) => ({
       userId: s.ltiUserId,
       scoreGiven: s.scoreGiven,
       scoreMaximum: s.scoreMaximum,
@@ -1227,7 +1227,7 @@ export class LtiRosterServiceImpl implements LtiRosterService {
       throw new Error(`NRPS request failed: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
 
     return data.members.map((m: any) => ({
       userId: m.user_id,

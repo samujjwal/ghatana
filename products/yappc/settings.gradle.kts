@@ -65,8 +65,6 @@ include(":launcher")
 
 // --- Unified Service Modules ---
 include(":services:platform")   // canonical combined module (was: domain + infrastructure)
-include(":services:domain")     // backward-compat stub — delegates to :services:platform
-include(":services:infrastructure") // backward-compat stub — delegates to :services:platform
 include(":services:ai")
 include(":services:lifecycle")
 include(":services:scaffold")
@@ -79,13 +77,8 @@ include(":core:domain:task")
 // --- Core: Scaffold Engine ---
 include(":core:scaffold")
 include(":core:scaffold:api")
-include(":core:scaffold:api:http")
-include(":core:scaffold:api:grpc")
 include(":core:scaffold:core")
 include(":core:scaffold:packs")
-include(":core:scaffold:adapters")
-include(":core:scaffold:cli")
-include(":core:scaffold:schemas")
 
 // --- Core: AI & Agents ---
 include(":core:ai")
@@ -152,8 +145,6 @@ if (isStandaloneBuild) {
             "backend:deployment",
             "launcher",
             "services:platform",       // canonical combined module
-            "services:domain",         // backward-compat stub
-            "services:infrastructure", // backward-compat stub
             "services:ai",
             "services:lifecycle",
             "services:scaffold",
@@ -162,13 +153,8 @@ if (isStandaloneBuild) {
             "core:domain:task",
             "core:scaffold",
             "core:scaffold:api",
-            "core:scaffold:api:http",
-            "core:scaffold:api:grpc",
             "core:scaffold:core",
             "core:scaffold:packs",
-            "core:scaffold:adapters",
-            "core:scaffold:cli",
-            "core:scaffold:schemas",
             "core:ai",
             "core:agents",
             "core:agents:runtime",

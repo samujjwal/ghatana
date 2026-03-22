@@ -6,7 +6,7 @@ export * from "./content-studio";
 
 // Canonical exports are source-of-truth modules with non-conflicting symbol surfaces.
 // Learning-unit and learning-path contracts remain available from explicit paths:
-// @ghatana/tutorputor-contracts/v1/learning-unit
-// @ghatana/tutorputor-contracts/v1/learning-path
+// @tutorputor/contracts/v1/learning-unit
+// @tutorputor/contracts/v1/learning-path
 export * from "./curriculum";
 export * from "./assessments";

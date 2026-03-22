@@ -1,4 +1,5 @@
 {
+  "extends": "../../../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -16,8 +17,8 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@ghatana/tutorputor-contracts": ["../../contracts/v1/index.ts"],
-      "@ghatana/tutorputor-contracts/*": ["../../contracts/*"]
+      "@tutorputor/contracts": ["../../contracts/v1/index.ts"],
+      "@tutorputor/contracts/*": ["../../contracts/*"]
     },
     "noImplicitAny": true,
     "strictNullChecks": true

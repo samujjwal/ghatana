@@ -20,7 +20,8 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@ghatana/tutorputor-contracts/v1/*": ["../../contracts/v1/*"]
+      "@tutorputor/contracts/v1/*": ["../../contracts/v1/*"],
+      "@tutorputor/contracts/v1": ["../../contracts/v1/index.ts"]
     }
   },
   "include": ["src/**/*"],

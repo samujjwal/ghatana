@@ -238,7 +238,7 @@ ${context || "No context provided."}
         temperature: 0.1,
       });
 
-      const content = completion.choices[0].message.content;
+      const content = completion.choices[0]!.message.content;
       if (!content) throw new Error("No content in response");
 
       const parsed = JSON.parse(content);
@@ -286,7 +286,7 @@ Be concise and helpful.`;
         ],
       });
       return (
-        completion.choices[0].message.content ||
+        completion.choices[0]!.message.content ||
         "I couldn't generate an explanation."
       );
     } catch (e) {
@@ -341,7 +341,7 @@ Output JSON format matching the ModuleDraftInput structure (simplified):
         response_format: { type: "json_object" },
       });
 
-      const content = completion.choices[0].message.content;
+      const content = completion.choices[0]!.message.content;
       return content ? JSON.parse(content) : null;
     } catch (e) {
       console.error("Error generating draft:", e);
@@ -382,7 +382,7 @@ Output JSON:
         temperature: 0,
       });
 
-      const content = completion.choices[0].message.content;
+      const content = completion.choices[0]!.message.content;
       return content ? JSON.parse(content) : { textSearch: query };
     } catch (e) {
       console.error("Error parsing content query:", e);
@@ -883,6 +883,6 @@ ${question}
 export function createAIProxyService(
   config?: AIProxyServiceConfig,
   prisma?: TutorPrismaClient,
-): AIProxyService {
+): TutorPutorAIProxyService {
   return new TutorPutorAIProxyService(config, prisma);
 }

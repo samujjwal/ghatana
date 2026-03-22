@@ -10,7 +10,7 @@ description = "Agent Registry SPI - Agent discovery and registration interfaces"
 
 dependencies {
     // Agent Framework (SPI definitions)
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
 
     // ActiveJ for async operations
     api(libs.activej.promise)

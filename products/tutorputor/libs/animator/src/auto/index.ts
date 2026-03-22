@@ -663,7 +663,7 @@ export class AutoAnimationService {
     if (analysis.concepts.length > 0) {
       const conceptTags = analysis.concepts.map((c) => c.split(':')[1]);
       candidates = candidates.filter((t) =>
-        conceptTags.some((tag) => t.tags.includes(tag))
+        conceptTags.some((tag) => t.tags.includes(tag!))
       );
     }
     
@@ -678,7 +678,7 @@ export class AutoAnimationService {
     }
     
     // Return top matches or default templates
-    return candidates.length > 0 ? candidates.slice(0, 3) : [AnimationTemplates[0]];
+    return candidates.length > 0 ? candidates.slice(0, 3) : [AnimationTemplates[0]!];
   }
 
   private generateTracksFromTemplates(
@@ -764,12 +764,12 @@ export class AutoAnimationService {
     let narration = `Let's explore ${learningObjective || 'this concept'} through animation. `;
     
     if (tracks.length > 0) {
-      narration += `First, we ${tracks[0].property === 'transform' ? 'see movement' : 'observe a change'} `;
-      narration += `as ${tracks[0].target.replace('.', 'the ')} begins to animate. `;
+      narration += `First, we ${tracks[0]!.property === 'transform' ? 'see movement' : 'observe a change'} `;
+      narration += `as ${tracks[0]!.target.replace('.', 'the ')} begins to animate. `;
     }
     
     if (tracks.length > 1) {
-      narration += `Then, ${tracks[1].target.replace('.', 'the ')} ${tracks[1].property === 'opacity' ? 'fades' : 'changes'} `;
+      narration += `Then, ${tracks[1]!.target.replace('.', 'the ')} ${tracks[1]!.property === 'opacity' ? 'fades' : 'changes'} `;
       narration += `to show the relationship between these elements. `;
     }
     
@@ -864,7 +864,7 @@ export class AutoAnimationService {
       t.tags.includes(algorithmType.replace(' ', '-'))
     );
     
-    return template || AnimationTemplates.find((t) => t.category === 'cs') || AnimationTemplates[0];
+    return template || AnimationTemplates.find((t) => t.category === 'cs') || AnimationTemplates[0]!;
   }
 
   private adaptTemplateForCode(

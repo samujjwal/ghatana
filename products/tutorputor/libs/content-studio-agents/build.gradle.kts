@@ -39,7 +39,7 @@ tasks.named("compileJava") {
 
 dependencies {
     // Agent framework for agent implementation
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
     
     // Core platform dependencies
     api(project(":platform:java:domain"))

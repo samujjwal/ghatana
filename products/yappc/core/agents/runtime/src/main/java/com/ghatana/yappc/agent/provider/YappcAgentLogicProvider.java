@@ -4,8 +4,8 @@
  */
 package com.ghatana.yappc.agent.provider;
 
-import com.ghatana.agent.api.AgentConfig;
-import com.ghatana.agent.api.TypedAgent;
+import com.ghatana.agent.AgentConfig;
+import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.spi.AgentLogicProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -41,7 +41,7 @@ dependencies {
     api(project(":platform:java:connectors"))
     api(project(":platform:java:schema-registry"))
     api(project(":platform:java:plugin"))
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
     api(project(":platform:java:agent-resilience"))
     api(project(":platform:java:ai-integration"))
     api(project(":platform:java:runtime"))

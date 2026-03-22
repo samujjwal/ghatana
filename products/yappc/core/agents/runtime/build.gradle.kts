@@ -22,7 +22,7 @@ dependencies {
     implementation(project(":products:yappc:backend:persistence"))
 
     // Agent framework from platform (api — types are part of YAPPCAgentBase public API)
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
     implementation(project(":platform:java:agent-dispatch"))
     implementation(project(":platform:java:agent-registry"))
     implementation(project(":platform:java:agent-memory"))

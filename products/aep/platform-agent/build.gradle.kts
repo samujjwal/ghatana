@@ -9,7 +9,7 @@ dependencies {
     implementation(project(":products:aep:platform-registry"))
     
     // Platform libraries
-    implementation(project(":platform:java:agent-framework"))
+    implementation(project(":platform:java:agent-core"))
     implementation(project(":platform:java:agent-registry"))
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:audit"))

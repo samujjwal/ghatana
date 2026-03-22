@@ -10,7 +10,7 @@ description = "YAPPC Services: Lifecycle — SDLC phase management and orchestra
 
 dependencies {
     // Internal domain (full monorepo paths)
-    implementation(project(":products:yappc:services:domain"))
+    implementation(project(":products:yappc:services:platform"))
     implementation(project(":products:yappc:libs:java:yappc-domain"))
 
     // Core Platform Libraries

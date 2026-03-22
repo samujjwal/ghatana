@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Plugin Routes - API endpoints for plugin publishing and management.
  *

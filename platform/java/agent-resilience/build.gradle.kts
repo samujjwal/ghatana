@@ -13,7 +13,7 @@ dependencies {
     api(project(":platform:java:core"))
 
     // Agent framework (TypedAgent, AgentDescriptor, AgentResult, AgentConfig, AgentContext)
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
 
     // Observability for health metrics
     api(project(":platform:java:observability"))

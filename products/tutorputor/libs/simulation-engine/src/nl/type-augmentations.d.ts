@@ -1,6 +1,6 @@
 // Local augmentations to align sim-nl with the broader simulation manifest used in runtime.
 // These fields are additive and scoped to this package to satisfy compilation.
-declare module "@ghatana/tutorputor-contracts/v1/simulation/types" {
+declare module "@tutorputor/contracts/v1/simulation/types" {
     // Loosen branded IDs inside sim-nl
     type SimulationId = string;
     type SimEntityId = string;
@@ -50,7 +50,7 @@ declare module "@ghatana/tutorputor-contracts/v1/simulation/types" {
 }
 
 // Ensure the same augmentations apply when importing from the barrel module
-declare module "@ghatana/tutorputor-contracts/v1/simulation" {
+declare module "@tutorputor/contracts/v1/simulation" {
     type SimulationId = string;
     type SimEntityId = string;
     type SimStepId = string;

@@ -10,7 +10,7 @@
 
 /// <reference types="vitest" />
 
-import { vi, type Mock } from "vitest";
+import { vi, beforeEach, afterEach, type Mock } from "vitest";
 
 // ============================================================================
 // Type Definitions
@@ -78,11 +78,8 @@ export const createMockClaim = (
 /**
  * Creates a typed mock function with proper return type inference
  */
-export function createMockFn<T extends (...args: any[]) => any>(): Mock<
-  Parameters<T>,
-  ReturnType<T>
-> {
-  return vi.fn();
+export function createMockFn<T extends (...args: any[]) => any>(): Mock<T> {
+  return vi.fn() as Mock<T>;
 }
 
 /**
@@ -232,7 +229,11 @@ export function createMockAIResponse(
 /**
  * Mocks AI provider for consistent testing
  */
-export function mockAIProvider() {
+export function mockAIProvider(): {
+  generate: Mock;
+  stream: Mock;
+  embed: Mock;
+} {
   return {
     generate: vi.fn().mockResolvedValue(createMockAIResponse()),
     stream: vi.fn().mockResolvedValue(createMockAIResponse()),

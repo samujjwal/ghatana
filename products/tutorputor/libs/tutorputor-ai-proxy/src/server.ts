@@ -108,7 +108,7 @@ async function start() {
           data: response,
         };
       } catch (error) {
-        fastify.log.error("Error in /api/ai/generate:", error);
+        fastify.log.error("Error in /api/ai/generate: " + String(error));
         return reply.code(500).send({
           error: "Failed to generate AI response",
           message: error instanceof Error ? error.message : String(error),

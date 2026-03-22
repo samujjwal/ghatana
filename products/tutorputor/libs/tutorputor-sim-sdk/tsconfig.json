@@ -9,8 +9,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "Node",
-    "module": "CommonJS",
+    "moduleResolution": "bundler",
+    "module": "ESNext",
     "target": "ES2022"
   },
   "include": ["src/**/*"],

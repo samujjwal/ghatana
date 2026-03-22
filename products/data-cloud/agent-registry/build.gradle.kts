@@ -19,7 +19,7 @@ dependencies {
     api(project(":platform:java:agent-registry"))
 
     // Agent Framework (AgentDescriptor, TypedAgent, AgentConfig, AgentType …)
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
 
     // Data-Cloud (persistence layer)
     api(project(":products:data-cloud:platform"))

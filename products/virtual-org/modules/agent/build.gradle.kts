@@ -14,7 +14,7 @@ sourceSets {
 dependencies {
     // Platform modules
     implementation(project(":platform:java:workflow"))
-    implementation(project(":platform:java:agent-framework"))
+    implementation(project(":platform:java:agent-core"))
 
     // Protobuf (for generated sources)
     implementation(libs.protobuf.java)

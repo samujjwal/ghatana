@@ -73,7 +73,7 @@ export const undoAtom = atom(null, (get, set) => {
     const newIndex = index - 1;
     set(historyIndexAtom, newIndex);
     const history = get(historyAtom);
-    set(animationTracksAtom, history[newIndex].tracks);
+    set(animationTracksAtom, history[newIndex]!.tracks);
   }
 });
 
@@ -83,7 +83,7 @@ export const redoAtom = atom(null, (get, set) => {
   if (index < history.length - 1) {
     const newIndex = index + 1;
     set(historyIndexAtom, newIndex);
-    set(animationTracksAtom, history[newIndex].tracks);
+    set(animationTracksAtom, history[newIndex]!.tracks);
   }
 });
 

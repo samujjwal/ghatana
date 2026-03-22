@@ -42,13 +42,12 @@ dependencies {
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:runtime"))
     implementation(project(":platform:java:plugin"))
-    implementation(project(":platform:java:agent-framework"))
+    implementation(project(":platform:java:agent-core"))
     implementation(project(":platform:java:testing"))
     
     // YAPPC modules
     // ===== Services bounded-context sub-modules =====
-    implementation(project(":products:yappc:services:domain"))
-    implementation(project(":products:yappc:services:infrastructure"))
+    implementation(project(":products:yappc:services:platform"))
     implementation(project(":products:yappc:services:lifecycle"))
     implementation(project(":products:yappc:services:scaffold"))
 

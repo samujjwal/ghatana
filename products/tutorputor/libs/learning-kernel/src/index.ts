@@ -121,7 +121,7 @@ export type {
     RawEvent,
     ValidationResult,
     ValidationIssue,
-} from '@ghatana/tutorputor-contracts/v1/plugin-interfaces';
+} from '@tutorputor/contracts/v1/plugin-interfaces';
 
 // Engine
 export * from './engine';

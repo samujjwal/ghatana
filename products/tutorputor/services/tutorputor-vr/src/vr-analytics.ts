@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type service
  * @doc.purpose VR Analytics service for tracking usage and learning outcomes

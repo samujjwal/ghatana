@@ -20,8 +20,7 @@ dependencies {
     implementation(project(":platform:java:plugin"))
     implementation(project(":platform:java:event-cloud"))
     implementation(project(":platform:java:audit"))
-    implementation(project(":platform:java:agent-framework"))
-    implementation(project(":platform:java:agent-spi"))
+    implementation(project(":platform:java:agent-core"))
 
     // Kernel modules
     implementation(project(":platform:java:kernel:modules:authentication"))

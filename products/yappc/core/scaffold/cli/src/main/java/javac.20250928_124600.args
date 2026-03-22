@@ -1,3 +1,0 @@
--cp
-../../../../../../../modules/core/src/main/java:.
-com/ghatana/yappc/cli/commands/PolicyCommand.java

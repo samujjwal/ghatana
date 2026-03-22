@@ -21,7 +21,6 @@ dependencies {
     // Internal dependencies
     implementation(project(":products:yappc:core:scaffold:core"))
     implementation(project(":products:yappc:core:scaffold:packs"))
-    implementation(project(":products:yappc:core:scaffold:cli"))
     
     // JSON serialization
     implementation(libs.jackson.databind)
@@ -51,7 +50,6 @@ dependencies {
     compileOnly("org.apache.tomcat:annotations-api:6.0.53")
     
     // Testing
-    testImplementation(project(":products:yappc:core:scaffold:api:http"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)

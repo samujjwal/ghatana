@@ -1,2 +1,2 @@
-export { createLTIService } from './service.js.js';
-export type { HealthAwareLTIService } from './service.js.js';
+export { createLTIService } from './service.js';
+export type { HealthAwareLTIService } from './service.js';

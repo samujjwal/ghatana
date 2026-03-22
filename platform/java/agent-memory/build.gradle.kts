@@ -18,7 +18,7 @@ dependencies {
     api(project(":platform:contracts"))
 
     // Agent Framework (for backward-compat adapters: MemoryStore, Episode, Fact, Policy)
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
 
     // ActiveJ for async operations
     api(libs.activej.promise)

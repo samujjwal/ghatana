@@ -13,7 +13,7 @@ dependencies {
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:database"))
-    implementation(project(":platform:java:agent-framework"))
+    implementation(project(":platform:java:agent-core"))
     implementation(project(":platform:java:agent-memory"))  // TODO: Migrate from custom AgentMemory to platform MemoryPlane
 
     // AEP platform (provides com.ghatana.core.operator.* and com.ghatana.core.pipeline.*)

@@ -15,7 +15,7 @@ dependencies {
     api(project(yappcDomainPath))
 
     // Core platform dependencies used by YAPPC domain components
-    api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-core"))
     api(project(":platform:java:observability"))
     api(project(":platform:java:ai-integration"))
     api(project(":platform:java:http"))

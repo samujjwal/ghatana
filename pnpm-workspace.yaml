@@ -1,15 +1,9 @@
 packages:
   # Platform TypeScript libraries
   - "platform/typescript/*"
-  - "platform/typescript/canvas/flow-canvas"
   - "platform/typescript/capabilities/*"
+  - "platform/typescript/capabilities/canvas-core/flow-canvas"
   - "platform/typescript/foundation/*"
-
-  # Domain-based organization
-  - "domain/*/*"
-
-  # Apps
-  - "apps/*"
 
   # Product UIs
   - "products/data-cloud/ui"
@@ -19,6 +13,7 @@ packages:
   # YAPPC frontend (existing)
   - "products/yappc/frontend/libs/*"
   - "products/yappc/frontend/apps/*"
+  - "products/yappc/frontend/web"
   - "products/yappc/tools/*"
 
   # Shared services

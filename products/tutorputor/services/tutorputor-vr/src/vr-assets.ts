@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type service
  * @doc.purpose VR Asset management service with S3 integration

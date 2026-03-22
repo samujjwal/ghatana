@@ -481,7 +481,7 @@ function generateExercises(concept: DomainConcept): ExerciseItem[] {
     const exercises: ExerciseItem[] = [];
 
     for (let i = 0; i < concept.pedagogicalMetadata.learningObjectives.length; i++) {
-        const objective = concept.pedagogicalMetadata.learningObjectives[i];
+        const objective = concept.pedagogicalMetadata.learningObjectives[i]!;
         const taxonomyLevel = inferTaxonomyLevel(objective);
 
         exercises.push({
