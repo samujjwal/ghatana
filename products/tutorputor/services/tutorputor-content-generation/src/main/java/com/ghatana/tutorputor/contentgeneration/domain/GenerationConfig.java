@@ -1,4 +1,4 @@
-package com.ghatana.tutorputor.explorer.model;
+package com.ghatana.tutorputor.contentgeneration.domain;
 
 public class GenerationConfig {
     private final boolean includeExamples;

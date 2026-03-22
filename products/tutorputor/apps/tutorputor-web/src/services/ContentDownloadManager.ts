@@ -12,9 +12,15 @@
 
 import type { ModuleDetail, ModuleId } from "@tutorputor/contracts/v1";
 
-// Type aliases for backwards compatibility with existing code
-type Module = ModuleDetail;
-type Lesson = ModuleDetail["blocks"] extends (infer T)[] ? T : never;
+// Extended Module type for download manager with additional fields
+type Module = ModuleDetail & {
+  blocks?: Array<{ id: string; [key: string]: unknown }>;
+  totalSizeBytes?: number;
+  lessons?: Array<{ id: string; [key: string]: unknown }>;
+  quizzes?: Array<{ id: string; questions: unknown[] }>;
+};
+
+type Lesson = Module["blocks"] extends (infer T)[] ? T : { id: string; [key: string]: unknown };
 type Quiz = { id: string; questions: unknown[] };
 
 // ============================================================================

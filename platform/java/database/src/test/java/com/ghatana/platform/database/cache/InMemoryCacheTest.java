@@ -106,13 +106,14 @@ class InMemoryCacheTest {
 
     @Test
     void testExpiration() throws InterruptedException {
-        InMemoryCache<String, String> shortTtlCache = InMemoryCache.create("short-ttl-cache", Duration.ofMillis(100));
+        // Use a 500ms TTL with a 1000ms sleep to provide robust margins against JVM/GC pauses
+        InMemoryCache<String, String> shortTtlCache = InMemoryCache.create("short-ttl-cache", Duration.ofMillis(500));
         try {
             shortTtlCache.put("key1", "value1");
             assertTrue(shortTtlCache.get("key1").isPresent());
             
-            // Wait for expiration
-            TimeUnit.MILLISECONDS.sleep(150);
+            // Wait for expiration (sleep > 2x TTL to handle slow/loaded machines)
+            TimeUnit.MILLISECONDS.sleep(1000);
             
             assertFalse(shortTtlCache.get("key1").isPresent());
         } finally {

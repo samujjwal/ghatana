@@ -22,7 +22,7 @@ import type {
     UserId,
     UserRole,
 } from "@tutorputor/contracts/v1/types";
-import type { TutorPrismaClient } from "@tutorputor/db";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 import { OidcClient, type OidcVerifiedClaims } from "./oidc/OidcClient.js";
 import { randomUUID } from "crypto";
 

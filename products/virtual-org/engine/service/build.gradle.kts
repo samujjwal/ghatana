@@ -25,7 +25,7 @@ dependencies {
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:agent-core"))
-    implementation(project(":platform:java:agent-memory"))  // TODO: Migrate from custom AgentMemory to platform MemoryPlane
+    implementation(project(":platform:java:agent-runtime"))  // Migrated from agent-memory: MemoryPlane
 
     // Platform contracts (proto-generated types)
     implementation(project(":platform:contracts"))

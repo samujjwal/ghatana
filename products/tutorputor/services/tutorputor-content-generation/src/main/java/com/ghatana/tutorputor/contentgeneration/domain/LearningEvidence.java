@@ -1,4 +1,4 @@
-package com.ghatana.tutorputor.explorer.model;
+package com.ghatana.tutorputor.contentgeneration.domain;
 
 public class LearningEvidence {
     private final String id;

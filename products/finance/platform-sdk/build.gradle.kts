@@ -38,10 +38,7 @@ dependencies {
     
     // ─── Platform Kernel (for migrated modules) ───────────────────────────────
     api(project(":platform:java:kernel"))
-    api(project(":platform:java:kernel:modules:authentication"))
-    api(project(":platform:java:kernel:modules:config"))
-    api(project(":platform:java:kernel:modules:event-store"))
-    api(project(":platform:java:kernel:modules:audit"))
+    api(project(":platform:java:kernel-capabilities"))  // Merged: kernel/modules/* (auth + config + event-store + audit + resilience + observability + secrets)
     
     // ─── Platform Libraries ───────────────────────────────────────────────────
     api(project(":platform:java:plugin"))

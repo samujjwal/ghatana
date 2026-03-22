@@ -1,7 +1,7 @@
 import type {
     TenantId,
 } from "@tutorputor/contracts/v1/types";
-import type { TutorPrismaClient } from "@tutorputor/db";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 import { z } from "zod";
 
 // =============================================================================

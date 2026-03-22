@@ -1,6 +1,6 @@
-package com.ghatana.products.collection.infrastructure.generation;
+package com.ghatana.tutorputor.contentgeneration;
 
-import com.ghatana.products.collection.domain.generation.*;
+import com.ghatana.tutorputor.contentgeneration.*;
 import io.activej.promise.Promise;
 import java.util.*;
 

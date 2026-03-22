@@ -5,7 +5,7 @@
  * and calculation of learning progress from assessment data.
  */
 
-import { PrismaClient } from "@tutorputor/db";
+import { PrismaClient } from "@tutorputor/core/db";
 import {
     Credential,
     CredentialFilter,

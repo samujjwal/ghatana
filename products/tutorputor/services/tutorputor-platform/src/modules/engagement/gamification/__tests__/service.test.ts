@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GamificationService } from '../service';
-import type { PrismaClient } from '@tutorputor/db';
+import type { PrismaClient } from '@tutorputor/core/db';
 
 function makeMockPrisma() {
     return {

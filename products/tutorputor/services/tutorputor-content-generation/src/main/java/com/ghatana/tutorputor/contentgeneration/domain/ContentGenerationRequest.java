@@ -1,4 +1,4 @@
-package com.ghatana.tutorputor.explorer.model;
+package com.ghatana.tutorputor.contentgeneration.domain;
 
 import lombok.Builder;
 import lombok.Getter;

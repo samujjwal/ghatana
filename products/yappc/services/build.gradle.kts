@@ -48,8 +48,7 @@ dependencies {
     // YAPPC modules
     // ===== Services bounded-context sub-modules =====
     implementation(project(":products:yappc:services:platform"))
-    implementation(project(":products:yappc:services:lifecycle"))
-    implementation(project(":products:yappc:services:scaffold"))
+    implementation(project(":products:yappc:services:lifecycle"))  // absorbs services:ai and services:scaffold
 
     implementation(project(":products:yappc:backend:api"))
     implementation(project(":products:yappc:platform"))
@@ -61,9 +60,8 @@ dependencies {
     implementation(project(":products:yappc:core:lifecycle"))
     implementation(project(":products:yappc:core:spi"))
     implementation(project(":products:yappc:core:framework"))
-    implementation(project(":products:yappc:core:scaffold:core"))
+    implementation(project(":products:yappc:core:scaffold:core"))  // absorbs packs
     implementation(project(":products:yappc:core:scaffold:api"))
-    implementation(project(":products:yappc:core:scaffold:packs"))
     implementation(project(":products:yappc:infrastructure:datacloud"))
     
     // Data Cloud

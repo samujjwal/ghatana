@@ -1,8 +1,10 @@
 /*
- * Platform Core Module - Build Configuration
- * 
- * Contains the core AEP engine, event processing, and pipeline execution.
- * This is the foundational module that other platform modules depend on.
+ * Platform Core Module - Build Configuration (Facade)
+ *
+ * Thin re-export facade after engine extraction.
+ * All core engine code has been moved to platform-engine.
+ * This module exists for backward compatibility — consumers
+ * that depend on platform-core will transitively get platform-engine.
  */
 
 plugins {
@@ -11,29 +13,9 @@ plugins {
 }
 
 dependencies {
-    // ActiveJ - core async framework
-    implementation(libs.activej.eventloop)
-    implementation(libs.activej.promise)
-    implementation(libs.activej.http)
-    implementation(libs.activej.csp)
-    
-    // Jackson - JSON processing
-    implementation(libs.jackson.core)
-    implementation(libs.jackson.databind)
-    implementation(libs.jackson.annotations)
-    
-    // Platform domain
-    implementation(project(":platform:java:domain"))
-    implementation(project(":platform:java:observability"))
-    implementation(project(":platform:contracts"))
-    
-    // Redis
-    implementation("redis.clients:jedis:5.1.0")
-    
-    // Logging
-    implementation(libs.slf4j.api)
-    implementation(libs.logback.classic)
-    
+    // Re-export platform-engine so all existing consumers work unchanged
+    api(project(":products:aep:platform-engine"))
+
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
@@ -42,13 +24,14 @@ dependencies {
     testImplementation(libs.activej.test)
     testImplementation(project(":platform:java:testing"))
     testImplementation(project(":platform:java:agent-core"))
-    testImplementation(project(":platform:java:agent-memory"))
+    testImplementation(project(":platform:java:agent-runtime"))  // Merged: agent-memory
     testImplementation(project(":platform:java:security"))
     testImplementation(project(":products:aep:platform-registry"))
     testImplementation(project(":products:aep:platform-agent"))
+    testImplementation(project(":products:aep:platform-engine"))
     testImplementation("org.openjdk.jmh:jmh-core:1.37")
     testAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.37")
-    
+
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)

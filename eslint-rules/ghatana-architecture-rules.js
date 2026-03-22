@@ -226,6 +226,72 @@ module.exports = {
     },
 
     /**
+     * Rule: no-platform-to-product-imports
+     * platform/typescript modules must not import from products/
+     *
+     * This is the TypeScript equivalent of the Java ArchUnit rule:
+     * platformMustNotImportProducts() in GhatanaBoundaryRules.java
+     *
+     * BDY-6-4: Added 2026-03-21 as part of architecture guard hardening.
+     */
+    'no-platform-to-product-imports': {
+      meta: {
+        type: 'error',
+        docs: {
+          description: 'Disallow imports from products/ inside platform/typescript modules',
+          category: 'Architecture',
+          recommended: true,
+        },
+        schema: [],
+        messages: {
+          platformImportsProduct: "🚫 platform/typescript module imports from products/: '{{import}}'. Platform code must be product-agnostic. Move shared code to platform or create product-local code. See BOUNDARY_IMPLEMENTATION_PLAN.md §BDY-6.",
+        },
+      },
+
+      create(context) {
+        const currentFilePath = context.getFilename();
+
+        // Only enforce for files inside platform/typescript/
+        if (!currentFilePath.includes('/platform/typescript/')) return {};
+
+        function checkImport(node, importPath) {
+          // Catch relative imports that escape into products/ (../../products/...)
+          if (importPath.includes('/products/')) {
+            context.report({
+              node,
+              messageId: 'platformImportsProduct',
+              data: { import: importPath },
+            });
+          }
+          // Catch scoped package imports that belong to a product scope
+          const PRODUCT_SCOPES = ['@yappc/', '@flashit/', '@tutorputor/', '@data-cloud/', '@dcmaar/', '@audio-video/', '@aep/', '@app-platform/'];
+          for (const scope of PRODUCT_SCOPES) {
+            if (importPath.startsWith(scope)) {
+              context.report({
+                node,
+                messageId: 'platformImportsProduct',
+                data: { import: importPath },
+              });
+              return;
+            }
+          }
+        }
+
+        return {
+          ImportDeclaration(node) {
+            checkImport(node, node.source.value);
+          },
+          ExportAllDeclaration(node) {
+            if (node.source) checkImport(node, node.source.value);
+          },
+          ExportNamedDeclaration(node) {
+            if (node.source) checkImport(node, node.source.value);
+          },
+        };
+      },
+    },
+
+    /**
      * Rule: no-deprecated-ghatana-ui
      * Prevents use of deprecated @ghatana/ui
      */

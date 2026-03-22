@@ -25,6 +25,12 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.diffutils)
 
+    // Absorbed from core:scaffold:packs (merged)
+    implementation(libs.picocli)
+    implementation(libs.jgit)
+    implementation(libs.joda.time)
+    implementation(libs.commons.text)
+
     // OpenTelemetry for unified telemetry
     api(libs.opentelemetry.api)
     implementation(libs.opentelemetry.sdk)

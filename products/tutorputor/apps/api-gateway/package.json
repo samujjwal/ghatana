@@ -21,8 +21,7 @@
     "@opentelemetry/resources": "^2.5.0",
     "@opentelemetry/sdk-node": "^0.211.0",
     "@opentelemetry/semantic-conventions": "^1.39.0",
-    "@tutorputor/contracts": "workspace:*",
-    "@tutorputor/db": "workspace:*",
+    "@tutorputor/core": "workspace:*",
     "@tutorputor/platform": "workspace:*",
     "fastify": "^5.7.4",
     "prom-client": "^15.1.3"

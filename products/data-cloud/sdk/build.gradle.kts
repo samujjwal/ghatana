@@ -27,11 +27,6 @@ group = "com.ghatana.datacloud"
 version = rootProject.version
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Resolved path to the canonical OpenAPI specification
-// ─────────────────────────────────────────────────────────────────────────────
-val specFile = rootProject.file("products/data-cloud/docs/openapi.yaml")
-
-// ─────────────────────────────────────────────────────────────────────────────
 //  Java SDK — okhttp-gson, Java 8+ compatible
 // ─────────────────────────────────────────────────────────────────────────────
 /**
@@ -45,6 +40,7 @@ val specFile = rootProject.file("products/data-cloud/docs/openapi.yaml")
 tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("generateJavaSdk") {
     group = "sdk"
     description = "Generates a Java (okhttp-gson) client SDK from the Data-Cloud OpenAPI spec."
+    val specFile = rootProject.layout.projectDirectory.file("products/data-cloud/docs/openapi.yaml").asFile
 
     generatorName.set("java")
     inputSpec.set(specFile.absolutePath)
@@ -104,6 +100,7 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("gen
 tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("generateTypescriptSdk") {
     group = "sdk"
     description = "Generates a TypeScript-Fetch client SDK from the Data-Cloud OpenAPI spec."
+    val specFile = rootProject.layout.projectDirectory.file("products/data-cloud/docs/openapi.yaml").asFile
 
     generatorName.set("typescript-fetch")
     inputSpec.set(specFile.absolutePath)
@@ -145,6 +142,7 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("gen
 tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("generatePythonSdk") {
     group = "sdk"
     description = "Generates a Python (urllib3) client SDK from the Data-Cloud OpenAPI spec."
+    val specFile = rootProject.layout.projectDirectory.file("products/data-cloud/docs/openapi.yaml").asFile
 
     generatorName.set("python")
     inputSpec.set(specFile.absolutePath)
@@ -181,6 +179,7 @@ tasks.named("build") {
 //  a misleading "generator not found" error
 // ─────────────────────────────────────────────────────────────────────────────
 tasks.configureEach {
+    val specFile = rootProject.layout.projectDirectory.file("products/data-cloud/docs/openapi.yaml").asFile
     if (name.startsWith("generate") && name.endsWith("Sdk")) {
         doFirst {
             require(specFile.exists()) {

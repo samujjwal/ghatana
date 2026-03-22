@@ -4,6 +4,7 @@ This index summarizes the **shared TypeScript libraries under `libs/typescript`*
 
 Libraries:
 
+- `@ghatana/canvas` ← **NEW** (BDY-2, 2026-03-21)
 - `@yappc/accessibility-audit`
 - `@ghatana/api`
 - `@ghatana/charts`

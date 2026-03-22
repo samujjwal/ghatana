@@ -1,4 +1,4 @@
-package com.ghatana.products.collection.domain.policy;
+package com.ghatana.tutorputor.contentgeneration;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,7 +40,8 @@ import java.util.Objects;
 public record PolicyCheckResult(
         boolean passed,
         List<PolicyViolation> violations,
-        PolicyType policyType
+    PolicyType policyType,
+    double score
 ) {
     /**
      * Creates policy check result with validation.
@@ -52,8 +53,14 @@ public record PolicyCheckResult(
      */
     public PolicyCheckResult {
         Objects.requireNonNull(violations, "violations cannot be null");
-        Objects.requireNonNull(policyType, "policyType cannot be null");
         violations = List.copyOf(violations); // Defensive copy for immutability
+        if (score < 0.0 || score > 1.0) {
+            throw new IllegalArgumentException("score must be between 0.0 and 1.0");
+        }
+    }
+
+    public PolicyCheckResult(boolean passed, List<PolicyViolation> violations, PolicyType policyType) {
+        this(passed, violations, policyType, passed ? 1.0 : 0.0);
     }
 
     /**
@@ -63,7 +70,11 @@ public record PolicyCheckResult(
      * @return PolicyCheckResult indicating pass
      */
     public static PolicyCheckResult pass(PolicyType policyType) {
-        return new PolicyCheckResult(true, Collections.emptyList(), policyType);
+        return new PolicyCheckResult(true, Collections.emptyList(), policyType, 1.0);
+    }
+
+    public static PolicyCheckResult pass(PolicyType policyType, double score) {
+        return new PolicyCheckResult(true, Collections.emptyList(), policyType, score);
     }
 
     /**
@@ -74,7 +85,15 @@ public record PolicyCheckResult(
      * @return PolicyCheckResult indicating failure
      */
     public static PolicyCheckResult fail(PolicyType policyType, List<PolicyViolation> violations) {
-        return new PolicyCheckResult(false, violations, policyType);
+        return new PolicyCheckResult(false, violations, policyType, 0.0);
+    }
+
+    public static PolicyCheckResult failWithViolations(
+            PolicyType policyType,
+            List<PolicyViolation> violations,
+            double score
+    ) {
+        return new PolicyCheckResult(false, violations, policyType, score);
     }
 
     /**
@@ -94,39 +113,34 @@ public record PolicyCheckResult(
     public boolean hasViolations() {
         return !violations.isEmpty();
     }
-}
 
-/**
- * Represents a single policy violation detected in content.
- *
- * <p><b>Purpose</b><br>
- * Details about a specific policy violation including the matched text,
- * confidence score, and position in the original content.
- *
- * @param violationType type of violation (e.g., "profanity", "spam_link")
- * @param matchedText exact text that triggered violation
- * @param confidence confidence score (0-1, higher = more certain)
- * @param position character position in original text (0-based)
- *
- * @doc.type record
- * @doc.purpose Policy violation detail
- * @doc.layer domain
- * @doc.pattern Value Object
- */
-record PolicyViolation(
-        String violationType,
-        String matchedText,
-        double confidence,
-        int position
-) {
-    public PolicyViolation {
-        Objects.requireNonNull(violationType, "violationType cannot be null");
-        Objects.requireNonNull(matchedText, "matchedText cannot be null");
-        if (confidence < 0.0 || confidence > 1.0) {
-            throw new IllegalArgumentException("confidence must be between 0.0 and 1.0");
-        }
-        if (position < 0) {
-            throw new IllegalArgumentException("position cannot be negative");
+    /**
+     * Represents a single policy violation detected in content.
+     *
+        * @param policyType policy category that was violated
+        * @param severity severity level for the violation
+        * @param location content location where the violation was found
+        * @param description human-readable explanation of the violation
+        * @param remediation recommended remediation for the violation
+     *
+     * @doc.type record
+     * @doc.purpose Policy violation detail
+     * @doc.layer domain
+     * @doc.pattern Value Object
+     */
+    public record PolicyViolation(
+            PolicyType policyType,
+            String severity,
+            String location,
+            String description,
+            String remediation
+    ) {
+        public PolicyViolation {
+            Objects.requireNonNull(policyType, "policyType cannot be null");
+            Objects.requireNonNull(severity, "severity cannot be null");
+            Objects.requireNonNull(location, "location cannot be null");
+            Objects.requireNonNull(description, "description cannot be null");
+            Objects.requireNonNull(remediation, "remediation cannot be null");
         }
     }
 }

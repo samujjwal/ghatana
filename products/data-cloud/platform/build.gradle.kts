@@ -142,11 +142,9 @@ dependencies {
     compileOnly("javax.annotation:javax.annotation-api:1.3.2") // @Generated annotation on proto stubs
 
     // =========================================================================
-    // AI INTEGRATION
+    // AI INTEGRATION (registry + observability merged into parent)
     // =========================================================================
     implementation(project(":platform:java:ai-integration"))
-    implementation(project(":platform:java:ai-integration:registry"))
-    implementation(project(":platform:java:ai-integration:observability"))
     
     // =========================================================================
     // TESTING

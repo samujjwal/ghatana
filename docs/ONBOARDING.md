@@ -221,6 +221,66 @@ products/       ← Business products (aep, data-cloud, dcmaar, virtual-org, ...
 
 ---
 
+## 8a. Standard Product Layout Template
+
+Every product in `products/` should follow this standard directory structure.  
+Reference implementations: `products/finance/` and `products/audio-video/` (both scored 8/10 in boundary audit).
+
+```
+products/<name>/
+├── OWNER.md                  ← Team ownership, Slack channel, on-call rotation (REQUIRED)
+├── README.md                 ← Product overview and quickstart
+├── build.gradle.kts          ← Root build file (or settings for multi-module)
+├── docs/                     ← Product-local architecture documentation
+│   └── CORE_ARCHITECTURE.md  ← Module map and dependency rules (recommended)
+├── core/                     ← Product-local domain logic
+│   ├── domain/               ← Value objects, domain events, aggregates
+│   ├── spi/                  ← Public plugin/extension API (if product is extensible)
+│   └── framework/            ← Framework integrations, lifecycle
+├── libs/                     ← Product-owned shared libraries (usable by other products)
+│   └── <lib-name>/           ← Each lib has its own build.gradle.kts
+├── services/                 ← Runnable microservices / application modules
+│   └── <service-name>/
+├── ui/                       ← Frontend application(s) (TypeScript/React)
+│   └── <app-name>/
+└── infrastructure/           ← Docker, K8s manifests, Terraform (if product-specific)
+```
+
+### Placement Decision Tree
+
+```
+Is this code used by exactly 1 product?
+    YES → products/<name>/core/ or products/<name>/services/
+    NO (2+ products):
+        Does one product own it?
+            YES → products/<owner>/libs/<lib-name>/ (product-owned shared)
+            NO  → platform/java/ or platform/typescript/ (truly global shared)
+                  Requires Architecture Board approval via MODULE_ADMISSION_CHECKLIST.md
+```
+
+### OWNER.md Template
+
+Every product MUST have an `OWNER.md` at its root:
+
+```markdown
+# Owner: <Product Name>
+
+**Team:** <Team Name>
+**Slack:** #<slack-channel>
+**On-call:** <rotation-name>
+**Architecture lead:** <name or role>
+
+## Responsibility
+
+<One-paragraph description of what this product does and its domain boundaries.>
+
+## Consumers
+
+<List of other products or external systems that consume this product's APIs.>
+```
+
+---
+
 ## 9. Getting Help
 
 - **Architecture decisions:** `docs/adr/`

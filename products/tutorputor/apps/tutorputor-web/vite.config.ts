@@ -17,13 +17,29 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src")
-    }
+      "@": path.resolve(__dirname, "./src"),
+      "@ghatana/design-system": path.resolve(__dirname, "../../../../platform/typescript/capabilities/design-system/dist/index.js"),
+      "@ghatana/theme": path.resolve(__dirname, "../../../../platform/typescript/theme/dist/index.js"),
+      "@ghatana/tokens": path.resolve(__dirname, "../../../../platform/typescript/tokens/dist/index.js"),
+      "@ghatana/utils": path.resolve(__dirname, "../../../../platform/typescript/foundation/platform-utils/dist/index.js"),
+    },
+    preserveSymlinks: true
   },
   build: {
     outDir: "dist",
     sourcemap: true,
     rollupOptions: {
+      external: [
+        '@tanstack/query-core',
+        '@tanstack/query-devtools',
+        'react-router',
+        'react-router/dom',
+        '@mui/utils',
+        '@mui/material',
+        '@mui/system',
+        '@emotion/react',
+        '@emotion/styled'
+      ],
       input: {
         main: path.resolve(__dirname, "index.html"),
         sw: path.resolve(__dirname, "src/sw.ts"),

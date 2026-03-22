@@ -1,4 +1,4 @@
-package com.ghatana.products.collection.domain.media;
+package com.ghatana.tutorputor.contentgeneration;
 
 import java.time.Instant;
 import java.util.Objects;

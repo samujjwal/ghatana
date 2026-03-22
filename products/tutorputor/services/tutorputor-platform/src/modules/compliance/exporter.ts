@@ -9,7 +9,7 @@ import { createWriteStream } from 'fs';
 import { mkdir, rm, writeFile } from 'fs/promises';
 import { join } from 'path';
 import archiver from 'archiver';
-import type { PrismaClient } from '@tutorputor/db';
+import type { PrismaClient } from '@tutorputor/core/db';
 import type { ExportedFile } from './types';
 import { createLogger } from '../../utils/logger.js';
 const logger = createLogger('exporter');

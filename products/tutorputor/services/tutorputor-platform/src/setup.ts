@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { PrismaClient } from "@tutorputor/db";
+import { PrismaClient } from "@tutorputor/core/db";
 import Redis from "ioredis";
 import jwt from "@fastify/jwt";
 import helmet from "@fastify/helmet";
@@ -26,6 +26,7 @@ import { aiModule } from "./modules/ai/index.js";
 import { autoRevisionModule } from "./modules/auto-revision/module.js";
 import { contentNeedsModule } from "./modules/content-needs/module.js";
 import { simulationModule } from "./modules/simulation/index.js";
+import { registerKernelRegistryRoutes } from "./modules/kernel-registry/fastify-routes.js";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
@@ -127,6 +128,10 @@ export async function setupPlatform(
   await app.register(autoRevisionModule, { prefix: "/api/auto-revision" });
   await app.register(contentNeedsModule, { prefix: "/api/content-needs" });
   await app.register(simulationModule);
+
+  // Register consolidated modules
+  await registerKernelRegistryRoutes(app);
+  app.log.info("✅ Kernel Registry routes registered");
 
   const shouldStartContentWorker =
     options.startContentWorker ??

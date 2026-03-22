@@ -1,5 +1,5 @@
 import { type BadgeCategory } from "@tutorputor/contracts/v1/types";
-import type { PrismaClient } from "@tutorputor/db";
+import type { PrismaClient } from "@tutorputor/core/db";
 import type {
     TenantId,
     UserId,

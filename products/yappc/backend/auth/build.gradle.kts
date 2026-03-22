@@ -14,6 +14,9 @@ dependencies {
     implementation(project(":products:yappc:backend:persistence"))
     implementation(project(":platform:java:security"))
 
+    // Absorbed from infrastructure:security (merged)
+    implementation(project(":products:yappc:infrastructure:datacloud"))
+
     // ActiveJ (HTTP, DI, Promise)
     implementation(libs.activej.http)
     implementation(libs.activej.inject)

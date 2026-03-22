@@ -7,6 +7,8 @@ import com.ghatana.datacloud.analytics.export.EntityExportService;
 import com.ghatana.datacloud.analytics.anomaly.StatisticalAnomalyDetector;
 import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.AnomalyContext;
 import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.DetectionType;
+import com.ghatana.datacloud.entity.storage.QuerySpec;
+import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.http.*;
@@ -49,6 +51,7 @@ public class EntityCrudHandler {
     private EntitySchemaValidator schemaValidator;
     private EntityExportService exportService;
     private StatisticalAnomalyDetector anomalyDetector;
+    private OpenSearchConnector openSearchConnector;
 
     /**
      * Creates an entity handler with required dependencies.
@@ -77,6 +80,11 @@ public class EntityCrudHandler {
 
     public EntityCrudHandler withAnomalyDetector(StatisticalAnomalyDetector detector) {
         this.anomalyDetector = detector;
+        return this;
+    }
+
+    public EntityCrudHandler withOpenSearchConnector(OpenSearchConnector connector) {
+        this.openSearchConnector = connector;
         return this;
     }
 
@@ -500,5 +508,84 @@ public class EntityCrudHandler {
             log.error("Error processing anomaly detection request", e);
             return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
         }
+    }
+
+    // ==================== Full-Text Search ====================
+
+    /**
+     * Handles full-text entity search via OpenSearch.
+     *
+     * <p>Returns {@code 501 Not Implemented} when no {@link OpenSearchConnector} is
+     * configured. Returns {@code 400 Bad Request} when required query params are
+     * absent or invalid.
+     *
+     * @param request the incoming HTTP request
+     * @return a Promise resolving to the HTTP response
+     *
+     * @doc.type     method
+     * @doc.purpose  REST handler for OpenSearch full-text entity search
+     * @doc.layer    product
+     * @doc.pattern  Handler
+     */
+    public Promise<HttpResponse> handleFullTextSearch(HttpRequest request) {
+        if (openSearchConnector == null) {
+            return Promise.of(http.errorResponse(501,
+                "Full-text search is not enabled; configure an OpenSearchConnector"));
+        }
+
+        String collection = request.getPathParameter("collection");
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
+
+        String q = request.getQueryParameter("q");
+        Optional<String> qErr = ApiInputValidator.validateSearchQuery(q);
+        if (qErr.isPresent()) return Promise.of(http.errorResponse(400, qErr.get()));
+
+        String tenantId = http.resolveTenantId(request);
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+
+        ApiInputValidator.LimitResult limitResult = ApiInputValidator.validateLimit(request.getQueryParameter("limit"), 20);
+        if (!limitResult.isValid()) return Promise.of(http.errorResponse(400, limitResult.getError().orElseThrow()));
+        int limit  = limitResult.getValue();
+        int offset = Math.max(HttpHandlerSupport.parseIntParam(request.getQueryParameter("offset"), 0), 0);
+
+        QuerySpec spec = QuerySpec.builder()
+            .filter(q)
+            .limit(limit)
+            .offset(offset)
+            .build();
+
+        log.debug("[search] tenant={} collection={} q='{}' limit={} offset={}", tenantId, collection, q, limit, offset);
+
+        return openSearchConnector.query((java.util.UUID) null, tenantId, spec)
+            .map(qr -> {
+                List<Map<String, Object>> results = qr.entities().stream()
+                    .map(e -> {
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        item.put("id", e.getId() != null ? e.getId().toString() : null);
+                        item.put("collectionName", e.getCollectionName());
+                        item.put("data", e.getData());
+                        item.put("version", e.getVersion());
+                        item.put("createdAt", e.getCreatedAt() != null ? e.getCreatedAt().toString() : null);
+                        item.put("updatedAt", e.getUpdatedAt() != null ? e.getUpdatedAt().toString() : null);
+                        return item;
+                    })
+                    .toList();
+
+                Map<String, Object> body = new LinkedHashMap<>();
+                body.put("results",     results);
+                body.put("total",       qr.total());
+                body.put("limit",       qr.limit());
+                body.put("offset",      qr.offset());
+                body.put("hasMore",     qr.hasMore());
+                body.put("executionMs", qr.executionTimeMs());
+                return http.jsonResponse(body);
+            })
+            .mapException(e -> {
+                log.error("[search] tenant={} collection={} q='{}': {}",
+                    tenantId, collection, q, e.getMessage(), e);
+                return new HttpException("Search failed: " + e.getMessage(), e);
+            });
     }
 }

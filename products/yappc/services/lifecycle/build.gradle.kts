@@ -21,7 +21,7 @@ dependencies {
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:security"))
     implementation(project(":platform:java:governance"))
-    implementation(project(":platform:java:yaml-template"))    // YAPPC-Ph3: YamlTemplateEngine
+    implementation(project(":platform:java:agent-core"))    // YAPPC-Ph3: YamlTemplateEngine (merged from yaml-template)
 
     // AEP platform (YAPPC-Ph4: OperatorCatalog, InMemoryOperatorCatalog, AepOperatorCatalogLoader)
     implementation(project(":products:aep:platform-bundle"))
@@ -29,12 +29,22 @@ dependencies {
     // AEP orchestrator (TriggerListener, ExecutionQueue)
     implementation(project(":products:aep:orchestrator"))
 
-    // Platform: Agent Memory — YAPPC-Ph7/8 (persistent MemoryPlane, MemoryStoreAdapter, Jdbc stores)
-    implementation(project(":platform:java:agent-memory"))
+    // Platform: Agent Runtime — MemoryPlane, MemoryStoreAdapter, Jdbc stores
+    implementation(project(":platform:java:agent-runtime"))  // Migrated from agent-memory
 
     // YAPPC lifecycle module (full monorepo path)
     implementation(project(":products:yappc:core:lifecycle"))
     implementation(project(":products:yappc:core:framework"))
+
+    // Absorbed from services:ai (merged)
+    implementation(project(":products:yappc:core:ai"))
+    implementation(project(":products:yappc:core:agents"))
+    implementation("dev.langchain4j:langchain4j:0.25.0")
+
+    // Absorbed from services:scaffold (merged)
+    implementation(project(":products:yappc:core:scaffold:core"))
+    implementation(project(":products:yappc:core:spi"))
+    implementation(project(":platform:java:plugin"))
 
     // ActiveJ for async + HTTP
     implementation(libs.activej.promise)

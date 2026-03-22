@@ -1,27 +1,28 @@
-package com.ghatana.tutorputor.explorer.generator;
+package com.ghatana.tutorputor.contentgeneration.generators;
 
-import com.ghatana.tutorputor.explorer.model.ContentGenerationRequest;
-import com.ghatana.tutorputor.explorer.model.LearningClaim;
+import com.ghatana.tutorputor.contentgeneration.domain.ContentGenerationRequest;
+import com.ghatana.tutorputor.contentgeneration.domain.LearningClaim;
 import io.activej.promise.Promise;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * @doc.type class
+ * @doc.purpose Generate baseline claims for a topic
+ * @doc.layer product
+ * @doc.pattern Generator
+ */
 public class ClaimGenerator {
-    
+
     public Promise<List<LearningClaim>> generateClaims(ContentGenerationRequest request) {
-        return Promise.ofBlocking(() -> {
-            List<LearningClaim> claims = new ArrayList<>();
-            // Stub implementation - would use LLM in production
-            claims.add(LearningClaim.builder()
+        LearningClaim claim = LearningClaim.builder()
                 .id(UUID.randomUUID().toString())
                 .text("Understanding " + request.getTopic())
-                .domain(request.getDomain().toString())
+                .domain(request.getDomain().name())
                 .gradeLevel(request.getGradeLevel())
                 .prerequisites(List.of())
-                .build());
-            return claims;
-        });
+                .build();
+        return Promise.of(List.of(claim));
     }
 }

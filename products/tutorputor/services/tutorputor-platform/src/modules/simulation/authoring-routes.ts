@@ -13,7 +13,7 @@ import type { FastifyInstance } from "fastify";
 import {
   createSimulationAuthorService,
   type SimAuthorConfig,
-} from "@tutorputor/simulation-engine";
+} from "@tutorputor/simulation/engine";
 import type {
   GenerateManifestRequest,
   RefineManifestRequest,

@@ -20,7 +20,7 @@ java {
 dependencies {
     // Platform dependencies
     api(project(":platform:java:core"))
-    api(project(":platform:java:observability"))
+    api(project(":platform:java:runtime"))
     
     // Nullability annotations
     compileOnly(libs.jetbrains.annotations)

@@ -1,13 +1,12 @@
-import { FastifyInstance } from 'fastify';
-import fp from 'fastify-plugin';
-import { PaymentService } from './service';
-import { paymentRoutes } from './routes';
+/**
+ * @doc.type module
+ * @doc.purpose TutorPutor payment service exports
+ * @doc.layer product
+ * @doc.pattern Module
+ */
 
-export const paymentModule = fp(async (fastify: FastifyInstance) => {
-    const stripeKey = process.env.STRIPE_SECRET_KEY || 'sk_test_mock';
-    const service = new PaymentService(fastify.prisma, stripeKey);
+export * from './types';
+export * from './service';
 
-    fastify.register(paymentRoutes, { service });
-
-    fastify.log.info('Payments module registered');
-});
+// Re-export Stripe for configuration
+export { default as Stripe } from 'stripe';

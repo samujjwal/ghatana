@@ -1,4 +1,4 @@
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from './utils/logger.js';
 const logger = createLogger('sw');
 
 /**
@@ -17,7 +17,43 @@ const logger = createLogger('sw');
 
 /// <reference lib="webworker" />
 
-declare const self: ServiceWorkerGlobalScope;
+// Service worker global scope types
+declare const self: ServiceWorkerGlobalScope & typeof globalThis;
+
+interface ServiceWorkerGlobalScope {
+  readonly caches: CacheStorage;
+  readonly clients: Clients;
+  readonly registration: ServiceWorkerRegistration;
+  skipWaiting(): Promise<void>;
+  addEventListener(type: string, listener: EventListener): void;
+}
+
+interface Clients {
+  claim(): Promise<void>;
+  get(id: string): Promise<Client | undefined>;
+  matchAll(options?: { includeUncontrolled?: boolean; type?: string }): Promise<Client[]>;
+}
+
+interface Client {
+  readonly id: string;
+  readonly type: string;
+  readonly url: string;
+  postMessage(message: unknown): void;
+}
+
+type ExtendableEvent = Event & {
+  waitUntil(promise: Promise<unknown>): void;
+};
+
+type FetchEvent = ExtendableEvent & {
+  request: Request;
+  respondWith(response: Promise<Response> | Response): void;
+};
+
+type SWMessageEvent = ExtendableEvent & {
+  data: unknown;
+  source: Client | null;
+};
 
 const CACHE_NAME = 'tutorputor-v1';
 const STATIC_CACHE_NAME = 'tutorputor-static-v1';

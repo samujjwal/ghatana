@@ -28,7 +28,7 @@ import type {
   UserId,
   ClassroomId,
 } from "@tutorputor/contracts/v1/types";
-import type { TutorPrismaClient } from "@tutorputor/db";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 import type { Redis } from "ioredis";
 
 // =============================================================================

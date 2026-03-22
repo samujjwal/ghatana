@@ -1,4 +1,4 @@
-package com.ghatana.products.collection.domain.policy;
+package com.ghatana.tutorputor.contentgeneration;
 
 /**
  * Enumeration of content policy types for validation.
@@ -16,11 +16,20 @@ public enum PolicyType {
     /** Offensive language, profanity, slurs */
     PROFANITY,
 
+    /** Personally identifiable information */
+    PII,
+
     /** Hate speech, discrimination, violence promotion */
     HATE_SPEECH,
 
+    /** Not-safe-for-work content */
+    NSFW,
+
     /** Sexual or graphic content */
     EXPLICIT,
+
+    /** Minimum content quality threshold */
+    QUALITY_THRESHOLD,
 
     /** Unwanted promotional or spam content */
     SPAM,

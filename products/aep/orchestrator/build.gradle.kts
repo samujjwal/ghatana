@@ -42,13 +42,12 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:domain"))
     api(project(":platform:java:agent-core"))
-    api(project(":platform:java:agent-dispatch"))
+    api(project(":platform:java:agent-runtime"))  // Merged: agent-dispatch + agent-resilience
     api(project(":platform:java:agent-registry"))
     api(project(":platform:java:observability"))
     api(project(":platform:java:database"))
     api(project(":platform:java:config"))
-    api(project(":platform:java:ai-integration:feature-store"))
-    api(project(":platform:java:ai-integration:registry"))
+    api(project(":platform:java:ai-integration"))  // Includes merged registry + feature-store
     api(project(":platform:contracts"))
     api(project(":products:data-cloud:spi"))
 

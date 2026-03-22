@@ -21,6 +21,9 @@ dependencies {
     // ActiveJ (async framework)
     api(libs.activej.promise)
     
+    // Metrics foundation (MetricsCollector interface lives here to avoid circular deps)
+    api(libs.micrometer.core)
+    
     // Logging
     api(libs.slf4j.api)
     
@@ -64,11 +67,12 @@ dependencies {
 }
 
 tasks.processResources {
+    val platformVersion = rootProject.version.toString()
     filesMatching("META-INF/platform.properties") {
         expand(
-            "platformVersion" to rootProject.version,
-            "sdkVersion" to rootProject.version,
-            "instrumentationVersion" to rootProject.version
+            "platformVersion" to platformVersion,
+            "sdkVersion" to platformVersion,
+            "instrumentationVersion" to platformVersion
         )
     }
 }

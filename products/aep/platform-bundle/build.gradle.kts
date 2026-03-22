@@ -26,9 +26,7 @@ dependencies {
     api(project(":products:aep:platform-core"))
     api(project(":products:aep:platform-agent"))
     api(project(":platform:java:agent-core"))
-    api(project(":platform:java:agent-dispatch"))
-    api(project(":platform:java:agent-learning"))
-    api(project(":platform:java:agent-memory"))
+    api(project(":platform:java:agent-runtime"))  // Merged: agent-memory + agent-learning + agent-dispatch + agent-resilience
     api(project(":platform:java:agent-registry"))
     api(project(":platform:java:connectors"))
     api(project(":products:data-cloud:spi"))       // SPI interfaces only (not full platform)
@@ -40,7 +38,7 @@ dependencies {
     api(project(":platform:java:http"))
     api(project(":platform:java:config"))
     api(project(":platform:contracts"))            // Generated gRPC stubs (EventServiceGrpc, etc.)
-    api(project(":platform:java:schema-registry"))  // SchemaRegistry, ValidationResult
+    // SchemaRegistry + ValidationResult now in platform:java:domain (SCHM-1 merger)
 
     // =========================================================================
     // ACTIVEJ (Async Runtime)
@@ -102,10 +100,9 @@ dependencies {
     implementation(libs.langchain4j.open.ai)
 
     // =========================================================================
-    // AI PLATFORM INTEGRATION (Feature Store + Model Registry)
+    // AI PLATFORM INTEGRATION (Feature Store + Model Registry — merged into ai-integration)
     // =========================================================================
-    implementation(project(":platform:java:ai-integration:feature-store"))  // FeatureStoreService
-    implementation(project(":platform:java:ai-integration:registry"))        // ModelRegistryService
+    implementation(project(":platform:java:ai-integration"))  // FeatureStoreService + ModelRegistryService
     
     // Apache Commons (for analytics)
     implementation(libs.commons.math3)

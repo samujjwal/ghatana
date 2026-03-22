@@ -10,7 +10,7 @@ import type {
     SimulationTemplateDifficulty,
     SimulationTemplateLicense
 } from "@tutorputor/contracts/v1/types";
-import type { TutorPrismaClient } from "@tutorputor/db";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 
 type TemplateSortField =
     | "popularity"

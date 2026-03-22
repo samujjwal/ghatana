@@ -3,7 +3,7 @@ package com.ghatana.tutorputor.contentgeneration;
 import com.ghatana.tutorputor.contentgeneration.LlmProvider;
 import com.ghatana.tutorputor.contentgeneration.prompts.PromptTemplateEngine;
 import com.ghatana.tutorputor.contentgeneration.ContentValidator;
-import com.ghatana.tutorputor.contracts.v1.*;
+import com.ghatana.tutorputor.contentgeneration.contracts.v1.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
@@ -68,18 +68,19 @@ public class ContentGenerationAgent {
     public Promise<GenerateClaimsResponse> generateClaims(GenerateClaimsRequest request) {
         Timer.Sample sample = Timer.start(meterRegistry);
         return executeWithRetry("generateClaims", request, () -> {
-            String prompt = promptEngine.buildPrompt(request, Map.of(
-                "operation", "generateClaims",
-                "topic", request.getTopic(),
-                "gradeLevel", request.getGradeLevel().name(),
-                "domain", request.getDomain().name(),
-                "maxClaims", request.getMaxClaims()
-            ));
+            String prompt = promptEngine.buildPrompt(
+                "generateClaims",
+                Map.of(
+                    "topic", request.getTopic(),
+                    "gradeLevel", request.getGradeLevel(),
+                    "domain", request.getDomain(),
+                    "maxClaims", String.valueOf(request.getMaxClaims())
+                ));
             return llmProvider.generate(prompt, Map.of(
                 "temperature", temperature,
                 "max_tokens", maxTokens
             )).map(raw -> {
-                GenerateClaimsResponse response = parseClaimsResponse(request.getRequestId(), raw);
+                GenerateClaimsResponse response = parseClaimsResponse(request.getContext().getRequestId(), raw);
                 sample.stop(meterRegistry.timer("tutorputor.agent.generate_claims"));
                 return response;
             });
@@ -96,19 +97,20 @@ public class ContentGenerationAgent {
     public Promise<GenerateExamplesResponse> generateExamples(GenerateExamplesRequest request) {
         Timer.Sample sample = Timer.start(meterRegistry);
         return executeWithRetry("generateExamples", request, () -> {
-            String prompt = promptEngine.buildPrompt(request, Map.of(
-                "operation", "generateExamples",
-                "claimText", request.getClaimText(),
-                "gradeLevel", request.getGradeLevel().name(),
-                "domain", request.getDomain().name(),
-                "exampleTypes", request.getTypesList().stream().map(Enum::name).toList(),
-                "count", request.getCount()
-            ));
+            // Get example types as list of strings (no enum conversion needed)
+            String prompt = promptEngine.buildPrompt(
+                "generateExamples",
+                Map.of(
+                    "claimText", request.getClaimText(),
+                    "gradeLevel", request.getGradeLevel(),
+                    "exampleTypes", String.join(",", request.getExampleTypesList()),
+                    "count", String.valueOf(request.getCount())
+                ));
             return llmProvider.generate(prompt, Map.of(
                 "temperature", temperature,
                 "max_tokens", maxTokens
             )).map(raw -> {
-                GenerateExamplesResponse response = parseExamplesResponse(request.getRequestId(), raw);
+                GenerateExamplesResponse response = parseExamplesResponse(request.getContext().getRequestId(), raw);
                 sample.stop(meterRegistry.timer("tutorputor.agent.generate_examples"));
                 return response;
             });
@@ -125,18 +127,22 @@ public class ContentGenerationAgent {
     public Promise<AnalyzeContentNeedsResponse> analyzeContentNeeds(AnalyzeContentNeedsRequest request) {
         Timer.Sample sample = Timer.start(meterRegistry);
         return executeWithRetry("analyzeContentNeeds", request, () -> {
-            String prompt = promptEngine.buildPrompt(request, Map.of(
-                "operation", "analyzeContentNeeds",
-                "claimText", request.getClaimText(),
-                "bloomLevel", request.getBloomLevel().name(),
-                "gradeLevel", request.getGradeLevel().name(),
-                "domain", request.getDomain().name()
-            ));
+            // Extract claim text from first claim if available
+            String claimText = request.getClaimsList().isEmpty() ? 
+                "" : request.getClaimsList().get(0).getClaimText();
+                
+            String prompt = promptEngine.buildPrompt(
+                "analyzeContentNeeds",
+                Map.of(
+                    "claimText", claimText,
+                    "targetGradeLevel", request.getTargetGradeLevel(),
+                    "learningObjective", request.getLearningObjective()
+                ));
             return llmProvider.generate(prompt, Map.of(
                 "temperature", Math.max(0.1, temperature - 0.2), // lower temperature for analysis
                 "max_tokens", maxTokens
             )).map(raw -> {
-                AnalyzeContentNeedsResponse response = parseContentNeedsResponse(request.getRequestId(), raw);
+                AnalyzeContentNeedsResponse response = parseContentNeedsResponse(request.getContext().getRequestId(), raw);
                 sample.stop(meterRegistry.timer("tutorputor.agent.analyze_content_needs"));
                 return response;
             });
@@ -152,19 +158,20 @@ public class ContentGenerationAgent {
     public Promise<GenerateSimulationResponse> generateSimulation(GenerateSimulationRequest request) {
         Timer.Sample sample = Timer.start(meterRegistry);
         return executeWithRetry("generateSimulation", request, () -> {
-            String prompt = promptEngine.buildPrompt(request, Map.of(
-                "operation", "generateSimulation",
-                "claimText", request.getClaimText(),
-                "gradeLevel", request.getGradeLevel().name(),
-                "domain", request.getDomain().name(),
-                "interactionType", request.getInteractionType().name(),
-                "complexity", request.getComplexity().name()
-            ));
+            String prompt = promptEngine.buildPrompt(
+                "generateSimulation",
+                Map.of(
+                    "claimText", request.getClaimText(),
+                    "gradeLevel", request.getGradeLevel(),
+                    "simulationType", request.getSimulationType(),
+                    "maxSteps", String.valueOf(request.getMaxSteps()),
+                    "durationMinutes", String.valueOf(request.getDurationMinutes())
+                ));
             return llmProvider.generate(prompt, Map.of(
                 "temperature", temperature,
                 "max_tokens", maxTokens * 2 // simulations need more tokens
             )).map(raw -> {
-                GenerateSimulationResponse response = parseSimulationResponse(request.getRequestId(), raw);
+                GenerateSimulationResponse response = parseSimulationResponse(request.getContext().getRequestId(), raw);
                 sample.stop(meterRegistry.timer("tutorputor.agent.generate_simulation"));
                 return response;
             });
@@ -184,19 +191,19 @@ public class ContentGenerationAgent {
     public Promise<GenerateAnimationResponse> generateAnimation(GenerateAnimationRequest request) {
         Timer.Sample sample = Timer.start(meterRegistry);
         return executeWithRetry("generateAnimation", request, () -> {
-            String prompt = promptEngine.buildPrompt(request, Map.of(
-                "operation", "generateAnimation",
-                "claimText", request.getClaimText(),
-                "claimRef", request.getClaimRef(),
-                "animationType", request.getAnimationType().name(),
-                "durationSeconds", request.getDurationSeconds()
-            ));
+            String prompt = promptEngine.buildPrompt(
+                "generateAnimation",
+                Map.of(
+                    "claimText", request.getClaimText(),
+                    "claimRef", request.getClaimRef(),
+                    "durationSeconds", String.valueOf(request.getDurationSeconds())
+                ));
             return llmProvider.generate(prompt, Map.of(
                 "temperature", temperature,
                 "max_tokens", maxTokens
             )).map(raw -> {
                 GenerateAnimationResponse response = parseAnimationResponse(request.getRequestId(), raw,
-                        request.getAnimationType(), request.getDurationSeconds());
+                        String.valueOf(request.getAnimationType()), request.getDurationSeconds());
                 sample.stop(meterRegistry.timer("tutorputor.agent.generate_animation"));
                 return response;
             });
@@ -231,11 +238,9 @@ public class ContentGenerationAgent {
 
     // ── Response parsers ─────────────────────────────────────────────────
     // Parse LLM text output into protobuf response objects.
-    // LLM is prompted to return structured text that we map to proto builders.
 
     private GenerateClaimsResponse parseClaimsResponse(String requestId, String raw) {
-        GenerateClaimsResponse.Builder builder = GenerateClaimsResponse.newBuilder()
-            .setRequestId(requestId);
+        GenerateClaimsResponse.Builder builder = GenerateClaimsResponse.newBuilder();
 
         try {
             JsonNode root = MAPPER.readTree(raw);
@@ -245,57 +250,11 @@ public class ContentGenerationAgent {
                 for (JsonNode claimNode : claimsNode) {
                     String claimRef = claimNode.path("claim_ref").asText(requestId + "-C" + index);
                     String text = claimNode.path("text").asText("");
-                    String bloomStr = claimNode.path("bloom_level").asText("understand").toUpperCase();
-                    BloomLevel bloomLevel;
-                    try {
-                        bloomLevel = BloomLevel.valueOf(bloomStr);
-                    } catch (IllegalArgumentException e) {
-                        bloomLevel = BloomLevel.UNDERSTAND;
-                    }
-
-                    Claim.Builder claim = Claim.newBuilder()
+                    
+                    ContentClaim.Builder claim = ContentClaim.newBuilder()
+                        .setClaimId(requestId + "-C" + index)
                         .setClaimRef(claimRef)
-                        .setText(text)
-                        .setBloomLevel(bloomLevel)
-                        .setOrderIndex(index);
-
-                    // Parse content needs if present
-                    JsonNode needsNode = claimNode.path("content_needs");
-                    if (!needsNode.isMissingNode()) {
-                        ContentNeeds.Builder needsBuilder = ContentNeeds.newBuilder();
-
-                        JsonNode exNode = needsNode.path("examples");
-                        if (!exNode.isMissingNode()) {
-                            ExampleNeeds.Builder ex = ExampleNeeds.newBuilder()
-                                .setRequired(exNode.path("required").asBoolean(false))
-                                .setCount(exNode.path("count").asInt(0))
-                                .setNecessity((float) exNode.path("necessity").asDouble(0.0));
-                            for (JsonNode t : exNode.path("types")) {
-                                try { ex.addTypes(ExampleType.valueOf(t.asText("").toUpperCase())); } catch (IllegalArgumentException ignored) {}
-                            }
-                            needsBuilder.setExamples(ex);
-                        }
-
-                        JsonNode simNode = needsNode.path("simulation");
-                        if (!simNode.isMissingNode()) {
-                            SimulationNeeds.Builder sim = SimulationNeeds.newBuilder()
-                                .setRequired(simNode.path("required").asBoolean(false))
-                                .setNecessity((float) simNode.path("necessity").asDouble(0.0));
-                            String complexityStr = simNode.path("complexity").asText("low").toUpperCase();
-                            try { sim.setComplexity(Complexity.valueOf(complexityStr)); } catch (IllegalArgumentException ignored) {}
-                            needsBuilder.setSimulation(sim);
-                        }
-
-                        JsonNode animNode = needsNode.path("animation");
-                        if (!animNode.isMissingNode()) {
-                            AnimationNeeds.Builder anim = AnimationNeeds.newBuilder()
-                                .setRequired(animNode.path("required").asBoolean(false))
-                                .setNecessity((float) animNode.path("necessity").asDouble(0.0));
-                            needsBuilder.setAnimation(anim);
-                        }
-
-                        claim.setContentNeeds(needsBuilder);
-                    }
+                        .setClaimText(text);
 
                     builder.addClaims(claim);
                     index++;
@@ -305,20 +264,11 @@ public class ContentGenerationAgent {
             log.warn("Failed to parse claims JSON, falling back: {}", e.getMessage());
         }
 
-        ValidationResult validation = validator.validate(builder.build());
-        builder.setValidation(validation);
-        builder.setMetadata(GenerationMetadata.newBuilder()
-            .setModelName(llmProvider.getModelName())
-            .setTokensUsed(raw.length() / 4)
-            .setTemperature((float) temperature)
-            .build());
-
         return builder.build();
     }
 
     private GenerateExamplesResponse parseExamplesResponse(String requestId, String raw) {
-        GenerateExamplesResponse.Builder builder = GenerateExamplesResponse.newBuilder()
-            .setRequestId(requestId);
+        GenerateExamplesResponse.Builder builder = GenerateExamplesResponse.newBuilder();
 
         try {
             JsonNode root = MAPPER.readTree(raw);
@@ -326,24 +276,12 @@ public class ContentGenerationAgent {
             if (examplesNode != null && examplesNode.isArray()) {
                 int index = 0;
                 for (JsonNode exNode : examplesNode) {
-                    String typeStr = exNode.path("type").asText("real_world").toUpperCase();
-                    ExampleType exType;
-                    try {
-                        exType = ExampleType.valueOf(typeStr);
-                    } catch (IllegalArgumentException e) {
-                        exType = ExampleType.REAL_WORLD;
-                    }
-                    Example.Builder example = Example.newBuilder()
+                    ContentExample.Builder example = ContentExample.newBuilder()
                         .setExampleId(requestId + "-E" + index)
-                        .setType(exType)
-                        .setTitle(exNode.path("title").asText(""))
-                        .setDescription(exNode.path("description").asText(""))
-                        .setSolutionContent(exNode.path("solution").asText(""))
-                        .setRealWorldConnection(exNode.path("real_world_connection").asText(""))
-                        .setOrderIndex(index);
-                    for (JsonNode kp : exNode.path("key_learning_points")) {
-                        example.addKeyLearningPoints(kp.asText());
-                    }
+                        .setScenario(exNode.path("scenario").asText(""))
+                        .setQuestion(exNode.path("question").asText(""))
+                        .setAnswer(exNode.path("answer").asText(""));
+
                     builder.addExamples(example);
                     index++;
                 }
@@ -352,184 +290,100 @@ public class ContentGenerationAgent {
             log.warn("Failed to parse examples JSON: {}", e.getMessage());
         }
 
-        ValidationResult validation = validator.validate(builder.build());
-        builder.setValidation(validation);
         return builder.build();
     }
 
     private AnalyzeContentNeedsResponse parseContentNeedsResponse(String requestId, String raw) {
-        AnalyzeContentNeedsResponse.Builder builder = AnalyzeContentNeedsResponse.newBuilder()
-            .setRequestId(requestId)
-            .setRationale(raw.trim());
+        AnalyzeContentNeedsResponse.Builder builder = AnalyzeContentNeedsResponse.newBuilder();
 
         try {
             JsonNode root = MAPPER.readTree(raw);
-
-            ContentNeeds.Builder needs = ContentNeeds.newBuilder();
-
-            JsonNode exNode = root.path("content_needs").path("examples");
-            if (exNode.isMissingNode()) exNode = root.path("examples");
-            if (!exNode.isMissingNode()) {
-                ExampleNeeds.Builder ex = ExampleNeeds.newBuilder()
-                    .setRequired(exNode.path("required").asBoolean(false))
-                    .setCount(exNode.path("count").asInt(0))
-                    .setNecessity((float) exNode.path("necessity").asDouble(0.0));
-                for (JsonNode t : exNode.path("types")) {
-                    try {
-                        ex.addTypes(ExampleType.valueOf(t.asText("").toUpperCase()));
-                    } catch (IllegalArgumentException ignored) {}
+            ContentNeedsAnalysis.Builder analysis = ContentNeedsAnalysis.newBuilder();
+            
+            // Parse gaps
+            JsonNode gapsNode = root.get("gaps");
+            if (gapsNode != null && gapsNode.isArray()) {
+                for (JsonNode gapNode : gapsNode) {
+                    ContentGap.Builder gap = ContentGap.newBuilder()
+                        .setGapType(gapNode.path("type").asText(""))
+                        .setDescription(gapNode.path("description").asText(""))
+                        .setSeverity(gapNode.path("severity").asText(""));
+                    analysis.addGaps(gap);
                 }
-                needs.setExamples(ex);
             }
 
-            JsonNode simNode = root.path("content_needs").path("simulation");
-            if (simNode.isMissingNode()) simNode = root.path("simulation");
-            if (!simNode.isMissingNode()) {
-                SimulationNeeds.Builder sim = SimulationNeeds.newBuilder()
-                    .setRequired(simNode.path("required").asBoolean(false))
-                    .setNecessity((float) simNode.path("necessity").asDouble(0.0));
-                String complexityStr = simNode.path("complexity").asText("low").toUpperCase();
-                try { sim.setComplexity(Complexity.valueOf(complexityStr)); } catch (IllegalArgumentException ignored) {}
-                String interactionStr = simNode.path("interaction_type").asText("").toUpperCase();
-                try { sim.setInteractionType(InteractionType.valueOf(interactionStr)); } catch (IllegalArgumentException ignored) {}
-                needs.setSimulation(sim);
-            }
-
-            JsonNode animNode = root.path("content_needs").path("animation");
-            if (animNode.isMissingNode()) animNode = root.path("animation");
-            if (!animNode.isMissingNode()) {
-                AnimationNeeds.Builder anim = AnimationNeeds.newBuilder()
-                    .setRequired(animNode.path("required").asBoolean(false))
-                    .setNecessity((float) animNode.path("necessity").asDouble(0.0));
-                needs.setAnimation(anim);
-            }
-
-            builder.setContentNeeds(needs);
-
-            String rationale = root.path("rationale").asText("");
-            if (!rationale.isEmpty()) builder.setRationale(rationale);
+            builder.setAnalysis(analysis);
 
         } catch (Exception e) {
             log.warn("Failed to parse content needs JSON, using heuristics: {}", e.getMessage());
-            // Fallback: keyword heuristics
-            boolean needsExamples = raw.toLowerCase().contains("example");
-            boolean needsSimulation = raw.toLowerCase().contains("simulat");
-            boolean needsAnimation = raw.toLowerCase().contains("animat");
-
-            ContentNeeds.Builder needs = ContentNeeds.newBuilder()
-                .setExamples(ExampleNeeds.newBuilder()
-                    .setRequired(needsExamples)
-                    .setCount(needsExamples ? 3 : 0)
-                    .setNecessity(needsExamples ? 0.8f : 0.2f)
-                    .build())
-                .setSimulation(SimulationNeeds.newBuilder()
-                    .setRequired(needsSimulation)
-                    .setComplexity(Complexity.MEDIUM)
-                    .setNecessity(needsSimulation ? 0.7f : 0.1f)
-                    .build())
-                .setAnimation(AnimationNeeds.newBuilder()
-                    .setRequired(needsAnimation)
-                    .setNecessity(needsAnimation ? 0.6f : 0.1f)
-                    .build());
-            builder.setContentNeeds(needs);
+            ContentNeedsAnalysis.Builder analysis = ContentNeedsAnalysis.newBuilder();
+            builder.setAnalysis(analysis);
         }
 
         return builder.build();
     }
 
     private GenerateSimulationResponse parseSimulationResponse(String requestId, String raw) {
-        GenerateSimulationResponse.Builder builder = GenerateSimulationResponse.newBuilder()
-            .setRequestId(requestId);
-
-        SimulationManifest.Builder manifest = SimulationManifest.newBuilder()
-            .setManifestId(requestId + "-SIM");
+        GenerateSimulationResponse.Builder builder = GenerateSimulationResponse.newBuilder();
 
         try {
             JsonNode root = MAPPER.readTree(raw);
-            JsonNode simNode = root.path("simulation");
-            JsonNode target = simNode.isMissingNode() ? root : simNode;
+            SimulationContent.Builder sim = SimulationContent.newBuilder()
+                .setSimulationId(requestId)
+                .setTitle(root.path("title").asText(""))
+                .setDescription(root.path("description").asText(""));
 
-            manifest.setName(target.path("name").asText("Simulation"));
-            manifest.setDescription(target.path("description").asText(""));
-
-            // Parse entities
-            for (JsonNode entityNode : target.path("entities")) {
-                Entity.Builder entity = Entity.newBuilder()
-                    .setEntityId(entityNode.path("id").asText("entity-" + manifest.getEntitiesCount()))
-                    .setType(entityNode.path("type").asText("UNKNOWN"));
-                JsonNode propsNode = entityNode.path("properties");
-                if (!propsNode.isMissingNode()) {
-                    propsNode.fields().forEachRemaining(e -> entity.putProperties(e.getKey(), e.getValue().asText()));
+            JsonNode stepsNode = root.get("steps");
+            if (stepsNode != null && stepsNode.isArray()) {
+                int index = 0;
+                for (JsonNode stepNode : stepsNode) {
+                    SimulationStep.Builder step = SimulationStep.newBuilder()
+                        .setStepId(requestId + "-S" + index)
+                        .setOrderIndex(index)
+                        .setTitle(stepNode.path("title").asText(""))
+                        .setDescription(stepNode.path("description").asText(""));
+                    sim.addSteps(step);
+                    index++;
                 }
-                manifest.addEntities(entity);
             }
 
-            // Parse goals
-            for (JsonNode goalNode : target.path("goals")) {
-                Goal.Builder goal = Goal.newBuilder()
-                    .setGoalId("goal-" + manifest.getGoalsCount())
-                    .setDescription(goalNode.path("description").asText(""));
-                manifest.addGoals(goal);
-            }
+            builder.setSimulation(sim);
 
         } catch (Exception e) {
             log.warn("Failed to parse simulation JSON: {}", e.getMessage());
-            manifest.setName("Simulation").setDescription("");
         }
 
-        builder.setManifest(manifest);
-
-        ValidationResult validation = validator.validate(builder.build());
-        builder.setValidation(validation);
         return builder.build();
     }
 
     private GenerateAnimationResponse parseAnimationResponse(
-            String requestId, String raw, AnimationType requestedType, int durationSeconds) {
-        GenerateAnimationResponse.Builder builder = GenerateAnimationResponse.newBuilder()
-            .setRequestId(requestId);
+            String requestId, String raw, String animationType, int durationSeconds) {
+        GenerateAnimationResponse.Builder builder = GenerateAnimationResponse.newBuilder();
 
-        String[] lines = raw.split("\n");
-        String title = lines.length > 0 ? lines[0].trim() : "Animation";
-        String description = lines.length > 1 ? lines[1].trim() : "";
+        try {
+            JsonNode root = MAPPER.readTree(raw);
+            AnimationContent.Builder anim = AnimationContent.newBuilder()
+                .setAnimationId(requestId)
+                .setTitle(root.path("title").asText(""))
+                .setDescription(root.path("description").asText(""))
+                .setTotalDurationSeconds(durationSeconds > 0 ? durationSeconds : 30);
 
-        AnimationSpec.Builder animSpec = AnimationSpec.newBuilder()
-            .setAnimationId(requestId + "-ANIM")
-            .setTitle(title)
-            .setDescription(description)
-            .setType(requestedType)
-            .setDurationSeconds(durationSeconds > 0 ? durationSeconds : 30);
+            JsonNode keyframesNode = root.get("keyframes");
+            if (keyframesNode != null && keyframesNode.isArray()) {
+                for (JsonNode kfNode : keyframesNode) {
+                    AnimationKeyframe.Builder kf = AnimationKeyframe.newBuilder()
+                        .setFrameIndex(kfNode.path("frame_index").asInt(0))
+                        .setDurationMs(kfNode.path("duration_ms").asInt(0));
+                    anim.addKeyframes(kf);
+                }
+            }
 
-        // Synthesize minimal keyframes from the raw text so the spec is playable
-        int totalMs = animSpec.getDurationSeconds() * 1000;
-        animSpec.addKeyframes(Keyframe.newBuilder()
-            .setTimeMs(0)
-            .setDescription("Initial state")
-            .putProperties("opacity", "1")
-            .putProperties("x", "0")
-            .build());
-        animSpec.addKeyframes(Keyframe.newBuilder()
-            .setTimeMs(totalMs / 2)
-            .setDescription("Mid state — concept in motion")
-            .putProperties("opacity", "0.8")
-            .putProperties("x", "50%")
-            .build());
-        animSpec.addKeyframes(Keyframe.newBuilder()
-            .setTimeMs(totalMs)
-            .setDescription("Final state — concept demonstrated")
-            .putProperties("opacity", "0.6")
-            .putProperties("x", "100%")
-            .build());
+            builder.setAnimation(anim);
 
-        animSpec.putConfig("width", "800");
-        animSpec.putConfig("height", "450");
-        animSpec.putConfig("fps", "30");
-        animSpec.putConfig("background", "#ffffff");
+        } catch (Exception e) {
+            log.warn("Failed to parse animation JSON: {}", e.getMessage());
+        }
 
-        builder.setAnimation(animSpec);
-
-        ValidationResult validation = validator.validate(builder.build());
-        builder.setValidation(validation);
         return builder.build();
     }
 

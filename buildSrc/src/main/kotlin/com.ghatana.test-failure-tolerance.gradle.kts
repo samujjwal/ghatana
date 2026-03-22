@@ -13,15 +13,17 @@ import org.gradle.api.tasks.testing.TestResult
  *   ./gradlew build -PtestFailureThreshold=10     # 10% tolerance
  */
 
-val threshold: Double = project.findProperty("testFailureThreshold")?.let {
-    runCatching { it.toString().toDouble() }.getOrElse {
-        project.logger.warn("Invalid testFailureThreshold value, using default 0.0%")
-        0.0
-    }
-} ?: 0.0
-
 tasks.withType<Test>().configureEach {
     val counts = TestCounts()
+    val threshold = providers.gradleProperty("testFailureThreshold")
+        .map {
+            runCatching { it.toDouble() }.getOrElse {
+                logger.warn("Invalid testFailureThreshold value, using default 0.0%")
+                0.0
+            }
+        }
+        .orElse(0.0)
+
     ignoreFailures = true
 
     addTestListener(object : TestListener {
@@ -44,6 +46,8 @@ tasks.withType<Test>().configureEach {
 
     val taskPath = path
     doLast {
+        val failureThreshold = threshold.get()
+
         if (counts.total == 0) return@doLast
         val executed = counts.passed + counts.failed
         if (executed == 0) return@doLast
@@ -51,22 +55,22 @@ tasks.withType<Test>().configureEach {
         val failureRate = (counts.failed.toDouble() / executed.toDouble()) * 100.0
         val summary = "[$taskPath] Test results: ${counts.total} total, " +
             "${counts.passed} passed, ${counts.failed} failed, ${counts.skipped} skipped " +
-            "(failure rate: ${"%.1f".format(failureRate)}%, threshold: ${"%.1f".format(threshold)}%)"
+            "(failure rate: ${"%.1f".format(failureRate)}%, threshold: ${"%.1f".format(failureThreshold)}%)"
 
         when {
-            counts.failed > 0 && failureRate >= threshold -> {
+            counts.failed > 0 && failureRate >= failureThreshold -> {
                 val failedList = counts.failedNames.joinToString("\n") { "  - $it" }
                 throw GradleException(
                     "$summary\nBuild FAILED: test failure rate (${"%.1f".format(failureRate)}%) " +
-                        "exceeds threshold (${"%.1f".format(threshold)}%).\nFailed tests:\n$failedList"
+                        "exceeds threshold (${"%.1f".format(failureThreshold)}%).\nFailed tests:\n$failedList"
                 )
             }
             counts.failed > 0 -> {
-                project.logger.warn("WARNING: $summary")
+                logger.warn("WARNING: $summary")
                 val failedList = counts.failedNames.joinToString("\n") { "  - $it" }
-                project.logger.warn("Tolerated failures:\n$failedList")
+                logger.warn("Tolerated failures:\n$failedList")
             }
-            else -> project.logger.lifecycle(summary)
+            else -> logger.lifecycle(summary)
         }
     }
 }

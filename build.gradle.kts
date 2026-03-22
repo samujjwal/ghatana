@@ -63,7 +63,7 @@ subprojects {
     }
 
     dependencies {
-        "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+        "testRuntimeOnly"("org.junit.platform:junit-platform-launcher:1.10.2")
     }
     
     tasks.withType<JavaCompile> {

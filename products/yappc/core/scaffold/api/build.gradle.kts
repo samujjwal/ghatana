@@ -19,8 +19,7 @@ val protobufVersion = "3.25.1"
 
 dependencies {
     // Internal dependencies
-    implementation(project(":products:yappc:core:scaffold:core"))
-    implementation(project(":products:yappc:core:scaffold:packs"))
+    implementation(project(":products:yappc:core:scaffold:core"))  // absorbs packs
     
     // JSON serialization
     implementation(libs.jackson.databind)

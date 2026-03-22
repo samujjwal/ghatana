@@ -38,3 +38,8 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
+
+tasks.test {
+    // ArchUnit scans the full com.ghatana classpath; needs more heap than the default 512m
+    jvmArgs("-Xmx2g")
+}

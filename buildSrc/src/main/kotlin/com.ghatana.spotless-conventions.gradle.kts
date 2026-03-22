@@ -7,13 +7,11 @@ pluginManager.withPlugin("com.diffplug.spotless") {
         format("misc") {
             target("*.gradle", ".gitignore")
             trimTrailingWhitespace()
-            indentWithSpaces(4)
             endWithNewline()
         }
         format("proto") {
             target("**/*.proto")
             trimTrailingWhitespace()
-            indentWithSpaces(2)
             endWithNewline()
             licenseHeaderFile(
                 project.rootProject.file("config/spotless/license-header.proto"),

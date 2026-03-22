@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { PrismaClient } from "@tutorputor/db";
+import type { PrismaClient } from "@tutorputor/core/db";
 import { registerContentStudioRoutes } from "./studio/routes.js";
 import { createContentStudioService } from "./studio/service.js";
 import { registerCMSRoutes } from "./cms/routes.js";

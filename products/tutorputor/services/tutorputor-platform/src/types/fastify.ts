@@ -1,4 +1,4 @@
-import type { TutorPrismaClient } from "@tutorputor/db";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
 import "fastify";
 

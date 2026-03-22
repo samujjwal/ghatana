@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { KnowledgeBaseService } from "../service";
-import type { PrismaClient } from "@tutorputor/db";
+import type { PrismaClient } from "@tutorputor/core/db";
 
 // Mock fetch
 const mockFetch = vi.fn();

@@ -10,17 +10,17 @@ import { lazy } from 'react';
 import type { RouteObject } from 'react-router';
 
 // Lazy load all components consistently
-const AnimationEditor = lazy(() => import('./pages/AnimationEditor'));
-const SimulationStudio = lazy(() => import('./pages/SimulationStudio'));
-const ContentExplorer = lazy(() => import('./pages/ContentExplorer'));
-const AssessmentBuilder = lazy(() => import('./pages/AssessmentBuilder'));
-const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
-const LearningPathDesigner = lazy(() => import('./pages/LearningPathDesigner'));
+const AnimationEditor = lazy(() => import('./pages/AnimationEditor.tsx'));
+const SimulationStudio = lazy(() => import('./pages/SimulationStudio.tsx'));
+const ContentExplorer = lazy(() => import('./pages/ContentExplorer.tsx'));
+const AssessmentBuilder = lazy(() => import('./pages/AssessmentBuilder.tsx'));
+const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard.tsx'));
+const LearningPathDesigner = lazy(() => import('./pages/LearningPathDesigner.tsx'));
 
-// Lazy load simulation renderers (heaviest components)
-const PhysicsSimulation = lazy(() => import('@tutorputor/physics-simulation/PhysicsRenderer'));
-const ChemistrySimulation = lazy(() => import('@tutorputor/physics-simulation/ChemistryRenderer'));
-const BiologySimulation = lazy(() => import('@tutorputor/physics-simulation/BiologyRenderer'));
+// Lazy load simulation renderers (heaviest components) - TODO: Fix when physics-simulation package is available
+const PhysicsSimulation = lazy(() => import('./pages/SimulationStudio'));
+const ChemistrySimulation = lazy(() => import('./pages/SimulationStudio'));
+const BiologySimulation = lazy(() => import('./pages/SimulationStudio'));
 
 /**
  * Route configuration with lazy loading
@@ -28,11 +28,11 @@ const BiologySimulation = lazy(() => import('@tutorputor/physics-simulation/Biol
 export const lazyRoutes: RouteObject[] = [
   {
     path: '/',
-    lazy: () => import('./pages/Home'),
+    lazy: () => import('./pages/Home.tsx'),
   },
   {
     path: '/animations',
-    lazy: () => import('./pages/AnimationList'),
+    lazy: () => import('./pages/AnimationList.tsx'),
   },
   {
     path: '/animations/editor/:id?',
@@ -40,7 +40,7 @@ export const lazyRoutes: RouteObject[] = [
   },
   {
     path: '/simulations',
-    lazy: () => import('./pages/SimulationList'),
+    lazy: () => import('./pages/SimulationList.tsx'),
   },
   {
     path: '/simulations/studio/:id?',
@@ -64,11 +64,11 @@ export const lazyRoutes: RouteObject[] = [
   },
   {
     path: '/content/explore',
-    lazy: () => import('./pages/ContentExplore'),
+    lazy: () => import('./pages/ContentExplore.tsx'),
   },
   {
     path: '/assessments',
-    lazy: () => import('./pages/AssessmentList'),
+    lazy: () => import('./pages/AssessmentList.tsx'),
   },
   {
     path: '/assessments/builder/:id?',
@@ -80,7 +80,7 @@ export const lazyRoutes: RouteObject[] = [
   },
   {
     path: '/learning-paths',
-    lazy: () => import('./pages/LearningPathList'),
+    lazy: () => import('./pages/LearningPathList.tsx'),
   },
   {
     path: '/learning-paths/designer/:id?',
@@ -88,11 +88,11 @@ export const lazyRoutes: RouteObject[] = [
   },
   {
     path: '/settings',
-    lazy: () => import('./pages/Settings'),
+    lazy: () => import('./pages/Settings.tsx'),
   },
   {
     path: '/profile',
-    lazy: () => import('./pages/Profile'),
+    lazy: () => import('./pages/Profile.tsx'),
   },
 ];
 

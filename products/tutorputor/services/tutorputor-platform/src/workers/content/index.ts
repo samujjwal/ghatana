@@ -6,7 +6,7 @@
  */
 
 import { Worker, Job, Queue } from 'bullmq';
-import { PrismaClient } from '@tutorputor/db';
+import { PrismaClient } from '@tutorputor/core/db';
 import Redis from 'ioredis';
 import { Logger } from 'pino';
 import { RealContentGenerationClient } from './grpc/RealContentGenerationClient';

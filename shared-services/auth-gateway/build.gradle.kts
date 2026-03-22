@@ -16,11 +16,29 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:security"))
+    implementation(project(":platform:java:config"))      // Absorbed from auth-service
+    implementation(project(":platform:java:database"))    // Absorbed from auth-service
     
     // ActiveJ - Use canonical versions from libs.versions.toml
     implementation(libs.activej.eventloop)
     implementation(libs.activej.promise)
     implementation(libs.activej.http)
+    implementation(libs.activej.inject)     // Absorbed from auth-service
+    implementation(libs.activej.launcher)   // Absorbed from auth-service
+    
+    // OAuth2 & JWT (absorbed from auth-service)
+    implementation(libs.nimbus.oauth2.sdk)
+    implementation(libs.nimbus.jose.jwt)
+    
+    // Password hashing (absorbed from auth-service)
+    implementation(libs.jbcrypt)
+    
+    // Session caching (absorbed from auth-service)
+    implementation(libs.caffeine)
+    
+    // JSON
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.dataformat.yaml)
     
     // Logging
     implementation(libs.slf4j.api)
@@ -28,6 +46,7 @@ dependencies {
     
     // Database connection pool
     implementation(libs.hikaricp)
+    implementation(libs.postgresql)
 
     // Rate limiting
     implementation(libs.guava)

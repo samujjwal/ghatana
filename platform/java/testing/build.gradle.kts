@@ -68,7 +68,9 @@ dependencies {
     runtimeOnly(libs.junit.jupiter.engine)
     runtimeOnly(libs.junit.platform.launcher)
     
-    // ArchUnit
+    // ArchUnit — exposed as api so product test suites can write boundary tests
+    // using GhatanaBoundaryRules without adding a direct archunit dependency.
+    api(libs.archunit.junit5)
     testImplementation(libs.archunit.junit5)
 }
 

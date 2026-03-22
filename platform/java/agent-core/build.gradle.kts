@@ -19,7 +19,6 @@ dependencies {
     api(project(":platform:java:observability"))
     api(project(":platform:java:ai-integration"))
     api(project(":platform:java:governance"))
-    api(project(":platform:java:yaml-template"))
     
     // Jackson YAML for agent config materialization
     implementation(libs.jackson.databind)

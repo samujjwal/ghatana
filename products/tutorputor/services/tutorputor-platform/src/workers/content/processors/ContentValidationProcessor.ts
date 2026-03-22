@@ -8,7 +8,7 @@
  */
 
 import { Job } from 'bullmq';
-import { PrismaClient } from '@tutorputor/db';
+import { PrismaClient } from '@tutorputor/core/db';
 import { Logger } from 'pino';
 import { RealContentGenerationClient } from '../grpc/RealContentGenerationClient';
 import * as crypto from 'crypto';

@@ -10,7 +10,7 @@ import type {
     TenantId,
     UserId
 } from "@tutorputor/contracts/v1/types";
-import type { TutorPrismaClient } from "@tutorputor/db";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 
 export type HealthAwareBillingService = BillingService & {
     checkHealth: () => Promise<boolean>;

@@ -1,4 +1,4 @@
-package com.ghatana.tutorputor.ai.service;
+package com.ghatana.tutorputor.contentgeneration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

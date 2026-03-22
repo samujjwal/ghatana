@@ -23,11 +23,7 @@ dependencies {
     implementation(project(":platform:java:agent-core"))
 
     // Kernel modules
-    implementation(project(":platform:java:kernel:modules:authentication"))
-    implementation(project(":platform:java:kernel:modules:config"))
-    implementation(project(":platform:java:kernel:modules:event-store"))
-    implementation(project(":platform:java:kernel:modules:audit"))
-    implementation(project(":platform:java:kernel:modules:resilience"))
+    implementation(project(":platform:java:kernel-capabilities"))  // Merged: kernel/modules/* (auth + config + event-store + audit + resilience + observability + secrets)
 
     // Finance Domains - Core
     implementation(project(":products:finance:domains:oms"))

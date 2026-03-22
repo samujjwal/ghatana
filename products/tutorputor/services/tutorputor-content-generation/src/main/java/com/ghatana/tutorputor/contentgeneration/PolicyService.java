@@ -1,6 +1,7 @@
-package com.ghatana.products.collection.application.policy;
+package com.ghatana.tutorputor.contentgeneration;
 
-import com.ghatana.products.collection.domain.policy.*;
+import com.ghatana.tutorputor.contentgeneration.*;
+import com.ghatana.core.activej.promise.PromiseCompat;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 
@@ -125,28 +126,15 @@ public class PolicyService {
 
         long startTime = System.currentTimeMillis();
 
-        // Split policies by checker
-        Set<PolicyType> ruleBasedPolicies = policiesToCheck.stream()
-                .filter(p -> ruleBasedChecker.getSupportedPolicies().contains(p))
-                .collect(Collectors.toSet());
-
-        Set<PolicyType> mlPolicies = policiesToCheck.stream()
-                .filter(p -> mlChecker.getSupportedPolicies().contains(p))
-                .collect(Collectors.toSet());
-
-        // Run checks in parallel
+        Map<ContentPolicyChecker, Set<PolicyType>> policiesByChecker = groupPoliciesByChecker(policiesToCheck);
         List<Promise<PolicyCheckResult>> checkPromises = new ArrayList<>();
-
-        if (!ruleBasedPolicies.isEmpty()) {
-            checkPromises.add(ruleBasedChecker.checkContent(tenantId, content, ruleBasedPolicies));
+        for (Map.Entry<ContentPolicyChecker, Set<PolicyType>> entry : policiesByChecker.entrySet()) {
+            checkPromises.add(entry.getKey()
+                .checkContent(tenantId, content, entry.getValue())
+                .mapException(e -> e));
         }
 
-        if (!mlPolicies.isEmpty()) {
-            checkPromises.add(mlChecker.checkContent(tenantId, content, mlPolicies));
-        }
-
-        // Aggregate results
-        return Promise.ofAll(checkPromises)
+        return PromiseCompat.all(checkPromises)
                 .map(results -> {
                     PolicyCheckResult aggregated = aggregateResults(results);
 
@@ -160,10 +148,11 @@ public class PolicyService {
 
                     return aggregated;
                 })
-                .whenException(e -> {
+                .mapException(e -> {
                     metrics.incrementCounter("policy.validation.errors",
                             "tenant", tenantId,
                             "error", e.getClass().getSimpleName());
+                    return e;
                 });
     }
 
@@ -202,68 +191,22 @@ public class PolicyService {
                 .map(content -> validateContent(tenantId, content, policiesToCheck))
                 .collect(Collectors.toList());
 
-        return Promise.ofAll(validationPromises)
-                .whenComplete((results, e) -> {
-                    if (e == null) {
-                        metrics.incrementCounter("policy.validation.batch.count",
-                                "tenant", tenantId,
-                                "batch_size", String.valueOf(contents.size()));
-                    }
+        return PromiseCompat.all(validationPromises)
+                .map(results -> {
+                    metrics.incrementCounter("policy.validation.batch.count",
+                            "tenant", tenantId,
+                            "batch_size", String.valueOf(contents.size()));
+                    return results;
                 });
     }
 
     /**
      * Configures policy settings for a tenant.
      *
-     * <p>Configuration format varies by policy type:
-     *
-     * <p><b>PROFANITY</b><br>
-     * <pre>
-     * {
-     *   "words": ["badword1", "badword2"]
-     * }
-     * </pre>
-     *
-     * <p><b>PII</b><br>
-     * No configuration needed (uses standard regex patterns)
-     *
-     * <p><b>SPAM</b><br>
-     * <pre>
-     * {
-     *   "keywords": ["buy now", "click here"]
-     * }
-     * </pre>
-     *
-     * <p><b>HATE_SPEECH</b><br>
-     * <pre>
-     * {
-     *   "endpoint": "/v1/moderate/hate-speech",
-     *   "threshold": 0.75
-     * }
-     * </pre>
-     *
-     * <p><b>NSFW</b><br>
-     * <pre>
-     * {
-     *   "endpoint": "/v1/moderate/nsfw",
-     *   "threshold": 0.80
-     * }
-     * </pre>
-     *
-     * <p><b>QUALITY_THRESHOLD</b><br>
-     * <pre>
-     * {
-     *   "endpoint": "/v1/analyze/quality",
-     *   "threshold": 0.60
-     * }
-     * </pre>
-     *
      * @param tenantId tenant identifier
      * @param policyType policy type to configure
      * @param configuration policy-specific configuration (non-null)
      * @return promise that completes when configuration is updated
-     * @throws NullPointerException if any parameter is null
-     * @throws IllegalArgumentException if policyType is not supported
      */
     public Promise<Void> configurePolicy(
             String tenantId,
@@ -274,21 +217,11 @@ public class PolicyService {
         Objects.requireNonNull(policyType, "policyType cannot be null");
         Objects.requireNonNull(configuration, "configuration cannot be null");
 
-        // Route to appropriate checker
-        ContentPolicyChecker checker = getCheckerForPolicy(policyType);
-        if (checker == null) {
-            return Promise.ofException(new IllegalArgumentException(
-                    "Unsupported policy type: " + policyType));
-        }
-
-        return checker.updatePolicyConfiguration(tenantId, policyType, configuration)
-                .whenComplete((v, e) -> {
-                    if (e == null) {
-                        metrics.incrementCounter("policy.configuration.updated",
-                                "tenant", tenantId,
-                                "policy", policyType.name());
-                    }
-                });
+        // For now, just log the configuration
+        metrics.incrementCounter("policy.configuration.attempted",
+                "tenant", tenantId,
+                "policy", policyType.name());
+        return checkerFor(policyType).updatePolicyConfiguration(tenantId, policyType, configuration);
     }
 
     /**
@@ -297,10 +230,9 @@ public class PolicyService {
      * @return set of all supported policy types
      */
     public Set<PolicyType> getSupportedPolicies() {
-        Set<PolicyType> supported = new HashSet<>();
-        supported.addAll(ruleBasedChecker.getSupportedPolicies());
-        supported.addAll(mlChecker.getSupportedPolicies());
-        return Collections.unmodifiableSet(supported);
+        Set<PolicyType> supportedPolicies = new HashSet<>(ruleBasedChecker.getSupportedPolicies());
+        supportedPolicies.addAll(mlChecker.getSupportedPolicies());
+        return Collections.unmodifiableSet(supportedPolicies);
     }
 
     /**
@@ -310,24 +242,7 @@ public class PolicyService {
      * @return true if supported
      */
     public boolean isSupported(PolicyType policyType) {
-        return ruleBasedChecker.getSupportedPolicies().contains(policyType) ||
-                mlChecker.getSupportedPolicies().contains(policyType);
-    }
-
-    /**
-     * Gets the checker responsible for a policy type.
-     *
-     * @param policyType policy type
-     * @return checker instance or null if not supported
-     */
-    private ContentPolicyChecker getCheckerForPolicy(PolicyType policyType) {
-        if (ruleBasedChecker.getSupportedPolicies().contains(policyType)) {
-            return ruleBasedChecker;
-        }
-        if (mlChecker.getSupportedPolicies().contains(policyType)) {
-            return mlChecker;
-        }
-        return null;
+        return getSupportedPolicies().contains(policyType);
     }
 
     /**
@@ -336,31 +251,54 @@ public class PolicyService {
      * <p>Strategy:
      * - If any result failed, aggregate fails
      * - All violations from all results are combined
-     * - Final score is weighted average of individual scores
      *
      * @param results individual policy check results
      * @return aggregated result
      */
     private PolicyCheckResult aggregateResults(List<PolicyCheckResult> results) {
         if (results.isEmpty()) {
-            return PolicyCheckResult.pass(null, 1.0);
+            return PolicyCheckResult.pass(PolicyType.PROFANITY, 1.0);
         }
 
         boolean allPassed = results.stream().allMatch(PolicyCheckResult::passed);
-        
+        double averageScore = results.stream()
+                .mapToDouble(PolicyCheckResult::score)
+                .average()
+                .orElse(1.0);
+
         List<PolicyCheckResult.PolicyViolation> allViolations = results.stream()
                 .flatMap(r -> r.violations().stream())
                 .collect(Collectors.toList());
 
-        double avgScore = results.stream()
-                .mapToDouble(PolicyCheckResult::score)
-                .average()
-                .orElse(0.0);
-
         if (allPassed) {
-            return PolicyCheckResult.pass(null, avgScore);
+            return PolicyCheckResult.pass(results.get(0).policyType(), averageScore);
         }
 
-        return PolicyCheckResult.failWithViolations(null, allViolations, avgScore);
+        PolicyType policyType = results.stream()
+                .filter(r -> !r.passed())
+                .map(r -> r.policyType())
+                .findFirst()
+                .orElse(PolicyType.PROFANITY);
+
+        return PolicyCheckResult.failWithViolations(policyType, allViolations, averageScore);
+    }
+
+    private Map<ContentPolicyChecker, Set<PolicyType>> groupPoliciesByChecker(Set<PolicyType> policiesToCheck) {
+        Map<ContentPolicyChecker, Set<PolicyType>> grouped = new LinkedHashMap<>();
+        for (PolicyType policyType : policiesToCheck) {
+            ContentPolicyChecker checker = checkerFor(policyType);
+            grouped.computeIfAbsent(checker, ignored -> new LinkedHashSet<>()).add(policyType);
+        }
+        return grouped;
+    }
+
+    private ContentPolicyChecker checkerFor(PolicyType policyType) {
+        if (ruleBasedChecker.getSupportedPolicies().contains(policyType)) {
+            return ruleBasedChecker;
+        }
+        if (mlChecker.getSupportedPolicies().contains(policyType)) {
+            return mlChecker;
+        }
+        throw new IllegalArgumentException("Unsupported policy type: " + policyType);
     }
 }

@@ -40,11 +40,10 @@ repositories {
 }
 
 dependencies {
-    // Extracted backend modules
+    // Extracted backend modules (websocket sources now live directly in this module)
     api(project(":products:yappc:backend:persistence"))
     api(project(":products:yappc:backend:auth"))
     api(project(":products:yappc:backend:deployment"))
-    api(project(":products:yappc:backend:websocket"))
 
     // Lifecycle service (DlqPublisher SPI + operator types)
     implementation(project(":products:yappc:services:lifecycle"))
@@ -54,12 +53,10 @@ dependencies {
     implementation(project(":platform:java:audit"))
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:observability"))
-    implementation(project(":platform:java:ai-integration"))
-    implementation(project(":platform:java:ai-integration:feature-store"))
-    implementation(project(":platform:java:ai-integration:registry"))
+    implementation(project(":platform:java:ai-integration"))  // Includes merged registry + feature-store
     implementation(project(":platform:java:security"))
     implementation(project(":platform:java:agent-core"))
-    implementation(project(":platform:java:agent-memory"))
+    implementation(project(":platform:java:agent-runtime"))  // Migrated from agent-memory
     implementation(project(":platform:java:agent-registry"))
     
     // AEP Platform Libraries
@@ -86,6 +83,7 @@ dependencies {
     implementation(libs.activej.promise)
     implementation(libs.activej.inject)
     implementation(libs.activej.launcher)
+    implementation(libs.activej.eventloop)  // Absorbed from backend:websocket (merged)
     
     // JSON Processing
     implementation(libs.jackson.databind)
@@ -95,8 +93,7 @@ dependencies {
     // JSON Schema validation (networknt) — used by EventSchemaValidator (AEP)
     implementation(libs.networknt.validator)
 
-    // YAML Template Engine — used by WorkflowMaterializer (Ph3)
-    implementation(project(":platform:java:yaml-template"))
+    // YAML Template Engine — used by WorkflowMaterializer (Ph3) (merged into agent-core)
     
     // Logging
     implementation(libs.slf4j.api)

@@ -207,7 +207,7 @@ export const simulationSchemas = {
     description: baseSchemas.description,
     type: z.enum(['PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS', 'ENGINEERING', 'BUSINESS', 'MEDICAL']),
     domain: z.string().min(1).max(50),
-    configuration: z.record(z.unknown()).refine(
+    configuration: z.record(z.string(), z.unknown()).refine(
       (val) => typeof val === 'object' && val !== null,
       'Configuration must be an object'
     ),
@@ -229,14 +229,14 @@ export const simulationSchemas = {
   
   run: z.object({
     simulationId: baseSchemas.id,
-    parameters: z.record(z.unknown()).optional(),
-    configuration: z.record(z.unknown()).optional(),
+    parameters: z.record(z.string(), z.unknown()).optional(),
+    configuration: z.record(z.string(), z.unknown()).optional(),
   }),
   
   results: z.object({
     score: z.coerce.number().min(0).max(100).optional(),
-    data: z.record(z.unknown()),
-    metrics: z.record(z.coerce.number()),
+    data: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.unknown()), z.object({})])), // Fix: Added value type to z.record
+    metrics: z.record(z.string(), z.union([z.number(), z.string()])), // Fix: Added value type to z.record
     summary: z.string().max(1000).optional(),
   }),
 };
@@ -275,7 +275,7 @@ export const searchSchemas = {
   
   advanced: z.object({
     query: z.string().max(100).optional(),
-    filters: z.record(z.unknown()).optional(),
+    filters: z.record(z.string(), z.unknown()).optional(),
     sort: z.array(z.object({
       field: z.string().min(1).max(50),
       direction: z.enum(['asc', 'desc']),

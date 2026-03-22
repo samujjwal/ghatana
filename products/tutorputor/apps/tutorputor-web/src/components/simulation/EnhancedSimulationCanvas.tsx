@@ -17,7 +17,7 @@ import {
     useAnimation,
     defaultTheme,
     type RenderTheme,
-} from '@tutorputor/sim-renderer';
+} from '@tutorputor/simulation/renderer';
 
 /**
  * Enhanced canvas props.

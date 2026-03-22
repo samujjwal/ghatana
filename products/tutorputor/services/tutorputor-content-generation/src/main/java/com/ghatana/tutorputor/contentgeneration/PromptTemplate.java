@@ -1,4 +1,4 @@
-package com.ghatana.products.collection.domain.generation;
+package com.ghatana.tutorputor.contentgeneration;
 
 import java.util.*;
 import java.util.regex.Matcher;

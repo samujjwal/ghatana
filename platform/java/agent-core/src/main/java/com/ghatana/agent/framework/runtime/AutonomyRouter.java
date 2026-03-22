@@ -27,11 +27,12 @@ import java.util.Objects;
  *
  * <h2>Behaviour by AutonomyLevel</h2>
  * <pre>
- * AUTONOMOUS  confidence ≥ threshold → pass through immediately
- * AUTONOMOUS  confidence < threshold → raise HumanApprovalRequest
- * SUPERVISED  confidence ≥ threshold → pass through immediately
- * SUPERVISED  confidence < threshold → raise HumanApprovalRequest
- * MANUAL      always                 → raise HumanApprovalRequest
+ * AUTONOMOUS           confidence ≥ threshold → pass through immediately
+ * BOUNDED_AUTONOMOUS   confidence ≥ threshold → pass through immediately (within bounds)
+ * SUPERVISED           confidence ≥ threshold → pass through immediately
+ * SUPERVISED           confidence &lt; threshold → raise HumanApprovalRequest
+ * DRAFT                always                 → raise HumanApprovalRequest
+ * ADVISORY             always                 → raise HumanApprovalRequest (advisory only)
  * </pre>
  *
  * @param <O> the output type of the agent

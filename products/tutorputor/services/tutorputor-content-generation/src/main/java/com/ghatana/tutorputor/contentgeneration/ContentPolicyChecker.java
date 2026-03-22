@@ -1,8 +1,9 @@
-package com.ghatana.products.collection.domain.policy;
+package com.ghatana.tutorputor.contentgeneration;
 
 import io.activej.promise.Promise;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Port interface for content policy and safety checks.
@@ -62,7 +63,62 @@ public interface ContentPolicyChecker {
      * @return Promise of PolicyCheckResult with pass/fail and violations
      * @throws IllegalArgumentException if text is null or policyType is null
      */
-    Promise<PolicyCheckResult> checkPolicy(String text, PolicyType policyType);
+    default Promise<PolicyCheckResult> checkPolicy(String text, PolicyType policyType) {
+        return checkContent("default", text, Set.of(policyType));
+    }
+
+    /**
+     * Checks content against one or more policy types for a tenant context.
+     *
+     * @param tenantId tenant identifier
+     * @param content content to check
+     * @param policiesToCheck policies to evaluate
+     * @return Promise of aggregated PolicyCheckResult
+     */
+    Promise<PolicyCheckResult> checkContent(String tenantId, String content, Set<PolicyType> policiesToCheck);
+
+    /**
+     * Checks a batch of content items.
+     *
+     * @param tenantId tenant identifier
+     * @param contents content items to validate
+     * @param policiesToCheck policies to evaluate
+     * @return Promise of per-item results
+     */
+    default Promise<List<PolicyCheckResult>> checkBatch(
+            String tenantId,
+            List<String> contents,
+            Set<PolicyType> policiesToCheck
+    ) {
+        return Promise.of(contents.stream()
+                .map(content -> checkContent(tenantId, content, policiesToCheck).getResult())
+                .toList());
+    }
+
+    /**
+     * Lists policies supported by an implementation.
+     *
+     * @return supported policy types
+     */
+    default Set<PolicyType> getSupportedPolicies() {
+        return Set.of();
+    }
+
+    /**
+     * Updates implementation-specific policy configuration.
+     *
+     * @param tenantId tenant identifier
+     * @param policyType policy to configure
+     * @param configuration configuration map
+     * @return Promise completing when configuration is applied
+     */
+    default Promise<Void> updatePolicyConfiguration(
+            String tenantId,
+            PolicyType policyType,
+            java.util.Map<String, Object> configuration
+    ) {
+        return Promise.complete();
+    }
 
     /**
      * Detects personally identifiable information (PII) in text.
@@ -79,7 +135,9 @@ public interface ContentPolicyChecker {
      * @return Promise of List of PIIDetection (empty if no PII found)
      * @throws IllegalArgumentException if text is null
      */
-    Promise<List<PIIDetection>> detectPII(String text);
+    default Promise<List<PIIDetection>> detectPII(String text) {
+        return Promise.of(List.of());
+    }
 
     /**
      * Classifies content into categories.
@@ -98,7 +156,9 @@ public interface ContentPolicyChecker {
      * @return Promise of ContentClassification with category and confidence
      * @throws IllegalArgumentException if text is null
      */
-    Promise<ContentClassification> classifyContent(String text);
+    default Promise<ContentClassification> classifyContent(String text) {
+        return Promise.of(ContentClassification.safe());
+    }
 
     /**
      * Performs comprehensive content safety check.
@@ -110,5 +170,12 @@ public interface ContentPolicyChecker {
      * @return Promise of ComprehensiveCheckResult
      * @throws IllegalArgumentException if text is null
      */
-    Promise<ComprehensiveCheckResult> comprehensiveCheck(String text);
+    default Promise<ComprehensiveCheckResult> comprehensiveCheck(String text) {
+        return checkPolicy(text, PolicyType.PROFANITY)
+                .map(policyResult -> new ComprehensiveCheckResult(
+                        policyResult,
+                        ContentClassification.safe(),
+                        false
+                ));
+    }
 }

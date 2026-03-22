@@ -12,7 +12,7 @@
  */
 
 import { Queue, QueueEvents, Job } from 'bullmq';
-import { PrismaClient } from '@tutorputor/db';
+import { PrismaClient } from '@tutorputor/core/db';
 import { Logger } from 'pino';
 import type { ContentNeeds } from '@tutorputor/contracts/v1/learning-unit';
 import { ModalitySelector, type ModalityType } from '../../utils/modality-selector';

@@ -21,13 +21,12 @@ java {
     }
 }
 
-// HTTP handlers have been extracted to :platform:java:observability-http (see ADR-007)
-
 dependencies {
     // Platform Core (includes ActiveJ)
     api(project(":platform:java:core"))
     api(project(":platform:java:runtime"))
     api(project(":platform:java:config"))
+    api(project(":platform:java:http"))
     
     // ActiveJ Promise & HTTP (explicit)
     api(libs.activej.promise)
@@ -55,6 +54,9 @@ dependencies {
     
     // Redis (for health checks)
     implementation(libs.jedis)
+    
+    // ClickHouse trace storage backend
+    implementation("com.clickhouse:clickhouse-jdbc:0.6.0:all")
     
     // Logging
     api(libs.slf4j.api)

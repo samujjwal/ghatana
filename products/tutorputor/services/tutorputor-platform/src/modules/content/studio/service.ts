@@ -6,7 +6,7 @@
  */
 
 import { Queue } from "bullmq";
-import type { PrismaClient } from "@tutorputor/db";
+import type { PrismaClient } from "@tutorputor/core/db";
 import type {
   ContentStudioService,
   CreateExperienceRequest,

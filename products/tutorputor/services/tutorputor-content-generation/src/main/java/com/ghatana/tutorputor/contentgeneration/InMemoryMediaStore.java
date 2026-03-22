@@ -1,8 +1,8 @@
-package com.ghatana.products.collection.infrastructure.media;
+package com.ghatana.tutorputor.contentgeneration;
 
-import com.ghatana.products.collection.domain.media.MediaAttachment;
-import com.ghatana.products.collection.domain.media.MediaStore;
-import com.ghatana.products.collection.domain.media.MediaUrl;
+import com.ghatana.tutorputor.contentgeneration.MediaAttachment;
+import com.ghatana.tutorputor.contentgeneration.MediaStore;
+import com.ghatana.tutorputor.contentgeneration.MediaUrl;
 import io.activej.promise.Promise;
 
 import java.io.ByteArrayOutputStream;

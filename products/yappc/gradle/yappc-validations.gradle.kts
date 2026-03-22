@@ -32,13 +32,15 @@ tasks.register("validateAgentCatalog") {
     description = "Validates all agent YAML definitions against catalog schema, checks for dangling capability references and broken delegation chains"
     group = "verification"
 
+    val projectDir = layout.projectDirectory.asFile
+    val agentDefsDir = layout.projectDirectory.dir("config/agents/definitions").asFile
+    val registryFile = layout.projectDirectory.file("config/agents/registry.yaml").asFile
+    val capabilitiesFile = layout.projectDirectory.file("config/agents/capabilities.yaml").asFile
+    val mappingsFile = layout.projectDirectory.file("config/agents/mappings.yaml").asFile
+    val eventRoutingFile = layout.projectDirectory.file("config/agents/event-routing.yaml").asFile
+
     doLast {
         val yaml = org.yaml.snakeyaml.Yaml()
-        val agentDefsDir = file("config/agents/definitions")
-        val registryFile = file("config/agents/registry.yaml")
-        val capabilitiesFile = file("config/agents/capabilities.yaml")
-        val mappingsFile = file("config/agents/mappings.yaml")
-        val eventRoutingFile = file("config/agents/event-routing.yaml")
 
         val agentYamlFiles = agentDefsDir.walkTopDown()
             .filter { it.isFile && it.name.endsWith(".yaml") }
@@ -119,7 +121,7 @@ tasks.register("validateAgentCatalog") {
 
         if (registryFile.exists()) {
             Regex("definition:\\s+(.+\\.yaml)").findAll(registryFile.readText()).forEach { match ->
-                val defPath = file("config/agents/${match.groupValues[1]}")
+                val defPath = File(projectDir, "config/agents/${match.groupValues[1]}")
                 if (!defPath.exists()) {
                     println("ERROR: registry.yaml references non-existent definition: ${match.groupValues[1]}")
                     errors++
@@ -185,10 +187,14 @@ tasks.register("validateEventSchemas") {
     description = "Validates all event JSON schemas and ensures they are properly referenced by pipelines"
     group = "verification"
 
+    val eventSchemaDir = layout.projectDirectory.dir("config/agents/event-schemas").asFile
+    val pipelineDir = layout.projectDirectory.dir("config/pipelines").asFile
+    val pipelineSchemaFile = layout.projectDirectory.file("config/validation/pipeline-schema-v1.json").asFile
+
     doLast {
-        val eventSchemaFiles = file("config/agents/event-schemas").walkTopDown()
+        val eventSchemaFiles = eventSchemaDir.walkTopDown()
             .filter { it.isFile && it.name.endsWith(".json") }.toList()
-        val pipelineFiles = file("config/pipelines").walkTopDown()
+        val pipelineFiles = pipelineDir.walkTopDown()
             .filter { it.isFile && it.name.endsWith(".yaml") }.toList()
 
         println("Validating ${eventSchemaFiles.size} event schemas and ${pipelineFiles.size} pipelines...")
@@ -217,7 +223,7 @@ tasks.register("validateEventSchemas") {
             }
         }
 
-        if (!file("config/validation/pipeline-schema-v1.json").exists()) {
+        if (!pipelineSchemaFile.exists()) {
             println("ERROR: pipeline-schema-v1.json not found"); errors++
         }
 
@@ -233,11 +239,14 @@ tasks.register("validatePipelines") {
     description = "Validates all pipeline YAML definitions against pipeline schema"
     group = "verification"
 
+    val pipelineSchemaFile = layout.projectDirectory.file("config/validation/pipeline-schema-v1.json").asFile
+    val pipelineDir = layout.projectDirectory.dir("config/pipelines").asFile
+
     doLast {
-        if (!file("config/validation/pipeline-schema-v1.json").exists())
+        if (!pipelineSchemaFile.exists())
             throw GradleException("Pipeline schema not found: config/validation/pipeline-schema-v1.json")
 
-        val pipelineFiles = file("config/pipelines").walkTopDown()
+        val pipelineFiles = pipelineDir.walkTopDown()
             .filter { it.isFile && it.name.endsWith(".yaml") }.toList()
 
         println("Validating ${pipelineFiles.size} pipeline definitions...")
@@ -281,10 +290,11 @@ tasks.register("validateLifecycleConfig") {
     description = "Validates lifecycle stages.yaml and transitions.yaml for structural integrity and cross-references"
     group = "verification"
 
+    val stagesFile = layout.projectDirectory.file("config/lifecycle/stages.yaml").asFile
+    val transitionsFile = layout.projectDirectory.file("config/lifecycle/transitions.yaml").asFile
+
     doLast {
         val yaml = org.yaml.snakeyaml.Yaml()
-        val stagesFile = file("config/lifecycle/stages.yaml")
-        val transitionsFile = file("config/lifecycle/transitions.yaml")
         var errors = 0
 
         if (!stagesFile.exists()) throw GradleException("config/lifecycle/stages.yaml not found")
@@ -335,10 +345,11 @@ tasks.register("validateWorkflowConfig") {
     description = "Validates canonical-workflows.yaml stage references resolve to known lifecycle stages"
     group = "verification"
 
+    val stagesFile = layout.projectDirectory.file("config/lifecycle/stages.yaml").asFile
+    val workflowFile = layout.projectDirectory.file("config/workflows/canonical-workflows.yaml").asFile
+
     doLast {
         val yaml = org.yaml.snakeyaml.Yaml()
-        val stagesFile   = file("config/lifecycle/stages.yaml")
-        val workflowFile = file("config/workflows/canonical-workflows.yaml")
         var errors = 0
 
         if (!stagesFile.exists())
@@ -402,9 +413,10 @@ tasks.register("validatePolicyConfig") {
     description = "Validates all policy YAML files in config/policies/ for structural correctness and ID uniqueness"
     group = "verification"
 
+    val policyDir = layout.projectDirectory.dir("config/policies").asFile
+
     doLast {
         val yaml      = org.yaml.snakeyaml.Yaml()
-        val policyDir = file("config/policies")
         var errors    = 0
 
         if (!policyDir.exists()) throw GradleException("config/policies/ directory not found")

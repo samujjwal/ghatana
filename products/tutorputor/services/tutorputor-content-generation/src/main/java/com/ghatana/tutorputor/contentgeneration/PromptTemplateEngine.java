@@ -1,4 +1,4 @@
-package com.ghatana.tutorputor.agents.prompts;
+package com.ghatana.tutorputor.contentgeneration;
 
 import java.util.Map;
 

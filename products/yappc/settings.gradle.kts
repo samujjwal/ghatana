@@ -56,18 +56,13 @@ include(":backend:api")
 
 // --- Backend Service Modules ---
 include(":backend:persistence")
-include(":backend:auth")
-include(":backend:websocket")
+include(":backend:auth")      // includes security scanning (absorbed from infrastructure:security)
 include(":backend:deployment")
-
-// --- Application Launcher ---
-include(":launcher")
+// NOTE: backend:websocket removed — sources merged into backend:api
 
 // --- Unified Service Modules ---
 include(":services:platform")   // canonical combined module (was: domain + infrastructure)
-include(":services:ai")
-include(":services:lifecycle")
-include(":services:scaffold")
+include(":services:lifecycle")  // absorbs services:ai and services:scaffold
 
 // --- Core Domain Modules ---
 include(":core:domain")
@@ -77,8 +72,8 @@ include(":core:domain:task")
 // --- Core: Scaffold Engine ---
 include(":core:scaffold")
 include(":core:scaffold:api")
-include(":core:scaffold:core")
-include(":core:scaffold:packs")
+include(":core:scaffold:core") // absorbs core:scaffold:packs
+// NOTE: core:scaffold:packs removed — sources merged into core:scaffold:core
 
 // --- Core: AI & Agents ---
 include(":core:ai")
@@ -101,7 +96,7 @@ include(":core:spi")
 
 // --- Infrastructure ---
 include(":infrastructure:datacloud")
-include(":infrastructure:security")
+// NOTE: infrastructure:security removed — sources merged into backend:auth
 
 // --- YAPPC Shared Libraries ---
 include(":libs:java:yappc-domain")
@@ -141,20 +136,18 @@ if (isStandaloneBuild) {
             "backend:api",
             "backend:persistence",
             "backend:auth",
-            "backend:websocket",
             "backend:deployment",
-            "launcher",
-            "services:platform",       // canonical combined module
-            "services:ai",
+            // backend:websocket, launcher removed — merged into backend:api
+            "services:platform",
             "services:lifecycle",
-            "services:scaffold",
+            // services:ai, services:scaffold removed — merged into services:lifecycle
             "core:domain",
             "core:domain:service",
             "core:domain:task",
             "core:scaffold",
             "core:scaffold:api",
             "core:scaffold:core",
-            "core:scaffold:packs",
+            // core:scaffold:packs removed — merged into core:scaffold:core
             "core:ai",
             "core:agents",
             "core:agents:runtime",
@@ -169,7 +162,7 @@ if (isStandaloneBuild) {
             "core:framework:integration-test",
             "core:spi",
             "infrastructure:datacloud",
-            "infrastructure:security",
+            // infrastructure:security removed — merged into backend:auth
             "libs:java:yappc-domain")
 
     yappcAliasModules.forEach { modulePath ->

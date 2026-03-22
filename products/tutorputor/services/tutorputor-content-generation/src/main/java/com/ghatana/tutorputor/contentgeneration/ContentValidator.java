@@ -1,4 +1,4 @@
-package com.ghatana.tutorputor.contentgeneration.validation;
+package com.ghatana.tutorputor.contentgeneration;
 
 import com.ghatana.tutorputor.contentgeneration.contracts.v1.GenerateAnimationResponse;
 import com.ghatana.tutorputor.contentgeneration.contracts.v1.GenerateClaimsResponse;
@@ -74,7 +74,7 @@ public class ContentValidator {
 
         // Unknown type — accept with reduced confidence to avoid false-blocking
         return ValidationResult.newBuilder()
-                .setValid(true)
+                .setIsValid(true)
                 .setConfidenceScore(0.6f)
                 .addSuggestions("No type-specific validation rule found for: " + content.getClass().getSimpleName())
                 .build();
@@ -99,26 +99,13 @@ public class ContentValidator {
         // Check: each claim has non-trivial text
         for (int i = 0; i < response.getClaimsCount(); i++) {
             totalChecks++;
-            String text = response.getClaims(i).getText();
+            String text = response.getClaims(i).getClaimText();
             if (text == null || text.trim().length() < MIN_CLAIM_TEXT_LENGTH) {
                 issues.add(issue(Severity.WARNING, "claims[" + i + "].text",
                         "Claim text is too short or empty (min " + MIN_CLAIM_TEXT_LENGTH + " chars)"));
             } else {
                 passedChecks++;
             }
-        }
-
-        // Check: at least two distinct Bloom levels across all claims (diversity)
-        totalChecks++;
-        long distinctBloomLevels = response.getClaimsList().stream()
-                .map(c -> c.getBloomLevel())
-                .distinct()
-                .count();
-        if (response.getClaimsCount() > 2 && distinctBloomLevels < 2) {
-            issues.add(issue(Severity.WARNING, "claims",
-                    "All claims are at the same Bloom level — consider a wider range of cognitive objectives"));
-        } else {
-            passedChecks++;
         }
 
         return buildResult(issues, totalChecks, passedChecks);
@@ -137,18 +124,18 @@ public class ContentValidator {
             passedChecks++;
         }
 
-        // Check: each example has title and description
+        // Check: each example has scenario and question
         for (int i = 0; i < response.getExamplesCount(); i++) {
             var example = response.getExamples(i);
             totalChecks++;
-            if (example.getTitle().isBlank()) {
-                issues.add(issue(Severity.WARNING, "examples[" + i + "].title", "Example title is empty"));
+            if (example.getScenario().isBlank()) {
+                issues.add(issue(Severity.WARNING, "examples[" + i + "].scenario", "Example scenario is empty"));
             } else {
                 passedChecks++;
             }
             totalChecks++;
-            if (example.getDescription().isBlank()) {
-                issues.add(issue(Severity.WARNING, "examples[" + i + "].description", "Example description is empty"));
+            if (example.getQuestion().isBlank()) {
+                issues.add(issue(Severity.WARNING, "examples[" + i + "].question", "Example question is empty"));
             } else {
                 passedChecks++;
             }
@@ -162,38 +149,29 @@ public class ContentValidator {
         int totalChecks = 0;
         int passedChecks = 0;
 
-        // Check: manifest present
+        // Check: simulation present
         totalChecks++;
-        if (!response.hasManifest()) {
-            issues.add(issue(Severity.ERROR, "manifest", "Simulation manifest is missing"));
+        if (!response.hasSimulation()) {
+            issues.add(issue(Severity.ERROR, "simulation", "Simulation content is missing"));
             return buildResult(issues, totalChecks, passedChecks); // can't check further
         }
         passedChecks++;
 
-        var manifest = response.getManifest();
+        var simulation = response.getSimulation();
 
-        // Check: at least one entity
+        // Check: at least one step
         totalChecks++;
-        if (manifest.getEntitiesCount() == 0) {
-            issues.add(issue(Severity.WARNING, "manifest.entities",
-                    "Simulation has no entities — add at least one physical or conceptual object"));
+        if (simulation.getStepsCount() == 0) {
+            issues.add(issue(Severity.WARNING, "simulation.steps",
+                    "Simulation has no steps — add at least one step to guide learners"));
         } else {
             passedChecks++;
         }
 
-        // Check: at least one goal
+        // Check: simulation has a title
         totalChecks++;
-        if (manifest.getGoalsCount() == 0) {
-            issues.add(issue(Severity.WARNING, "manifest.goals",
-                    "Simulation has no learning goals — define at least one measurable success criterion"));
-        } else {
-            passedChecks++;
-        }
-
-        // Check: manifest has a name
-        totalChecks++;
-        if (manifest.getName().isBlank()) {
-            issues.add(issue(Severity.WARNING, "manifest.name", "Simulation name is empty"));
+        if (simulation.getTitle().isBlank()) {
+            issues.add(issue(Severity.WARNING, "simulation.title", "Simulation title is empty"));
         } else {
             passedChecks++;
         }
@@ -227,8 +205,8 @@ public class ContentValidator {
 
         // Check: duration is positive
         totalChecks++;
-        if (anim.getDurationSeconds() <= 0) {
-            issues.add(issue(Severity.WARNING, "animation.duration_seconds",
+        if (anim.getTotalDurationSeconds() <= 0) {
+            issues.add(issue(Severity.WARNING, "animation.total_duration_seconds",
                     "Animation duration must be a positive number of seconds"));
         } else {
             passedChecks++;
@@ -253,7 +231,7 @@ public class ContentValidator {
         boolean valid = !hasErrors && confidence >= 0.5f;
 
         var builder = ValidationResult.newBuilder()
-                .setValid(valid)
+                .setIsValid(valid)
                 .setConfidenceScore(confidence)
                 .addAllIssues(issues);
 
@@ -269,17 +247,17 @@ public class ContentValidator {
 
     private ValidationResult invalid(String message, float confidence) {
         return ValidationResult.newBuilder()
-                .setValid(false)
+                .setIsValid(false)
                 .setConfidenceScore(confidence)
                 .addIssues(issue(Severity.ERROR, "root", message))
                 .build();
     }
 
-    private ValidationIssue issue(Severity severity, String field, String message) {
+    private ValidationIssue issue(Severity severity, String location, String description) {
         return ValidationIssue.newBuilder()
                 .setSeverity(severity)
-                .setField(field)
-                .setMessage(message)
+                .setLocation(location)
+                .setDescription(description)
                 .build();
     }
 }

@@ -1,0 +1,115 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CODEOWNERS — Ghatana Monorepo
+#
+# Format: <pattern>  <@team-or-user> ...
+# Last line wins for overlapping patterns (Gitea / GitHub semantics).
+#
+# Team roster reference:
+#   @platform-team      — Platform engineering team (platform/java/* stewards)
+#   @infra-team         — Infrastructure & observability team
+#   @security-team      — Authentication, authorisation, compliance
+#   @data-cloud-team    — Data ingestion, event-streaming, schema
+#   @aep-team           — Agentic Event Processor product team
+#   @finance-team       — Finance product team
+#   @yappc-team         — Yappc product team
+#   @dcmaar-team        — DcMaar product team
+#   @architecture-board — ADR approvers (principal engineers)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Catch-all (last-resort) ───────────────────────────────────────────────────
+*                                       @platform-team
+
+# ── Governance & Documentation ───────────────────────────────────────────────
+docs/adr/                               @architecture-board @platform-team
+docs/DEPRECATION_POLICY.md             @architecture-board @platform-team
+docs/MODULE_ADMISSION_CHECKLIST.md     @architecture-board @platform-team
+.github/                               @platform-team
+.gitea/                                @platform-team
+buildSrc/                              @platform-team
+scripts/                               @platform-team
+config/                                @platform-team
+gradle/                                @platform-team
+build.gradle.kts                       @platform-team
+settings.gradle.kts                    @platform-team
+gradle.properties                      @platform-team
+eslint-rules/                          @platform-team @architecture-board
+
+# ── Platform — Java Core ──────────────────────────────────────────────────────
+platform/java/core/                    @platform-team
+platform/java/runtime/                 @platform-team
+platform/java/domain/                  @platform-team
+platform/java/http/                    @platform-team
+platform/java/database/                @platform-team
+platform/java/config/                  @platform-team
+platform/java/plugin/                  @platform-team
+platform/java/audit/                   @platform-team @security-team
+platform/java/testing/                 @platform-team
+platform/java/connectors/              @platform-team
+
+# ── Platform — Observability & Kernel ────────────────────────────────────────
+platform/java/observability/           @platform-team @infra-team
+platform/java/kernel/                  @platform-team @infra-team
+platform/java/kernel-capabilities/     @platform-team @infra-team
+
+# ── Platform — Agent Framework ───────────────────────────────────────────────
+platform/java/agent-core/              @platform-team @aep-team
+platform/java/agent-runtime/           @platform-team @aep-team
+platform/java/agent-registry/          @platform-team @aep-team
+
+# ── Platform — AI ────────────────────────────────────────────────────────────
+platform/java/ai-integration/          @platform-team
+platform/java/ai-api/                  @platform-team
+
+# ── Platform — Data & Events ─────────────────────────────────────────────────
+platform/java/event-cloud/             @platform-team @data-cloud-team
+platform/java/schema-registry/         @platform-team @data-cloud-team
+platform/java/workflow/                @platform-team
+platform/java/governance/              @platform-team @architecture-board
+
+# ── Platform — Security ──────────────────────────────────────────────────────
+platform/java/security/                @platform-team @security-team
+
+# ── Platform — TypeScript ────────────────────────────────────────────────────
+platform/typescript/                   @platform-team
+
+# ── Products — Data Cloud ────────────────────────────────────────────────────
+products/data-cloud/                   @data-cloud-team @platform-team
+
+# ── Products — AEP ───────────────────────────────────────────────────────────
+products/aep/                          @aep-team @platform-team
+
+# ── Products — Finance ───────────────────────────────────────────────────────
+products/finance/                      @finance-team @platform-team
+
+# ── Products — Yappc ─────────────────────────────────────────────────────────
+products/yappc/                        @yappc-team
+products/yappc/services/platform/      @yappc-team @platform-team
+products/yappc/services/lifecycle/     @yappc-team @platform-team
+
+# ── Products — DcMaar / Guardian ─────────────────────────────────────────────
+products/dcmaar/                       @dcmaar-team
+products/dcmaar/apps/guardian/         @dcmaar-team @security-team
+
+# ── Products — App Platform ──────────────────────────────────────────────────
+products/app-platform/                 @platform-team
+
+# ── Products — Security Gateway ──────────────────────────────────────────────
+products/security-gateway/             @security-team @platform-team
+
+# ── Products — Other ─────────────────────────────────────────────────────────
+products/audio-video/                  @platform-team
+products/aura/                         @platform-team
+products/flashit/                      @platform-team
+products/phr/                          @platform-team
+products/software-org/                 @platform-team
+products/tutorputor/                   @platform-team
+products/virtual-org/                  @platform-team
+
+# ── Shared Services ──────────────────────────────────────────────────────────
+shared-services/                       @platform-team @infra-team
+
+# ── Apps ─────────────────────────────────────────────────────────────────────
+apps/yappc-web/                        @yappc-team
+
+# ── Contracts / Schemas ──────────────────────────────────────────────────────
+contracts/                             @architecture-board @platform-team

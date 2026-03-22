@@ -15,7 +15,7 @@ dependencies {
     // Core lifecycle and infrastructure
     implementation(project(":products:yappc:core:lifecycle"))
     implementation(project(":products:yappc:infrastructure:datacloud"))
-    implementation(project(":products:yappc:infrastructure:security"))
+    implementation(project(":products:yappc:backend:auth"))  // security scanning classes moved here from infrastructure:security
 
     // Core Platform Libraries
     implementation(project(":platform:java:core"))

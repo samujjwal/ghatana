@@ -132,7 +132,7 @@ val generatePojos = tasks.register<JavaExec>("generatePojos") {
     )
     
     doFirst {
-        delete(outDir)
+        outDir.get().asFile.deleteRecursively()
         outDir.get().asFile.mkdirs()
     }
 }

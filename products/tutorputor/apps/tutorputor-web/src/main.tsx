@@ -1,4 +1,4 @@
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from './utils/logger.js';
 const logger = createLogger('main');
 
 import { StrictMode } from "react";

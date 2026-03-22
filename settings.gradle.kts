@@ -39,43 +39,24 @@ include(":platform:java:domain")
 include(":platform:java:database")
 include(":platform:java:http")
 include(":platform:java:observability")
-include(":platform:java:observability-http")
-include(":platform:java:observability-clickhouse")
 include(":platform:java:testing")
 include(":platform:java:runtime")
 include(":platform:java:config")
 include(":platform:java:workflow")
-include(":platform:java:workflow-runtime")
-include(":platform:java:workflow-jdbc")
 include(":platform:java:plugin")
 include(":platform:java:event-cloud")
-include(":platform:java:ai-integration")
-include(":platform:java:ai-integration:registry")
-include(":platform:java:ai-integration:observability")
-include(":platform:java:ai-integration:feature-store")
+include(":platform:java:ai-integration")  // Merged: registry + observability + feature-store + experimental consolidated
 include(":platform:java:ai-api")
-include(":platform:java:ai-experimental")
 include(":platform:java:governance")
 include(":platform:java:security")
 include(":platform:java:agent-core")
-include(":platform:java:agent-memory")
-include(":platform:java:agent-learning")
-include(":platform:java:agent-resilience")
+include(":platform:java:agent-runtime")   // Merged: agent-memory + agent-learning + agent-dispatch + agent-resilience
 include(":platform:java:agent-registry")
-include(":platform:java:agent-dispatch")
-include(":platform:java:yaml-template")
-include(":platform:java:schema-registry")
+// schema-registry merged into platform:java:domain (SCHM-1, 2026)
 include(":platform:java:connectors")
-include(":platform:java:ingestion")
 include(":platform:java:audit")
 include(":platform:java:kernel")
-include(":platform:java:kernel:modules:authentication")
-include(":platform:java:kernel:modules:config")
-include(":platform:java:kernel:modules:event-store")
-include(":platform:java:kernel:modules:audit")
-include(":platform:java:kernel:modules:resilience")
-include(":platform:java:kernel:modules:observability")
-include(":platform:java:kernel:modules:secrets")
+include(":platform:java:kernel-capabilities")  // Merged: authentication + config + event-store + audit + resilience + observability + secrets
 
 // =============================================================================
 // Product: AEP — Autonomous Event Processing
@@ -84,6 +65,7 @@ include(":platform:java:kernel:modules:secrets")
 include(":products:aep:contracts")
 include(":products:aep:platform-bundle")
 include(":products:aep:platform-core")
+include(":products:aep:platform-engine")
 include(":products:aep:platform-registry")
 include(":products:aep:platform-analytics")
 include(":products:aep:platform-security")
@@ -103,6 +85,7 @@ include(":products:data-cloud:platform")
 include(":products:data-cloud:launcher")
 include(":products:data-cloud:sdk")
 include(":products:data-cloud:agent-registry")
+include(":products:data-cloud:feature-store-ingest")  // migrated from shared-services per ADR-013
 
 // =============================================================================
 // Product: YAPPC — Yet Another Platform Creator
@@ -121,8 +104,6 @@ include(":products:yappc:backend:auth")
 include(":products:yappc:backend:deployment")
 include(":products:yappc:backend:websocket")
 include(":products:yappc:core:domain")
-include(":products:yappc:core:domain:service")
-include(":products:yappc:core:domain:task")
 include(":products:yappc:core:scaffold")
 include(":products:yappc:core:scaffold:api")
 include(":products:yappc:core:scaffold:core")
@@ -175,10 +156,14 @@ include(":products:dcmaar:libs:java:guardian-threat-service")
 // Product: Tutorputor — AI Tutoring Platform
 // =============================================================================
 
-include(":products:tutorputor:apps:content-explorer")
+//include(":products:tutorputor:apps:content-explorer")
+//project(":products:tutorputor:apps:content-explorer").projectDir = File(
+//    rootDir,
+//   "products/tutorputor/apps/tutorputor-explorer"
+//)
 include(":products:tutorputor:libs:content-studio-agents")
-include(":products:tutorputor:services:tutorputor-ai-agents")
-include(":products:tutorputor:services:tutorputor-content-studio-grpc")
+//include(":products:tutorputor:services:tutorputor-ai-agents")
+include(":products:tutorputor:services:tutorputor-content-generation")
 
 // =============================================================================
 // Product: Software-Org — Software Organization Simulation
@@ -271,8 +256,8 @@ include(":products:finance:client-onboarding")
 // =============================================================================
 
 // include(":shared-services:ai-inference-service")   // disabled: build not stabilised yet
-include(":shared-services:ai-registry")
-include(":shared-services:auth-gateway")
-include(":shared-services:feature-store-ingest")
-include(":shared-services:auth-service")
+// include(":shared-services:ai-registry")             // consolidated into platform:java:ai-integration per ADR-013
+include(":shared-services:auth-gateway")                // absorbs auth-service
+// include(":shared-services:feature-store-ingest")     // migrated to products:data-cloud per ADR-013
+// include(":shared-services:auth-service")             // consolidated into auth-gateway per ADR-013
 include(":shared-services:user-profile-service")

@@ -22,8 +22,7 @@ dependencies {
 
     // Direct platform deps used by learning/ and eval/ (not exposed by sub-modules as api)
     implementation(project(":products:yappc:backend:persistence"))
-    implementation(project(":platform:java:agent-memory"))
-    implementation(project(":platform:java:agent-dispatch"))
+    implementation(project(":platform:java:agent-runtime"))  // Migrated from agent-memory + agent-dispatch
 
     // ActiveJ (generators / examples use async directly)
     implementation(libs.activej.promise)

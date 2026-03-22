@@ -1,4 +1,4 @@
-package com.ghatana.products.collection.domain.policy;
+package com.ghatana.tutorputor.contentgeneration;
 
 import java.util.Objects;
 

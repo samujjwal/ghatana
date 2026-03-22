@@ -343,22 +343,21 @@ public class AISuggestionsController {
   }
 
   private void executeAepActionNonCritical(String action, java.util.Map<String, Object> context) {
-    Promise.ofBlocking(
-            blockingExecutor,
-            () -> {
-              try {
-                String response = aepService.executeAction(action, JsonUtils.toJson(context));
-                logger.debug("AEP action {} completed ({} bytes)", action, response.length());
-                return null;
-              } catch (AepException e) {
-                logger.warn("AEP action {} failed (continuing)", action, e);
-                return null;
-              } catch (Exception e) {
-                logger.warn(
-                    "Failed to serialize AEP action context for {} (continuing)", action, e);
-                return null;
-              }
-            })
-        .whenException(e -> logger.warn("Background AEP action execution failed", e));
+    // Submit directly to the executor rather than via Promise.ofBlocking so that
+    // this truly fire-and-forget task is never tied to the eventloop lifecycle.
+    // Using Promise.ofBlocking would create a dangling promise whose completion
+    // callback posts back to the eventloop, potentially triggering a fatal-error
+    // when the eventloop is torn down in @AfterEach before the task finishes.
+    blockingExecutor.execute(
+        () -> {
+          try {
+            String response = aepService.executeAction(action, JsonUtils.toJson(context));
+            logger.debug("AEP action {} completed ({} bytes)", action, response.length());
+          } catch (AepException e) {
+            logger.warn("AEP action {} failed (continuing)", action, e);
+          } catch (Exception e) {
+            logger.warn("Failed to serialize AEP action context for {} (continuing)", action, e);
+          }
+        });
   }
 }

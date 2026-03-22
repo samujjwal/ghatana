@@ -1,4 +1,4 @@
-package com.ghatana.ai.gateway;
+package com.ghatana.tutorputor.contentgeneration;
 
 import io.activej.promise.Promise;
 

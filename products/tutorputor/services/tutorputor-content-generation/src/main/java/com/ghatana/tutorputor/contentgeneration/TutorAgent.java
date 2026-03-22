@@ -1,4 +1,4 @@
-package com.ghatana.tutorputor.agents;
+package com.ghatana.tutorputor.contentgeneration;
 
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;

@@ -186,6 +186,28 @@ public class AgentResult<O> {
                 .build();
     }
 
+    /** Creates a result indicating the action is pending human approval. */
+    public static <O> AgentResult<O> pendingApproval(String reason, String agentId) {
+        return AgentResult.<O>builder()
+                .confidence(0.0)
+                .status(AgentResultStatus.PENDING_APPROVAL)
+                .agentId(agentId)
+                .explanation(reason)
+                .processingTime(Duration.ZERO)
+                .build();
+    }
+
+    /** Creates a result indicating the action was denied by governance policy. */
+    public static <O> AgentResult<O> denied(String reason, String agentId) {
+        return AgentResult.<O>builder()
+                .confidence(0.0)
+                .status(AgentResultStatus.DENIED)
+                .agentId(agentId)
+                .explanation(reason)
+                .processingTime(Duration.ZERO)
+                .build();
+    }
+
     /**
      * Nested Status alias enum for convenience — mirrors {@link AgentResultStatus}.
      *
@@ -193,7 +215,8 @@ public class AgentResult<O> {
      * without a separate import of {@link AgentResultStatus}.
      */
     public enum Status {
-        SUCCESS, FAILED, LOW_CONFIDENCE, TIMEOUT, SKIPPED, DELEGATED;
+        SUCCESS, FAILED, LOW_CONFIDENCE, TIMEOUT, SKIPPED, DELEGATED,
+        PENDING_APPROVAL, DENIED, CANCELLED, ROLLED_BACK;
 
         /** Converts this Status to the equivalent {@link AgentResultStatus}. */
         public AgentResultStatus toResultStatus() {

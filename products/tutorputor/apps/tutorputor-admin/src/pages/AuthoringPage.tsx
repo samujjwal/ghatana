@@ -90,7 +90,7 @@ import {
   PhysicsPropertyPanel,
   PhysicsConfigPanel,
   type EntityType,
-} from "@tutorputor/physics-simulation";
+} from "@tutorputor/simulation/physics";
 import { AnimationStudio } from "../components/animation/AnimationStudio";
 import type { AnimationSpec } from "../../../../services/tutorputor-platform/src/modules/animation-runtime/service";
 

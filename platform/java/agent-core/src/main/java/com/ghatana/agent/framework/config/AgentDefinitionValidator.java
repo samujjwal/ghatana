@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -64,6 +65,7 @@ public final class AgentDefinitionValidator {
         validateSecurity(definition, errors);
         validateCost(definition, errors);
         validateTypeSpecific(definition, errors);
+        validateGovernance(definition, errors);
 
         return new ValidationResult(errors);
     }
@@ -325,6 +327,105 @@ public final class AgentDefinitionValidator {
         }
         if (def.getMaxCostPerCall() <= 0) {
             errors.add("[cost] maxCostPerCall must be positive");
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Governance Validation
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /** Canonical five-tier autonomy values recognized by the runtime. */
+    private static final Set<String> CANONICAL_AUTONOMY_LEVELS = Set.of(
+            "advisory", "draft", "supervised", "bounded-autonomous", "autonomous"
+    );
+
+    /** Valid action class values. */
+    private static final Set<String> VALID_ACTION_CLASSES = Set.of(
+            "READ", "DRAFT", "WRITE_REVERSIBLE", "WRITE_IRREVERSIBLE",
+            "CALL_EXTERNAL", "DELEGATE", "MEMORY_MUTATION", "POLICY_CHANGE"
+    );
+
+    /**
+     * Validates governance-related configuration including autonomy level,
+     * action governance constraints, and memory governance completeness.
+     *
+     * <p>Governance attributes are read from labels and metadata:
+     * <ul>
+     *   <li>{@code labels["autonomyLevel"]} — canonical five-tier autonomy</li>
+     *   <li>{@code metadata["actionGovernance"]} — action governance map</li>
+     *   <li>{@code metadata["memoryGovernance"]} — memory governance map</li>
+     * </ul>
+     *
+     * <p>High-risk agents (critical/high criticality or privileged action classes)
+     * must declare evaluation gates.
+     */
+    @SuppressWarnings("unchecked")
+    private static void validateGovernance(AgentDefinition def, List<String> errors) {
+        Map<String, String> labels = def.getLabels();
+        Map<String, Object> metadata = def.getMetadata();
+
+        // -- Autonomy level normalization check --
+        String autonomy = labels.get("autonomyLevel");
+        if (autonomy != null && !CANONICAL_AUTONOMY_LEVELS.contains(autonomy.toLowerCase())) {
+            errors.add("[governance] autonomyLevel '" + autonomy
+                    + "' is not a canonical value; expected one of: " + CANONICAL_AUTONOMY_LEVELS);
+        }
+
+        // -- Action governance check --
+        Object agObj = metadata.get("actionGovernance");
+        if (agObj instanceof Map<?, ?> actionGov) {
+            // Validate allowed action classes
+            Object aacObj = actionGov.get("allowedActionClasses");
+            if (aacObj instanceof List<?> classes) {
+                for (Object cls : classes) {
+                    if (cls instanceof String s && !VALID_ACTION_CLASSES.contains(s)) {
+                        errors.add("[governance] unknown action class '" + s
+                                + "'; expected one of: " + VALID_ACTION_CLASSES);
+                    }
+                }
+            }
+
+            // Validate delegation depth bounds
+            Object depthObj = actionGov.get("maxDelegationDepth");
+            if (depthObj instanceof Number n && n.intValue() > 10) {
+                errors.add("[governance] maxDelegationDepth=" + n.intValue()
+                        + " is very high; consider capping at 10 for safety");
+            }
+        }
+
+        // -- Memory governance completeness --
+        Object mgObj = metadata.get("memoryGovernance");
+        if (mgObj instanceof Map<?, ?> memGov) {
+            if (!memGov.containsKey("namespace")) {
+                errors.add("[governance] memoryGovernance declared but 'namespace' is missing");
+            }
+            if (!memGov.containsKey("provenanceRequired")) {
+                errors.add("[governance] memoryGovernance declared but 'provenanceRequired' is missing");
+            }
+        }
+
+        // -- High-risk agents must have evaluation gates --
+        boolean isHighRisk = "critical".equalsIgnoreCase(labels.get("criticality"))
+                || "high".equalsIgnoreCase(labels.get("criticality"));
+
+        if (agObj instanceof Map<?, ?> actionGov) {
+            Object aacObj = actionGov.get("allowedActionClasses");
+            if (aacObj instanceof List<?> classes) {
+                boolean hasPrivileged = classes.stream()
+                        .filter(String.class::isInstance)
+                        .map(String.class::cast)
+                        .anyMatch(c -> c.equals("WRITE_IRREVERSIBLE")
+                                || c.equals("POLICY_CHANGE")
+                                || c.equals("DELEGATE"));
+                if (hasPrivileged) {
+                    isHighRisk = true;
+                }
+            }
+        }
+
+        if (isHighRisk && !metadata.containsKey("assurance")) {
+            errors.add("[governance] high-risk agents should declare 'assurance' metadata "
+                    + "with evaluation pack references");
         }
     }
 

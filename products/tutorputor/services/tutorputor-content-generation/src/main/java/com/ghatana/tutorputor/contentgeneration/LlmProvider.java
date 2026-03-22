@@ -1,4 +1,4 @@
-package com.ghatana.patternlearning.llm;
+package com.ghatana.tutorputor.contentgeneration;
 
 import io.activej.promise.Promise;
 import java.util.Map;

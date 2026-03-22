@@ -1,28 +1,29 @@
-package com.ghatana.tutorputor.explorer.generator;
+package com.ghatana.tutorputor.contentgeneration.generators;
 
-import com.ghatana.tutorputor.explorer.model.ContentGenerationRequest;
-import com.ghatana.tutorputor.explorer.model.LearningClaim;
-import com.ghatana.tutorputor.explorer.model.LearningEvidence;
+import com.ghatana.tutorputor.contentgeneration.domain.ContentGenerationRequest;
+import com.ghatana.tutorputor.contentgeneration.domain.LearningClaim;
+import com.ghatana.tutorputor.contentgeneration.domain.LearningEvidence;
 import io.activej.promise.Promise;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * @doc.type class
+ * @doc.purpose Generate supporting evidence items for claims
+ * @doc.layer product
+ * @doc.pattern Generator
+ */
 public class EvidenceGenerator {
-    
+
     public Promise<List<LearningEvidence>> generateEvidence(List<LearningClaim> claims, ContentGenerationRequest request) {
-        return Promise.ofBlocking(() -> {
-            List<LearningEvidence> evidence = new ArrayList<>();
-            for (LearningClaim claim : claims) {
-                evidence.add(LearningEvidence.builder()
-                    .id(UUID.randomUUID().toString())
-                    .claimId(claim.getId())
-                    .type("EXAMPLE")
-                    .content("Evidence for: " + claim.getText())
-                    .build());
-            }
-            return evidence;
-        });
+        return Promise.of(claims.stream()
+                .map(claim -> LearningEvidence.builder()
+                        .id(UUID.randomUUID().toString())
+                        .claimId(claim.getId())
+                        .type("REFERENCE")
+                        .content("Supporting evidence for " + claim.getText())
+                        .build())
+                .toList());
     }
 }

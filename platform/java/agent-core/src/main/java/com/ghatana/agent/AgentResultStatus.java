@@ -47,5 +47,17 @@ public enum AgentResultStatus {
     DEGRADED,
 
     /** Agent explicitly delegated processing to another agent. */
-    DELEGATED
+    DELEGATED,
+
+    /** Agent action requires human approval before it can proceed. */
+    PENDING_APPROVAL,
+
+    /** Agent action was explicitly denied by governance policy or human reviewer. */
+    DENIED,
+
+    /** Agent action was cancelled before completion (e.g., by user or kill-switch). */
+    CANCELLED,
+
+    /** Agent action was executed but subsequently rolled back due to compensation. */
+    ROLLED_BACK
 }

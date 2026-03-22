@@ -31,6 +31,18 @@ dependencies {
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:observability"))
     
+    // Metrics (for MetricsWorkflowListener)
+    implementation(libs.micrometer.core)
+    
+    // JDBC backend (for JdbcWorkflow* classes)
+    implementation(libs.hikaricp)
+    implementation(libs.postgresql)
+    implementation(libs.flyway.core)
+    
+    // Serialization
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jsr310)
+    
     // Annotations
     compileOnly(libs.jetbrains.annotations)
     

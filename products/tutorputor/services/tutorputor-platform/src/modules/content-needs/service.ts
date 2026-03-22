@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@tutorputor/db';
+import type { PrismaClient } from '@tutorputor/core/db';
 import type { ContentStudioService } from '@tutorputor/contracts/v1';
 import type { ContentNeeds, ExampleType } from '@tutorputor/contracts/v1/learning-unit';
 

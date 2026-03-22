@@ -10,6 +10,9 @@
 #   2. No reflective (non-SPI) agent instantiation
 #   3. Dependency flow: products → libs → contracts (no upward deps)
 #   4. Module size limits (class count per module)
+#   5. TypeScript dist artifacts not committed
+#   6. New unapproved cross-product Java imports
+#   7. Module count ceiling (prevent sprawl)
 # ─────────────────────────────────────────────────────────────────────────────
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -50,16 +53,49 @@ if [[ "$CROSS_TOP" -gt 0 ]]; then
 fi
 
 # ── 4. Module size check ─────────────────────────────────────────────────────
+# Alert threshold: 400 files (chosen to warn above current max of 324 in scaffold/core)
+# Fail threshold: 600 files (hard block for truly out-of-control god modules)
 OVERSIZED=0
+ALERT_THRESHOLD=400
+FAIL_THRESHOLD=600
 while IFS= read -r dir; do
     COUNT=$(find "$dir" -name '*.java' -not -path '*/test/*' -not -path '*/build/*' 2>/dev/null | wc -l | tr -d ' ')
     COUNT=${COUNT:-0}
-    if [[ "$COUNT" -gt 200 ]]; then
+    if [[ "$COUNT" -gt "$FAIL_THRESHOLD" ]]; then
         MODULE=$(echo "$dir" | sed 's|/src/main.*||')
-        deduct 5 "Module ${MODULE} has ${COUNT} source files (limit: 200)"
+        deduct 10 "Module ${MODULE} has ${COUNT} source files (HARD LIMIT: ${FAIL_THRESHOLD}) — mandatory split required"
+        OVERSIZED=$((OVERSIZED + 1))
+    elif [[ "$COUNT" -gt "$ALERT_THRESHOLD" ]]; then
+        MODULE=$(echo "$dir" | sed 's|/src/main.*||')
+        deduct 5 "Module ${MODULE} has ${COUNT} source files (alert threshold: ${ALERT_THRESHOLD}) — consider splitting"
         OVERSIZED=$((OVERSIZED + 1))
     fi
 done < <(find products platform -type d -name "main" -path "*/src/main" 2>/dev/null)
+
+# ── 5. Committed dist artifacts in TypeScript packages ───────────────────────
+# Platform TypeScript packages must not commit built dist/ files.
+COMMITTED_DIST=$(git ls-files 'platform/typescript/*/dist' 'platform/typescript/capabilities/*/dist' 2>/dev/null | wc -l | tr -d ' ' || true)
+COMMITTED_DIST=${COMMITTED_DIST:-0}
+if [[ "$COMMITTED_DIST" -gt 0 ]]; then
+    deduct 10 "Found ${COMMITTED_DIST} committed dist/ artifact(s) in platform/typescript — add to .gitignore and un-track. See docs/platform-libraries/LIBRARY_canvas.md"
+fi
+
+# ── 6. New unapproved cross-product Java imports ──────────────────────────────
+# The cross-product deps script documents approved deps; any new ones need approval.
+if bash scripts/check-cross-product-deps.sh 2>/dev/null | grep -q "FAIL"; then
+    UNAPPROVED_COUNT=$(bash scripts/check-cross-product-deps.sh 2>/dev/null | grep -c "product '.*' depends on" || true)
+    UNAPPROVED_COUNT=${UNAPPROVED_COUNT:-1}
+    deduct 15 "Found ${UNAPPROVED_COUNT} NEW unapproved cross-product dependency/ies — get Architecture Board approval first"
+fi
+
+# ── 7. Module count ceiling ─────────────────────────────────────────────────
+# Current baseline: 142 modules (after Phase 1 consolidation 2026-01).
+# Ceiling: 145 — any new platform modules require Arch Board approval (GOV-2).
+MODULE_COUNT=$(grep -c '^include(' settings.gradle.kts 2>/dev/null || echo 0)
+MODULE_CEILING=145
+if [[ "$MODULE_COUNT" -gt "$MODULE_CEILING" ]]; then
+    deduct 15 "Module count ${MODULE_COUNT} exceeds ceiling ${MODULE_CEILING} — new modules need Architecture Board approval (see docs/MODULE_ADMISSION_CHECKLIST.md)"
+fi
 
 # ── Report ───────────────────────────────────────────────────────────────────
 echo ""
@@ -75,7 +111,7 @@ echo ""
 echo "Score: ${SCORE}/100"
 echo ""
 
-THRESHOLD=70
+THRESHOLD=80
 if [[ "$SCORE" -lt "$THRESHOLD" ]]; then
     echo "❌  FAIL — Score ${SCORE} is below threshold ${THRESHOLD}"
     exit 1

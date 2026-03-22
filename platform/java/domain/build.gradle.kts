@@ -33,6 +33,16 @@ dependencies {
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
 
+    // ActiveJ for async schema operations
+    api(libs.activej.promise)
+    api(libs.activej.eventloop)
+
+    // JSON Schema validation (schema-registry merger)
+    implementation(libs.networknt.validator)
+
+    // Logging
+    implementation(libs.slf4j.api)
+
     // Nullability annotations
     compileOnly(libs.jetbrains.annotations)
 

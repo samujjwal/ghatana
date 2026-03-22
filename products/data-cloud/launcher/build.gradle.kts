@@ -13,10 +13,8 @@ dependencies {
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:governance"))
 
-    // AI platform integration — model registry, feature store, observability (DC-11)
-    implementation(project(":platform:java:ai-integration:registry"))
-    implementation(project(":platform:java:ai-integration:observability"))
-    implementation(project(":platform:java:ai-integration:feature-store"))
+    // AI platform integration — model registry, feature store, observability (all merged into ai-integration)
+    implementation(project(":platform:java:ai-integration"))
 
     // HikariCP for AI service DataSource creation in standalone launcher
     implementation(libs.hikaricp)

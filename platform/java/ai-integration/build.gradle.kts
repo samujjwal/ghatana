@@ -6,20 +6,59 @@ plugins {
 group = "com.ghatana.platform"
 version = "2026.3.1-SNAPSHOT"
 
-description = "AI Integration - Compatibility layer (deprecated - use ai-api and ai-experimental)"
+description = """
+    AI Integration — Unified AI platform module.
+    Includes all previously-separate submodules: registry, observability, feature-store.
+
+    Packages:
+      com.ghatana.ai.*                      — LLM clients, embeddings, prompts, vector store
+      com.ghatana.aiplatform.registry.*     — Model registry, version control, deployment tracking
+      com.ghatana.aiplatform.observability.* — AI metrics, cost tracking, drift detection
+      com.ghatana.aiplatform.featurestore.*  — Feature engineering, storage, and serving
+""".trimIndent()
 
 dependencies {
-    // Re-export new split modules
+    // Re-export ai-api (stable interfaces)
     api(project(":platform:java:ai-api"))
-    api(project(":platform:java:ai-experimental"))
-    
+
     // Core Platform
     api(project(":platform:java:core"))
     api(project(":platform:java:observability"))
-    
+    api(project(":platform:java:database"))
+    api(project(":platform:java:event-cloud"))
+
+    // ActiveJ (for OpenAI async client code)
+    api(libs.activej.promise)
+    api(libs.activej.eventloop)
+
+    // OpenAI client (from ai-experimental)
+    implementation("com.openai:openai-java:0.25.0")
+
+    // Database (registry + feature-store)
+    implementation(libs.postgresql)
+    implementation(libs.hikaricp)
+
+    // Redis (feature-store)
+    implementation(libs.jedis)
+
+    // Jackson for JSON
+    implementation(platform(libs.jackson.bom))
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jdk8)
+    implementation(libs.jackson.datatype.jsr310)
+
+    // Validation (registry)
+    implementation(libs.jakarta.validation.api)
+
     // Logging
     api(libs.slf4j.api)
-    
+    implementation(libs.log4j.core)
+    implementation(libs.log4j.slf4j.impl)
+
+    // Annotations
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
@@ -31,3 +70,4 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+

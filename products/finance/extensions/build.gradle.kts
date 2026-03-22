@@ -14,7 +14,7 @@ dependencies {
     implementation(project(":platform:java:kernel"))
 
     // Kernel authentication module
-    implementation(project(":platform:java:kernel:modules:authentication"))
+    implementation(project(":platform:java:kernel-capabilities"))  // Merged: kernel/modules/* (auth + config + event-store + audit + resilience + observability + secrets)
 
     // Finance domain rules
     implementation(project(":products:finance:domains:rules"))

@@ -2,6 +2,8 @@ plugins {
     java
     application
     kotlin("jvm") version "1.9.22"
+    id("jacoco")
+    alias(libs.plugins.protobuf)
 }
 
 group = "com.ghatana.tutorputor"
@@ -24,10 +26,10 @@ dependencies {
     implementation(project(":platform:contracts"))
     
     // ActiveJ framework
-    implementation("io.activej:activej-boot:5.5.1")
-    implementation("io.activej:activej-promise:5.5.1")
-    implementation("io.activej:activej-http:5.5.1")
-    implementation("io.activej:activej-inject:5.5.1")
+    implementation(libs.activej.boot)
+    implementation(libs.activej.promise)
+    implementation(libs.activej.http)
+    implementation(libs.activej.inject)
     
     // LLM integration (from ai-agents)
     implementation("dev.langchain4j:langchain4j:0.34.0")
@@ -64,7 +66,6 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
     testImplementation("org.assertj:assertj-core:3.24.2")
-    testImplementation("io.activej:activej-test:5.5.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -87,8 +88,6 @@ tasks.test {
 }
 
 // Code coverage with JaCoCo
-plugins.apply("jacoco")
-
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
     reports {
@@ -147,5 +146,10 @@ tasks.withType<Copy>().configureEach {
 }
 
 tasks.named<Copy>("processResources") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Handle sourcesJar duplicates from protobuf
+tasks.withType<org.gradle.api.tasks.bundling.Jar>().configureEach {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

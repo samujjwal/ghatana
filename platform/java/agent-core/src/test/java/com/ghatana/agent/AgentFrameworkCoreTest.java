@@ -165,9 +165,9 @@ class AgentFrameworkCoreTest {
     class AgentResultStatusTest {
 
         @Test
-        @DisplayName("has 7 values")
+        @DisplayName("has 11 values")
         void shouldHave7Values() {
-            assertThat(AgentResultStatus.values()).hasSize(7);
+            assertThat(AgentResultStatus.values()).hasSize(11);
             assertThat(AgentResultStatus.values()).containsExactly(
                     AgentResultStatus.SUCCESS,
                     AgentResultStatus.LOW_CONFIDENCE,
@@ -175,7 +175,11 @@ class AgentFrameworkCoreTest {
                     AgentResultStatus.FAILED,
                     AgentResultStatus.TIMEOUT,
                     AgentResultStatus.DEGRADED,
-                    AgentResultStatus.DELEGATED
+                    AgentResultStatus.DELEGATED,
+                    AgentResultStatus.PENDING_APPROVAL,
+                    AgentResultStatus.DENIED,
+                    AgentResultStatus.CANCELLED,
+                    AgentResultStatus.ROLLED_BACK
             );
         }
     }

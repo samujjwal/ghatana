@@ -155,13 +155,12 @@ public final class ContentGenerationService {
                             Collections.emptyList()
                     ));
                 })
-                .catchEx(exception -> {
+                .whenException(exception -> {
                     metricsCollector.incrementCounter(
                             "generation.errors",
                             "tenant", tenantId,
                             "error_type", exception.getClass().getSimpleName()
                     );
-                    return Promise.ofException(exception);
                 });
     }
 
@@ -231,12 +230,11 @@ public final class ContentGenerationService {
                     );
                     return Promise.of((Void) null);
                 })
-                .catchEx(exception -> {
+                .whenException(Exception.class, exception -> {
                     metricsCollector.incrementCounter(
                             "generation.configuration.errors",
                             "tenant", tenantId
                     );
-                    return Promise.ofException(exception);
                 });
     }
 
@@ -329,12 +327,15 @@ public final class ContentGenerationService {
                             tenantId, templates, guardrails, index + 1, results, errors
                     );
                 })
-                .catchEx(exception -> {
-                    errors.add("Item " + index + ": " + exception.getMessage());
-                    return generateBatchRecursive(
-                            tenantId, templates, guardrails, index + 1, results, errors
-                    );
-                });
+                .then(
+                    unused -> Promise.of((Void) null),  // success case
+                    exception -> {                       // error case
+                        errors.add("Item " + index + ": " + exception.getMessage());
+                        return generateBatchRecursive(
+                                tenantId, templates, guardrails, index + 1, results, errors
+                        );
+                    }
+                );
     }
 
     /**

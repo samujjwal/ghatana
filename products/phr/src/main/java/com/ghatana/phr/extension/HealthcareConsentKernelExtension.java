@@ -209,8 +209,13 @@ public class HealthcareConsentKernelExtension implements KernelExtension {
             return Promise.ofException(new IllegalStateException("Extension not started"));
         }
 
-        String consentId = generateConsentId(patientId, purpose);
-        ConsentRecord record = consentRegistry.get(consentId);
+        // Find the most recently granted consent for this patient and purpose.
+        // Note: generateConsentId includes a timestamp and therefore cannot be
+        // used here to look up a consent that was created at a different time.
+        ConsentRecord record = consentRegistry.values().stream()
+                .filter(r -> r.getPatientId().equals(patientId) && r.getPurpose() == purpose)
+                .max(java.util.Comparator.comparing(ConsentRecord::getGrantedAt))
+                .orElse(null);
 
         if (record == null) {
             return Promise.of(new ConsentVerification(false, "No consent found", null));

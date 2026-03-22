@@ -28,7 +28,7 @@ identity:
   agentType: "{{ agentType }}"                             # deterministic | probabilistic | stream-processor | planning | hybrid | adaptive | composite | reactive | custom
   subtype: "{{ agentSubtype }}"                            # type-specific fine-grained subtype (optional)
   criticality: "{{ defaultCriticality }}"                  # critical | high | medium | low
-  autonomyLevel: "{{ defaultAutonomyLevel }}"              # autonomous | semi-autonomous | supervised
+  autonomyLevel: "{{ defaultAutonomyLevel }}"              # advisory | draft | supervised | bounded-autonomous | autonomous
   determinismGuarantee: "{{ defaultDeterminismGuarantee }}"  # fully-deterministic | config-scoped | non-deterministic
   stateMutability: "{{ defaultStateMutability }}"          # stateless | local-state | persistent
   failureMode: "{{ defaultFailureMode }}"                  # fail-fast | fail-silent | fail-closed | dead-letter | retry | skip
@@ -74,3 +74,36 @@ observability:
   logLevel: "{{ defaultLogLevel }}"
   metrics:
     scrapeInterval: "{{ defaultMetricsScrapeInterval }}"
+
+# ---------------------------------------------------------------------------
+# Action Governance defaults
+# ---------------------------------------------------------------------------
+actionGovernance:
+  allowedActionClasses:
+    - READ
+    - DRAFT
+  reversibilityDefault: REVERSIBLE
+  maxDelegationDepth: 3
+  maxDelegationFanout: 5
+  budgets:
+    maxCostPerTurn: "{{ defaultMaxCostPerCall }}"
+    maxActionsPerTurn: 50
+    maxTurnDurationSeconds: 300
+
+# ---------------------------------------------------------------------------
+# Memory Governance defaults
+# ---------------------------------------------------------------------------
+memoryGovernance:
+  namespace: "{{ agentType }}.default"
+  versioning: true
+  sharingMode: PRIVATE
+  conflictResolution: LAST_WRITE_WINS
+  provenanceRequired: true
+  retentionDays: 90
+
+# ---------------------------------------------------------------------------
+# Assurance & Promotion defaults
+# ---------------------------------------------------------------------------
+assurance:
+  requiredPassRate: 0.95
+  shadowTestRequired: false

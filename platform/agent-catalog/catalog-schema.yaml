@@ -65,7 +65,15 @@ schema:
       autonomyLevel:
         type: string
         required: true
-        enum: [autonomous, semi-autonomous, supervised]
+        enum: [advisory, draft, supervised, bounded-autonomous, autonomous]
+        description: >
+          Canonical five-tier autonomy progression:
+            advisory: Agent provides recommendations only, never executes.
+            draft: Agent prepares drafts, human approves before execution.
+            supervised: Agent executes with real-time human oversight.
+            bounded-autonomous: Agent acts within declared boundaries, escalates outside.
+            autonomous: Full delegation within governance policy.
+          Legacy values 'semi-autonomous' and 'manual' map to 'supervised' and 'draft' respectively.
 
       determinismGuarantee:
         type: string
@@ -217,5 +225,101 @@ schema:
         type: object
       governance:
         type: object
+        description: "General governance metadata"
+
+      actionGovernance:
+        type: object
+        description: "Governance rules for agent actions"
+        properties:
+          allowedActionClasses:
+            type: array
+            items:
+              type: string
+              enum: [READ, DRAFT, WRITE_REVERSIBLE, WRITE_IRREVERSIBLE, CALL_EXTERNAL, DELEGATE, MEMORY_MUTATION, POLICY_CHANGE]
+            description: "Action classes this agent is permitted to perform"
+          reversibilityDefault:
+            type: string
+            enum: [REVERSIBLE, COMPENSATABLE, IRREVERSIBLE]
+            default: REVERSIBLE
+          maxDelegationDepth:
+            type: integer
+            default: 3
+            description: "Maximum depth of the delegation chain"
+          maxDelegationFanout:
+            type: integer
+            default: 5
+            description: "Maximum number of concurrent delegations"
+          budgets:
+            type: object
+            properties:
+              maxCostPerTurn:
+                type: number
+                description: "Maximum cost per agent turn in USD"
+              maxActionsPerTurn:
+                type: integer
+                description: "Maximum actions permitted per turn"
+              maxTurnDurationSeconds:
+                type: integer
+                description: "Maximum turn duration in seconds"
+
+      memoryGovernance:
+        type: object
+        description: "Governance rules for agent memory access"
+        properties:
+          namespace:
+            type: string
+            description: "Memory namespace this agent operates in"
+          owner:
+            type: string
+            description: "Owning agent or team for the namespace"
+          versioning:
+            type: boolean
+            default: true
+            description: "Whether memory mutations are versioned"
+          sharingMode:
+            type: string
+            enum: [PRIVATE, SHARED_READ, SHARED_WRITE, PUBLIC]
+            default: PRIVATE
+          conflictResolution:
+            type: string
+            enum: [LAST_WRITE_WINS, VERSION_VECTOR, MANUAL]
+            default: LAST_WRITE_WINS
+          provenanceRequired:
+            type: boolean
+            default: true
+            description: "Whether memory mutations must carry provenance metadata"
+          retentionDays:
+            type: integer
+            default: 90
+            description: "Days to retain memory items before archival/deletion"
+
+      assurance:
+        type: object
+        description: "Evaluation and promotion gate references"
+        properties:
+          evaluationPacks:
+            type: array
+            items:
+              type: string
+            description: "List of evaluation pack IDs required for this agent"
+          requiredPassRate:
+            type: number
+            default: 0.95
+            description: "Minimum pass rate across all evaluation packs"
+          promotionGates:
+            type: array
+            items:
+              type: string
+            description: "Promotion gate IDs this agent must pass for deployment"
+          shadowTestRequired:
+            type: boolean
+            default: false
+            description: "Whether shadow testing is required before production"
+          invariantSets:
+            type: array
+            items:
+              type: string
+            description: "Invariant set IDs that must hold during execution"
+
       performance:
         type: object

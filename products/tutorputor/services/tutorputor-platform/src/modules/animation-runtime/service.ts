@@ -11,7 +11,7 @@ import {
   lerp,
   lerpColor,
   clamp,
-} from "@tutorputor/sim-renderer";
+} from "@tutorputor/simulation/renderer";
 
 type FrameRequestCallback = (timestamp: number) => void;
 

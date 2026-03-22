@@ -2,7 +2,7 @@
   "name": "@ghatana/ui",
   "version": "1.0.0",
   "type": "module",
-  "description": "Ghatana UI component library - re-exports from design-system",
+  "description": "DEPRECATED (TSUI-1, 2026-01): Re-export shim for @ghatana/design-system. Use @ghatana/design-system directly.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {

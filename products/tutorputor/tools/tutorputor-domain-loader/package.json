@@ -19,7 +19,7 @@
     },
     "dependencies": {
         "@tutorputor/contracts": "workspace:*",
-        "@tutorputor/db": "workspace:*",
+        "@tutorputor/core": "workspace:*",
         "@prisma/client": "7.3.0",
         "@prisma/adapter-libsql": "^7.3.0",
         "@libsql/client": "^0.17.0",

@@ -23,10 +23,8 @@ dependencies {
 
     // Agent framework from platform (api — types are part of YAPPCAgentBase public API)
     api(project(":platform:java:agent-core"))
-    implementation(project(":platform:java:agent-dispatch"))
+    implementation(project(":platform:java:agent-runtime"))  // Migrated from agent-dispatch + agent-memory + agent-learning
     implementation(project(":platform:java:agent-registry"))
-    implementation(project(":platform:java:agent-memory"))
-    implementation(project(":platform:java:agent-learning"))
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:database"))

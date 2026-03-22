@@ -32,8 +32,7 @@ dependencies {
     api(project(":platform:java:agent-core"))
 
     // ─── Platform workflow ────────────────────────────────────────────────────
-    implementation(project(":platform:java:workflow-runtime"))
-    implementation(project(":platform:java:workflow-jdbc"))
+    implementation(project(":platform:java:workflow"))
 
     // ─── Kernel dependencies ──────────────────────────────────────────────────
     implementation(project(":products:app-platform:kernel:event-store"))

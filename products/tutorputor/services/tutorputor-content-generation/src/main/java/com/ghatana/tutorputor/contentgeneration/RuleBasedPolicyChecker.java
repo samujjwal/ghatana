@@ -1,4 +1,4 @@
-package com.ghatana.products.collection.domain.policy;
+package com.ghatana.tutorputor.contentgeneration;
 
 import io.activej.promise.Promise;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -452,7 +452,7 @@ public class RuleBasedPolicyChecker implements ContentPolicyChecker {
      */
     private PolicyCheckResult aggregateResults(List<PolicyCheckResult> results) {
         if (results.isEmpty()) {
-            return PolicyCheckResult.pass(null, 1.0);
+            return PolicyCheckResult.pass(PolicyType.PROFANITY, 1.0);
         }
 
         boolean allPassed = results.stream().allMatch(PolicyCheckResult::passed);
@@ -465,11 +465,17 @@ public class RuleBasedPolicyChecker implements ContentPolicyChecker {
                 .average()
                 .orElse(0.0);
 
+        PolicyType aggregatePolicyType = results.stream()
+                .map(PolicyCheckResult::policyType)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(PolicyType.PROFANITY);
+
         if (allPassed) {
-            return PolicyCheckResult.pass(null, avgScore);
+            return PolicyCheckResult.pass(aggregatePolicyType, avgScore);
         }
 
-        return PolicyCheckResult.failWithViolations(null, allViolations, avgScore);
+        return PolicyCheckResult.failWithViolations(aggregatePolicyType, allViolations, avgScore);
     }
 
     /**
