@@ -2,8 +2,7 @@ package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.ghatana.datacloud.entity.Entity;
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.products.yappc.domain.model.Dashboard;
 import com.ghatana.products.yappc.domain.repository.DashboardRepository;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
@@ -22,7 +21,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -39,7 +37,7 @@ import static org.mockito.Mockito.*;
 class DashboardDataCloudAdapterTest extends EventloopTestBase {
 
     @Mock
-    private EntityRepository entityRepository;
+    private DataCloudClient client;
 
     private YappcEntityMapper mapper;
     private DashboardRepository dashboardRepository;
@@ -52,7 +50,7 @@ class DashboardDataCloudAdapterTest extends EventloopTestBase {
         objectMapper.registerModule(new JavaTimeModule());
         mapper = new YappcEntityMapper(objectMapper);
 
-        dashboardRepository = new DashboardDataCloudAdapter(entityRepository, mapper);
+        dashboardRepository = new DashboardDataCloudAdapter(client, mapper);
     }
 
     @Test
@@ -60,13 +58,13 @@ class DashboardDataCloudAdapterTest extends EventloopTestBase {
     void shouldFindByWorkspaceId() {
         UUID workspaceId = UUID.randomUUID();
 
-        when(entityRepository.findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt()))
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
             .thenReturn(Promise.of(List.of()));
 
         List<Dashboard> result = runPromise(() -> dashboardRepository.findByWorkspaceId(workspaceId));
 
         assertThat(result).isNotNull();
-        verify(entityRepository).findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt());
+        verify(client).query(anyString(), anyString(), any(DataCloudClient.Query.class));
     }
 
     @Test
@@ -74,7 +72,7 @@ class DashboardDataCloudAdapterTest extends EventloopTestBase {
     void shouldFindByWorkspaceIdAndName() {
         UUID workspaceId = UUID.randomUUID();
 
-        when(entityRepository.findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt()))
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
             .thenReturn(Promise.of(List.of()));
 
         Optional<Dashboard> result = runPromise(() -> dashboardRepository.findByWorkspaceIdAndName(workspaceId, "test"));

@@ -12,9 +12,8 @@
 
 import { useState, useMemo } from 'react';
 import { BaseCanvasContent } from '../BaseCanvasContent';
-import { Box, Typography, Chip } from '@ghatana/design-system';
+import { Accordion, AccordionSummary, AccordionDetails, Box, Typography, Chip } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { Accordion, AccordionSummary, AccordionDetails } from '@yappc/ui';
 import { Settings, Search, ChevronDown as ExpandMore, Cloud, Hammer as Build, Shield as Security, Braces as DataObject } from 'lucide-react';
 
 interface ConfigFile {

@@ -1,8 +1,7 @@
 packages:
   # Platform TypeScript libraries
   - "platform/typescript/*"
-  - "platform/typescript/capabilities/*"
-  - "platform/typescript/capabilities/canvas-core/flow-canvas"
+  - "platform/typescript/canvas/flow-canvas"
   - "platform/typescript/foundation/*"
 
   # Product UIs

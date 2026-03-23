@@ -15,16 +15,18 @@ plugins {
 
 dependencies {
     // Platform modules (modularized - Item 46)
-    implementation(project(":products:aep:platform-core"))
-    implementation(project(":products:aep:platform-registry"))
-    implementation(project(":products:aep:platform-analytics"))
-    implementation(project(":products:aep:platform-security"))
-    implementation(project(":products:aep:platform-connectors"))
-    implementation(project(":products:aep:platform-agent"))
-    implementation(project(":products:aep:platform-api"))
+    implementation(project(":products:aep:aep-engine"))
+    implementation(project(":products:aep:aep-registry"))
+    implementation(project(":products:aep:aep-analytics"))
+    implementation(project(":products:aep:aep-security"))
+    implementation(project(":products:aep:aep-connectors"))
+    // aep-agent merged into aep-registry on 2026-03-22
+    implementation(project(":products:aep:aep-api"))
     
     // Orchestrator sub-module (pipeline lifecycle, execution queues, DI wiring)
     implementation(project(":products:aep:orchestrator"))
+    // Data Cloud SPI + embedded client for agent-registry queries in standalone mode
+    implementation(project(":products:data-cloud:spi"))
     implementation(project(":products:data-cloud:platform"))
     
     // Core platform dependencies

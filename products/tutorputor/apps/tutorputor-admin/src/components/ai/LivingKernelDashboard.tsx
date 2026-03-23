@@ -138,7 +138,7 @@ export function LivingKernelDashboard({
         successRate: Math.random() * 10 + 90, // 90-100%
         lastExecution: new Date(Date.now() - Math.random() * 60 * 60 * 1000), // Last hour
       },
-    }));
+    })) as unknown[] as LivingPlugin[];
   };
 
   const determinePluginCategory = (pluginId: string): string => {

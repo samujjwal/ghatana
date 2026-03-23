@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { StatusBadge } from '@dcmaar/shared-ui-tailwind';
+import { StatusBadge } from '@dcmaar/ui';
 import { 
     ArrowPathIcon,
     CheckCircleIcon,

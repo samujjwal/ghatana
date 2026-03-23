@@ -4,6 +4,7 @@
  */
 package com.ghatana.yappc.api.aep;
 
+import com.ghatana.aep.AepEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +19,8 @@ import org.slf4j.LoggerFactory;
  *
  * <pre>
  * AepConfig config = AepConfig.fromEnvironment(environment);
- * AepClient client = AepClientFactory.create(config);
+ * AepEngine engine = Aep.embedded(); // provided by DI composition root
+ * AepClient client = AepClientFactory.create(config, engine);
  * client.publishEvent("shape.created", eventJson);
  * </pre>
  *
@@ -41,31 +43,30 @@ public class AepClientFactory {
    * Creates an AEP client based on configuration.
    *
    * @param config The AEP configuration
+   * @param engine The AEP engine (used for LIBRARY mode; provided by DI composition root)
    * @return AEP client instance (library or service mode)
    * @throws AepException if client creation fails
    */
-  public static AepClient create(AepConfig config) throws AepException {
+  public static AepClient create(AepConfig config, AepEngine engine) throws AepException {
     LOG.info("Creating AEP client: {}", config);
 
     if (config.getMode() == AepMode.LIBRARY) {
-      return createLibraryClient(config);
+      return createLibraryClient(engine);
     } else {
       return createServiceClient(config);
     }
   }
 
   /**
-   * Creates an in-process library client.
+   * Creates an in-process library client backed by the provided engine.
    *
-   * @param config The AEP configuration
+   * @param engine the AEP engine
    * @return AEP library client
-   * @throws AepException if library loading fails
+   * @throws AepException if client creation fails
    */
-  private static AepClient createLibraryClient(AepConfig config) throws AepException {
-    LOG.info("Initializing AEP in LIBRARY mode from: {}", config.getLibraryPath());
-
+  private static AepClient createLibraryClient(AepEngine engine) throws AepException {
     try {
-      return new AepLibraryClient(config.getLibraryPath());
+      return new AepLibraryClient(engine);
     } catch (Exception e) {
       throw new AepException("Failed to initialize AEP library client", e);
     }

@@ -6,7 +6,6 @@ package com.ghatana.yappc.api.aep;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.platform.governance.security.TenantContext;
@@ -38,16 +37,17 @@ public final class AepLibraryClient implements AepClient {
   private final AepEngine engine;
 
   /**
-   * Creates an {@link AepLibraryClient} backed by an embedded {@link AepEngine}.
+   * Creates an {@link AepLibraryClient} backed by the given {@link AepEngine}.
    *
-   * <p>The {@code libraryPath} parameter is accepted for backward API compatibility but is
-   * intentionally ignored — AEP classes are always loaded from the standard classpath.
+   * <p>The {@code AepEngine} should be provided by the DI container (e.g. via {@code
+   * Aep.embedded()} in the composition root) so that application code does not depend on the
+   * concrete engine implementation module.
    *
-   * @param libraryPath ignored; retained for compatibility with {@link AepClientFactory}
+   * @param engine the AEP engine to delegate all operations to
    */
-  public AepLibraryClient(@SuppressWarnings("unused") String libraryPath) {
+  public AepLibraryClient(AepEngine engine) {
     this.objectMapper = JsonUtils.getDefaultMapper();
-    this.engine = Aep.embedded();
+    this.engine = engine;
     LOG.info("Initialized AEP library client (embedded, direct typed API)");
   }
 

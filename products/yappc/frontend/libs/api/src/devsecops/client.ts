@@ -230,7 +230,7 @@ export class DevSecOpsClient {
   }
 
   private isApiResponse<T>(value: unknown): value is ApiResponse<T> {
-    return value && typeof value === 'object' && 'data' in value && 'success' in value;
+    return !!value && typeof value === 'object' && 'data' in value && 'success' in value;
   }
 
   /**

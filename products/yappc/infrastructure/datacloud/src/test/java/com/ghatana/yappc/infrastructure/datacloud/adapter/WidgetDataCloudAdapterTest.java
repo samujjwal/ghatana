@@ -2,7 +2,7 @@ package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.products.yappc.domain.model.Widget;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import io.activej.promise.Promise;
@@ -18,7 +18,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -35,7 +34,7 @@ import static org.mockito.Mockito.*;
 class WidgetDataCloudAdapterTest extends EventloopTestBase {
 
     @Mock
-    private EntityRepository entityRepository;
+    private DataCloudClient client;
 
     private YappcEntityMapper mapper;
     private WidgetDataCloudAdapter widgetAdapter;
@@ -48,7 +47,7 @@ class WidgetDataCloudAdapterTest extends EventloopTestBase {
         objectMapper.registerModule(new JavaTimeModule());
         mapper = new YappcEntityMapper(objectMapper);
 
-        widgetAdapter = new WidgetDataCloudAdapter(entityRepository, mapper);
+        widgetAdapter = new WidgetDataCloudAdapter(client, mapper);
     }
 
     @Test
@@ -56,13 +55,13 @@ class WidgetDataCloudAdapterTest extends EventloopTestBase {
     void shouldFindByDashboardId() {
         UUID dashboardId = UUID.randomUUID();
 
-        when(entityRepository.findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt()))
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
             .thenReturn(Promise.of(List.of()));
 
         List<Widget> result = runPromise(() -> widgetAdapter.findByDashboardId(dashboardId));
 
         assertThat(result).isNotNull();
-        verify(entityRepository).findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt());
+        verify(client).query(anyString(), anyString(), any(DataCloudClient.Query.class));
     }
 
     @Test
@@ -70,7 +69,7 @@ class WidgetDataCloudAdapterTest extends EventloopTestBase {
     void shouldFindByWorkspaceId() {
         UUID workspaceId = UUID.randomUUID();
 
-        when(entityRepository.findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt()))
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
             .thenReturn(Promise.of(List.of()));
 
         List<Widget> result = runPromise(() -> widgetAdapter.findByWorkspaceId(workspaceId));

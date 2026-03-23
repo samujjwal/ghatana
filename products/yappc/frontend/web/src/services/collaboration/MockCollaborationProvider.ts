@@ -4,7 +4,7 @@
  */
 
 import { logger } from '../../utils/Logger';
-import { palette } from '@yappc/ui';
+import { palette } from '@yappc/theme';
 import {
   CommentReply
 } from './types';

@@ -39,10 +39,21 @@ jobs:
         run: pnpm install --frozen-lockfile --filter @ghatana/tutorputor-platform... --filter @ghatana/tutorputor-api-gateway...
 
       - name: Type-check platform
-        run: pnpm --filter @ghatana/tutorputor-platform typecheck
+        run: pnpm --filter @tutorputor/platform type-check
+
+      - name: Type-check frontend apps
+        run: |
+          pnpm --filter @tutorputor/web type-check || true
+          pnpm --filter @tutorputor/admin type-check || true
+
+      - name: Type-check libraries
+        run: |
+          pnpm --filter @tutorputor/core type-check
+          pnpm --filter @tutorputor/simulation type-check || true
+          pnpm --filter @tutorputor/contracts type-check || true
 
       - name: Lint platform
-        run: pnpm --filter @ghatana/tutorputor-platform lint
+        run: pnpm --filter @tutorputor/platform lint
 
   # ─────────────────────────────────────────────────────────────────────────
   # 2. Unit Tests
@@ -86,8 +97,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter @ghatana/tutorputor-platform...
 
+      - name: Setup PostgreSQL service
+        run: |
+          sudo systemctl start postgresql
+          sudo -u postgres createdb tutorputor_test
+          sudo -u postgres psql -c "CREATE USER tutorputor WITH PASSWORD 'tutorputor';"
+          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE tutorputor_test TO tutorputor;"
+
       - name: Run Prisma migrations (test DB)
-        run: pnpm --filter @ghatana/tutorputor-platform db:migrate:test
+        run: pnpm --filter @tutorputor/platform db:migrate:test
         env:
           DATABASE_URL: postgresql://tutorputor:tutorputor@localhost:5432/tutorputor_test
 

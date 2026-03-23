@@ -44,15 +44,15 @@ import {
     useConfigRefresh
 } from '../../hooks/useConfig';
 import {
+    configViewModeAtom,
     selectedDomainIdAtom,
-    selectedWorkflowIdAtom,
     selectedPhaseIdAtom,
-    configViewModeAtom
-} from '../../state/configAtoms';
+    selectedWorkflowIdAtom
+} from '@yappc/state';
 
 // DevSecOps persona integration - use canonical types and hook
 import type { PersonaType } from '@yappc/core/types/devsecops';
-import { usePersonas } from '../../hooks/useConfigData';
+import { usePersonas } from '@yappc/config-hooks';
 import { getPersonaDashboard } from './persona-configs';
 
 // Domain icons mapping

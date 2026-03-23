@@ -1,2 +1,1 @@
-export { Popover, PopoverTrigger, PopoverClose } from './Popover.baseui';
-export type { PopoverProps, PopoverPlacement } from './Popover.baseui';
+export { Popover, PopoverTrigger, PopoverClose, type PopoverProps, type PopoverPlacement } from '@yappc/base-ui';

@@ -1,6 +1,6 @@
 package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.products.yappc.domain.model.Widget;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import io.activej.promise.Promise;
@@ -30,11 +30,11 @@ public class WidgetDataCloudAdapter {
     private final YappcDataCloudRepository<Widget> repository;
     
     public WidgetDataCloudAdapter(
-        @NotNull EntityRepository entityRepository,
+        @NotNull DataCloudClient client,
         @NotNull YappcEntityMapper mapper
     ) {
         this.repository = new YappcDataCloudRepository<>(
-            entityRepository,
+            client,
             mapper,
             COLLECTION,
             Widget.class

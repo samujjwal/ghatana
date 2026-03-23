@@ -9,7 +9,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAtom, WritableAtom } from 'jotai';
 import { atom } from 'jotai';
-import { StateManager } from '@yappc/ui';
+import { StateManager } from '@yappc/state';
 
 type Theme = 'light' | 'dark' | 'system';
 type ThemeWithoutSystem = 'light' | 'dark';

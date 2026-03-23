@@ -11,7 +11,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ResourcesList, Resource } from '@yappc/ui';
+import { ResourcesList, Resource } from '@yappc/initialization-ui';
 
 // ============================================================================
 // Types

@@ -4,6 +4,7 @@
  */
 package com.ghatana.yappc.api.config;
 
+import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.client.DataCloudClient;
 import com.ghatana.datacloud.client.DataCloudClientFactory;
 import io.activej.inject.annotation.Provides;
@@ -54,5 +55,18 @@ public class DataCloudModule extends AbstractModule {
     DataCloudClient client = DataCloudClientFactory.fromEnvironment();
     log.info("Data-Cloud client ready: {}", client.getClass().getSimpleName());
     return client;
+  }
+
+  /**
+   * Provides the spi-level {@link com.ghatana.datacloud.DataCloudClient} singleton.
+   *
+   * <p>Used by YAPPC infrastructure adapters that depend on {@code data-cloud:spi}.
+   *
+   * @return embedded DataCloudClient (SPI) instance
+   */
+  @Provides
+  com.ghatana.datacloud.DataCloudClient spiDataCloudClient() {
+    log.info("Initialising Data-Cloud SPI client (embedded mode)");
+    return DataCloud.embedded();
   }
 }

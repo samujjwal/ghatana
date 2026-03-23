@@ -21,7 +21,6 @@ java {
 dependencies {
     // Kernel Platform
     api(project(":platform:java:kernel"))
-    api(project(":platform:java:kernel-capabilities"))  // Merged: kernel/modules/* (auth + config + event-store + audit + resilience + observability + secrets)
 
     // Platform Libraries
     api(project(":platform:java:security"))

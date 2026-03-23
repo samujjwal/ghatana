@@ -11,6 +11,9 @@
 
 import { useState, useMemo } from 'react';
 import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   Box,
   Typography,
   InputAdornment,
@@ -19,7 +22,6 @@ import {
   Tooltip,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { Accordion, AccordionSummary, AccordionDetails } from '@yappc/ui';
 import { Search, List as ViewList, LayoutGrid as ViewModule } from 'lucide-react';
 import type {
   RailPanelProps,

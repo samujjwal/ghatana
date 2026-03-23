@@ -1,5 +1,8 @@
 import { Shield as SecurityIcon, AlertTriangle as WarningIcon, AlertCircle as ErrorIcon, Info as InfoIcon, CheckCircle as CheckCircleIcon, ChevronDown as ExpandMoreIcon, RefreshCw as RefreshIcon, Eye as VisibilityIcon, Code as CodeIcon, Image as ImageIcon, FileText as DescriptionIcon, Link as LinkIcon } from 'lucide-react';
 import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   Card,
   CardContent,
   CardActions,
@@ -22,13 +25,7 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { ListItemSecondaryAction, Collapse } from '@ghatana/design-system';
-import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  useTheme,
-  resolveMuiColor,
-} from '@yappc/ui';
+import { useTheme, resolveMuiColor } from '@yappc/theme';
 import React, { useState, useCallback, useMemo } from 'react';
 
 import { useSecurityAudit } from './hooks';

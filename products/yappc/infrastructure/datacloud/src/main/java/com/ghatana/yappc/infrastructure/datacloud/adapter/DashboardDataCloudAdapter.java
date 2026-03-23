@@ -1,6 +1,6 @@
 package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.products.yappc.domain.model.Dashboard;
 import com.ghatana.products.yappc.domain.repository.DashboardRepository;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
@@ -31,11 +31,11 @@ public class DashboardDataCloudAdapter implements DashboardRepository {
     private final YappcDataCloudRepository<Dashboard> repository;
     
     public DashboardDataCloudAdapter(
-        @NotNull EntityRepository entityRepository,
+        @NotNull DataCloudClient client,
         @NotNull YappcEntityMapper mapper
     ) {
         this.repository = new YappcDataCloudRepository<>(
-            entityRepository,
+            client,
             mapper,
             COLLECTION,
             Dashboard.class

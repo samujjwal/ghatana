@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Target, Lightbulb, AlertTriangle, Plus, X } from 'lucide-react';
 import type { Intent } from '@tutorputor/contracts/v1/learning-unit';
 

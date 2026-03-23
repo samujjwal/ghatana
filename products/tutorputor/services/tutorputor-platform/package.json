@@ -13,7 +13,8 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write 'src/**/*.ts'",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "db:migrate:test": "pnpm --filter @tutorputor/core prisma:migrate:deploy --schema=libs/tutorputor-core/prisma/schema.prisma"
   },
   "dependencies": {
     "fastify": "^5.7.4",

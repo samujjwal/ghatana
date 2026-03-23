@@ -6,7 +6,7 @@ package com.ghatana.yappc.services.lifecycle;
 
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.yappc.api.GenerationApiController;
@@ -251,14 +251,14 @@ public class LifecycleServiceModule extends AbstractModule {
      * in the {@code yappc-artifacts} collection, using {@link TenantContext} for
      * multi-tenant isolation. Survives service restarts (replaces InMemoryArtifactStore).
      *
-     * @param entityRepository DataCloud entity repository (from data-cloud:platform)
+     * @param client DataCloud SPI client
      * @return production-grade durable artifact repository
      */
     @Provides
-    YappcArtifactRepository artifactRepository(EntityRepository entityRepository) {
+    YappcArtifactRepository artifactRepository(DataCloudClient client) {
         ObjectMapper mapper = new ObjectMapper();
         logger.info("Creating YappcArtifactRepository backed by DataCloudArtifactStore");
-        return new YappcArtifactRepository(new DataCloudArtifactStore(entityRepository, mapper));
+        return new YappcArtifactRepository(new DataCloudArtifactStore(client, mapper));
     }
 
     /**

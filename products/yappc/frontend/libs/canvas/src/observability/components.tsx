@@ -1,5 +1,8 @@
 import { LayoutDashboard as DashboardIcon, Gauge as SpeedIcon, Cpu as MemoryIcon, AlertCircle as ErrorIcon, AlertTriangle as WarningIcon, Info as InfoIcon, Activity as TimelineIcon, Bug as BugReportIcon, RefreshCw as RefreshIcon, Download as DownloadIcon, XCircle as ClearIcon, Play as PlayIcon, Stop as StopIcon, ChevronDown as ExpandMoreIcon, Eye as VisibilityIcon, Code as CodeIcon, CheckCircle as CheckCircleIcon } from 'lucide-react';
 import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   Card,
   CardContent,
   CardHeader,
@@ -35,7 +38,6 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField, MenuItem } from '@ghatana/design-system';
-import { Accordion, AccordionSummary, AccordionDetails } from '@yappc/ui';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 
 import {

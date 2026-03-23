@@ -4,7 +4,7 @@
  */
 package com.ghatana.yappc.infrastructure.datacloud.repository;
 
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.yappc.infrastructure.datacloud.adapter.YappcDataCloudRepository;
 import com.ghatana.yappc.infrastructure.datacloud.entity.ProjectEntity;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
@@ -45,10 +45,10 @@ public class ProjectRepository {
   private static final String COLLECTION = ProjectEntity.getCollectionName();
 
   public ProjectRepository(
-      @NotNull EntityRepository entityRepository,
+      @NotNull DataCloudClient client,
       @NotNull YappcEntityMapper mapper) {
     this.delegate = new YappcDataCloudRepository<>(
-        entityRepository, mapper, COLLECTION, ProjectEntity.class);
+        client, mapper, COLLECTION, ProjectEntity.class);
   }
 
   // Basic CRUD
@@ -151,14 +151,14 @@ public class ProjectRepository {
   /**
    * Creates a ProjectRepository with the given dependencies.
    *
-   * @param entityRepository the data-cloud entity repository
+   * @param client the data-cloud spi client
    * @param mapper the entity mapper
    * @return new repository instance
    */
   @NotNull
   public static ProjectRepository create(
-      @NotNull EntityRepository entityRepository,
+      @NotNull DataCloudClient client,
       @NotNull YappcEntityMapper mapper) {
-    return new ProjectRepository(entityRepository, mapper);
+    return new ProjectRepository(client, mapper);
   }
 }

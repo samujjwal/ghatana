@@ -1,10 +1,11 @@
 export {
   useKeyboardShortcuts,
   shortcutRegistry,
-} from './useKeyboardShortcuts/index';
+  ShortcutRegistry,
+} from '@yappc/shortcuts';
 export type {
   KeyboardShortcut,
   ShortcutContext,
   UseKeyboardShortcutsOptions,
   UseKeyboardShortcutsReturn,
-} from './useKeyboardShortcuts/types';
+} from '@yappc/shortcuts';

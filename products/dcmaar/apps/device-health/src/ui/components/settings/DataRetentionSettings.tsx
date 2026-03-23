@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card } from '@dcmaar/shared-ui-tailwind';
+import { Card } from '@dcmaar/ui';
 import {
   dataRetentionPolicy,
   formatRetentionPeriod,

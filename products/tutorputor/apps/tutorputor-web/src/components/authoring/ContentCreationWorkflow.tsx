@@ -54,7 +54,7 @@ export function ContentCreationWorkflow({ objectives, onComplete, onBack }: Cont
             const result = await response.json();
             setGeneratedManifest(result.manifest);
         } catch (error) {
-            logger.error({}, 'Generation failed:', error);
+            logger.error('Generation failed:', { error: String(error) });
         } finally {
             setIsGenerating(false);
         }
@@ -62,7 +62,7 @@ export function ContentCreationWorkflow({ objectives, onComplete, onBack }: Cont
 
     const handleTemplateSelection = (templateId: string) => {
         // Load template and customize
-        logger.info({}, 'Loading template:', templateId);
+        logger.info('Loading template:', { templateId });
     };
 
     if (!method) {

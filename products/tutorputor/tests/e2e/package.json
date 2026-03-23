@@ -1,0 +1,21 @@
+{
+  "name": "@tutorputor/e2e-tests",
+  "version": "1.0.0",
+  "description": "E2E smoke tests for TutorPutor applications",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report",
+    "test:install": "playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^25.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

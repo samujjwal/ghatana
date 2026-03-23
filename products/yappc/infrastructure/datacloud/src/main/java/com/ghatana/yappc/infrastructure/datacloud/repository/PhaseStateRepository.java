@@ -4,7 +4,7 @@
  */
 package com.ghatana.yappc.infrastructure.datacloud.repository;
 
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.yappc.infrastructure.datacloud.adapter.YappcDataCloudRepository;
 import com.ghatana.yappc.infrastructure.datacloud.entity.PhaseStateEntity;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
@@ -47,10 +47,10 @@ public class PhaseStateRepository {
   private static final String COLLECTION = PhaseStateEntity.getCollectionName();
 
   public PhaseStateRepository(
-      @NotNull EntityRepository entityRepository,
+      @NotNull DataCloudClient client,
       @NotNull YappcEntityMapper mapper) {
     this.delegate = new YappcDataCloudRepository<>(
-        entityRepository, mapper, COLLECTION, PhaseStateEntity.class);
+        client, mapper, COLLECTION, PhaseStateEntity.class);
   }
 
   // Basic CRUD
@@ -227,14 +227,14 @@ public class PhaseStateRepository {
   /**
    * Creates a PhaseStateRepository with the given dependencies.
    *
-   * @param entityRepository the data-cloud entity repository
+   * @param client the data-cloud spi client
    * @param mapper the entity mapper
    * @return new repository instance
    */
   @NotNull
   public static PhaseStateRepository create(
-      @NotNull EntityRepository entityRepository,
+      @NotNull DataCloudClient client,
       @NotNull YappcEntityMapper mapper) {
-    return new PhaseStateRepository(entityRepository, mapper);
+    return new PhaseStateRepository(client, mapper);
   }
 }

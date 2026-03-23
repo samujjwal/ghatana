@@ -41,7 +41,7 @@ export function ReviewPublishWorkflow({ manifest, onPublish, onBack }: ReviewPub
             const result = await response.json();
             setValidation(result);
         } catch (error) {
-            logger.error({}, 'Validation failed:', error);
+            logger.error('Validation failed:', { error: String(error) });
         } finally {
             setIsValidating(false);
         }
@@ -52,7 +52,7 @@ export function ReviewPublishWorkflow({ manifest, onPublish, onBack }: ReviewPub
         try {
             await onPublish(manifest);
         } catch (error) {
-            logger.error({}, 'Publication failed:', error);
+            logger.error('Publication failed:', { error: String(error) });
         } finally {
             setIsPublishing(false);
         }
@@ -60,12 +60,12 @@ export function ReviewPublishWorkflow({ manifest, onPublish, onBack }: ReviewPub
 
     const handleRefine = async (refinement: string) => {
         // Call refinement API
-        logger.info({}, 'Refining with:', refinement);
+        logger.info('Refining with:', { refinement });
     };
 
     const handleApplySuggestion = async (suggestionId: string) => {
         // Apply auto-fix suggestion
-        logger.info({}, 'Applying suggestion:', suggestionId);
+        logger.info('Applying suggestion:', { suggestionId });
     };
 
     return (

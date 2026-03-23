@@ -1,4 +1,4 @@
-import { StorybookProvider } from '@yappc/ui';
+import { StorybookProvider } from '@yappc/state/storybook';
 import React from 'react';
 
 import { Button } from '../../Button';

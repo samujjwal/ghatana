@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { TimeRange } from '@dcmaar/shared-ui-core';
+import type { TimeRange } from '@dcmaar/ui';
 
 import { AnalyticsApi } from '../../api/analytics';
 import type { ProcessedMetrics } from '../../analytics/AnalyticsPipeline';

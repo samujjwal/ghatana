@@ -1,0 +1,1 @@
+export { cn } from '@ghatana/platform-utils/cn';

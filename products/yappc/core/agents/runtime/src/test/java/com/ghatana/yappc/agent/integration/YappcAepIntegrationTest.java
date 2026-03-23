@@ -5,10 +5,7 @@
 package com.ghatana.yappc.agent.integration;
 
 import com.ghatana.agent.catalog.CatalogAgentEntry;
-import com.ghatana.agent.catalog.CatalogRegistry;
-import com.ghatana.aep.catalog.AepCentralCatalogService;
-import com.ghatana.aep.runtime.AepCentralRegistryService;
-import com.ghatana.aep.runtime.AgentMaterializer;
+import com.ghatana.aep.registry.AgentRegistryContracts;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,13 +37,13 @@ import static org.mockito.Mockito.*;
 class YappcAepIntegrationTest extends EventloopTestBase {
 
     private YappcAepIntegration integration;
-    private CatalogRegistry catalogRegistry;
+    private AgentRegistryContracts registryService;
 
     @BeforeEach
     void setUp() {
-        catalogRegistry = mock(CatalogRegistry.class);
+        registryService = mock(AgentRegistryContracts.class);
 
-        // Stub catalog entries: mix of YAPPC and non-YAPPC agents
+        // Stub agent entries: mix of YAPPC and non-YAPPC agents
         List<CatalogAgentEntry> allAgents = List.of(
                 buildEntry("agent.yappc.architecture.domain-modeler", "yappc",
                         Set.of("architecture", "domain-modeling")),
@@ -65,29 +62,21 @@ class YappcAepIntegrationTest extends EventloopTestBase {
                         Set.of("monitoring", "health"))
         );
 
-        when(catalogRegistry.allDefinitions()).thenReturn(allAgents);
-        when(catalogRegistry.findById("agent.yappc.architecture.domain-modeler"))
-                .thenReturn(Optional.of(allAgents.get(0)));
-        when(catalogRegistry.findById("agent.yappc.implementation.code-reviewer"))
-                .thenReturn(Optional.of(allAgents.get(2)));
-        when(catalogRegistry.findById("agent.yappc.nonexistent"))
-                .thenReturn(Optional.empty());
-        when(catalogRegistry.findByCapability("architecture"))
-                .thenReturn(List.of(allAgents.get(0), allAgents.get(1)));
-        when(catalogRegistry.findByCapability("testing"))
-                .thenReturn(List.of(allAgents.get(3), allAgents.get(4)));
-        when(catalogRegistry.findByCapability("validation"))
-                .thenReturn(List.of(allAgents.get(5)));
+        when(registryService.listAgents()).thenReturn(Promise.of(allAgents));
+        when(registryService.getAgent("agent.yappc.architecture.domain-modeler"))
+                .thenReturn(Promise.of(Optional.of(allAgents.get(0))));
+        when(registryService.getAgent("agent.yappc.implementation.code-reviewer"))
+                .thenReturn(Promise.of(Optional.of(allAgents.get(2))));
+        when(registryService.getAgent("agent.yappc.nonexistent"))
+                .thenReturn(Promise.of(Optional.empty()));
+        when(registryService.findByCapability("architecture"))
+                .thenReturn(Promise.of(List.of(allAgents.get(0), allAgents.get(1))));
+        when(registryService.findByCapability("testing"))
+                .thenReturn(Promise.of(List.of(allAgents.get(3), allAgents.get(4))));
+        when(registryService.findByCapability("validation"))
+                .thenReturn(Promise.of(List.of(allAgents.get(5))));
 
-        AepCentralCatalogService catalogService = mock(AepCentralCatalogService.class);
-        when(catalogService.getRegistry()).thenReturn(catalogRegistry);
-
-        AgentMaterializer materializer = mock(AgentMaterializer.class);
-
-        AepCentralRegistryService registryService =
-                new AepCentralRegistryService(catalogService, materializer);
-
-        integration = new YappcAepIntegration(catalogService, registryService);
+        integration = new YappcAepIntegration(registryService);
     }
 
     @Test

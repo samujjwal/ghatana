@@ -27,7 +27,7 @@ export function LearningUnitEditor({ initialUnit, onSave }: LearningUnitEditorPr
     useEffect(() => {
         const validate = async () => {
             // Cast to LearningUnit for validation (might be incomplete)
-            const result = await validator.validate(unit as LearningUnit);
+            const result = await validator.validate(unit as any);
             setValidation(result);
         };
 

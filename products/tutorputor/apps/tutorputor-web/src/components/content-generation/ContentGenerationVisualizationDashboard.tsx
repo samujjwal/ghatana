@@ -265,7 +265,7 @@ const OverviewView: React.FC<OverviewViewProps> = ({ metrics }) => (
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ domain, count }) => `${domain}: ${count}`}
+              label={(props) => `${props.payload?.domain}: ${props.payload?.count}`}
               outerRadius={80}
               fill="#8884d8"
               dataKey="count"

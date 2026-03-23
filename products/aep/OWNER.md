@@ -22,11 +22,11 @@ AEP is the **event-driven agent orchestration runtime** for the Ghatana platform
 
 | Module | Purpose |
 |--------|---------|
-| `platform-engine` | Core pipeline execution engine |
-| `platform-core` | Platform facades and entry points |
-| `platform-bundle` | All-in-one dependency bundle |
-| `platform-analytics` | Pipeline observability and metrics |
-| `platform-registry` | Operator registry |
+| `aep-engine` | Core pipeline execution engine |
+| `aep-runtime-core` | Runtime facades and entry points |
+| `aep-operator-contracts` | Shared operator and pipeline contracts |
+| `aep-analytics` | Pipeline observability and metrics |
+| `aep-registry` | Operator and pipeline registry |
 | `orchestrator` | Multi-tenant orchestration |
 | `server` | HTTP server entry point |
 
@@ -41,5 +41,5 @@ AEP is the **event-driven agent orchestration runtime** for the Ghatana platform
 
 ## Open Remediation Items (BDY-7)
 
-- [ ] Rename `platform-*` modules to domain-reflecting names (e.g. `platform-engine` → `event-processing-engine`)
-- [ ] Document rationale for `platform-*` naming if intentional
+- [x] Rename `platform-*` modules to domain-reflecting AEP-owned names
+- [x] Remove direct product consumers of deprecated AEP platform-* module paths

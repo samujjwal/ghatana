@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Card } from '@dcmaar/shared-ui-tailwind';
+import { Card } from '@dcmaar/ui';
 import type { Alert } from '../../../analytics/AlertManager';
 import { getMetricGlossaryEntry } from '../../../analytics/metrics/MetricGlossary';
 import { MetricTooltip } from '../common/MetricTooltip';

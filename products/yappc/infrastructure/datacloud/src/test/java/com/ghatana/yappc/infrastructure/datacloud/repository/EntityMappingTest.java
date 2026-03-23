@@ -8,6 +8,7 @@ import com.ghatana.yappc.infrastructure.datacloud.entity.PhaseStateEntity;
 import com.ghatana.yappc.infrastructure.datacloud.entity.ProjectEntity;
 import com.ghatana.yappc.infrastructure.datacloud.entity.TaskEntity;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
+import com.ghatana.datacloud.DataCloudClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +57,8 @@ class EntityMappingTest {
     original.advanceStage("execute");
 
     // When
-    var entity = mapper.toEntity(original, "projects", "tenant-1");
+    Map<String, Object> data = mapper.toEntityData(original);
+    DataCloudClient.Entity entity = DataCloudClient.Entity.of(original.getId().toString(), "projects", data);
     ProjectEntity restored = mapper.fromEntity(entity, ProjectEntity.class);
 
     // Then
@@ -83,7 +85,8 @@ class EntityMappingTest {
     original.setEventCorrelationId("evt-123");
 
     // When
-    var entity = mapper.toEntity(original, "tasks", "tenant-1");
+    Map<String, Object> data = mapper.toEntityData(original);
+    DataCloudClient.Entity entity = DataCloudClient.Entity.of(original.getId().toString(), "tasks", data);
     TaskEntity restored = mapper.fromEntity(entity, TaskEntity.class);
 
     // Then
@@ -117,7 +120,8 @@ class EntityMappingTest {
     original.setEventCorrelationId("evt-phase-123");
 
     // When
-    var entity = mapper.toEntity(original, "phase_states", "tenant-1");
+    Map<String, Object> data = mapper.toEntityData(original);
+    DataCloudClient.Entity entity = DataCloudClient.Entity.of(original.getId().toString(), "phase_states", data);
     PhaseStateEntity restored = mapper.fromEntity(entity, PhaseStateEntity.class);
 
     // Then

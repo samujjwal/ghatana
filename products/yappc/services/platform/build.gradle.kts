@@ -24,8 +24,7 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:event-cloud"))
 
-    // Data Cloud
-    implementation(project(":products:data-cloud:platform"))
+    // Data Cloud dep removed — no Java sources use data-cloud imports
 
     // ActiveJ for async
     implementation(libs.activej.promise)

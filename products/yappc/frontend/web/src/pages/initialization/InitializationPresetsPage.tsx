@@ -11,7 +11,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PresetCard, InitializationPreset, PresetCategory } from '@yappc/ui';
+import { PresetCard, InitializationPreset, PresetCategory } from '@yappc/initialization-ui';
 
 // ============================================================================
 // Types

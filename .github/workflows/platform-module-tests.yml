@@ -77,9 +77,9 @@ jobs:
       - name: Test AEP modules
         run: |
           ./gradlew \
-            :products:aep:platform-bundle:test \
-            :products:aep:platform-core:test \
-            :products:aep:platform-connectors:test \
+            :products:aep:aep-engine:test \
+            :products:aep:aep-runtime-core:test \
+            :products:aep:aep-connectors:test \
             :products:aep:orchestrator:test \
             --no-daemon --continue
 

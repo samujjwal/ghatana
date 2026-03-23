@@ -5,8 +5,7 @@
 package com.ghatana.yappc.agent.integration;
 
 import com.ghatana.agent.catalog.CatalogAgentEntry;
-import com.ghatana.aep.catalog.AepCentralCatalogService;
-import com.ghatana.aep.runtime.AepCentralRegistryService;
+import com.ghatana.aep.registry.AgentRegistryContracts;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -40,19 +39,15 @@ public final class YappcAepIntegration {
     private static final String YAPPC_AGENT_PREFIX = "agent.yappc.";
     private static final String YAPPC_CATALOG_ID = "yappc";
 
-    private final AepCentralCatalogService catalogService;
-    private final AepCentralRegistryService registryService;
+    private final AgentRegistryContracts registryService;
 
     /**
      * Creates the integration bridge.
      *
-     * @param catalogService  the central catalog service
-     * @param registryService the central registry service
+     * @param registryService the central agent registry contract
      */
     public YappcAepIntegration(
-            @NotNull AepCentralCatalogService catalogService,
-            @NotNull AepCentralRegistryService registryService) {
-        this.catalogService = Objects.requireNonNull(catalogService, "catalogService");
+            @NotNull AgentRegistryContracts registryService) {
         this.registryService = Objects.requireNonNull(registryService, "registryService");
     }
 

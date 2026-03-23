@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * React Router v7 Integration for Animator
  * 
@@ -6,15 +5,11 @@
  * animation effects using React Router v7's new data APIs and navigation state.
  */
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import {
   useLocation,
-  useNavigation,
-  useMatches,
   useNavigate,
-  type Location,
-  type Navigation,
-} from 'react-router';
+} from 'react-router-dom';
 import type { AnimationTrack, Animator } from '../index';
 import { AnimationPresets } from '../index';
 
@@ -67,7 +62,14 @@ export interface PageTransitionProps {
 // Route Animation Hook
 // =============================================================================
 
-export function useRouteAnimation(configs: RouteAnimationConfig[]): any {
+export interface UseRouteAnimationReturn {
+  isAnimating: boolean;
+  direction: 'forward' | 'backward' | 'unknown';
+  location: ReturnType<typeof useLocation>;
+  previousLocation: Location | null;
+}
+
+export function useRouteAnimation(configs: RouteAnimationConfig[]): UseRouteAnimationReturn {
   const location = useLocation();
   const navigation = useNavigation();
   const matches = useMatches();

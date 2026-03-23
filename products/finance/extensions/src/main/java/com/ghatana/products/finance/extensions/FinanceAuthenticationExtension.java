@@ -9,7 +9,6 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.extension.KernelExtension;
 import com.ghatana.kernel.module.KernelModule;
-import com.ghatana.kernel.modules.authentication.service.AuthenticationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,16 +74,15 @@ public final class FinanceAuthenticationExtension implements KernelExtension {
     public void onModuleInitialized(KernelContext context) {
         log.info("Initializing Finance Authentication Extension");
 
-        AuthenticationService authService = context.getDependency(AuthenticationService.class);
-        if (authService == null) {
-            log.warn("Authentication service not available, skipping extension");
+        if (!context.hasCapability(KernelCapability.Core.USER_AUTHENTICATION)) {
+            log.warn("Authentication capability not available, skipping extension");
             return;
         }
 
         // Add finance-specific authentication policies
-        addTraderAuthenticationPolicy(authService);
-        addComplianceAuthenticationPolicy(authService);
-        addRiskBasedAuthenticationPolicy(authService);
+        addTraderAuthenticationPolicy();
+        addComplianceAuthenticationPolicy();
+        addRiskBasedAuthenticationPolicy();
 
         log.info("Finance Authentication Extension initialized");
     }
@@ -101,19 +99,19 @@ public final class FinanceAuthenticationExtension implements KernelExtension {
 
     // ==================== Private Methods ====================
 
-    private void addTraderAuthenticationPolicy(AuthenticationService authService) {
+    private void addTraderAuthenticationPolicy() {
         log.debug("Adding trader authentication policy");
         // Add trader-specific authentication requirements
         // e.g., market hours restrictions, desk-specific access
     }
 
-    private void addComplianceAuthenticationPolicy(AuthenticationService authService) {
+    private void addComplianceAuthenticationPolicy() {
         log.debug("Adding compliance authentication policy");
         // Add compliance officer authentication requirements
         // e.g., additional MFA, audit logging
     }
 
-    private void addRiskBasedAuthenticationPolicy(AuthenticationService authService) {
+    private void addRiskBasedAuthenticationPolicy() {
         log.debug("Adding risk-based authentication policy");
         // Add risk-based authentication rules
         // e.g., location-based, device-based risk scoring

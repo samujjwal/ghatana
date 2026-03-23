@@ -2,7 +2,7 @@ package com.ghatana.yappc.infrastructure.datacloud.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.ghatana.datacloud.entity.Entity;
+import com.ghatana.datacloud.DataCloudClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,27 +35,23 @@ class YappcEntityMapperTest {
     }
 
     @Test
-    @DisplayName("Should convert simple object to Entity")
+    @DisplayName("Should convert simple object to entity data map")
     void shouldConvertToEntity() {
         TestEntity source = new TestEntity(UUID.randomUUID(), "Test", 42);
 
-        Entity result = mapper.toEntity(source, "test_collection", "default");
+        Map<String, Object> result = mapper.toEntityData(source);
 
-        assertThat(result.getCollectionName()).isEqualTo("test_collection");
-        assertThat(result.getTenantId()).isEqualTo("default");
-        assertThat(result.getData()).containsEntry("name", "Test");
-        assertThat(result.getData()).containsEntry("value", 42);
+        assertThat(result).containsEntry("name", "Test");
+        assertThat(result).containsEntry("value", 42);
     }
 
     @Test
     @DisplayName("Should convert Entity back to domain object")
     void shouldConvertFromEntity() {
         UUID id = UUID.randomUUID();
-        Entity entity = Entity.builder()
-            .tenantId("default")
-            .collectionName("test_collection")
-            .data(Map.of("id", id.toString(), "name", "Test", "value", 42))
-            .build();
+        DataCloudClient.Entity entity = DataCloudClient.Entity.of(
+            id.toString(), "test_collection",
+            Map.of("id", id.toString(), "name", "Test", "value", 42));
 
         TestEntity result = mapper.fromEntity(entity, TestEntity.class);
 

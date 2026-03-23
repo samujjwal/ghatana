@@ -31,8 +31,11 @@ dependencies {
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:event-cloud"))
 
-    // AEP central runtime — for YappcAepIntegration bridge
-    implementation(project(":products:aep:platform-central-runtime"))
+    // AEP contracts (decoupled from concrete runtime implementation)
+    implementation(project(":products:aep:aep-operator-contracts"))
+
+    // AEP central runtime — only for tests (YappcAepIntegrationTest used real service pre-migration)
+    testImplementation(project(":products:aep:aep-central-runtime"))
 
     // AI module (api — LLMProvider/LLMRequest/LLMResponse in public agent API)
     api(project(":products:yappc:core:ai"))

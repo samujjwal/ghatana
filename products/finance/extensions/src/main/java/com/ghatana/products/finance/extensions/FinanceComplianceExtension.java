@@ -9,7 +9,8 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.extension.KernelExtension;
 import com.ghatana.kernel.module.KernelModule;
-import com.ghatana.kernel.modules.eventstore.service.EventStoreService;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +42,9 @@ import java.util.Set;
 public final class FinanceComplianceExtension implements KernelExtension {
 
     private static final Logger log = LoggerFactory.getLogger(FinanceComplianceExtension.class);
+    private static final String SYSTEM_TENANT = "finance-system";
 
-    private EventStoreService eventStoreService;
+    private AuditBusPort auditBusPort;
 
     @Override
     public String getExtensionId() {
@@ -78,11 +80,12 @@ public final class FinanceComplianceExtension implements KernelExtension {
     public void onModuleInitialized(KernelContext context) {
         log.info("Initializing Finance Compliance Extension");
 
-        eventStoreService = context.getDependency(EventStoreService.class);
-        if (eventStoreService == null) {
-            log.warn("Event store service not available, compliance auditing disabled");
+        if (!context.hasCapability(KernelCapability.Core.EVENT_PROCESSING)) {
+            log.warn("Event processing capability not available, compliance auditing disabled");
             return;
         }
+
+        auditBusPort = context.getOptionalDependency(AuditBusPort.class).orElse(null);
 
         log.info("Finance Compliance Extension initialized - event auditing enabled");
     }
@@ -91,7 +94,7 @@ public final class FinanceComplianceExtension implements KernelExtension {
     public void onModuleStarted(KernelContext context) {
         log.info("Finance Compliance Extension: module started, publishing startup audit event");
 
-        if (eventStoreService != null) {
+        if (auditBusPort != null) {
             publishAuditEvent("compliance.extension.started", Map.of(
                 "extensionId", getExtensionId(),
                 "version", getVersion(),
@@ -104,7 +107,7 @@ public final class FinanceComplianceExtension implements KernelExtension {
     public void onModuleStopped(KernelContext context) {
         log.info("Finance Compliance Extension: module stopped, publishing shutdown audit event");
 
-        if (eventStoreService != null) {
+        if (auditBusPort != null) {
             publishAuditEvent("compliance.extension.stopping", Map.of(
                 "extensionId", getExtensionId(),
                 "timestamp", Instant.now().toString()
@@ -119,13 +122,18 @@ public final class FinanceComplianceExtension implements KernelExtension {
      * @param data the event data
      */
     public void publishAuditEvent(String eventType, Map<String, Object> data) {
-        if (eventStoreService == null) {
-            log.warn("Cannot publish audit event - event store not available");
+        if (auditBusPort == null) {
+            log.warn("Cannot publish audit event - audit bus not available");
             return;
         }
 
-        // Use the event store service to publish compliance events
-        eventStoreService.publish("finance.compliance.audit", data);
+        auditBusPort.emit(AuditEvent.builder()
+            .tenantId(SYSTEM_TENANT)
+            .eventType(eventType)
+            .resourceType("finance.extension")
+            .resourceId(getExtensionId())
+            .details(data)
+            .build());
         log.debug("Published compliance audit event: {}", eventType);
     }
 }

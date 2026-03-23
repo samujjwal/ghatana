@@ -74,7 +74,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  platform/typescript/capabilities/canvas-core:
+  platform/typescript/canvas:
     dependencies:
       '@ghatana/design-system':
         specifier: workspace:*
@@ -118,7 +118,7 @@ importers:
         version: 0.7.54
       '@types/node':
         specifier: ^25.2.0
-        version: 25.5.0
+        version: 25.2.0
       '@types/react':
         specifier: ^19.2.10
         version: 19.2.14
@@ -130,9 +130,9 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.5.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
-  platform/typescript/capabilities/canvas-core/flow-canvas:
+  platform/typescript/canvas/flow-canvas:
     dependencies:
       '@xyflow/react':
         specifier: ^12.10.0
@@ -157,56 +157,6 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  platform/typescript/capabilities/design-system:
-    dependencies:
-      '@ghatana/platform-utils':
-        specifier: workspace:*
-        version: link:../../foundation/platform-utils
-      '@ghatana/theme':
-        specifier: workspace:*
-        version: link:../../theme
-      '@ghatana/tokens':
-        specifier: workspace:*
-        version: link:../../tokens
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-      react:
-        specifier: ^19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.2.4
-        version: 19.2.4(react@19.2.4)
-      react-router:
-        specifier: ^7.0.0
-        version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      tailwind-merge:
-        specifier: ^3.4.0
-        version: 3.5.0
-    devDependencies:
-      '@types/node':
-        specifier: ^25.2.0
-        version: 25.5.0
-      '@types/react':
-        specifier: ^19.2.10
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  platform/typescript/capabilities/realtime-engine:
-    dependencies:
-      react:
-        specifier: ^19.2.4
-        version: 19.2.4
-    devDependencies:
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
   platform/typescript/charts:
     dependencies:
       '@ghatana/theme':
@@ -222,6 +172,52 @@ importers:
       '@types/react':
         specifier: ^19.2.10
         version: 19.2.14
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  platform/typescript/design-system:
+    dependencies:
+      '@ghatana/platform-utils':
+        specifier: workspace:*
+        version: link:../foundation/platform-utils
+      '@ghatana/theme':
+        specifier: workspace:*
+        version: link:../theme
+      '@ghatana/tokens':
+        specifier: workspace:*
+        version: link:../tokens
+      '@ghatana/utils':
+        specifier: workspace:*
+        version: link:../utils
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      lucide-react:
+        specifier: ^0.563.0
+        version: 0.563.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      react-router:
+        specifier: ^7.0.0
+        version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      tailwind-merge:
+        specifier: ^3.4.0
+        version: 3.5.0
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.0
+        version: 25.2.0
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -292,6 +288,16 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  platform/typescript/realtime:
+    dependencies:
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   platform/typescript/sso-client:
     devDependencies:
       '@types/jest':
@@ -358,7 +364,7 @@ importers:
     dependencies:
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../capabilities/design-system
+        version: link:../design-system
       '@ghatana/platform-utils':
         specifier: workspace:*
         version: link:../foundation/platform-utils
@@ -390,6 +396,16 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  platform/typescript/utils:
+    dependencies:
+      '@ghatana/platform-utils':
+        specifier: workspace:*
+        version: link:../foundation/platform-utils
+    devDependencies:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -514,7 +530,7 @@ importers:
         version: link:../../libs/audio-video-ui
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../../platform/typescript/capabilities/design-system
+        version: link:../../../../platform/typescript/design-system
       '@tauri-apps/api':
         specifier: ^2.9.1
         version: 2.10.1
@@ -610,7 +626,7 @@ importers:
         version: link:../../libs/ai-voice-ui-react
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../../../../../platform/typescript/capabilities/design-system
+        version: link:../../../../../../../platform/typescript/design-system
       '@tauri-apps/api':
         specifier: ^2.9.1
         version: 2.10.1
@@ -705,19 +721,19 @@ importers:
     dependencies:
       '@ghatana/canvas':
         specifier: workspace:*
-        version: link:../../../platform/typescript/capabilities/canvas-core
+        version: link:../../../platform/typescript/canvas
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../platform/typescript/capabilities/design-system
+        version: link:../../../platform/typescript/design-system
       '@ghatana/flow-canvas':
         specifier: workspace:*
-        version: link:../../../platform/typescript/capabilities/canvas-core/flow-canvas
+        version: link:../../../platform/typescript/canvas/flow-canvas
       '@ghatana/platform-utils':
         specifier: workspace:*
         version: link:../../../platform/typescript/foundation/platform-utils
       '@ghatana/realtime':
         specifier: workspace:*
-        version: link:../../../platform/typescript/capabilities/realtime-engine
+        version: link:../../../platform/typescript/realtime
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../platform/typescript/theme
@@ -1303,21 +1319,15 @@ importers:
       '@dcmaar/plugin-extension':
         specifier: workspace:*
         version: link:../../libs/typescript/plugin-extension
-      '@dcmaar/shared-ui-charts':
-        specifier: workspace:*
-        version: link:../../libs/typescript/shared-ui-charts
-      '@dcmaar/shared-ui-core':
-        specifier: workspace:*
-        version: link:../../libs/typescript/shared-ui-core
-      '@dcmaar/shared-ui-tailwind':
-        specifier: workspace:*
-        version: link:../../libs/typescript/shared-ui-tailwind
       '@dcmaar/types':
         specifier: workspace:*
         version: link:../../libs/typescript/types
+      '@dcmaar/ui':
+        specifier: workspace:*
+        version: link:../../libs/typescript/dcmaar-ui
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../../platform/typescript/capabilities/design-system
+        version: link:../../../../platform/typescript/design-system
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
@@ -1557,7 +1567,7 @@ importers:
         version: link:../../libs/guardian-dashboard-core
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../../platform/typescript/capabilities/design-system
+        version: link:../../../../platform/typescript/design-system
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.2(react@19.2.4))
@@ -1991,6 +2001,18 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  products/dcmaar/libs/typescript/dcmaar-ui:
+    dependencies:
+      '@ghatana/charts':
+        specifier: workspace:*
+        version: link:../../../../../platform/typescript/charts
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../../../platform/typescript/design-system
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+
   products/dcmaar/libs/typescript/plugin-abstractions:
     dependencies:
       '@dcmaar/types':
@@ -2033,23 +2055,6 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
-
-  products/dcmaar/libs/typescript/shared-ui-charts:
-    dependencies:
-      '@ghatana/charts':
-        specifier: workspace:*
-        version: link:../../../../../platform/typescript/charts
-
-  products/dcmaar/libs/typescript/shared-ui-core: {}
-
-  products/dcmaar/libs/typescript/shared-ui-tailwind:
-    dependencies:
-      '@ghatana/design-system':
-        specifier: workspace:*
-        version: link:../../../../../platform/typescript/capabilities/design-system
-      react:
-        specifier: ^19.2.4
-        version: 19.2.4
 
   products/dcmaar/libs/typescript/types:
     devDependencies:
@@ -2327,7 +2332,7 @@ importers:
         version: link:../../libs/ts/shared
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../../platform/typescript/capabilities/design-system
+        version: link:../../../../platform/typescript/design-system
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
@@ -2465,7 +2470,7 @@ importers:
     dependencies:
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../../platform/typescript/capabilities/design-system
+        version: link:../../../../platform/typescript/design-system
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../../platform/typescript/theme
@@ -2659,10 +2664,10 @@ importers:
     dependencies:
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../../platform/typescript/capabilities/design-system
+        version: link:../../../../platform/typescript/design-system
       '@ghatana/realtime':
         specifier: workspace:*
-        version: link:../../../../platform/typescript/capabilities/realtime-engine
+        version: link:../../../../platform/typescript/realtime
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../../platform/typescript/theme
@@ -3210,10 +3215,10 @@ importers:
     dependencies:
       '@ghatana/canvas':
         specifier: workspace:*
-        version: link:../../../../../platform/typescript/capabilities/canvas-core
+        version: link:../../../../../platform/typescript/canvas
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../../../platform/typescript/capabilities/design-system
+        version: link:../../../../../platform/typescript/design-system
       '@ghatana/platform-utils':
         specifier: workspace:*
         version: link:../../../../../platform/typescript/foundation/platform-utils
@@ -3320,20 +3325,54 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.5.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  products/yappc/frontend/libs/base-ui:
+    dependencies:
+      '@base-ui/react':
+        specifier: ^1.1.0
+        version: 1.2.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      tailwind-merge:
+        specifier: ^3.4.0
+        version: 3.5.0
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.5.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
   products/yappc/frontend/libs/canvas:
     dependencies:
       '@ghatana/canvas':
         specifier: workspace:*
-        version: link:../../../../../platform/typescript/capabilities/canvas-core
+        version: link:../../../../../platform/typescript/canvas
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../../../platform/typescript/capabilities/design-system
+        version: link:../../../../../platform/typescript/design-system
       '@xyflow/react':
         specifier: ^12.10.0
         version: 12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@yappc/ai':
         specifier: workspace:*
         version: link:../ai
+      '@yappc/base-ui':
+        specifier: workspace:*
+        version: link:../base-ui
       '@yappc/core':
         specifier: workspace:*
         version: link:../core
@@ -3391,7 +3430,7 @@ importers:
     dependencies:
       '@ghatana/canvas':
         specifier: workspace:*
-        version: link:../../../../../../platform/typescript/capabilities/canvas-core
+        version: link:../../../../../../platform/typescript/canvas
       jotai:
         specifier: ^2.17.0
         version: 2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4)
@@ -3517,6 +3556,31 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  products/yappc/frontend/libs/config-hooks:
+    dependencies:
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.90.20
+        version: 5.90.21(react@19.2.4)
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.5.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
   products/yappc/frontend/libs/core:
     dependencies:
       '@yappc/config':
@@ -3557,6 +3621,28 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
+  products/yappc/frontend/libs/development-ui:
+    dependencies:
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.5.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
   products/yappc/frontend/libs/ide:
     dependencies:
@@ -3619,6 +3705,28 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  products/yappc/frontend/libs/initialization-ui:
+    dependencies:
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.5.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
   products/yappc/frontend/libs/messaging:
     dependencies:
       date-fns:
@@ -3647,6 +3755,40 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  products/yappc/frontend/libs/navigation-ui:
+    dependencies:
+      '@base-ui/react':
+        specifier: ^1.1.0
+        version: 1.2.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../../../platform/typescript/design-system
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      tailwind-merge:
+        specifier: ^3.4.0
+        version: 3.5.0
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.5.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
   products/yappc/frontend/libs/notifications:
     dependencies:
       '@yappc/messaging':
@@ -3670,6 +3812,59 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  products/yappc/frontend/libs/shortcuts:
+    dependencies:
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.5.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
+  products/yappc/frontend/libs/state:
+    dependencies:
+      '@yappc/core':
+        specifier: workspace:*
+        version: link:../core
+      jotai:
+        specifier: ^2.17.0
+        version: 2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.5.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
   products/yappc/frontend/libs/testing:
     devDependencies:
       '@types/node':
@@ -3682,8 +3877,43 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
-  products/yappc/frontend/libs/types:
+  products/yappc/frontend/libs/theme:
+    dependencies:
+      '@mui/material':
+        specifier: ^7.3.0
+        version: 7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
     devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.5.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
+  products/yappc/frontend/libs/types:
+    dependencies:
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -3714,15 +3944,39 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
+      '@yappc/base-ui':
+        specifier: workspace:*
+        version: link:../base-ui
       '@yappc/canvas':
         specifier: workspace:*
         version: link:../canvas
       '@yappc/collab':
         specifier: workspace:*
         version: link:../collab
+      '@yappc/config-hooks':
+        specifier: workspace:*
+        version: link:../config-hooks
+      '@yappc/development-ui':
+        specifier: workspace:*
+        version: link:../development-ui
+      '@yappc/initialization-ui':
+        specifier: workspace:*
+        version: link:../initialization-ui
+      '@yappc/navigation-ui':
+        specifier: workspace:*
+        version: link:../navigation-ui
       '@yappc/realtime':
         specifier: workspace:*
         version: link:../realtime
+      '@yappc/shortcuts':
+        specifier: workspace:*
+        version: link:../shortcuts
+      '@yappc/state':
+        specifier: workspace:*
+        version: link:../state
+      '@yappc/theme':
+        specifier: workspace:*
+        version: link:../theme
       framer-motion:
         specifier: ^12.35.0
         version: 12.35.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -3898,10 +4152,10 @@ importers:
         version: 3.2.2(react@19.2.4)
       '@ghatana/canvas':
         specifier: workspace:*
-        version: link:../../../../platform/typescript/capabilities/canvas-core
+        version: link:../../../../platform/typescript/canvas
       '@ghatana/design-system':
         specifier: workspace:*
-        version: link:../../../../platform/typescript/capabilities/design-system
+        version: link:../../../../platform/typescript/design-system
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../../platform/typescript/theme
@@ -3947,15 +4201,30 @@ importers:
       '@yappc/collab':
         specifier: workspace:*
         version: link:../libs/collab
+      '@yappc/config-hooks':
+        specifier: workspace:*
+        version: link:../libs/config-hooks
       '@yappc/core':
         specifier: workspace:*
         version: link:../libs/core
       '@yappc/crdt':
         specifier: workspace:*
         version: link:../libs/crdt
+      '@yappc/development-ui':
+        specifier: workspace:*
+        version: link:../libs/development-ui
       '@yappc/ide':
         specifier: workspace:*
         version: link:../libs/ide
+      '@yappc/initialization-ui':
+        specifier: workspace:*
+        version: link:../libs/initialization-ui
+      '@yappc/navigation-ui':
+        specifier: workspace:*
+        version: link:../libs/navigation-ui
+      '@yappc/shortcuts':
+        specifier: workspace:*
+        version: link:../libs/shortcuts
       '@yappc/testing':
         specifier: workspace:*
         version: link:../libs/testing

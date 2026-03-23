@@ -9,7 +9,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Card } from '@dcmaar/shared-ui-tailwind';
+import { Card } from '@dcmaar/ui';
 import type { ProcessedMetrics } from '../../../analytics/AnalyticsPipeline';
 import { MetricCard } from '../metrics/MetricCard';
 import { MetricChart } from '../metrics/MetricChart';

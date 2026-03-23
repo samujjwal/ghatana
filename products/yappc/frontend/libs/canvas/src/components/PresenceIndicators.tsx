@@ -15,7 +15,8 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { ListItemAvatar, Fade } from '@ghatana/design-system';
-import { Popover, useTheme, resolveMuiColor } from '@yappc/ui';
+import { Popover } from '@yappc/base-ui';
+import { useTheme, resolveMuiColor } from '@yappc/theme';
 import React, { useState, useEffect } from 'react';
 
 import { useCollaboration } from '../hooks/useCollaboration';

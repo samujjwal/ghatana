@@ -18,9 +18,6 @@ description = """
 """.trimIndent()
 
 dependencies {
-    // Re-export ai-api (stable interfaces)
-    api(project(":platform:java:ai-api"))
-
     // Core Platform
     api(project(":platform:java:core"))
     api(project(":platform:java:observability"))

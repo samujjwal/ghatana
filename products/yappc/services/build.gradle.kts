@@ -64,8 +64,8 @@ dependencies {
     implementation(project(":products:yappc:core:scaffold:api"))
     implementation(project(":products:yappc:infrastructure:datacloud"))
     
-    // Data Cloud
-    implementation(project(":products:data-cloud:platform"))
+    // Data Cloud (platform used only in tests via VersionComparator, VersionService, InMemoryVersionRecord)
+    testImplementation(project(":products:data-cloud:platform"))
     
     // ActiveJ Framework
     implementation(libs.activej.boot)

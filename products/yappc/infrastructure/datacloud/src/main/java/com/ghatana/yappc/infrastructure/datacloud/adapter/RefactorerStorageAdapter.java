@@ -1,6 +1,6 @@
 package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -25,14 +25,14 @@ public class RefactorerStorageAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(RefactorerStorageAdapter.class);
     private static final String COLLECTION = "refactorer_storage";
     
-    private final EntityRepository entityRepository;
+    private final DataCloudClient client;
     private final YappcEntityMapper mapper;
     
     public RefactorerStorageAdapter(
-        @NotNull EntityRepository entityRepository,
+        @NotNull DataCloudClient client,
         @NotNull YappcEntityMapper mapper
     ) {
-        this.entityRepository = entityRepository;
+        this.client = client;
         this.mapper = mapper;
         LOG.info("Initialized RefactorerStorageAdapter");
     }

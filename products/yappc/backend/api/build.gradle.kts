@@ -61,7 +61,7 @@ dependencies {
     implementation(project(":platform:java:agent-registry"))
     
     // AEP engine libraries
-    implementation(project(":products:aep:platform-engine"))
+    implementation(project(":products:aep:aep-engine"))
     
     // Domain model entities
     api(project(":products:yappc:libs:java:yappc-domain"))

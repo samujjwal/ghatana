@@ -8,13 +8,12 @@ export {
   ThemeProvider,
   lightTheme,
   darkTheme,
-  // YAPPC-specific hooks
-  usePersonas,
-  useKeyboardShortcuts,
   // YAPPC-specific types/utilities
   resolveMuiColor,
   getPaletteMain,
 } from '@yappc/ui';
+export { usePersonas } from '@yappc/config-hooks';
+export { useKeyboardShortcuts } from '@yappc/shortcuts';
 
 /**
  * UI Components Index

@@ -1,0 +1,28 @@
+{
+  "name": "@dcmaar/ui",
+  "version": "1.0.0",
+  "description": "Consolidated UI library for DCMAAR apps — types, components, and chart adapters",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./core": "./src/core.ts",
+    "./components": "./src/components.ts",
+    "./charts": "./src/charts.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "echo 'no unit tests for adapter layer'"
+  },
+  "dependencies": {
+    "@ghatana/charts": "workspace:*",
+    "@ghatana/design-system": "workspace:*",
+    "react": "^19.2.4"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4"
+  },
+  "author": "DCMAAR Team",
+  "license": "MIT"
+}

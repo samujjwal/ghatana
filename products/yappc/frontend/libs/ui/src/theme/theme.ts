@@ -1,23 +1,4 @@
-import { createTheme, alpha } from '@mui/material/styles';
-
-import {
-  palette,
-  lightColors,
-  darkColors,
-  typographyVariants,
-  fontFamilies,
-  spacing,
-  borderRadius,
-  lightShadows,
-  darkShadows,
-  elevationLevels,
-  breakpoints,
-  durations,
-  easings,
-  zIndex,
-} from '../tokens';
-
-import type { PaletteMode, ThemeOptions } from '../theme/types';
+export { theme, lightTheme, darkTheme } from '@yappc/theme';
 
 // Common theme settings
 const getThemeOptions = (mode: PaletteMode): ThemeOptions => {

@@ -6,12 +6,12 @@
  * agent/pipeline lifecycle management layer.
  *
  * Dependency direction:
- *   products:aep:orchestrator    → products:aep:platform-contracts (shared AEP contracts)
- *   products:aep:platform-bundle ← no dependency on orchestrator
+ *   products:aep:orchestrator    → products:aep:aep-operator-contracts (shared AEP contracts)
+ *   products:aep:platform-bundle ← retired; no dependency on orchestrator
  *   products:aep:server          → products:aep:orchestrator
  *
  * This module intentionally breaks the circular dependency that would result
- * from keeping orchestrator code inside products:aep:platform-bundle.
+ * from the earlier state where orchestrator code lived inside products:aep:platform-bundle.
  */
 plugins {
     id("java-library")
@@ -33,11 +33,11 @@ java {
 
 dependencies {
     // Shared AEP contracts — EventCloud, operator catalog, pipeline contracts
-    api(project(":products:aep:platform-contracts"))
-    implementation(project(":products:aep:platform-engine"))
-    api(project(":products:aep:platform-agent"))
-    api(project(":products:aep:platform-connectors"))
-    api(project(":products:aep:platform-registry"))
+    api(project(":products:aep:aep-operator-contracts"))
+    implementation(project(":products:aep:aep-engine"))
+    // aep-agent merged into aep-registry on 2026-03-22
+    api(project(":products:aep:aep-connectors"))
+    api(project(":products:aep:aep-registry"))
 
     // Core platform libs
     api(project(":platform:java:core"))
@@ -90,8 +90,8 @@ dependencies {
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.activej.test)
     testImplementation(project(":platform:java:testing"))
-    testImplementation(project(":products:aep:platform-engine"))
-    testImplementation(project(":products:aep:platform-analytics"))
+    testImplementation(project(":products:aep:aep-engine"))
+    testImplementation(project(":products:aep:aep-analytics"))
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 

@@ -65,29 +65,15 @@ interface ValidationResult {
 
 interface ExperienceWizardProps {
     onExperienceCreated: (experience: LearningExperience, validation?: ValidationResult) => void;
-    onCancel: () => void;
 }
 
-const GRADE_RANGES = [
-    { value: 'k_2', label: 'K-2 (Ages 5-7)', icon: '🎨' },
-    { value: 'grade_3_5', label: 'Grades 3-5 (Ages 8-10)', icon: '📚' },
-    { value: 'grade_6_8', label: 'Grades 6-8 (Ages 11-13)', icon: '🔬' },
-    { value: 'grade_9_12', label: 'Grades 9-12 (Ages 14-18)', icon: '🎓' },
-    { value: 'undergraduate', label: 'Undergraduate', icon: '🏛️' },
-    { value: 'graduate', label: 'Graduate', icon: '🔬' },
-    { value: 'professional', label: 'Professional', icon: '💼' },
-];
-
-export function ExperienceWizard({ onExperienceCreated, onCancel }: ExperienceWizardProps) {
+export function ExperienceWizard({ onExperienceCreated }: ExperienceWizardProps) {
     const [query, setQuery] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     const [gradeVariations, setGradeVariations] = useState<any[]>([]);
     const [similarExperiences, setSimilarExperiences] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [linkedSimulation, setLinkedSimulation] = useState<any>(null);
-    const [showSimulationBuilder, setShowSimulationBuilder] = useState(false);
-    const [selectedVariation, setSelectedVariation] = useState<any>(null);
 
     // Search for similar experiences as user types (debounced)
     const searchSimilar = useCallback(async (searchQuery: string) => {
@@ -165,21 +151,6 @@ export function ExperienceWizard({ onExperienceCreated, onCancel }: ExperienceWi
         }
     }, [query]);
 
-    const handleSimulationGenerated = useCallback((simulation: any) => {
-        setLinkedSimulation(simulation);
-        setShowSimulationBuilder(false);
-    }, []);
-
-    const handleSimulationLinked = useCallback((simulationId: string, version: string) => {
-        setLinkedSimulation({ id: simulationId, version });
-        setShowSimulationBuilder(false);
-    }, []);
-
-    const handleCreateWithSimulation = useCallback((variation: any) => {
-        setSelectedVariation(variation);
-        setShowSimulationBuilder(true);
-    }, []);
-
     const handleCreateExperience = useCallback(async (variation: any) => {
         if (!variation) return;
 
@@ -197,9 +168,9 @@ export function ExperienceWizard({ onExperienceCreated, onCancel }: ExperienceWi
                     keywords: variation.keywords,
                     estimatedTimeMinutes: variation.estimatedTimeMinutes,
                     gradeAdaptation: variation.gradeAdaptation,
-                    // Use simulation from variation if available, otherwise use linked simulation
-                    simulationManifestId: variation.simulation?.id || linkedSimulation?.id,
-                    simulationVersion: variation.simulation?.version || linkedSimulation?.version,
+                    // Use simulation from variation if available
+                    simulationManifestId: variation.simulation?.id,
+                    simulationVersion: variation.simulation?.version,
                 }),
             });
 
@@ -212,7 +183,7 @@ export function ExperienceWizard({ onExperienceCreated, onCancel }: ExperienceWi
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create experience');
         }
-    }, [query, linkedSimulation, onExperienceCreated]);
+    }, [query, onExperienceCreated]);
 
     const handleSelectExisting = useCallback((experience: any) => {
         onExperienceCreated(experience);

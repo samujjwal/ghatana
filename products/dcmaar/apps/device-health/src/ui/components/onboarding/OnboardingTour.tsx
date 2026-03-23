@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Card } from '@dcmaar/shared-ui-tailwind';
+import { Card } from '@dcmaar/ui';
 
 export interface TourStep {
   id: string;

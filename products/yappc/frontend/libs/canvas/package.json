@@ -84,6 +84,7 @@
   },
   "dependencies": {
     "@ghatana/canvas": "workspace:*",
+    "@yappc/base-ui": "workspace:*",
     "@yappc/core": "workspace:*",
     "jotai": "^2.17.0",
     "@xyflow/react": "^12.10.0",

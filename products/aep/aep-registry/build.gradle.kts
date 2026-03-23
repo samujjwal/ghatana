@@ -1,0 +1,67 @@
+/*
+ * Platform Registry Module - Build Configuration
+ *
+ * Contains pipeline registry, deployment management, store abstractions,
+ * AND agent registry (absorbed from aep-agent on 2026-03-22 per boundary audit).
+ * Depends on platform-core for engine integration.
+ */
+
+plugins {
+    id("com.ghatana.java-conventions")
+    `java-library`
+}
+
+dependencies {
+    // Depends on core
+    implementation(project(":products:aep:aep-engine"))
+    implementation(project(":platform:java:core"))
+    implementation(project(":platform:java:domain"))
+    implementation(project(":platform:java:observability"))
+    implementation(project(":platform:java:http"))
+    implementation(project(":platform:java:security"))
+    implementation(project(":platform:java:connectors"))
+    implementation(project(":platform:java:database"))
+    implementation(project(":products:aep:aep-connectors"))
+
+    // Agent registry (absorbed from aep-agent — 2026-03-22)
+    implementation(project(":platform:java:agent-core"))
+    implementation(project(":platform:java:agent-registry"))
+    implementation(project(":platform:java:audit"))
+    implementation(project(":platform:contracts"))
+    compileOnly(libs.jakarta.persistence.api)
+    compileOnly(libs.hibernate.core)
+    
+    // gRPC dependencies
+    implementation(libs.grpc.netty.shaded)
+    implementation(libs.grpc.stub)
+    implementation(libs.grpc.protobuf)
+    
+    // Connection pool and cache
+    implementation("com.zaxxer:HikariCP:6.2.1")
+    implementation("redis.clients:jedis:5.1.0")
+    
+    // Lombok for model classes
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+    
+    // Jakarta
+    implementation(libs.jakarta.inject)
+    
+    // ActiveJ
+    implementation(libs.activej.promise)
+    
+    // Jackson
+    implementation(libs.jackson.databind)
+    
+    // Testing
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.assertj.core)
+    testImplementation(project(":platform:java:testing"))
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+// Target: < 150 classes (increased due to aep-agent absorption on 2026-03-22)

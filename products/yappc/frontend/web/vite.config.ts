@@ -186,7 +186,14 @@ export default defineConfig({
       
       // Library aliases (matching tsconfig.base.json)
       '@yappc/ui': path.resolve(__dirname, '../libs/ui/src'),
-      '@yappc/canvas': path.resolve(__dirname, '../libs/state/src'),
+      '@yappc/state': path.resolve(__dirname, '../libs/state/src'),
+      '@yappc/shortcuts': path.resolve(__dirname, '../libs/shortcuts/src'),
+      '@yappc/base-ui': path.resolve(__dirname, '../libs/base-ui/src'),
+      '@yappc/config-hooks': path.resolve(__dirname, '../libs/config-hooks/src'),
+      '@yappc/development-ui': path.resolve(__dirname, '../libs/development-ui/src'),
+      '@yappc/initialization-ui': path.resolve(__dirname, '../libs/initialization-ui/src'),
+      '@yappc/navigation-ui': path.resolve(__dirname, '../libs/navigation-ui/src'),
+      '@yappc/theme': path.resolve(__dirname, '../libs/theme/src'),
       '@ghatana/yappc-storage': path.resolve(__dirname, '../libs/storage/src'),
       '@yappc/ai': path.resolve(__dirname, '../libs/ai/src'),
       '@ghatana/yappc-ai-requirements-service': path.resolve(__dirname, '../libs/ai-requirements-service/src'),
@@ -195,7 +202,6 @@ export default defineConfig({
       '@ghatana/yappc-collab': path.resolve(__dirname, '../libs/collab/src'),
       '@ghatana/yappc-ide': path.resolve(__dirname, '../libs/ide/src'),
       '@ghatana/yappc-types': path.resolve(__dirname, '../libs/types/src'),
-      '@ghatana/yappc-api': path.resolve(__dirname, '../libs/graphql/src'),
       '@ghatana/yappc-api': path.resolve(__dirname, '../libs/api/src'),
       '@ghatana/yappc-testing': path.resolve(__dirname, '../libs/testing/src'),
       '@ghatana/yappc-mocks': path.resolve(__dirname, '../libs/mocks/src'),

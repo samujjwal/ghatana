@@ -24,7 +24,7 @@ dependencies {
     implementation(project(":platform:java:agent-core"))    // YAPPC-Ph3: YamlTemplateEngine (merged from yaml-template)
 
     // AEP contracts (YAPPC-Ph4: OperatorCatalog, InMemoryOperatorCatalog, AepEventCloudFactory)
-    implementation(project(":products:aep:platform-contracts"))
+    implementation(project(":products:aep:aep-operator-contracts"))
 
     // AEP orchestrator (TriggerListener, ExecutionQueue)
     implementation(project(":products:aep:orchestrator"))

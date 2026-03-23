@@ -5,6 +5,8 @@
 package com.ghatana.yappc.api.config.modules;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.aep.Aep;
+import com.ghatana.aep.AepEngine;
 import com.ghatana.yappc.api.aep.AepClient;
 import com.ghatana.yappc.api.aep.AepClientFactory;
 import com.ghatana.yappc.api.aep.AepConfig;
@@ -38,8 +40,14 @@ public class AepIntegrationModule extends AbstractModule {
   }
 
   @Provides
-  AepClient aepClient(AepConfig config) throws AepException {
-    return AepClientFactory.create(config);
+  AepEngine aepEngine() {
+    logger.info("Initialising embedded AEP engine");
+    return Aep.embedded();
+  }
+
+  @Provides
+  AepClient aepClient(AepConfig config, AepEngine engine) throws AepException {
+    return AepClientFactory.create(config, engine);
   }
 
   @Provides

@@ -1,6 +1,6 @@
 package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.products.yappc.domain.repository.DashboardRepository;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import org.jetbrains.annotations.NotNull;
@@ -22,10 +22,10 @@ public class DashboardRepositoryFactory {
      */
     @NotNull
     public static DashboardRepository createDataCloudRepository(
-        @NotNull EntityRepository entityRepository,
+        @NotNull DataCloudClient client,
         @NotNull YappcEntityMapper mapper
     ) {
-        return new DashboardDataCloudAdapter(entityRepository, mapper);
+        return new DashboardDataCloudAdapter(client, mapper);
     }
     
 }

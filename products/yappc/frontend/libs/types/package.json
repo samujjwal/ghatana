@@ -27,7 +27,14 @@
     "build:types": "tsc -p tsconfig.json",
     "type-check": "tsc --noEmit"
   },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4"
+  },
   "devDependencies": {
+    "@types/react": "^19.2.10",
     "typescript": "^5.9.3"
   }
 }

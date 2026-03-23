@@ -1,4 +1,4 @@
-import { Card, StatusBadge, Skeleton } from '@dcmaar/shared-ui-tailwind';
+import { Card, StatusBadge, Skeleton } from '@dcmaar/ui';
 import { ArrowPathIcon, InformationCircleIcon } from '@heroicons/react/20/solid';
 import React, { Suspense, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';

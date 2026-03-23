@@ -21,7 +21,6 @@ dependencies {
     // Kernel platform — provides KernelContext, KernelModule, KernelExtension,
     // DataCloudKernelAdapter, ClassificationDescriptor, etc.
     api(project(":platform:java:kernel"))
-    api(project(":platform:java:kernel-capabilities"))  // Merged: audit + authentication + event-store + resilience
 
     // Platform libraries
     api(project(":platform:java:security"))

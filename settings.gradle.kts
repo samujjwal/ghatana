@@ -46,7 +46,6 @@ include(":platform:java:workflow")
 include(":platform:java:plugin")
 include(":platform:java:event-cloud")
 include(":platform:java:ai-integration")  // Merged: registry + observability + feature-store + experimental consolidated
-include(":platform:java:ai-api")
 include(":platform:java:governance")
 include(":platform:java:security")
 include(":platform:java:agent-core")
@@ -63,17 +62,16 @@ include(":platform:java:kernel-capabilities")  // Merged: authentication + confi
 // =============================================================================
 
 include(":products:aep:contracts")
-include(":products:aep:platform-contracts")
-include(":products:aep:platform-central-runtime")
-include(":products:aep:platform-core")
-include(":products:aep:platform-engine")
-include(":products:aep:platform-registry")
-include(":products:aep:platform-analytics")
-include(":products:aep:platform-security")
-include(":products:aep:platform-connectors")
-include(":products:aep:platform-agent")
-include(":products:aep:platform-api")
-include(":products:aep:platform-scaling")
+include(":products:aep:aep-operator-contracts")
+include(":products:aep:aep-central-runtime")
+include(":products:aep:aep-engine")
+include(":products:aep:aep-registry")
+include(":products:aep:aep-analytics")
+include(":products:aep:aep-security")
+include(":products:aep:aep-connectors")
+// aep-agent merged into aep-registry on 2026-03-22 (boundary audit P0)
+include(":products:aep:aep-api")
+include(":products:aep:aep-scaling")
 include(":products:aep:orchestrator")
 include(":products:aep:server")
 
@@ -96,19 +94,19 @@ include(":products:yappc")
 include(":products:yappc:platform")
 include(":products:yappc:services")
 include(":products:yappc:services:platform")
-include(":products:yappc:services:ai")
+// services:ai removed — absorbed into services:lifecycle
 include(":products:yappc:services:lifecycle")
-include(":products:yappc:services:scaffold")
+// services:scaffold removed — absorbed into services:lifecycle
 include(":products:yappc:backend:api")
 include(":products:yappc:backend:persistence")
 include(":products:yappc:backend:auth")
 include(":products:yappc:backend:deployment")
-include(":products:yappc:backend:websocket")
+// backend:websocket removed — sources merged into backend:api
 include(":products:yappc:core:domain")
 include(":products:yappc:core:scaffold")
 include(":products:yappc:core:scaffold:api")
 include(":products:yappc:core:scaffold:core")
-include(":products:yappc:core:scaffold:packs")
+// core:scaffold:packs removed — absorbed into core:scaffold:core
 include(":products:yappc:core:ai")
 include(":products:yappc:core:agents")
 include(":products:yappc:core:agents:runtime")
@@ -123,9 +121,9 @@ include(":products:yappc:core:framework:integration-test")
 include(":products:yappc:core:refactorer:api")
 include(":products:yappc:core:refactorer:engine")
 include(":products:yappc:infrastructure:datacloud")
-include(":products:yappc:infrastructure:security")
+// infrastructure:security removed — absorbed into backend:auth
 include(":products:yappc:libs:java:yappc-domain")
-include(":products:yappc:launcher")
+// launcher removed — superseded by backend:api application launcher
 
 // =============================================================================
 // Product: Flashit — Context Capture Platform
@@ -253,7 +251,7 @@ include(":products:finance:client-onboarding")
 // Shared Services — Cross-product microservices
 // =============================================================================
 
-// include(":shared-services:ai-inference-service")   // disabled: build not stabilised yet
+// include(":shared-services:ai-inference-service")   // ARCHIVED: build not stabilised; see shared-services/ai-inference-service/STATUS.md
 // include(":shared-services:ai-registry")             // consolidated into platform:java:ai-integration per ADR-013
 include(":shared-services:auth-gateway")                // absorbs auth-service
 // include(":shared-services:feature-store-ingest")     // migrated to products:data-cloud per ADR-013

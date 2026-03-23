@@ -38,6 +38,7 @@ interface Client {
   readonly type: string;
   readonly url: string;
   postMessage(message: unknown): void;
+  focus?(): Promise<Client>;
 }
 
 type ExtendableEvent = Event & {
@@ -83,9 +84,8 @@ const CACHEABLE_API_ROUTES = [
 /**
  * Install event - cache static assets.
  */
-self.addEventListener('install', (event) => {
-  const installEvent = event as ExtendableEvent;
-  installEvent.waitUntil(
+self.addEventListener('install', (event: ExtendableEvent) => {
+  event.waitUntil(
     caches
       .open(STATIC_CACHE_NAME)
       .then((cache) => {

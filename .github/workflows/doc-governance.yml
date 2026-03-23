@@ -1,0 +1,85 @@
+name: Documentation Governance
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'docs/**'
+      - 'products/**/docs/**'
+      - '.github/workflows/doc-governance.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'docs/**'
+      - 'products/**/docs/**'
+
+jobs:
+  doc-governance:
+    name: Documentation Governance Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for stale 'ghatana-new' references
+        run: |
+          if rg -n 'ghatana-new' README.md docs products --type md 2>/dev/null; then
+            echo "❌ Found stale 'ghatana-new' references in documentation"
+            exit 1
+          else
+            echo "✅ No stale 'ghatana-new' references found"
+          fi
+        shell: bash
+        continue-on-error: true
+      
+      - name: Check for forbidden temporary files
+        run: |
+          TEMP_FILES=$(find . -type f \( -name '*.DS_Store' -o -name '*.backup' -o -name '*.stub' -o -name 'README_OLD.md' -o -name 'README_NEW.md' \) 2>/dev/null | head -20)
+          if [ -n "$TEMP_FILES" ]; then
+            echo "❌ Found forbidden temporary files:"
+            echo "$TEMP_FILES"
+            exit 1
+          else
+            echo "✅ No forbidden temporary files found"
+          fi
+        shell: bash
+        continue-on-error: true
+      
+      - name: Verify docs/README.md exists
+        run: |
+          if [ ! -f "docs/README.md" ]; then
+            echo "❌ docs/README.md is missing"
+            exit 1
+          else
+            echo "✅ docs/README.md exists"
+          fi
+        shell: bash
+      
+      - name: Check for duplicate active trackers
+        run: |
+          TRACKER_COUNT=$(find docs -maxdepth 1 -name '*TRACKER*.md' -type f 2>/dev/null | wc -l)
+          if [ "$TRACKER_COUNT" -gt 1 ]; then
+            echo "❌ Found $TRACKER_COUNT active trackers in docs/. Should have at most 1."
+            exit 1
+          else
+            echo "✅ Tracker count OK: $TRACKER_COUNT"
+          fi
+        shell: bash
+        continue-on-error: true
+      
+      - name: Verify archive folders have README
+        run: |
+          MISSING=0
+          for dir in docs/archive products/*/docs/archive; do
+            if [ -d "$dir" ] && [ ! -f "$dir/README.md" ]; then
+              echo "⚠️  $dir missing README.md"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+          if [ "$MISSING" -gt 0 ]; then
+            echo "❌ $MISSING archive folders missing README.md"
+          else
+            echo "✅ All archive folders have README.md"
+          fi
+        shell: bash
+        continue-on-error: true

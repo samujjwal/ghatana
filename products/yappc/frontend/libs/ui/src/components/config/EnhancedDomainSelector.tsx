@@ -9,6 +9,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { selectedDomainIdAtom } from '@yappc/state';
 import { useAtom } from 'jotai';
 import {
   Box,
@@ -27,7 +28,6 @@ import {
 import { Code as CodeIcon, Shield as SecurityIcon, Gauge as PerformanceIcon, ClipboardList as TaskIcon, LayoutDashboard as DashboardIcon, Info as InfoIcon } from 'lucide-react';
 
 import { useTaskDomains } from '../../hooks/useConfig';
-import { selectedDomainIdAtom } from '../../state/configAtoms';
 
 // Domain icons mapping
 const DOMAIN_ICONS: Record<string, React.ReactNode> = {

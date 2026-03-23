@@ -30,7 +30,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { Card } from '@dcmaar/shared-ui-tailwind';
+import { Card } from '@dcmaar/ui';
 
 const PageUsageDashboard: React.FC = () => {
   useEffect(() => {

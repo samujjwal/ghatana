@@ -216,12 +216,27 @@ if (isStandaloneBuild) {
     }
 
     val aepRoot = File(monorepoRoot, "products/aep")
-    val aepPlatform = File(aepRoot, "platform-bundle")
-    if (aepRoot.exists() && aepPlatform.exists()) {
+    val aepContracts = File(aepRoot, "aep-operator-contracts")
+    val aepEngine = File(aepRoot, "aep-engine")
+    val aepCentralRuntime = File(aepRoot, "aep-central-runtime")
+    val aepOrchestrator = File(aepRoot, "orchestrator")
+    if (aepRoot.exists() && aepContracts.exists()) {
         include("products:aep")
         project(":products:aep").projectDir = aepRoot
-        include("products:aep:platform-bundle")
-        project(":products:aep:platform-bundle").projectDir = aepPlatform
+        include("products:aep:aep-operator-contracts")
+        project(":products:aep:aep-operator-contracts").projectDir = aepContracts
+        if (aepEngine.exists()) {
+            include("products:aep:aep-engine")
+            project(":products:aep:aep-engine").projectDir = aepEngine
+        }
+        if (aepCentralRuntime.exists()) {
+            include("products:aep:aep-central-runtime")
+            project(":products:aep:aep-central-runtime").projectDir = aepCentralRuntime
+        }
+        if (aepOrchestrator.exists()) {
+            include("products:aep:orchestrator")
+            project(":products:aep:orchestrator").projectDir = aepOrchestrator
+        }
     }
 
     val sharedServicesRoot = File(monorepoRoot, "shared-services")

@@ -2,8 +2,7 @@ package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.ghatana.datacloud.entity.Entity;
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import com.ghatana.products.yappc.domain.Identifiable;
 import io.activej.promise.Promise;
@@ -21,7 +20,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -38,7 +36,7 @@ import static org.mockito.Mockito.*;
 class YappcDataCloudRepositoryTest extends EventloopTestBase {
 
     @Mock
-    private EntityRepository entityRepository;
+    private DataCloudClient client;
 
     private YappcEntityMapper mapper;
     private YappcDataCloudRepository<TestEntity> repository;
@@ -52,7 +50,7 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
         mapper = new YappcEntityMapper(objectMapper);
 
         repository = new YappcDataCloudRepository<>(
-            entityRepository,
+            client,
             mapper,
             "test_collection",
             TestEntity.class
@@ -65,47 +63,43 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
         UUID id = UUID.randomUUID();
         TestEntity entity = new TestEntity(id, "Test", 42);
 
-        Entity savedEntity = Entity.builder()
-            .tenantId("default")
-            .collectionName("test_collection")
-            .data(Map.of("id", id.toString(), "name", "Test", "value", 42))
-            .build();
+        DataCloudClient.Entity savedEntity = DataCloudClient.Entity.of(
+            id.toString(), "test_collection",
+            Map.of("id", id.toString(), "name", "Test", "value", 42));
 
-        when(entityRepository.save(anyString(), any(Entity.class)))
+        when(client.save(anyString(), anyString(), any()))
             .thenReturn(Promise.of(savedEntity));
 
         Promise<TestEntity> result = repository.save(entity);
 
-        verify(entityRepository).save(anyString(), any(Entity.class));
+        verify(client).save(anyString(), anyString(), any());
     }
 
     @Test
     @DisplayName("Should find entity by ID")
     void shouldFindById() {
         UUID id = UUID.randomUUID();
-        Entity entity = Entity.builder()
-            .tenantId("default")
-            .collectionName("test_collection")
-            .data(Map.of("id", id.toString(), "name", "Test", "value", 42))
-            .build();
+        DataCloudClient.Entity entity = DataCloudClient.Entity.of(
+            id.toString(), "test_collection",
+            Map.of("id", id.toString(), "name", "Test", "value", 42));
 
-        when(entityRepository.findById(anyString(), anyString(), any(UUID.class)))
+        when(client.findById(anyString(), anyString(), anyString()))
             .thenReturn(Promise.of(Optional.of(entity)));
 
         Promise<Optional<TestEntity>> result = repository.findById(id);
 
-        verify(entityRepository).findById(anyString(), anyString(), any(UUID.class));
+        verify(client).findById(anyString(), anyString(), anyString());
     }
 
     @Test
     @DisplayName("Should find all entities")
     void shouldFindAll() {
-        when(entityRepository.findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt()))
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
             .thenReturn(Promise.of(List.of()));
 
         Promise<List<TestEntity>> result = repository.findAll();
 
-        verify(entityRepository).findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt());
+        verify(client).query(anyString(), anyString(), any(DataCloudClient.Query.class));
     }
 
     @Test
@@ -113,12 +107,12 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
     void shouldDeleteById() {
         UUID id = UUID.randomUUID();
 
-        when(entityRepository.delete(anyString(), anyString(), any(UUID.class)))
+        when(client.delete(anyString(), anyString(), anyString()))
             .thenReturn(Promise.of(null));
 
         Promise<Void> result = repository.deleteById(id);
 
-        verify(entityRepository).delete(anyString(), anyString(), any(UUID.class));
+        verify(client).delete(anyString(), anyString(), anyString());
     }
 
     record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> {

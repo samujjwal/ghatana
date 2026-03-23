@@ -1,0 +1,41 @@
+{
+  "name": "@ghatana/utils",
+  "version": "0.1.0",
+  "description": "Compatibility wrapper for Ghatana platform utility exports",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./cn": {
+      "types": "./dist/cn.d.ts",
+      "import": "./dist/cn.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ghatana/platform-utils": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "ghatana",
+    "utilities",
+    "compatibility"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

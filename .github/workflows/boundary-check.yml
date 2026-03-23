@@ -51,3 +51,22 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Guard against DCMAAR thin-UI re-introduction
+        run: |
+          for pkg in "@dcmaar/shared-ui-core" "@dcmaar/shared-ui-tailwind" "@dcmaar/shared-ui-charts"; do
+            if grep -r "$pkg" products/ --include="package.json" --exclude-dir="node_modules" -l 2>/dev/null | grep -q .; then
+              echo "ERROR: Deprecated package $pkg was re-introduced. Use @dcmaar/ui instead."
+              exit 1
+            fi
+          done
+          echo "DCMAAR thin-UI check passed"
+
+      - name: Verify cross-product shared modules have OWNER.md
+        run: |
+          # products/virtual-org is a product-owned shared framework (framework module used by software-org)
+          if [ ! -f "products/virtual-org/OWNER.md" ]; then
+            echo "ERROR: products/virtual-org/OWNER.md is missing — required for cross-product shared modules"
+            exit 1
+          fi
+          echo "Cross-product module ownership check passed"

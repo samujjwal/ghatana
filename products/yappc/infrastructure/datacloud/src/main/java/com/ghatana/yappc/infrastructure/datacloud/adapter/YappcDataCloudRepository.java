@@ -1,7 +1,6 @@
 package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
-import com.ghatana.datacloud.entity.Entity;
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.products.yappc.domain.Identifiable;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
@@ -34,17 +33,17 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
 
     private static final Logger LOG = LoggerFactory.getLogger(YappcDataCloudRepository.class);
 
-    private final EntityRepository entityRepository;
+    private final DataCloudClient client;
     private final YappcEntityMapper mapper;
     private final String collectionName;
     private final Class<T> entityClass;
 
     public YappcDataCloudRepository(
-            @NotNull EntityRepository entityRepository,
+            @NotNull DataCloudClient client,
             @NotNull YappcEntityMapper mapper,
             @NotNull String collectionName,
             @NotNull Class<T> entityClass) {
-        this.entityRepository = entityRepository;
+        this.client = client;
         this.mapper = mapper;
         this.collectionName = collectionName;
         this.entityClass = entityClass;
@@ -73,9 +72,9 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
     @NotNull
     public Promise<T> save(@NotNull T domainEntity) {
         String tenantId = resolveTenantId();
-        Entity entity = mapper.toEntity(domainEntity, collectionName, tenantId);
+        Map<String, Object> data = mapper.toEntityData(domainEntity);
 
-        return entityRepository.save(tenantId, entity)
+        return client.save(tenantId, collectionName, data)
                 .map(saved -> mapper.fromEntity(saved, entityClass));
     }
 
@@ -85,7 +84,7 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
     @NotNull
     public Promise<Optional<T>> findById(@NotNull UUID id) {
         String tenantId = resolveTenantId();
-        return entityRepository.findById(tenantId, collectionName, id)
+        return client.findById(tenantId, collectionName, id.toString())
                 .map(opt -> opt.map(entity -> mapper.fromEntity(entity, entityClass)));
     }
 
@@ -95,7 +94,7 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
     @NotNull
     public Promise<List<T>> findAll() {
         String tenantId = resolveTenantId();
-        return entityRepository.findAll(tenantId, collectionName, Map.of(), null, 0, 1000)
+        return client.query(tenantId, collectionName, DataCloudClient.Query.limit(1000))
                 .map(entities -> entities.stream()
                         .map(entity -> mapper.fromEntity(entity, entityClass))
                         .collect(Collectors.toList()));
@@ -107,14 +106,14 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
     @NotNull
     public Promise<Void> deleteById(@NotNull UUID id) {
         String tenantId = resolveTenantId();
-        return entityRepository.delete(tenantId, collectionName, id);
+        return client.delete(tenantId, collectionName, id.toString());
     }
 
     /**
      * Finds entities by filter criteria, scoped to the current tenant.
      *
      * @param filter the filter criteria (field name -&gt; value)
-     * @param sort   the sort expression (optional, can be null)
+     * @param sort   ignored (reserved for future use)
      * @param limit  maximum results to return
      * @param offset offset for pagination
      * @return Promise of list of matching entities
@@ -126,7 +125,15 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
             int limit,
             int offset) {
         String tenantId = resolveTenantId();
-        return entityRepository.findAll(tenantId, collectionName, filter, sort, offset, limit)
+        List<DataCloudClient.Filter> filters = filter.entrySet().stream()
+                .map(e -> DataCloudClient.Filter.eq(e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
+        DataCloudClient.Query query = DataCloudClient.Query.builder()
+                .filters(filters)
+                .offset(offset)
+                .limit(limit > 0 ? limit : 1000)
+                .build();
+        return client.query(tenantId, collectionName, query)
                 .map(entities -> entities.stream()
                         .map(entity -> mapper.fromEntity(entity, entityClass))
                         .collect(Collectors.toList()));

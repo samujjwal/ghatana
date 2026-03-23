@@ -21,7 +21,7 @@ type SimulationDomain =
   | "MEDICINE"
   | "ECONOMICS"
   | "CS_DISCRETE"
-  | "MATH"
+  | "MATHEMATICS"
   | "ENGINEERING";
 
 // =============================================================================
@@ -48,6 +48,7 @@ const DOMAINS: { value: SimulationDomain; label: string; icon: string }[] = [
   { value: "MEDICINE", label: "Medicine", icon: "💊" },
   { value: "ECONOMICS", label: "Economics", icon: "📊" },
   { value: "CS_DISCRETE", label: "Computer Science", icon: "🔢" },
+  { value: "MATHEMATICS", label: "Mathematics", icon: "📐" },
 ];
 
 const DIFFICULTIES: { value: TemplateDifficulty; label: string; color: string }[] = [

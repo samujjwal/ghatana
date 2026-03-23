@@ -1,1 +1,10 @@
-// Configuration hooks\nexport * from './hooks/useConfig';\n\n// Configuration state atoms\nexport * from './state/configAtoms';\n\n// Configuration components\nexport { DomainSelector } from './components/config/DomainSelector';\nexport { WorkflowRenderer } from './components/config/WorkflowRenderer';\nexport { TaskListView } from './components/config/TaskListView';\n
+// Configuration hooks
+export * from './hooks/useConfig';
+
+// Configuration state atoms
+export * from './state';
+
+// Configuration components
+export { DomainSelector } from './components/config/DomainSelector';
+export { WorkflowRenderer } from './components/config/WorkflowRenderer';
+export { TaskListView } from './components/config/TaskListView';

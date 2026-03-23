@@ -6,8 +6,8 @@ group = "com.ghatana.products.yappc"
 version = "2026.3.1-SNAPSHOT"
 
 dependencies {
-    // Data-Cloud Core (merged: domain, application, infrastructure, api, spi)
-    api(project(":products:data-cloud:platform"))
+    // Data-Cloud SPI only (no platform dep)
+    implementation(project(":products:data-cloud:spi"))
     
     // YAPPC domain models (for mapping)
     implementation(project(":products:yappc:libs:java:yappc-domain"))

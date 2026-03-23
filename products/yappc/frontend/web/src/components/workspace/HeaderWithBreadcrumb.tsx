@@ -11,7 +11,7 @@
  */
 import { useAtom } from 'jotai';
 
-import { Breadcrumb } from '@yappc/ui';
+import { Breadcrumb } from '@yappc/navigation-ui';
 import { breadcrumbItemsAtom, navigationContextAtom } from '../../state/atoms/breadcrumbAtom';
 import { WorkspaceSelector } from './WorkspaceSelector';
 

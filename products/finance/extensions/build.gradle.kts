@@ -13,8 +13,8 @@ dependencies {
     // Kernel framework (provides KernelExtension, KernelContext)
     implementation(project(":platform:java:kernel"))
 
-    // Kernel authentication module
-    implementation(project(":platform:java:kernel-capabilities"))  // Merged: kernel/modules/* (auth + config + event-store + audit + resilience + observability + secrets)
+    // Canonical platform ports used by extensions
+    implementation(project(":platform:java:audit"))
 
     // Finance domain rules
     implementation(project(":products:finance:domains:rules"))

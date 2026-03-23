@@ -9,9 +9,6 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.extension.KernelExtension;
 import com.ghatana.kernel.module.KernelModule;
-import com.ghatana.kernel.modules.authentication.service.AuthenticationService;
-import com.ghatana.kernel.modules.authentication.service.AuthorizationService;
-import com.ghatana.products.finance.rules.service.FinanceRulesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,8 +102,7 @@ public final class FinanceKernelExtension implements KernelExtension {
     // ==================== Extension Methods ====================
 
     private void extendAuthentication(KernelContext context) {
-        AuthenticationService authService = context.getDependency(AuthenticationService.class);
-        if (authService != null) {
+        if (context.hasCapability(KernelCapability.Core.USER_AUTHENTICATION)) {
             // Add finance-specific authentication policies
             log.debug("Adding finance-specific authentication policies");
 
@@ -118,8 +114,7 @@ public final class FinanceKernelExtension implements KernelExtension {
     }
 
     private void extendAuthorization(KernelContext context) {
-        AuthorizationService authzService = context.getDependency(AuthorizationService.class);
-        if (authzService != null) {
+        if (context.hasCapability(KernelCapability.Core.SECURITY_FRAMEWORK)) {
             // Add finance-specific authorization rules
             log.debug("Adding finance-specific authorization rules");
 

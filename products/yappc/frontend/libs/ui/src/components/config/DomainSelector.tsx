@@ -12,10 +12,10 @@
 import React from 'react';
 
 import { Box, Typography, Button } from '@ghatana/design-system';
+import { selectedDomainIdAtom } from '@yappc/state';
 import { useAtom } from 'jotai';
 
 import { useTaskDomains } from '../../hooks/useConfig';
-import { selectedDomainIdAtom } from '../../state/configAtoms';
 
 // ============================================================================
 // Types

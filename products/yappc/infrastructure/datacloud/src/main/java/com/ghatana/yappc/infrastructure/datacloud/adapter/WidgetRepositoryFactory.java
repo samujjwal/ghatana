@@ -1,6 +1,6 @@
 package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,10 +21,10 @@ public class WidgetRepositoryFactory {
      */
     @NotNull
     public static WidgetDataCloudAdapter createDataCloudRepository(
-        @NotNull EntityRepository entityRepository,
+        @NotNull DataCloudClient client,
         @NotNull YappcEntityMapper mapper
     ) {
-        return new WidgetDataCloudAdapter(entityRepository, mapper);
+        return new WidgetDataCloudAdapter(client, mapper);
     }
     
 }

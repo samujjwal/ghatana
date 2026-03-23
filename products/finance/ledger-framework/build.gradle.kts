@@ -18,7 +18,6 @@ dependencies {
     implementation(project(":platform:java:audit"))
 
     // Kernel modules
-    implementation(project(":platform:java:kernel-capabilities"))  // Merged: kernel/modules/* (auth + config + event-store + audit + resilience + observability + secrets)
 
     // ActiveJ Promise
     implementation(libs.activej.promise)

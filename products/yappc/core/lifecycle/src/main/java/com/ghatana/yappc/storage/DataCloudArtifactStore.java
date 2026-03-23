@@ -5,8 +5,7 @@
 package com.ghatana.yappc.storage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.datacloud.entity.Entity;
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -45,18 +44,18 @@ public class DataCloudArtifactStore implements ArtifactStore {
     private static final String ARTIFACTS_COLLECTION = "yappc-artifacts";
     private static final String METADATA_COLLECTION  = "yappc-artifact-metadata";
 
-    private final EntityRepository entityRepository;
+    private final DataCloudClient client;
     private final ObjectMapper mapper;
 
     /**
      * Constructs a {@code DataCloudArtifactStore}.
      *
-     * @param entityRepository DataCloud entity repository for persistence
+     * @param client DataCloud SPI client for persistence
      * @param mapper           Jackson ObjectMapper for JSON serialisation
      */
-    public DataCloudArtifactStore(EntityRepository entityRepository, ObjectMapper mapper) {
-        this.entityRepository = entityRepository;
-        this.mapper           = mapper;
+    public DataCloudArtifactStore(DataCloudClient client, ObjectMapper mapper) {
+        this.client  = client;
+        this.mapper  = mapper;
     }
 
     // =========================================================================
@@ -83,14 +82,9 @@ public class DataCloudArtifactStore implements ArtifactStore {
         entityData.put("created_at", System.currentTimeMillis());
 
         UUID entityUuid = UUID.nameUUIDFromBytes((path.replace("/", "_") + "_" + version).getBytes(StandardCharsets.UTF_8));
-        Entity entity   = Entity.builder()
-                .id(entityUuid)
-                .tenantId(tenantId)
-                .collectionName(ARTIFACTS_COLLECTION)
-                .data(entityData)
-                .build();
+        entityData.put("id", entityUuid.toString());
 
-        return entityRepository.save(tenantId, entity)
+        return client.save(tenantId, ARTIFACTS_COLLECTION, entityData)
                 .map(saved -> {
                     log.info("Stored artifact: path={} version={} size={} tenant={}",
                             path, version, content.length, tenantId);
@@ -115,12 +109,12 @@ public class DataCloudArtifactStore implements ArtifactStore {
         String version  = path.substring(lastSlash + 1);
         UUID entityUuid = UUID.nameUUIDFromBytes((basePath.replace("/", "_") + "_" + version).getBytes(StandardCharsets.UTF_8));
 
-        return entityRepository.findById(tenantId, ARTIFACTS_COLLECTION, entityUuid)
+        return client.findById(tenantId, ARTIFACTS_COLLECTION, entityUuid.toString())
                 .map(entityOpt -> {
-                    if (entityOpt.isEmpty() || entityOpt.get().getData() == null) {
+                    if (entityOpt.isEmpty() || entityOpt.get().data() == null) {
                         throw new IllegalArgumentException("Artifact not found: " + path);
                     }
-                    String encoded = (String) entityOpt.get().getData().get("content");
+                    String encoded = (String) entityOpt.get().data().get("content");
                     if (encoded == null) {
                         throw new IllegalStateException("Artifact entity missing content field: " + path);
                     }
@@ -138,12 +132,16 @@ public class DataCloudArtifactStore implements ArtifactStore {
     public Promise<List<String>> list(String prefix) {
         String tenantId = resolveTenantId();
 
-        return entityRepository.findAll(
-                tenantId, ARTIFACTS_COLLECTION, Map.of("path", prefix), null, 0, Integer.MAX_VALUE)
+        return client.query(
+                tenantId, ARTIFACTS_COLLECTION,
+                DataCloudClient.Query.builder()
+                        .filter(DataCloudClient.Filter.eq("path", prefix))
+                        .limit(Integer.MAX_VALUE)
+                        .build())
                 .map(entities -> {
                     List<String> versions = new ArrayList<>();
-                    for (Entity e : entities) {
-                        Object v = e.getData() != null ? e.getData().get("version") : null;
+                    for (DataCloudClient.Entity e : entities) {
+                        Object v = e.data() != null ? e.data().get("version") : null;
                         if (v != null) {
                             versions.add(v.toString());
                         }
@@ -164,14 +162,9 @@ public class DataCloudArtifactStore implements ArtifactStore {
         entityData.put("tenant_id", tenantId);
 
         UUID entityUuid = UUID.nameUUIDFromBytes(("meta_" + path.replace("/", "_")).getBytes(StandardCharsets.UTF_8));
-        Entity entity   = Entity.builder()
-                .id(entityUuid)
-                .tenantId(tenantId)
-                .collectionName(METADATA_COLLECTION)
-                .data(entityData)
-                .build();
+        entityData.put("id", entityUuid.toString());
 
-        return entityRepository.save(tenantId, entity)
+        return client.save(tenantId, METADATA_COLLECTION, entityData)
                 .map(saved -> {
                     log.debug("Stored metadata for path={} tenant={}", path, tenantId);
                     return (Void) null;
@@ -188,13 +181,13 @@ public class DataCloudArtifactStore implements ArtifactStore {
 
         UUID entityUuid = UUID.nameUUIDFromBytes(("meta_" + path.replace("/", "_")).getBytes(StandardCharsets.UTF_8));
 
-        return entityRepository.findById(tenantId, METADATA_COLLECTION, entityUuid)
+        return client.findById(tenantId, METADATA_COLLECTION, entityUuid.toString())
                 .map(entityOpt -> {
-                    if (entityOpt.isEmpty() || entityOpt.get().getData() == null) {
+                    if (entityOpt.isEmpty() || entityOpt.get().data() == null) {
                         return Map.<String, String>of();
                     }
                     Map<String, String> result = new HashMap<>();
-                    for (Map.Entry<String, Object> entry : entityOpt.get().getData().entrySet()) {
+                    for (Map.Entry<String, Object> entry : entityOpt.get().data().entrySet()) {
                         if (!"path".equals(entry.getKey()) && !"tenant_id".equals(entry.getKey())) {
                             result.put(entry.getKey(), String.valueOf(entry.getValue()));
                         }

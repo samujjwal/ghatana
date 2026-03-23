@@ -17,7 +17,7 @@ dependencies {
     implementation(project(":platform:java:agent-runtime"))  // Migrated from agent-memory: MemoryPlane
 
     // AEP contracts (provides com.ghatana.core.operator.* and com.ghatana.core.pipeline.*)
-    implementation(project(":products:aep:platform-contracts"))
+    implementation(project(":products:aep:aep-operator-contracts"))
 
     // ActiveJ
     implementation(libs.activej.eventloop)

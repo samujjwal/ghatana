@@ -95,8 +95,13 @@
  * }
  *
  * @Provides
- * static AepClient aepClient(AepConfig config) throws AepException {
- *   return AepClientFactory.create(config);
+ * static AepEngine aepEngine() {
+ *   return Aep.embedded();
+ * }
+ *
+ * @Provides
+ * static AepClient aepClient(AepConfig config, AepEngine engine) throws AepException {
+ *   return AepClientFactory.create(config, engine);
  * }
  *
  * @Provides

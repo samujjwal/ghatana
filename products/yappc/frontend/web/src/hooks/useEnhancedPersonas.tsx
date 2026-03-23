@@ -10,7 +10,7 @@
  */
 
 import { useMemo } from 'react';
-import { usePersonas } from '@yappc/ui';
+import { usePersonas } from '@yappc/config-hooks';
 import { getPersonaIcon } from '../utils/personaIcons';
 import type { PersonaType, PersonaCategory } from '../types/persona';
 

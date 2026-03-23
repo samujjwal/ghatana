@@ -1205,6 +1205,21 @@ export * from './hooks';
 // Example journey flows
 export * from './examples';
 
+// Example-oriented component builder surface is sourced from the UI package,
+// but re-exported here so canvas examples do not depend on @yappc/ui directly.
+export {
+  DraggableCanvas,
+  DraggableItem,
+  ComponentLibrary,
+} from '@yappc/ui/components/canvas/DraggableCanvas';
+export type {
+  ComponentType,
+  DraggableItemProps,
+  ComponentLibraryProps,
+  CanvasItem,
+  DraggableCanvasProps,
+} from '@yappc/ui/components/canvas/DraggableCanvas';
+
 // Persona Canvas Components (Task 8: Specialized Persona Canvases)
 export {
   PersonaCanvas,

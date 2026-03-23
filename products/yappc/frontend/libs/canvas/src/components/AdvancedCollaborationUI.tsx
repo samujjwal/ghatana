@@ -1,5 +1,8 @@
 import { AlertTriangle as WarningIcon, Merge as MergeIcon, ArrowLeftRight as SwapIcon, Hammer as ManualIcon, User as PersonIcon, Clock as ScheduleIcon, CompareArrows as CompareIcon, Undo2 as UndoIcon, Redo2 as RedoIcon, History as HistoryIcon, Eye as VisibilityIcon, Pencil as EditIcon, Trash2 as DeleteIcon, Plus as AddIcon, ChevronDown as ExpandMoreIcon, X as CloseIcon, Check as CheckIcon, AlertCircle as ErrorIcon, Info as InfoIcon } from 'lucide-react';
 import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -31,7 +34,6 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { MenuItem } from '@ghatana/design-system';
-import { Accordion, AccordionSummary, AccordionDetails } from '@yappc/ui';
 import { formatDistanceToNow } from 'date-fns';
 import React, { useState, useCallback } from 'react';
 

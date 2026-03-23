@@ -1,6 +1,9 @@
 import { useDraggable } from '@dnd-kit/core';
 // Core UI components from @ghatana/yappc-ui
 import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   Box,
   Typography,
   Chip,
@@ -13,7 +16,6 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { ListItemAvatar, TextField } from '@ghatana/design-system';
-import { Accordion, AccordionSummary, AccordionDetails } from '@yappc/ui';
 
 import { Search as SearchIcon, ChevronDown as ExpandMoreIcon, Plus as AddIcon } from 'lucide-react';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';

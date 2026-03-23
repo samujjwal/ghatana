@@ -12,8 +12,35 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
+      "@yappc/state": [
+        "../../libs/state/src"
+      ],
+      "@yappc/state/*": [
+        "../../libs/state/src/*"
+      ],
+      "@yappc/shortcuts": [
+        "../../libs/shortcuts/src"
+      ],
+      "@yappc/shortcuts/*": [
+        "../../libs/shortcuts/src/*"
+      ],
+      "@yappc/base-ui": [
+        "../../libs/base-ui/src"
+      ],
+      "@yappc/base-ui/*": [
+        "../../libs/base-ui/src/*"
+      ],
+      "@yappc/theme": [
+        "../../libs/theme/src"
+      ],
+      "@yappc/theme/*": [
+        "../../libs/theme/src/*"
+      ],
       "@yappc/core/types": [
         "../../libs/types/src"
+      ],
+      "@yappc/core/types/*": [
+        "../../libs/types/src/*"
       ],
       "@ghatana/yappc-types/*": [
         "../../libs/types/src/*"
@@ -41,6 +68,9 @@
       ],
       "@yappc/core/api": [
         "../../libs/api/src"
+      ],
+      "@yappc/core/api/*": [
+        "../../libs/api/src/*"
       ],
       "@ghatana/yappc-api/*": [
         "../../libs/api/src/*"

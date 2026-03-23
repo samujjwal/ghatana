@@ -1,5 +1,4 @@
-import React from 'react';
-import { CheckSquare, Plus, Trash2, Link, Settings } from 'lucide-react';
+import { CheckSquare, Plus, Trash2 } from 'lucide-react';
 import type { Task, Claim, Evidence } from '@tutorputor/contracts/v1/learning-unit';
 
 interface TasksEditorProps {
@@ -9,7 +8,7 @@ interface TasksEditorProps {
     onChange: (tasks: Task[]) => void;
 }
 
-const TASK_TYPES = ['prediction', 'simulation', 'explanation'];
+const TASK_TYPES = ['prediction', 'simulation', 'explanation', 'construction'] as const;
 
 export function TasksEditor({ tasks, claims, evidence, onChange }: TasksEditorProps) {
     const handleAddTask = () => {
@@ -21,6 +20,7 @@ export function TasksEditor({ tasks, claims, evidence, onChange }: TasksEditorPr
             evidenceRef: evidence[0]?.id || '',
             prompt: '',
             confidenceRequired: true,
+            options: [],
         };
         onChange([...tasks, newTask]);
     };
@@ -67,7 +67,7 @@ export function TasksEditor({ tasks, claims, evidence, onChange }: TasksEditorPr
                                         </label>
                                         <select
                                             value={task.type}
-                                            onChange={(e) => handleUpdateTask(index, { type: e.target.value })}
+                                            onChange={(e) => handleUpdateTask(index, { type: e.target.value as typeof TASK_TYPES[number] })}
                                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-transparent capitalize"
                                         >
                                             {TASK_TYPES.map(t => (
@@ -132,7 +132,7 @@ export function TasksEditor({ tasks, claims, evidence, onChange }: TasksEditorPr
                                                 <input
                                                     type="checkbox"
                                                     checked={task.confidenceRequired}
-                                                    onChange={(e) => handleUpdateTask(index, { confidenceRequired: e.target.checked })}
+                                                    onChange={(e) => handleUpdateTask(index, { confidenceRequired: e.target.checked as true })}
                                                     className="rounded border-gray-300 text-blue-600"
                                                 />
                                                 Require Confidence (CBM)

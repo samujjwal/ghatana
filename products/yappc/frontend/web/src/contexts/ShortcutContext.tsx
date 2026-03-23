@@ -5,9 +5,7 @@
  * for the entire application. Manages context-aware shortcuts and power user features.
  */
 
-import CommandPalette from '@yappc/ui/components/CommandPalette';
-import { ShortcutHelper } from '@yappc/ui';
-import { useKeyboardShortcuts, Command } from '@yappc/ui';
+import { CommandPalette, ShortcutHelper, useKeyboardShortcuts, Command } from '@yappc/shortcuts';
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 

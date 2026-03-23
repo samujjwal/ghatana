@@ -26,7 +26,6 @@ dependencies {
     implementation(project(":products:finance:domains:oms"))
 
     // ─── Infrastructure Dependencies (migrated from app-platform) ──────────
-    api(project(":platform:java:kernel-capabilities"))  // Merged: kernel/modules/* (auth + config + event-store + audit + resilience + observability + secrets)
     api(project(":platform:java:security"))
     api(project(":platform:java:database"))
     api(project(":platform:java:http"))

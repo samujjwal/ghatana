@@ -8,8 +8,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
-import com.ghatana.kernel.modules.authentication.service.AuthenticationService;
-import com.ghatana.kernel.modules.resilience.service.ResilienceService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.products.finance.rules.service.FinanceRulesService;
 import io.activej.promise.Promise;
@@ -43,12 +41,6 @@ public class FinanceProductModuleIntegrationTest extends EventloopTestBase {
 
     @Mock
     private Executor mockExecutor;
-
-    @Mock
-    private AuthenticationService mockAuthService;
-
-    @Mock
-    private ResilienceService mockResilienceService;
 
     @Mock
     private FinanceRulesService mockRulesService;
