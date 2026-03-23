@@ -432,7 +432,7 @@ importers:
         version: 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       '@xyflow/react':
         specifier: ^12.10.0
         version: 12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -726,7 +726,7 @@ importers:
         version: 5.2.2(react-hook-form@7.71.2(react@19.2.4))
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       '@xyflow/react':
         specifier: ^12.10.0
         version: 12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -1199,7 +1199,7 @@ importers:
         version: 7.14.4(@react-navigation/native@7.1.33(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native-safe-area-context@5.6.2(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native-screens@4.24.0(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -1320,7 +1320,7 @@ importers:
         version: link:../../../../platform/typescript/capabilities/design-system
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       '@tensorflow/tfjs':
         specifier: ^4.22.0
         version: 4.22.0(encoding@0.1.13)(seedrandom@3.0.5)
@@ -1627,7 +1627,7 @@ importers:
         version: 0.5.19(tailwindcss@4.1.18)
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       '@testing-library/jest-dom':
         specifier: ^6.9.1
         version: 6.9.1
@@ -1741,7 +1741,7 @@ importers:
         version: 7.14.4(@react-navigation/native@7.1.33(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native-safe-area-context@5.6.2(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native-screens@4.24.0(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -1829,7 +1829,7 @@ importers:
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       '@testing-library/react':
         specifier: ^16.3.2
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -2221,7 +2221,7 @@ importers:
         version: 7.14.4(@react-navigation/native@7.1.33(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.2.4))(react@19.2.4))(react-native-safe-area-context@5.6.2(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.2.4))(react@19.2.4))(react-native-screens@4.16.0(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.2.4))(react@19.2.4))(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.2.4))(react@19.2.4)
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       '@types/react':
         specifier: ~19.1.10
         version: 19.1.17
@@ -2330,7 +2330,7 @@ importers:
         version: link:../../../../platform/typescript/capabilities/design-system
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -2471,7 +2471,7 @@ importers:
         version: link:../../../../platform/typescript/theme
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       '@tutorputor/core':
         specifier: workspace:*
         version: link:../../libs/tutorputor-core
@@ -2589,7 +2589,7 @@ importers:
         version: 7.14.4(@react-navigation/native@7.1.33(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native-safe-area-context@5.6.2(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native-screens@4.24.0(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4))(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.83.2(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       '@tutorputor/core':
         specifier: workspace:*
         version: link:../../libs/tutorputor-core
@@ -2671,7 +2671,7 @@ importers:
         version: link:../../../../platform/typescript/tokens
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       '@tutorputor/core':
         specifier: workspace:*
         version: link:../../libs/tutorputor-core
@@ -2717,7 +2717,7 @@ importers:
         version: 4.1.18
       '@tanstack/react-query-devtools':
         specifier: ^5.90.20
-        version: 5.95.0(@tanstack/react-query@5.90.21(react@19.2.4))(react@19.2.4)
+        version: 5.95.0(@tanstack/react-query@5.95.0(react@19.2.4))(react@19.2.4)
       '@testing-library/jest-dom':
         specifier: ^6.9.1
         version: 6.9.1
@@ -3922,7 +3922,7 @@ importers:
         version: 7.13.1(react-router@7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(typescript@5.9.3)
       '@tanstack/react-query':
         specifier: ^5.90.20
-        version: 5.90.21(react@19.2.4)
+        version: 5.95.0(react@19.2.4)
       '@types/dagre':
         specifier: ^0.7.53
         version: 0.7.54
@@ -5173,6 +5173,10 @@ packages:
     resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
     engines: {node: '>=6.9.0'}
 
+  '@babel/runtime@7.29.2':
+    resolution: {integrity: sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==}
+    engines: {node: '>=6.9.0'}
+
   '@babel/template@7.28.6':
     resolution: {integrity: sha512-YA6Ma2KsCdGb+WC6UpBVFJGXL58MDA6oyONbjyF/+5sBgxY/dwkhLogbMT2GXXyU84/IhRw/2D1Os1B/giz+BQ==}
     engines: {node: '>=6.9.0'}
@@ -5331,6 +5335,14 @@ packages:
 
   '@csstools/css-syntax-patches-for-csstree@1.0.29':
     resolution: {integrity: sha512-jx9GjkkP5YHuTmko2eWAvpPnb0mB4mGRr2U7XwVNwevm8nlpobZEVk+GNmiYMk2VuA75v+plfXWyroWKmICZXg==}
+
+  '@csstools/css-syntax-patches-for-csstree@1.1.1':
+    resolution: {integrity: sha512-BvqN0AMWNAnLk9G8jnUT77D+mUbY/H2b3uDTvg2isJkHaOufUE2R3AOwxWo7VBQKT1lOdwdvorddo2B/lk64+w==}
+    peerDependencies:
+      css-tree: ^3.2.1
+    peerDependenciesMeta:
+      css-tree:
+        optional: true
 
   '@csstools/css-tokenizer@3.0.4':
     resolution: {integrity: sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw==}
@@ -9673,6 +9685,9 @@ packages:
   '@tanstack/query-core@5.90.20':
     resolution: {integrity: sha512-OMD2HLpNouXEfZJWcKeVKUgQ5n+n3A2JFmBaScpNDUqSrQSjiveC7dKMe53uJUg1nDG16ttFPz2xfilz6i2uVg==}
 
+  '@tanstack/query-core@5.95.0':
+    resolution: {integrity: sha512-H1/CWCe8tGL3YIVeo770Z6kPbt0B3M1d/iQXIIK1qlFiFt6G2neYdkHgLapOC8uMYNt9DmHjmGukEKgdMk1P+A==}
+
   '@tanstack/query-devtools@5.95.0':
     resolution: {integrity: sha512-i8IzjIsZSE9y9XGndeVYeUusrZpKyhOnOPIzWKao8iAVzmk8ZesPe5URt02aLwC5A0Rg72N+vgqolXXCXm4fFg==}
 
@@ -9684,6 +9699,11 @@ packages:
 
   '@tanstack/react-query@5.90.21':
     resolution: {integrity: sha512-0Lu6y5t+tvlTJMTO7oh5NSpJfpg/5D41LlThfepTixPYkJ0sE2Jj0m0f6yYqujBwIXlId87e234+MxG3D3g7kg==}
+    peerDependencies:
+      react: ^19.2.4
+
+  '@tanstack/react-query@5.95.0':
+    resolution: {integrity: sha512-EMP8B+BK9zvnAemT8M/y3z/WO0NjZ7fIUY3T3wnHYK6AA3qK/k33i7tPgCXCejhX0cd4I6bJIXN2GmjrHjDBzg==}
     peerDependencies:
       react: ^19.2.4
 
@@ -11621,8 +11641,8 @@ packages:
     resolution: {integrity: sha512-zkDT5WAF4hSSoUgyfg5tFIxz8XQK+25W/TLVojJTMKBaxevLBBtLxgqguAuVQB8PVW79FVjHcU+GJ9tVbDZ9mQ==}
     engines: {node: '>=14.16'}
 
-  cacheable@2.3.3:
-    resolution: {integrity: sha512-iffYMX4zxKp54evOH27fm92hs+DeC1DhXmNVN8Tr94M/iZIV42dqTHSR2Ik4TOSPyOAwKr7Yu3rN9ALoLkbWyQ==}
+  cacheable@2.3.4:
+    resolution: {integrity: sha512-djgxybDbw9fL/ZWMI3+CE8ZilNxcwFkVtDc1gJ+IlOSSWkSMPQabhV/XCHTQ6pwwN6aivXPZ43omTooZiX06Ew==}
 
   caf@15.0.1:
     resolution: {integrity: sha512-Xp/IK6vMwujxWZXra7djdYzPdPnEQKa7Mudu2wZgDQ3TJry1I0TgtjEgwZHpoBcMp68j4fb0/FZ1SJyMEgJrXQ==}
@@ -12288,6 +12308,10 @@ packages:
 
   css-tree@3.2.0:
     resolution: {integrity: sha512-t99A4LolkP0ZX9WUoaHz4YrPT1FKNlV8IDCeCPPpGaWyxegh64tt/BSUqN3u5necrYRon+ddZ6mPMjxIlfpobg==}
+    engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0}
+
+  css-tree@3.2.1:
+    resolution: {integrity: sha512-X7sjQzceUhu1u7Y/ylrRZFU2FS6LRiFVp6rKLPg23y3x3c3DOKAwuXGDp+PAGjh6CSnCjYeAul8pcT8bAl+lSA==}
     engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0}
 
   css-what@6.2.2:
@@ -13812,8 +13836,8 @@ packages:
     resolution: {integrity: sha512-f7ccFPK3SXFHpx15UIGyRJ/FJQctuKZ0zVuN3frBo4HnK3cay9VEW0R6yPYFHC0AgqhukPzKjq22t5DmAyqGyw==}
     engines: {node: '>=16'}
 
-  flat-cache@6.1.20:
-    resolution: {integrity: sha512-AhHYqwvN62NVLp4lObVXGVluiABTHapoB57EyegZVmazN+hhGhLTn3uZbOofoTw4DSDvVCadzzyChXhOAvy8uQ==}
+  flat-cache@6.1.21:
+    resolution: {integrity: sha512-2u7cJfSf7Th7NxEk/VzQjnPoglok2YCsevS7TSbJjcDQWJPbqUUnSYtriHSvtnq+fRZHy1s0ugk4ApnQyhPGoQ==}
 
   flat@5.0.2:
     resolution: {integrity: sha512-b6suED+5/3rTpUBdG1gupIl8MPFCAMA0QXwmljLhvCUKcUvdE4gWky9zpuGCcXHOsz4J9wPGNWq6OKpmIzz3hQ==}
@@ -13821,6 +13845,9 @@ packages:
 
   flatted@3.3.4:
     resolution: {integrity: sha512-3+mMldrTAPdta5kjX2G2J7iX4zxtnwpdA8Tr2ZSjkyPSanvbZAcy6flmtnXbEybHrDcU9641lxrMfFuUxVz9vA==}
+
+  flatted@3.4.2:
+    resolution: {integrity: sha512-PjDse7RzhcPkIJwy5t7KPWQSZ9cAbzQXcafsetQoD7sOJRQlGikNbx7yZp2OotDnJyrDcbyRq3Ttb18iYOqkxA==}
 
   flow-enums-runtime@0.0.6:
     resolution: {integrity: sha512-3PYnM29RFXwvAN6Pc/scUfkI7RwhQ/xqyLUyPNlXUp9S40zI8nup9tUSrTLSVnWGBN38FNiGWbwZOB6uR4OGdw==}
@@ -14216,8 +14243,8 @@ packages:
   hash-it@6.0.1:
     resolution: {integrity: sha512-qhl8+l4Zwi1eLlL3lja5ywmDQnBzLEJxd0QJoAVIgZpgQbdtVZrN5ypB0y3VHwBlvAalpcbM2/A6x7oUks5zNg==}
 
-  hashery@1.5.0:
-    resolution: {integrity: sha512-nhQ6ExaOIqti2FDWoEMWARUqIKyjr2VcZzXShrI+A3zpeiuPWzx6iPftt44LhP74E5sW36B75N6VHbvRtpvO6Q==}
+  hashery@1.5.1:
+    resolution: {integrity: sha512-iZyKG96/JwPz1N55vj2Ie2vXbhu440zfUfJvSwEqEbeLluk7NnapfGqa7LH0mOsnDxTF85Mx8/dyR6HfqcbmbQ==}
     engines: {node: '>=20'}
 
   hasown@2.0.2:
@@ -14316,6 +14343,9 @@ packages:
 
   hookified@1.15.1:
     resolution: {integrity: sha512-MvG/clsADq1GPM2KGo2nyfaWVyn9naPiXrqIe4jYjXNZQt238kWyOGrsyc/DmRAQ+Re6yeo6yX/yoNCG5KAEVg==}
+
+  hookified@2.1.0:
+    resolution: {integrity: sha512-ootKng4eaxNxa7rx6FJv2YKef3DuhqbEj3l70oGXwddPQEEnISm50TEZQclqiLTAtilT2nu7TErtCO523hHkyg==}
 
   hosted-git-info@2.8.9:
     resolution: {integrity: sha512-mxIDAb9Lsm6DoOJ7xH+5+X4y1LU/4Hi50L9C5sIswK3JzULS4bwk1FvjdBgvYR4bzT4tuUQiC15FE2f5HbLvYw==}
@@ -15489,7 +15519,6 @@ packages:
     resolution: {integrity: sha512-Quz3MvAwHxVYNXsOByL7xI5EB2WYOeFswqaHIA3qOK3isRWTxiplBEocmmru6XmxDB2L7jDNYtYA4FyimoAFEw==}
     engines: {node: '>=8.17.0'}
     hasBin: true
-    bundledDependencies: []
 
   jsonfile@6.2.0:
     resolution: {integrity: sha512-FGuPw30AdOIUTRMC2OMRtQV+jkVj2cfPqSeWXv1NEAJ1qZ5zb1X6z1mFhbfOB/iy3ssJCD+3KuZ8r8C3uVFlAg==}
@@ -16661,6 +16690,11 @@ packages:
 
   nanoid@5.1.6:
     resolution: {integrity: sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==}
+    engines: {node: ^18 || >=20}
+    hasBin: true
+
+  nanoid@5.1.7:
+    resolution: {integrity: sha512-ua3NDgISf6jdwezAheMOk4mbE1LXjm1DfMUDMuJf4AqxLFK3ccGpgWizwa5YV7Yz9EpXwEaWoRXSb/BnV0t5dQ==}
     engines: {node: ^18 || >=20}
     hasBin: true
 
@@ -18094,8 +18128,8 @@ packages:
     resolution: {integrity: sha512-KTqnxsgGiQ6ZAzZCVlJH5eOjSnvlyEgx1m8bkRJfOhmGRqfo5KLvmAlACQkrjEtOQ4B7wF9TdSLIs9O90MX9xA==}
     engines: {node: '>=16.0.0'}
 
-  qified@0.6.0:
-    resolution: {integrity: sha512-tsSGN1x3h569ZSU1u6diwhltLyfUWDp3YbFHedapTmpBl0B3P6U3+Qptg7xu+v+1io1EwhdPyyRHYbEw0KN2FA==}
+  qified@0.9.0:
+    resolution: {integrity: sha512-4q61YgkHbY6gmwkqm0BsxyLDO3UYdrdiJTJ7JiaZb3xpW1duxn135SB7KqUEkCiuu5O4W+TtwEWP2VjmSRanvA==}
     engines: {node: '>=20'}
 
   qrcode-terminal@0.11.0:
@@ -21424,7 +21458,7 @@ snapshots:
       '@babel/core': 7.29.0
       '@babel/generator': 7.29.1
       '@babel/parser': 7.29.0
-      '@babel/runtime': 7.28.6
+      '@babel/runtime': 7.29.2
       '@babel/traverse': 7.29.0
       '@babel/types': 7.29.0
       babel-preset-fbjs: 3.4.0(@babel/core@7.29.0)
@@ -21447,7 +21481,7 @@ snapshots:
     dependencies:
       '@babel/generator': 7.29.1
       '@babel/parser': 7.29.0
-      '@babel/runtime': 7.28.6
+      '@babel/runtime': 7.29.2
       chalk: 4.1.2
       fb-watchman: 2.0.2
       graphql: 16.13.1
@@ -22881,6 +22915,8 @@ snapshots:
 
   '@babel/runtime@7.28.6': {}
 
+  '@babel/runtime@7.29.2': {}
+
   '@babel/template@7.28.6':
     dependencies:
       '@babel/code-frame': 7.29.0
@@ -22948,7 +22984,7 @@ snapshots:
 
   '@cacheable/utils@2.4.0':
     dependencies:
-      hashery: 1.5.0
+      hashery: 1.5.1
       keyv: 5.6.0
     optional: true
 
@@ -23068,6 +23104,11 @@ snapshots:
       '@csstools/css-tokenizer': 4.0.0
 
   '@csstools/css-syntax-patches-for-csstree@1.0.29': {}
+
+  '@csstools/css-syntax-patches-for-csstree@1.1.1(css-tree@3.2.1)':
+    optionalDependencies:
+      css-tree: 3.2.1
+    optional: true
 
   '@csstools/css-tokenizer@3.0.4': {}
 
@@ -26114,7 +26155,7 @@ snapshots:
 
   '@keyv/bigmap@1.3.1(keyv@5.6.0)':
     dependencies:
-      hashery: 1.5.0
+      hashery: 1.5.1
       hookified: 1.15.1
       keyv: 5.6.0
     optional: true
@@ -28754,7 +28795,7 @@ snapshots:
 
   '@slorber/react-helmet-async@1.3.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
-      '@babel/runtime': 7.28.6
+      '@babel/runtime': 7.29.2
       invariant: 2.2.4
       prop-types: 15.8.1
       react: 19.2.4
@@ -29543,17 +29584,24 @@ snapshots:
 
   '@tanstack/query-core@5.90.20': {}
 
+  '@tanstack/query-core@5.95.0': {}
+
   '@tanstack/query-devtools@5.95.0': {}
 
-  '@tanstack/react-query-devtools@5.95.0(@tanstack/react-query@5.90.21(react@19.2.4))(react@19.2.4)':
+  '@tanstack/react-query-devtools@5.95.0(@tanstack/react-query@5.95.0(react@19.2.4))(react@19.2.4)':
     dependencies:
       '@tanstack/query-devtools': 5.95.0
-      '@tanstack/react-query': 5.90.21(react@19.2.4)
+      '@tanstack/react-query': 5.95.0(react@19.2.4)
       react: 19.2.4
 
   '@tanstack/react-query@5.90.21(react@19.2.4)':
     dependencies:
       '@tanstack/query-core': 5.90.20
+      react: 19.2.4
+
+  '@tanstack/react-query@5.95.0(react@19.2.4)':
+    dependencies:
+      '@tanstack/query-core': 5.95.0
       react: 19.2.4
 
   '@tanstack/react-virtual@3.13.19(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
@@ -29685,7 +29733,7 @@ snapshots:
   '@testing-library/dom@10.4.1':
     dependencies:
       '@babel/code-frame': 7.29.0
-      '@babel/runtime': 7.28.6
+      '@babel/runtime': 7.29.2
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
       dom-accessibility-api: 0.5.16
@@ -31899,7 +31947,7 @@ snapshots:
       node-abort-controller: 3.1.1
       semver: 7.7.4
       tslib: 2.8.1
-      uuid: nanoid@5.1.6
+      uuid: nanoid@5.1.7
     transitivePeerDependencies:
       - supports-color
 
@@ -32007,13 +32055,13 @@ snapshots:
       normalize-url: 8.1.1
       responselike: 3.0.0
 
-  cacheable@2.3.3:
+  cacheable@2.3.4:
     dependencies:
       '@cacheable/memory': 2.0.8
       '@cacheable/utils': 2.4.0
       hookified: 1.15.1
       keyv: 5.6.0
-      qified: 0.6.0
+      qified: 0.9.0
     optional: true
 
   caf@15.0.1: {}
@@ -32762,6 +32810,12 @@ snapshots:
     dependencies:
       mdn-data: 2.27.1
       source-map-js: 1.2.1
+
+  css-tree@3.2.1:
+    dependencies:
+      mdn-data: 2.27.1
+      source-map-js: 1.2.1
+    optional: true
 
   css-what@6.2.2: {}
 
@@ -34633,7 +34687,7 @@ snapshots:
 
   file-entry-cache@11.1.2:
     dependencies:
-      flat-cache: 6.1.20
+      flat-cache: 6.1.21
     optional: true
 
   file-entry-cache@8.0.0:
@@ -34740,16 +34794,19 @@ snapshots:
       flatted: 3.3.4
       keyv: 4.5.4
 
-  flat-cache@6.1.20:
+  flat-cache@6.1.21:
     dependencies:
-      cacheable: 2.3.3
-      flatted: 3.3.4
+      cacheable: 2.3.4
+      flatted: 3.4.2
       hookified: 1.15.1
     optional: true
 
   flat@5.0.2: {}
 
   flatted@3.3.4: {}
+
+  flatted@3.4.2:
+    optional: true
 
   flow-enums-runtime@0.0.6: {}
 
@@ -34871,7 +34928,7 @@ snapshots:
       https-proxy-agent: 7.0.6
       is-stream: 2.0.1
       node-fetch: 2.7.0(encoding@0.1.13)
-      uuid: nanoid@5.1.6
+      uuid: nanoid@5.1.7
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -35195,7 +35252,7 @@ snapshots:
 
   hash-it@6.0.1: {}
 
-  hashery@1.5.0:
+  hashery@1.5.1:
     dependencies:
       hookified: 1.15.1
     optional: true
@@ -35364,6 +35421,9 @@ snapshots:
   hono@4.11.4: {}
 
   hookified@1.15.1:
+    optional: true
+
+  hookified@2.1.0:
     optional: true
 
   hosted-git-info@2.8.9: {}
@@ -36056,7 +36116,7 @@ snapshots:
       node-int64: 0.4.0
       opentracing: 0.14.7
       thriftrw: 3.11.4
-      uuid: nanoid@5.1.6
+      uuid: nanoid@5.1.7
       xorshift: 1.2.0
 
   javascript-stringify@2.1.0: {}
@@ -38074,7 +38134,7 @@ snapshots:
       roughjs: 4.6.6
       stylis: 4.3.6
       ts-dedent: 2.2.0
-      uuid: nanoid@5.1.6
+      uuid: nanoid@5.1.7
 
   meshline@3.3.1(three@0.182.0):
     dependencies:
@@ -39046,6 +39106,8 @@ snapshots:
   nanoid@3.3.11: {}
 
   nanoid@5.1.6: {}
+
+  nanoid@5.1.7: {}
 
   napi-build-utils@2.0.0:
     optional: true
@@ -40582,9 +40644,9 @@ snapshots:
 
   pvutils@1.1.5: {}
 
-  qified@0.6.0:
+  qified@0.9.0:
     dependencies:
-      hookified: 1.15.1
+      hookified: 2.1.0
     optional: true
 
   qrcode-terminal@0.11.0: {}
@@ -41141,7 +41203,7 @@ snapshots:
 
   react-textarea-autosize@8.5.9(@types/react@19.2.14)(react@19.2.4):
     dependencies:
-      '@babel/runtime': 7.28.6
+      '@babel/runtime': 7.29.2
       react: 19.2.4
       use-composed-ref: 1.4.0(@types/react@19.2.14)(react@19.2.4)
       use-latest: 1.3.0(@types/react@19.2.14)(react@19.2.4)
@@ -41335,7 +41397,7 @@ snapshots:
 
   redux@4.2.1:
     dependencies:
-      '@babel/runtime': 7.28.6
+      '@babel/runtime': 7.29.2
 
   redux@5.0.1: {}
 
@@ -41414,7 +41476,7 @@ snapshots:
 
   relay-runtime@12.0.0(encoding@0.1.13):
     dependencies:
-      '@babel/runtime': 7.28.6
+      '@babel/runtime': 7.29.2
       fbjs: 3.0.5(encoding@0.1.13)
       invariant: 2.2.4
     transitivePeerDependencies:
@@ -42120,7 +42182,7 @@ snapshots:
   sockjs@0.3.24:
     dependencies:
       faye-websocket: 0.11.4
-      uuid: nanoid@5.1.6
+      uuid: nanoid@5.1.7
       websocket-driver: 0.7.4
 
   socks-proxy-agent@8.0.5:
@@ -42509,7 +42571,7 @@ snapshots:
     dependencies:
       '@csstools/css-calc': 3.1.1(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
-      '@csstools/css-syntax-patches-for-csstree': 1.0.29
+      '@csstools/css-syntax-patches-for-csstree': 1.1.1(css-tree@3.2.1)
       '@csstools/css-tokenizer': 4.0.0
       '@csstools/media-query-list-parser': 5.0.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/selector-resolve-nested': 4.0.0(postcss-selector-parser@7.1.1)
@@ -42517,7 +42579,7 @@ snapshots:
       colord: 2.9.3
       cosmiconfig: 9.0.1(typescript@5.9.3)
       css-functions-list: 3.3.3
-      css-tree: 3.2.0
+      css-tree: 3.2.1
       debug: 4.4.3
       fast-glob: 3.3.3
       fastest-levenshtein: 1.0.16
@@ -44388,7 +44450,7 @@ snapshots:
   xcode@3.0.1:
     dependencies:
       simple-plist: 1.3.1
-      uuid: nanoid@5.1.6
+      uuid: nanoid@5.1.7
 
   xdg-basedir@5.1.0: {}
 
