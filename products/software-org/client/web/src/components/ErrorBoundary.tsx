@@ -27,6 +27,8 @@ import { captureError } from '@/lib/sentry';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  resetKeys?: Array<string | number>;
 }
 
 interface State {
@@ -70,12 +72,28 @@ export class ErrorBoundary extends Component<Props, State> {
       errorInfo,
     });
 
+    this.props.onError?.(error, errorInfo);
+
     // Send to Sentry
     captureError(error, {
       react: {
         componentStack: errorInfo.componentStack,
       },
     });
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    const { resetKeys } = this.props;
+    const prevResetKeys = prevProps.resetKeys;
+
+    if (
+      resetKeys &&
+      prevResetKeys &&
+      resetKeys.length === prevResetKeys.length &&
+      resetKeys.some((key, index) => key !== prevResetKeys[index])
+    ) {
+      this.handleReset();
+    }
   }
 
   handleReset = () => {
@@ -163,3 +181,5 @@ export function useErrorHandler() {
 
   return setError;
 }
+
+export default ErrorBoundary;

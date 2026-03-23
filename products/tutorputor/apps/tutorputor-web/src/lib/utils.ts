@@ -1,9 +1,9 @@
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
 /**
- * Re-exports shared utilities from the canonical shared package.
- *
- * Keeping this re-export module preserves all existing '\@/lib/utils' import
- * paths while the actual implementation lives in one authoritative location.
- *
- * @see @ghatana/tutorputor-ui-shared
+ * Utility function to merge Tailwind CSS classes
  */
-export { cn } from '@tutorputor/ui-shared';
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}

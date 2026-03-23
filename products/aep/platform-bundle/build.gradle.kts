@@ -23,6 +23,7 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:domain"))
     api(project(":platform:java:workflow"))
+    api(project(":products:aep:platform-contracts"))
     api(project(":products:aep:platform-core"))
     api(project(":products:aep:platform-agent"))
     api(project(":platform:java:agent-core"))

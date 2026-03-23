@@ -27,7 +27,7 @@
       "@tutorputor/simulation-engine": ["./libs/simulation-engine/src"],
       "@tutorputor/tracing": ["./libs/tracing"],
       "@tutorputor/tutorputor-db": ["./libs/tutorputor-db/src"],
-      "@ghatana/ui": ["../platform/ui/src"],
+      "@ghatana/design-system": ["../../platform/typescript/capabilities/design-system/src/index.ts"],
       "@ghatana/theme": ["../platform/theme/src"]
     },
     "typeRoots": ["./node_modules/@types", "./types"],

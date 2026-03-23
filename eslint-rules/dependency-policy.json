@@ -7,35 +7,31 @@
   "productBoundaries": {
     "yappc": {
       "allowedImports": ["yappc", "platform", "shared-services"],
-      "disallowedImports": ["flashit", "tutorputor", "data-cloud", "dcmaar", "audio-video", "aep", "app-platform"]
+      "disallowedImports": ["flashit", "tutorputor", "data-cloud", "dcmaar", "audio-video", "aep"]
     },
     "flashit": {
       "allowedImports": ["flashit", "platform", "shared-services"],
-      "disallowedImports": ["yappc", "tutorputor", "data-cloud", "dcmaar", "audio-video", "aep", "app-platform"]
+      "disallowedImports": ["yappc", "tutorputor", "data-cloud", "dcmaar", "audio-video", "aep"]
     },
     "tutorputor": {
       "allowedImports": ["tutorputor", "platform", "shared-services"],
-      "disallowedImports": ["yappc", "flashit", "data-cloud", "dcmaar", "audio-video", "aep", "app-platform"]
+      "disallowedImports": ["yappc", "flashit", "data-cloud", "dcmaar", "audio-video", "aep"]
     },
     "data-cloud": {
       "allowedImports": ["data-cloud", "platform", "shared-services"],
-      "disallowedImports": ["yappc", "flashit", "tutorputor", "dcmaar", "audio-video", "aep", "app-platform"]
+      "disallowedImports": ["yappc", "flashit", "tutorputor", "dcmaar", "audio-video", "aep"]
     },
     "dcmaar": {
       "allowedImports": ["dcmaar", "platform", "shared-services"],
-      "disallowedImports": ["yappc", "flashit", "tutorputor", "data-cloud", "audio-video", "aep", "app-platform"]
+      "disallowedImports": ["yappc", "flashit", "tutorputor", "data-cloud", "audio-video", "aep"]
     },
     "audio-video": {
       "allowedImports": ["audio-video", "platform", "shared-services"],
-      "disallowedImports": ["yappc", "flashit", "tutorputor", "data-cloud", "dcmaar", "aep", "app-platform"]
+      "disallowedImports": ["yappc", "flashit", "tutorputor", "data-cloud", "dcmaar", "aep"]
     },
     "aep": {
       "allowedImports": ["aep", "platform", "shared-services"],
-      "disallowedImports": ["yappc", "flashit", "tutorputor", "data-cloud", "dcmaar", "audio-video", "app-platform"]
-    },
-    "app-platform": {
-      "allowedImports": ["app-platform", "platform", "shared-services"],
-      "disallowedImports": ["yappc", "flashit", "tutorputor", "data-cloud", "dcmaar", "audio-video", "aep"]
+      "disallowedImports": ["yappc", "flashit", "tutorputor", "data-cloud", "dcmaar", "audio-video"]
     }
   },
 
@@ -166,6 +162,12 @@
     },
     "@ghatana/yappc-canvas": {
       "replacement": "@yappc/canvas",
+      "migrationGuide": "/docs/migrations/yappc-naming-consolidation.md",
+      "sunsetDate": "2025-06-30",
+      "severity": "error"
+    },
+    "@ghatana/yappc-component-traceability": {
+      "replacement": "@yappc/ui/traceability",
       "migrationGuide": "/docs/migrations/yappc-naming-consolidation.md",
       "sunsetDate": "2025-06-30",
       "severity": "error"

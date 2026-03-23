@@ -1,75 +1,186 @@
 #!/bin/bash
 #
-# Check for deprecated @ghatana/ui usage in the repository
-# This script is used by CI to prevent new deprecated usage from landing
+# Check for deprecated package usage in active code and config surfaces.
+# This script is used by CI to prevent removed compatibility packages from
+# re-entering the repository through imports, aliases, or manifest entries.
 #
 
-set -e
+set -euo pipefail
 
-DEPRECATED_PACKAGE="@ghatana/ui"
+DEPRECATED_PACKAGES=(
+    "@ghatana/ui"
+    "@ghatana/yappc-component-traceability"
+    "@yappc/component-traceability"
+)
+
 EXIT_CODE=0
+USE_RG=0
 
-echo "🔍 Checking for deprecated ${DEPRECATED_PACKAGE} usage..."
-
-# Check 1: TypeScript/TSX imports
-echo ""
-echo "Checking TypeScript/TSX imports..."
-if rg "${DEPRECATED_PACKAGE}" --type ts --type tsx --no-heading --line-number -n; then
-    echo ""
-    echo "❌ Found ${DEPRECATED_PACKAGE} imports in TypeScript/TSX files"
-    EXIT_CODE=1
-else
-    echo "✅ No ${DEPRECATED_PACKAGE} imports in TypeScript/TSX files"
+if command -v rg >/dev/null 2>&1; then
+    USE_RG=1
 fi
 
-# Check 2: Package.json dependencies
-echo ""
-echo "Checking package.json dependencies..."
-if rg "\"${DEPRECATED_PACKAGE}\":" --type json -g 'package.json' --no-heading --line-number -n; then
-    echo ""
-    echo "❌ Found ${DEPRECATED_PACKAGE} in package.json dependencies"
-    EXIT_CODE=1
-else
-    echo "✅ No ${DEPRECATED_PACKAGE} in package.json dependencies"
-fi
+find_files() {
+    local mode="$1"
 
-# Check 3: Tailwind config references
-echo ""
-echo "Checking Tailwind config references..."
-if rg "${DEPRECATED_PACKAGE}" -g 'tailwind.config.*' --no-heading --line-number -n; then
-    echo ""
-    echo "❌ Found ${DEPRECATED_PACKAGE} in Tailwind configs"
-    EXIT_CODE=1
-else
-    echo "✅ No ${DEPRECATED_PACKAGE} in Tailwind configs"
-fi
+    case "$mode" in
+        source)
+            git ls-files \
+                'products/**/*.ts' 'products/**/*.tsx' 'products/**/*.js' 'products/**/*.jsx' \
+                'platform/**/*.ts' 'platform/**/*.tsx' 'platform/**/*.js' 'platform/**/*.jsx' \
+                'shared-services/**/*.ts' 'shared-services/**/*.tsx' 'shared-services/**/*.js' 'shared-services/**/*.jsx' \
+                'apps/**/*.ts' 'apps/**/*.tsx' 'apps/**/*.js' 'apps/**/*.jsx'
+            ;;
+        manifest)
+            git ls-files 'products/**/package.json' 'platform/**/package.json' 'shared-services/**/package.json' 'apps/**/package.json'
+            ;;
+        tsconfig)
+            git ls-files 'products/**/tsconfig*.json' 'platform/**/tsconfig*.json' 'shared-services/**/tsconfig*.json' 'apps/**/tsconfig*.json'
+            ;;
+        bundler)
+            git ls-files \
+                'products/**/vite.config.*' 'products/**/tailwind.config.*' \
+                'platform/**/vite.config.*' 'platform/**/tailwind.config.*' \
+                'shared-services/**/vite.config.*' 'shared-services/**/tailwind.config.*' \
+                'apps/**/vite.config.*' 'apps/**/tailwind.config.*'
+            ;;
+    esac
+}
 
-# Check 4: Check pnpm lockfile for workspace dependencies
-echo ""
-echo "Checking pnpm-lock.yaml for workspace references..."
-if rg "${DEPRECATED_PACKAGE}@" pnpm-lock.yaml --no-heading --line-number -n | head -20; then
-    echo ""
-    echo "⚠️  Found ${DEPRECATED_PACKAGE} references in pnpm-lock.yaml"
-    echo "   (This may be acceptable if consumers still exist during migration)"
-fi
+existing_files() {
+    while IFS= read -r file; do
+        if [ -f "$file" ]; then
+            printf '%s\0' "$file"
+        fi
+    done
+}
 
-if [ $EXIT_CODE -eq 0 ]; then
+run_search() {
+    local pattern="$1"
+    local mode="$2"
+
+    if [ "$USE_RG" -eq 1 ]; then
+        case "$mode" in
+            source)
+                rg "$pattern" --type ts --type tsx --type js --type jsx \
+                    -g '!**/node_modules/**' -g '!**/build/**' -g '!**/dist/**' -g '!**/coverage/**' \
+                    products platform shared-services apps --no-heading --line-number -n
+                ;;
+            manifest)
+                rg "\"${pattern}\"" --type json -g 'package.json' -g '!**/node_modules/**' \
+                    products platform shared-services apps --no-heading --line-number -n
+                ;;
+            tsconfig)
+                rg "$pattern" -g 'tsconfig*.json' -g '!**/node_modules/**' \
+                    products platform shared-services apps --no-heading --line-number -n
+                ;;
+            bundler)
+                rg "$pattern" -g 'vite.config.*' -g 'tailwind.config.*' -g '!**/node_modules/**' \
+                    products platform shared-services apps --no-heading --line-number -n
+                ;;
+            lockfile)
+                rg "${pattern}@" pnpm-lock.yaml --no-heading --line-number -n
+                ;;
+        esac
+        return
+    fi
+
+    case "$mode" in
+        source)
+            find_files source | existing_files | xargs -0 grep -En "$pattern"
+            ;;
+        manifest)
+            find_files manifest | existing_files | xargs -0 grep -En "$pattern"
+            ;;
+        tsconfig)
+            find_files tsconfig | existing_files | xargs -0 grep -En "$pattern"
+            ;;
+        bundler)
+            find_files bundler | existing_files | xargs -0 grep -En "$pattern"
+            ;;
+        lockfile)
+            grep -En "${pattern}@" pnpm-lock.yaml
+            ;;
+    esac
+}
+
+build_source_pattern() {
+    local pkg="$1"
+    printf "^[[:space:]]*(import|export)[^;]*['\"]%s([^'\"]*)?['\"]|require\\(['\"]%s([^'\"]*)?['\"]\\)" "$pkg" "$pkg"
+}
+
+build_exact_config_pattern() {
+    local pkg="$1"
+    printf "['\"]%s(['\"]|/|\\*)" "$pkg"
+}
+
+check_pattern() {
+    local label="$1"
+    local pattern="$2"
+    local mode="$3"
+
     echo ""
-    echo "✅ All checks passed - no new deprecated usage detected"
+    echo "Checking ${label}..."
+    if run_search "$pattern" "$mode"; then
+        echo ""
+        echo "❌ Found deprecated package usage in ${label}"
+        EXIT_CODE=1
+    else
+        echo "✅ No deprecated package usage in ${label}"
+    fi
+}
+
+for deprecated_package in "${DEPRECATED_PACKAGES[@]}"; do
+    echo ""
+    echo "🔍 Checking for deprecated ${deprecated_package} usage..."
+
+    check_pattern \
+        "TypeScript and JavaScript sources" \
+        "$(build_source_pattern "${deprecated_package}")" \
+        source
+
+    check_pattern \
+        "package manifests" \
+        "$(build_exact_config_pattern "${deprecated_package}")" \
+        manifest
+
+    check_pattern \
+        "TypeScript path aliases" \
+        "$(build_exact_config_pattern "${deprecated_package}")" \
+        tsconfig
+
+    check_pattern \
+        "Vite and Tailwind configs" \
+        "$(build_exact_config_pattern "${deprecated_package}")" \
+        bundler
+
+    echo ""
+    echo "Checking pnpm-lock.yaml for ${deprecated_package} references..."
+    if run_search "${deprecated_package}" lockfile | head -20; then
+        echo ""
+        echo "⚠️  Found ${deprecated_package} references in pnpm-lock.yaml"
+        echo "   Refresh the lockfile if this package becomes active again in the graph."
+    else
+        echo "✅ No ${deprecated_package} references in pnpm-lock.yaml"
+    fi
+done
+
+if [ "$EXIT_CODE" -eq 0 ]; then
+    echo ""
+    echo "✅ All checks passed - no deprecated package usage detected"
 else
     echo ""
-    echo "═══════════════════════════════════════════════════════════════"
+    echo "==============================================================="
     echo "  ❌ DEPRECATED PACKAGE USAGE DETECTED"
-    echo "═══════════════════════════════════════════════════════════════"
+    echo "==============================================================="
     echo ""
-    echo "  Found usage of ${DEPRECATED_PACKAGE}"
+    echo "  Migration paths:"
+    echo "    - @ghatana/ui -> @ghatana/design-system"
+    echo "    - @ghatana/yappc-component-traceability -> @yappc/ui/traceability"
+    echo "    - @yappc/component-traceability -> @yappc/ui/traceability"
     echo ""
-    echo "  Migration path:"
-    echo "    - UI components → @ghatana/design-system"
-    echo "    - Product-specific UI → product-local packages"
-    echo ""
-    echo "  See: docs/PLATFORM_SHARED_LIBRARIES_REMAINING_WORK_PLAN_2026-03-14.md"
-    echo "═══════════════════════════════════════════════════════════════"
+    echo "  See: docs/execution-plans/MONOREPO_BOUNDARY_EXECUTION_PLAN_2026-03-22.md"
+    echo "==============================================================="
 fi
 
-exit $EXIT_CODE
+exit "$EXIT_CODE"

@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { WorkItemSummary, WorkItemStatus, WorkItemType } from '@/types/workItem';
-import { useItems, usePhases, mockPhases } from '@ghatana/yappc-store/devsecops';
-import type { Item as DevSecOpsStoreItem, PhaseKey } from '@yappc/core/types/devsecops';
+import { defaultDevSecOpsPhases } from '@/features/devsecops/types';
+import type { DevSecOpsPhase, Item as DevSecOpsStoreItem, PhaseKey } from '@/features/devsecops/types';
 import { mapWorkItemStatusToDevSecOpsStatus, mapWorkItemPriorityToDevSecOpsPriority, inferDevSecOpsPhaseIdFromWorkItemStatus } from './mapWorkItemToDevSecOpsItem';
 import type { DevSecOpsPhaseId } from '@/config/devsecopsEngineerFlow';
 
@@ -78,12 +78,12 @@ function mapSummaryToStoreItem(summary: WorkItemSummary): DevSecOpsStoreItem {
 }
 
 export function useDevSecOpsStoreFromWorkItems(workItems: WorkItemSummary[] | undefined) {
-    const [currentItems, setItems] = useItems();
-    const [phases, setPhases] = usePhases();
+    const [currentItems, setItems] = useState<DevSecOpsStoreItem[]>([]);
+    const [phases, setPhases] = useState<DevSecOpsPhase[]>(defaultDevSecOpsPhases);
 
     useEffect(() => {
         if (!phases || phases.length === 0) {
-            setPhases(mockPhases);
+            setPhases(defaultDevSecOpsPhases);
         }
     }, [phases, setPhases]);
 
@@ -115,4 +115,9 @@ export function useDevSecOpsStoreFromWorkItems(workItems: WorkItemSummary[] | un
 
         setItems(nextItems);
     }, [workItems, setItems, currentItems]);
+
+    return {
+        items: currentItems,
+        phases,
+    };
 }

@@ -1,0 +1,53 @@
+name: Monorepo Boundary Check
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+  push:
+    branches: [main, master, develop]
+
+jobs:
+  boundary-check:
+    name: Boundary Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check deprecated package usage
+        run: ./scripts/check-deprecated-ui.sh
+
+      - name: Check package dependency policy
+        run: node scripts/check-architecture-compliance.js
+
+      - name: Check cross-product Gradle dependencies
+        run: bash scripts/check-cross-product-deps.sh
+
+      - name: Verify Data-Cloud UI remains product-local
+        run: |
+          if rg '@yappc/' products/data-cloud/ui/package.json --no-heading --line-number -n; then
+            echo 'ERROR: Data-Cloud UI depends on YAPPC packages'
+            exit 1
+          fi
+
+      - name: Verify shared-service ownership files
+        run: |
+          for dir in shared-services/*/; do
+            if [ ! -f "${dir}OWNER.md" ]; then
+              echo "ERROR: ${dir} missing OWNER.md"
+              exit 1
+            fi
+          done

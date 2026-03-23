@@ -213,12 +213,11 @@ export default defineConfig({
       '@ghatana/yappc-code-editor': path.resolve(__dirname, '../libs/code-editor/src'),
       '@ghatana/yappc-layout': path.resolve(__dirname, '../libs/layout/src'),
       '@ghatana/yappc-live-preview-server': path.resolve(__dirname, '../libs/live-preview-server/src'),
-      '@ghatana/yappc-component-traceability': path.resolve(__dirname, '../libs/component-traceability/src'),
       '@ghatana/yappc-vite-plugin-live-edit': path.resolve(__dirname, '../libs/vite-plugin-live-edit/src'),
       '@ghatana/yappc-realtime': path.resolve(__dirname, '../../../../platform/typescript/realtime/src/index.ts'),
 
       // Platform shared packages used by YAPPC and transitive UI deps
-      '@ghatana/design-system': path.resolve(__dirname, '../../../../platform/typescript/ui/src/index.ts'),
+      '@ghatana/design-system': path.resolve(__dirname, '../../../../platform/typescript/capabilities/design-system/src/index.ts'),
       '@ghatana/theme': path.resolve(__dirname, '../../../../platform/typescript/theme/src/index.ts'),
       '@ghatana/charts': path.resolve(__dirname, '../../../../platform/typescript/charts/src/index.ts'),
       '@ghatana/platform-utils': path.resolve(__dirname, '../../../../platform/typescript/utils/src/index.ts'),

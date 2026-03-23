@@ -24,7 +24,7 @@ export default defineConfig({
         manualChunks: {
           // Separate vendor chunks for better caching
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['@ghatana/ui', '@ghatana/theme', '@ghatana/tokens'],
+          'vendor-ui': ['@ghatana/design-system', '@ghatana/theme', '@ghatana/tokens'],
           'vendor-data': ['@tanstack/react-query', 'zod'],
           'vendor-charts': ['recharts', '@ghatana/charts'],
           'vendor-simulation': ['@tutorputor/simulation'],

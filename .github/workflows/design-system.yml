@@ -48,7 +48,7 @@ jobs:
           node-version: 20
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @ghatana/ui type-check
+      - run: pnpm --filter @ghatana/design-system type-check
       - run: pnpm --filter @ghatana/theme type-check
       - run: pnpm --filter @ghatana/storybook storybook:build
       - run: pnpm --filter @ghatana/storybook storybook:test

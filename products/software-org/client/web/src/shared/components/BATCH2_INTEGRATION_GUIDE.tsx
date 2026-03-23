@@ -4,7 +4,7 @@ import { CommandPalette } from './CommandPalette';
 import { SearchBar } from './SearchBar';
 import { NotificationCenter } from './NotificationCenter';
 import { NavigationSidebar } from './NavigationSidebar';
-import { ErrorBoundary } from './ErrorBoundary';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SettingsPanel } from './SettingsPanel';
 import { AppHeader } from './AppHeader';
 

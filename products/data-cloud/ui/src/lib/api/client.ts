@@ -1,16 +1,14 @@
 /**
  * API Client Configuration
- * 
+ *
  * Centralized API client for data-cloud UI. Provides typed endpoints
  * for collections, workflows, and other resources.
- * 
+ *
  * @doc.type service
  * @doc.purpose API client configuration and utilities
  * @doc.layer frontend
  * @doc.pattern Repository Pattern
  */
-
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 /**
  * API Response wrapper
@@ -52,102 +50,157 @@ export interface ApiClientConfig {
 }
 
 /**
- * Create configured axios instance
+ * Request options accepted by the API client.
  */
-function createAxiosInstance(config: ApiClientConfig): AxiosInstance {
-    const instance = axios.create({
-        baseURL: config.baseUrl,
-        timeout: config.timeout ?? 30000,
-        headers: {
-            'Content-Type': 'application/json',
-            ...config.headers,
-        },
-    });
-
-    // Request interceptor for auth
-    instance.interceptors.request.use(
-        (requestConfig) => {
-            // Add auth token if available
-            const token = localStorage.getItem('auth_token');
-            if (token && requestConfig.headers) {
-                requestConfig.headers.Authorization = `Bearer ${token}`;
-            }
-            return requestConfig;
-        },
-        (error) => Promise.reject(error)
-    );
-
-    // Response interceptor for error handling
-    instance.interceptors.response.use(
-        (response) => response,
-        (error) => {
-            if (error.response) {
-                const apiError: ApiError = {
-                    code: error.response.data?.code ?? 'UNKNOWN_ERROR',
-                    message: error.response.data?.message ?? error.message,
-                    details: error.response.data?.details,
-                    status: error.response.status,
-                };
-                return Promise.reject(apiError);
-            }
-            return Promise.reject({
-                code: 'NETWORK_ERROR',
-                message: error.message ?? 'Network error occurred',
-            });
-        }
-    );
-
-    return instance;
+export interface ApiRequestConfig extends Omit<RequestInit, 'body' | 'headers'> {
+    body?: BodyInit | null;
+    headers?: Record<string, string>;
+    params?: object;
+    responseType?: 'json' | 'text' | 'blob';
 }
 
 /**
  * API Client class
  */
 export class ApiClient {
-    private axios: AxiosInstance;
+    private readonly baseUrl: string;
+    private readonly timeout: number;
+    private readonly defaultHeaders: Record<string, string>;
 
     constructor(config: ApiClientConfig) {
-        this.axios = createAxiosInstance(config);
+        this.baseUrl = config.baseUrl;
+        this.timeout = config.timeout ?? 30000;
+        this.defaultHeaders = {
+            'Content-Type': 'application/json',
+            ...config.headers,
+        };
+    }
+
+    private createHeaders(extraHeaders?: Record<string, string>): Headers {
+        const headers = new Headers({
+            ...this.defaultHeaders,
+            ...extraHeaders,
+        });
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            headers.set('Authorization', `Bearer ${token}`);
+        }
+        return headers;
+    }
+
+    private async request<T>(url: string, config: ApiRequestConfig = {}): Promise<T> {
+        const controller = new AbortController();
+        const timeoutHandle = window.setTimeout(() => controller.abort(), this.timeout);
+        const requestUrl = new URL(`${this.baseUrl}${url}`, window.location.origin);
+
+        if (config.params) {
+            for (const [key, value] of Object.entries(config.params)) {
+                if (value != null) {
+                    requestUrl.searchParams.set(key, String(value));
+                }
+            }
+        }
+
+        try {
+            const response = await fetch(requestUrl.toString(), {
+                ...config,
+                headers: this.createHeaders(config.headers),
+                signal: controller.signal,
+            });
+
+            const responseType = config.responseType ?? 'json';
+            const contentType = response.headers.get('content-type') ?? '';
+            const payload = responseType === 'blob'
+                ? await response.blob()
+                : responseType === 'text'
+                    ? await response.text()
+                    : contentType.includes('application/json')
+                        ? await response.json()
+                        : await response.text();
+
+            if (!response.ok) {
+                const details = typeof payload === 'object' && payload !== null ? payload as Record<string, unknown> : undefined;
+                throw {
+                    code: details?.code ?? 'UNKNOWN_ERROR',
+                    message: (details?.message as string | undefined) ?? response.statusText,
+                    details,
+                    status: response.status,
+                } as ApiError;
+            }
+
+            return payload as T;
+        } catch (error) {
+            if ((error as DOMException).name === 'AbortError') {
+                throw {
+                    code: 'TIMEOUT',
+                    message: 'Request timed out',
+                } as ApiError;
+            }
+
+            if ((error as ApiError).code) {
+                throw error;
+            }
+
+            throw {
+                code: 'NETWORK_ERROR',
+                message: error instanceof Error ? error.message : 'Network error occurred',
+            } as ApiError;
+        } finally {
+            window.clearTimeout(timeoutHandle);
+        }
     }
 
     /**
      * GET request
      */
-    async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-        const response: AxiosResponse<T> = await this.axios.get(url, config);
-        return response.data;
+    async get<T>(url: string, config?: ApiRequestConfig): Promise<T> {
+        return this.request<T>(url, {
+            ...config,
+            method: 'GET',
+        });
     }
 
     /**
      * POST request
      */
-    async post<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
-        const response: AxiosResponse<T> = await this.axios.post(url, data, config);
-        return response.data;
+    async post<T, D = unknown>(url: string, data?: D, config?: ApiRequestConfig): Promise<T> {
+        return this.request<T>(url, {
+            ...config,
+            method: 'POST',
+            body: data == null ? null : JSON.stringify(data),
+        });
     }
 
     /**
      * PUT request
      */
-    async put<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
-        const response: AxiosResponse<T> = await this.axios.put(url, data, config);
-        return response.data;
+    async put<T, D = unknown>(url: string, data?: D, config?: ApiRequestConfig): Promise<T> {
+        return this.request<T>(url, {
+            ...config,
+            method: 'PUT',
+            body: data == null ? null : JSON.stringify(data),
+        });
     }
 
     /**
      * PATCH request
      */
-    async patch<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
-        const response: AxiosResponse<T> = await this.axios.patch(url, data, config);
-        return response.data;
+    async patch<T, D = unknown>(url: string, data?: D, config?: ApiRequestConfig): Promise<T> {
+        return this.request<T>(url, {
+            ...config,
+            method: 'PATCH',
+            body: data == null ? null : JSON.stringify(data),
+        });
     }
 
     /**
      * DELETE request
      */
-    async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-        const response: AxiosResponse<T> = await this.axios.delete(url, config);
-        return response.data;
+    async delete<T>(url: string, config?: ApiRequestConfig): Promise<T> {
+        return this.request<T>(url, {
+            ...config,
+            method: 'DELETE',
+        });
     }
 }
 

@@ -59,7 +59,10 @@ dependencies {
     implementation("com.zaxxer:HikariCP")
 
     // Testing
+    testImplementation(project(":platform:java:testing"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.assertj:assertj-core")
     testImplementation("org.mockito:mockito-core")
+    testImplementation("org.mockito:mockito-junit-jupiter")
     testImplementation("io.activej:activej-test:6.0-rc2")
 }

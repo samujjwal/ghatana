@@ -20,7 +20,7 @@ export { NavigationSidebar } from './NavigationSidebar';
 export { CommandPalette } from './CommandPalette';
 export { SearchBar } from './SearchBar';
 export { NotificationCenter } from './NotificationCenter';
-export { ErrorBoundary } from './ErrorBoundary';
+export { ErrorBoundary } from '../../components/ErrorBoundary';
 export { SettingsPanel } from './SettingsPanel';
 export {
     GlobalFilterBar,

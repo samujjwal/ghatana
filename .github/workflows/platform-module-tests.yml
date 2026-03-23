@@ -10,7 +10,6 @@ on:
       - 'products/yappc/**'
       - 'products/virtual-org/**'
       - 'products/software-org/**'
-      - 'products/app-platform/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -101,5 +101,5 @@ curl -X POST http://localhost:3000/api/dashboards/db \
 - `libs/java/ai-platform/registry/README.md` - Model Registry implementation
 - `libs/java/ai-platform/feature-store/README.md` - Feature Store implementation
 - `libs/java/ai-platform/observability/README.md` - AI metrics emitter
-- `products/shared-services/ai-registry/README.md` - HTTP service
+- `platform/java/ai-integration/README.md` - Consolidated AI platform HTTP and integration surface
 - `products/shared-services/feature-store-ingest/README.md` - Ingestion service

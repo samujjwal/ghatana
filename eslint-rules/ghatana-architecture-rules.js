@@ -20,7 +20,6 @@ const PRODUCT_BOUNDARIES = {
   'dcmaar': { allow: ['dcmaar', 'platform', 'shared-services'] },
   'audio-video': { allow: ['audio-video', 'platform', 'shared-services'] },
   'aep': { allow: ['aep', 'platform', 'shared-services'] },
-  'app-platform': { allow: ['app-platform', 'platform', 'shared-services'] },
 };
 
 // Platform layers (dependency direction: foundation → platform → domain → app)
@@ -264,7 +263,7 @@ module.exports = {
             });
           }
           // Catch scoped package imports that belong to a product scope
-          const PRODUCT_SCOPES = ['@yappc/', '@flashit/', '@tutorputor/', '@data-cloud/', '@dcmaar/', '@audio-video/', '@aep/', '@app-platform/'];
+          const PRODUCT_SCOPES = ['@yappc/', '@flashit/', '@tutorputor/', '@data-cloud/', '@dcmaar/', '@audio-video/', '@aep/'];
           for (const scope of PRODUCT_SCOPES) {
             if (importPath.startsWith(scope)) {
               context.report({
@@ -380,7 +379,6 @@ function getProductFromPackage(packageName) {
   if (packageName.startsWith('@dcmaar/')) return 'dcmaar';
   if (packageName.startsWith('@audio-video/')) return 'audio-video';
   if (packageName.startsWith('@aep/')) return 'aep';
-  if (packageName.startsWith('@app-platform/')) return 'app-platform';
   return null;
 }
 

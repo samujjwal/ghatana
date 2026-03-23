@@ -1,7 +1,7 @@
 import React, { useState, ReactNode } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AppHeader } from './AppHeader';
 import { NavigationSidebar } from './NavigationSidebar';
-import { ErrorBoundary } from './ErrorBoundary';
 
 /**
  * AppLayout - Main application layout wrapper.

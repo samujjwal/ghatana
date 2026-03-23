@@ -18,7 +18,6 @@
  * @doc.layer product
  */
 
-import React from "react";
 import { lazy, Suspense, ComponentType } from "react";
 import { Navigate, createBrowserRouter, redirect } from "react-router-dom";
 import { AdminLayout } from "./components/layout/AdminLayout";

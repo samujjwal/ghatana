@@ -1,717 +1,639 @@
 {
-  "timestamp": "2026-03-17T19:17:22.276Z",
-  "mode": "apply",
-  "totalPackages": 118,
-  "packagesWithChanges": 57,
-  "totalChanges": 1251,
+  "timestamp": "2026-03-23T00:02:41.331Z",
+  "mode": "dry-run",
+  "totalPackages": 105,
+  "packagesWithChanges": 3,
+  "totalChanges": 61,
   "packages": [
     {
       "package": "@ghatana/monorepo",
-      "path": "/home/samujjwal/Developments/ghatana/package.json",
-      "hasChanges": true,
-      "changeCount": 4
+      "path": "/Users/samujjwal/Development/ghatana/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/accessibility-audit",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/accessibility-audit/package.json",
-      "hasChanges": true,
-      "changeCount": 9
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/accessibility-audit/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/api",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/api/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/api/package.json",
       "hasChanges": false,
       "changeCount": 0
-    },
-    {
-      "package": "@ghatana/audio-video-client",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/audio-video-client/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/audio-video-types",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/audio-video-types/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/audio-video-ui",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/audio-video-ui/package.json",
-      "hasChanges": true,
-      "changeCount": 6
     },
     {
       "package": "@ghatana/flow-canvas",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/canvas/flow-canvas/package.json",
-      "hasChanges": true,
-      "changeCount": 9
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/capabilities/canvas-core/flow-canvas/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/canvas",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/canvas/package.json",
-      "hasChanges": true,
-      "changeCount": 18
-    },
-    {
-      "package": "@ghatana/charts",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/charts/package.json",
-      "hasChanges": true,
-      "changeCount": 6
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/capabilities/canvas-core/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/design-system",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/design-system/package.json",
-      "hasChanges": true,
-      "changeCount": 12
-    },
-    {
-      "package": "@ghatana/i18n",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/i18n/package.json",
-      "hasChanges": true,
-      "changeCount": 6
-    },
-    {
-      "package": "@ghatana/platform-shell",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/platform-shell/package.json",
-      "hasChanges": true,
-      "changeCount": 9
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/capabilities/design-system/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/realtime",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/realtime/package.json",
-      "hasChanges": true,
-      "changeCount": 2
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/capabilities/realtime-engine/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@ghatana/charts",
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/charts/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@ghatana/platform-utils",
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/foundation/platform-utils/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@ghatana/i18n",
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/i18n/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@ghatana/platform-shell",
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/platform-shell/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/sso-client",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/sso-client/package.json",
-      "hasChanges": true,
-      "changeCount": 4
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/sso-client/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/theme",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/theme/package.json",
-      "hasChanges": true,
-      "changeCount": 8
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/theme/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/tokens",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/tokens/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/tokens/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
       "package": "@ghatana/ui-integration",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/ui-integration/package.json",
-      "hasChanges": true,
-      "changeCount": 12
-    },
-    {
-      "package": "@ghatana/utils",
-      "path": "/home/samujjwal/Developments/ghatana/platform/typescript/utils/package.json",
-      "hasChanges": true,
-      "changeCount": 5
-    },
-    {
-      "package": "@ghatana/aep-api",
-      "path": "/home/samujjwal/Developments/ghatana/products/aep/api/package.json",
-      "hasChanges": true,
-      "changeCount": 8
-    },
-    {
-      "package": "@ghatana/aep-ui",
-      "path": "/home/samujjwal/Developments/ghatana/products/aep/ui/package.json",
-      "hasChanges": true,
-      "changeCount": 28
-    },
-    {
-      "package": "@ghatana/audit-middleware",
-      "path": "/home/samujjwal/Developments/ghatana/products/app-platform/libs/typescript/audit-middleware/package.json",
-      "hasChanges": true,
-      "changeCount": 8
-    },
-    {
-      "package": "@ghatana/resilience",
-      "path": "/home/samujjwal/Developments/ghatana/products/app-platform/libs/typescript/resilience/package.json",
-      "hasChanges": true,
-      "changeCount": 5
-    },
-    {
-      "package": "@ghatana/audio-video-desktop-app",
-      "path": "/home/samujjwal/Developments/ghatana/products/audio-video/apps/desktop/package.json",
-      "hasChanges": true,
-      "changeCount": 21
-    },
-    {
-      "package": "@ghatana/audio-video-product-client",
-      "path": "/home/samujjwal/Developments/ghatana/products/audio-video/libs/audio-video-client/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/platform/typescript/ui-integration/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/audio-video-product-types",
-      "path": "/home/samujjwal/Developments/ghatana/products/audio-video/libs/audio-video-types/package.json",
+      "package": "@ghatana/aep-gateway",
+      "path": "/Users/samujjwal/Development/ghatana/products/aep/gateway/package.json",
+      "hasChanges": true,
+      "changeCount": 9
+    },
+    {
+      "package": "@aep/ui",
+      "path": "/Users/samujjwal/Development/ghatana/products/aep/ui/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/audio-video-product-ui",
-      "path": "/home/samujjwal/Developments/ghatana/products/audio-video/libs/audio-video-ui/package.json",
-      "hasChanges": true,
-      "changeCount": 5
+      "package": "@audio-video/desktop-app",
+      "path": "/Users/samujjwal/Development/ghatana/products/audio-video/apps/desktop/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@audio-video/client",
+      "path": "/Users/samujjwal/Development/ghatana/products/audio-video/libs/audio-video-client/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@audio-video/types",
+      "path": "/Users/samujjwal/Development/ghatana/products/audio-video/libs/audio-video-types/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@audio-video/ui",
+      "path": "/Users/samujjwal/Development/ghatana/products/audio-video/libs/audio-video-ui/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/ai-voice-desktop-app",
-      "path": "/home/samujjwal/Developments/ghatana/products/audio-video/modules/intelligence/ai-voice/apps/desktop/package.json",
-      "hasChanges": true,
-      "changeCount": 22
+      "path": "/Users/samujjwal/Development/ghatana/products/audio-video/modules/intelligence/ai-voice/apps/desktop/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/ai-voice-ui-react",
-      "path": "/home/samujjwal/Developments/ghatana/products/audio-video/modules/intelligence/ai-voice/libs/ai-voice-ui-react/package.json",
-      "hasChanges": true,
-      "changeCount": 8
-    },
-    {
-      "package": "@ghatana/data-cloud-ui",
-      "path": "/home/samujjwal/Developments/ghatana/products/data-cloud/ui/package.json",
-      "hasChanges": true,
-      "changeCount": 50
-    },
-    {
-      "package": "@ghatana/dcmaar-agent-core",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/agent-core/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/products/audio-video/modules/intelligence/ai-voice/libs/ai-voice-ui-react/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-agent-react-native",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/agent-react-native/package.json",
+      "package": "@data-cloud/ui",
+      "path": "/Users/samujjwal/Development/ghatana/products/data-cloud/ui/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-backend",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/backend/package.json",
+      "package": "@dcmaar/agent-core",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/agent-core/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-browser-extension",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/browser-extension/package.json",
+      "package": "@dcmaar/agent-react-native",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/agent-react-native/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-child-mobile",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/child-mobile/package.json",
+      "package": "@dcmaar/backend",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/backend/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-device-health-extension",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/device-health/package.json",
-      "hasChanges": true,
-      "changeCount": 106
-    },
-    {
-      "package": "@ghatana/dcmaar-guardian-plugins",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/guardian-plugins/package.json",
+      "package": "@dcmaar/browser-extension",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/browser-extension/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-browser-extension-host",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/host/package.json",
+      "package": "@dcmaar/child-mobile",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/child-mobile/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@dcmaar/device-health",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/device-health/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@dcmaar/guardian-plugins",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian-plugins/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@dcmaar/host-browser-extension-host",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/host/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
       "package": "@ghatana/dcmaar-backend-shim",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-parent-dashboard",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/parent-dashboard/package.json",
-      "hasChanges": true,
-      "changeCount": 54
-    },
-    {
-      "package": "@ghatana/dcmaar-parent-mobile",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/apps/parent-mobile/package.json",
+      "package": "@dcmaar/parent-dashboard",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/parent-dashboard/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-dashboard-core",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/guardian-dashboard-core/package.json",
-      "hasChanges": true,
-      "changeCount": 9
-    },
-    {
-      "package": "@ghatana/dcmaar-bridge-protocol",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/agent-core/bridge-protocol/package.json",
+      "package": "@dcmaar/parent-mobile",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/parent-mobile/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-agent-types",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/agent-core/types/package.json",
+      "package": "@dcmaar/dashboard-core",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/guardian-dashboard-core/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-agent-ui",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/agent-core/ui/package.json",
-      "hasChanges": true,
-      "changeCount": 33
-    },
-    {
-      "package": "@ghatana/dcmaar-browser-extension-core",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/browser-extension-core/package.json",
+      "package": "@dcmaar/bridge-protocol",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/agent-core/bridge-protocol/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-browser-extension-ui",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/browser-extension-ui/package.json",
-      "hasChanges": true,
-      "changeCount": 8
-    },
-    {
-      "package": "@ghatana/dcmaar-config-presets",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/config-presets/package.json",
+      "package": "@dcmaar/agent-types",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/agent-core/types/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-connectors",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/connectors/package.json",
+      "package": "@dcmaar/agent-ui",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/agent-core/ui/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-plugin-abstractions",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/plugin-abstractions/package.json",
+      "package": "@dcmaar/browser-extension-core",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/browser-extension-core/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-plugin-extension",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/plugin-extension/package.json",
+      "package": "@dcmaar/browser-extension-ui",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/browser-extension-ui/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-shared-ui-charts",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/shared-ui-charts/package.json",
+      "package": "@dcmaar/config-presets",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/config-presets/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-shared-ui-core",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/shared-ui-core/package.json",
+      "package": "@dcmaar/connectors",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/connectors/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-shared-ui-tailwind",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/shared-ui-tailwind/package.json",
-      "hasChanges": true,
-      "changeCount": 3
-    },
-    {
-      "package": "@ghatana/dcmaar-types",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/libs/typescript/types/package.json",
+      "package": "@dcmaar/plugin-abstractions",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/plugin-abstractions/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-agent-connectors",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/modules/ai-platform-adapters/package.json",
-      "hasChanges": true,
-      "changeCount": 14
+      "package": "@dcmaar/plugin-extension",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/plugin-extension/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
-      "package": "@ghatana/dcmaar-desktop",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/modules/desktop/package.json",
-      "hasChanges": true,
-      "changeCount": 96
+      "package": "@dcmaar/shared-ui-charts",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/shared-ui-charts/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@dcmaar/shared-ui-core",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/shared-ui-core/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@dcmaar/shared-ui-tailwind",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/shared-ui-tailwind/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@dcmaar/types",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/libs/typescript/types/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@dcmaar/agent-connectors",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/modules/ai-platform-adapters/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@dcmaar/desktop",
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/modules/desktop/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/dcmaar",
-      "path": "/home/samujjwal/Developments/ghatana/products/dcmaar/package.json",
-      "hasChanges": true,
-      "changeCount": 46
+      "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "prisma-client-a36439c93a38d66de00635f067ebe0dc7a07267ba71ae7d1594a9e8b98692e65",
-      "path": "/home/samujjwal/Developments/ghatana/products/flashit/backend/gateway/generated/prisma/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/products/flashit/backend/gateway/generated/prisma/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/flashit-web-api",
-      "path": "/home/samujjwal/Developments/ghatana/products/flashit/backend/gateway/package.json",
-      "hasChanges": true,
-      "changeCount": 46
+      "package": "@flashit/web-api",
+      "path": "/Users/samujjwal/Development/ghatana/products/flashit/backend/gateway/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
-      "package": "@ghatana/flashit-mobile",
-      "path": "/home/samujjwal/Developments/ghatana/products/flashit/client/mobile/package.json",
-      "hasChanges": true,
-      "changeCount": 41
+      "package": "@flashit/mobile",
+      "path": "/Users/samujjwal/Development/ghatana/products/flashit/client/mobile/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
-      "package": "@ghatana/flashit-web",
-      "path": "/home/samujjwal/Developments/ghatana/products/flashit/client/web/package.json",
-      "hasChanges": true,
-      "changeCount": 22
+      "package": "@flashit/web",
+      "path": "/Users/samujjwal/Development/ghatana/products/flashit/client/web/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
-      "package": "@ghatana/flashit-shared",
-      "path": "/home/samujjwal/Developments/ghatana/products/flashit/libs/ts/shared/package.json",
-      "hasChanges": true,
-      "changeCount": 7
+      "package": "@flashit/shared",
+      "path": "/Users/samujjwal/Development/ghatana/products/flashit/libs/ts/shared/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/flashit-tests",
-      "path": "/home/samujjwal/Developments/ghatana/products/flashit/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/products/flashit/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/software-org-web",
-      "path": "/home/samujjwal/Developments/ghatana/products/software-org/client/web/package.json",
-      "hasChanges": true,
-      "changeCount": 50
+      "package": "@software-org/web",
+      "path": "/Users/samujjwal/Development/ghatana/products/software-org/client/web/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "prisma-client-7cdc3fd95f6329cde95ed7171336631235b8099114eec9902e56ed6541bdd5df",
-      "path": "/home/samujjwal/Developments/ghatana/products/software-org/services/management-api/generated/prisma-client/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/products/software-org/services/management-api/generated/prisma-client/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/software-org-backend",
-      "path": "/home/samujjwal/Developments/ghatana/products/software-org/services/management-api/package.json",
+      "package": "@software-org/backend",
+      "path": "/Users/samujjwal/Development/ghatana/products/software-org/services/management-api/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@tutorputor/api-gateway",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/apps/api-gateway/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@tutorputor/admin",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/apps/tutorputor-admin/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@tutorputor/mobile",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/apps/tutorputor-mobile/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@tutorputor/web",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/apps/tutorputor-web/package.json",
       "hasChanges": true,
-      "changeCount": 33
+      "changeCount": 39
     },
     {
-      "package": "@ghatana/tutorputor-api-gateway",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/apps/api-gateway/package.json",
+      "package": "@tutorputor/contracts",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/contracts/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/content-explorer",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/apps/content-explorer/package.json",
-      "hasChanges": true,
-      "changeCount": 32
-    },
-    {
-      "package": "@ghatana/tutorputor-admin",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/apps/tutorputor-admin/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/tutorputor-mobile",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/apps/tutorputor-mobile/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/tutorputor-web",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/apps/tutorputor-web/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/tutorputor-contracts",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/contracts/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/tutorputor-assessments",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/libs/assessments/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/tutorputor-learning-kernel",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/libs/learning-kernel/package.json",
-      "hasChanges": true,
-      "changeCount": 5
-    },
-    {
-      "package": "@ghatana/tutorputor-physics-simulation",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/libs/physics-simulation/package.json",
-      "hasChanges": true,
-      "changeCount": 16
-    },
-    {
-      "package": "@ghatana/tutorputor-sim-renderer",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/libs/sim-renderer/package.json",
-      "hasChanges": true,
-      "changeCount": 22
-    },
-    {
-      "package": "@ghatana/tutorputor-simulation-engine",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/libs/simulation-engine/package.json",
-      "hasChanges": true,
-      "changeCount": 6
-    },
-    {
-      "package": "@ghatana/tutorputor-ai-proxy",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/libs/tutorputor-ai-proxy/package.json",
+      "package": "@tutorputor/ai",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/libs/tutorputor-ai/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
       "package": "prisma-client-37d81a809759bf8330ac602cbca95da3f055ee18a960a7e5c3a33b75ec4ef64e",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/libs/tutorputor-db/generated/prisma/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/libs/tutorputor-core/generated/prisma/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/tutorputor-db",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/libs/tutorputor-db/package.json",
+      "package": "@tutorputor/core",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/libs/tutorputor-core/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/tutorputor-sim-sdk",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/libs/tutorputor-sim-sdk/package.json",
+      "package": "@tutorputor/simulation",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/libs/tutorputor-simulation/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/tutorputor-ui-shared",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/libs/tutorputor-ui-shared/package.json",
-      "hasChanges": true,
-      "changeCount": 10
-    },
-    {
-      "package": "@ghatana/tutorputor-kernel-registry",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/services/tutorputor-kernel-registry/package.json",
+      "package": "@tutorputor/ui",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/libs/tutorputor-ui/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/tutorputor-lti-service",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/services/tutorputor-lti/package.json",
+      "package": "@tutorputor/platform",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/services/tutorputor-platform/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/tutorputor-payments",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/services/tutorputor-payments/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/tutorputor-platform",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/services/tutorputor-platform/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/tutorputor-vr-labs",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/services/tutorputor-vr/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/tutorputor-domain-loader",
-      "path": "/home/samujjwal/Developments/ghatana/products/tutorputor/tools/tutorputor-domain-loader/package.json",
+      "package": "@tutorputor/domain-loader",
+      "path": "/Users/samujjwal/Development/ghatana/products/tutorputor/tools/tutorputor-domain-loader/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
       "package": "@ghatana/yappc-canvas-governance",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/.governance/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/.governance/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-api-app",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/apps/api/package.json",
+      "package": "@yappc/api-app",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/apps/api/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-web-app",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/apps/web/package.json",
-      "hasChanges": true,
-      "changeCount": 75
-    },
-    {
-      "package": "@ghatana/yappc-docs",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/docs-site/package.json",
-      "hasChanges": true,
-      "changeCount": 10
-    },
-    {
-      "package": "@ghatana/yappc-eslint-local-rules",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/eslint-local-rules/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/yappc-ai",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/ai/package.json",
-      "hasChanges": true,
-      "changeCount": 3
-    },
-    {
-      "package": "@ghatana/yappc-api",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/api/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/yappc-auth",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/auth/package.json",
-      "hasChanges": true,
-      "changeCount": 5
-    },
-    {
-      "package": "@ghatana/yappc-canvas",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/canvas/package.json",
-      "hasChanges": true,
-      "changeCount": 21
-    },
-    {
-      "package": "@ghatana/yappc-canvas-core",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/canvas/yappc-canvas/package.json",
-      "hasChanges": true,
-      "changeCount": 10
-    },
-    {
-      "package": "@ghatana/yappc-chat",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/chat/package.json",
-      "hasChanges": false,
-      "changeCount": 0
-    },
-    {
-      "package": "@ghatana/yappc-code-editor",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/code-editor/package.json",
-      "hasChanges": true,
-      "changeCount": 10
-    },
-    {
-      "package": "@ghatana/yappc-collab",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/collab/package.json",
+      "package": "web",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/apps/web/package.json",
       "hasChanges": true,
       "changeCount": 13
     },
     {
-      "package": "@ghatana/yappc-component-traceability",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/component-traceability/package.json",
+      "package": "@yappc/docs",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/docs-site/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-config",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/config/package.json",
+      "package": "@yappc/eslint-local-rules",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/eslint-local-rules/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-crdt",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/crdt/package.json",
+      "package": "@yappc/ai",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/ai/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-ide",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/ide/package.json",
-      "hasChanges": true,
-      "changeCount": 25
-    },
-    {
-      "package": "@ghatana/yappc-live-preview-server",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/live-preview-server/package.json",
+      "package": "@yappc/api",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/api/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-notifications",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/notifications/package.json",
+      "package": "@yappc/auth",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/auth/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-realtime",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/realtime/package.json",
+      "package": "@yappc/canvas",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/canvas/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-testing",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/testing/package.json",
+      "package": "@yappc/canvas-core",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/canvas/yappc-canvas/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-types",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/types/package.json",
+      "package": "@yappc/chat",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/chat/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-ui",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/ui/package.json",
-      "hasChanges": true,
-      "changeCount": 40
-    },
-    {
-      "package": "@ghatana/yappc-utils",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/utils/package.json",
+      "package": "@yappc/code-editor",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/code-editor/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-vite-plugin-live-edit",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/libs/vite-plugin-live-edit/package.json",
-      "hasChanges": true,
-      "changeCount": 5
+      "package": "@yappc/collab",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/collab/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/config",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/config/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/core",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/core/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/crdt",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/crdt/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/ide",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/ide/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/messaging",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/messaging/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/notifications",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/notifications/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/realtime",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/realtime/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/testing",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/testing/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/types",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/types/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/ui",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/ui/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/utils",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/libs/utils/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     },
     {
       "package": "@ghatana/yappc-frontend",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/package.json",
-      "hasChanges": true,
-      "changeCount": 105
-    },
-    {
-      "package": "@ghatana/yappc-eslint-config-custom",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/packages/eslint-config-custom/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-tsconfig",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/packages/tsconfig/package.json",
+      "package": "@yappc/eslint-config-custom",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/packages/eslint-config-custom/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/tsconfig",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/packages/tsconfig/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/vite-plugin-live-edit",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/packages/vite-plugin-live-edit/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
       "package": "@ghatana/yappc-config-scripts",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/frontend/scripts/package.json",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/scripts/package.json",
       "hasChanges": false,
       "changeCount": 0
     },
     {
-      "package": "@ghatana/yappc-canvas-sync",
-      "path": "/home/samujjwal/Developments/ghatana/products/yappc/tools/vscode-extension/package.json",
-      "hasChanges": true,
-      "changeCount": 5
+      "package": "@yappc/web-app",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/frontend/web/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/live-preview-server",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/tools/live-preview-server/package.json",
+      "hasChanges": false,
+      "changeCount": 0
+    },
+    {
+      "package": "@yappc/canvas-sync",
+      "path": "/Users/samujjwal/Development/ghatana/products/yappc/tools/vscode-extension/package.json",
+      "hasChanges": false,
+      "changeCount": 0
     }
   ]
 }

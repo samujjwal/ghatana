@@ -1,6 +1,3 @@
-import { createLogger } from './utils/logger.js';
-const logger = createLogger('sw');
-
 /**
  * TutorPutor Service Worker
  *
@@ -16,6 +13,8 @@ const logger = createLogger('sw');
  */
 
 /// <reference lib="webworker" />
+
+import { logger } from './components/utils/logger';
 
 // Service worker global scope types
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
@@ -85,11 +84,12 @@ const CACHEABLE_API_ROUTES = [
  * Install event - cache static assets.
  */
 self.addEventListener('install', (event) => {
-  event.waitUntil(
+  const installEvent = event as ExtendableEvent;
+  installEvent.waitUntil(
     caches
       .open(STATIC_CACHE_NAME)
       .then((cache) => {
-        logger.info({}, '[SW] Caching static assets');
+        logger.info('[SW] Caching static assets');
         return cache.addAll(STATIC_ASSETS);
       })
       .then(() => self.skipWaiting())
@@ -100,7 +100,8 @@ self.addEventListener('install', (event) => {
  * Activate event - clean up old caches.
  */
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
+  const activateEvent = event as ExtendableEvent;
+  activateEvent.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
@@ -112,7 +113,7 @@ self.addEventListener('activate', (event) => {
             );
           })
           .map((name) => {
-            logger.info({}, '[SW] Deleting old cache:', name);
+            logger.info('[SW] Deleting old cache:', name);
             return caches.delete(name);
           })
       );
@@ -124,7 +125,8 @@ self.addEventListener('activate', (event) => {
  * Fetch event - implement caching strategies.
  */
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
+  const fetchEvent = event as FetchEvent;
+  const { request } = fetchEvent;
   const url = new URL(request.url);
 
   // Skip non-GET requests
@@ -139,18 +141,18 @@ self.addEventListener('fetch', (event) => {
 
   // API requests - network first with cache fallback
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirstStrategy(request));
+    fetchEvent.respondWith(networkFirstStrategy(request));
     return;
   }
 
   // Static assets - cache first
   if (isStaticAsset(url.pathname)) {
-    event.respondWith(cacheFirstStrategy(request));
+    fetchEvent.respondWith(cacheFirstStrategy(request));
     return;
   }
 
   // Dynamic content - stale while revalidate
-  event.respondWith(staleWhileRevalidateStrategy(request));
+  fetchEvent.respondWith(staleWhileRevalidateStrategy(request));
 });
 
 /**
@@ -267,12 +269,15 @@ function isCacheableApi(url: string): boolean {
   return CACHEABLE_API_ROUTES.some((route) => pathname.startsWith(route));
 }
 
+type SyncEvent = ExtendableEvent & { tag: string };
+
 /**
  * Background sync for offline mutations.
  */
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-mutations') {
-    event.waitUntil(syncPendingMutations());
+  const syncEvent = event as SyncEvent;
+  if (syncEvent.tag === 'sync-mutations') {
+    syncEvent.waitUntil(syncPendingMutations());
   }
 });
 
@@ -290,19 +295,22 @@ async function syncPendingMutations(): Promise<void> {
       });
     });
   } catch (error) {
-    logger.error({}, '[SW] Failed to sync mutations:', error);
+    logger.error('[SW] Failed to sync mutations:', error);
   }
 }
+
+type PushEvent = ExtendableEvent & { data: PushMessageData | null };
 
 /**
  * Push notification handling.
  */
 self.addEventListener('push', (event) => {
-  if (!event.data) return;
+  const pushEvent = event as PushEvent;
+  if (!pushEvent.data) return;
 
-  const data = event.data.json();
+  const data = pushEvent.data.json();
   
-  event.waitUntil(
+  pushEvent.waitUntil(
     self.registration.showNotification(data.title || 'TutorPutor', {
       body: data.body,
       icon: '/icons/icon-192x192.png',
@@ -313,15 +321,18 @@ self.addEventListener('push', (event) => {
   );
 });
 
+type NotificationClickEvent = ExtendableEvent & { notification: Notification };
+
 /**
  * Notification click handling.
  */
 self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
+  const notificationEvent = event as NotificationClickEvent;
+  notificationEvent.notification.close();
 
-  const urlToOpen = event.notification.data?.url || '/';
+  const urlToOpen = notificationEvent.notification.data?.url || '/';
 
-  event.waitUntil(
+  notificationEvent.waitUntil(
     self.clients
       .matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
@@ -331,6 +342,7 @@ self.addEventListener('notificationclick', (event) => {
             return client.focus();
           }
         }
+        // @ts-expect-error - openWindow exists on Clients in service worker context
         return self.clients.openWindow(urlToOpen);
       })
   );
@@ -339,8 +351,8 @@ self.addEventListener('notificationclick', (event) => {
 /**
  * Message handling from main thread.
  */
-self.addEventListener('message', (event) => {
-  const { type, payload } = event.data;
+self.addEventListener('message', (event: MessageEvent) => {
+  const { type, payload } = event.data as { type: string; payload?: { urls?: string[] } };
 
   switch (type) {
     case 'SKIP_WAITING':
@@ -358,7 +370,7 @@ self.addEventListener('message', (event) => {
       break;
 
     default:
-      logger.info({}, '[SW] Unknown message type:', type);
+      logger.info('[SW] Unknown message type:', type);
   }
 });
 

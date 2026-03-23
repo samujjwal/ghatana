@@ -379,32 +379,35 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
             UUID id2 = UUID.randomUUID();
             UUID id3 = UUID.randomUUID();
 
-            when(delegate.findById(eq(TENANT), eq(COLLECTION), any()))
-                    .thenReturn(Promise.of(Optional.of(stubEntity(id1))))
-                    .thenReturn(Promise.of(Optional.of(stubEntity(id2))));
-            when(delegate.findById(eq(TENANT), eq("other"), any()))
-                    .thenReturn(Promise.of(Optional.of(stubEntity(id3))));
+            when(delegate.findById(TENANT, COLLECTION, id1))
+                .thenReturn(Promise.of(Optional.of(stubEntity(id1))))
+                .thenReturn(Promise.of(Optional.empty()));
+            when(delegate.findById(TENANT, COLLECTION, id2))
+                .thenReturn(Promise.of(Optional.of(stubEntity(id2))))
+                .thenReturn(Promise.of(Optional.empty()));
+            when(delegate.findById(TENANT, "other", id3))
+                .thenReturn(Promise.of(Optional.of(stubEntity(id3))));
 
             // Warm 2 entries for COLLECTION, 1 for "other"
             runPromise(() -> cache.findById(TENANT, COLLECTION, id1));
             runPromise(() -> cache.findById(TENANT, COLLECTION, id2));
             runPromise(() -> cache.findById(TENANT, "other", id3));
 
+            clearInvocations(delegate);
+
             // Invalidate only COLLECTION
             cache.invalidateCollection(TENANT, COLLECTION);
 
-            // Re-fetch id1 and id2 — should miss (delegate called again)
-            when(delegate.findById(TENANT, COLLECTION, id1)).thenReturn(Promise.of(Optional.empty()));
-            when(delegate.findById(TENANT, COLLECTION, id2)).thenReturn(Promise.of(Optional.empty()));
+            // Re-fetch id1 and id2 — should miss after invalidation.
             runPromise(() -> cache.findById(TENANT, COLLECTION, id1));
             runPromise(() -> cache.findById(TENANT, COLLECTION, id2));
 
             // id3 in "other" collection should still be cached — delegate not called again
             runPromise(() -> cache.findById(TENANT, "other", id3));
 
-            verify(delegate, times(2)).findById(TENANT, COLLECTION, id1);
-            verify(delegate, times(2)).findById(TENANT, COLLECTION, id2);
-            verify(delegate, times(1)).findById(TENANT, "other", id3);
+            verify(delegate, times(1)).findById(TENANT, COLLECTION, id1);
+            verify(delegate, times(1)).findById(TENANT, COLLECTION, id2);
+            verify(delegate, never()).findById(TENANT, "other", id3);
         }
 
         @Test

@@ -30,8 +30,6 @@ import {
 } from "../../services/aiServiceManager";
 
 interface AIAssistantProps {
-  onActionSuggestion?: (action: string) => void;
-  onContentGenerated?: (content: unknown) => void;
   className?: string;
   initialContext?: string;
 }
@@ -54,8 +52,6 @@ interface SmartSuggestion {
 }
 
 export function AIAssistant({
-  onActionSuggestion,
-  onContentGenerated,
   className = "",
   initialContext = "content_creation",
 }: AIAssistantProps) {
@@ -140,7 +136,7 @@ export function AIAssistant({
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: "user",
-      content: actionMessages[action],
+      content: actionMessages[action as keyof typeof actionMessages],
       timestamp: new Date(),
     };
 
@@ -152,7 +148,7 @@ export function AIAssistant({
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: "ai",
-        content: actionMessages[action],
+        content: actionMessages[action as keyof typeof actionMessages],
         timestamp: new Date(),
         suggestions: getSuggestionsForAction(action),
       };
@@ -436,7 +432,6 @@ export function AIAssistant({
             <div className="p-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex gap-2">
                 <Input
-                  ref={inputRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}

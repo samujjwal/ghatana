@@ -10,10 +10,8 @@
  * @doc.pattern Admin
  */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -23,18 +21,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
-  AreaChart,
-  Area,
 } from "recharts";
-import type {
-  AutomationRule,
-  AutomationMetrics,
-  DomainData,
-  PerformanceData,
-  QualityData,
-} from "../../types/content-generation";
 
 interface ContentCreationStats {
   totalContent: number;
@@ -398,19 +386,19 @@ export const AdminContentCreationDashboard: React.FC = () => {
                           Connections:
                         </span>
                         <span className="text-sm font-medium">
-                          {data.connections}
+                          {(data as { connections: number }).connections}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Size:</span>
-                        <span className="text-sm font-medium">{data.size}</span>
+                        <span className="text-sm font-medium">{(data as { size: string }).size}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">
                           Performance:
                         </span>
                         <span className="text-sm font-medium">
-                          {data.performance.toFixed(1)}%
+                          {(data as { performance: number }).performance.toFixed(1)}%
                         </span>
                       </div>
                     </>
@@ -420,19 +408,19 @@ export const AdminContentCreationDashboard: React.FC = () => {
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Memory:</span>
                         <span className="text-sm font-medium">
-                          {data.memory}
+                          {(data as { memory: string }).memory}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Keys:</span>
                         <span className="text-sm font-medium">
-                          {data.keys.toLocaleString()}
+                          {(data as { keys: number }).keys.toLocaleString()}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Hit Rate:</span>
                         <span className="text-sm font-medium">
-                          {data.hitRate.toFixed(1)}%
+                          {(data as { hitRate: number }).hitRate.toFixed(1)}%
                         </span>
                       </div>
                     </>
@@ -442,13 +430,13 @@ export const AdminContentCreationDashboard: React.FC = () => {
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Storage:</span>
                         <span className="text-sm font-medium">
-                          {data.storage}
+                          {(data as { storage: string }).storage}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Objects:</span>
                         <span className="text-sm font-medium">
-                          {data.objects.toLocaleString()}
+                          {(data as { objects: number }).objects.toLocaleString()}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -456,7 +444,7 @@ export const AdminContentCreationDashboard: React.FC = () => {
                           Bandwidth:
                         </span>
                         <span className="text-sm font-medium">
-                          {data.bandwidth.toFixed(1)} MB/s
+                          {(data as { bandwidth: number }).bandwidth.toFixed(1)} MB/s
                         </span>
                       </div>
                     </>

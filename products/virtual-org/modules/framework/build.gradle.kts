@@ -16,9 +16,8 @@ dependencies {
     implementation(project(":platform:java:agent-core"))
     implementation(project(":platform:java:agent-runtime"))  // Migrated from agent-memory: MemoryPlane
 
-    // AEP platform (provides com.ghatana.core.operator.* and com.ghatana.core.pipeline.*)
-    // TODO: Migrate core operator/pipeline types to platform:java:workflow
-    implementation(project(":products:aep:platform-bundle"))
+    // AEP contracts (provides com.ghatana.core.operator.* and com.ghatana.core.pipeline.*)
+    implementation(project(":products:aep:platform-contracts"))
 
     // ActiveJ
     implementation(libs.activej.eventloop)

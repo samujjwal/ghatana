@@ -1,5 +1,5 @@
 /**
- * AI Features Integration for @ghatana/ui
+ * AI Features Integration for @ghatana/design-system
  * 
  * Provides component generation, style prediction, accessibility recommendations,
  * and best practices enforcement for AI-assisted UI development.
@@ -352,7 +352,7 @@ export class ComponentGenerationService {
   private generateComponentCode(template: ComponentTemplate, _description: string, _context?: unknown): string {
     // Generate React component code based on template and context
     return `import React from 'react';
-import { ${template.name} } from '@ghatana/ui';
+import { ${template.name} } from '@ghatana/design-system';
 
 interface ${template.name}Props {
   ${(template.props || []).map(prop => `${prop.name}${prop.required ? '' : '?'}: ${prop.type};`).join('\n  ')}

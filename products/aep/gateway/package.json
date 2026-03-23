@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "AEP API Gateway \u2014 Fastify BFF proxy for JWT auth, CORS, and WebSocket forwarding to Java backend",
+  "description": "AEP API Gateway — Fastify BFF proxy for JWT auth, CORS, and WebSocket forwarding to Java backend",
   "scripts": {
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",

@@ -64,8 +64,6 @@
 
       "@ghatana/yappc-live-preview-server": ["libs/live-preview-server/src"],
       "@ghatana/yappc-live-preview-server/*": ["libs/live-preview-server/src/*"],
-      "@ghatana/yappc-component-traceability": ["libs/component-traceability/src"],
-      "@ghatana/yappc-component-traceability/*": ["libs/component-traceability/src/*"],
       "@ghatana/yappc-vite-plugin-live-edit": ["libs/vite-plugin-live-edit/src"],
       "@ghatana/yappc-vite-plugin-live-edit/*": ["libs/vite-plugin-live-edit/src/*"],
       // App-specific aliases (for apps/web)

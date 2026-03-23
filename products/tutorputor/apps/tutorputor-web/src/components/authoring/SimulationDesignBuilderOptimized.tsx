@@ -15,7 +15,32 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { FixedSizeList as List } from 'react-window';
-import { debounce } from 'lodash-es';
+
+type DebouncedFunction<T extends (...args: any[]) => void> = ((...args: Parameters<T>) => void) & {
+    cancel: () => void;
+};
+
+function debounce<T extends (...args: any[]) => void>(fn: T, delayMs: number): DebouncedFunction<T> {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const debounced = ((...args: Parameters<T>) => {
+        if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+        }
+        timeoutId = setTimeout(() => {
+            fn(...args);
+        }, delayMs);
+    }) as DebouncedFunction<T>;
+
+    debounced.cancel = () => {
+        if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+        }
+    };
+
+    return debounced;
+}
 
 interface Entity {
     id: string;
@@ -392,6 +417,7 @@ export function SimulationDesignBuilderOptimized({
                                         itemCount={editedManifest.initialEntities.length}
                                         itemSize={ENTITY_ITEM_SIZE}
                                         itemData={entityData}
+                                        width="100%"
                                     >
                                         {EntityItem}
                                     </List>

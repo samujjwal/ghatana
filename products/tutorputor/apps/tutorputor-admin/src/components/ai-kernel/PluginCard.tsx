@@ -1,4 +1,4 @@
-import { Card, Badge, Button } from '@ghatana/design-system';
+import { Card, Badge } from '@ghatana/design-system';
 import { PluginMetadata } from '@tutorputor/contracts/v1/plugin-interfaces';
 
 interface PluginCardProps {

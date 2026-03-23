@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance } from "axios";
+// Using native fetch instead of axios due to monorepo aliasing
 
 // Local type definitions
 type ModuleId = string;
@@ -220,37 +220,48 @@ export interface ApiError {
 }
 
 export class TutorPutorApiClient {
-  private client: AxiosInstance;
+  private baseURL: string;
 
   constructor(baseURL: string = "/api") {
-    this.client = axios.create({
-      baseURL,
+    this.baseURL = baseURL;
+  }
+
+  private getHeaders(): HeadersInit {
+    const token = localStorage.getItem("auth_token");
+    const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
+    
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      "X-Tenant-ID": tenantId,
+      "X-Correlation-ID": crypto.randomUUID(),
+    };
+    
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    
+    return headers;
+  }
+
+  private async request<T>(url: string, options?: RequestInit): Promise<T> {
+    const response = await fetch(`${this.baseURL}${url}`, {
+      ...options,
       headers: {
-        "Content-Type": "application/json"
-      }
+        ...this.getHeaders(),
+        ...options?.headers,
+      },
     });
-
-    // Add request interceptor for auth and tenant headers
-    this.client.interceptors.request.use((config) => {
-      const token = localStorage.getItem("auth_token");
-      const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
-
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      config.headers["X-Tenant-ID"] = tenantId;
-      config.headers["X-Correlation-ID"] = crypto.randomUUID();
-
-      return config;
-    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return response.json();
   }
 
   async getDashboard(): Promise<DashboardSummary> {
     try {
-      const response = await this.client.get<DashboardSummary>(
-        "/v1/learning/dashboard"
-      );
-      return response.data;
+      return await this.request<DashboardSummary>("/v1/learning/dashboard");
     } catch (error) {
       // Return mock data when backend is unavailable
       return {
@@ -297,13 +308,11 @@ export class TutorPutorApiClient {
     nextCursor?: string | null;
   }> {
     try {
-      const response = await this.client.get<{
+      const url = domain ? `/v1/modules?domain=${domain}` : '/v1/modules';
+      return await this.request<{
         items: ModuleSummary[];
         nextCursor?: string | null;
-      }>("/v1/modules", {
-        params: { domain }
-      });
-      return response.data;
+      }>(url);
     } catch (error) {
       // Return mock modules when backend is unavailable
       return {
@@ -337,11 +346,10 @@ export class TutorPutorApiClient {
     userEnrollment: Enrollment | null;
   }> {
     try {
-      const response = await this.client.get<{
+      return await this.request<{
         module: ModuleDetail;
         userEnrollment: Enrollment | null;
       }>(`/v1/modules/${slug}`);
-      return response.data;
     } catch (error) {
       // Return mock module when backend is unavailable
       return {
@@ -360,11 +368,10 @@ export class TutorPutorApiClient {
   }
 
   async enrollInModule(moduleId: ModuleId): Promise<{ enrollment: Enrollment }> {
-    const response = await this.client.post<{ enrollment: Enrollment }>(
+    return await this.request<{ enrollment: Enrollment }>(
       "/v1/enrollments",
-      { moduleId }
+      { method: 'POST', body: JSON.stringify({ moduleId }) }
     );
-    return response.data;
   }
 
   async updateProgress(
@@ -372,27 +379,25 @@ export class TutorPutorApiClient {
     progressPercent: number,
     timeSpentSecondsDelta: number
   ): Promise<{ enrollment: Enrollment }> {
-    const response = await this.client.patch<{ enrollment: Enrollment }>(
+    return await this.request<{ enrollment: Enrollment }>(
       `/v1/enrollments/${enrollmentId}/progress`,
       {
-        progressPercent,
-        timeSpentSecondsDelta
+        method: 'PATCH',
+        body: JSON.stringify({ progressPercent, timeSpentSecondsDelta })
       }
     );
-    return response.data;
   }
 
   async queryTutor(
     question: string,
     moduleId?: ModuleId
   ): Promise<{ response: TutorResponsePayload }> {
-    const response = await this.client.post<{
+    return await this.request<{
       response: TutorResponsePayload;
     }>("/v1/ai/tutor/query", {
-      question,
-      moduleId
+      method: 'POST',
+      body: JSON.stringify({ question, moduleId })
     });
-    return response.data;
   }
 
   async generateQuestions(
@@ -407,7 +412,7 @@ export class TutorPutorApiClient {
       explanation: string;
     }>;
   }> {
-    const response = await this.client.post<{
+    return await this.request<{
       questions: Array<{
         question: string;
         options?: string[];
@@ -415,43 +420,41 @@ export class TutorPutorApiClient {
         explanation: string;
       }>;
     }>("/v1/ai/generate-questions", {
-      moduleId,
-      count,
-      difficulty
+      method: 'POST',
+      body: JSON.stringify({ moduleId, count, difficulty })
     });
-    return response.data;
   }
 
   // ========== Learning Pathways ==========
 
   async recommendPath(goals: string[], currentSkills?: string[]): Promise<LearningPath> {
-    const response = await this.client.post<LearningPath>("/v1/pathways/recommend", {
-      goals,
-      currentSkills
+    return await this.request<LearningPath>("/v1/pathways/recommend", {
+      method: 'POST',
+      body: JSON.stringify({ goals, currentSkills })
     });
-    return response.data;
   }
 
   async enrollInPath(pathId: string): Promise<LearningPathEnrollment> {
-    const response = await this.client.post<LearningPathEnrollment>("/v1/pathways/enroll", {
-      pathId
+    return await this.request<LearningPathEnrollment>("/v1/pathways/enroll", {
+      method: 'POST',
+      body: JSON.stringify({ pathId })
     });
-    return response.data;
   }
 
   async getPathEnrollment(pathId: string): Promise<LearningPathEnrollment> {
-    const response = await this.client.get<LearningPathEnrollment>(`/v1/pathways/${pathId}`);
-    return response.data;
+    return await this.request<LearningPathEnrollment>(`/v1/pathways/${pathId}`);
   }
 
   async updatePathProgress(pathId: string, nodeId: string, status: string): Promise<void> {
-    await this.client.patch(`/v1/pathways/${pathId}/progress`, { nodeId, status });
+    await this.request(`/v1/pathways/${pathId}/progress`, {
+      method: 'PATCH',
+      body: JSON.stringify({ nodeId, status })
+    });
   }
 
   async listPathEnrollments(): Promise<{ enrollments: LearningPathEnrollment[] }> {
     try {
-      const response = await this.client.get<{ enrollments: LearningPathEnrollment[] }>("/v1/pathways");
-      return response.data;
+      return await this.request<{ enrollments: LearningPathEnrollment[] }>("/v1/pathways");
     } catch (error) {
       // Return empty enrollments when backend is unavailable
       return { enrollments: [] };
@@ -462,8 +465,7 @@ export class TutorPutorApiClient {
 
   async listClassrooms(): Promise<{ classrooms: Classroom[] }> {
     try {
-      const response = await this.client.get<{ classrooms: Classroom[] }>("/v1/teacher/classrooms");
-      return response.data;
+      return await this.request<{ classrooms: Classroom[] }>("/v1/teacher/classrooms");
     } catch (error) {
       // Return empty classrooms when backend is unavailable
       return { classrooms: [] };
@@ -471,34 +473,35 @@ export class TutorPutorApiClient {
   }
 
   async createClassroom(data: { name: string; description?: string }): Promise<Classroom> {
-    const response = await this.client.post<Classroom>("/v1/teacher/classrooms", data);
-    return response.data;
+    return await this.request<Classroom>("/v1/teacher/classrooms", {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
   }
 
   async getClassroom(classroomId: string): Promise<Classroom> {
-    const response = await this.client.get<Classroom>(`/v1/teacher/classrooms/${classroomId}`);
-    return response.data;
+    return await this.request<Classroom>(`/v1/teacher/classrooms/${classroomId}`);
   }
 
   async getClassroomProgress(classroomId: string): Promise<{ progress: StudentProgress[] }> {
-    const response = await this.client.get<{ progress: StudentProgress[] }>(
+    return await this.request<{ progress: StudentProgress[] }>(
       `/v1/teacher/classrooms/${classroomId}/progress`
     );
-    return response.data;
   }
 
   async addStudentToClassroom(classroomId: string, studentId: string): Promise<void> {
-    await this.client.post(`/v1/teacher/classrooms/${classroomId}/students`, { studentId });
+    await this.request(`/v1/teacher/classrooms/${classroomId}/students`, {
+      method: 'POST',
+      body: JSON.stringify({ studentId })
+    });
   }
 
   // ========== Collaboration ==========
 
   async listThreads(moduleId?: string): Promise<{ threads: Thread[] }> {
     try {
-      const response = await this.client.get<{ threads: Thread[] }>("/v1/collaboration/threads", {
-        params: moduleId ? { moduleId } : undefined
-      });
-      return response.data;
+      const url = moduleId ? `/v1/collaboration/threads?moduleId=${moduleId}` : '/v1/collaboration/threads';
+      return await this.request<{ threads: Thread[] }>(url);
     } catch (error) {
       // Return empty threads when backend is unavailable
       return { threads: [] };
@@ -507,10 +510,9 @@ export class TutorPutorApiClient {
 
   async getThread(threadId: string): Promise<{ thread: Thread; posts: Post[] }> {
     try {
-      const response = await this.client.get<{ thread: Thread; posts: Post[] }>(
+      return await this.request<{ thread: Thread; posts: Post[] }>(
         `/v1/collaboration/threads/${threadId}`
       );
-      return response.data;
     } catch (error) {
       // Return empty thread and posts when backend is unavailable
       return {
@@ -530,20 +532,24 @@ export class TutorPutorApiClient {
   }
 
   async createThread(data: { moduleId: string; title: string; content: string }): Promise<Thread> {
-    const response = await this.client.post<Thread>("/v1/collaboration/threads", data);
-    return response.data;
+    return await this.request<Thread>("/v1/collaboration/threads", {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
   }
 
   async createPost(threadId: string, content: string, parentId?: string): Promise<Post> {
-    const response = await this.client.post<Post>(`/v1/collaboration/threads/${threadId}/posts`, {
-      content,
-      parentId
+    return await this.request<Post>(`/v1/collaboration/threads/${threadId}/posts`, {
+      method: 'POST',
+      body: JSON.stringify({ content, parentId })
     });
-    return response.data;
   }
 
   async voteOnPost(postId: string, vote: "up" | "down"): Promise<void> {
-    await this.client.post(`/v1/collaboration/posts/${postId}/vote`, { vote });
+    await this.request(`/v1/collaboration/posts/${postId}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ vote })
+    });
   }
 
   // ========== Gamification ==========
@@ -556,8 +562,7 @@ export class TutorPutorApiClient {
     badges: Achievement[];
   }> {
     try {
-      const response = await this.client.get("/v1/gamification/progress");
-      return response.data;
+      return await this.request("/v1/gamification/progress");
     } catch (error) {
       // Return mock progress when backend is unavailable
       return {
@@ -579,17 +584,14 @@ export class TutorPutorApiClient {
       badges: number;
     }>;
   }> {
-    const response = await this.client.get("/v1/gamification/leaderboard", {
-      params: period ? { period } : undefined
-    });
-    return response.data;
+    const url = period ? `/v1/gamification/leaderboard?period=${period}` : '/v1/gamification/leaderboard';
+    return await this.request(url);
   }
 
   async getUserAchievements(): Promise<{ achievements: Achievement[] }> {
-    const response = await this.client.get<{ achievements: Achievement[] }>(
+    return await this.request<{ achievements: Achievement[] }>(
       "/v1/gamification/achievements"
     );
-    return response.data;
   }
 
   // ========== Search ==========
@@ -606,10 +608,8 @@ export class TutorPutorApiClient {
     facets: Record<string, Array<{ value: string; count: number }>>;
   }> {
     try {
-      const response = await this.client.get("/v1/search", {
-        params: { q: query, ...filters }
-      });
-      return response.data;
+      const params = new URLSearchParams({ q: query, ...filters });
+      return await this.request(`/v1/search?${params}`);
     } catch (error) {
       // Return empty results when backend is unavailable
       return { results: [], total: 0, facets: {} };
@@ -619,10 +619,7 @@ export class TutorPutorApiClient {
   async getSearchSuggestions(query: string): Promise<{
     suggestions: Array<{ text: string; type: string; id?: string }>;
   }> {
-    const response = await this.client.get("/v1/search/autocomplete", {
-      params: { q: query }
-    });
-    return response.data;
+    return await this.request(`/v1/search/autocomplete?q=${encodeURIComponent(query)}`);
   }
 }
 
@@ -630,61 +627,60 @@ export const apiClient = new TutorPutorApiClient();
 
 /**
  * Simplified client for direct HTTP calls (e.g., for CMS pages)
- * This provides get/post/patch/delete methods that return axios responses
+ * This provides get/post/patch/delete methods using native fetch
  */
+function getHeaders(): HeadersInit {
+  const token = localStorage.getItem("auth_token");
+  const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
+  
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    "X-Tenant-ID": tenantId,
+    "X-Correlation-ID": crypto.randomUUID(),
+  };
+  
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  return headers;
+}
+
 export const tutorputorClient = {
   get: async <T = unknown>(url: string, params?: object): Promise<{ data: T }> => {
-    const token = localStorage.getItem("auth_token");
-    const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
-    const response = await axios.get<T>(`/api/v1${url}`, {
-      params,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : undefined,
-        "X-Tenant-ID": tenantId,
-        "X-Correlation-ID": crypto.randomUUID(),
-      },
+    const queryString = params ? `?${new URLSearchParams(params as Record<string, string>)}` : '';
+    const response = await fetch(`/api/v1${url}${queryString}`, {
+      method: 'GET',
+      headers: getHeaders(),
     });
-    return response;
+    const data = await response.json();
+    return { data };
   },
   post: async <T = unknown>(url: string, data?: object): Promise<{ data: T }> => {
-    const token = localStorage.getItem("auth_token");
-    const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
-    const response = await axios.post<T>(`/api/v1${url}`, data, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : undefined,
-        "X-Tenant-ID": tenantId,
-        "X-Correlation-ID": crypto.randomUUID(),
-      },
+    const response = await fetch(`/api/v1${url}`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
     });
-    return response;
+    const responseData = await response.json();
+    return { data: responseData };
   },
   patch: async <T = unknown>(url: string, data?: object): Promise<{ data: T }> => {
-    const token = localStorage.getItem("auth_token");
-    const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
-    const response = await axios.patch<T>(`/api/v1${url}`, data, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : undefined,
-        "X-Tenant-ID": tenantId,
-        "X-Correlation-ID": crypto.randomUUID(),
-      },
+    const response = await fetch(`/api/v1${url}`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
     });
-    return response;
+    const responseData = await response.json();
+    return { data: responseData };
   },
   delete: async <T = unknown>(url: string): Promise<{ data: T }> => {
-    const token = localStorage.getItem("auth_token");
-    const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
-    const response = await axios.delete<T>(`/api/v1${url}`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : undefined,
-        "X-Tenant-ID": tenantId,
-        "X-Correlation-ID": crypto.randomUUID(),
-      },
+    const response = await fetch(`/api/v1${url}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
     });
-    return response;
+    const data = await response.json();
+    return { data };
   },
 };
 

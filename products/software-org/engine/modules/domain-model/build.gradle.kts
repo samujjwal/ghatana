@@ -14,7 +14,7 @@ dependencies {
     
     // Contracts - software-org contracts
     api(project(":platform:contracts"))  // Common types
-    api(project(":products:aep:platform-bundle"))  // Agent contracts (for DevSecOps)
+    api(project(":products:aep:platform-contracts"))  // Agent contracts (for DevSecOps)
     
     // Virtual-Org Framework
     api(project(":products:virtual-org:modules:framework"))

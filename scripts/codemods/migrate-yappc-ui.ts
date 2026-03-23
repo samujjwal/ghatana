@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
 /**
- * Codemod: Migrate @ghatana/yappc-ui → @ghatana/ui
+ * Codemod: Migrate @ghatana/yappc-ui → @ghatana/design-system
  * 
  * This script rewrites imports from the deprecated @ghatana/yappc-ui package
- * to the platform-level @ghatana/ui package. Components that have 1:1 
+ * to the platform-level @ghatana/design-system package. Components that have 1:1 
  * equivalents are remapped directly. YAPPC-specific components stay in
  * a slimmed @ghatana/yappc-ui (without MUI re-exports).
  * 
@@ -20,7 +20,7 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '../..');
 
 // ─── Component Mapping ────────────────────────────────────────────────
-// Maps MUI component names (as exported by @ghatana/yappc-ui) to @ghatana/ui equivalents
+// Maps MUI component names (as exported by @ghatana/yappc-ui) to @ghatana/design-system equivalents
 // Components NOT in this map are considered YAPPC-specific and stay in @ghatana/yappc-ui
 
 const DIRECT_MAPPING: Record<string, string> = {
@@ -74,7 +74,7 @@ const DIRECT_MAPPING: Record<string, string> = {
   'LinearProgress': 'LinearProgress',
   'Progress': 'Progress',
 
-  // Components previously MUI-only, now built in @ghatana/ui
+  // Components previously MUI-only, now built in @ghatana/design-system
   'TextField': 'TextField',
   'MenuItem': 'MenuItem',
   'Drawer': 'Drawer',
@@ -101,16 +101,16 @@ const DIRECT_MAPPING: Record<string, string> = {
   'cn': 'cn',
 };
 
-// Components that need renaming (MUI name → @ghatana/ui name)
+// Components that need renaming (MUI name → @ghatana/design-system name)
 const RENAME_MAPPING: Record<string, string> = {
   'CircularProgress': 'Spinner',
   'Paper': 'Surface',
   'List': 'InteractiveList',
-  'Typography': 'Typography', // Keep same name — @ghatana/ui has Typography
+  'Typography': 'Typography', // Keep same name — @ghatana/design-system has Typography
   'LoadingSpinner': 'Spinner',
 };
 
-// Components that exist in @ghatana/ui but with sub-component patterns
+// Components that exist in @ghatana/design-system but with sub-component patterns
 // These need special handling
 const COMPOUND_MAPPING: Record<string, string> = {
   // Card family
@@ -276,8 +276,8 @@ function rewriteFile(filePath: string, content: string): RewriteResult {
   const imports = parseImports(content);
 
   for (const imp of imports) {
-    const uiSpecifiers: string[] = [];          // → @ghatana/ui
-    const renamedSpecifiers: string[] = [];     // → @ghatana/ui with rename
+    const uiSpecifiers: string[] = [];          // → @ghatana/design-system
+    const renamedSpecifiers: string[] = [];     // → @ghatana/design-system with rename
     const yappcSpecifiers: string[] = [];       // Stay in @ghatana/yappc-ui
     const typeSpecifiers: string[] = [];        // Type imports that stay
 
@@ -327,10 +327,10 @@ function rewriteFile(filePath: string, content: string): RewriteResult {
     if (allUi.length > 0) {
       const typePrefix = imp.isType ? 'type ' : '';
       if (allUi.length <= 3) {
-        newImports.push(`import ${typePrefix}{ ${allUi.join(', ')} } from '@ghatana/ui';`);
+        newImports.push(`import ${typePrefix}{ ${allUi.join(', ')} } from '@ghatana/design-system';`);
       } else {
         const formatted = allUi.map(s => `  ${s},`).join('\n');
-        newImports.push(`import ${typePrefix}{\n${formatted}\n} from '@ghatana/ui';`);
+        newImports.push(`import ${typePrefix}{\n${formatted}\n} from '@ghatana/design-system';`);
       }
     }
 
@@ -362,7 +362,7 @@ function rewriteFile(filePath: string, content: string): RewriteResult {
 // ─── Main ─────────────────────────────────────────────────────────────
 
 function main() {
-  console.log(`\n🔄 Migrating @ghatana/yappc-ui → @ghatana/ui${DRY_RUN ? ' (DRY RUN)' : ''}\n`);
+  console.log(`\n🔄 Migrating @ghatana/yappc-ui → @ghatana/design-system${DRY_RUN ? ' (DRY RUN)' : ''}\n`);
 
   const searchDirs = [
     path.join(ROOT, 'products/yappc/frontend'),

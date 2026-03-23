@@ -63,7 +63,7 @@ const RENAME_MAP = {
   '@ghatana/yappc-auth': '@yappc/auth',
   '@ghatana/yappc-code-editor': '@yappc/code-editor',
   '@ghatana/yappc-collab': '@yappc/collab',
-  '@ghatana/yappc-component-traceability': '@yappc/component-traceability',
+  '@ghatana/yappc-component-traceability': '@yappc/ui/traceability',
   '@ghatana/yappc-governance': '@yappc/governance',
   '@ghatana/yappc-eslint-local-rules': '@yappc/eslint-local-rules',
 };

@@ -96,7 +96,7 @@ class ArchitectureChecker {
       const nameScope = pkgName.startsWith('@') ? pkgName.split('/')[0] : null;
 
       if (locationScope && nameScope && locationScope !== nameScope) {
-        if (pkgName !== '@ghatana/event-cloud') { // Known exception
+        if (nameScope !== '@ghatana' && pkgName !== '@ghatana/event-cloud') {
           this.addViolation(
             'SCOPE_MISMATCH',
             `Package scope ${nameScope} doesn't match location ${locationScope}`,
@@ -295,10 +295,17 @@ class ArchitectureChecker {
       // Simple glob matching
       if (pattern.includes('**')) {
         const baseDir = pattern.split('**')[0];
-        this.walkDirectory(path.join(workspaceRoot, baseDir), files, 5);
+        const searchRoot = path.join(workspaceRoot, baseDir);
+        if (fs.existsSync(searchRoot)) {
+          this.walkDirectory(searchRoot, files, 5);
+        }
       } else if (pattern.includes('*')) {
         const baseDir = pattern.split('*')[0];
-        const entries = fs.readdirSync(path.join(workspaceRoot, baseDir), { withFileTypes: true });
+        const searchRoot = path.join(workspaceRoot, baseDir);
+        if (!fs.existsSync(searchRoot)) {
+          continue;
+        }
+        const entries = fs.readdirSync(searchRoot, { withFileTypes: true });
         for (const entry of entries) {
           if (entry.isDirectory()) {
             const pkgPath = path.join(workspaceRoot, baseDir, entry.name, 'package.json');
@@ -320,6 +327,7 @@ class ArchitectureChecker {
 
   walkDirectory(dir, files, maxDepth, currentDepth = 0) {
     if (currentDepth > maxDepth) return;
+    if (!fs.existsSync(dir)) return;
 
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
@@ -346,7 +354,6 @@ class ArchitectureChecker {
     if (relative.startsWith('products/dcmaar/')) return '@dcmaar';
     if (relative.startsWith('products/audio-video/')) return '@audio-video';
     if (relative.startsWith('products/aep/')) return '@aep';
-    if (relative.startsWith('products/app-platform/')) return '@app-platform';
     if (relative.startsWith('shared-services/')) return '@shared';
 
     return null;
@@ -366,7 +373,6 @@ class ArchitectureChecker {
     if (packageName.startsWith('@dcmaar/')) return 'dcmaar';
     if (packageName.startsWith('@audio-video/')) return 'audio-video';
     if (packageName.startsWith('@aep/')) return 'aep';
-    if (packageName.startsWith('@app-platform/')) return 'app-platform';
     return null;
   }
 

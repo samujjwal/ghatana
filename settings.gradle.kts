@@ -63,6 +63,7 @@ include(":platform:java:kernel-capabilities")  // Merged: authentication + confi
 // =============================================================================
 
 include(":products:aep:contracts")
+include(":products:aep:platform-contracts")
 include(":products:aep:platform-bundle")
 include(":products:aep:platform-core")
 include(":products:aep:platform-engine")
@@ -238,9 +239,6 @@ include(":products:finance:domains:reference-data")
 include(":products:finance:domains:regulatory-reporting")
 include(":products:finance:domains:sanctions")
 include(":products:finance:domains:surveillance")
-
-// Finance Product Module (main entry point)
-include(":products:finance:product")
 
 // Finance Domain Pack Extensions
 include(":products:finance:extensions")

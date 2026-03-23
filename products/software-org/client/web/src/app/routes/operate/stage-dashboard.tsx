@@ -20,20 +20,20 @@ import { useStageUpdates } from '@/features/devsecops/useDevSecOpsUpdates';
 import { mockDevSecOpsItems } from '@/features/devsecops/mockDevSecOpsItems';
 import { mockStageEvents } from '@/features/devsecops/mockStageEvents';
 import {
+        DataTable,
+        FilterPanel,
+        KanbanBoard,
+        SearchBar,
+        Timeline,
+} from '@/features/devsecops/components/WorkItemViews';
+import type { Item, ItemFilter } from '@/features/devsecops/types';
+import {
     ArrowLeft,
     FileText,
     GitBranch,
     Shield,
     Rocket,
 } from 'lucide-react';
-import {
-  KanbanBoard,
-  DataTable,
-  Timeline,
-  SearchBar,
-  FilterPanel,
-} from '@yappc/ui';
-import type { Item, ItemFilter } from '@yappc/core/types/devsecops';
 import { Badge, KpiCard } from '@/components/ui';
 
 // Mock stage health data
@@ -50,9 +50,6 @@ const mockStageHealth: Record<string, StageHealth> = {
     operate: { stage: 'operate', status: 'on-track', itemsTotal: 20, itemsCompleted: 18, itemsBlocked: 0, itemsInProgress: 2, criticalIssues: 0, lastUpdated: new Date().toISOString() },
     monitor: { stage: 'monitor', status: 'on-track', itemsTotal: 15, itemsCompleted: 14, itemsBlocked: 0, itemsInProgress: 1, criticalIssues: 0, lastUpdated: new Date().toISOString() },
 };
-
-// Placeholder: YAPPC UI components not yet available
-// TODO: Implement proper KanbanBoard, DataTable, Timeline components
 
 // Convert DevSecOpsItem to YAPPC Item type
 const convertToYappcItem = (item: typeof mockDevSecOpsItems[string][number], phase: string): Item => ({

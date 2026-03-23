@@ -16,6 +16,8 @@ plugins {
 }
 
 dependencies {
+    api(project(":products:aep:platform-contracts"))
+
     // ActiveJ - core async framework
     api(libs.activej.eventloop)
     api(libs.activej.promise)
