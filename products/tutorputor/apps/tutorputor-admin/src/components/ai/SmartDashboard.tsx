@@ -20,7 +20,6 @@ import {
   Zap,
   Eye,
   Target,
-  BarChart3,
   Sparkles,
   ArrowUp,
   ArrowDown,

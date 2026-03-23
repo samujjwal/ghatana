@@ -9,9 +9,6 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:core"))
     
-    // Optional dependencies for integration with external systems
-    implementation(project(":products:aep:platform-bundle"))
-
     // Tests
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)

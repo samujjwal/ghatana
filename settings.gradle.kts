@@ -64,7 +64,7 @@ include(":platform:java:kernel-capabilities")  // Merged: authentication + confi
 
 include(":products:aep:contracts")
 include(":products:aep:platform-contracts")
-include(":products:aep:platform-bundle")
+include(":products:aep:platform-central-runtime")
 include(":products:aep:platform-core")
 include(":products:aep:platform-engine")
 include(":products:aep:platform-registry")

@@ -19,12 +19,6 @@ interface AnimationTimelineProps {
     isPlaying?: boolean;
 }
 
-interface TimelineMarker {
-    id: string;
-    timeMs: number;
-    label: string;
-}
-
 export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
     animation,
     onAnimationChange,
@@ -35,7 +29,6 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
     isPlaying = false,
 }) => {
     const [selectedKeyframeIndex, setSelectedKeyframeIndex] = useState<number | null>(null);
-    const [isDragging, setIsDragging] = useState(false);
     const [zoom, setZoom] = useState(1);
     const timelineRef = useRef<HTMLDivElement>(null);
     const [playheadPosition, setPlayheadPosition] = useState(0);

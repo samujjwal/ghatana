@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { Sparkles, Globe, PenTool, QuizIcon, Settings, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { Sparkles, Globe, PenTool, HelpCircle, Settings, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { Button } from '@ghatana/design-system';
 import { useContentStudioApi } from '../../services/contentStudioApi';
 
@@ -46,7 +46,7 @@ export function ContentGenerationWizard({ onContentGenerated, onCancel }: Conten
     const contentTypes = [
         { id: 'includeRealWorldUseCases', label: 'Real-World Use Cases', icon: Globe, description: 'Industry applications and case studies' },
         { id: 'includePracticeWorksheets', label: 'Practice Worksheets', icon: PenTool, description: 'Hands-on exercises and problems' },
-        { id: 'includeQuizzes', label: 'Interactive Quizzes', icon: QuizIcon, description: 'Assessment and evaluation tools' },
+        { id: 'includeQuizzes', label: 'Interactive Quizzes', icon: HelpCircle, description: 'Assessment and evaluation tools' },
         { id: 'includeSimulations', label: 'Simulations', icon: Settings, description: 'Interactive learning experiences' },
         { id: 'includeAnimations', label: 'Animations', icon: Settings, description: 'Visual learning aids' },
         { id: 'includeProjects', label: 'Projects', icon: Settings, description: 'Hands-on project-based learning' }

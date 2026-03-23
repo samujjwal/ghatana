@@ -55,12 +55,13 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:ai-integration"))  // Includes merged registry + feature-store
     implementation(project(":platform:java:security"))
+    implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:agent-core"))
     implementation(project(":platform:java:agent-runtime"))  // Migrated from agent-memory
     implementation(project(":platform:java:agent-registry"))
     
-    // AEP Platform Libraries
-    implementation(project(":products:aep:platform-bundle"))
+    // AEP engine libraries
+    implementation(project(":products:aep:platform-engine"))
     
     // Domain model entities
     api(project(":products:yappc:libs:java:yappc-domain"))

@@ -11,6 +11,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { Button } from '@ghatana/design-system';
 import {
     Plus,
     CheckCircle,
@@ -81,6 +82,8 @@ interface LearningExperience {
     keywords: string[];
     moduleId?: string;
     simulationId?: string;
+    simulationVersion?: string;
+    domain?: string;
     authorId?: string;
     createdAt: Date;
     updatedAt: Date;
@@ -215,14 +218,6 @@ export function ExperienceEditor({ experience, validation, onExperienceUpdated, 
         return TASK_TYPES.find(t => t.value === type) || { value: type, label: type, icon: '📝' };
     };
 
-    // Get validation status color
-    const getValidationColor = () => {
-        if (!validation) return 'text-gray-400';
-        if (validation.status === 'valid') return 'text-green-500';
-        if (validation.status === 'warnings') return 'text-yellow-500';
-        return 'text-red-500';
-    };
-
     return (
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
             {/* Main Editor Panel - Takes 3 columns */}
@@ -291,11 +286,11 @@ export function ExperienceEditor({ experience, validation, onExperienceUpdated, 
                                 )}
                                 <div>
                                     <p className="text-xs text-gray-600 dark:text-gray-400">Quality</p>
-                                    <p className={`text-lg font-bold ${validation?.score >= 80 ? 'text-green-600 dark:text-green-400' :
-                                        validation?.score >= 60 ? 'text-yellow-600 dark:text-yellow-400' :
+                                    <p className={`text-lg font-bold ${(validation?.score ?? 0) >= 80 ? 'text-green-600 dark:text-green-400' :
+                                        (validation?.score ?? 0) >= 60 ? 'text-yellow-600 dark:text-yellow-400' :
                                             'text-red-600 dark:text-red-400'
                                         }`}>
-                                        {validation?.score || '--'}%
+                                        {validation?.score ?? '--'}%
                                     </p>
                                 </div>
                             </div>

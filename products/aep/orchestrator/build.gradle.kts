@@ -6,7 +6,7 @@
  * agent/pipeline lifecycle management layer.
  *
  * Dependency direction:
- *   products:aep:orchestrator    → products:aep:platform-bundle (domain models)
+ *   products:aep:orchestrator    → products:aep:platform-contracts (shared AEP contracts)
  *   products:aep:platform-bundle ← no dependency on orchestrator
  *   products:aep:server          → products:aep:orchestrator
  *
@@ -32,8 +32,9 @@ java {
 }
 
 dependencies {
-    // AEP domain platform — orchestrator depends on domain models
-    api(project(":products:aep:platform-bundle"))
+    // Shared AEP contracts — EventCloud, operator catalog, pipeline contracts
+    api(project(":products:aep:platform-contracts"))
+    implementation(project(":products:aep:platform-engine"))
     api(project(":products:aep:platform-agent"))
     api(project(":products:aep:platform-connectors"))
     api(project(":products:aep:platform-registry"))
@@ -89,6 +90,7 @@ dependencies {
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.activej.test)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(project(":products:aep:platform-engine"))
     testImplementation(project(":products:aep:platform-analytics"))
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)

@@ -267,8 +267,8 @@ export function LivingKernelDashboard({
     // In real implementation, this would call the kernel API
   };
 
-  const handleOptimization = (suggestions: string[]) => {
-    console.log(`Optimizing with suggestions:`, suggestions);
+  const handleOptimization = (_pluginId: string, suggestions: string[]) => {
+    console.log(`Optimizing plugin ${_pluginId} with suggestions:`, suggestions);
     // In real implementation, this would apply optimizations
   };
 

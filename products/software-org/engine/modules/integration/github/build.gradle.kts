@@ -4,7 +4,6 @@ plugins {
 
 dependencies {
     api(project(":products:software-org:engine:modules:integration:plugins"))
-    api(project(":products:aep:platform-bundle"))
     implementation(project(":platform:java:observability"))
     testImplementation(project(":platform:java:testing"))
 }

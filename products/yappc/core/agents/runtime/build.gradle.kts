@@ -32,7 +32,7 @@ dependencies {
     implementation(project(":platform:java:event-cloud"))
 
     // AEP central runtime — for YappcAepIntegration bridge
-    implementation(project(":products:aep:platform-bundle"))
+    implementation(project(":products:aep:platform-central-runtime"))
 
     // AI module (api — LLMProvider/LLMRequest/LLMResponse in public agent API)
     api(project(":products:yappc:core:ai"))
