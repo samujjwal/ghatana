@@ -1,17 +1,38 @@
 /**
  * Comprehensive Integration Testing Framework
- * 
+ *
  * Provides integration testing for all services including API contracts,
  * database operations, authentication, and end-to-end workflows.
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { FastifyInstance } from 'fastify';
-import { PrismaClient } from '@prisma/client';
-import { createServer } from '../server.js';
-import { createLogger } from '../utils/logger.js';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+} from "vitest";
+import { FastifyInstance } from "fastify";
+import Fastify from "fastify";
+import { PrismaClient } from "@tutorputor/core/db";
+import { setupPlatform } from "../../services/tutorputor-platform/src/setup.js";
 
-const logger = createLogger('integration-tests');
+/**
+ * Create a fully configured test server instance.
+ * Uses setupPlatform with the content worker disabled.
+ */
+async function createServer(
+  _opts: { logger?: boolean; db?: unknown } = {},
+): Promise<FastifyInstance> {
+  const app = Fastify({ logger: false });
+  await setupPlatform(app, {
+    startContentWorker: false,
+    jwtSecret: "test-secret-do-not-use-in-prod",
+  });
+  return app;
+}
 
 // ============================================================================
 // Test Infrastructure
@@ -29,15 +50,10 @@ export class IntegrationTestSuite {
   private testDatabases: string[] = [];
 
   async setup(): Promise<TestEnvironment> {
-    // Setup test database
-    const testDbUrl = process.env.TEST_DATABASE_URL || 'postgresql://postgres:password@localhost:5432/tutorputor_test';
-    this.db = new PrismaClient({
-      datasources: {
-        db: {
-          url: testDbUrl,
-        },
-      },
-    });
+    // Setup test database — use env var or default to SQLite for isolated test runs
+    const testDbUrl = process.env.TEST_DATABASE_URL || "file:./test.db";
+    process.env.DATABASE_URL = testDbUrl;
+    this.db = new PrismaClient();
 
     // Clear test data
     await this.clearTestData();
@@ -57,11 +73,11 @@ export class IntegrationTestSuite {
 
   async cleanup(): Promise<void> {
     await this.clearTestData();
-    
+
     if (this.server) {
       await this.server.close();
     }
-    
+
     if (this.db) {
       await this.db.$disconnect();
     }
@@ -78,19 +94,21 @@ export class IntegrationTestSuite {
     await this.db.user.deleteMany();
   }
 
-  async createTestUser(data: Partial<{
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    tenantId: string;
-  }> = {}): Promise<any> {
+  async createTestUser(
+    data: Partial<{
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+      tenantId: string;
+    }> = {},
+  ): Promise<any> {
     const userData = {
       email: data.email || `test-${Date.now()}@example.com`,
-      firstName: data.firstName || 'Test',
-      lastName: data.lastName || 'User',
-      role: data.role || 'student',
-      tenantId: data.tenantId || 'test-tenant',
+      firstName: data.firstName || "Test",
+      lastName: data.lastName || "User",
+      role: data.role || "student",
+      tenantId: data.tenantId || "test-tenant",
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -99,22 +117,24 @@ export class IntegrationTestSuite {
     return this.db!.user.create({ data: userData });
   }
 
-  async createTestModule(data: Partial<{
-    title: string;
-    description: string;
-    domain: string;
-    difficulty: string;
-    instructorId: string;
-    tenantId: string;
-  }> = {}): Promise<any> {
+  async createTestModule(
+    data: Partial<{
+      title: string;
+      description: string;
+      domain: string;
+      difficulty: string;
+      instructorId: string;
+      tenantId: string;
+    }> = {},
+  ): Promise<any> {
     const moduleData = {
       title: data.title || `Test Module ${Date.now()}`,
-      description: data.description || 'Test module description',
-      domain: data.domain || 'MATHEMATICS',
-      difficulty: data.difficulty || 'BEGINNER',
+      description: data.description || "Test module description",
+      domain: data.domain || "MATHEMATICS",
+      difficulty: data.difficulty || "BEGINNER",
       estimatedTimeMinutes: 60,
-      status: 'PUBLISHED',
-      tenantId: data.tenantId || 'test-tenant',
+      status: "PUBLISHED",
+      tenantId: data.tenantId || "test-tenant",
       instructorId: data.instructorId,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -123,21 +143,23 @@ export class IntegrationTestSuite {
     return this.db!.module.create({ data: moduleData });
   }
 
-  async createTestAssessment(data: Partial<{
-    title: string;
-    moduleId: string;
-    type: string;
-    tenantId: string;
-  }> = {}): Promise<any> {
+  async createTestAssessment(
+    data: Partial<{
+      title: string;
+      moduleId: string;
+      type: string;
+      tenantId: string;
+    }> = {},
+  ): Promise<any> {
     const assessmentData = {
       title: data.title || `Test Assessment ${Date.now()}`,
-      description: 'Test assessment description',
+      description: "Test assessment description",
       moduleId: data.moduleId,
-      type: data.type || 'FORMATIVE',
+      type: data.type || "FORMATIVE",
       timeLimit: 30,
       maxAttempts: 3,
       passingScore: 70,
-      tenantId: data.tenantId || 'test-tenant',
+      tenantId: data.tenantId || "test-tenant",
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -150,7 +172,7 @@ export class IntegrationTestSuite {
 // Authentication Integration Tests
 // ============================================================================
 
-describe('Authentication Integration Tests', () => {
+describe("Authentication Integration Tests", () => {
   let testSuite: IntegrationTestSuite;
   let env: TestEnvironment;
 
@@ -163,19 +185,19 @@ describe('Authentication Integration Tests', () => {
     await env.cleanup();
   });
 
-  describe('User Registration', () => {
-    it('should register a new user successfully', async () => {
+  describe("User Registration", () => {
+    it("should register a new user successfully", async () => {
       const userData = {
         email: `test-${Date.now()}@example.com`,
-        firstName: 'John',
-        lastName: 'Doe',
-        password: 'SecurePassword123!',
-        role: 'student',
+        firstName: "John",
+        lastName: "Doe",
+        password: "SecurePassword123!",
+        role: "student",
       };
 
       const response = await env.server.inject({
-        method: 'POST',
-        url: '/api/auth/register',
+        method: "POST",
+        url: "/api/v1/auth/register",
         payload: userData,
       });
 
@@ -187,70 +209,70 @@ describe('Authentication Integration Tests', () => {
       expect(result.token).toBeDefined();
     });
 
-    it('should reject duplicate email registration', async () => {
+    it("should reject duplicate email registration", async () => {
       const userData = {
         email: `test-${Date.now()}@example.com`,
-        firstName: 'Jane',
-        lastName: 'Doe',
-        password: 'SecurePassword123!',
-        role: 'student',
+        firstName: "Jane",
+        lastName: "Doe",
+        password: "SecurePassword123!",
+        role: "student",
       };
 
       // First registration
       await env.server.inject({
-        method: 'POST',
-        url: '/api/auth/register',
+        method: "POST",
+        url: "/api/v1/auth/register",
         payload: userData,
       });
 
       // Second registration with same email
       const response = await env.server.inject({
-        method: 'POST',
-        url: '/api/auth/register',
+        method: "POST",
+        url: "/api/v1/auth/register",
         payload: userData,
       });
 
       expect(response.statusCode).toBe(400);
-      expect(response.json().message).toContain('already exists');
+      expect(response.json().message).toContain("already exists");
     });
 
-    it('should validate password requirements', async () => {
+    it("should validate password requirements", async () => {
       const userData = {
         email: `test-${Date.now()}@example.com`,
-        firstName: 'Bob',
-        lastName: 'Doe',
-        password: 'weak', // Too weak
-        role: 'student',
+        firstName: "Bob",
+        lastName: "Doe",
+        password: "weak", // Too weak
+        role: "student",
       };
 
       const response = await env.server.inject({
-        method: 'POST',
-        url: '/api/auth/register',
+        method: "POST",
+        url: "/api/v1/auth/register",
         payload: userData,
       });
 
       expect(response.statusCode).toBe(400);
-      expect(response.json().message).toContain('password');
+      expect(response.json().message).toContain("password");
     });
   });
 
-  describe('User Login', () => {
+  describe("User Login", () => {
     let testUser: any;
 
     beforeEach(async () => {
       testUser = await testSuite.createTestUser({
         email: `login-test-${Date.now()}@example.com`,
-        password: 'SecurePassword123!',
+        password: "SecurePassword123!",
       });
     });
 
-    it('should login with valid credentials', async () => {
+    it("should login with valid credentials", async () => {
       const response = await env.server.inject({
-        method: 'POST',
-        url: '/api/auth/login',
+        method: "POST",
+        url: "/api/v1/auth/login",
         payload: {
           email: testUser.email,
-          password: 'SecurePassword123!',
+          password: "SecurePassword123!",
         },
       });
 
@@ -261,27 +283,27 @@ describe('Authentication Integration Tests', () => {
       expect(result.refreshToken).toBeDefined();
     });
 
-    it('should reject invalid credentials', async () => {
+    it("should reject invalid credentials", async () => {
       const response = await env.server.inject({
-        method: 'POST',
-        url: '/api/auth/login',
+        method: "POST",
+        url: "/api/v1/auth/login",
         payload: {
           email: testUser.email,
-          password: 'wrongpassword',
+          password: "wrongpassword",
         },
       });
 
       expect(response.statusCode).toBe(401);
-      expect(response.json().message).toContain('credentials');
+      expect(response.json().message).toContain("credentials");
     });
 
-    it('should reject non-existent user', async () => {
+    it("should reject non-existent user", async () => {
       const response = await env.server.inject({
-        method: 'POST',
-        url: '/api/auth/login',
+        method: "POST",
+        url: "/api/v1/auth/login",
         payload: {
-          email: 'nonexistent@example.com',
-          password: 'password',
+          email: "nonexistent@example.com",
+          password: "password",
         },
       });
 
@@ -289,32 +311,32 @@ describe('Authentication Integration Tests', () => {
     });
   });
 
-  describe('Token Validation', () => {
+  describe("Token Validation", () => {
     let authToken: string;
     let testUser: any;
 
     beforeEach(async () => {
       testUser = await testSuite.createTestUser({
         email: `token-test-${Date.now()}@example.com`,
-        password: 'SecurePassword123!',
+        password: "SecurePassword123!",
       });
 
       const loginResponse = await env.server.inject({
-        method: 'POST',
-        url: '/api/auth/login',
+        method: "POST",
+        url: "/api/v1/auth/login",
         payload: {
           email: testUser.email,
-          password: 'SecurePassword123!',
+          password: "SecurePassword123!",
         },
       });
 
       authToken = loginResponse.json().token;
     });
 
-    it('should validate valid token', async () => {
+    it("should validate valid token", async () => {
       const response = await env.server.inject({
-        method: 'GET',
-        url: '/api/auth/me',
+        method: "GET",
+        url: "/api/v1/auth/me",
         headers: {
           authorization: `Bearer ${authToken}`,
         },
@@ -324,22 +346,22 @@ describe('Authentication Integration Tests', () => {
       expect(response.json().user.email).toBe(testUser.email);
     });
 
-    it('should reject invalid token', async () => {
+    it("should reject invalid token", async () => {
       const response = await env.server.inject({
-        method: 'GET',
-        url: '/api/auth/me',
+        method: "GET",
+        url: "/api/v1/auth/me",
         headers: {
-          authorization: 'Bearer invalid-token',
+          authorization: "Bearer invalid-token",
         },
       });
 
       expect(response.statusCode).toBe(401);
     });
 
-    it('should reject missing token', async () => {
+    it("should reject missing token", async () => {
       const response = await env.server.inject({
-        method: 'GET',
-        url: '/api/auth/me',
+        method: "GET",
+        url: "/api/v1/auth/me",
       });
 
       expect(response.statusCode).toBe(401);
@@ -351,7 +373,7 @@ describe('Authentication Integration Tests', () => {
 // Module Management Integration Tests
 // ============================================================================
 
-describe('Module Management Integration Tests', () => {
+describe("Module Management Integration Tests", () => {
   let testSuite: IntegrationTestSuite;
   let env: TestEnvironment;
   let instructorToken: string;
@@ -366,30 +388,30 @@ describe('Module Management Integration Tests', () => {
     // Create test users
     instructorUser = await testSuite.createTestUser({
       email: `instructor-${Date.now()}@example.com`,
-      role: 'instructor',
+      role: "instructor",
     });
 
     studentUser = await testSuite.createTestUser({
       email: `student-${Date.now()}@example.com`,
-      role: 'student',
+      role: "student",
     });
 
     // Get auth tokens
     const instructorLogin = await env.server.inject({
-      method: 'POST',
-      url: '/api/auth/login',
+      method: "POST",
+      url: "/api/v1/auth/login",
       payload: {
         email: instructorUser.email,
-        password: 'SecurePassword123!',
+        password: "SecurePassword123!",
       },
     });
 
     const studentLogin = await env.server.inject({
-      method: 'POST',
-      url: '/api/auth/login',
+      method: "POST",
+      url: "/api/v1/auth/login",
       payload: {
         email: studentUser.email,
-        password: 'SecurePassword123!',
+        password: "SecurePassword123!",
       },
     });
 
@@ -401,21 +423,21 @@ describe('Module Management Integration Tests', () => {
     await env.cleanup();
   });
 
-  describe('Module Creation', () => {
-    it('should allow instructors to create modules', async () => {
+  describe("Module Creation", () => {
+    it("should allow instructors to create modules", async () => {
       const moduleData = {
-        title: 'Test Module',
-        description: 'A test module for integration testing',
-        domain: 'MATHEMATICS',
-        difficulty: 'BEGINNER',
+        title: "Test Module",
+        description: "A test module for integration testing",
+        domain: "MATHEMATICS",
+        difficulty: "BEGINNER",
         estimatedTimeMinutes: 60,
-        learningObjectives: ['Learn basic math'],
-        tags: ['math', 'basic'],
+        learningObjectives: ["Learn basic math"],
+        tags: ["math", "basic"],
       };
 
       const response = await env.server.inject({
-        method: 'POST',
-        url: '/api/modules',
+        method: "POST",
+        url: "/api/v1/modules",
         headers: {
           authorization: `Bearer ${instructorToken}`,
         },
@@ -428,17 +450,17 @@ describe('Module Management Integration Tests', () => {
       expect(result.instructorId).toBe(instructorUser.id);
     });
 
-    it('should reject module creation by students', async () => {
+    it("should reject module creation by students", async () => {
       const moduleData = {
-        title: 'Unauthorized Module',
-        description: 'Should not be created',
-        domain: 'SCIENCE',
-        difficulty: 'BEGINNER',
+        title: "Unauthorized Module",
+        description: "Should not be created",
+        domain: "SCIENCE",
+        difficulty: "BEGINNER",
       };
 
       const response = await env.server.inject({
-        method: 'POST',
-        url: '/api/modules',
+        method: "POST",
+        url: "/api/v1/modules",
         headers: {
           authorization: `Bearer ${studentToken}`,
         },
@@ -448,17 +470,17 @@ describe('Module Management Integration Tests', () => {
       expect(response.statusCode).toBe(403);
     });
 
-    it('should validate module data', async () => {
+    it("should validate module data", async () => {
       const invalidModuleData = {
-        title: '', // Empty title
-        description: 'Invalid module',
-        domain: 'INVALID_DOMAIN',
-        difficulty: 'BEGINNER',
+        title: "", // Empty title
+        description: "Invalid module",
+        domain: "INVALID_DOMAIN",
+        difficulty: "BEGINNER",
       };
 
       const response = await env.server.inject({
-        method: 'POST',
-        url: '/api/modules',
+        method: "POST",
+        url: "/api/v1/modules",
         headers: {
           authorization: `Bearer ${instructorToken}`,
         },
@@ -469,7 +491,7 @@ describe('Module Management Integration Tests', () => {
     });
   });
 
-  describe('Module Retrieval', () => {
+  describe("Module Retrieval", () => {
     let testModule: any;
 
     beforeEach(async () => {
@@ -478,9 +500,9 @@ describe('Module Management Integration Tests', () => {
       });
     });
 
-    it('should allow authenticated users to view modules', async () => {
+    it("should allow authenticated users to view modules", async () => {
       const response = await env.server.inject({
-        method: 'GET',
+        method: "GET",
         url: `/api/modules/${testModule.id}`,
         headers: {
           authorization: `Bearer ${studentToken}`,
@@ -491,19 +513,19 @@ describe('Module Management Integration Tests', () => {
       expect(response.json().id).toBe(testModule.id);
     });
 
-    it('should reject unauthenticated access', async () => {
+    it("should reject unauthenticated access", async () => {
       const response = await env.server.inject({
-        method: 'GET',
+        method: "GET",
         url: `/api/modules/${testModule.id}`,
       });
 
       expect(response.statusCode).toBe(401);
     });
 
-    it('should return 404 for non-existent modules', async () => {
+    it("should return 404 for non-existent modules", async () => {
       const response = await env.server.inject({
-        method: 'GET',
-        url: '/api/modules/non-existent-id',
+        method: "GET",
+        url: "/api/v1/modules/non-existent-id",
         headers: {
           authorization: `Bearer ${studentToken}`,
         },
@@ -513,28 +535,28 @@ describe('Module Management Integration Tests', () => {
     });
   });
 
-  describe('Module Search', () => {
+  describe("Module Search", () => {
     beforeEach(async () => {
       // Create test modules for search
       await testSuite.createTestModule({
-        title: 'Math Basics',
-        domain: 'MATHEMATICS',
-        difficulty: 'BEGINNER',
+        title: "Math Basics",
+        domain: "MATHEMATICS",
+        difficulty: "BEGINNER",
         instructorId: instructorUser.id,
       });
 
       await testSuite.createTestModule({
-        title: 'Advanced Physics',
-        domain: 'SCIENCE',
-        difficulty: 'ADVANCED',
+        title: "Advanced Physics",
+        domain: "SCIENCE",
+        difficulty: "ADVANCED",
         instructorId: instructorUser.id,
       });
     });
 
-    it('should search modules by query', async () => {
+    it("should search modules by query", async () => {
       const response = await env.server.inject({
-        method: 'GET',
-        url: '/api/modules/search?query=Math',
+        method: "GET",
+        url: "/api/v1/modules/search?query=Math",
         headers: {
           authorization: `Bearer ${studentToken}`,
         },
@@ -543,13 +565,13 @@ describe('Module Management Integration Tests', () => {
       expect(response.statusCode).toBe(200);
       const results = response.json();
       expect(results.modules).toHaveLength(1);
-      expect(results.modules[0].title).toContain('Math');
+      expect(results.modules[0].title).toContain("Math");
     });
 
-    it('should filter modules by domain', async () => {
+    it("should filter modules by domain", async () => {
       const response = await env.server.inject({
-        method: 'GET',
-        url: '/api/modules/search?domain=SCIENCE',
+        method: "GET",
+        url: "/api/v1/modules/search?domain=SCIENCE",
         headers: {
           authorization: `Bearer ${studentToken}`,
         },
@@ -558,13 +580,13 @@ describe('Module Management Integration Tests', () => {
       expect(response.statusCode).toBe(200);
       const results = response.json();
       expect(results.modules).toHaveLength(1);
-      expect(results.modules[0].domain).toBe('SCIENCE');
+      expect(results.modules[0].domain).toBe("SCIENCE");
     });
 
-    it('should paginate results', async () => {
+    it("should paginate results", async () => {
       const response = await env.server.inject({
-        method: 'GET',
-        url: '/api/modules/search?page=1&limit=1',
+        method: "GET",
+        url: "/api/v1/modules/search?page=1&limit=1",
         headers: {
           authorization: `Bearer ${studentToken}`,
         },
@@ -583,7 +605,7 @@ describe('Module Management Integration Tests', () => {
 // Assessment Integration Tests
 // ============================================================================
 
-describe('Assessment Integration Tests', () => {
+describe("Assessment Integration Tests", () => {
   let testSuite: IntegrationTestSuite;
   let env: TestEnvironment;
   let instructorToken: string;
@@ -599,30 +621,30 @@ describe('Assessment Integration Tests', () => {
     // Create test users
     instructorUser = await testSuite.createTestUser({
       email: `instructor-${Date.now()}@example.com`,
-      role: 'instructor',
+      role: "instructor",
     });
 
     studentUser = await testSuite.createTestUser({
       email: `student-${Date.now()}@example.com`,
-      role: 'student',
+      role: "student",
     });
 
     // Get auth tokens
     const instructorLogin = await env.server.inject({
-      method: 'POST',
-      url: '/api/auth/login',
+      method: "POST",
+      url: "/api/v1/auth/login",
       payload: {
         email: instructorUser.email,
-        password: 'SecurePassword123!',
+        password: "SecurePassword123!",
       },
     });
 
     const studentLogin = await env.server.inject({
-      method: 'POST',
-      url: '/api/auth/login',
+      method: "POST",
+      url: "/api/v1/auth/login",
       payload: {
         email: studentUser.email,
-        password: 'SecurePassword123!',
+        password: "SecurePassword123!",
       },
     });
 
@@ -639,33 +661,33 @@ describe('Assessment Integration Tests', () => {
     await env.cleanup();
   });
 
-  describe('Assessment Creation', () => {
-    it('should allow instructors to create assessments', async () => {
+  describe("Assessment Creation", () => {
+    it("should allow instructors to create assessments", async () => {
       const assessmentData = {
-        title: 'Math Quiz',
-        description: 'Basic math assessment',
+        title: "Math Quiz",
+        description: "Basic math assessment",
         moduleId: testModule.id,
-        type: 'FORMATIVE',
+        type: "FORMATIVE",
         timeLimit: 30,
         maxAttempts: 3,
         passingScore: 70,
         questions: [
           {
-            type: 'MULTIPLE_CHOICE',
-            text: 'What is 2 + 2?',
+            type: "MULTIPLE_CHOICE",
+            text: "What is 2 + 2?",
             points: 10,
             options: [
-              { text: '3', isCorrect: false },
-              { text: '4', isCorrect: true },
-              { text: '5', isCorrect: false },
+              { text: "3", isCorrect: false },
+              { text: "4", isCorrect: true },
+              { text: "5", isCorrect: false },
             ],
           },
         ],
       };
 
       const response = await env.server.inject({
-        method: 'POST',
-        url: '/api/assessments',
+        method: "POST",
+        url: "/api/assessments",
         headers: {
           authorization: `Bearer ${instructorToken}`,
         },
@@ -678,17 +700,17 @@ describe('Assessment Integration Tests', () => {
       expect(result.moduleId).toBe(testModule.id);
     });
 
-    it('should reject assessment creation by students', async () => {
+    it("should reject assessment creation by students", async () => {
       const assessmentData = {
-        title: 'Unauthorized Assessment',
+        title: "Unauthorized Assessment",
         moduleId: testModule.id,
-        type: 'FORMATIVE',
+        type: "FORMATIVE",
         questions: [],
       };
 
       const response = await env.server.inject({
-        method: 'POST',
-        url: '/api/assessments',
+        method: "POST",
+        url: "/api/assessments",
         headers: {
           authorization: `Bearer ${studentToken}`,
         },
@@ -699,7 +721,7 @@ describe('Assessment Integration Tests', () => {
     });
   });
 
-  describe('Assessment Submission', () => {
+  describe("Assessment Submission", () => {
     let testAssessment: any;
 
     beforeEach(async () => {
@@ -708,16 +730,16 @@ describe('Assessment Integration Tests', () => {
       });
     });
 
-    it('should allow students to submit assessments', async () => {
+    it("should allow students to submit assessments", async () => {
       const submissionData = {
         answers: {
-          'q1': 'A',
+          q1: "A",
         },
         timeSpent: 1200, // 20 minutes
       };
 
       const response = await env.server.inject({
-        method: 'POST',
+        method: "POST",
         url: `/api/assessments/${testAssessment.id}/submit`,
         headers: {
           authorization: `Bearer ${studentToken}`,
@@ -731,25 +753,25 @@ describe('Assessment Integration Tests', () => {
       expect(result.score).toBeDefined();
     });
 
-    it('should track assessment attempts', async () => {
+    it("should track assessment attempts", async () => {
       // Submit first attempt
       await env.server.inject({
-        method: 'POST',
+        method: "POST",
         url: `/api/assessments/${testAssessment.id}/submit`,
         headers: {
           authorization: `Bearer ${studentToken}`,
         },
-        payload: { answers: { 'q1': 'A' } },
+        payload: { answers: { q1: "A" } },
       });
 
       // Submit second attempt
       const response = await env.server.inject({
-        method: 'POST',
+        method: "POST",
         url: `/api/assessments/${testAssessment.id}/submit`,
         headers: {
           authorization: `Bearer ${studentToken}`,
         },
-        payload: { answers: { 'q1': 'B' } },
+        payload: { answers: { q1: "B" } },
       });
 
       expect(response.statusCode).toBe(200);
@@ -763,7 +785,7 @@ describe('Assessment Integration Tests', () => {
 // Database Integration Tests
 // ============================================================================
 
-describe('Database Integration Tests', () => {
+describe("Database Integration Tests", () => {
   let testSuite: IntegrationTestSuite;
   let env: TestEnvironment;
 
@@ -776,42 +798,42 @@ describe('Database Integration Tests', () => {
     await env.cleanup();
   });
 
-  describe('Database Connections', () => {
-    it('should maintain database connection', async () => {
+  describe("Database Connections", () => {
+    it("should maintain database connection", async () => {
       // Test basic database connectivity
       const result = await env.db.$queryRaw`SELECT 1 as test`;
       expect(result).toBeDefined();
     });
 
-    it('should handle concurrent operations', async () => {
+    it("should handle concurrent operations", async () => {
       const promises = Array.from({ length: 10 }, (_, i) =>
         testSuite.createTestUser({
           email: `concurrent-${i}-${Date.now()}@example.com`,
-        })
+        }),
       );
 
       const results = await Promise.all(promises);
       expect(results).toHaveLength(10);
-      expect(results.every(user => user.id)).toBe(true);
+      expect(results.every((user) => user.id)).toBe(true);
     });
   });
 
-  describe('Data Integrity', () => {
-    it('should enforce foreign key constraints', async () => {
+  describe("Data Integrity", () => {
+    it("should enforce foreign key constraints", async () => {
       // Try to create assessment with non-existent module
       await expect(
         env.db.assessment.create({
           data: {
-            title: 'Orphan Assessment',
-            moduleId: 'non-existent-module-id',
-            type: 'FORMATIVE',
-            tenantId: 'test-tenant',
+            title: "Orphan Assessment",
+            moduleId: "non-existent-module-id",
+            type: "FORMATIVE",
+            tenantId: "test-tenant",
           },
-        })
+        }),
       ).rejects.toThrow();
     });
 
-    it('should maintain data consistency', async () => {
+    it("should maintain data consistency", async () => {
       const user = await testSuite.createTestUser();
       const module = await testSuite.createTestModule({
         instructorId: user.id,
@@ -827,8 +849,8 @@ describe('Database Integration Tests', () => {
     });
   });
 
-  describe('Transaction Management', () => {
-    it('should rollback on transaction failure', async () => {
+  describe("Transaction Management", () => {
+    it("should rollback on transaction failure", async () => {
       const initialUserCount = await env.db.user.count();
 
       try {
@@ -836,10 +858,10 @@ describe('Database Integration Tests', () => {
           await tx.user.create({
             data: {
               email: `transaction-test-${Date.now()}@example.com`,
-              firstName: 'Test',
-              lastName: 'User',
-              role: 'student',
-              tenantId: 'test-tenant',
+              firstName: "Test",
+              lastName: "User",
+              role: "student",
+              tenantId: "test-tenant",
               isActive: true,
               createdAt: new Date(),
               updatedAt: new Date(),
@@ -847,7 +869,7 @@ describe('Database Integration Tests', () => {
           });
 
           // Force an error
-          throw new Error('Intentional error');
+          throw new Error("Intentional error");
         });
       } catch (error) {
         // Expected error
@@ -857,17 +879,17 @@ describe('Database Integration Tests', () => {
       expect(finalUserCount).toBe(initialUserCount);
     });
 
-    it('should commit successful transactions', async () => {
+    it("should commit successful transactions", async () => {
       const initialUserCount = await env.db.user.count();
 
       await env.db.$transaction(async (tx) => {
         await tx.user.create({
           data: {
             email: `transaction-success-${Date.now()}@example.com`,
-            firstName: 'Success',
-            lastName: 'User',
-            role: 'student',
-            tenantId: 'test-tenant',
+            firstName: "Success",
+            lastName: "User",
+            role: "student",
+            tenantId: "test-tenant",
             isActive: true,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -885,7 +907,7 @@ describe('Database Integration Tests', () => {
 // Performance Integration Tests
 // ============================================================================
 
-describe('Performance Integration Tests', () => {
+describe("Performance Integration Tests", () => {
   let testSuite: IntegrationTestSuite;
   let env: TestEnvironment;
 
@@ -898,12 +920,12 @@ describe('Performance Integration Tests', () => {
     await env.cleanup();
   });
 
-  describe('Response Times', () => {
-    it('should respond to health checks quickly', async () => {
+  describe("Response Times", () => {
+    it("should respond to health checks quickly", async () => {
       const start = Date.now();
       const response = await env.server.inject({
-        method: 'GET',
-        url: '/health',
+        method: "GET",
+        url: "/health",
       });
       const duration = Date.now() - start;
 
@@ -911,12 +933,12 @@ describe('Performance Integration Tests', () => {
       expect(duration).toBeLessThan(1000); // Should respond within 1 second
     });
 
-    it('should handle concurrent requests efficiently', async () => {
+    it("should handle concurrent requests efficiently", async () => {
       const promises = Array.from({ length: 50 }, () =>
         env.server.inject({
-          method: 'GET',
-          url: '/health',
-        })
+          method: "GET",
+          url: "/health",
+        }),
       );
 
       const start = Date.now();
@@ -924,13 +946,13 @@ describe('Performance Integration Tests', () => {
       const duration = Date.now() - start;
 
       expect(results).toHaveLength(50);
-      expect(results.every(r => r.statusCode === 200)).toBe(true);
+      expect(results.every((r) => r.statusCode === 200)).toBe(true);
       expect(duration).toBeLessThan(5000); // Should handle 50 requests within 5 seconds
     });
   });
 
-  describe('Memory Usage', () => {
-    it('should not leak memory during operations', async () => {
+  describe("Memory Usage", () => {
+    it("should not leak memory during operations", async () => {
       const initialMemory = process.memoryUsage().heapUsed;
 
       // Perform multiple operations

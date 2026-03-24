@@ -85,4 +85,130 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       });
     },
   );
+
+  // Get saved manifest by ID
+  app.get<{ Params: { id: string } }>(
+    "/api/sim-author/manifests/:id",
+    async (request, reply) => {
+      const { id } = request.params;
+      const tenantId = getTenantId(request);
+      const record = await app.prisma.simulationManifest.findFirst({
+        where: { id, tenantId: tenantId as string },
+      });
+      if (!record) {
+        return reply.code(404).send({ error: "Manifest not found" });
+      }
+      return reply.send({
+        id: record.id,
+        title: record.title,
+        manifest: record.manifest,
+      });
+    },
+  );
+
+  // Save / update manifest
+  app.put<{ Params: { id: string }; Body: Record<string, unknown> }>(
+    "/api/sim-author/manifests/:id",
+    async (request, reply) => {
+      const { id } = request.params;
+      const tenantId = getTenantId(request);
+      const existing = await app.prisma.simulationManifest.findFirst({
+        where: { id, tenantId: tenantId as string },
+        select: { id: true },
+      });
+      if (!existing) {
+        return reply.code(404).send({ error: "Manifest not found" });
+      }
+      await app.prisma.simulationManifest.update({
+        where: { id },
+        data: { manifest: request.body },
+      });
+      return reply.send({ success: true });
+    },
+  );
+
+  // Link a saved manifest to a claim within a learning experience
+  // Body: { experienceId, claimRef, interactionType?, goal?, successCriteria?, estimatedMinutes? }
+  app.post<{
+    Params: { id: string };
+    Body: {
+      experienceId: string;
+      claimRef: string;
+      interactionType?: string;
+      goal?: string;
+      successCriteria?: Record<string, unknown>;
+      estimatedMinutes?: number;
+    };
+  }>("/api/sim-author/manifests/:id/link-claim", async (request, reply) => {
+    const { id } = request.params;
+    const tenantId = getTenantId(request);
+    const {
+      experienceId,
+      claimRef,
+      interactionType,
+      goal,
+      successCriteria,
+      estimatedMinutes,
+    } = request.body;
+
+    if (!experienceId || !claimRef) {
+      return reply
+        .code(400)
+        .send({ error: "experienceId and claimRef are required" });
+    }
+
+    // Verify manifest exists for this tenant
+    const manifest = await app.prisma.simulationManifest.findFirst({
+      where: { id, tenantId: tenantId as string },
+      select: { id: true },
+    });
+    if (!manifest) {
+      return reply.code(404).send({ error: "Manifest not found" });
+    }
+
+    // Verify claim exists for the experience
+    const claim = await app.prisma.learningClaim.findFirst({
+      where: {
+        experienceId,
+        OR: [{ id: claimRef }, { claimRef }],
+      },
+      select: { claimRef: true },
+    });
+    if (!claim) {
+      return reply
+        .code(404)
+        .send({ error: "Claim not found for this experience" });
+    }
+
+    // Upsert the ClaimSimulation link (unique on experienceId + claimRef)
+    await app.prisma.claimSimulation.upsert({
+      where: {
+        experienceId_claimRef: { experienceId, claimRef: claim.claimRef },
+      },
+      create: {
+        experienceId,
+        claimRef: claim.claimRef,
+        simulationManifestId: id,
+        interactionType: interactionType ?? "parameter_exploration",
+        goal: goal ?? "",
+        successCriteria: successCriteria ?? {},
+        estimatedMinutes: estimatedMinutes ?? 10,
+      },
+      update: {
+        simulationManifestId: id,
+        interactionType: interactionType ?? "parameter_exploration",
+        goal: goal ?? "",
+        successCriteria: successCriteria ?? {},
+        estimatedMinutes: estimatedMinutes ?? 10,
+      },
+    });
+
+    return reply
+      .code(201)
+      .send({
+        success: true,
+        simulationManifestId: id,
+        claimRef: claim.claimRef,
+      });
+  });
 }

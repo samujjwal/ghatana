@@ -71,7 +71,11 @@ interface ContentBlock {
   payload?: {
     markdown?: string;
     videoUrl?: string;
-    questions?: Array<{ question: string; options: string[]; correctIndex: number }>;
+    questions?: Array<{
+      question: string;
+      options: string[];
+      correctIndex: number;
+    }>;
   };
 }
 
@@ -197,7 +201,12 @@ interface Thread {
   replyCount?: number;
 }
 
-type AchievementCategory = "learning" | "streak" | "collaboration" | "mastery" | "special";
+type AchievementCategory =
+  | "learning"
+  | "streak"
+  | "collaboration"
+  | "mastery"
+  | "special";
 
 interface Badge {
   id: string;
@@ -229,17 +238,17 @@ export class TutorPutorApiClient {
   private getHeaders(): HeadersInit {
     const token = localStorage.getItem("auth_token");
     const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
-    
+
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       "X-Tenant-ID": tenantId,
       "X-Correlation-ID": crypto.randomUUID(),
     };
-    
+
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
-    
+
     return headers;
   }
 
@@ -251,159 +260,85 @@ export class TutorPutorApiClient {
         ...options?.headers,
       },
     });
-    
+
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const errorBody = await response.json().catch(() => ({}));
+      const error = new Error(
+        errorBody?.error ||
+          errorBody?.message ||
+          `HTTP ${response.status}: ${response.statusText}`,
+      ) as Error & { statusCode: number };
+      error.statusCode = response.status;
+      throw error;
     }
-    
+
     return response.json();
   }
 
   async getDashboard(): Promise<DashboardSummary> {
-    try {
-      return await this.request<DashboardSummary>("/v1/learning/dashboard");
-    } catch (error) {
-      // Return mock data when backend is unavailable
-      return {
-        user: {
-          id: "user-1",
-          email: "student@example.com",
-          displayName: "Student User",
-          avatarUrl: undefined
-        },
-        currentEnrollments: [
-          {
-            id: "enroll-1",
-            moduleId: "mod-1",
-            status: "active",
-            progress: 65,
-            progressPercent: 65,
-            lastAccessedAt: new Date().toISOString(),
-            timeSpentSeconds: 3600
-          }
-        ],
-        recommendedModules: [
-          {
-            id: "mod-2",
-            title: "Advanced Topics",
-            slug: "advanced-topics",
-            description: "Dive deeper into complex concepts",
-            tags: ["advanced"],
-            estimatedMinutes: 120,
-            difficulty: "advanced",
-            progressPercent: 0
-          }
-        ],
-        stats: {
-          totalEnrollments: 5,
-          completedModules: 2,
-          averageProgress: 45
-        }
-      };
-    }
+    return await this.request<DashboardSummary>("/v1/learning/dashboard");
   }
 
   async listModules(domain?: string): Promise<{
     items: ModuleSummary[];
     nextCursor?: string | null;
   }> {
-    try {
-      const url = domain ? `/v1/modules?domain=${domain}` : '/v1/modules';
-      return await this.request<{
-        items: ModuleSummary[];
-        nextCursor?: string | null;
-      }>(url);
-    } catch (error) {
-      // Return mock modules when backend is unavailable
-      return {
-        items: [
-          {
-            id: "mod-1",
-            title: "Introduction to Algebra",
-            slug: "intro-algebra",
-            description: "Learn the fundamentals of algebra",
-            estimatedMinutes: 180,
-            difficulty: "beginner",
-            tags: ["math", "algebra"]
-          },
-          {
-            id: "mod-2",
-            title: "Calculus Basics",
-            slug: "calculus-basics",
-            description: "Introduction to differential calculus",
-            estimatedMinutes: 240,
-            difficulty: "intermediate",
-            tags: ["math", "calculus"]
-          }
-        ],
-        nextCursor: null
-      };
-    }
+    const url = domain ? `/v1/modules?domain=${domain}` : "/v1/modules";
+    return await this.request<{
+      items: ModuleSummary[];
+      nextCursor?: string | null;
+    }>(url);
   }
 
   async getModuleBySlug(slug: string): Promise<{
     module: ModuleDetail;
     userEnrollment: Enrollment | null;
   }> {
-    try {
-      return await this.request<{
-        module: ModuleDetail;
-        userEnrollment: Enrollment | null;
-      }>(`/v1/modules/${slug}`);
-    } catch (error) {
-      // Return mock module when backend is unavailable
-      return {
-        module: {
-          id: slug,
-          title: `Module: ${slug}`,
-          slug,
-          description: "This is a placeholder module",
-          domain: "general",
-          estimatedTimeMinutes: 60,
-          difficulty: "beginner"
-        } as any,
-        userEnrollment: null
-      };
-    }
+    return await this.request<{
+      module: ModuleDetail;
+      userEnrollment: Enrollment | null;
+    }>(`/v1/modules/${slug}`);
   }
 
-  async enrollInModule(moduleId: ModuleId): Promise<{ enrollment: Enrollment }> {
-    return await this.request<{ enrollment: Enrollment }>(
-      "/v1/enrollments",
-      { method: 'POST', body: JSON.stringify({ moduleId }) }
-    );
+  async enrollInModule(
+    moduleId: ModuleId,
+  ): Promise<{ enrollment: Enrollment }> {
+    return await this.request<{ enrollment: Enrollment }>("/v1/enrollments", {
+      method: "POST",
+      body: JSON.stringify({ moduleId }),
+    });
   }
 
   async updateProgress(
     enrollmentId: EnrollmentId,
     progressPercent: number,
-    timeSpentSecondsDelta: number
+    timeSpentSecondsDelta: number,
   ): Promise<{ enrollment: Enrollment }> {
     return await this.request<{ enrollment: Enrollment }>(
       `/v1/enrollments/${enrollmentId}/progress`,
       {
-        method: 'PATCH',
-        body: JSON.stringify({ progressPercent, timeSpentSecondsDelta })
-      }
+        method: "PATCH",
+        body: JSON.stringify({ progressPercent, timeSpentSecondsDelta }),
+      },
     );
   }
 
   async queryTutor(
     question: string,
-    moduleId?: ModuleId
+    moduleId?: ModuleId,
   ): Promise<{ response: TutorResponsePayload }> {
     return await this.request<{
       response: TutorResponsePayload;
     }>("/v1/ai/tutor/query", {
-      method: 'POST',
-      body: JSON.stringify({ question, moduleId })
+      method: "POST",
+      body: JSON.stringify({ question, moduleId }),
     });
   }
 
   async generateQuestions(
     moduleId: ModuleId,
     count: number = 5,
-    difficulty: "easy" | "medium" | "hard" = "medium"
+    difficulty: "easy" | "medium" | "hard" = "medium",
   ): Promise<{
     questions: Array<{
       question: string;
@@ -420,24 +355,27 @@ export class TutorPutorApiClient {
         explanation: string;
       }>;
     }>("/v1/ai/generate-questions", {
-      method: 'POST',
-      body: JSON.stringify({ moduleId, count, difficulty })
+      method: "POST",
+      body: JSON.stringify({ moduleId, count, difficulty }),
     });
   }
 
   // ========== Learning Pathways ==========
 
-  async recommendPath(goals: string[], currentSkills?: string[]): Promise<LearningPath> {
+  async recommendPath(
+    goals: string[],
+    currentSkills?: string[],
+  ): Promise<LearningPath> {
     return await this.request<LearningPath>("/v1/pathways/recommend", {
-      method: 'POST',
-      body: JSON.stringify({ goals, currentSkills })
+      method: "POST",
+      body: JSON.stringify({ goals, currentSkills }),
     });
   }
 
   async enrollInPath(pathId: string): Promise<LearningPathEnrollment> {
     return await this.request<LearningPathEnrollment>("/v1/pathways/enroll", {
-      method: 'POST',
-      body: JSON.stringify({ pathId })
+      method: "POST",
+      body: JSON.stringify({ pathId }),
     });
   }
 
@@ -445,110 +383,113 @@ export class TutorPutorApiClient {
     return await this.request<LearningPathEnrollment>(`/v1/pathways/${pathId}`);
   }
 
-  async updatePathProgress(pathId: string, nodeId: string, status: string): Promise<void> {
+  async updatePathProgress(
+    pathId: string,
+    nodeId: string,
+    status: string,
+  ): Promise<void> {
     await this.request(`/v1/pathways/${pathId}/progress`, {
-      method: 'PATCH',
-      body: JSON.stringify({ nodeId, status })
+      method: "PATCH",
+      body: JSON.stringify({ nodeId, status }),
     });
   }
 
-  async listPathEnrollments(): Promise<{ enrollments: LearningPathEnrollment[] }> {
-    try {
-      return await this.request<{ enrollments: LearningPathEnrollment[] }>("/v1/pathways");
-    } catch (error) {
-      // Return empty enrollments when backend is unavailable
-      return { enrollments: [] };
-    }
+  async listPathEnrollments(): Promise<{
+    enrollments: LearningPathEnrollment[];
+  }> {
+    return await this.request<{ enrollments: LearningPathEnrollment[] }>(
+      "/v1/pathways",
+    );
   }
 
   // ========== Teacher/Classroom ==========
 
   async listClassrooms(): Promise<{ classrooms: Classroom[] }> {
-    try {
-      return await this.request<{ classrooms: Classroom[] }>("/v1/teacher/classrooms");
-    } catch (error) {
-      // Return empty classrooms when backend is unavailable
-      return { classrooms: [] };
-    }
+    return await this.request<{ classrooms: Classroom[] }>(
+      "/v1/teacher/classrooms",
+    );
   }
 
-  async createClassroom(data: { name: string; description?: string }): Promise<Classroom> {
+  async createClassroom(data: {
+    name: string;
+    description?: string;
+  }): Promise<Classroom> {
     return await this.request<Classroom>("/v1/teacher/classrooms", {
-      method: 'POST',
-      body: JSON.stringify(data)
+      method: "POST",
+      body: JSON.stringify(data),
     });
   }
 
   async getClassroom(classroomId: string): Promise<Classroom> {
-    return await this.request<Classroom>(`/v1/teacher/classrooms/${classroomId}`);
-  }
-
-  async getClassroomProgress(classroomId: string): Promise<{ progress: StudentProgress[] }> {
-    return await this.request<{ progress: StudentProgress[] }>(
-      `/v1/teacher/classrooms/${classroomId}/progress`
+    return await this.request<Classroom>(
+      `/v1/teacher/classrooms/${classroomId}`,
     );
   }
 
-  async addStudentToClassroom(classroomId: string, studentId: string): Promise<void> {
+  async getClassroomProgress(
+    classroomId: string,
+  ): Promise<{ progress: StudentProgress[] }> {
+    return await this.request<{ progress: StudentProgress[] }>(
+      `/v1/teacher/classrooms/${classroomId}/progress`,
+    );
+  }
+
+  async addStudentToClassroom(
+    classroomId: string,
+    studentId: string,
+  ): Promise<void> {
     await this.request(`/v1/teacher/classrooms/${classroomId}/students`, {
-      method: 'POST',
-      body: JSON.stringify({ studentId })
+      method: "POST",
+      body: JSON.stringify({ studentId }),
     });
   }
 
   // ========== Collaboration ==========
 
   async listThreads(moduleId?: string): Promise<{ threads: Thread[] }> {
-    try {
-      const url = moduleId ? `/v1/collaboration/threads?moduleId=${moduleId}` : '/v1/collaboration/threads';
-      return await this.request<{ threads: Thread[] }>(url);
-    } catch (error) {
-      // Return empty threads when backend is unavailable
-      return { threads: [] };
-    }
+    const url = moduleId
+      ? `/v1/collaboration/threads?moduleId=${moduleId}`
+      : "/v1/collaboration/threads";
+    return await this.request<{ threads: Thread[] }>(url);
   }
 
-  async getThread(threadId: string): Promise<{ thread: Thread; posts: Post[] }> {
-    try {
-      return await this.request<{ thread: Thread; posts: Post[] }>(
-        `/v1/collaboration/threads/${threadId}`
-      );
-    } catch (error) {
-      // Return empty thread and posts when backend is unavailable
-      return {
-        thread: {
-          id: threadId,
-          tenantId: "",
-          title: "Thread",
-          status: "OPEN",
-          authorId: "",
-          content: "",
-          posts: [],
-          createdAt: new Date().toISOString()
-        },
-        posts: []
-      };
-    }
+  async getThread(
+    threadId: string,
+  ): Promise<{ thread: Thread; posts: Post[] }> {
+    return await this.request<{ thread: Thread; posts: Post[] }>(
+      `/v1/collaboration/threads/${threadId}`,
+    );
   }
 
-  async createThread(data: { moduleId: string; title: string; content: string }): Promise<Thread> {
+  async createThread(data: {
+    moduleId: string;
+    title: string;
+    content: string;
+  }): Promise<Thread> {
     return await this.request<Thread>("/v1/collaboration/threads", {
-      method: 'POST',
-      body: JSON.stringify(data)
+      method: "POST",
+      body: JSON.stringify(data),
     });
   }
 
-  async createPost(threadId: string, content: string, parentId?: string): Promise<Post> {
-    return await this.request<Post>(`/v1/collaboration/threads/${threadId}/posts`, {
-      method: 'POST',
-      body: JSON.stringify({ content, parentId })
-    });
+  async createPost(
+    threadId: string,
+    content: string,
+    parentId?: string,
+  ): Promise<Post> {
+    return await this.request<Post>(
+      `/v1/collaboration/threads/${threadId}/posts`,
+      {
+        method: "POST",
+        body: JSON.stringify({ content, parentId }),
+      },
+    );
   }
 
   async voteOnPost(postId: string, vote: "up" | "down"): Promise<void> {
     await this.request(`/v1/collaboration/posts/${postId}/vote`, {
-      method: 'POST',
-      body: JSON.stringify({ vote })
+      method: "POST",
+      body: JSON.stringify({ vote }),
     });
   }
 
@@ -561,18 +502,7 @@ export class TutorPutorApiClient {
     xpToNextLevel: number;
     badges: Achievement[];
   }> {
-    try {
-      return await this.request("/v1/gamification/progress");
-    } catch (error) {
-      // Return mock progress when backend is unavailable
-      return {
-        totalPoints: 0,
-        currentStreak: 0,
-        level: 1,
-        xpToNextLevel: 1000,
-        badges: []
-      };
-    }
+    return await this.request("/v1/gamification/progress");
   }
 
   async getLeaderboard(period?: string): Promise<{
@@ -584,19 +514,24 @@ export class TutorPutorApiClient {
       badges: number;
     }>;
   }> {
-    const url = period ? `/v1/gamification/leaderboard?period=${period}` : '/v1/gamification/leaderboard';
+    const url = period
+      ? `/v1/gamification/leaderboard?period=${period}`
+      : "/v1/gamification/leaderboard";
     return await this.request(url);
   }
 
   async getUserAchievements(): Promise<{ achievements: Achievement[] }> {
     return await this.request<{ achievements: Achievement[] }>(
-      "/v1/gamification/achievements"
+      "/v1/gamification/achievements",
     );
   }
 
   // ========== Search ==========
 
-  async search(query: string, filters?: Record<string, string>): Promise<{
+  async search(
+    query: string,
+    filters?: Record<string, string>,
+  ): Promise<{
     results: Array<{
       id: string;
       type: string;
@@ -607,19 +542,16 @@ export class TutorPutorApiClient {
     total: number;
     facets: Record<string, Array<{ value: string; count: number }>>;
   }> {
-    try {
-      const params = new URLSearchParams({ q: query, ...filters });
-      return await this.request(`/v1/search?${params}`);
-    } catch (error) {
-      // Return empty results when backend is unavailable
-      return { results: [], total: 0, facets: {} };
-    }
+    const params = new URLSearchParams({ q: query, ...filters });
+    return await this.request(`/v1/search?${params}`);
   }
 
   async getSearchSuggestions(query: string): Promise<{
     suggestions: Array<{ text: string; type: string; id?: string }>;
   }> {
-    return await this.request(`/v1/search/autocomplete?q=${encodeURIComponent(query)}`);
+    return await this.request(
+      `/v1/search/autocomplete?q=${encodeURIComponent(query)}`,
+    );
   }
 }
 
@@ -632,42 +564,53 @@ export const apiClient = new TutorPutorApiClient();
 function getHeaders(): HeadersInit {
   const token = localStorage.getItem("auth_token");
   const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
-  
+
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     "X-Tenant-ID": tenantId,
     "X-Correlation-ID": crypto.randomUUID(),
   };
-  
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  
+
   return headers;
 }
 
 export const tutorputorClient = {
-  get: async <T = unknown>(url: string, params?: object): Promise<{ data: T }> => {
-    const queryString = params ? `?${new URLSearchParams(params as Record<string, string>)}` : '';
+  get: async <T = unknown>(
+    url: string,
+    params?: object,
+  ): Promise<{ data: T }> => {
+    const queryString = params
+      ? `?${new URLSearchParams(params as Record<string, string>)}`
+      : "";
     const response = await fetch(`/api/v1${url}${queryString}`, {
-      method: 'GET',
+      method: "GET",
       headers: getHeaders(),
     });
     const data = await response.json();
     return { data };
   },
-  post: async <T = unknown>(url: string, data?: object): Promise<{ data: T }> => {
+  post: async <T = unknown>(
+    url: string,
+    data?: object,
+  ): Promise<{ data: T }> => {
     const response = await fetch(`/api/v1${url}`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
     const responseData = await response.json();
     return { data: responseData };
   },
-  patch: async <T = unknown>(url: string, data?: object): Promise<{ data: T }> => {
+  patch: async <T = unknown>(
+    url: string,
+    data?: object,
+  ): Promise<{ data: T }> => {
     const response = await fetch(`/api/v1${url}`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
@@ -676,13 +619,10 @@ export const tutorputorClient = {
   },
   delete: async <T = unknown>(url: string): Promise<{ data: T }> => {
     const response = await fetch(`/api/v1${url}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: getHeaders(),
     });
     const data = await response.json();
     return { data };
   },
 };
-
-
-

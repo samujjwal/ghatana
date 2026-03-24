@@ -2790,3 +2790,45 @@ model AutoRevisionMetrics {
   @@unique([tenantId, date])
   @@index([date])
 }
+
+// =============================================================================
+// Kernel Plugin Registry (persistent storage for registered domain kernels)
+// =============================================================================
+
+model KernelPlugin {
+  id           String   @id @default(cuid())
+  tenantId     String
+  pluginId     String   @unique
+  name         String
+  version      String
+  description  String?
+  author       String?
+  kernelType   String
+  capabilities String   @default("[]") // JSON array
+  dependencies String?  // JSON object
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId, kernelType])
+  @@index([tenantId])
+}
+
+// =============================================================================
+// Automation Rules (content studio experience triggers)
+// =============================================================================
+
+model AutomationRule {
+  id           String   @id @default(cuid())
+  tenantId     String
+  experienceId String
+  name         String
+  description  String?
+  trigger      String   // JSON: { type, conditions }
+  action       String   // JSON: { type, params }
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId, experienceId])
+  @@index([tenantId, enabled])
+}

@@ -1,6 +1,7 @@
 import { atom, useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import type { UserSummary, TenantId } from "@tutorputor/contracts/v1/types";
+import { setAuthToken } from "../services/contentStudioApi";
 
 interface AuthState {
   user: UserSummary | null;
@@ -30,9 +31,10 @@ export function useAuth() {
 
     async function checkAuth() {
       try {
-        const response = await fetch("/api/auth/me");
+        const response = await fetch("/api/v1/auth/me");
         if (response.ok) {
           const data = await response.json();
+          setAuthToken(data.accessToken ?? null);
           setAuth({
             user: data.user ?? data,
             tenantId: data.tenantId,
@@ -43,9 +45,10 @@ export function useAuth() {
           (response.status === 401 ||
             response.status === 404 ||
             response.status === 500) &&
-          import.meta.env.DEV
+          import.meta.env.VITE_DEV_AUTH_BYPASS === "true"
         ) {
           // In development, if auth endpoint fails or doesn't exist, use seeded admin user
+          setAuthToken("dev-token");
           setAuth({
             user: {
               id: "user-admin-001",
@@ -68,8 +71,9 @@ export function useAuth() {
           });
         }
       } catch {
-        if (import.meta.env.DEV) {
+        if (import.meta.env.VITE_DEV_AUTH_BYPASS === "true") {
           // In development, use seeded admin user on any error
+          setAuthToken("dev-token");
           setAuth({
             user: {
               id: "user-admin-001",
@@ -84,6 +88,7 @@ export function useAuth() {
             isLoading: false,
           });
         } else {
+          setAuthToken(null);
           setAuth({
             user: null,
             tenantId: null,
@@ -105,7 +110,11 @@ export function useAuth() {
     isAdmin: auth.user?.role === "admin",
     isLoading: auth.isLoading,
     logout: async () => {
-      await fetch("/auth/logout", { method: "POST" });
+      await fetch("/api/v1/auth/logout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${auth.accessToken ?? ""}` },
+      });
+      setAuthToken(null);
       setAuth({
         user: null,
         tenantId: null,

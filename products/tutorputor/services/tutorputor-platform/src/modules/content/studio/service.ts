@@ -43,22 +43,51 @@ export interface ContentStudioConfig {
 
 export type HealthAwareContentStudioService = ContentStudioService & {
   checkHealth: () => Promise<boolean>;
-  updateExperience: (id: string, data: any) => Promise<LearningExperience | null>;
+  updateExperience: (
+    id: string,
+    data: any,
+  ) => Promise<LearningExperience | null>;
   deleteExperience: (id: string) => Promise<void>;
   generateClaims: (id: string, request: any) => Promise<any>;
-  generateTasks: (experienceId: string, claimId: string, request: any) => Promise<any>;
-  refineContent: (id: string, request: any) => Promise<LearningExperience | null>;
+  generateTasks: (
+    experienceId: string,
+    claimId: string,
+    request: any,
+  ) => Promise<any>;
+  refineContent: (
+    id: string,
+    request: any,
+  ) => Promise<LearningExperience | null>;
   adaptGrade: (id: string, request: any) => Promise<LearningExperience | null>;
   getValidationHistory: (id: string) => Promise<any[]>;
-  publishExperience: (id: string, userId: string) => Promise<LearningExperience | null>;
-  unpublishExperience: (id: string, reason?: string) => Promise<LearningExperience | null>;
+  publishExperience: (
+    id: string,
+    userId: string,
+  ) => Promise<LearningExperience | null>;
+  unpublishExperience: (
+    id: string,
+    reason?: string,
+  ) => Promise<LearningExperience | null>;
   archiveExperience: (id: string) => Promise<LearningExperience | null>;
   addClaim: (id: string, claim: any) => Promise<any>;
-  updateClaim: (experienceId: string, claimId: string, data: any) => Promise<any>;
+  updateClaim: (
+    experienceId: string,
+    claimId: string,
+    data: any,
+  ) => Promise<any>;
   deleteClaim: (experienceId: string, claimId: string) => Promise<void>;
   addTask: (experienceId: string, claimId: string, task: any) => Promise<any>;
-  updateTask: (experienceId: string, claimId: string, taskId: string, data: any) => Promise<any>;
-  deleteTask: (experienceId: string, claimId: string, taskId: string) => Promise<void>;
+  updateTask: (
+    experienceId: string,
+    claimId: string,
+    taskId: string,
+    data: any,
+  ) => Promise<any>;
+  deleteTask: (
+    experienceId: string,
+    claimId: string,
+    taskId: string,
+  ) => Promise<void>;
   getExperienceAnalytics: (id: string) => Promise<any>;
   getGenerationProgress: (id: string) => Promise<any>;
 };
@@ -101,7 +130,8 @@ function getQueue(): QueueLike {
     if (disableQueue) {
       queueSingleton = {
         async add(_name, _data, opts) {
-          const id = typeof opts?.["jobId"] === "string" ? opts["jobId"] : "noop";
+          const id =
+            typeof opts?.["jobId"] === "string" ? opts["jobId"] : "noop";
           return { id };
         },
       };
@@ -122,12 +152,21 @@ function generateSlug(title: string): string {
     .slice(0, 80);
 }
 
-function inferDomain(title: string, description?: string): "MATH" | "SCIENCE" | "TECH" {
+function inferDomain(
+  title: string,
+  description?: string,
+): "MATH" | "SCIENCE" | "TECH" {
   const text = `${title} ${description || ""}`.toLowerCase();
-  if (/\b(math|algebra|calculus|geometry|statistics|equation|number)\b/.test(text)) {
+  if (
+    /\b(math|algebra|calculus|geometry|statistics|equation|number)\b/.test(text)
+  ) {
     return "MATH";
   }
-  if (/\b(physics|chemistry|biology|science|force|energy|cell|molecule)\b/.test(text)) {
+  if (
+    /\b(physics|chemistry|biology|science|force|energy|cell|molecule)\b/.test(
+      text,
+    )
+  ) {
     return "SCIENCE";
   }
   return "TECH";
@@ -261,7 +300,14 @@ function bloomToContract(value: string): string {
 function bloomFromInput(value: string | undefined): string {
   if (!value) return "UNDERSTAND";
   const up = value.toUpperCase();
-  const valid = ["REMEMBER", "UNDERSTAND", "APPLY", "ANALYZE", "EVALUATE", "CREATE"];
+  const valid = [
+    "REMEMBER",
+    "UNDERSTAND",
+    "APPLY",
+    "ANALYZE",
+    "EVALUATE",
+    "CREATE",
+  ];
   return valid.includes(up) ? up : "UNDERSTAND";
 }
 
@@ -271,7 +317,10 @@ function extractPrimaryGrade(experience: any): GradeRange {
   return normalizeGradeRange(String(grades[0]));
 }
 
-async function mapExperience(prisma: PrismaClient, experienceId: string): Promise<LearningExperience | null> {
+async function mapExperience(
+  prisma: PrismaClient,
+  experienceId: string,
+): Promise<LearningExperience | null> {
   const exp = await prisma.learningExperience.findUnique({
     where: { id: experienceId },
     include: {
@@ -287,7 +336,8 @@ async function mapExperience(prisma: PrismaClient, experienceId: string): Promis
 
   const gradeRange = extractPrimaryGrade(exp);
   const gradeAdaptations = safeJsonArray(exp.gradeAdaptations);
-  const selectedGradeAdaptation = gradeAdaptations[0] || defaultGradeAdaptation(gradeRange);
+  const selectedGradeAdaptation =
+    gradeAdaptations[0] || defaultGradeAdaptation(gradeRange);
 
   const claims: LearningClaim[] = (exp.claims || []).map((claim: any) => {
     const claimRef = claim.claimRef ?? claim.id;
@@ -300,7 +350,9 @@ async function mapExperience(prisma: PrismaClient, experienceId: string): Promis
       : (exp.evidences || []).filter((e: any) => e.claimRef === claimRef);
     const tasks = Array.isArray(claim.tasks)
       ? claim.tasks
-      : (exp.experienceTasks || []).filter((task: any) => task.claimRef === claimRef);
+      : (exp.experienceTasks || []).filter(
+          (task: any) => task.claimRef === claimRef,
+        );
 
     return {
       id: claimId,
@@ -419,10 +471,14 @@ export function createContentStudioService(
           },
         );
       } catch (queueError) {
-        await prisma.learningExperience.delete({ where: { id: experience.id } }).catch(() => undefined);
+        await prisma.learningExperience
+          .delete({ where: { id: experience.id } })
+          .catch(() => undefined);
         throw new Error(
           `Failed to enqueue background claim generation: ${
-            queueError instanceof Error ? queueError.message : String(queueError)
+            queueError instanceof Error
+              ? queueError.message
+              : String(queueError)
           }`,
         );
       }
@@ -440,7 +496,9 @@ export function createContentStudioService(
     }
   }
 
-  async function getExperience(experienceId: string): Promise<LearningExperience | null> {
+  async function getExperience(
+    experienceId: string,
+  ): Promise<LearningExperience | null> {
     return mapExperience(prisma, experienceId);
   }
 
@@ -476,17 +534,28 @@ export function createContentStudioService(
     for (const row of rows) {
       const mapped = await mapExperience(prisma, row.id);
       if (!mapped) continue;
-      if (filters.gradeRange && mapped.gradeAdaptation?.gradeRange !== filters.gradeRange) {
+      if (
+        filters.gradeRange &&
+        mapped.gradeAdaptation?.gradeRange !== filters.gradeRange
+      ) {
         continue;
       }
       experiences.push(mapped);
     }
 
-    return { experiences, total: filters.gradeRange ? experiences.length : total };
+    return {
+      experiences,
+      total: filters.gradeRange ? experiences.length : total,
+    };
   }
 
-  async function updateExperience(id: string, data: any): Promise<LearningExperience | null> {
-    const existing = await prisma.learningExperience.findUnique({ where: { id } });
+  async function updateExperience(
+    id: string,
+    data: any,
+  ): Promise<LearningExperience | null> {
+    const existing = await prisma.learningExperience.findUnique({
+      where: { id },
+    });
     if (!existing) return null;
 
     const updateData: any = {
@@ -509,7 +578,10 @@ export function createContentStudioService(
       updateData.status = toPrismaStatus(data.status);
     }
 
-    if (typeof data?.estimatedTimeMinutes === "number" && data.estimatedTimeMinutes > 0) {
+    if (
+      typeof data?.estimatedTimeMinutes === "number" &&
+      data.estimatedTimeMinutes > 0
+    ) {
       updateData.estimatedTimeMinutes = data.estimatedTimeMinutes;
     }
 
@@ -532,12 +604,16 @@ export function createContentStudioService(
   }
 
   async function generateClaims(id: string, request: any): Promise<any> {
-    const experience = await prisma.learningExperience.findUnique({ where: { id } });
+    const experience = await prisma.learningExperience.findUnique({
+      where: { id },
+    });
     if (!experience) {
       throw new Error("Experience not found");
     }
 
-    const primaryGrade = normalizeGradeRange(String(safeJsonArray(experience.targetGrades)[0] || "grade_6_8"));
+    const primaryGrade = normalizeGradeRange(
+      String(safeJsonArray(experience.targetGrades)[0] || "grade_6_8"),
+    );
     const maxClaims =
       typeof request?.maxClaims === "number" && request.maxClaims > 0
         ? request.maxClaims
@@ -597,8 +673,13 @@ export function createContentStudioService(
     return { tasks };
   }
 
-  async function refineContent(id: string, request: any): Promise<LearningExperience | null> {
-    const current = await prisma.learningExperience.findUnique({ where: { id } });
+  async function refineContent(
+    id: string,
+    request: any,
+  ): Promise<LearningExperience | null> {
+    const current = await prisma.learningExperience.findUnique({
+      where: { id },
+    });
     if (!current) return null;
 
     const note =
@@ -609,7 +690,8 @@ export function createContentStudioService(
     await prisma.learningExperience.update({
       where: { id },
       data: {
-        intentMotivation: `${current.intentMotivation}\n\nRefinement: ${note}`.slice(0, 5000),
+        intentMotivation:
+          `${current.intentMotivation}\n\nRefinement: ${note}`.slice(0, 5000),
         version: { increment: 1 },
         lastEditedBy: request?.userId || "auto-refiner",
       },
@@ -618,7 +700,9 @@ export function createContentStudioService(
     return mapExperience(prisma, id);
   }
 
-  async function refineExperience(request: RefineExperienceRequest): Promise<ExperienceOperationResult> {
+  async function refineExperience(
+    request: RefineExperienceRequest,
+  ): Promise<ExperienceOperationResult> {
     const experience = await refineContent(request.experienceId, request);
     if (!experience) {
       return { success: false, error: "Experience not found" };
@@ -626,8 +710,13 @@ export function createContentStudioService(
     return { success: true, experience };
   }
 
-  async function adaptGrade(id: string, request: any): Promise<LearningExperience | null> {
-    const target = normalizeGradeRange(String(request?.gradeRange || request?.targetGrade || "grade_6_8"));
+  async function adaptGrade(
+    id: string,
+    request: any,
+  ): Promise<LearningExperience | null> {
+    const target = normalizeGradeRange(
+      String(request?.gradeRange || request?.targetGrade || "grade_6_8"),
+    );
     await prisma.learningExperience.update({
       where: { id },
       data: {
@@ -640,7 +729,10 @@ export function createContentStudioService(
     return mapExperience(prisma, id);
   }
 
-  async function adaptGradeLevel(experienceId: string, targetGrade: GradeRange): Promise<ExperienceOperationResult> {
+  async function adaptGradeLevel(
+    experienceId: string,
+    targetGrade: GradeRange,
+  ): Promise<ExperienceOperationResult> {
     const experience = await adaptGrade(experienceId, { targetGrade });
     if (!experience) {
       return { success: false, error: "Experience not found" };
@@ -648,11 +740,20 @@ export function createContentStudioService(
     return { success: true, experience };
   }
 
-  async function validateExperience(id: string, _request?: any): Promise<ExperienceValidationResult> {
+  async function validateExperience(
+    id: string,
+    _request?: any,
+  ): Promise<ExperienceValidationResult> {
     const experience = await prisma.learningExperience.findUnique({
       where: { id },
       include: {
-        claims: true,
+        claims: {
+          include: {
+            examples: true,
+            simulations: true,
+            animations: true,
+          },
+        },
         evidences: true,
         experienceTasks: true,
       },
@@ -662,47 +763,220 @@ export function createContentStudioService(
       throw new Error("Experience not found");
     }
 
-    const claimCount = experience.claims.length;
-    const evidenceCount = experience.evidences.length;
-    const taskCount = experience.experienceTasks.length;
+    const claims = experience.claims as any[];
+    const claimCount = claims.length;
 
-    const completeness = claimCount === 0 ? 20 : Math.min(100, Math.round(((evidenceCount + taskCount) / Math.max(claimCount, 1)) * 30));
-    const baseScore = claimCount === 0 ? 35 : 70;
-    const score = Math.min(100, baseScore + Math.round(completeness / 3));
-    const canPublish = claimCount > 0 && score >= 70;
-    const overallStatus = canPublish ? "PASS" : score >= 50 ? "WARN" : "FAIL";
+    // --------------------------------------------------------------------------
+    // Evidence-based validation: check per-claim artifact presence
+    // --------------------------------------------------------------------------
+    let claimsWithTasks = 0;
+    let claimsWithArtifacts = 0;
+    let claimsWithBloom = 0;
+
+    const claimChecks: Array<{
+      claimRef: string;
+      hasTasks: boolean;
+      hasArtifacts: boolean;
+      hasBloom: boolean;
+    }> = [];
+
+    const tasksByClaimRef = new Map<string, number>();
+    for (const task of experience.experienceTasks) {
+      const ref = (task as any).claimRef ?? "";
+      tasksByClaimRef.set(ref, (tasksByClaimRef.get(ref) ?? 0) + 1);
+    }
+
+    for (const claim of claims) {
+      const claimRef = (claim as any).claimRef ?? (claim as any).id ?? "";
+      const taskCount = tasksByClaimRef.get(claimRef) ?? 0;
+      const exampleCount = claim.examples?.length ?? 0;
+      const simCount = claim.simulations?.length ?? 0;
+      const animCount = claim.animations?.length ?? 0;
+      const hasArtifacts = exampleCount + simCount + animCount > 0;
+      const hasTasks = taskCount > 0;
+      const hasBloom = !!claim.bloomLevel;
+
+      if (hasTasks) claimsWithTasks++;
+      if (hasArtifacts) claimsWithArtifacts++;
+      if (hasBloom) claimsWithBloom++;
+
+      claimChecks.push({ claimRef, hasTasks, hasArtifacts, hasBloom });
+    }
+
+    // --------------------------------------------------------------------------
+    // Pillar scoring (0–100 per pillar)
+    // --------------------------------------------------------------------------
+    // Educational: claims with Bloom level + task coverage
+    const educationalScore =
+      claimCount === 0
+        ? 0
+        : Math.round(
+            (claimsWithBloom / claimCount) * 50 +
+              (claimsWithTasks / claimCount) * 50,
+          );
+
+    // Experiential: claims with concrete artifacts (examples / simulations / animations)
+    const experientialScore =
+      claimCount === 0
+        ? 0
+        : Math.round((claimsWithArtifacts / claimCount) * 100);
+
+    // Technical: schema validity — grade adaptation present + version set
+    const hasGradeAdaptation =
+      Array.isArray(experience.gradeAdaptations) &&
+      (experience.gradeAdaptations as any[]).length > 0;
+    const technicalScore =
+      claimCount === 0
+        ? 20
+        : Math.min(
+            100,
+            (hasGradeAdaptation ? 50 : 0) + (claimCount > 0 ? 50 : 0),
+          );
+
+    // Safety / Accessibility: grade adaptation presence + sensible grade range
+    const accessibilityScore = hasGradeAdaptation ? 85 : 50;
+    const safetyScore = 100; // No safety issues unless content screening is integrated
+
+    const overallScore = Math.round(
+      educationalScore * 0.3 +
+        experientialScore * 0.35 +
+        technicalScore * 0.15 +
+        safetyScore * 0.1 +
+        accessibilityScore * 0.1,
+    );
+
+    // --------------------------------------------------------------------------
+    // Publishability gate:
+    //   - At least one claim
+    //   - Every claim must have at least one task OR one artifact
+    //   - Overall score >= 60
+    // --------------------------------------------------------------------------
+    const allClaimsMeetBaseline = claimChecks.every(
+      (c) => c.hasTasks || c.hasArtifacts,
+    );
+    const canPublish =
+      claimCount > 0 && allClaimsMeetBaseline && overallScore >= 60;
+    const overallStatus = canPublish
+      ? "PASS"
+      : overallScore >= 45
+        ? "WARN"
+        : "FAIL";
+
+    // --------------------------------------------------------------------------
+    // Build human-readable check items
+    // --------------------------------------------------------------------------
+    const checks: any[] = [];
+
+    if (claimCount === 0) {
+      checks.push({
+        checkId: "claims-required",
+        pillar: "Educational",
+        name: "Learning Claims",
+        passed: false,
+        severity: "error",
+        message:
+          "Experience has no learning claims. Generate claims before publishing.",
+        suggestion:
+          "Use the Generate Claims action to create evidence-backed claims.",
+      });
+    } else {
+      checks.push({
+        checkId: "claims-present",
+        pillar: "Educational",
+        name: "Learning Claims",
+        passed: true,
+        severity: "info",
+        message: `${claimCount} claim${claimCount > 1 ? "s" : ""} present.`,
+      });
+    }
+
+    if (claimCount > 0) {
+      const missingTasks = claimChecks.filter((c) => !c.hasTasks).length;
+      const missingArtifacts = claimChecks.filter(
+        (c) => !c.hasArtifacts,
+      ).length;
+
+      checks.push({
+        checkId: "claim-tasks",
+        pillar: "Educational",
+        name: "Claim Tasks Coverage",
+        passed: missingTasks === 0,
+        severity: missingTasks === 0 ? "info" : "warning",
+        message:
+          missingTasks === 0
+            ? "All claims have associated practice tasks."
+            : `${missingTasks} claim${missingTasks > 1 ? "s are" : " is"} missing tasks.`,
+        suggestion:
+          missingTasks > 0
+            ? "Generate tasks for claims without coverage."
+            : undefined,
+      });
+
+      checks.push({
+        checkId: "claim-artifacts",
+        pillar: "Experiential",
+        name: "Concrete Learning Artifacts",
+        passed: missingArtifacts === 0,
+        severity: missingArtifacts === 0 ? "info" : "warning",
+        message:
+          missingArtifacts === 0
+            ? "All claims have at least one concrete learning artifact."
+            : `${missingArtifacts} claim${missingArtifacts > 1 ? "s lack" : " lacks"} examples, simulations, or animations.`,
+        suggestion:
+          missingArtifacts > 0
+            ? "Run the content generation pipeline to create examples and simulations."
+            : undefined,
+      });
+    }
+
+    checks.push({
+      checkId: "grade-adaptation",
+      pillar: "Accessibility",
+      name: "Grade Adaptation",
+      passed: hasGradeAdaptation,
+      severity: hasGradeAdaptation ? "info" : "warning",
+      message: hasGradeAdaptation
+        ? "Grade adaptation profile is set."
+        : "No grade adaptation profile found.",
+      suggestion: hasGradeAdaptation
+        ? undefined
+        : "Set a target grade range to enable grade-appropriate content.",
+    });
 
     await prisma.validationRecord.create({
       data: {
         experienceId: id,
-        authorityScore: score,
-        accuracyScore: score,
-        usefulnessScore: score,
-        harmlessnessScore: score,
-        accessibilityScore: score,
-        gradefitScore: score,
+        authorityScore: educationalScore,
+        accuracyScore: technicalScore,
+        usefulnessScore: experientialScore,
+        harmlessnessScore: safetyScore,
+        accessibilityScore,
+        gradefitScore: accessibilityScore,
         overallStatus,
-        issues: canPublish
-          ? []
-          : [{
-              severity: "warning",
-              message: "Insufficient generated content for one or more claims",
-            }],
-        suggestions: canPublish ? [] : ["Generate claims/examples/tasks before publishing"],
+        issues: checks
+          .filter((c) => !c.passed)
+          .map((c) => ({ severity: c.severity, message: c.message })),
+        suggestions: checks
+          .filter((c) => c.suggestion)
+          .map((c) => c.suggestion as string),
       } as any,
     });
 
     return {
-      status: canPublish ? "valid" : score >= 50 ? "warnings" : "invalid",
+      status: canPublish
+        ? "valid"
+        : overallScore >= 45
+          ? "warnings"
+          : "invalid",
       canPublish,
-      checks: [],
-      score,
+      checks,
+      score: overallScore,
       pillarScores: {
-        educational: score,
-        experiential: score,
-        safety: score,
-        technical: score,
-        accessibility: score,
+        educational: educationalScore,
+        experiential: experientialScore,
+        safety: safetyScore,
+        technical: technicalScore,
+        accessibility: accessibilityScore,
       } as any,
       validatedAt: new Date(),
     };
@@ -718,7 +992,22 @@ export function createContentStudioService(
     return rows;
   }
 
-  async function publishExperience(id: string, userId: string): Promise<LearningExperience | null> {
+  async function publishExperience(
+    id: string,
+    userId: string,
+  ): Promise<LearningExperience | null> {
+    // Validate before publishing — gate on canPublish from evidence-based check
+    const validation = await validateExperience(id);
+    if (!validation.canPublish) {
+      throw new Error(
+        `Cannot publish: validation failed (score ${validation.score}/100). ` +
+          `Fix the following issues: ${validation.checks
+            .filter((c: any) => !c.passed && c.severity === "error")
+            .map((c: any) => c.message)
+            .join("; ")}`,
+      );
+    }
+
     await prisma.learningExperience.update({
       where: { id },
       data: {
@@ -731,7 +1020,10 @@ export function createContentStudioService(
     return mapExperience(prisma, id);
   }
 
-  async function unpublishExperience(id: string, _reason?: string): Promise<LearningExperience | null> {
+  async function unpublishExperience(
+    id: string,
+    _reason?: string,
+  ): Promise<LearningExperience | null> {
     await prisma.learningExperience.update({
       where: { id },
       data: {
@@ -741,7 +1033,9 @@ export function createContentStudioService(
     return mapExperience(prisma, id);
   }
 
-  async function archiveExperience(id: string): Promise<LearningExperience | null> {
+  async function archiveExperience(
+    id: string,
+  ): Promise<LearningExperience | null> {
     await prisma.learningExperience.update({
       where: { id },
       data: {
@@ -774,7 +1068,11 @@ export function createContentStudioService(
     return created;
   }
 
-  async function updateClaim(experienceId: string, claimId: string, data: any): Promise<any> {
+  async function updateClaim(
+    experienceId: string,
+    claimId: string,
+    data: any,
+  ): Promise<any> {
     const claim = await prisma.learningClaim.findFirst({
       where: {
         experienceId,
@@ -789,13 +1087,19 @@ export function createContentStudioService(
       where: { id: claim.id },
       data: {
         text: data?.text || data?.statement || claim.text,
-        bloomLevel: data?.bloomLevel || data?.bloom ? bloomFromInput(data?.bloomLevel || data?.bloom) : claim.bloomLevel,
+        bloomLevel:
+          data?.bloomLevel || data?.bloom
+            ? bloomFromInput(data?.bloomLevel || data?.bloom)
+            : claim.bloomLevel,
         contentNeeds: data?.contentNeeds ?? claim.contentNeeds,
       } as any,
     });
   }
 
-  async function deleteClaim(experienceId: string, claimId: string): Promise<void> {
+  async function deleteClaim(
+    experienceId: string,
+    claimId: string,
+  ): Promise<void> {
     const claim = await prisma.learningClaim.findFirst({
       where: {
         experienceId,
@@ -810,7 +1114,11 @@ export function createContentStudioService(
     });
   }
 
-  async function addTask(experienceId: string, claimId: string, task: any): Promise<any> {
+  async function addTask(
+    experienceId: string,
+    claimId: string,
+    task: any,
+  ): Promise<any> {
     const claim = await prisma.learningClaim.findFirst({
       where: {
         experienceId,
@@ -931,11 +1239,16 @@ export function createContentStudioService(
     );
 
     const isComplete = totalClaims > 0 && claimsProcessed >= totalClaims;
-    const percentComplete = totalClaims === 0 ? 0 : Math.round((claimsProcessed / totalClaims) * 100);
+    const percentComplete =
+      totalClaims === 0 ? 0 : Math.round((claimsProcessed / totalClaims) * 100);
 
     return {
       experienceId: id,
-      status: isComplete ? "complete" : totalClaims === 0 ? "queued" : "in_progress",
+      status: isComplete
+        ? "complete"
+        : totalClaims === 0
+          ? "queued"
+          : "in_progress",
       totalClaims,
       claimsProcessed,
       percentComplete,

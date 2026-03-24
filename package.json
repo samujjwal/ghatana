@@ -48,6 +48,12 @@
       "date-fns": "^4.1.0",
       "axios": "npm:node-fetch@3",
       "uuid": "npm:nanoid@5"
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "@prisma/engines",
+      "esbuild",
+      "msw",
+      "prisma"
+    ]
   }
 }

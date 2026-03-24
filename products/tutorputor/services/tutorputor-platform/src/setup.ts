@@ -26,7 +26,10 @@ import { aiModule } from "./modules/ai/index.js";
 import { autoRevisionModule } from "./modules/auto-revision/module.js";
 import { contentNeedsModule } from "./modules/content-needs/module.js";
 import { simulationModule } from "./modules/simulation/index.js";
+import { searchModule } from "./modules/search/index.js";
 import { registerKernelRegistryRoutes } from "./modules/kernel-registry/fastify-routes.js";
+import { vrRoutes } from "./modules/vr/vr-routes.js";
+import { notificationRoutes } from "./modules/notifications/index.js";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
@@ -114,24 +117,90 @@ export async function setupPlatform(
   // Rate limiting
   await setupRateLimit(app);
 
+  // -------------------------------------------------------------------------
+  // Global JWT Authentication Guard
+  // Protects all /api/v1/* routes. Verifies the Bearer token and populates
+  // req.user with decoded claims for downstream route handlers.
+  //
+  // Exemptions (public routes):
+  //   - /api/v1/auth/sso/*  — SSO login/callback flows
+  //   - /api/v1/auth/health — module health probe
+  //   - /health, /healthz, /metrics — infrastructure probes
+  //   - Routes outside /api/v1/* (e.g., /api/sim-author/* handled by simulationModule)
+  // -------------------------------------------------------------------------
+  app.addHook("onRequest", async (req, reply) => {
+    const url = req.raw.url ?? req.url;
+    // Guard versioned API routes and content-studio routes
+    const isGuarded =
+      url.startsWith("/api/v1/") || url.startsWith("/api/content-studio/");
+    if (!isGuarded) return;
+    // Public auth sub-routes (only under /api/v1/)
+    if (url.startsWith("/api/v1/auth/sso/") || url === "/api/v1/auth/health")
+      return;
+    // Content-studio health is public
+    if (url === "/api/content-studio/health") return;
+
+    try {
+      await req.jwtVerify();
+    } catch {
+      reply.code(401).send({
+        error: "Unauthorized",
+        message: "A valid Bearer token is required.",
+      });
+    }
+  });
+
   // Register All Modules
+  // Canonical prefix strategy: all routes exposed under /api/v1/
   app.log.info("Registering TutorPutor modules...");
+
+  // Content module mounts at /api so its internal /v1/modules routes become /api/v1/modules
   await app.register(contentModule, { prefix: "/api" });
-  await app.register(learningModule, { prefix: "/api/learning" });
-  await app.register(userModule, { prefix: "/api/users" });
-  await app.register(collaborationModule, { prefix: "/api/collaboration" });
-  await app.register(engagementModule, { prefix: "/api/engagement" });
-  await app.register(integrationModule, { prefix: "/api/integration" });
-  await app.register(tenantModule, { prefix: "/api/tenant" });
-  await app.register(authModule, { prefix: "/api/auth" });
+
+  // Learning: dashboard, enrollments, pathways, assessments
+  // Routes within module use /learning/dashboard, /enrollments, /pathways etc.
+  await app.register(learningModule, { prefix: "/api/v1" });
+
+  // User: /api/v1/teacher/... and /api/v1/admin/...
+  await app.register(userModule, { prefix: "/api/v1" });
+
+  // Collaboration: /api/v1/collaboration/threads etc.
+  await app.register(collaborationModule, { prefix: "/api/v1/collaboration" });
+
+  // Engagement: /api/v1/gamification/..., /api/v1/social/..., /api/v1/credentials/...
+  await app.register(engagementModule, { prefix: "/api/v1" });
+
+  // Integration and tenant management
+  await app.register(integrationModule, { prefix: "/api/v1/integration" });
+  await app.register(tenantModule, { prefix: "/api/v1/tenant" });
+
+  // Auth: /api/v1/auth/me, /api/v1/auth/sso/...
+  await app.register(authModule, { prefix: "/api/v1/auth" });
+
+  // AI: /api/v1/ai/tutor/query etc. (already versioned)
   await app.register(aiModule, { prefix: "/api/v1/ai" });
-  await app.register(autoRevisionModule, { prefix: "/api/auto-revision" });
-  await app.register(contentNeedsModule, { prefix: "/api/content-needs" });
+
+  // Revision and content needs
+  await app.register(autoRevisionModule, { prefix: "/api/v1/auto-revision" });
+  await app.register(contentNeedsModule, { prefix: "/api/v1/content-needs" });
+
+  // Simulation: /api/sim-author/generate etc.
   await app.register(simulationModule);
+
+  // Search: /api/v1/search and /api/v1/search/autocomplete
+  await app.register(searchModule, { prefix: "/api/v1/search" });
 
   // Register consolidated modules
   await registerKernelRegistryRoutes(app);
   app.log.info("✅ Kernel Registry routes registered");
+
+  // VR Labs: /api/v1/vr/labs, /api/v1/vr/sessions, /api/v1/vr/labs/:labId/analytics
+  await app.register(vrRoutes, { prefix: "/api/v1/vr" });
+  app.log.info("✅ VR routes registered");
+
+  // Notifications: /api/v1/notifications, /api/v1/notifications/preferences
+  await app.register(notificationRoutes, { prefix: "/api/v1/notifications" });
+  app.log.info("✅ Notification routes registered");
 
   const shouldStartContentWorker =
     options.startContentWorker ??

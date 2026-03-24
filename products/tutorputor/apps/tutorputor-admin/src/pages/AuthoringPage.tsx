@@ -267,47 +267,33 @@ function AuthoringPageContent() {
     }
   }, [contentToDelete, selectedContent, announce]);
 
-  // Mock data - replace with real API
-  const [contentItems, setContentItems] = useState<ContentItem[]>([
-    {
-      id: "1",
-      title: "Newton's Laws of Motion",
-      description:
-        "Interactive exploration of the three laws of motion with real-world examples",
-      type: "learning_experience",
-      status: "published",
-      domain: "Physics",
-      gradeRange: "9-12",
-      updatedAt: new Date("2026-02-01"),
-      author: "Dr. Smith",
-      metrics: { views: 1250, completions: 890, rating: 4.8 },
-    },
-    {
-      id: "2",
-      title: "Photosynthesis Process",
-      description:
-        "Step-by-step simulation of the photosynthesis process in plants",
-      type: "simulation",
-      status: "draft",
-      domain: "Biology",
-      gradeRange: "6-8",
-      updatedAt: new Date("2026-02-02"),
-      author: "Dr. Green",
-    },
-    {
-      id: "3",
-      title: "Quadratic Equations",
-      description:
-        "Visual representation of quadratic functions and their solutions",
-      type: "learning_experience",
-      status: "review",
-      domain: "Mathematics",
-      gradeRange: "9-12",
-      updatedAt: new Date("2026-02-03"),
-      author: "Prof. Math",
-      metrics: { views: 450, completions: 320, rating: 4.5 },
-    },
-  ]);
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
+
+  // Load content from API
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    fetch("/api/content-studio/experiences?limit=50", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
+      .then((res: { data: Array<Record<string, unknown>> }) => {
+        const items: ContentItem[] = (res.data ?? []).map((e) => ({
+          id: e.id as string,
+          title: e.title as string,
+          description: (e.intentProblem as string) ?? "",
+          type: "learning_experience" as ContentItem["type"],
+          status: ((e.status as string) ?? "draft").toLowerCase() as ContentItem["status"],
+          domain: e.domain as string,
+          gradeRange: Array.isArray(e.targetGrades)
+            ? (e.targetGrades as string[]).join(", ")
+            : "",
+          updatedAt: new Date((e.updatedAt as string) ?? Date.now()),
+          author: (e.createdBy as string) ?? "Unknown",
+        }));
+        setContentItems(items);
+      })
+      .catch((err) => console.error("Failed to load content items", err));
+  }, []);
 
   // Initialize AI suggestions based on context
   useEffect(() => {
@@ -350,11 +336,12 @@ function AuthoringPageContent() {
     setIsCreating(true);
     try {
       // Call AI to analyze intent and generate structure
+      const token = localStorage.getItem("auth_token");
       const response = await fetch("/api/content-studio/ai/analyze-intent", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-tenant-id": "default",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ intent: newContentInput }),
       });
@@ -516,21 +503,19 @@ function AuthoringPageContent() {
               <div className="flex gap-1">
                 <button
                   onClick={() => setLibraryView("grid")}
-                  className={`p-1.5 rounded ${
-                    libraryView === "grid"
+                  className={`p-1.5 rounded ${libraryView === "grid"
                       ? "bg-primary-100 text-primary-600"
                       : "text-gray-400 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <Grid3X3 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setLibraryView("list")}
-                  className={`p-1.5 rounded ${
-                    libraryView === "list"
+                  className={`p-1.5 rounded ${libraryView === "list"
                       ? "bg-primary-100 text-primary-600"
                       : "text-gray-400 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <List className="w-4 h-4" />
                 </button>
@@ -562,11 +547,10 @@ function AuthoringPageContent() {
                   filteredContent.map((item) => (
                     <div
                       key={item.id}
-                      className={`group relative w-full text-left p-3 rounded-lg mb-1 transition-all ${
-                        selectedContent?.id === item.id
+                      className={`group relative w-full text-left p-3 rounded-lg mb-1 transition-all ${selectedContent?.id === item.id
                           ? "bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-700"
                           : "hover:bg-gray-50 dark:hover:bg-gray-700 border border-transparent"
-                      }`}
+                        }`}
                     >
                       <button
                         onClick={() => {
@@ -577,11 +561,10 @@ function AuthoringPageContent() {
                       >
                         <div className="flex items-start gap-2">
                           <div
-                            className={`p-1.5 rounded ${
-                              selectedContent?.id === item.id
+                            className={`p-1.5 rounded ${selectedContent?.id === item.id
                                 ? "bg-primary-100 text-primary-600"
                                 : "bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
-                            }`}
+                              }`}
                           >
                             {getTypeIcon(item.type)}
                           </div>
@@ -675,11 +658,10 @@ function AuthoringPageContent() {
               )}
               <button
                 onClick={() => setIsAICoPilotOpen(!isAICoPilotOpen)}
-                className={`p-2 rounded-lg transition-colors ${
-                  isAICoPilotOpen
+                className={`p-2 rounded-lg transition-colors ${isAICoPilotOpen
                     ? "bg-purple-100 text-purple-600 dark:bg-purple-900/30"
                     : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
+                  }`}
                 title="Toggle AI Co-Pilot"
               >
                 <Sparkles className="w-5 h-5" />
@@ -960,11 +942,10 @@ function ContentEditor({ content }: { content: ContentItem }) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.id
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
                   ? "border-primary-500 text-primary-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
@@ -1125,10 +1106,9 @@ function ClaimsEditor({ contentId }: { contentId: string }) {
               {...getFieldProps("newClaim")}
               placeholder="Add a new learning claim..."
               className={`w-full px-4 py-2 bg-white dark:bg-gray-700 border rounded-lg
-                ${
-                  touched.newClaim && errors.newClaim
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-200 dark:border-gray-600 focus:ring-primary-500"
+                ${touched.newClaim && errors.newClaim
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-200 dark:border-gray-600 focus:ring-primary-500"
                 }`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && isValid) {
@@ -1390,10 +1370,9 @@ function SettingsEditor({ content }: { content: ContentItem }) {
           {...getFieldProps("title")}
           aria-invalid={touched.title && !!errors.title}
           className={`w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border rounded-lg
-            ${
-              touched.title && errors.title
-                ? "border-red-500 focus:ring-red-500"
-                : "border-gray-200 dark:border-gray-600 focus:ring-primary-500"
+            ${touched.title && errors.title
+              ? "border-red-500 focus:ring-red-500"
+              : "border-gray-200 dark:border-gray-600 focus:ring-primary-500"
             }`}
         />
       </FormField>
@@ -1409,10 +1388,9 @@ function SettingsEditor({ content }: { content: ContentItem }) {
           rows={3}
           aria-invalid={touched.description && !!errors.description}
           className={`w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border rounded-lg resize-none
-            ${
-              touched.description && errors.description
-                ? "border-red-500 focus:ring-red-500"
-                : "border-gray-200 dark:border-gray-600 focus:ring-primary-500"
+            ${touched.description && errors.description
+              ? "border-red-500 focus:ring-red-500"
+              : "border-gray-200 dark:border-gray-600 focus:ring-primary-500"
             }`}
         />
       </FormField>
@@ -1511,7 +1489,7 @@ function AICoPilot({
         role: "ai" as const,
         content: response.ok
           ? (await response.json()).response ||
-            "I can help with that. Let me analyze your request..."
+          "I can help with that. Let me analyze your request..."
           : "I understand. Let me help you with that.",
       };
       setMessages((prev) => [...prev, aiResponse]);
@@ -1584,16 +1562,14 @@ function AICoPilot({
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex gap-2 ${
-              msg.role === "user" ? "flex-row-reverse" : ""
-            }`}
+            className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""
+              }`}
           >
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                msg.role === "ai"
+              className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === "ai"
                   ? "bg-purple-100 text-purple-600"
                   : "bg-blue-100 text-blue-600"
-              }`}
+                }`}
             >
               {msg.role === "ai" ? (
                 <Bot className="w-4 h-4" />
@@ -1602,11 +1578,10 @@ function AICoPilot({
               )}
             </div>
             <div
-              className={`max-w-[85%] px-3 py-2 rounded-xl text-sm ${
-                msg.role === "user"
+              className={`max-w-[85%] px-3 py-2 rounded-xl text-sm ${msg.role === "user"
                   ? "bg-blue-600 text-white rounded-tr-none"
                   : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-tl-none"
-              }`}
+                }`}
             >
               {msg.content}
             </div>

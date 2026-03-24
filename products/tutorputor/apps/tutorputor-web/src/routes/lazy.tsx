@@ -9,76 +9,73 @@
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
-// TODO: Re-enable these routes when pages are implemented
-// const AnimationEditor = lazy(() => import('./pages/AnimationEditor.tsx'));
-// const SimulationStudio = lazy(() => import('./pages/SimulationStudio.tsx'));
-// const ContentExplorer = lazy(() => import('./pages/ContentExplorer.tsx'));
-// const AssessmentBuilder = lazy(() => import('./pages/AssessmentBuilder.tsx'));
-// const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard.tsx'));
-// const LearningPathDesigner = lazy(() => import('./pages/LearningPathDesigner.tsx'));
+const AnimationEditor = lazy(() => import('../pages/AnimationEditor.tsx'));
+const SimulationStudio = lazy(() => import('../pages/SimulationStudio.tsx'));
+const ContentExplorer = lazy(() => import('../pages/ContentExplorer.tsx'));
+const AssessmentBuilder = lazy(() => import('../pages/AssessmentBuilder.tsx'));
+const AnalyticsDashboard = lazy(() => import('../pages/AnalyticsDashboard.tsx'));
+const LearningPathDesigner = lazy(() => import('../pages/LearningPathDesigner.tsx'));
 
 /**
  * Route configuration with lazy loading
- * NOTE: Most routes temporarily disabled until pages are implemented
  */
 export const lazyRoutes: RouteObject[] = [
-  // TODO: Re-enable routes as pages are implemented
-  // {
-  //   path: '/',
-  //   lazy: () => import('./pages/Home.tsx'),
-  // },
-  // {
-  //   path: '/animations',
-  //   lazy: () => import('./pages/AnimationList.tsx'),
-  // },
-  // {
-  //   path: '/animations/editor/:id?',
-  //   Component: AnimationEditor,
-  // },
-  // {
-  //   path: '/simulations',
-  //   lazy: () => import('./pages/SimulationList.tsx'),
-  // },
-  // {
-  //   path: '/simulations/studio/:id?',
-  //   Component: SimulationStudio,
-  // },
-  // {
-  //   path: '/content',
-  //   Component: ContentExplorer,
-  // },
-  // {
-  //   path: '/content/explore',
-  //   lazy: () => import('./pages/ContentExplore.tsx'),
-  // },
-  // {
-  //   path: '/assessments',
-  //   lazy: () => import('./pages/AssessmentList.tsx'),
-  // },
-  // {
-  //   path: '/assessments/builder/:id?',
-  //   Component: AssessmentBuilder,
-  // },
-  // {
-  //   path: '/analytics',
-  //   Component: AnalyticsDashboard,
-  // },
-  // {
-  //   path: '/learning-paths',
-  //   lazy: () => import('./pages/LearningPathList.tsx'),
-  // },
-  // {
-  //   path: '/learning-paths/designer/:id?',
-  //   Component: LearningPathDesigner,
-  // },
-  // {
-  //   path: '/settings',
-  //   lazy: () => import('./pages/Settings.tsx'),
-  // },
-  // {
-  //   path: '/profile',
-  //   lazy: () => import('./pages/Profile.tsx'),
-  // },
+  {
+    path: '/',
+    lazy: () => import('../pages/Home.tsx'),
+  },
+  {
+    path: '/animations',
+    lazy: () => import('../pages/AnimationList.tsx'),
+  },
+  {
+    path: '/animations/editor/:id?',
+    Component: AnimationEditor,
+  },
+  {
+    path: '/simulations',
+    lazy: () => import('../pages/SimulationList.tsx'),
+  },
+  {
+    path: '/simulations/studio/:id?',
+    Component: SimulationStudio,
+  },
+  {
+    path: '/content',
+    Component: ContentExplorer,
+  },
+  {
+    path: '/content/explore',
+    lazy: () => import('../pages/ContentExplore.tsx'),
+  },
+  {
+    path: '/assessments',
+    lazy: () => import('../pages/AssessmentList.tsx'),
+  },
+  {
+    path: '/assessments/builder/:id?',
+    Component: AssessmentBuilder,
+  },
+  {
+    path: '/analytics',
+    Component: AnalyticsDashboard,
+  },
+  {
+    path: '/learning-paths',
+    lazy: () => import('../pages/LearningPathList.tsx'),
+  },
+  {
+    path: '/learning-paths/designer/:id?',
+    Component: LearningPathDesigner,
+  },
+  {
+    path: '/settings',
+    lazy: () => import('../pages/Settings.tsx'),
+  },
+  {
+    path: '/profile',
+    lazy: () => import('../pages/Profile.tsx'),
+  },
 ];
 
 /**

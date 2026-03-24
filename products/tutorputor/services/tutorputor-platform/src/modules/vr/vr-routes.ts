@@ -1,0 +1,320 @@
+/**
+ * @doc.type routes
+ * @doc.purpose HTTP endpoints for VR lab creation, sessions, and analytics
+ * @doc.layer product
+ * @doc.pattern REST API
+ */
+
+import type { FastifyPluginAsync } from "fastify";
+import {
+  getTenantId,
+  getUserId,
+  requireRole,
+  respondWithErrors,
+} from "../../core/http/requestContext.js";
+import {
+  VRLabServiceImpl,
+  VRSessionServiceImpl,
+  VRAnalyticsServiceImpl,
+} from "./index.js";
+
+/**
+ * VR module routes. Registered at prefix /api/v1/vr.
+ */
+export const vrRoutes: FastifyPluginAsync = async (app) => {
+  const prisma = app.prisma as any;
+  const labService = new VRLabServiceImpl(prisma);
+  const sessionService = new VRSessionServiceImpl(prisma);
+  const analyticsService = new VRAnalyticsServiceImpl(prisma);
+
+  // ===========================================================================
+  // VR Labs
+  // ===========================================================================
+
+  /**
+   * POST /labs
+   * Create a new VR lab. Admin or content_creator only.
+   */
+  app.post("/labs", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+    requireRole(req, ["admin", "content_creator", "superadmin"]);
+    const body = req.body as any;
+
+    await respondWithErrors(reply, async () => {
+      const lab = await labService.createLab({ tenantId, userId, data: body });
+      reply.code(201);
+      return lab;
+    });
+  });
+
+  /**
+   * GET /labs
+   * List VR labs for the current tenant.
+   */
+  app.get("/labs", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const query = (req.query ?? {}) as any;
+
+    await respondWithErrors(reply, () =>
+      labService.listLabs({
+        tenantId,
+        params: {
+          category: query.category,
+          difficulty: query.difficulty,
+          isPublished:
+            query.isPublished !== undefined
+              ? query.isPublished === "true"
+              : undefined,
+          search: query.search,
+          page: query.page ? Number(query.page) : 1,
+          limit: query.limit ? Number(query.limit) : 20,
+        },
+      }),
+    );
+  });
+
+  /**
+   * GET /labs/:labId
+   * Get a single VR lab by ID.
+   */
+  app.get("/labs/:labId", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const { labId } = req.params as { labId: string };
+
+    const lab = await labService.getLabById({ tenantId, labId });
+    if (!lab) return reply.code(404).send({ error: "VR lab not found" });
+    return reply.send(lab);
+  });
+
+  /**
+   * PUT /labs/:labId
+   * Update VR lab metadata. Admin or content_creator only.
+   */
+  app.put("/labs/:labId", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+    requireRole(req, ["admin", "content_creator", "superadmin"]);
+    const { labId } = req.params as { labId: string };
+
+    await respondWithErrors(reply, () =>
+      labService.updateLab({ tenantId, userId, labId, data: req.body as any }),
+    );
+  });
+
+  /**
+   * DELETE /labs/:labId
+   * Delete a VR lab. Admin only.
+   */
+  app.delete("/labs/:labId", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+    requireRole(req, ["admin", "superadmin"]);
+    const { labId } = req.params as { labId: string };
+
+    await respondWithErrors(reply, async () => {
+      await labService.deleteLab({ tenantId, userId, labId });
+      return { success: true };
+    });
+  });
+
+  /**
+   * POST /labs/:labId/publish
+   * Publish a VR lab. Admin or content_creator only.
+   */
+  app.post("/labs/:labId/publish", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+    requireRole(req, ["admin", "content_creator", "superadmin"]);
+    const { labId } = req.params as { labId: string };
+
+    await respondWithErrors(reply, () =>
+      labService.publishLab({ tenantId, userId, labId }),
+    );
+  });
+
+  // ===========================================================================
+  // VR Scenes (nested under labs)
+  // ===========================================================================
+
+  /**
+   * POST /labs/:labId/scenes
+   * Add a scene to a lab. Admin or content_creator only.
+   */
+  app.post("/labs/:labId/scenes", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+    requireRole(req, ["admin", "content_creator", "superadmin"]);
+    const { labId } = req.params as { labId: string };
+
+    await respondWithErrors(reply, async () => {
+      const scene = await labService.addScene({
+        tenantId,
+        userId,
+        labId,
+        data: req.body as any,
+      });
+      reply.code(201);
+      return scene;
+    });
+  });
+
+  /**
+   * PUT /labs/:labId/scenes/:sceneId
+   * Update a scene. Admin or content_creator only.
+   */
+  app.put("/labs/:labId/scenes/:sceneId", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+    requireRole(req, ["admin", "content_creator", "superadmin"]);
+    const { labId, sceneId } = req.params as {
+      labId: string;
+      sceneId: string;
+    };
+
+    await respondWithErrors(reply, () =>
+      labService.updateScene({
+        tenantId,
+        userId,
+        labId,
+        sceneId,
+        data: req.body as any,
+      }),
+    );
+  });
+
+  /**
+   * DELETE /labs/:labId/scenes/:sceneId
+   * Remove a scene. Admin only.
+   */
+  app.delete("/labs/:labId/scenes/:sceneId", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+    requireRole(req, ["admin", "superadmin"]);
+    const { labId, sceneId } = req.params as {
+      labId: string;
+      sceneId: string;
+    };
+
+    await respondWithErrors(reply, async () => {
+      await labService.deleteScene({ tenantId, userId, labId, sceneId });
+      return { success: true };
+    });
+  });
+
+  // ===========================================================================
+  // VR Analytics
+  // ===========================================================================
+
+  /**
+   * GET /labs/:labId/analytics
+   * Get analytics for a VR lab. Admin or content_creator only.
+   * Query: ?period=day|week|month|all (default: all)
+   */
+  app.get("/labs/:labId/analytics", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    requireRole(req, ["admin", "content_creator", "superadmin"]);
+    const { labId } = req.params as { labId: string };
+    const { period = "all" } = (req.query ?? {}) as {
+      period?: "day" | "week" | "month" | "all";
+    };
+
+    await respondWithErrors(reply, () =>
+      analyticsService.getLabAnalytics({ tenantId, labId, period }),
+    );
+  });
+
+  // ===========================================================================
+  // VR Sessions
+  // ===========================================================================
+
+  /**
+   * POST /sessions
+   * Start a new VR session for the current user.
+   */
+  app.post("/sessions", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+
+    await respondWithErrors(reply, async () => {
+      const session = await sessionService.startSession({
+        tenantId,
+        userId,
+        data: req.body as any,
+      });
+      reply.code(201);
+      return session;
+    });
+  });
+
+  /**
+   * GET /sessions
+   * List sessions for the current user.
+   * Query: ?labId=&status=&page=&limit=
+   */
+  app.get("/sessions", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+    const query = (req.query ?? {}) as any;
+
+    await respondWithErrors(reply, () =>
+      sessionService.listUserSessions({
+        tenantId,
+        userId,
+        labId: query.labId,
+        status: query.status,
+        pagination: {
+          page: query.page ? Number(query.page) : 1,
+          limit: query.limit ? Number(query.limit) : 20,
+        },
+      }),
+    );
+  });
+
+  /**
+   * GET /sessions/:sessionId
+   * Get a single VR session.
+   */
+  app.get("/sessions/:sessionId", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const { sessionId } = req.params as { sessionId: string };
+
+    const session = await sessionService.getSession({ tenantId, sessionId });
+    if (!session)
+      return reply.code(404).send({ error: "VR session not found" });
+    return reply.send(session);
+  });
+
+  /**
+   * PATCH /sessions/:sessionId
+   * Update session progress (scene change, interaction log, performance metrics).
+   */
+  app.patch("/sessions/:sessionId", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+    const { sessionId } = req.params as { sessionId: string };
+
+    await respondWithErrors(reply, () =>
+      sessionService.updateSession({
+        tenantId,
+        userId,
+        sessionId,
+        data: req.body as any,
+      }),
+    );
+  });
+
+  /**
+   * POST /sessions/:sessionId/end
+   * End an active VR session.
+   */
+  app.post("/sessions/:sessionId/end", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+    const { sessionId } = req.params as { sessionId: string };
+
+    await respondWithErrors(reply, () =>
+      sessionService.endSession({ tenantId, userId, sessionId }),
+    );
+  });
+};
