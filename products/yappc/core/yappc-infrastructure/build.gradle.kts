@@ -1,49 +1,51 @@
 plugins {
+    id("java-library")
     id("com.ghatana.java-conventions")
-    id("com.ghatana.java-library-conventions")
 }
 
 description = "YAPPC Consolidated Infrastructure Module"
 
 dependencies {
-    // Platform dependencies
-    implementation(platform("com.ghatana:platform-bom"))
-    
-    // Platform infrastructure components
-    implementation("com.ghatana.platform:storage-core")
-    implementation("com.ghatana.platform:messaging-core")
-    implementation("com.ghatana.platform:monitoring-core")
+    // Platform modules
+    implementation(project(":platform:java:database"))
+    implementation(project(":platform:java:distributed-cache"))
+    implementation(project(":platform:java:observability"))
     
     // YAPPC shared utilities
-    implementation(projects.yappcShared)
+    implementation(project(":products:yappc:core:yappc-shared"))
     
     // Database
-    implementation("org.postgresql:postgresql")
-    implementation("com.zaxxer:HikariCP")
+    implementation(libs.postgresql)
+    implementation(libs.hikaricp)
     
     // Redis
-    implementation("redis.clients:jedis")
+    implementation(libs.jedis)
     
     // Messaging
-    implementation("org.apache.kafka:kafka-clients")
+    implementation(libs.kafka.clients)
     
     // Monitoring
-    implementation("io.micrometer:micrometer-core")
-    implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation(libs.micrometer.core)
+    implementation(libs.micrometer.registry.prometheus)
     
     // Configuration
-    implementation("com.typesafe:config")
+    implementation(libs.typesafe.config)
     
     // Testing
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core")
-    testImplementation("org.testcontainers:postgresql")
-    testImplementation("org.testcontainers:kafka")
-    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.kafka)
+    testImplementation(libs.testcontainers.junit.jupiter)
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Handle duplicate entries in sourcesJar
+tasks.withType<org.gradle.jvm.tasks.Jar> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // Source sets for infrastructure components

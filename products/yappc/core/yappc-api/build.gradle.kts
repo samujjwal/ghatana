@@ -1,52 +1,45 @@
 plugins {
+    id("java-library")
     id("com.ghatana.java-conventions")
-    id("com.ghatana.java-library-conventions")
 }
 
 description = "YAPPC Consolidated API Module"
 
 dependencies {
-    // Platform dependencies
-    implementation(platform("com.ghatana:platform-bom"))
+    // Platform modules
+    implementation(project(":platform:java:http"))
     
-    // Platform API components
-    implementation("com.ghatana.platform:rest-core")
-    implementation("com.ghatana.platform:graphql-core")
-    
-    // YAPPC services
-    implementation(projects.yappcServices)
-    
-    // YAPPC shared utilities
-    implementation(projects.yappcShared)
+    // YAPPC modules
+    implementation(project(":products:yappc:core:yappc-services"))
+    implementation(project(":products:yappc:core:yappc-domain"))
+    implementation(project(":products:yappc:core:yappc-shared"))
     
     // REST API
-    implementation("io.activej:activej-http")
-    implementation("io.activej:activej-boot")
+    implementation(libs.activej.http)
+    implementation(libs.activej.boot)
     
     // GraphQL
-    implementation("com.graphql-java:graphql-java")
-    implementation("com.graphql-java:graphql-java-spring-boot-starter")
+    implementation(libs.graphql.java)
     
-    // Documentation
-    implementation("org.springdoc:springdoc-openapi-ui")
-    
-    // Security
-    implementation("io.jsonwebtoken:jjwt-api")
-    implementation("io.jsonwebtoken:jjwt-impl")
-    implementation("io.jsonwebtoken:jjwt-jackson")
+    // Security - use Nimbus JWT (canonical)
+    implementation(libs.nimbus.jose.jwt)
     
     // Validation
-    implementation("org.hibernate.validator:hibernate-validator")
+    implementation(libs.hibernate.validator)
     
     // Testing
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core")
-    testImplementation("org.mockito:mockito-core")
-    testImplementation("io.rest-assured:rest-assured")
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Handle duplicate entries in JAR tasks
+tasks.withType<org.gradle.jvm.tasks.Jar> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // Source sets for API components

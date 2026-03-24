@@ -393,8 +393,15 @@ jobs:
 
       - name: Render Helm chart (dry-run)
         run: |
-          HELM_DIR="products/data-cloud/helm"
-          if [ -d "$HELM_DIR" ]; then
+          HELM_ROOT="products/data-cloud/helm"
+          HELM_DIR=""
+          if [ -f "$HELM_ROOT/Chart.yaml" ]; then
+            HELM_DIR="$HELM_ROOT"
+          elif [ -f "$HELM_ROOT/data-cloud/Chart.yaml" ]; then
+            HELM_DIR="$HELM_ROOT/data-cloud"
+          fi
+
+          if [ -n "$HELM_DIR" ]; then
             echo "Rendering Helm chart at $HELM_DIR …"
             helm dependency update "$HELM_DIR" 2>/dev/null || true
             helm template data-cloud "$HELM_DIR" \
@@ -406,7 +413,7 @@ jobs:
               | head -60
             echo "✓ Helm chart renders without errors."
           else
-            echo "::warning::No helm/ directory found under products/data-cloud — skipping chart validation."
+            echo "::warning::No Helm chart found under products/data-cloud/helm — skipping chart validation."
           fi
 
       - name: Validate raw k8s manifests (dry-run)
@@ -428,12 +435,19 @@ jobs:
         if: always()
         run: |
           echo "## Helm / k8s Render Validation" >> "$GITHUB_STEP_SUMMARY"
-          HELM_DIR="products/data-cloud/helm"
+          HELM_ROOT="products/data-cloud/helm"
+          HELM_DIR=""
           K8S_DIR="products/data-cloud/k8s"
-          if [ -d "$HELM_DIR" ]; then
+          if [ -f "$HELM_ROOT/Chart.yaml" ]; then
+            HELM_DIR="$HELM_ROOT"
+          elif [ -f "$HELM_ROOT/data-cloud/Chart.yaml" ]; then
+            HELM_DIR="$HELM_ROOT/data-cloud"
+          fi
+
+          if [ -n "$HELM_DIR" ]; then
             echo "- **Helm chart**: rendered cleanly (dry-run)" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "- **Helm chart**: ⚠ Not found (add \`products/data-cloud/helm/\` to enable)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Helm chart**: ⚠ Not found (expected \`products/data-cloud/helm/Chart.yaml\` or \`products/data-cloud/helm/data-cloud/Chart.yaml\`)" >> "$GITHUB_STEP_SUMMARY"
           fi
           if [ -d "$K8S_DIR" ]; then
             MANIFEST_COUNT=$(find "$K8S_DIR" -name "*.yaml" -o -name "*.yml" | wc -l | tr -d ' ')

@@ -103,6 +103,19 @@ include(":products:yappc:backend:persistence")
 include(":products:yappc:backend:auth")
 include(":products:yappc:backend:deployment")
 // backend:websocket removed — sources merged into backend:api
+// =============================================================================
+// YAPPC Core — Consolidated Modules (2026-03-23)
+// =============================================================================
+include(":products:yappc:core:yappc-agents")
+include(":products:yappc:core:yappc-domain")
+include(":products:yappc:core:yappc-infrastructure")
+include(":products:yappc:core:yappc-services")
+include(":products:yappc:core:yappc-api")
+include(":products:yappc:core:yappc-shared")
+
+// =============================================================================
+// YAPPC Core — Legacy Modules (to be removed after migration validation)
+// =============================================================================
 include(":products:yappc:core:domain")
 include(":products:yappc:core:scaffold")
 include(":products:yappc:core:scaffold:api")

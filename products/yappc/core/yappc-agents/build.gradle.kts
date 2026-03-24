@@ -1,49 +1,65 @@
 plugins {
+    id("java-library")
     id("com.ghatana.java-conventions")
-    id("com.ghatana.java-library-conventions")
 }
 
 description = "YAPPC Consolidated Agents Module"
 
 dependencies {
-    // Platform dependencies
-    implementation(platform("com.ghatana:platform-bom"))
+    // Platform agent modules
+    implementation(project(":platform:java:agent-core"))
+    implementation(project(":platform:java:agent-registry"))
+    implementation(project(":platform:java:agent-runtime"))
     
-    // Platform agent framework
-    implementation("com.ghatana.platform:agent-core")
-    implementation("com.ghatana.platform:agent-registry")
-    implementation("com.ghatana.platform:agent-framework-api")
+    // AEP registry service
+    implementation(project(":products:aep:aep-registry"))
+    
+    // YAPPC agents aggregator (includes all specialist modules)
+    implementation(project(":products:yappc:core:agents"))
     
     // YAPPC domain
-    implementation(projects.yappcDomain)
+    implementation(project(":products:yappc:core:yappc-domain"))
+    
+    // YAPPC API (for domain classes)
+    implementation(project(":products:yappc:core:yappc-api"))
     
     // YAPPC shared utilities
-    implementation(projects.yappcShared)
+    implementation(project(":products:yappc:core:yappc-shared"))
     
     // YAPPC infrastructure
-    implementation(projects.yappcInfrastructure)
+    implementation(project(":products:yappc:core:yappc-infrastructure"))
     
     // YAML parsing
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
-    implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation(libs.jackson.dataformat.yaml)
+    implementation(libs.jackson.databind)
     
     // JSON Schema validation
-    implementation("com.networknt:json-schema-validator")
+    implementation(libs.networknt.validator)
     
     // Migration tooling
-    implementation("com.github.javaparser:javaparser-core")
+    implementation(libs.javaparser.core)
+    
+    // Lombok for data classes
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
     
     // Testing
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core")
-    testImplementation("org.mockito:mockito-core")
-    
-    // Test fixtures
-    testFixturesImplementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Handle duplicate entries in JAR tasks
+tasks.withType<org.gradle.jvm.tasks.Jar> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.withType<ProcessResources> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // Java source sets for different agent specialties

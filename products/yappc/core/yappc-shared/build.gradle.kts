@@ -1,41 +1,47 @@
 plugins {
+    id("java-library")
+    id("maven-publish")
     id("com.ghatana.java-conventions")
-    id("com.ghatana.java-library-conventions")
 }
 
 description = "YAPPC Consolidated Shared Utilities Module"
 
 dependencies {
-    // Platform dependencies
-    implementation(platform("com.ghatana:platform-bom"))
-    
-    // Platform shared utilities
-    implementation("com.ghatana.platform:common-utils")
-    implementation("com.ghatana.platform:json-utils")
-    
-    // JSON processing
-    implementation("com.fasterxml.jackson.core:jackson-databind")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-    
+    // Platform modules
+    implementation(project(":platform:java:plugin"))
+    implementation(project(":platform:java:core"))
+
+    // ActiveJ for async
+    implementation(libs.activej.promise)
+
+    // Jackson for JSON
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jsr310)
+
     // Logging
-    implementation("org.slf4j:slf4j-api")
-    
-    // Validation
-    implementation("org.apache.commons:commons-lang3")
-    implementation("org.apache.commons:commons-collections4")
-    
+    implementation(libs.slf4j.api)
+
+    // Utilities
+    implementation(libs.commons.lang3)
+    implementation(libs.commons.collections4)
+
     // Configuration
-    implementation("com.typesafe:config")
-    
-    // Testing utilities
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core")
-    testImplementation("org.mockito:mockito-core")
-    testImplementation("org.junit-pioneer:junit-pioneer")
+    implementation(libs.typesafe.config)
+
+    // Testing
+    testImplementation(project(":platform:java:testing"))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Handle duplicate entries in sourcesJar
+tasks.withType<org.gradle.jvm.tasks.Jar> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // Source sets for shared utilities

@@ -48,6 +48,9 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.dataformat.yaml)
 
+    // Migration tooling
+    implementation(libs.javaparser.core)
+
     // Utilities
     implementation(libs.commons.lang3)
     implementation(libs.guava)

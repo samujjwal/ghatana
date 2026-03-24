@@ -1,49 +1,58 @@
 plugins {
+    id("java-library")
     id("com.ghatana.java-conventions")
-    id("com.ghatana.java-library-conventions")
 }
 
 description = "YAPPC Consolidated Services Module"
 
 dependencies {
-    // Platform dependencies
-    implementation(platform("com.ghatana:platform-bom"))
+    // Platform modules
+    implementation(project(":platform:java:core"))
+    implementation(project(":platform:java:workflow"))
+    implementation(project(":platform:java:ai-integration"))
+    implementation(project(":platform:java:governance"))
     
-    // Platform services
-    implementation("com.ghatana.platform:service-core")
-    implementation("com.ghatana.platform:workflow-core")
+    // YAPPC domain (both core and libs versions)
+    implementation(project(":products:yappc:core:yappc-domain"))
+    implementation(project(":products:yappc:libs:java:yappc-domain"))
     
-    // YAPPC domain
-    implementation(projects.yappcDomain)
+    // YAPPC agents runtime (for AepEventPublisher)
+    implementation(project(":products:yappc:core:agents:runtime"))
     
-    // YAPPC agents
-    implementation(projects.yappcAgents)
+    // Data-Cloud platform (for DataCloudClient)
+    implementation(project(":products:data-cloud:platform"))
     
     // YAPPC infrastructure
-    implementation(projects.yappcInfrastructure)
+    implementation(project(":products:yappc:core:yappc-infrastructure"))
     
     // YAPPC shared utilities
-    implementation(projects.yappcShared)
+    implementation(project(":products:yappc:core:yappc-shared"))
     
     // Validation
-    implementation("org.hibernate.validator:hibernate-validator")
-    implementation("jakarta.validation:jakarta.validation-api")
+    implementation(libs.hibernate.validator)
+    implementation(libs.jakarta.validation.api)
     
     // JSON processing
-    implementation("com.fasterxml.jackson.core:jackson-databind")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jsr310)
     
     // Async processing
-    implementation("io.activej:activej-promise")
+    implementation(libs.activej.promise)
     
     // Testing
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core")
-    testImplementation("org.mockito:mockito-core")
+    testImplementation(project(":platform:java:testing"))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Handle duplicate entries in JAR tasks
+tasks.withType<org.gradle.jvm.tasks.Jar> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // Source sets for service components

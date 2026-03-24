@@ -1,0 +1,226 @@
+/**
+ * Spinner Component Styles
+ * 
+ * CSS for loading spinner component
+ */
+
+/* ============================================================================
+   Base Spinner
+   ========================================================================== */
+
+.spinner {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.spinner__svg {
+  animation: spinner-rotate 1.4s linear infinite;
+}
+
+.spinner__circle {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-dasharray: 80, 200;
+  stroke-dashoffset: 0;
+  animation: spinner-dash 1.4s ease-in-out infinite;
+}
+
+.spinner__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Size variants */
+.spinner--xs .spinner__svg {
+  width: 16px;
+  height: 16px;
+}
+
+.spinner--sm .spinner__svg {
+  width: 24px;
+  height: 24px;
+}
+
+.spinner--md .spinner__svg {
+  width: 32px;
+  height: 32px;
+}
+
+.spinner--lg .spinner__svg {
+  width: 48px;
+  height: 48px;
+}
+
+.spinner--xl .spinner__svg {
+  width: 64px;
+  height: 64px;
+}
+
+/* Color variants */
+.spinner--primary {
+  color: #3b82f6;
+}
+
+.spinner--secondary {
+  color: #6b7280;
+}
+
+.spinner--white {
+  color: #ffffff;
+}
+
+.spinner--black {
+  color: #000000;
+}
+
+/* ============================================================================
+   Container & Overlay
+   ========================================================================== */
+
+.spinner__container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 200px;
+}
+
+.spinner__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+}
+
+/* ============================================================================
+   Inline Spinner
+   ========================================================================== */
+
+.spinner-inline {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.spinner-inline__svg {
+  animation: spinner-rotate 1.4s linear infinite;
+}
+
+.spinner-inline__circle {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-dasharray: 80, 200;
+  stroke-dashoffset: 0;
+  animation: spinner-dash 1.4s ease-in-out infinite;
+}
+
+/* Size variants */
+.spinner-inline--xs .spinner-inline__svg {
+  width: 14px;
+  height: 14px;
+}
+
+.spinner-inline--sm .spinner-inline__svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Color variants */
+.spinner-inline--primary {
+  color: #3b82f6;
+}
+
+.spinner-inline--secondary {
+  color: #6b7280;
+}
+
+.spinner-inline--white {
+  color: #ffffff;
+}
+
+.spinner-inline--black {
+  color: #000000;
+}
+
+/* ============================================================================
+   Loading Button
+   ========================================================================== */
+
+.loading-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.loading-button--loading {
+  cursor: not-allowed;
+}
+
+.loading-button__spinner {
+  margin-right: 0.25rem;
+}
+
+.loading-button__text--loading {
+  opacity: 0.7;
+}
+
+/* ============================================================================
+   Animations
+   ========================================================================== */
+
+@keyframes spinner-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinner-dash {
+  0% {
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 100, 200;
+    stroke-dashoffset: -15;
+  }
+  100% {
+    stroke-dasharray: 100, 200;
+    stroke-dashoffset: -125;
+  }
+}
+
+/* ============================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner__svg,
+  .spinner-inline__svg {
+    animation-duration: 2s;
+  }
+
+  .spinner__circle,
+  .spinner-inline__circle {
+    animation-duration: 2s;
+  }
+}

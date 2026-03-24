@@ -221,6 +221,7 @@ public class YamlAgentConfig {
         public double getTemperature() { return temperature; }
         public int getMaxTokens() { return maxTokens; }
         public int getMaxRetries() { return maxRetries; }
+        public Map<String, Object> getProperties() { return properties; }
         
         @SuppressWarnings("unchecked")
         public <T> T getProperty(String key, T defaultValue) {

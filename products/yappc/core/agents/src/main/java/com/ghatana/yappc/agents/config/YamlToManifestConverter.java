@@ -54,8 +54,8 @@ public class YamlToManifestConverter {
      */
     private MetadataProto buildMetadata(YamlAgentConfig config) {
         MetadataProto.Builder metadata = MetadataProto.newBuilder()
-            .setName(config.getId())
-            .setDisplayName(config.getName())
+            .setId(config.getId())
+            .setName(config.getName())
             .setDescription(config.getDescription())
             .setVersion(config.getVersion());
         
@@ -112,9 +112,9 @@ public class YamlToManifestConverter {
      */
     private RuntimeProto buildRuntime(YamlAgentConfig config) {
         RuntimeProto.Builder runtime = RuntimeProto.newBuilder()
-            .setName(config.getId())
+            .setType("java")
             .setVersion(config.getVersion())
-            .setDescription(config.getDescription());
+            .setEntrypoint(config.getId());
         
         // Add generator configuration
         if (config.getGenerator() != null) {

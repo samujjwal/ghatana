@@ -1,32 +1,38 @@
 plugins {
+    id("java-library")
+    id("maven-publish")
     id("com.ghatana.java-conventions")
-    id("com.ghatana.java-library-conventions")
 }
 
 description = "YAPPC Domain Models Module"
 
 dependencies {
-    // Platform dependencies
-    implementation(platform("com.ghatana:platform-bom"))
-    
-    // Platform domain models
-    implementation("com.ghatana.platform:domain-models")
+    // Platform modules
+    implementation(project(":platform:java:domain"))
+    implementation(project(":platform:java:ai-integration"))
+    implementation(project(":platform:java:http"))
+    implementation(project(":platform:java:agent-core"))
+    implementation(project(":platform:java:observability"))
     
     // YAPPC shared utilities
-    implementation(projects.yappcShared)
+    implementation(project(":products:yappc:core:yappc-shared"))
+    
+    // ActiveJ for async
+    implementation(libs.activej.promise)
+    implementation(libs.activej.http)
     
     // JSON processing
-    implementation("com.fasterxml.jackson.core:jackson-databind")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jsr310)
     
     // Validation
-    implementation("org.hibernate.validator:hibernate-validator")
-    implementation("jakarta.validation:jakarta.validation-api")
+    implementation(libs.hibernate.validator)
+    implementation(libs.jakarta.validation.api)
     
     // Testing
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core")
-    testImplementation("org.mockito:mockito-core")
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
 }
 
 tasks.test {

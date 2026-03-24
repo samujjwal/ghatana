@@ -3,6 +3,7 @@ package com.ghatana.yappc.agents.migration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -278,7 +279,8 @@ public class AgentMigrationTool {
         }
         
         if (!required.isEmpty()) {
-            schema.putArray("required").addAll(required.stream().map(jsonMapper::valueToTree).toList());
+            ArrayNode requiredArray = schema.putArray("required");
+            required.forEach(requiredArray::add);
         }
         
         return jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(schema);

@@ -1,3 +1,10 @@
+import org.gradle.api.DefaultTask
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.TaskAction
+import java.io.File
+
 plugins {
     id("java")
     id("org.owasp.dependencycheck") version "12.1.6"
@@ -174,39 +181,53 @@ tasks.named("check") {
 // ============================================================================
 // Module Size Enforcement
 // ============================================================================
-tasks.register("checkModuleSize") {
+tasks.register<CheckModuleSizeTask>("checkModuleSize") {
     description = "Fails if any module exceeds size limits"
     group = "verification"
-    
-    doLast {
-        val maxJavaFiles = 150
+
+    maxJavaFiles.set(150)
+    moduleJavaDirs.set(
+        subprojects.associate { subproject ->
+            subproject.path to subproject.layout.projectDirectory.dir("src/main/java").asFile.absolutePath
+        }
+    )
+}
+
+abstract class CheckModuleSizeTask : DefaultTask() {
+    @get:Input
+    abstract val maxJavaFiles: Property<Int>
+
+    @get:Input
+    abstract val moduleJavaDirs: MapProperty<String, String>
+
+    @TaskAction
+    fun checkSizes() {
         val violations = mutableListOf<String>()
-        
-        subprojects.forEach { project ->
-            val srcDir = project.file("src/main/java")
+
+        moduleJavaDirs.get().forEach { (projectPath, srcDirPath) ->
+            val srcDir = File(srcDirPath)
             if (srcDir.exists()) {
                 val fileCount = srcDir.walkTopDown()
                     .filter { it.isFile && it.extension == "java" }
                     .count()
-                
-                if (fileCount > maxJavaFiles) {
-                    violations.add("${project.path}: $fileCount files (max: $maxJavaFiles)")
+
+                if (fileCount > maxJavaFiles.get()) {
+                    violations.add("$projectPath: $fileCount files (max: ${maxJavaFiles.get()})")
                 }
             }
         }
-        
+
         if (violations.isNotEmpty()) {
             throw GradleException(
                 "Modules exceed size limit:\n" +
-                violations.joinToString("\n") { "  - $it" } + "\n" +
-                "Consider splitting large modules into focused submodules."
+                    violations.joinToString("\n") { "  - $it" } + "\n" +
+                    "Consider splitting large modules into focused submodules."
             )
         }
-        
+
         logger.lifecycle("✓ All modules within size limits")
     }
 }
-
 tasks.named("check") {
     dependsOn("checkModuleSize")
 }

@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -81,7 +82,7 @@ public class AepIntegratedAgentLoader {
             .map(manifest -> registerAgent(tenantId, manifest))
             .collect(Collectors.toList());
         
-        return Promises.all(registrations);
+        return Promises.toList(registrations);
     }
     
     /**
@@ -106,7 +107,7 @@ public class AepIntegratedAgentLoader {
             .map(manifest -> registerAgent(tenantId, manifest))
             .collect(Collectors.toList());
         
-        return Promises.all(registrations);
+        return Promises.toList(registrations);
     }
     
     /**
@@ -153,7 +154,10 @@ public class AepIntegratedAgentLoader {
      * @return Promise of matching agent IDs
      */
     public Promise<List<String>> findAgentsByCapability(TenantId tenantId, String capability) {
-        return aepRegistry.findByCapability(tenantId, capability);
+        return aepRegistry.findByCapabilities(tenantId, Set.of(capability))
+            .map(manifests -> manifests.stream()
+                .map(m -> m.getMetadata().getId())
+                .collect(Collectors.toList()));
     }
     
     /**
@@ -164,7 +168,10 @@ public class AepIntegratedAgentLoader {
      * @return Promise of matching agent IDs
      */
     public Promise<List<String>> findAgentsByEventType(TenantId tenantId, String eventType) {
-        return aepRegistry.findByEventType(tenantId, eventType);
+        return aepRegistry.findByEventType(tenantId, eventType)
+            .map(manifests -> manifests.stream()
+                .map(m -> m.getMetadata().getId())
+                .collect(Collectors.toList()));
     }
     
     /**
@@ -197,9 +204,23 @@ public class AepIntegratedAgentLoader {
      * @return Promise of deletion confirmation
      */
     public Promise<Void> deleteAgent(TenantId tenantId, String agentId) {
-        return aepRegistry.delete(tenantId, agentId)
-            .whenResult(() -> 
-                log.info("Successfully deleted agent {} from AEP for tenant {}", agentId, tenantId))
+        return deleteAgent(tenantId, agentId, false);
+    }
+    
+    /**
+     * Delete an agent from AEP registry with hard delete option.
+     * 
+     * @param tenantId Tenant scope
+     * @param agentId Agent identifier
+     * @param hardDelete If true, permanently delete; otherwise soft-delete
+     * @return Promise of deletion confirmation
+     */
+    public Promise<Void> deleteAgent(TenantId tenantId, String agentId, boolean hardDelete) {
+        return aepRegistry.delete(tenantId, agentId, hardDelete)
+            .map(deleted -> (Void) null)
+            .whenResult(v -> 
+                log.info("Successfully deleted agent {} from AEP for tenant {} (hard={})", 
+                    agentId, tenantId, hardDelete))
             .whenException(error -> 
                 log.error("Failed to delete agent {} from AEP for tenant {}: {}", 
                     agentId, tenantId, error.getMessage(), error));

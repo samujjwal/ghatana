@@ -76,8 +76,12 @@ kubectl get deploy data-cloud -n data-cloud -o yaml | grep image:
 CANARY_TAG="v$(cat products/data-cloud/version.txt)-$(git rev-parse --short HEAD)"
 
 # Apply canary deployment with 5% weight
-kubectl apply -f k8s/data-cloud-canary.yaml \
-  --patch "{\"spec\":{\"selector\":{\"matchLabels\":{\"version\":\"${CANARY_TAG}\"}}}}"
+kubectl apply -f products/data-cloud/k8s/canary/deployment-canary.yaml
+
+# Update the canary deployment image
+kubectl set image deployment/data-cloud-canary \
+  data-cloud="ghatana/data-cloud:${CANARY_TAG}" \
+  -n data-cloud
 
 # Configure traffic split (Istio VirtualService or Nginx Ingress weight annotation)
 kubectl patch virtualservice data-cloud -n data-cloud --type=json \
@@ -193,10 +197,12 @@ kubectl delete deployment data-cloud-canary -n data-cloud
 
 | Resource | File |
 |---|---|
-| Stable deployment | `products/data-cloud/helm/templates/deployment.yaml` |
-| Canary deployment | `products/data-cloud/helm/templates/deployment-canary.yaml` |
-| VirtualService | `products/data-cloud/k8s/virtual-service.yaml` |
+| Stable deployment | `products/data-cloud/helm/data-cloud/templates/deployment.yaml` |
+| Canary deployment | `products/data-cloud/k8s/canary/deployment-canary.yaml` |
+| VirtualService | `products/data-cloud/k8s/canary/virtual-service-canary.yaml` |
 | HPA | `products/data-cloud/k8s/hpa.yaml` |
+
+Canary approvals and promotion timestamps are recorded in `products/data-cloud/docs/CANARY_AUDIT_LOG.txt`.
 
 ---
 
