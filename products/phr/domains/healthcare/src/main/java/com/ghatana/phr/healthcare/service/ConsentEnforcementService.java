@@ -8,10 +8,14 @@ import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 /**
@@ -43,8 +47,24 @@ import java.util.concurrent.Executor;
  */
 public class ConsentEnforcementService {
 
+    /** Maximum duration an emergency access token remains valid (4 hours). */
+    static final Duration EMERGENCY_TOKEN_TTL = Duration.ofHours(4);
+
+    /** Allowed actor types for C1/C2 role-based access (no explicit consent needed). */
+    private static final Set<ConsentCheckRequest.ActorType> C1_C2_ALLOWED_ROLES = Set.of(
+        ConsentCheckRequest.ActorType.PROVIDER,
+        ConsentCheckRequest.ActorType.ADMIN,
+        ConsentCheckRequest.ActorType.FCHV
+    );
+
     private final ConsentStore consentStore;
     private final Executor executor;
+
+    /**
+     * Tracks active emergency tokens: key = "tenantId:actorId:patientId", value = expiry instant.
+     * Entries auto-expire after {@link #EMERGENCY_TOKEN_TTL}.
+     */
+    private final Map<String, Instant> emergencyTokens = new ConcurrentHashMap<>();
 
     private final Counter allowedCounter;
     private final Counter deniedCounter;
@@ -166,12 +186,25 @@ public class ConsentEnforcementService {
         // Nothing to check here since patient and actor both come from the same tenantId
         // in an enforced request context; this is a belt-and-suspenders check.
 
-        // Layer 1: emergency override
+        // Layer 1: emergency override — time-limited tokens (ISSUE-P14)
         if (req.emergencyOverride() && req.action() == ConsentAction.EMERGENCY_READ) {
+            String tokenKey = req.tenantId() + ":" + req.actorId() + ":" + req.patientId();
+            Instant now = Instant.now();
+            Instant existingExpiry = emergencyTokens.get(tokenKey);
+
+            if (existingExpiry != null && now.isBefore(existingExpiry)) {
+                // Reuse existing valid emergency token
+                emergencyOverrideCounter.increment();
+                allowedCounter.increment();
+                return AccessDecision.allow(AccessDecision.ReasonCode.EMERGENCY_GRANT, tokenKey, true);
+            }
+
+            // Issue new time-limited emergency token (4-hour window)
+            Instant expiry = now.plus(EMERGENCY_TOKEN_TTL);
+            emergencyTokens.put(tokenKey, expiry);
             emergencyOverrideCounter.increment();
             allowedCounter.increment();
-            // Emergency access is ALWAYS allowed but ALWAYS requires tamper-evident audit
-            return AccessDecision.allow(AccessDecision.ReasonCode.EMERGENCY_GRANT, null, true);
+            return AccessDecision.allow(AccessDecision.ReasonCode.EMERGENCY_GRANT, tokenKey, true);
         }
 
         // Layer 2: self-access (patient accessing their own C1/C2/C3 record)
@@ -190,12 +223,20 @@ public class ConsentEnforcementService {
             }
         }
 
-        // Layer 3: C1/C2 classification — role-based access sufficient (no consent lookup)
+        // Layer 3: C1/C2 classification — role-based access check (ISSUE-P12)
+        // Patients can self-access C1/C2 (handled in Layer 2 above).
+        // Providers, Admins, and FCHVs may access C1/C2 without explicit consent.
+        // Caregivers require explicit consent even for C1/C2.
         if (!req.resourceClassification().requiresExplicitConsent()) {
-            allowedCounter.increment();
-            return AccessDecision.allow(
-                AccessDecision.ReasonCode.ROLE_ALLOWED, null, false
-            );
+            if (C1_C2_ALLOWED_ROLES.contains(req.actorType())) {
+                allowedCounter.increment();
+                return AccessDecision.allow(
+                    AccessDecision.ReasonCode.ROLE_ALLOWED, null, false
+                );
+            }
+            // Actor type not permitted for role-based C1/C2 access
+            deniedCounter.increment();
+            return AccessDecision.deny(AccessDecision.ReasonCode.RESTRICTED_RESOURCE);
         }
 
         // Layer 4: C3/C4 — require an active consent record

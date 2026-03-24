@@ -9,7 +9,7 @@ import com.ghatana.kernel.context.KernelContext;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
-import com.ghatana.kernel.util.JsonUtils;
+import com.ghatana.kernel.util.TypedDataSerializer;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -339,12 +339,11 @@ public class OrderManagementService {
     }
 
     private byte[] serialize(Order order) {
-        return JsonUtils.toJson(order).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(order, "Order", 1);
     }
 
     private Order deserialize(byte[] data) {
-        if (data == null) return null;
-        return JsonUtils.fromJson(new String(data, StandardCharsets.UTF_8), Order.class);
+        return TypedDataSerializer.fromBytes(data, Order.class);
     }
 
     private String generateId() {

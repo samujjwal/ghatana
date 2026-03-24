@@ -2,6 +2,7 @@ package com.ghatana.finance.extension;
 
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  */
 @DisplayName("ComplianceKernelExtension Tests")
-class ComplianceKernelExtensionTest {
+class ComplianceKernelExtensionTest extends EventloopTestBase {
 
     private ComplianceKernelExtension extension;
 
@@ -76,7 +77,7 @@ class ComplianceKernelExtensionTest {
         );
 
         var promise = extension.validateTrade("trade-123", trade);
-        ComplianceKernelExtension.ComplianceCheckResult result = promise.getResult();
+        ComplianceKernelExtension.ComplianceCheckResult result = runPromise(() -> promise);
 
         assertTrue(result.isCompliant());
         assertNull(result.getViolation());
@@ -86,12 +87,13 @@ class ComplianceKernelExtensionTest {
     @Test
     @DisplayName("Should detect PCI-DSS violations for unencrypted data")
     void shouldDetectPciDssViolationsForUnencryptedData() {
+        // PAN 4111-1111-1111-1111 is the official Visa test card number (Luhn-valid, not a real card)
         ComplianceKernelExtension.PaymentDetails payment = new ComplianceKernelExtension.PaymentDetails(
             "4111111111111111", false, "123", "12/25"
         );
 
         var promise = extension.validatePCICompliance("txn-001", payment);
-        ComplianceKernelExtension.ComplianceCheckResult result = promise.getResult();
+        ComplianceKernelExtension.ComplianceCheckResult result = runPromise(() -> promise);
 
         assertFalse(result.isCompliant());
         assertNotNull(result.getViolation());
@@ -104,12 +106,13 @@ class ComplianceKernelExtensionTest {
     void shouldDetectPciDssViolationsForUnmaskedPan() {
         // This test assumes the extension checks for masking
         // Implementation may vary
+        // PAN 4111-1111-1111-1111 is the official Visa test card number (Luhn-valid, not a real card)
         ComplianceKernelExtension.PaymentDetails payment = new ComplianceKernelExtension.PaymentDetails(
             "4111-1111-1111-1111", true, "123", "12/25"
         );
 
         var promise = extension.validatePCICompliance("txn-002", payment);
-        ComplianceKernelExtension.ComplianceCheckResult result = promise.getResult();
+        ComplianceKernelExtension.ComplianceCheckResult result = runPromise(() -> promise);
 
         // Note: This depends on the actual implementation
         // The current implementation only checks for encryption
@@ -123,7 +126,7 @@ class ComplianceKernelExtensionTest {
         );
 
         var promise = extension.validatePCICompliance("txn-003", payment);
-        ComplianceKernelExtension.ComplianceCheckResult result = promise.getResult();
+        ComplianceKernelExtension.ComplianceCheckResult result = runPromise(() -> promise);
 
         assertTrue(result.isCompliant());
     }
@@ -138,7 +141,7 @@ class ComplianceKernelExtensionTest {
         );
 
         var promise = extension.validateSOXControl("control-001", controlData);
-        ComplianceKernelExtension.ComplianceCheckResult result = promise.getResult();
+        ComplianceKernelExtension.ComplianceCheckResult result = runPromise(() -> promise);
 
         assertTrue(result.isCompliant());
     }
@@ -152,7 +155,7 @@ class ComplianceKernelExtensionTest {
         );
 
         var promise = extension.validateSOXControl("control-002", controlData);
-        ComplianceKernelExtension.ComplianceCheckResult result = promise.getResult();
+        ComplianceKernelExtension.ComplianceCheckResult result = runPromise(() -> promise);
 
         assertFalse(result.isCompliant());
         assertNotNull(result.getViolation());
@@ -169,7 +172,7 @@ class ComplianceKernelExtensionTest {
         );
 
         var promise = extension.validateSOXControl("control-003", controlData);
-        ComplianceKernelExtension.ComplianceCheckResult result = promise.getResult();
+        ComplianceKernelExtension.ComplianceCheckResult result = runPromise(() -> promise);
 
         assertFalse(result.isCompliant());
         assertNotNull(result.getViolation());
@@ -183,10 +186,10 @@ class ComplianceKernelExtensionTest {
         ComplianceKernelExtension.TradeDetails trade = new ComplianceKernelExtension.TradeDetails(
             "AAPL", "BUY", new BigDecimal("100"), new BigDecimal("150.00"), "trader-001"
         );
-        extension.validateTrade("audit-trade", trade).getResult();
+        runPromise(() -> extension.validateTrade("audit-trade", trade));
 
         var promise = extension.getAuditTrail("audit-trade");
-        Set<ComplianceKernelExtension.AuditEntry> entries = promise.getResult();
+        Set<ComplianceKernelExtension.AuditEntry> entries = runPromise(() -> promise);
 
         assertFalse(entries.isEmpty());
         ComplianceKernelExtension.AuditEntry entry = entries.iterator().next();
@@ -204,7 +207,7 @@ class ComplianceKernelExtensionTest {
             ComplianceKernelExtension.Severity.HIGH
         );
 
-        extension.addComplianceRule(rule).getResult();
+        runPromise(() -> extension.addComplianceRule(rule));
         // Rule is added to internal registry
     }
 
@@ -218,7 +221,7 @@ class ComplianceKernelExtensionTest {
         );
 
         var promise = extension.validateTrade("test", trade);
-        assertTrue(promise.isException());
+        assertThrows(Exception.class, () -> runPromise(() -> promise));
     }
 
     @Test
@@ -231,14 +234,14 @@ class ComplianceKernelExtensionTest {
     @Test
     @DisplayName("Should mask PAN correctly")
     void shouldMaskPanCorrectly() {
-        // This tests the internal method indirectly through PCI validation
+        // PAN 4111-1111-1111-1111 is the official Visa test card number (Luhn-valid, not a real card)
         ComplianceKernelExtension.PaymentDetails unmasked = new ComplianceKernelExtension.PaymentDetails(
             "4111111111111111", true, "123", "12/25"
         );
 
         var promise = extension.validatePCICompliance("mask-test", unmasked);
         // Result depends on whether masking is enforced
-        promise.getResult();
+        runPromise(() -> promise);
     }
 
     @Test
@@ -290,7 +293,7 @@ class ComplianceKernelExtensionTest {
         );
 
         var promise = extension.validateTrade("large-trade", largeTrade);
-        ComplianceKernelExtension.ComplianceCheckResult result = promise.getResult();
+        ComplianceKernelExtension.ComplianceCheckResult result = runPromise(() -> promise);
 
         // Result depends on the specific compliance rules configured
         assertNotNull(result);

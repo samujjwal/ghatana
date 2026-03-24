@@ -6,7 +6,10 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadReque
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.util.JsonUtils;
+import com.ghatana.kernel.util.TypedDataSerializer;
+import com.ghatana.platform.cache.DistributedCachePort;
+import com.ghatana.platform.cache.InMemoryCacheAdapter;
+import com.ghatana.phr.kernel.consent.ConsentService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -21,6 +24,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Consent Management Service with Nepal Directive 2081 compliance.
@@ -32,6 +37,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Caregiver delegation consent</li>
  *   <li>Audit trail with patient visibility</li>
  *   <li>Automatic expiration and cache invalidation</li>
+ *   <li>Distributed consent cache (ISSUE-X02 fix) — uses {@link DistributedCachePort} instead
+ *       of a node-local {@code ConcurrentHashMap} so that grant invalidations propagate
+ *       across all horizontally-scaled nodes.</li>
  * </ul></p>
  *
  * @doc.type class
@@ -41,18 +49,44 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class ConsentManagementService {
+public class ConsentManagementService implements ConsentService {
 
     private static final String CONSENT_DATASET = "phr.consent.grants";
     private static final String AUDIT_DATASET = "phr.consent.audit";
     private static final String EMERGENCY_DATASET = "phr.emergency.access";
 
+    /** Maximum grant creation requests per actor per window. */
+    private static final int CREATE_GRANT_MAX_PER_WINDOW = 20;
+    /** Maximum access-check requests per actor per window. */
+    private static final int CHECK_ACCESS_MAX_PER_WINDOW = 200;
+    /** Sliding window duration for rate limiting. */
+    private static final long RATE_WINDOW_MILLIS = 60_000L; // 1 minute
+
     private final DataCloudKernelAdapter dataCloud;
-    private final Map<String, ConsentCacheEntry> consentCache = new ConcurrentHashMap<>();
+    /** Distributed cache for consent decisions — multi-node safe (ISSUE-X02). */
+    private final DistributedCachePort<String, ConsentCacheEntry> consentCache;
+    private final ConcurrentHashMap<String, RateBucket> createGrantLimiter = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, RateBucket> checkAccessLimiter = new ConcurrentHashMap<>();
     private volatile boolean running = false;
 
-    public ConsentManagementService(KernelContext context) {
+    /**
+     * Constructs a ConsentManagementService with a supplied distributed cache.
+     *
+     * @param context      kernel context providing DataCloudKernelAdapter
+     * @param consentCache distributed cache for consent decisions (ISSUE-X02 fix)
+     */
+    public ConsentManagementService(KernelContext context,
+                                     DistributedCachePort<String, ConsentCacheEntry> consentCache) {
         this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        this.consentCache = Objects.requireNonNull(consentCache, "consentCache must not be null");
+    }
+
+    /**
+     * Convenience constructor for tests and single-node deployments.
+     * Creates an in-memory cache with 50,000 entry capacity and 5-minute TTL.
+     */
+    public ConsentManagementService(KernelContext context) {
+        this(context, new InMemoryCacheAdapter<>(50_000, Duration.ofMinutes(5)));
     }
 
     public Promise<Void> start() {
@@ -62,8 +96,7 @@ public class ConsentManagementService {
 
     public Promise<Void> stop() {
         running = false;
-        consentCache.clear();
-        return Promise.complete();
+        return consentCache.invalidateAll();
     }
 
     public boolean isHealthy() {
@@ -85,6 +118,12 @@ public class ConsentManagementService {
     public Promise<ConsentGrant> createGrant(ConsentGrant grant) {
         if (!running) {
             return Promise.ofException(new IllegalStateException("Service not running"));
+        }
+
+        String rateLimitKey = grant.getRecipientId();
+        if (!tryAcquire(createGrantLimiter, rateLimitKey, CREATE_GRANT_MAX_PER_WINDOW)) {
+            return Promise.ofException(new RateLimitExceededException(
+                    "Grant creation rate limit exceeded for actor: " + rateLimitKey));
         }
 
         // Check for conflicting grants
@@ -142,7 +181,14 @@ public class ConsentManagementService {
 
                 ConsentGrant revoked = grant.withStatus("REVOKED").withRevokedAt(Instant.now());
                 Promise<ConsentGrant> updated = updateGrant(revoked);
-                return updated.then($ -> Promise.complete());
+                // ENH-P01: Invalidate ALL cached decisions for this patient, not just
+                // the specific recipient-patient pair. Other actors' cached allow-decisions
+                // may reference grants that are affected by cascading revocation policies.
+                return updated
+                    .then($ -> invalidatePatientAccessCache(
+                            new CacheInvalidationRequest(null, grant.getPatientId(),
+                                    CacheInvalidationReason.GRANT_REVOKED)))
+                    .then($ -> Promise.complete());
             });
     }
 
@@ -162,33 +208,128 @@ public class ConsentManagementService {
 
         // Check cache first
         String cacheKey = accessorId + ":" + patientId + ":" + resourceType;
-        ConsentCacheEntry cached = consentCache.get(cacheKey);
-        if (cached != null && !cached.isExpired() && !cached.isNearExpiry()) {
-            return Promise.of(new ConsentValidationResult(
-                cached.isAllowed(),
-                cached.isAllowed() ? "Cache: Access allowed" : "Cache: Access denied",
-                cached.getGrantId()
-            ));
-        }
-
-        // Query active grants
-        return getActiveGrantsForPatient(patientId)
-            .then(grants -> {
-                for (ConsentGrant grant : grants) {
-                    if (grant.covers(accessorId, resourceType)) {
-                        // Update cache
-                        consentCache.put(cacheKey, new ConsentCacheEntry(
-                            grant.getId(), true, grant.getExpiresAt()
-                        ));
+        return consentCache.get(cacheKey)
+            .then(optCached -> {
+                if (optCached.isPresent()) {
+                    ConsentCacheEntry cached = optCached.get();
+                    if (!cached.isExpired() && !cached.isNearExpiry()) {
                         return Promise.of(new ConsentValidationResult(
-                            true, "Valid grant found", grant.getId()
+                            cached.isAllowed(),
+                            cached.isAllowed() ? "Cache: Access allowed" : "Cache: Access denied",
+                            cached.getGrantId()
                         ));
                     }
                 }
-                return Promise.of(new ConsentValidationResult(
-                    false, "No valid consent grant", null
-                ));
+                // Query active grants
+                return getActiveGrantsForPatient(patientId)
+                    .then(grants -> {
+                        for (ConsentGrant grant : grants) {
+                            if (grant.covers(accessorId, resourceType)) {
+                                ConsentCacheEntry entry = new ConsentCacheEntry(
+                                    grant.getId(), true, grant.getExpiresAt());
+                                return consentCache.put(cacheKey, entry)
+                                    .map($ -> new ConsentValidationResult(
+                                        true, "Valid grant found", grant.getId()));
+                            }
+                        }
+                        return Promise.of(new ConsentValidationResult(
+                            false, "No valid consent grant", null));
+                    });
             });
+    }
+
+    // ==================== ConsentService Contract Methods ====================
+
+    /** {@inheritDoc} */
+    @Override
+    public Promise<ConsentAccessDecision> checkAccess(ConsentCheckRequest request) {
+        if (!running) {
+            return Promise.of(new ConsentAccessDecision(
+                    false, ReasonCode.SYSTEM_DENY, null, CacheStatus.BYPASS,
+                    true, null, List.of()));
+        }
+
+        String rateLimitKey = request.actor().actorId();
+        if (!tryAcquire(checkAccessLimiter, rateLimitKey, CHECK_ACCESS_MAX_PER_WINDOW)) {
+            return Promise.of(new ConsentAccessDecision(
+                    false, ReasonCode.SYSTEM_DENY, null, CacheStatus.BYPASS,
+                    true, null, List.of("RATE_LIMIT_EXCEEDED")));
+        }
+
+        // Self-access shortcut: patient accessing own data
+        if (request.actor().actorType() == ActorType.PATIENT
+                && request.target().patientId().equals(request.actor().patientId())) {
+            return Promise.of(new ConsentAccessDecision(
+                    true, ReasonCode.SELF_ACCESS, null, CacheStatus.BYPASS,
+                    false, null, List.of()));
+        }
+
+        // Emergency path
+        if (request.purposeOfUse() == PurposeOfUse.EMERGENCY
+                && request.emergency() != null && request.emergency().enabled()) {
+            return Promise.of(new ConsentAccessDecision(
+                    true, ReasonCode.EMERGENCY_GRANT, null, CacheStatus.BYPASS,
+                    true, null, List.of("SUBMIT_POST_HOC_JUSTIFICATION")));
+        }
+
+        // Check cache
+        String cacheKey = request.actor().actorId() + ":" + request.target().patientId()
+                + ":" + request.target().resourceType();
+        return consentCache.get(cacheKey)
+                .then(optCached -> {
+                    if (optCached.isPresent()) {
+                        ConsentCacheEntry cached = optCached.get();
+                        if (!cached.isExpired() && !cached.isNearExpiry()) {
+                            return Promise.of(new ConsentAccessDecision(
+                                    cached.isAllowed(),
+                                    cached.isAllowed() ? ReasonCode.EXPLICIT_GRANT : ReasonCode.OUT_OF_SCOPE,
+                                    cached.getGrantId(), CacheStatus.HIT,
+                                    !cached.isAllowed(), null, List.of()));
+                        }
+                    }
+                    // Query grants
+                    return getActiveGrantsForPatient(request.target().patientId())
+                            .then(grants -> {
+                                for (ConsentGrant grant : grants) {
+                                    if (grant.covers(request.actor().actorId(),
+                                            request.target().resourceType())) {
+                                        ConsentCacheEntry entry = new ConsentCacheEntry(
+                                                grant.getId(), true, grant.getExpiresAt());
+                                        return consentCache.put(cacheKey, entry)
+                                                .map($ -> new ConsentAccessDecision(
+                                                        true, ReasonCode.EXPLICIT_GRANT, grant.getId(),
+                                                        CacheStatus.MISS, false, grant.getExpiresAt(), List.of()));
+                                    }
+                                }
+                                return Promise.of(new ConsentAccessDecision(
+                                        false, ReasonCode.OUT_OF_SCOPE, null, CacheStatus.MISS,
+                                        true, null, List.of()));
+                            });
+                });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Promise<ConsentAccessDecision> assertAccess(ConsentCheckRequest request) {
+        return checkAccess(request)
+                .then(decision -> {
+                    if (!decision.allowed()) {
+                        return Promise.ofException(
+                                new IllegalStateException("Consent denied: " + decision.reasonCode()));
+                    }
+                    return Promise.of(decision);
+                });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Promise<Void> invalidatePatientAccessCache(CacheInvalidationRequest request) {
+        // Flush the entire consent-cache namespace for this service instance.
+        // The cache namespace is scoped to "phr.consent" at construction time, so this only
+        // affects consent decisions — not other cache domains. For finer-grained per-patient
+        // invalidation, the distributed cache would need server-side Lua scan support
+        // (Redis SCAN pattern). Until then, a full namespace flush is the safe default.
+        return consentCache.invalidateAll();
     }
 
     /**
@@ -377,10 +518,13 @@ public class ConsentManagementService {
     }
 
     private Promise<Void> invalidateConsentCache(String recipientId, String patientId) {
-        // Invalidate all cache entries for this recipient-patient pair
-        consentCache.keySet().removeIf(key ->
-            key.startsWith(recipientId + ":" + patientId + ":"));
-        return Promise.complete();
+        // Invalidate the cache entries that directly encode this recipient-patient pair.
+        // We build the deterministic key prefix used in validateAccess / checkAccess:
+        //   cacheKey = actorId + ":" + patientId + ":" + resourceType
+        // Since DistributedCachePort only supports single-key invalidation (no server-side
+        // pattern scan on the interface), we flush the entire namespace for correctness.
+        // This is safe because the namespace is already scoped to consent decisions.
+        return consentCache.invalidateAll();
     }
 
     private Promise<Void> notifyPatientOfEmergencyAccess(EmergencyGrant grant) {
@@ -411,25 +555,23 @@ public class ConsentManagementService {
     }
 
     private byte[] serialize(ConsentGrant grant) {
-        return JsonUtils.toJson(grant).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(grant, "ConsentGrant", 1);
     }
 
     private ConsentGrant deserialize(byte[] data) {
-        if (data == null) return null;
-        return JsonUtils.fromJson(new String(data, StandardCharsets.UTF_8), ConsentGrant.class);
+        return TypedDataSerializer.fromBytes(data, ConsentGrant.class);
     }
 
     private byte[] serializeEmergency(EmergencyGrant grant) {
-        return JsonUtils.toJson(grant).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(grant, "EmergencyGrant", 1);
     }
 
     private byte[] serializeAudit(PatientAuditEntry entry) {
-        return JsonUtils.toJson(entry).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(entry, "PatientAuditEntry", 1);
     }
 
     private PatientAuditEntry deserializeAudit(byte[] data) {
-        if (data == null) return null;
-        return JsonUtils.fromJson(new String(data, StandardCharsets.UTF_8), PatientAuditEntry.class);
+        return TypedDataSerializer.fromBytes(data, PatientAuditEntry.class);
     }
 
     private String generateId() {
@@ -648,6 +790,45 @@ public class ConsentManagementService {
         boolean isExpired() { return Instant.now().isAfter(expiresAt); }
         boolean isNearExpiry() {
             return expiresAt.minusSeconds(300).isBefore(Instant.now());
+        }
+    }
+
+    // ==================== Rate Limiting ====================
+
+    /**
+     * Simple sliding-window rate bucket. Resets the counter when the window expires.
+     */
+    private static class RateBucket {
+        private final AtomicInteger count = new AtomicInteger(0);
+        private final AtomicLong windowStart = new AtomicLong(System.currentTimeMillis());
+
+        boolean tryAcquire(int maxPerWindow, long windowMillis) {
+            long now = System.currentTimeMillis();
+            long start = windowStart.get();
+            if (now - start >= windowMillis) {
+                // Window expired — reset
+                if (windowStart.compareAndSet(start, now)) {
+                    count.set(1);
+                    return true;
+                }
+                // Lost CAS race; fall through and count against new window
+            }
+            return count.incrementAndGet() <= maxPerWindow;
+        }
+    }
+
+    private static boolean tryAcquire(ConcurrentHashMap<String, RateBucket> limiter,
+                                       String key, int maxPerWindow) {
+        RateBucket bucket = limiter.computeIfAbsent(key, k -> new RateBucket());
+        return bucket.tryAcquire(maxPerWindow, RATE_WINDOW_MILLIS);
+    }
+
+    /**
+     * Thrown when a consent operation exceeds the per-actor rate limit.
+     */
+    public static class RateLimitExceededException extends RuntimeException {
+        public RateLimitExceededException(String message) {
+            super(message);
         }
     }
 }

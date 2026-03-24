@@ -6,6 +6,7 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.health.HealthStatus;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.products.finance.FinanceCapabilities;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  */
 @DisplayName("FinanceKernelModule Tests")
-class FinanceKernelModuleTest {
+class FinanceKernelModuleTest extends EventloopTestBase {
 
     private FinanceKernelModule module;
     private KernelContext mockContext;
@@ -110,33 +111,29 @@ class FinanceKernelModuleTest {
     void shouldStartSuccessfullyAfterInitialization() {
         module.initialize(mockContext);
 
-        Promise<Void> startPromise = module.start();
-        assertFalse(startPromise.isException());
+        assertDoesNotThrow(() -> runPromise(module::start));
     }
 
     @Test
     @DisplayName("Should fail to start when not initialized")
     void shouldFailToStartWhenNotInitialized() {
-        Promise<Void> startPromise = module.start();
-
-        assertTrue(startPromise.isException());
+        assertThrows(Exception.class, () -> runPromise(module::start));
     }
 
     @Test
     @DisplayName("Should stop successfully")
     void shouldStopSuccessfully() {
         module.initialize(mockContext);
-        assertFalse(module.start().isException());
+        runPromise(module::start);
 
-        Promise<Void> stopPromise = module.stop();
-        assertFalse(stopPromise.isException());
+        assertDoesNotThrow(() -> runPromise(module::stop));
     }
 
     @Test
     @DisplayName("Should report healthy status when initialized and started")
     void shouldReportHealthyStatusWhenInitializedAndStarted() {
         module.initialize(mockContext);
-        assertFalse(module.start().isException());
+        runPromise(module::start);
 
         HealthStatus status = module.getHealthStatus();
 
@@ -158,7 +155,7 @@ class FinanceKernelModuleTest {
     @DisplayName("Should report all service health checks")
     void shouldReportAllServiceHealthChecks() {
         module.initialize(mockContext);
-        assertFalse(module.start().isException());
+        runPromise(module::start);
 
         HealthStatus status = module.getHealthStatus();
 
@@ -179,15 +176,10 @@ class FinanceKernelModuleTest {
         module.initialize(mockContext);
 
         // Multiple operations should be safe
-        Promise<Void> start1 = module.start();
-        Promise<Void> start2 = module.start();
-        Promise<Void> stop1 = module.stop();
-        Promise<Void> start3 = module.start();
-
-        assertFalse(start1.isException());
-        assertFalse(start2.isException());
-        assertFalse(stop1.isException());
-        assertFalse(start3.isException());
+        runPromise(module::start);
+        runPromise(module::start);
+        runPromise(module::stop);
+        runPromise(module::start);
 
         // Health should be healthy after final start
         HealthStatus status = module.getHealthStatus();

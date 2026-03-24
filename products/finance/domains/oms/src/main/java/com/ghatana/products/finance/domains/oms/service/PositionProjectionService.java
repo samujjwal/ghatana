@@ -14,11 +14,20 @@ import java.time.Instant;
 import java.util.concurrent.Executor;
 
 /**
+ * OMS Position Projection Service — in-memory pre-settlement position tracking.
+ *
+ * <h2>Distinction from Post-Trade PositionProjectionService (F15)</h2>
+ * <p>This service maintains <b>tentative</b> positions during the order lifecycle by
+ * consuming FillReceived events and updating an in-memory {@link PositionStore} port.
+ * The Post-Trade variant maintains the <b>authoritative settled position</b> in
+ * PostgreSQL + Redis after settlement completion.</p>
+ *
  * @doc.type    Service (Application)
  * @doc.purpose CQRS read-side projection: consumes FillReceived events → updates
- *              position records with running P&L (D01-016, D01-017).
+ *              position records with running P&amp;L (D01-016, D01-017).
  * @doc.layer   Application Service
  * @doc.pattern CQRS Read Side, Event Consumer
+ * @see com.ghatana.products.finance.domains.posttrade.service.PositionProjectionService Post-Trade settled variant
  */
 public class PositionProjectionService {
 

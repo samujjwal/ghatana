@@ -37,6 +37,7 @@ public record Patient(
     DataClassification classification,
     String registeredBy,
     java.time.Instant registeredAt,
+    java.time.Instant lastClinicalActivityAt, // null if no clinical activity recorded yet
     boolean active
 ) {
 
@@ -65,7 +66,7 @@ public record Patient(
             UUID.randomUUID(), tenantId, nhsId,
             firstName, lastName, dateOfBirth, gender,
             null, null, null, null, null,
-            DataClassification.C2, registeredBy, java.time.Instant.now(), true
+            DataClassification.C2, registeredBy, java.time.Instant.now(), null, true
         );
     }
 
@@ -76,18 +77,22 @@ public record Patient(
         return new Patient(
             patientId, tenantId, nhsId, firstName, lastName, dateOfBirth,
             gender, bloodGroup, primaryPhone, primaryEmail, address, province,
-            newClassification, registeredBy, registeredAt, active
+            newClassification, registeredBy, registeredAt, lastClinicalActivityAt, active
         );
     }
 
     /**
      * Returns whether this patient record qualifies for right-to-erasure.
      * Nepal Directive 2081 §22: deletion request can be filed if no active treatments
-     * and a 25-year minimum retention period has elapsed.
+     * and a 25-year minimum retention period has elapsed since the last clinical activity
+     * (or registration if no clinical activity has occurred).
      */
     public boolean isDeletionEligible(java.time.Instant now, boolean hasActiveTreatment) {
         if (hasActiveTreatment) return false;
-        long yearsRetained = java.time.temporal.ChronoUnit.YEARS.between(registeredAt, now);
+        // Use lastClinicalActivityAt for retention window — fall back to registeredAt
+        java.time.Instant retentionStart = (lastClinicalActivityAt != null)
+                ? lastClinicalActivityAt : registeredAt;
+        long yearsRetained = java.time.temporal.ChronoUnit.YEARS.between(retentionStart, now);
         return yearsRetained >= 25;
     }
 }

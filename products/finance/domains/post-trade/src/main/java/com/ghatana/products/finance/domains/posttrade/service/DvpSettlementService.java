@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -55,13 +56,13 @@ public class DvpSettlementService {
     // ─── Inner ports (K-17 saga participants) ────────────────────────────────
 
     public interface SecuritiesReservationPort {
-        String   reserveSecurities(String delivererId, String instrumentId, double quantity);  // returns reservationId
+        String   reserveSecurities(String delivererId, String instrumentId, BigDecimal quantity);
         boolean  releaseReservation(String reservationId);
         boolean  executeTransfer(String reservationId, String receiverId);
     }
 
     public interface CashReservationPort {
-        String   reserveCash(String receiverId, double amount, String currency);  // returns reservationId
+        String   reserveCash(String receiverId, BigDecimal amount, String currency);
         boolean  releaseReservation(String reservationId);
         boolean  executeTransfer(String reservationId, String delivererId);
     }
@@ -72,7 +73,7 @@ public class DvpSettlementService {
     public interface LedgerPort {
         void postJournal(String journalId, String description,
                          String debitAccount, String creditAccount,
-                         double amount, String currency);
+                         BigDecimal amount, String currency);
     }
 
     // ─── Records ─────────────────────────────────────────────────────────────
@@ -82,8 +83,8 @@ public class DvpSettlementService {
         String delivererId,
         String receiverId,
         String instrumentId,
-        double quantity,
-        double amount,
+        BigDecimal quantity,
+        BigDecimal amount,
         String currency
     ) {}
 

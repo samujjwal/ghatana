@@ -9,6 +9,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @doc.type      Service
@@ -30,22 +35,63 @@ import java.util.List;
 public class ComplianceCheckIntegrationService {
 
     private static final Logger log = LoggerFactory.getLogger(ComplianceCheckIntegrationService.class);
-    private static final long   TIMEOUT_MS = 2_000;
+    private static final long   DEFAULT_TIMEOUT_MS = 2_000;
 
     private final CompliancePort  compliancePort;
     private final EventBusPort eventBusPort;
+    private final long timeoutMs;
+    private final ComplianceDecision failSafeDefault;
     private final Counter complianceFails;
     private final Counter complianceReviews;
+    private final Counter complianceTimeouts;
     private final Timer   complianceLatency;
 
+    /**
+     * Creates a compliance check service with configurable timeout and fail-safe default.
+     *
+     * @param compliancePort   compliance engine adapter
+     * @param eventBusPort     event bus for publishing compliance events
+     * @param meterRegistry    metrics registry
+     * @param timeoutMs        maximum time (ms) to wait for a compliance check; must be &gt; 0
+     * @param failSafeDefault  decision returned when the compliance check times out or errors
+     *                         (typically {@link ComplianceDecision#REVIEW} for staging,
+     *                         {@link ComplianceDecision#FAIL} for production); must not be null
+     */
+    public ComplianceCheckIntegrationService(CompliancePort compliancePort,
+                                              EventBusPort eventBusPort,
+                                              MeterRegistry meterRegistry,
+                                              long timeoutMs,
+                                              ComplianceDecision failSafeDefault) {
+        this.compliancePort      = compliancePort;
+        this.eventBusPort        = eventBusPort;
+        this.timeoutMs           = timeoutMs > 0 ? timeoutMs : DEFAULT_TIMEOUT_MS;
+        this.failSafeDefault     = failSafeDefault != null ? failSafeDefault : ComplianceDecision.REVIEW;
+        this.complianceFails     = meterRegistry.counter("oms.compliance.fails");
+        this.complianceReviews   = meterRegistry.counter("oms.compliance.reviews");
+        this.complianceTimeouts  = meterRegistry.counter("oms.compliance.timeouts");
+        this.complianceLatency   = meterRegistry.timer("oms.compliance.latency");
+    }
+
+    /**
+     * Creates a compliance check service with a configurable timeout and REVIEW as fail-safe.
+     *
+     * @param compliancePort  compliance engine adapter
+     * @param eventBusPort    event bus for publishing compliance events
+     * @param meterRegistry   metrics registry
+     * @param timeoutMs       maximum time (ms) to wait for a compliance check; must be &gt; 0
+     */
+    public ComplianceCheckIntegrationService(CompliancePort compliancePort,
+                                              EventBusPort eventBusPort,
+                                              MeterRegistry meterRegistry,
+                                              long timeoutMs) {
+        this(compliancePort, eventBusPort, meterRegistry, timeoutMs, ComplianceDecision.REVIEW);
+    }
+
+    /** Creates a compliance check service with the default 2-second timeout and REVIEW fail-safe. */
     public ComplianceCheckIntegrationService(CompliancePort compliancePort,
                                               EventBusPort eventBusPort,
                                               MeterRegistry meterRegistry) {
-        this.compliancePort    = compliancePort;
-        this.eventBusPort    = eventBusPort;
-        this.complianceFails   = meterRegistry.counter("oms.compliance.fails");
-        this.complianceReviews = meterRegistry.counter("oms.compliance.reviews");
-        this.complianceLatency = meterRegistry.timer("oms.compliance.latency");
+        this(compliancePort, eventBusPort, meterRegistry, DEFAULT_TIMEOUT_MS, ComplianceDecision.REVIEW);
     }
 
     /**
@@ -62,11 +108,22 @@ public class ComplianceCheckIntegrationService {
                                    String instrumentId, String side, long quantity) {
         ComplianceOutcome outcome = complianceLatency.record(() -> {
             try {
-                return compliancePort.check(clientId, instrumentId, side, quantity);
+                Future<ComplianceOutcome> future = ForkJoinPool.commonPool().submit(
+                        () -> compliancePort.check(clientId, instrumentId, side, quantity));
+                return future.get(timeoutMs, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                complianceTimeouts.increment();
+                log.warn("Compliance check timed out for orderId={} ({}ms limit) — defaulting to {}",
+                        orderId, timeoutMs, failSafeDefault);
+                return failSafeOutcome(List.of("COMPLIANCE_TIMEOUT"));
+            } catch (ExecutionException e) {
+                log.warn("Compliance check error for orderId={}: {} — defaulting to {}",
+                        orderId, e.getCause().getMessage(), failSafeDefault);
+                return failSafeOutcome(List.of("COMPLIANCE_ERROR"));
             } catch (Exception e) {
-                log.warn("Compliance check timeout/error for orderId={}: {} — defaulting to REVIEW",
-                        orderId, e.getMessage());
-                return ComplianceOutcome.review(List.of("COMPLIANCE_TIMEOUT"));
+                log.warn("Compliance check error for orderId={}: {} — defaulting to {}",
+                        orderId, e.getMessage(), failSafeDefault);
+                return failSafeOutcome(List.of("COMPLIANCE_TIMEOUT"));
             }
         });
 
@@ -88,6 +145,19 @@ public class ComplianceCheckIntegrationService {
     }
 
     // ─── Port ─────────────────────────────────────────────────────────────────
+
+    /** Returns the configured fail-safe decision used on timeout or error. */
+    public ComplianceDecision getFailSafeDefault() {
+        return failSafeDefault;
+    }
+
+    private ComplianceOutcome failSafeOutcome(List<String> reasons) {
+        return switch (failSafeDefault) {
+            case FAIL   -> ComplianceOutcome.fail(reasons);
+            case REVIEW -> ComplianceOutcome.review(reasons);
+            case PASS   -> ComplianceOutcome.pass();
+        };
+    }
 
     public interface CompliancePort {
         ComplianceOutcome check(String clientId, String instrumentId, String side, long quantity);

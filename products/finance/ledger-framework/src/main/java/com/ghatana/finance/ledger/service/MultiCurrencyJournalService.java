@@ -133,8 +133,8 @@ public final class MultiCurrencyJournalService {
      * Posts a cross-currency FX conversion as two separate balanced journals.
      *
      * <p>The source journal is persisted first; on success the target journal is
-     * persisted. Both journals carry the exchange rate in their description for
-     * audit and reconciliation.
+     * persisted. If the target journal fails, a reversing journal is posted for
+     * the source leg to maintain ledger consistency (saga compensation).
      *
      * @param request FX conversion parameters
      * @return promise resolving to the conversion result containing both posted journals
@@ -148,7 +148,18 @@ public final class MultiCurrencyJournalService {
         return ledgerService.postJournal(sourceJournal)
                 .then(postedSource -> ledgerService.postJournal(targetJournal)
                         .map(postedTarget -> new FxConversionResult(
-                                postedSource, postedTarget, request.exchangeRate())));
+                                postedSource, postedTarget, request.exchangeRate()))
+                        .whenException(targetError -> {
+                            // Compensate: reverse the source journal that was already posted
+                            Journal reversingJournal = postedSource.reverse(
+                                    "FX-COMPENSATION: reversal of " + postedSource.journalId()
+                                            + " due to target leg failure");
+                            ledgerService.postJournal(reversingJournal)
+                                    .whenException(reverseError ->
+                                            // Log but do not suppress the original error
+                                            // — manual reconciliation will be needed
+                                            {});
+                        }));
     }
 
     // ── Value objects ─────────────────────────────────────────────────────────

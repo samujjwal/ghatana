@@ -25,6 +25,10 @@ dependencies {
     // Platform libraries
     api(project(":platform:java:security"))
     api(project(":platform:java:database"))
+    api(project(":platform:java:audit"))
+
+    // Distributed cache (ISSUE-X02 / KRQ-05)
+    implementation(project(":platform:java:distributed-cache"))
 
     // ActiveJ
     api(libs.activej.promise)
@@ -35,6 +39,7 @@ dependencies {
 
     // Testing
     testImplementation(project(":platform:java:kernel"))
+    testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testRuntimeOnly(libs.junit.jupiter.engine)

@@ -2,6 +2,8 @@ package com.ghatana.phr.healthcare.service;
 
 import com.ghatana.phr.healthcare.domain.Patient;
 import com.ghatana.phr.healthcare.port.PatientStore;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditService;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,6 +34,7 @@ public class PatientRegistrationService {
 
     private final PatientStore patientStore;
     private final Executor executor;
+    private final AuditService auditService;
     private final Counter registeredCounter;
 
     public record RegistrationRequest(
@@ -56,9 +59,10 @@ public class PatientRegistrationService {
     }
 
     public PatientRegistrationService(PatientStore patientStore, Executor executor,
-                                      MeterRegistry registry) {
+                                      MeterRegistry registry, AuditService auditService) {
         this.patientStore = Objects.requireNonNull(patientStore);
         this.executor = Objects.requireNonNull(executor);
+        this.auditService = Objects.requireNonNull(auditService);
         this.registeredCounter = Counter.builder("healthcare.patients.registered_total")
             .description("Total number of patients registered")
             .register(registry);
@@ -67,9 +71,20 @@ public class PatientRegistrationService {
     /**
      * Registers a new patient within a tenant.
      * Returns the newly created patient.
+     *
+     * @throws IllegalStateException if the NHS ID is already registered within the tenant
      */
     public Promise<Patient> register(RegistrationRequest request) {
         return Promise.ofBlocking(executor, () -> {
+            // NHS ID uniqueness check within the tenant (if nhsId provided)
+            if (request.nhsId() != null && !request.nhsId().isBlank()) {
+                Optional<Patient> existing = patientStore.findByNhsId(request.tenantId(), request.nhsId());
+                if (existing.isPresent()) {
+                    throw new IllegalStateException(
+                            "NHS ID already registered within tenant: " + request.tenantId());
+                }
+            }
+
             Patient patient = Patient.newPatient(
                 request.tenantId(), request.nhsId(),
                 request.firstName(), request.lastName(),
@@ -84,10 +99,19 @@ public class PatientRegistrationService {
                 request.primaryPhone(), request.primaryEmail(),
                 null, request.province(),
                 patient.classification(), patient.registeredBy(),
-                patient.registeredAt(), true
+                patient.registeredAt(), null, true
             );
             patientStore.save(enriched);
             registeredCounter.increment();
+            auditService.record(AuditEvent.builder()
+                .tenantId(request.tenantId())
+                .eventType("PATIENT_REGISTERED")
+                .principal(request.registeredBy())
+                .resourceType("Patient")
+                .resourceId(enriched.patientId().toString())
+                .success(true)
+                .detail("nhsId", request.nhsId() != null ? "present" : "absent")
+                .build());
             return enriched;
         });
     }

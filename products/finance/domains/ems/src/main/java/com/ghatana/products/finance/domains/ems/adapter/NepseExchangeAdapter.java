@@ -1,5 +1,6 @@
 package com.ghatana.products.finance.domains.ems.adapter;
 
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.products.finance.domains.ems.domain.*;
 import com.ghatana.products.finance.domains.ems.port.ExchangeAdapterPort;
 import com.ghatana.products.finance.domains.ems.service.FixProtocolService;
@@ -47,6 +48,7 @@ public class NepseExchangeAdapter implements ExchangeAdapterPort {
     );
 
     private final FixProtocolService fixEngine;
+    private final EventBusPort eventBusPort;
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final ConcurrentHashMap<String, String>     routingToExternal = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, RoutedOrder> pendingOrders    = new ConcurrentHashMap<>();
@@ -59,8 +61,11 @@ public class NepseExchangeAdapter implements ExchangeAdapterPort {
     private final Counter execReportsReceived;
     private final Counter rejections;
 
-    public NepseExchangeAdapter(FixProtocolService fixEngine, MeterRegistry meterRegistry) {
+    public NepseExchangeAdapter(FixProtocolService fixEngine,
+                                EventBusPort eventBusPort,
+                                MeterRegistry meterRegistry) {
         this.fixEngine = fixEngine;
+        this.eventBusPort = Objects.requireNonNull(eventBusPort, "eventBusPort");
         this.ordersSubmitted    = meterRegistry.counter("nepse.orders.submitted");
         this.execReportsReceived = meterRegistry.counter("nepse.exec.reports.received");
         this.rejections         = meterRegistry.counter("nepse.rejections");
@@ -210,6 +215,7 @@ public class NepseExchangeAdapter implements ExchangeAdapterPort {
                 log.info("NepseAdapter: fill received clOrdId={} qty={} price={}",
                         clOrdId, lastQty, fillPx);
                 if (fillCallback != null) fillCallback.accept(fill);
+                eventBusPort.publish(new ExecutionFillReceivedEvent(clOrdId, fill, EXCHANGE_ID));
             }
             case "8" -> { // Rejected
                 rejections.increment();
@@ -217,6 +223,7 @@ public class NepseExchangeAdapter implements ExchangeAdapterPort {
                 String reason = REJECT_CODES.getOrDefault(rejectCode,
                         "NEPSE rejection code: " + rejectCode);
                 log.warn("NepseAdapter: order rejected clOrdId={} reason={}", clOrdId, reason);
+                eventBusPort.publish(new OrderRejectedByExchangeEvent(clOrdId, rejectCode, reason));
                 pendingOrders.remove(clOrdId);
             }
             case "4" -> { // Cancelled
@@ -249,4 +256,17 @@ public class NepseExchangeAdapter implements ExchangeAdapterPort {
 
     // Note: in production, the transport layer forwards bytes to fixEngine.receive() which
     // then publishes FixExecReportEvents consumed by this adapter's handleExecReport().
+
+    // ─── Domain Events ────────────────────────────────────────────────────────
+
+    /**
+     * Published when the adapter receives an execution fill from NEPSE.
+     * Enables cross-service observability and replay without coupling to the Consumer callback.
+     */
+    public record ExecutionFillReceivedEvent(String routingId, ExecutionFill fill, String exchange) {}
+
+    /**
+     * Published when an order is rejected by NEPSE.
+     */
+    public record OrderRejectedByExchangeEvent(String routingId, String rejectCode, String reason) {}
 }

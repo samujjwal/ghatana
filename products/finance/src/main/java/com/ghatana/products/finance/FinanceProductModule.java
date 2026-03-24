@@ -24,18 +24,36 @@ import com.ghatana.products.finance.domains.risk.RiskDomainModule;
 import com.ghatana.products.finance.domains.sanctions.SanctionsDomainModule;
 import com.ghatana.products.finance.domains.surveillance.SurveillanceDomainModule;
 import com.ghatana.products.finance.rules.FinanceRulesDomain;
+import com.ghatana.finance.kernel.FinanceKernelModule;
+import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.products.finance.shell.FinanceProductShell;
 import io.activej.promise.Promise;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Finance Product Module.
+ * Finance Product Module — composition root for the entire Finance product.
  *
- * <p>Main product module for the Finance product. Serves as the entry point for
- * finance-specific business logic and workflows. This module uses kernel capabilities
- * for generic functionality and implements finance-specific business rules.</p>
+ * <h2>Architecture (F14 — Module Boundary)</h2>
+ * <p>This module implements a <b>two-level composition pattern</b>:</p>
+ * <ol>
+ *   <li><b>Kernel level</b> — {@link FinanceKernelModule} owns cross-cutting platform
+ *       services (order management, risk, compliance) that wire directly to kernel
+ *       adapters and expose their contracts via {@code ContractRegistry}. It is the
+ *       single integration point between the finance product and the kernel runtime.</li>
+ *   <li><b>Domain level</b> — 14 domain modules (OMS, EMS, PMS, etc.) own domain-specific
+ *       services, ports, and rules that operate within the business logic layer. These
+ *       modules receive their dependencies through {@link KernelContext} and do not
+ *       interact with kernel adapters directly.</li>
+ * </ol>
+ *
+ * <p>{@code FinanceProductModule} acts as the <em>composition root</em>: it instantiates
+ * both levels, wires lifecycle delegation (initialize → start → stop → health), and
+ * registers the product shell and BFF. It does <b>not</b> create individual service
+ * instances — that responsibility belongs to either the kernel module or the respective
+ * domain module.</p>
  *
  * <p>Key capabilities:
  * <ul>
@@ -57,9 +75,9 @@ import org.slf4j.LoggerFactory;
  * </ul></p>
  *
  * @doc.type class
- * @doc.purpose Finance product module - main entry point for finance business logic
+ * @doc.purpose Finance product module - composition root for kernel and 14 domain modules
  * @doc.layer product
- * @doc.pattern Module
+ * @doc.pattern CompositionRoot
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
@@ -67,6 +85,8 @@ public final class FinanceProductModule implements KernelModule {
 
     private static final Logger log = LoggerFactory.getLogger(FinanceProductModule.class);
 
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private FinanceKernelModule kernelModule;
     private FinanceProductShell productShell;
     private FinanceBFF bff;
     private KernelContext context;
@@ -128,8 +148,22 @@ public final class FinanceProductModule implements KernelModule {
 
     @Override
     public void initialize(KernelContext context) {
+        if (!initialized.compareAndSet(false, true)) {
+            throw new IllegalStateException("Finance product module already initialized");
+        }
+
         log.info("Initializing Finance product module with all 14 domains");
         this.context = context;
+
+        // Kernel level: cross-cutting core services (OMS, Risk, Compliance) wired to kernel adapters
+        kernelModule = new FinanceKernelModule();
+        if (context.hasDependency(KernelConfigResolver.class)) {
+            kernelModule.initialize(context);
+            log.info("Finance kernel module initialized — core services delegated to kernel level");
+        } else {
+            log.warn("KernelConfigResolver not available; kernel module will not be initialized");
+            kernelModule = null;
+        }
 
         productShell = new FinanceProductShell(context);
         bff = new FinanceBFF(context);
@@ -182,12 +216,17 @@ public final class FinanceProductModule implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting Finance product module with all domains");
 
-        startDomainModules();
-        productShell.start();
-        bff.start();
+        Promise<Void> kernelStart = kernelModule != null
+                ? kernelModule.start() : Promise.complete();
 
-        log.info("Finance product module started successfully");
-        return Promise.complete();
+        return kernelStart.then($ -> {
+            startDomainModules();
+            productShell.start();
+            bff.start();
+
+            log.info("Finance product module started successfully");
+            return Promise.complete();
+        });
     }
 
     private void startDomainModules() {
@@ -224,8 +263,13 @@ public final class FinanceProductModule implements KernelModule {
 
         stopDomainModules();
 
-        log.info("Finance product module stopped successfully");
-        return Promise.complete();
+        Promise<Void> kernelStop = kernelModule != null
+                ? kernelModule.stop() : Promise.complete();
+
+        return kernelStop.then($ -> {
+            log.info("Finance product module stopped successfully");
+            return Promise.complete();
+        });
     }
 
     private void stopDomainModules() {
@@ -255,7 +299,8 @@ public final class FinanceProductModule implements KernelModule {
             boolean shellHealthy = productShell != null && productShell.isHealthy();
             boolean bffHealthy = bff != null && bff.isHealthy();
             boolean domainsHealthy = checkDomainModulesHealth();
-            boolean overallHealthy = shellHealthy && bffHealthy && domainsHealthy;
+            boolean kernelHealthy = kernelModule == null || kernelModule.getHealthStatus().isHealthy();
+            boolean overallHealthy = shellHealthy && bffHealthy && domainsHealthy && kernelHealthy;
 
             return overallHealthy
                 ? HealthStatus.healthy("All finance services and 14 domains operational")

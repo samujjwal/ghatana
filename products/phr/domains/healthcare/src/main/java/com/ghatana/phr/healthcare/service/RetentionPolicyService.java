@@ -2,6 +2,8 @@ package com.ghatana.phr.healthcare.service;
 
 import com.ghatana.phr.healthcare.domain.Patient;
 import com.ghatana.phr.healthcare.port.PatientStore;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditService;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -39,6 +41,7 @@ public class RetentionPolicyService {
 
     private final PatientStore patientStore;
     private final Executor executor;
+    private final AuditService auditService;
     private final Counter erasureRequestedCounter;
     private final Counter erasureBlockedCounter;
     private final Counter erasureExecutedCounter;
@@ -68,9 +71,11 @@ public class RetentionPolicyService {
 
     public RetentionPolicyService(PatientStore patientStore,
                                    Executor executor,
-                                   MeterRegistry registry) {
+                                   MeterRegistry registry,
+                                   AuditService auditService) {
         this.patientStore = Objects.requireNonNull(patientStore);
         this.executor = Objects.requireNonNull(executor);
+        this.auditService = Objects.requireNonNull(auditService);
         this.erasureRequestedCounter = Counter.builder("healthcare.retention.erasure_requested_total")
             .register(registry);
         this.erasureBlockedCounter = Counter.builder("healthcare.retention.erasure_blocked_total")
@@ -106,6 +111,7 @@ public class RetentionPolicyService {
             Optional<Patient> patientOpt = patientStore.findById(tenantId, patientId);
             if (patientOpt.isEmpty()) {
                 erasureBlockedCounter.increment();
+                auditErasure(tenantId, patientId, "PATIENT_NOT_FOUND", false);
                 return ErasureOutcome.blocked("PATIENT_NOT_FOUND");
             }
             Patient patient = patientOpt.get();
@@ -113,18 +119,21 @@ public class RetentionPolicyService {
             // 1. Legal hold check
             if (legalHold.hasActiveLegalHold(tenantId, patientId)) {
                 erasureBlockedCounter.increment();
+                auditErasure(tenantId, patientId, "LEGAL_HOLD", false);
                 return ErasureOutcome.blocked("LEGAL_HOLD");
             }
 
             // 2. Active treatment check
             if (activeTreatment.hasActiveTreatment(tenantId, patientId)) {
                 erasureBlockedCounter.increment();
+                auditErasure(tenantId, patientId, "ACTIVE_TREATMENT", false);
                 return ErasureOutcome.blocked("ACTIVE_TREATMENT");
             }
 
             // 3. 25-year retention period check
             if (!patient.isDeletionEligible(Instant.now(), false)) {
                 erasureBlockedCounter.increment();
+                auditErasure(tenantId, patientId, "RETENTION_PERIOD_NOT_ELAPSED", false);
                 return ErasureOutcome.blocked("RETENTION_PERIOD_NOT_ELAPSED");
             }
 
@@ -132,7 +141,19 @@ public class RetentionPolicyService {
             patientStore.deactivate(tenantId, patientId);
             patientStore.hardDelete(tenantId, patientId);
             erasureExecutedCounter.increment();
+            auditErasure(tenantId, patientId, "EXECUTED", true);
             return ErasureOutcome.executed();
         });
+    }
+
+    private void auditErasure(String tenantId, UUID patientId, String reason, boolean success) {
+        auditService.record(AuditEvent.builder()
+            .tenantId(tenantId)
+            .eventType("ERASURE_" + (success ? "EXECUTED" : "BLOCKED"))
+            .resourceType("Patient")
+            .resourceId(patientId.toString())
+            .success(success)
+            .detail("reason", reason)
+            .build());
     }
 }

@@ -2,6 +2,7 @@ package com.ghatana.phr.healthcare.service;
 
 import com.ghatana.phr.healthcare.domain.*;
 import com.ghatana.phr.healthcare.port.ConsentStore;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,8 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * ConsentEnforcementService unit tests.
  *
- * <p>Tests the consent decision layers for C3/C4 classified healthcare data
- * against the scenarios in the PHR consent service interface specification.</p>
+ * <p>Tests the consent decision layers including emergency override (P14 — time-limited
+ * tokens), self-access, C1/C2 role-based access (P12 — CAREGIVER exclusion), and
+ * C3/C4 explicit consent lookup.</p>
  *
  * @doc.type test
  * @doc.purpose Unit tests for the consent enforcement service
@@ -29,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @since 1.0.0
  */
 @DisplayName("ConsentEnforcementService")
-class ConsentEnforcementServiceTest {
+class ConsentEnforcementServiceTest extends EventloopTestBase {
 
     private ConsentEnforcementService service;
     private StubConsentStore consentStore;
@@ -67,12 +69,79 @@ class ConsentEnforcementServiceTest {
                 "EMERGENCY", true, "Trauma — patient unconscious"
             );
 
-            ConsentEnforcementService.AccessDecision decision = service.checkAccess(req).getResult();
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
 
             assertThat(decision.allowed()).isTrue();
             assertThat(decision.reasonCode())
                 .isEqualTo(ConsentEnforcementService.AccessDecision.ReasonCode.EMERGENCY_GRANT);
             assertThat(decision.auditRequired()).isTrue(); // always true for emergency
+        }
+
+        @Test
+        @DisplayName("P14: Emergency token is reused for same actor+patient within TTL window")
+        void emergencyTokenIsReusedWithinTtl() {
+            ConsentEnforcementService.ConsentCheckRequest req1 = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-em-1", TENANT_ID, PATIENT_ID, PROVIDER_ID,
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.PROVIDER,
+                ConsentAction.EMERGENCY_READ, DataClassification.C4,
+                "EMERGENCY", true, "Initial emergency"
+            );
+            ConsentEnforcementService.ConsentCheckRequest req2 = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-em-2", TENANT_ID, PATIENT_ID, PROVIDER_ID,
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.PROVIDER,
+                ConsentAction.EMERGENCY_READ, DataClassification.C4,
+                "EMERGENCY", true, "Follow-up emergency"
+            );
+
+            ConsentEnforcementService.AccessDecision d1 = runPromise(() -> service.checkAccess(req1));
+            ConsentEnforcementService.AccessDecision d2 = runPromise(() -> service.checkAccess(req2));
+
+            assertThat(d1.allowed()).isTrue();
+            assertThat(d2.allowed()).isTrue();
+            // Same token key reused for the same actor+patient
+            assertThat(d2.grantId()).isEqualTo(d1.grantId());
+        }
+
+        @Test
+        @DisplayName("P14: Different patients receive separate emergency tokens")
+        void differentPatientsGetSeparateTokens() {
+            UUID patient2 = UUID.randomUUID();
+
+            ConsentEnforcementService.ConsentCheckRequest req1 = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-em-3", TENANT_ID, PATIENT_ID, PROVIDER_ID,
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.PROVIDER,
+                ConsentAction.EMERGENCY_READ, DataClassification.C4,
+                "EMERGENCY", true, "Emergency for patient 1"
+            );
+            ConsentEnforcementService.ConsentCheckRequest req2 = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-em-4", TENANT_ID, patient2, PROVIDER_ID,
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.PROVIDER,
+                ConsentAction.EMERGENCY_READ, DataClassification.C4,
+                "EMERGENCY", true, "Emergency for patient 2"
+            );
+
+            ConsentEnforcementService.AccessDecision d1 = runPromise(() -> service.checkAccess(req1));
+            ConsentEnforcementService.AccessDecision d2 = runPromise(() -> service.checkAccess(req2));
+
+            assertThat(d1.allowed()).isTrue();
+            assertThat(d2.allowed()).isTrue();
+            assertThat(d2.grantId()).isNotEqualTo(d1.grantId());
+        }
+
+        @Test
+        @DisplayName("P14: Emergency token key includes tenant:actor:patient")
+        void emergencyTokenKeyStructure() {
+            ConsentEnforcementService.ConsentCheckRequest req = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-em-5", TENANT_ID, PATIENT_ID, PROVIDER_ID,
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.PROVIDER,
+                ConsentAction.EMERGENCY_READ, DataClassification.C4,
+                "EMERGENCY", true, "Critical"
+            );
+
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
+
+            String expectedKeyPrefix = TENANT_ID + ":" + PROVIDER_ID + ":" + PATIENT_ID;
+            assertThat(decision.grantId()).isEqualTo(expectedKeyPrefix);
         }
     }
 
@@ -93,7 +162,7 @@ class ConsentEnforcementServiceTest {
                 "SELF_SERVICE", false, null
             );
 
-            ConsentEnforcementService.AccessDecision decision = service.checkAccess(req).getResult();
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
 
             assertThat(decision.allowed()).isTrue();
             assertThat(decision.reasonCode())
@@ -114,7 +183,7 @@ class ConsentEnforcementServiceTest {
                 "SELF_SERVICE", false, null
             );
 
-            ConsentEnforcementService.AccessDecision decision = service.checkAccess(req).getResult();
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
 
             // C4 self-write is a write action, not in the self-access allowlist → lookup required
             assertThat(decision.allowed()).isFalse();
@@ -137,12 +206,100 @@ class ConsentEnforcementServiceTest {
                 "CARE_DELIVERY", false, null
             );
 
-            ConsentEnforcementService.AccessDecision decision = service.checkAccess(req).getResult();
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
 
             assertThat(decision.allowed()).isTrue();
             assertThat(decision.reasonCode())
                 .isEqualTo(ConsentEnforcementService.AccessDecision.ReasonCode.ROLE_ALLOWED);
             assertThat(consentStore.lookupCalled).isFalse(); // no consent store lookup
+        }
+
+        @Test
+        @DisplayName("P12: Admin can access C1 data via role-based access")
+        void adminCanAccessC1Data() {
+            ConsentEnforcementService.ConsentCheckRequest req = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-p12-1", TENANT_ID, PATIENT_ID, "admin-user-1",
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.ADMIN,
+                ConsentAction.PATIENT_READ, DataClassification.C1,
+                "ADMIN_REVIEW", false, null
+            );
+
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
+
+            assertThat(decision.allowed()).isTrue();
+            assertThat(decision.reasonCode())
+                .isEqualTo(ConsentEnforcementService.AccessDecision.ReasonCode.ROLE_ALLOWED);
+        }
+
+        @Test
+        @DisplayName("P12: FCHV can access C2 data via role-based access")
+        void fchvCanAccessC2Data() {
+            ConsentEnforcementService.ConsentCheckRequest req = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-p12-2", TENANT_ID, PATIENT_ID, "fchv-sita",
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.FCHV,
+                ConsentAction.PATIENT_READ, DataClassification.C2,
+                "COMMUNITY_HEALTH", false, null
+            );
+
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
+
+            assertThat(decision.allowed()).isTrue();
+            assertThat(decision.reasonCode())
+                .isEqualTo(ConsentEnforcementService.AccessDecision.ReasonCode.ROLE_ALLOWED);
+        }
+
+        @Test
+        @DisplayName("P12: Caregiver is DENIED C1/C2 access without explicit consent")
+        void caregiverDeniedC1C2WithoutConsent() {
+            ConsentEnforcementService.ConsentCheckRequest req = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-p12-3", TENANT_ID, PATIENT_ID, "caregiver-family-1",
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.CAREGIVER,
+                ConsentAction.PATIENT_READ, DataClassification.C2,
+                "CARE_SUPPORT", false, null
+            );
+
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
+
+            assertThat(decision.allowed()).isFalse();
+            assertThat(decision.reasonCode())
+                .isEqualTo(ConsentEnforcementService.AccessDecision.ReasonCode.RESTRICTED_RESOURCE);
+        }
+
+        @Test
+        @DisplayName("P12: Caregiver is DENIED C1 access — must go through consent")
+        void caregiverDeniedC1Access() {
+            ConsentEnforcementService.ConsentCheckRequest req = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-p12-4", TENANT_ID, PATIENT_ID, "caregiver-family-2",
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.CAREGIVER,
+                ConsentAction.PATIENT_READ, DataClassification.C1,
+                "CARE_SUPPORT", false, null
+            );
+
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
+
+            assertThat(decision.allowed()).isFalse();
+            assertThat(decision.reasonCode())
+                .isEqualTo(ConsentEnforcementService.AccessDecision.ReasonCode.RESTRICTED_RESOURCE);
+        }
+
+        @Test
+        @DisplayName("C1 data accessible for provider (no consent lookup required)")
+        void c1DataAccessibleForProvider() {
+            consentStore.lookupCalled = false;
+
+            ConsentEnforcementService.ConsentCheckRequest req = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-p12-5", TENANT_ID, PATIENT_ID, PROVIDER_ID,
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.PROVIDER,
+                ConsentAction.PATIENT_READ, DataClassification.C1,
+                "CARE_DELIVERY", false, null
+            );
+
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
+
+            assertThat(decision.allowed()).isTrue();
+            assertThat(decision.reasonCode())
+                .isEqualTo(ConsentEnforcementService.AccessDecision.ReasonCode.ROLE_ALLOWED);
+            assertThat(consentStore.lookupCalled).isFalse();
         }
     }
 
@@ -173,7 +330,7 @@ class ConsentEnforcementServiceTest {
                 "CARE_DELIVERY", false, null
             );
 
-            ConsentEnforcementService.AccessDecision decision = service.checkAccess(req).getResult();
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
 
             assertThat(decision.allowed()).isTrue();
             assertThat(decision.reasonCode())
@@ -193,7 +350,7 @@ class ConsentEnforcementServiceTest {
                 "CARE_DELIVERY", false, null
             );
 
-            ConsentEnforcementService.AccessDecision decision = service.checkAccess(req).getResult();
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
 
             assertThat(decision.allowed()).isFalse();
             assertThat(decision.reasonCode())
@@ -221,7 +378,7 @@ class ConsentEnforcementServiceTest {
                 "CARE_DELIVERY", false, null
             );
 
-            ConsentEnforcementService.AccessDecision decision = service.checkAccess(req).getResult();
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
 
             assertThat(decision.allowed()).isFalse();
             assertThat(decision.reasonCode())
@@ -248,10 +405,67 @@ class ConsentEnforcementServiceTest {
                 "CARE_DELIVERY", false, null
             );
 
-            ConsentEnforcementService.AccessDecision decision = service.checkAccess(req).getResult();
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.checkAccess(req));
 
             assertThat(decision.allowed()).isTrue();
             assertThat(decision.auditRequired()).isTrue();  // C4 always requires tamper-evident audit
+        }
+    }
+
+    // ── assertAccess ─────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("assertAccess (exception-throwing variant)")
+    class AssertAccessTests {
+
+        @Test
+        @DisplayName("assertAccess throws ConsentDeniedException when denied")
+        void assertAccessThrowsWhenDenied() {
+            consentStore.activeConsent = Optional.empty();
+
+            ConsentEnforcementService.ConsentCheckRequest req = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-assert-1", TENANT_ID, PATIENT_ID, PROVIDER_ID,
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.PROVIDER,
+                ConsentAction.DOCUMENT_READ, DataClassification.C3,
+                "CARE_DELIVERY", false, null
+            );
+
+            try {
+                runPromise(() -> service.assertAccess(req));
+                org.junit.jupiter.api.Assertions.fail("Expected ConsentDeniedException");
+            } catch (Exception e) {
+                assertThat(e).isInstanceOf(ConsentDeniedException.class);
+                ConsentDeniedException cde = (ConsentDeniedException) e;
+                assertThat(cde.getRequestId()).isEqualTo("req-assert-1");
+                assertThat(cde.getReasonCode()).isEqualTo("OUT_OF_SCOPE");
+            }
+        }
+
+        @Test
+        @DisplayName("assertAccess returns decision when allowed")
+        void assertAccessReturnDecisionWhenAllowed() {
+            ConsentRecord activeConsent = ConsentRecord.newGrant(
+                TENANT_ID, PATIENT_ID,
+                PATIENT_ID.toString(), "PATIENT",
+                PROVIDER_ID, "PROVIDER",
+                List.of(ConsentAction.DOCUMENT_READ),
+                DataClassification.C3, "CARE_DELIVERY",
+                Instant.now().plusSeconds(3600), "system"
+            );
+            consentStore.activeConsent = Optional.of(activeConsent);
+
+            ConsentEnforcementService.ConsentCheckRequest req = new ConsentEnforcementService.ConsentCheckRequest(
+                "req-assert-2", TENANT_ID, PATIENT_ID, PROVIDER_ID,
+                ConsentEnforcementService.ConsentCheckRequest.ActorType.PROVIDER,
+                ConsentAction.DOCUMENT_READ, DataClassification.C3,
+                "CARE_DELIVERY", false, null
+            );
+
+            ConsentEnforcementService.AccessDecision decision = runPromise(() -> service.assertAccess(req));
+
+            assertThat(decision.allowed()).isTrue();
+            assertThat(decision.reasonCode())
+                .isEqualTo(ConsentEnforcementService.AccessDecision.ReasonCode.EXPLICIT_GRANT);
         }
     }
 

@@ -10,7 +10,7 @@ import com.ghatana.kernel.context.KernelContext;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
-import com.ghatana.kernel.util.JsonUtils;
+import com.ghatana.kernel.util.TypedDataSerializer;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -387,21 +387,21 @@ public class AppointmentService {
     }
 
     private byte[] serialize(Appointment appointment) {
-        return JsonUtils.toJson(appointment).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(appointment, "Appointment", 1);
     }
 
     private Appointment deserialize(byte[] data) {
         if (data == null) return null;
-        return JsonUtils.fromJson(new String(data, StandardCharsets.UTF_8), Appointment.class);
+        return TypedDataSerializer.fromBytes(data, Appointment.class);
     }
 
     private byte[] serializeSlot(TimeSlot slot) {
-        return JsonUtils.toJson(slot).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(slot, "TimeSlot", 1);
     }
 
     private TimeSlot deserializeSlot(byte[] data) {
         if (data == null) return null;
-        return JsonUtils.fromJson(new String(data, StandardCharsets.UTF_8), TimeSlot.class);
+        return TypedDataSerializer.fromBytes(data, TimeSlot.class);
     }
 
     private String generateId() {

@@ -4,6 +4,9 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.plugin.PluginManifest;
+import com.ghatana.phr.fhir.FhirResourceService;
+import com.ghatana.phr.fhir.FhirTransformer;
+import com.ghatana.phr.fhir.FhirValidator;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
@@ -25,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-public class FhirInteropKernelPlugin implements KernelPlugin {
+public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceService, FhirValidator, FhirTransformer {
 
     private static final String PLUGIN_ID = "fhir-interop-r4";
     private static final String VERSION = "1.0.0";
@@ -138,13 +141,8 @@ public class FhirInteropKernelPlugin implements KernelPlugin {
 
     // ==================== FHIR Resource Processing ====================
 
-    /**
-     * Validates a FHIR resource against R4 specification.
-     *
-     * @param resourceType the FHIR resource type
-     * @param resourceJson the resource JSON
-     * @return Promise containing validation result
-     */
+    /** {@inheritDoc} */
+    @Override
     public Promise<ValidationResult> validateResource(String resourceType, String resourceJson) {
         if (!started.get()) {
             return Promise.ofException(new IllegalStateException("Plugin not started"));
@@ -157,13 +155,8 @@ public class FhirInteropKernelPlugin implements KernelPlugin {
         return Promise.of(new ValidationResult(valid, message, resourceType));
     }
 
-    /**
-     * Transforms internal PHR data to FHIR R4 format.
-     *
-     * @param internalData the internal data format
-     * @param targetResourceType the target FHIR resource type
-     * @return Promise containing FHIR JSON
-     */
+    /** {@inheritDoc} */
+    @Override
     public Promise<String> transformToFhir(Object internalData, String targetResourceType) {
         if (!started.get()) {
             return Promise.ofException(new IllegalStateException("Plugin not started"));
@@ -175,13 +168,8 @@ public class FhirInteropKernelPlugin implements KernelPlugin {
         return Promise.of(fhirJson);
     }
 
-    /**
-     * Transforms FHIR R4 resource to internal PHR format.
-     *
-     * @param fhirJson the FHIR JSON
-     * @param sourceResourceType the source FHIR resource type
-     * @return Promise containing internal data
-     */
+    /** {@inheritDoc} */
+    @Override
     public Promise<Object> transformFromFhir(String fhirJson, String sourceResourceType) {
         if (!started.get()) {
             return Promise.ofException(new IllegalStateException("Plugin not started"));
@@ -193,12 +181,8 @@ public class FhirInteropKernelPlugin implements KernelPlugin {
         return Promise.of(internalData);
     }
 
-    /**
-     * Stores a FHIR resource.
-     *
-     * @param resource the FHIR resource
-     * @return Promise completing when stored
-     */
+    /** {@inheritDoc} */
+    @Override
     public Promise<Void> storeResource(FhirResource resource) {
         if (!started.get()) {
             return Promise.ofException(new IllegalStateException("Plugin not started"));
@@ -210,12 +194,8 @@ public class FhirInteropKernelPlugin implements KernelPlugin {
         return persistResource(resource);
     }
 
-    /**
-     * Retrieves a FHIR resource by ID.
-     *
-     * @param resourceId the resource identifier
-     * @return Promise containing the resource if found
-     */
+    /** {@inheritDoc} */
+    @Override
     public Promise<FhirResource> getResource(String resourceId) {
         if (!started.get()) {
             return Promise.ofException(new IllegalStateException("Plugin not started"));
@@ -230,13 +210,8 @@ public class FhirInteropKernelPlugin implements KernelPlugin {
         return loadResource(resourceId);
     }
 
-    /**
-     * Searches FHIR resources by criteria.
-     *
-     * @param resourceType the resource type to search
-     * @param searchParams the search parameters
-     * @return Promise containing search results
-     */
+    /** {@inheritDoc} */
+    @Override
     public Promise<SearchResult> searchResources(String resourceType, Map<String, String> searchParams) {
         if (!started.get()) {
             return Promise.ofException(new IllegalStateException("Plugin not started"));
@@ -276,13 +251,11 @@ public class FhirInteropKernelPlugin implements KernelPlugin {
     }
 
     private String performTransformation(Object internalData, String targetResourceType) {
-        // Real transformation logic
-        return "{\"resourceType\":\"" + targetResourceType + "\",\"id\":\"generated\"}";
+        return com.ghatana.phr.fhir.FhirR4TransformationEngine.toFhir(internalData, targetResourceType);
     }
 
     private Object performReverseTransformation(String fhirJson, String sourceResourceType) {
-        // Real reverse transformation logic
-        return Map.of("type", sourceResourceType, "data", fhirJson);
+        return com.ghatana.phr.fhir.FhirR4TransformationEngine.fromFhir(fhirJson, sourceResourceType);
     }
 
     private Promise<Void> persistResource(FhirResource resource) {

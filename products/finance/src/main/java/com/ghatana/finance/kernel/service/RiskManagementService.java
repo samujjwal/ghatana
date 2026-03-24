@@ -5,23 +5,25 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequ
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
+import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.platform.cache.DistributedCachePort;
+import com.ghatana.platform.cache.InMemoryCacheAdapter;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
-import com.ghatana.kernel.util.JsonUtils;
+import com.ghatana.kernel.util.TypedDataSerializer;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Risk Management Service for pre-trade and post-trade risk checks.
@@ -33,6 +35,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Concentration risk detection</li>
  *   <li>Real-time risk metrics</li>
  *   <li>SEBON regulatory compliance</li>
+ *   <li>Distributed cache (ISSUE-X02 fix) — uses {@link DistributedCachePort} instead of a
+ *       node-local {@code ConcurrentHashMap} so that cache invalidation propagates across
+ *       all horizontally-scaled nodes.</li>
  * </ul></p>
  *
  * @doc.type class
@@ -47,17 +52,63 @@ public class RiskManagementService {
     private static final String RISK_DATASET = "finance.risk.metrics";
     private static final String ALERT_DATASET = "finance.risk.alerts";
 
+    /** Distributed cache for risk profiles — multi-node safe (ISSUE-X02). */
+    private final DistributedCachePort<String, RiskMetrics> riskCache;
     private final DataCloudKernelAdapter dataCloud;
-    private final Map<String, RiskProfile> riskCache = new ConcurrentHashMap<>();
     private volatile boolean running = false;
 
-    // Risk limits (configurable)
-    private static final BigDecimal MAX_POSITION_LIMIT = new BigDecimal("10000000"); // 1 crore NRP
-    private static final BigDecimal MAX_CONCENTRATION_PCT = new BigDecimal("0.20"); // 20%
-    private static final BigDecimal MAX_DAILY_LOSS = new BigDecimal("500000"); // 5 lakhs
+    // Risk limits — loaded from KernelConfigResolver at start(), with sensible defaults
+    private volatile BigDecimal maxPositionLimit;
+    private volatile BigDecimal maxConcentrationPct;
+    private volatile BigDecimal maxDailyLoss;
 
-    public RiskManagementService(KernelContext context) {
+    private static final BigDecimal DEFAULT_MAX_POSITION_LIMIT = new BigDecimal("10000000");
+    private static final BigDecimal DEFAULT_MAX_CONCENTRATION_PCT = new BigDecimal("0.20");
+    private static final BigDecimal DEFAULT_MAX_DAILY_LOSS = new BigDecimal("500000");
+
+    /**
+     * Creates a {@link RiskManagementService} using the supplied distributed cache.
+     *
+     * <p>In production, inject a {@code WriteThroughDistributedCache} (L1=Caffeine, L2=Redis)
+     * constructed by {@code DistributedCacheFactory.create(...)} in the module initializer.
+     * In tests, use {@code DistributedCacheFactory.createInMemory(10_000, Duration.ofMinutes(5))}.</p>
+     *
+     * @param context   kernel context — provides DataCloud and optional config
+     * @param riskCache distributed cache for risk metric profiles (ISSUE-X02 fix)
+     */
+    public RiskManagementService(KernelContext context,
+                                  DistributedCachePort<String, RiskMetrics> riskCache) {
         this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        this.riskCache = Objects.requireNonNull(riskCache, "riskCache must not be null");
+
+        // Load configurable risk limits from kernel config
+        if (context.hasDependency(KernelConfigResolver.class)) {
+            KernelConfigResolver config = context.getDependency(KernelConfigResolver.class);
+            var tenantCtx = context.getTenantContext();
+            this.maxPositionLimit = config.resolveWithDefault(
+                    "finance.risk.max-position-limit", BigDecimal.class,
+                    DEFAULT_MAX_POSITION_LIMIT, tenantCtx);
+            this.maxConcentrationPct = config.resolveWithDefault(
+                    "finance.risk.max-concentration-pct", BigDecimal.class,
+                    DEFAULT_MAX_CONCENTRATION_PCT, tenantCtx);
+            this.maxDailyLoss = config.resolveWithDefault(
+                    "finance.risk.max-daily-loss", BigDecimal.class,
+                    DEFAULT_MAX_DAILY_LOSS, tenantCtx);
+        } else {
+            this.maxPositionLimit = DEFAULT_MAX_POSITION_LIMIT;
+            this.maxConcentrationPct = DEFAULT_MAX_CONCENTRATION_PCT;
+            this.maxDailyLoss = DEFAULT_MAX_DAILY_LOSS;
+        }
+    }
+
+    /**
+     * Convenience constructor for tests and single-node deployments — creates an in-memory
+     * {@link InMemoryCacheAdapter} with a 10,000 entry limit and 60-second TTL.
+     *
+     * @param context kernel context
+     */
+    public RiskManagementService(KernelContext context) {
+        this(context, new InMemoryCacheAdapter<>(10_000, Duration.ofSeconds(60)));
     }
 
     public Promise<Void> start() {
@@ -67,7 +118,8 @@ public class RiskManagementService {
 
     public Promise<Void> stop() {
         running = false;
-        return Promise.complete();
+        // Flush local layer of the distributed cache on graceful shutdown
+        return riskCache.invalidateAll();
     }
 
     public boolean isHealthy() {
@@ -105,7 +157,7 @@ public class RiskManagementService {
                     ? currentPosition.add(notional)
                     : currentPosition.subtract(notional);
 
-                if (newPosition.abs().compareTo(MAX_POSITION_LIMIT) > 0) {
+                if (newPosition.abs().compareTo(maxPositionLimit) > 0) {
                     return createRiskAlert(traderId, "POSITION_LIMIT",
                         "Position limit exceeded for " + symbol)
                         .map($ -> RiskCheckResult.rejected("Position limit exceeded"));
@@ -117,7 +169,7 @@ public class RiskManagementService {
                         if (portfolioValue.compareTo(BigDecimal.ZERO) > 0) {
                             BigDecimal concentration = newPosition.abs()
                                 .divide(portfolioValue, 4, RoundingMode.HALF_UP);
-                            if (concentration.compareTo(MAX_CONCENTRATION_PCT) > 0) {
+                            if (concentration.compareTo(maxConcentrationPct) > 0) {
                                 return createRiskAlert(traderId, "CONCENTRATION_RISK",
                                     "Concentration limit exceeded for " + symbol)
                                     .map($ -> RiskCheckResult.rejected("Concentration limit exceeded"));
@@ -129,7 +181,10 @@ public class RiskManagementService {
     }
 
     /**
-     * Gets risk metrics for a trader.
+     * Gets risk metrics for a trader, using the distributed cache (ISSUE-X02 fix).
+     *
+     * <p>Cache miss triggers a fresh calculation which is stored in both L1 (local)
+     * and L2 (Redis) so that all nodes serve consistent data.</p>
      *
      * @param traderId the trader identifier
      * @return Promise containing risk metrics
@@ -139,20 +194,14 @@ public class RiskManagementService {
             return Promise.of(RiskMetrics.empty());
         }
 
-        RiskProfile cached = riskCache.get(traderId);
-        if (cached != null && !cached.isStale()) {
-            return Promise.of(cached.getMetrics());
-        }
-
-        return calculateRiskMetrics(traderId)
-            .then(metrics -> {
-                riskCache.put(traderId, new RiskProfile(metrics));
-                return Promise.of(metrics);
-            });
+        return riskCache.getOrLoad(traderId, id -> calculateRiskMetrics(id));
     }
 
     /**
      * Records trade for post-trade risk monitoring.
+     *
+     * <p>Invalidates the risk cache entry for the affected trader so that the next
+     * {@link #getRiskMetrics(String)} call fetches fresh data across all nodes (ISSUE-X02).</p>
      *
      * @param trade the trade record
      * @return Promise completing when recorded
@@ -164,7 +213,9 @@ public class RiskManagementService {
 
         return updatePosition(trade)
             .then($ -> checkRiskLimits(trade.getTraderId()))
-            .then($ -> recordRiskMetrics(trade.getTraderId()));
+            .then($ -> recordRiskMetrics(trade.getTraderId()))
+            // Invalidate distributed cache entry so all nodes pick up the updated metrics
+            .then($ -> riskCache.invalidate(trade.getTraderId()));
     }
 
     /**
@@ -299,7 +350,7 @@ public class RiskManagementService {
                 List<Promise<Void>> checks = new ArrayList<>();
 
                 // Check daily loss limit
-                if (metrics.getDailyPnL().abs().compareTo(MAX_DAILY_LOSS) > 0) {
+                if (metrics.getDailyPnL().abs().compareTo(maxDailyLoss) > 0) {
                     checks.add(createRiskAlert(traderId, "DAILY_LOSS_LIMIT",
                         "Daily loss limit exceeded"));
                 }
@@ -350,22 +401,22 @@ public class RiskManagementService {
     }
 
     private byte[] serializeMetrics(RiskMetrics metrics) {
-        return JsonUtils.toJson(metrics).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(metrics, "RiskMetrics", 1);
     }
 
     private byte[] serializeAlert(RiskAlert alert) {
-        return JsonUtils.toJson(alert).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(alert, "RiskAlert", 1);
     }
 
     private RiskAlert deserializeAlert(byte[] data) {
-        if (data == null) return null;
-        return JsonUtils.fromJson(new String(data, StandardCharsets.UTF_8), RiskAlert.class);
+        return TypedDataSerializer.fromBytes(data, RiskAlert.class);
     }
 
     private String generateId() {
         return "risk-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
+    // ==================== Inner Types ====================
     // ==================== Inner Types ====================
 
     public static class RiskCheckResult {
@@ -471,17 +522,5 @@ public class RiskManagementService {
         public BigDecimal getPrice() { return price; }
         public Instant getTimestamp() { return timestamp; }
     }
-
-    private static class RiskProfile {
-        private final RiskMetrics metrics;
-        private final Instant cachedAt;
-
-        RiskProfile(RiskMetrics metrics) {
-            this.metrics = metrics;
-            this.cachedAt = Instant.now();
-        }
-
-        RiskMetrics getMetrics() { return metrics; }
-        boolean isStale() { return cachedAt.plusSeconds(60).isBefore(Instant.now()); }
-    }
 }
+

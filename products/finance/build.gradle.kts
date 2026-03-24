@@ -43,6 +43,9 @@ dependencies {
     implementation(project(":products:finance:domains:sanctions"))
     implementation(project(":products:finance:domains:surveillance"))
 
+    // Distributed cache (KRQ-05)
+    implementation(project(":platform:java:distributed-cache"))
+
     // ActiveJ Promise
     implementation("io.activej:activej-promise")
 

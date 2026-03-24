@@ -6,7 +6,7 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadReque
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.util.JsonUtils;
+import com.ghatana.kernel.util.TypedDataSerializer;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -436,21 +436,21 @@ public class DocumentService {
     }
 
     private byte[] serialize(PatientDocument document) {
-        return JsonUtils.toJson(document).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(document, "PatientDocument", 1);
     }
 
     private PatientDocument deserialize(byte[] data) {
         if (data == null) return null;
-        return JsonUtils.fromJson(new String(data, StandardCharsets.UTF_8), PatientDocument.class);
+        return TypedDataSerializer.fromBytes(data, PatientDocument.class);
     }
 
     private byte[] serializeContent(DocumentContent content) {
-        return JsonUtils.toJson(content).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(content, "DocumentContent", 1);
     }
 
     private DocumentContent deserializeContent(byte[] data) {
         if (data == null) return null;
-        return JsonUtils.fromJson(new String(data, StandardCharsets.UTF_8), DocumentContent.class);
+        return TypedDataSerializer.fromBytes(data, DocumentContent.class);
     }
 
     private String generateId() {

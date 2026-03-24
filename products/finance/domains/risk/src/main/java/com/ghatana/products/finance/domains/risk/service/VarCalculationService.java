@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import javax.sql.DataSource;
@@ -107,7 +107,7 @@ public class VarCalculationService {
         double mean = Arrays.stream(returns).average().orElse(0.0);
         double variance = Arrays.stream(returns).map(r -> (r - mean) * (r - mean)).average().orElse(0.0);
         double vol = Math.sqrt(variance);
-        Random rng = new Random(42);  // deterministic seed for reproducibility
+        SecureRandom rng = new SecureRandom();
         double[] simReturns = new double[MC_SIMULATIONS];
         for (int i = 0; i < MC_SIMULATIONS; i++) {
             double totalReturn = 0.0;

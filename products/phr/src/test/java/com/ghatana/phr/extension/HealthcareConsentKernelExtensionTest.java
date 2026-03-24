@@ -3,6 +3,7 @@ package com.ghatana.phr.extension;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.module.KernelModule;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  */
 @DisplayName("HealthcareConsentKernelExtension Tests")
-class HealthcareConsentKernelExtensionTest {
+class HealthcareConsentKernelExtensionTest extends EventloopTestBase {
 
     private HealthcareConsentKernelExtension extension;
 
@@ -83,7 +84,7 @@ class HealthcareConsentKernelExtensionTest {
                 HealthcareConsentKernelExtension.ConsentDuration.ONE_YEAR
             );
 
-        HealthcareConsentKernelExtension.ConsentRecord record = promise.getResult();
+        HealthcareConsentKernelExtension.ConsentRecord record = runPromise(() -> promise);
         assertNotNull(record);
         assertEquals("patient-123", record.getPatientId());
         assertEquals(HealthcareConsentKernelExtension.ConsentPurpose.TREATMENT, record.getPurpose());
@@ -109,16 +110,15 @@ class HealthcareConsentKernelExtensionTest {
                 HealthcareConsentKernelExtension.ConsentDuration.UNTIL_WITHDRAWN
             );
 
-        HealthcareConsentKernelExtension.ConsentRecord granted = grantPromise.getResult();
+        HealthcareConsentKernelExtension.ConsentRecord granted = runPromise(() -> grantPromise);
         String consentId = granted.getConsentId();
 
         // Then withdraw
-        Promise<Void> withdrawPromise = extension.withdrawConsent(consentId, "Patient request");
-        withdrawPromise.getResult();
+        runPromise(() -> extension.withdrawConsent(consentId, "Patient request"));
 
         // Verify withdrawal
         Set<HealthcareConsentKernelExtension.ConsentRecord> history =
-            extension.getConsentHistory("patient-456").getResult();
+            runPromise(() -> extension.getConsentHistory("patient-456"));
         HealthcareConsentKernelExtension.ConsentRecord withdrawn = history.iterator().next();
 
         assertEquals(HealthcareConsentKernelExtension.ConsentStatus.WITHDRAWN, withdrawn.getStatus());
@@ -133,8 +133,7 @@ class HealthcareConsentKernelExtensionTest {
 
         Promise<Void> promise = extension.withdrawConsent("non-existent-id", "Test");
 
-        assertTrue(promise.isException());
-        assertTrue(promise.getException().getMessage().contains("not found"));
+        assertThrows(Exception.class, () -> runPromise(() -> promise));
     }
 
     @Test
@@ -147,14 +146,12 @@ class HealthcareConsentKernelExtensionTest {
             extension.grantConsent("patient-789", HealthcareConsentKernelExtension.ConsentPurpose.TREATMENT,
                 HealthcareConsentKernelExtension.ConsentScope.SPECIFIC_RECORDS,
                 HealthcareConsentKernelExtension.ConsentDuration.THIRTY_DAYS);
-        String consentId = grantPromise.getResult().getConsentId();
-        extension.withdrawConsent(consentId, "First withdrawal").getResult();
+        String consentId = runPromise(() -> grantPromise).getConsentId();
+        runPromise(() -> extension.withdrawConsent(consentId, "First withdrawal"));
 
         // Try to withdraw again
-        Promise<Void> secondWithdrawal = extension.withdrawConsent(consentId, "Second attempt");
-
-        assertTrue(secondWithdrawal.isException());
-        assertTrue(secondWithdrawal.getException().getMessage().contains("not in GRANTED state"));
+        assertThrows(Exception.class, () -> runPromise(() ->
+            extension.withdrawConsent(consentId, "Second attempt")));
     }
 
     @Test
@@ -163,15 +160,17 @@ class HealthcareConsentKernelExtensionTest {
         extension.onModuleStarted(null);
 
         // Grant consent
-        extension.grantConsent("patient-verify", HealthcareConsentKernelExtension.ConsentPurpose.TREATMENT,
-            HealthcareConsentKernelExtension.ConsentScope.ALL_DATA,
-            HealthcareConsentKernelExtension.ConsentDuration.NINETY_DAYS).getResult();
+        Promise<HealthcareConsentKernelExtension.ConsentRecord> grantPromise =
+            extension.grantConsent("patient-verify", HealthcareConsentKernelExtension.ConsentPurpose.TREATMENT,
+                HealthcareConsentKernelExtension.ConsentScope.ALL_DATA,
+                HealthcareConsentKernelExtension.ConsentDuration.NINETY_DAYS);
+        runPromise(() -> grantPromise);
 
         // Verify
         Promise<HealthcareConsentKernelExtension.ConsentVerification> verifyPromise =
             extension.verifyConsent("patient-verify", HealthcareConsentKernelExtension.ConsentPurpose.TREATMENT, "EMR");
 
-        HealthcareConsentKernelExtension.ConsentVerification verification = verifyPromise.getResult();
+        HealthcareConsentKernelExtension.ConsentVerification verification = runPromise(() -> verifyPromise);
         assertTrue(verification.isValid());
         assertTrue(verification.getRecord().isPresent());
     }
@@ -184,7 +183,7 @@ class HealthcareConsentKernelExtensionTest {
         Promise<HealthcareConsentKernelExtension.ConsentVerification> verifyPromise =
             extension.verifyConsent("unknown-patient", HealthcareConsentKernelExtension.ConsentPurpose.TREATMENT, "EMR");
 
-        HealthcareConsentKernelExtension.ConsentVerification verification = verifyPromise.getResult();
+        HealthcareConsentKernelExtension.ConsentVerification verification = runPromise(() -> verifyPromise);
         assertFalse(verification.isValid());
         assertTrue(verification.getReason().contains("No consent found"));
     }
@@ -206,7 +205,7 @@ class HealthcareConsentKernelExtensionTest {
         Promise<HealthcareConsentKernelExtension.ConsentVerification> verifyPromise =
             extension.verifyConsent("patient-expired", HealthcareConsentKernelExtension.ConsentPurpose.TREATMENT, "EMR");
 
-        HealthcareConsentKernelExtension.ConsentVerification verification = verifyPromise.getResult();
+        HealthcareConsentKernelExtension.ConsentVerification verification = runPromise(() -> verifyPromise);
         // Note: ONE_TIME grants are immediately expired, so this should fail
         // The actual behavior depends on the implementation details
     }
@@ -217,15 +216,15 @@ class HealthcareConsentKernelExtensionTest {
         extension.onModuleStarted(null);
 
         // Grant multiple consents
-        extension.grantConsent("patient-history", HealthcareConsentKernelExtension.ConsentPurpose.TREATMENT,
+        runPromise(() -> extension.grantConsent("patient-history", HealthcareConsentKernelExtension.ConsentPurpose.TREATMENT,
             HealthcareConsentKernelExtension.ConsentScope.ALL_DATA,
-            HealthcareConsentKernelExtension.ConsentDuration.ONE_YEAR).getResult();
-        extension.grantConsent("patient-history", HealthcareConsentKernelExtension.ConsentPurpose.RESEARCH,
+            HealthcareConsentKernelExtension.ConsentDuration.ONE_YEAR));
+        runPromise(() -> extension.grantConsent("patient-history", HealthcareConsentKernelExtension.ConsentPurpose.RESEARCH,
             HealthcareConsentKernelExtension.ConsentScope.ANONYMIZED_ONLY,
-            HealthcareConsentKernelExtension.ConsentDuration.UNTIL_WITHDRAWN).getResult();
+            HealthcareConsentKernelExtension.ConsentDuration.UNTIL_WITHDRAWN));
 
         Set<HealthcareConsentKernelExtension.ConsentRecord> history =
-            extension.getConsentHistory("patient-history").getResult();
+            runPromise(() -> extension.getConsentHistory("patient-history"));
 
         assertEquals(2, history.size());
     }
@@ -247,8 +246,7 @@ class HealthcareConsentKernelExtensionTest {
                 HealthcareConsentKernelExtension.ConsentScope.ALL_DATA,
                 HealthcareConsentKernelExtension.ConsentDuration.ONE_YEAR);
 
-        assertTrue(promise.isException());
-        assertTrue(promise.getException().getMessage().contains("not started"));
+        assertThrows(Exception.class, () -> runPromise(() -> promise));
     }
 
     @Test

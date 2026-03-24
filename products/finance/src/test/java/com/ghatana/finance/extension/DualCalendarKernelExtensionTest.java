@@ -1,10 +1,18 @@
 package com.ghatana.finance.extension;
 
+import com.ghatana.finance.kernel.extension.DualCalendarKernelExtension;
+import com.ghatana.finance.kernel.extension.DualCalendarKernelExtension.CalendarRegistry;
+import com.ghatana.finance.kernel.extension.DualCalendarKernelExtension.CalendarSystem;
+import com.ghatana.finance.kernel.extension.DualCalendarKernelExtension.DualCalendarCalculator;
+import com.ghatana.finance.kernel.extension.DualCalendarKernelExtension.GregorianCalendar;
+import com.ghatana.finance.kernel.extension.DualCalendarKernelExtension.NepaliCalendar;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -16,13 +24,16 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for {@link DualCalendarKernelExtension}.
  *
+ * <p>Tests cover extension metadata, calendar registry, Nepali calendar operations,
+ * dual calendar conversion, and fiscal year computation.</p>
+ *
  * @doc.type test
  * @doc.purpose Unit tests for AD/BS dual calendar support
  * @doc.layer test
  * @author Ghatana Kernel Team
  */
 @DisplayName("DualCalendarKernelExtension Tests")
-class DualCalendarKernelExtensionTest {
+class DualCalendarKernelExtensionTest extends EventloopTestBase {
 
     private DualCalendarKernelExtension extension;
 
@@ -33,233 +44,327 @@ class DualCalendarKernelExtensionTest {
         extension.onModuleStarted(null);
     }
 
-    @Test
-    @DisplayName("Should return correct extension metadata")
-    void shouldReturnCorrectExtensionMetadata() {
-        assertEquals("dual-calendar-nepal", extension.getExtensionId());
-        assertEquals("Dual Calendar Support (AD/BS)", extension.getName());
-        assertEquals(50, extension.getPriority());
-        assertTrue(extension.isEnabledByDefault());
+    // ==================== Extension Metadata ====================
+
+    @Nested
+    @DisplayName("Extension Metadata")
+    class ExtensionMetadata {
+
+        @Test
+        @DisplayName("Should return correct extension identity")
+        void shouldReturnCorrectExtensionIdentity() {
+            assertEquals("dual-calendar", extension.getExtensionId());
+            assertEquals("Dual Calendar Extension", extension.getName());
+            assertEquals("1.0.0", extension.getVersion());
+        }
+
+        @Test
+        @DisplayName("Should return valid descriptor")
+        void shouldReturnValidDescriptor() {
+            KernelDescriptor descriptor = extension.getDescriptor();
+
+            assertNotNull(descriptor);
+            assertEquals("dual-calendar", descriptor.getDescriptorId());
+            assertEquals("Dual Calendar Extension", descriptor.getName());
+            assertEquals("1.0.0", descriptor.getVersion());
+            assertEquals(KernelDescriptor.DescriptorType.EXTENSION, descriptor.getType());
+        }
+
+        @Test
+        @DisplayName("Should contribute dual calendar capability")
+        void shouldContributeDualCalendarCapability() {
+            Set<KernelCapability> capabilities = extension.getContributedCapabilities();
+
+            assertEquals(1, capabilities.size());
+            KernelCapability cap = capabilities.iterator().next();
+            assertEquals("calendar.dual", cap.getCapabilityId());
+            assertEquals(KernelCapability.CapabilityType.BUSINESS_LOGIC, cap.getType());
+            assertEquals("gregorian,bikram-sambat", cap.getMetadata().get("calendars"));
+            assertEquals("bikram-sambat", cap.getMetadata().get("primary"));
+            assertEquals("bidirectional", cap.getMetadata().get("conversion"));
+        }
+
+        @Test
+        @DisplayName("Should have medium priority")
+        void shouldHaveMediumPriority() {
+            assertEquals(50, extension.getPriority());
+        }
+
+        @Test
+        @DisplayName("Should be compatible with all modules")
+        void shouldBeCompatibleWithAllModules() {
+            assertTrue(extension.isCompatible(null));
+        }
     }
 
-    @Test
-    @DisplayName("Should return valid descriptor")
-    void shouldReturnValidDescriptor() {
-        KernelDescriptor descriptor = extension.getDescriptor();
+    // ==================== Calendar Registry ====================
 
-        assertNotNull(descriptor);
-        assertEquals("dual-calendar-nepal", descriptor.getDescriptorId());
-        assertEquals("Dual Calendar Support (AD/BS)", descriptor.getName());
-        assertEquals("1.0.0", descriptor.getVersion());
-        assertEquals(KernelDescriptor.DescriptorType.EXTENSION, descriptor.getType());
+    @Nested
+    @DisplayName("Calendar Registry")
+    class CalendarRegistryTests {
+
+        @Test
+        @DisplayName("Should register both calendar systems on init")
+        void shouldRegisterBothCalendarSystemsOnInit() {
+            CalendarRegistry registry = extension.getCalendarRegistry();
+
+            assertNotNull(registry);
+            Set<String> available = registry.getAvailableCalendars();
+            assertEquals(2, available.size());
+            assertTrue(available.contains("gregorian"));
+            assertTrue(available.contains("bikram-sambat"));
+        }
+
+        @Test
+        @DisplayName("Should return correct calendar by ID")
+        void shouldReturnCorrectCalendarById() {
+            CalendarRegistry registry = extension.getCalendarRegistry();
+
+            CalendarSystem gregorian = registry.getCalendar("gregorian");
+            assertNotNull(gregorian);
+            assertEquals("Gregorian Calendar", gregorian.getName());
+
+            CalendarSystem nepali = registry.getCalendar("bikram-sambat");
+            assertNotNull(nepali);
+            assertEquals("Bikram Sambat (Nepali Calendar)", nepali.getName());
+        }
+
+        @Test
+        @DisplayName("Should return null for unknown calendar")
+        void shouldReturnNullForUnknownCalendar() {
+            CalendarRegistry registry = extension.getCalendarRegistry();
+            assertNull(registry.getCalendar("lunar"));
+        }
     }
 
-    @Test
-    @DisplayName("Should contribute dual calendar capability")
-    void shouldContributeDualCalendarCapability() {
-        Set<KernelCapability> capabilities = extension.getContributedCapabilities();
+    // ==================== Gregorian Calendar ====================
 
-        assertEquals(1, capabilities.size());
-        KernelCapability cap = capabilities.iterator().next();
-        assertEquals("calendar.dual", cap.getCapabilityId());
-        assertEquals(KernelCapability.CapabilityType.DATA_MANAGEMENT, cap.getType());
+    @Nested
+    @DisplayName("Gregorian Calendar")
+    class GregorianCalendarTests {
 
-        assertEquals("true", cap.getMetadata().get("supports_ad").toString());
-        assertEquals("true", cap.getMetadata().get("supports_bs").toString());
-        assertEquals("nepal", cap.getMetadata().get("region").toString());
-        assertEquals("true", cap.getMetadata().get("conversion_supported").toString());
+        private GregorianCalendar calendar;
+
+        @BeforeEach
+        void setUp() {
+            calendar = new GregorianCalendar();
+        }
+
+        @Test
+        @DisplayName("Should return correct calendar identity")
+        void shouldReturnCorrectIdentity() {
+            assertEquals("gregorian", calendar.getCalendarId());
+            assertEquals("Gregorian Calendar", calendar.getName());
+        }
+
+        @Test
+        @DisplayName("Should return today as current date")
+        void shouldReturnTodayAsCurrentDate() {
+            LocalDate today = calendar.today();
+            assertNotNull(today);
+            assertEquals(LocalDate.now(), today);
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+            "2024, 2, 29, true",  // Leap year
+            "2023, 2, 29, false", // Not a leap year
+            "2024, 1, 31, true",
+            "2024, 4, 31, false", // April has 30 days
+            "2024, 13, 1, false", // Invalid month
+            "2024, 0, 1, false"   // Invalid month
+        })
+        @DisplayName("Should validate dates correctly")
+        void shouldValidateDatesCorrectly(int year, int month, int day, boolean expected) {
+            assertEquals(expected, calendar.isValidDate(year, month, day));
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+            "2024, 1, 31",  // January
+            "2024, 2, 29",  // Feb leap
+            "2023, 2, 28",  // Feb non-leap
+            "2024, 4, 30",  // April
+            "2024, 12, 31"  // December
+        })
+        @DisplayName("Should return correct days in month")
+        void shouldReturnCorrectDaysInMonth(int year, int month, int expected) {
+            assertEquals(expected, calendar.daysInMonth(year, month));
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+            "2024, 366",  // Leap year
+            "2023, 365",  // Non-leap year
+            "2000, 366",  // Divisible by 400 — leap
+            "1900, 365"   // Divisible by 100 but not 400 — not leap
+        })
+        @DisplayName("Should return correct days in year")
+        void shouldReturnCorrectDaysInYear(int year, int expected) {
+            assertEquals(expected, calendar.daysInYear(year));
+        }
     }
 
-    @Test
-    @DisplayName("Should convert BS to AD correctly")
-    void shouldConvertBsToAdCorrectly() {
-        // BS 2081-01-01 should convert to approximately AD 2024-04-13
-        LocalDate adDate = extension.convertBsToAd(2081, 1, 1);
+    // ==================== Nepali Calendar ====================
 
-        assertNotNull(adDate);
-        // Allow some variance due to simplified conversion algorithm
-        assertTrue(adDate.getYear() >= 2024 && adDate.getYear() <= 2025);
-        assertTrue(adDate.getMonthValue() >= 1 && adDate.getMonthValue() <= 12);
-        assertTrue(adDate.getDayOfMonth() >= 1 && adDate.getDayOfMonth() <= 31);
+    @Nested
+    @DisplayName("Nepali Calendar")
+    class NepaliCalendarTests {
+
+        private NepaliCalendar calendar;
+
+        @BeforeEach
+        void setUp() {
+            calendar = new NepaliCalendar();
+        }
+
+        @Test
+        @DisplayName("Should return correct calendar identity")
+        void shouldReturnCorrectIdentity() {
+            assertEquals("bikram-sambat", calendar.getCalendarId());
+            assertEquals("Bikram Sambat (Nepali Calendar)", calendar.getName());
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+            "2081, 1, 1, true",    // Valid: first day
+            "2081, 1, 31, true",   // Valid: last day of Baisakh
+            "2081, 12, 30, true",  // Valid: last day of Chaitra
+            "2081, 0, 1, false",   // Invalid: month 0
+            "2081, 13, 1, false",  // Invalid: month 13
+            "2081, 1, 0, false",   // Invalid: day 0
+            "2081, 1, 32, false"   // Invalid: day > daysInMonth
+        })
+        @DisplayName("Should validate BS dates correctly")
+        void shouldValidateBsDatesCorrectly(int year, int month, int day, boolean expected) {
+            assertEquals(expected, calendar.isValidDate(year, month, day));
+        }
+
+        @Test
+        @DisplayName("Should convert BS to Gregorian approximately")
+        void shouldConvertBsToGregorianApproximately() {
+            // BS 2081-01-01 → approx AD 2024 (offset ~57 years)
+            LocalDate ad = calendar.toGregorian(2081, 1, 1);
+            assertNotNull(ad);
+            assertEquals(2024, ad.getYear()); // 2081 - 57 = 2024
+        }
+
+        @Test
+        @DisplayName("Should convert Gregorian to BS approximately")
+        void shouldConvertGregorianToBsApproximately() {
+            LocalDate ad = LocalDate.of(2024, 4, 13);
+            int[] bs = calendar.fromGregorian(ad);
+
+            assertEquals(3, bs.length);
+            assertEquals(2081, bs[0]); // 2024 + 57 = 2081
+            assertEquals(4, bs[1]);    // Month preserved
+            assertEquals(13, bs[2]);   // Day preserved
+        }
+
+        @Test
+        @DisplayName("Should return typical month day counts")
+        void shouldReturnTypicalMonthDayCounts() {
+            // First 3 months: 31 days each
+            assertEquals(31, calendar.daysInMonth(2081, 1));
+            assertEquals(31, calendar.daysInMonth(2081, 2));
+            assertEquals(31, calendar.daysInMonth(2081, 3));
+            // Fourth month: 32 days
+            assertEquals(32, calendar.daysInMonth(2081, 4));
+        }
     }
 
-    @Test
-    @DisplayName("Should convert AD to BS correctly")
-    void shouldConvertAdToBsCorrectly() {
-        LocalDate adDate = LocalDate.of(2024, 4, 13);
-        DualCalendarKernelExtension.BsDate bsDate = extension.convertAdToBs(adDate);
+    // ==================== Dual Calendar Calculator ====================
 
-        assertNotNull(bsDate);
-        // Should be approximately BS 2081
-        assertTrue(bsDate.year >= 2080 && bsDate.year <= 2082);
-        assertTrue(bsDate.month >= 1 && bsDate.month <= 12);
-        assertTrue(bsDate.day >= 1 && bsDate.day <= 32);
-    }
+    @Nested
+    @DisplayName("Dual Calendar Calculator")
+    class DualCalendarCalculatorTests {
 
-    @Test
-    @DisplayName("Should validate BS dates correctly")
-    void shouldValidateBsDatesCorrectly() {
-        // Valid dates should not throw
-        assertDoesNotThrow(() -> extension.convertBsToAd(2081, 1, 1));
-        assertDoesNotThrow(() -> extension.convertBsToAd(2081, 6, 15));
-        assertDoesNotThrow(() -> extension.convertBsToAd(2081, 12, 30));
+        private DualCalendarCalculator calculator;
 
-        // Invalid month should throw
-        assertThrows(IllegalArgumentException.class, () ->
-            extension.convertBsToAd(2081, 13, 1));
+        @BeforeEach
+        void setUp() {
+            calculator = new DualCalendarCalculator();
+        }
 
-        // Invalid day for month should throw
-        assertThrows(IllegalArgumentException.class, () ->
-            extension.convertBsToAd(2081, 11, 35)); // Chaitra max is 30
-    }
+        @Test
+        @DisplayName("Should return same date when converting between same calendars")
+        void shouldReturnSameDateForSameCalendar() {
+            LocalDate date = LocalDate.of(2024, 6, 15);
+            LocalDate result = calculator.convert(date, "gregorian", "gregorian");
+            assertEquals(date, result);
+        }
 
-    @Test
-    @DisplayName("Should cache conversion results")
-    void shouldCacheConversionResults() {
-        LocalDate adDate1 = extension.convertBsToAd(2081, 1, 15);
-        LocalDate adDate2 = extension.convertBsToAd(2081, 1, 15);
+        @Test
+        @DisplayName("Should convert Gregorian to BS")
+        void shouldConvertGregorianToBs() {
+            LocalDate ad = LocalDate.of(2024, 1, 15);
+            LocalDate bs = calculator.convert(ad, "gregorian", "bikram-sambat");
 
-        assertEquals(adDate1, adDate2);
-    }
+            assertNotNull(bs);
+            assertEquals(2081, bs.getYear()); // 2024 + 57
+        }
 
-    @Test
-    @DisplayName("Should format AD date correctly")
-    void shouldFormatAdDateCorrectly() {
-        LocalDate adDate = LocalDate.of(2024, 4, 13);
-        String formatted = extension.formatDate(adDate, "yyyy-MM-dd",
-            DualCalendarKernelExtension.CalendarType.AD);
+        @Test
+        @DisplayName("Should convert BS to Gregorian")
+        void shouldConvertBsToGregorian() {
+            // Create a virtual BS date as LocalDate (year=2081, month=1, day=1)
+            LocalDate bsAsLocalDate = LocalDate.of(2081, 1, 1);
+            LocalDate ad = calculator.convert(bsAsLocalDate, "bikram-sambat", "gregorian");
 
-        assertEquals("2024-04-13", formatted);
-    }
+            assertNotNull(ad);
+            assertEquals(2024, ad.getYear()); // 2081 - 57
+        }
 
-    @Test
-    @DisplayName("Should format BS date correctly")
-    void shouldFormatBsDateCorrectly() {
-        DualCalendarKernelExtension.BsDate bsDate = new DualCalendarKernelExtension.BsDate(2081, 4, 15);
-        String formatted = extension.formatDate(bsDate, "yyyy-MM-dd",
-            DualCalendarKernelExtension.CalendarType.BS);
+        @Test
+        @DisplayName("Should throw for unsupported calendar conversion")
+        void shouldThrowForUnsupportedCalendarConversion() {
+            LocalDate date = LocalDate.of(2024, 1, 1);
+            assertThrows(IllegalArgumentException.class,
+                () -> calculator.convert(date, "gregorian", "lunar"));
+        }
 
-        assertEquals("2081-04-15", formatted);
-    }
+        @Test
+        @DisplayName("Should get current date in Gregorian")
+        void shouldGetCurrentDateInGregorian() {
+            LocalDate now = calculator.now("gregorian");
+            assertNotNull(now);
+            assertEquals(LocalDate.now(), now);
+        }
 
-    @Test
-    @DisplayName("Should parse BS date correctly")
-    void shouldParseBsDateCorrectly() {
-        Object result = extension.parseDate("2081-04-15", "yyyy-MM-dd",
-            DualCalendarKernelExtension.CalendarType.BS);
+        @Test
+        @DisplayName("Should get current date in BS")
+        void shouldGetCurrentDateInBs() {
+            LocalDate now = calculator.now("bikram-sambat");
+            assertNotNull(now);
+        }
 
-        assertTrue(result instanceof DualCalendarKernelExtension.BsDate);
-        DualCalendarKernelExtension.BsDate bsDate = (DualCalendarKernelExtension.BsDate) result;
-        assertEquals(2081, bsDate.year);
-        assertEquals(4, bsDate.month);
-        assertEquals(15, bsDate.day);
-    }
+        @Test
+        @DisplayName("Should throw for unknown calendar in now()")
+        void shouldThrowForUnknownCalendar() {
+            assertThrows(IllegalArgumentException.class,
+                () -> calculator.now("lunar"));
+        }
 
-    @Test
-    @DisplayName("Should get current date in AD")
-    void shouldGetCurrentDateInAd() {
-        Object result = extension.getCurrentDate(DualCalendarKernelExtension.CalendarType.AD);
+        @Test
+        @DisplayName("Should compute Nepal fiscal year correctly")
+        void shouldComputeNepalFiscalYearCorrectly() {
+            // Month 1-9 in BS → fiscal year is bsYear/(bsYear+1)
+            // Month 10-12 in BS → fiscal year is (bsYear-1)/bsYear
+            LocalDate date = LocalDate.of(2024, 1, 15);
+            String fiscalYear = calculator.getNepalFiscalYear(date);
+            assertNotNull(fiscalYear);
+            assertTrue(fiscalYear.contains("/"));
+        }
 
-        assertTrue(result instanceof LocalDate);
-        LocalDate adDate = (LocalDate) result;
-        assertTrue(adDate.getYear() >= 2024);
-    }
+        @Test
+        @DisplayName("Should convert round-trip approximately")
+        void shouldConvertRoundTripApproximately() {
+            LocalDate original = LocalDate.of(2024, 6, 15);
 
-    @Test
-    @DisplayName("Should get current date in BS")
-    void shouldGetCurrentDateInBs() {
-        Object result = extension.getCurrentDate(DualCalendarKernelExtension.CalendarType.BS);
+            LocalDate bs = calculator.convert(original, "gregorian", "bikram-sambat");
+            LocalDate backToAd = calculator.convert(bs, "bikram-sambat", "gregorian");
 
-        assertTrue(result instanceof DualCalendarKernelExtension.BsDate);
-        DualCalendarKernelExtension.BsDate bsDate = (DualCalendarKernelExtension.BsDate) result;
-        assertTrue(bsDate.year >= 2080);
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-        "2020, AD, true",   // Leap year
-        "2021, AD, false",
-        "2024, AD, true",   // Leap year
-        "2100, AD, false",  // Not leap (divisible by 100 but not 400)
-        "2080, BS, true",
-        "2081, BS, false",
-        "2084, BS, true"
-    })
-    @DisplayName("Should detect leap years correctly")
-    void shouldDetectLeapYearsCorrectly(int year, DualCalendarKernelExtension.CalendarType type, boolean expected) {
-        assertEquals(expected, extension.isLeapYear(year, type));
-    }
-
-    @Test
-    @DisplayName("Should throw exception for null AD date in conversion")
-    void shouldThrowExceptionForNullAdDateInConversion() {
-        assertThrows(IllegalArgumentException.class, () ->
-            extension.convertAdToBs(null));
-    }
-
-    @Test
-    @DisplayName("Should throw exception when not started")
-    void shouldThrowExceptionWhenNotStarted() {
-        extension.onModuleStopped(null);
-
-        assertThrows(IllegalStateException.class, () ->
-            extension.convertBsToAd(2081, 1, 1));
-        assertThrows(IllegalStateException.class, () ->
-            extension.convertAdToBs(LocalDate.now()));
-        assertThrows(IllegalStateException.class, () ->
-            extension.getCurrentDate(DualCalendarKernelExtension.CalendarType.AD));
-    }
-
-    @Test
-    @DisplayName("Should be compatible with all modules")
-    void shouldBeCompatibleWithAllModules() {
-        assertTrue(extension.isCompatible(null));
-    }
-
-    @Test
-    @DisplayName("BsDate toString should format correctly")
-    void bsDateToStringShouldFormatCorrectly() {
-        DualCalendarKernelExtension.BsDate bsDate = new DualCalendarKernelExtension.BsDate(2081, 4, 15);
-        assertEquals("2081-04-15 BS", bsDate.toString());
-    }
-
-    @Test
-    @DisplayName("Should reject invalid calendar type for parsing")
-    void shouldRejectInvalidCalendarTypeForParsing() {
-        assertThrows(IllegalArgumentException.class, () ->
-            extension.parseDate("2024-04-13", "yyyy-MM-dd", null));
-    }
-
-    @Test
-    @DisplayName("Should handle edge cases in BS date conversion")
-    void shouldHandleEdgeCasesInBsDateConversion() {
-        // BS month boundaries
-        assertDoesNotThrow(() -> extension.convertBsToAd(2081, 1, 32)); // Baisakh can have 31-32 days
-        assertDoesNotThrow(() -> extension.convertBsToAd(2081, 5, 32));  // Bhadra can have 31-32 days
-        assertDoesNotThrow(() -> extension.convertBsToAd(2081, 6, 30)); // Ashoj typically 30 days
-    }
-
-    @Test
-    @DisplayName("Should handle year boundaries")
-    void shouldHandleYearBoundaries() {
-        // First day of BS year
-        LocalDate adFirstDay = extension.convertBsToAd(2081, 1, 1);
-        assertNotNull(adFirstDay);
-
-        // Last day of BS year
-        LocalDate adLastDay = extension.convertBsToAd(2081, 12, 30);
-        assertNotNull(adLastDay);
-    }
-
-    @Test
-    @DisplayName("Should convert round-trip approximately")
-    void shouldConvertRoundTripApproximately() {
-        LocalDate originalAd = LocalDate.of(2024, 6, 15);
-
-        DualCalendarKernelExtension.BsDate bsDate = extension.convertAdToBs(originalAd);
-        LocalDate convertedAd = extension.convertBsToAd(bsDate.year, bsDate.month, bsDate.day);
-
-        // Due to simplified algorithm, allow some variance
-        assertTrue(Math.abs(originalAd.getDayOfYear() - convertedAd.getDayOfYear()) <= 2);
+            assertEquals(original, backToAd);
+        }
     }
 }

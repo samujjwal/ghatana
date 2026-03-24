@@ -19,6 +19,25 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * Post-Trade Position Projection Service — durable position read model.
+ *
+ * <h2>Distinction from OMS PositionProjectionService (F15)</h2>
+ * <p>The OMS module contains an in-memory {@code PositionProjectionService} (port-based,
+ * backed by {@code PositionStore}) used for <b>pre-settlement</b> position tracking during
+ * the order lifecycle. This Post-Trade variant maintains the <b>authoritative settled
+ * position</b> state in PostgreSQL with a Redis write-through cache for sub-1ms queries.</p>
+ *
+ * <p>The two services serve different lifecycle stages and are <b>not duplicates</b>:</p>
+ * <ul>
+ *   <li><b>OMS</b>: In-memory, port-abstracted, pre-settle fills → tentative position.</li>
+ *   <li><b>Post-Trade</b>: PostgreSQL + Redis, event-driven (SettlementCompleted,
+ *       CorporateAction) → authoritative settled position with cost basis.</li>
+ * </ul>
+ *
+ * <p>Future consolidation into a shared {@code domains/position} module is tracked as
+ * a backlog item. Any consolidation must preserve the duality of tentative vs settled
+ * position semantics.</p>
+ *
  * @doc.type    DomainService
  * @doc.purpose Maintains real-time client position state. Listens to SettlementCompleted and
  *              CorporateAction events. Updates PostgreSQL `client_positions` as the durable
@@ -28,6 +47,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @doc.layer   Domain
  * @doc.pattern Event-driven; Redis write-through cache; idempotency via ON CONFLICT on
  *              (client_id, instrument_id); K-15 CalendarPort unused here (positions in AD dates).
+ * @see com.ghatana.products.finance.domains.oms.service.PositionProjectionService OMS pre-settle variant
  */
 public class PositionProjectionService {
 

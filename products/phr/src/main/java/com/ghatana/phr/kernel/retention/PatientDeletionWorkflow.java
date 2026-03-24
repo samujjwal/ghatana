@@ -35,6 +35,21 @@ import java.util.UUID;
 public class PatientDeletionWorkflow {
 
     private final LegalHoldService legalHoldService;
+    private final DeletionAuditStore auditStore;
+
+    /**
+     * Port for persisting deletion audit evidence to a durable store.
+     */
+    public interface DeletionAuditStore {
+        /**
+         * Persists a deletion evidence record.
+         *
+         * @param request   the originating deletion request
+         * @param decision  the per-resource decision
+         * @return a Promise completing when the evidence is durably stored
+         */
+        Promise<Void> persistEvidence(DeletionRequest request, ResourceDeletionDecision decision);
+    }
 
     /**
      * Request to delete all PHR data for a patient.
@@ -115,10 +130,13 @@ public class PatientDeletionWorkflow {
         }
     }
 
-    public PatientDeletionWorkflow(LegalHoldService legalHoldService) {
+    public PatientDeletionWorkflow(LegalHoldService legalHoldService, DeletionAuditStore auditStore) {
         if (legalHoldService == null)
             throw new IllegalArgumentException("legalHoldService must not be null");
+        if (auditStore == null)
+            throw new IllegalArgumentException("auditStore must not be null");
         this.legalHoldService = legalHoldService;
+        this.auditStore = auditStore;
     }
 
     /**
@@ -151,9 +169,16 @@ public class PatientDeletionWorkflow {
                                         DeletionOutcome.RETAIN_UNDER_HOLD,
                                         "Active legal hold prevents deletion"))
                                 .toList();
-                        return Promise.of(new DeletionReport(
-                                request.requestId(), request.patientId(), request.tenantId(),
-                                Instant.now(), holdDecisions, true));
+
+                        // Phase 5: Persist audit evidence for each hold decision
+                        List<Promise<Void>> auditPromises = holdDecisions.stream()
+                                .map(d -> auditStore.persistEvidence(request, d))
+                                .toList();
+
+                        return Promises.toList(auditPromises)
+                                .map($ -> new DeletionReport(
+                                        request.requestId(), request.patientId(), request.tenantId(),
+                                        Instant.now(), holdDecisions, true));
                     }
 
                     // Phase 3 + 4: Classify and execute per resource
@@ -162,9 +187,17 @@ public class PatientDeletionWorkflow {
                             .toList();
 
                     return Promises.toList(decisionPromises)
-                            .map(decisions -> new DeletionReport(
-                                    request.requestId(), request.patientId(), request.tenantId(),
-                                    Instant.now(), decisions, false));
+                            .then(decisions -> {
+                                // Phase 5: Persist audit evidence for each decision
+                                List<Promise<Void>> auditPromises = decisions.stream()
+                                        .map(d -> auditStore.persistEvidence(request, d))
+                                        .toList();
+                                return Promises.toList(auditPromises)
+                                        .map($ -> new DeletionReport(
+                                                request.requestId(), request.patientId(),
+                                                request.tenantId(),
+                                                Instant.now(), decisions, false));
+                            });
                 });
     }
 

@@ -1,6 +1,8 @@
 package com.ghatana.finance.kernel;
 
 import com.ghatana.kernel.config.KernelConfigResolver;
+import com.ghatana.kernel.contract.ContractRegistry;
+import com.ghatana.kernel.contract.ContractValidator;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
@@ -15,6 +17,7 @@ import io.activej.promise.Promises;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -96,6 +99,7 @@ public class FinanceKernelModule implements KernelModule {
         initializeConfiguration();
         registerEventHandlers();
         initializeServices();
+        registerModuleContract();
     }
 
     @Override
@@ -202,6 +206,27 @@ public class FinanceKernelModule implements KernelModule {
         serviceInstances.add(new RiskManagementService(context));
         serviceInstances.add(new ComplianceService(context));
         // Additional services can be added here
+    }
+
+    private void registerModuleContract() {
+        if (context.hasDependency(ContractRegistry.class)) {
+            ContractRegistry registry = context.getDependency(ContractRegistry.class);
+            registry.registerModuleContract(new ContractValidator.ModuleContract(
+                MODULE_ID, VERSION, getCapabilities(), getDependencies(), Map.of()
+            ));
+
+            // Register dataset schema contracts (X01 — replaces inline string literals)
+            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+                "finance.orders", VERSION, "json",
+                Map.of("fields", List.of("orderId", "clientId", "instrumentId", "side", "quantity", "status")),
+                Map.of("owner", MODULE_ID)
+            ));
+            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+                "finance.risk.metrics", VERSION, "json",
+                Map.of("fields", List.of("instrumentId", "var", "stress", "exposure", "limit")),
+                Map.of("owner", MODULE_ID)
+            ));
+        }
     }
 
 }

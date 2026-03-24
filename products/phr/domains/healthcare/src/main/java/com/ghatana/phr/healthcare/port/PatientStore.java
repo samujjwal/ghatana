@@ -64,4 +64,15 @@ public interface PatientStore {
      * @param patientId the patient's UUID
      */
     void hardDelete(String tenantId, UUID patientId);
+
+    /**
+     * Returns the patient matching the NHS ID within the given tenant, if any.
+     *
+     * <p>Used to enforce NHS ID uniqueness within a tenant during registration.
+     *
+     * @param tenantId the tenant scope
+     * @param nhsId    the NHS identifier
+     * @return optional patient
+     */
+    Optional<Patient> findByNhsId(String tenantId, String nhsId);
 }

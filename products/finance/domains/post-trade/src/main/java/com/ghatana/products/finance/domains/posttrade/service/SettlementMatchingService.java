@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -57,7 +58,7 @@ public class SettlementMatchingService {
         String counterpartyId,
         String instrumentId,
         String direction,          // DELIVER | RECEIVE
-        double quantity,
+        BigDecimal quantity,
         String settlementDateAd
     ) {}
 
@@ -148,7 +149,7 @@ public class SettlementMatchingService {
                         rs.getString("counterparty_id"),
                         rs.getString("instrument_id"),
                         rs.getString("direction"),
-                        rs.getDouble("quantity"),
+                        rs.getBigDecimal("quantity"),
                         rs.getString("settlement_date_ad")
                     );
                 }
@@ -161,7 +162,7 @@ public class SettlementMatchingService {
 
     private List<String> diff(SettlementInstruction a, SettlementInstruction b) {
         List<String> diffs = new ArrayList<>();
-        if (Math.abs(a.quantity() - b.quantity()) > 0.0001) {
+        if (a.quantity().subtract(b.quantity()).abs().compareTo(new BigDecimal("0.0001")) > 0) {
             diffs.add("QUANTITY_MISMATCH: " + a.quantity() + " vs " + b.quantity());
         }
         if (!a.settlementDateAd().equals(b.settlementDateAd())) {

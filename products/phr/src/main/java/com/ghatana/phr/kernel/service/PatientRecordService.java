@@ -7,7 +7,7 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataResult;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.util.JsonUtils;
+import com.ghatana.kernel.util.TypedDataSerializer;
 import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
@@ -113,10 +113,7 @@ public class PatientRecordService {
         );
 
         return dataCloud.readData(request)
-            .map(result -> Optional.ofNullable(deserialize(result.getData())))
-            .whenException(e -> {
-                // Patient not found
-            });
+            .map(result -> Optional.ofNullable(deserialize(result.getData())));
     }
 
     /**
@@ -247,12 +244,12 @@ public class PatientRecordService {
     }
 
     private byte[] serialize(Patient patient) {
-        return JsonUtils.toJson(patient).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(patient, "Patient", 1);
     }
 
     private Patient deserialize(byte[] data) {
         if (data == null) return null;
-        return JsonUtils.fromJson(new String(data, StandardCharsets.UTF_8), Patient.class);
+        return TypedDataSerializer.fromBytes(data, Patient.class);
     }
 
     private String generateId() {

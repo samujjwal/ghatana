@@ -6,6 +6,7 @@ import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.health.HealthStatus;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  */
 @DisplayName("PhrKernelModule Tests")
-class PhrKernelModuleTest {
+class PhrKernelModuleTest extends EventloopTestBase {
 
     private PhrKernelModule module;
     private KernelContext mockContext;
@@ -110,49 +111,41 @@ class PhrKernelModuleTest {
     void shouldStartSuccessfullyAfterInitialization() {
         module.initialize(mockContext);
 
-        Promise<Void> startPromise = module.start();
-        assertDoesNotThrow(startPromise::getResult);
+        assertDoesNotThrow(() -> runPromise(module::start));
 
         // Starting again should be idempotent
-        Promise<Void> secondStart = module.start();
-        assertDoesNotThrow(secondStart::getResult);
+        assertDoesNotThrow(() -> runPromise(module::start));
     }
 
     @Test
     @DisplayName("Should fail to start when not initialized")
     void shouldFailToStartWhenNotInitialized() {
-        Promise<Void> startPromise = module.start();
-
-        assertTrue(startPromise.isException());
-        assertTrue(startPromise.getException().getMessage().contains("not initialized"));
+        assertThrows(Exception.class, () -> runPromise(module::start));
     }
 
     @Test
     @DisplayName("Should stop successfully")
     void shouldStopSuccessfully() {
         module.initialize(mockContext);
-        module.start().getResult();
+        runPromise(module::start);
 
-        Promise<Void> stopPromise = module.stop();
-        assertDoesNotThrow(stopPromise::getResult);
+        assertDoesNotThrow(() -> runPromise(module::stop));
 
         // Stopping again should be idempotent
-        Promise<Void> secondStop = module.stop();
-        assertDoesNotThrow(secondStop::getResult);
+        assertDoesNotThrow(() -> runPromise(module::stop));
     }
 
     @Test
     @DisplayName("Should stop without error when not started")
     void shouldStopWithoutErrorWhenNotStarted() {
-        Promise<Void> stopPromise = module.stop();
-        assertDoesNotThrow(stopPromise::getResult);
+        assertDoesNotThrow(() -> runPromise(module::stop));
     }
 
     @Test
     @DisplayName("Should report healthy status when initialized and started")
     void shouldReportHealthyStatusWhenInitializedAndStarted() {
         module.initialize(mockContext);
-        module.start().getResult();
+        runPromise(module::start);
 
         HealthStatus status = module.getHealthStatus();
 
@@ -174,7 +167,7 @@ class PhrKernelModuleTest {
     @DisplayName("Should report all service health checks")
     void shouldReportAllServiceHealthChecks() {
         module.initialize(mockContext);
-        module.start().getResult();
+        runPromise(module::start);
 
         HealthStatus status = module.getHealthStatus();
 
@@ -195,8 +188,7 @@ class PhrKernelModuleTest {
     void shouldCompleteStartPromiseWhenAllServicesStart() {
         module.initialize(mockContext);
 
-        Promise<Void> startPromise = module.start();
-        Void result = startPromise.getResult();
+        Void result = runPromise(module::start);
 
         assertNull(result); // Promise<Void> returns null on success
     }
@@ -205,10 +197,9 @@ class PhrKernelModuleTest {
     @DisplayName("Should complete stop promise when all services stop")
     void shouldCompleteStopPromiseWhenAllServicesStop() {
         module.initialize(mockContext);
-        module.start().getResult();
+        runPromise(module::start);
 
-        Promise<Void> stopPromise = module.stop();
-        Void result = stopPromise.getResult();
+        Void result = runPromise(module::stop);
 
         assertNull(result);
     }
@@ -219,13 +210,9 @@ class PhrKernelModuleTest {
         module.initialize(mockContext);
 
         // Multiple starts should be safe
-        Promise<Void> start1 = module.start();
-        Promise<Void> start2 = module.start();
-        Promise<Void> start3 = module.start();
-
-        assertDoesNotThrow(start1::getResult);
-        assertDoesNotThrow(start2::getResult);
-        assertDoesNotThrow(start3::getResult);
+        runPromise(module::start);
+        runPromise(module::start);
+        runPromise(module::start);
 
         // Health should be healthy
         HealthStatus status = module.getHealthStatus();

@@ -101,4 +101,22 @@ public record Journal(
     public int entryCount() {
         return entries.size();
     }
+
+    /**
+     * Creates a reversing journal where every entry's direction is flipped.
+     * Used for saga compensation when a multi-leg posting partially fails.
+     *
+     * @param reversalDescription description for the reversing journal
+     * @return a new journal with all directions inverted
+     */
+    public Journal reverse(String reversalDescription) {
+        List<JournalEntry> reversedEntries = entries.stream()
+                .map(e -> JournalEntry.of(
+                        e.accountId(),
+                        e.direction().opposite(),
+                        e.amount(),
+                        "REVERSAL: " + (e.description() != null ? e.description() : "")))
+                .toList();
+        return Journal.of(reference, reversalDescription, tenantId, reversedEntries);
+    }
 }

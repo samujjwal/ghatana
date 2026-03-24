@@ -2,6 +2,7 @@ package com.ghatana.finance.extension;
 
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  */
 @DisplayName("RiskManagementKernelExtension Tests")
-class RiskManagementKernelExtensionTest {
+class RiskManagementKernelExtensionTest extends EventloopTestBase {
 
     private RiskManagementKernelExtension extension;
 
@@ -77,7 +78,7 @@ class RiskManagementKernelExtensionTest {
         BigDecimal avgCost = new BigDecimal("145.00");
 
         var promise = extension.calculatePositionRisk(positionId, quantity, currentPrice, avgCost);
-        RiskManagementKernelExtension.PositionRisk risk = promise.getResult();
+        RiskManagementKernelExtension.PositionRisk risk = runPromise(() -> promise);
 
         assertNotNull(risk);
         assertEquals(positionId, risk.getPositionId());
@@ -102,7 +103,7 @@ class RiskManagementKernelExtensionTest {
         BigDecimal avgCost = new BigDecimal("150.00");
 
         var promise = extension.calculatePositionRisk("position-loss", quantity, currentPrice, avgCost);
-        RiskManagementKernelExtension.PositionRisk risk = promise.getResult();
+        RiskManagementKernelExtension.PositionRisk risk = runPromise(() -> promise);
 
         // Unrealized P&L = 100 * (140 - 150) = -1000
         assertTrue(risk.getUnrealizedPnL().compareTo(BigDecimal.ZERO) < 0);
@@ -112,13 +113,13 @@ class RiskManagementKernelExtensionTest {
     @DisplayName("Should calculate portfolio risk correctly")
     void shouldCalculatePortfolioRiskCorrectly() {
         // Create some position risks first
-        RiskManagementKernelExtension.PositionRisk risk1 = extension.calculatePositionRisk(
+        RiskManagementKernelExtension.PositionRisk risk1 = runPromise(() -> extension.calculatePositionRisk(
             "pos-1", new BigDecimal("100"), new BigDecimal("150"), new BigDecimal("145")
-        ).getResult();
+        ));
 
-        RiskManagementKernelExtension.PositionRisk risk2 = extension.calculatePositionRisk(
+        RiskManagementKernelExtension.PositionRisk risk2 = runPromise(() -> extension.calculatePositionRisk(
             "pos-2", new BigDecimal("50"), new BigDecimal("200"), new BigDecimal("195")
-        ).getResult();
+        ));
 
         Map<String, RiskManagementKernelExtension.PositionRisk> positions = Map.of(
             "pos-1", risk1,
@@ -126,7 +127,7 @@ class RiskManagementKernelExtensionTest {
         );
 
         var promise = extension.calculatePortfolioRisk("portfolio-1", positions);
-        RiskManagementKernelExtension.PortfolioRisk portfolioRisk = promise.getResult();
+        RiskManagementKernelExtension.PortfolioRisk portfolioRisk = runPromise(() -> promise);
 
         assertNotNull(portfolioRisk);
         assertEquals("portfolio-1", portfolioRisk.getPortfolioId());
@@ -154,7 +155,7 @@ class RiskManagementKernelExtensionTest {
             new BigDecimal("500000")    // Max single position loss
         );
 
-        extension.updateRiskLimits(newLimits).getResult();
+        runPromise(() -> extension.updateRiskLimits(newLimits));
         RiskManagementKernelExtension.RiskLimits retrieved = extension.getRiskLimits();
 
         assertNotNull(retrieved);
@@ -169,8 +170,8 @@ class RiskManagementKernelExtensionTest {
     @DisplayName("Should retrieve position risk by ID")
     void shouldRetrievePositionRiskById() {
         String positionId = "tracked-position";
-        extension.calculatePositionRisk(positionId,
-            new BigDecimal("100"), new BigDecimal("150"), new BigDecimal("145")).getResult();
+        runPromise(() -> extension.calculatePositionRisk(positionId,
+            new BigDecimal("100"), new BigDecimal("150"), new BigDecimal("145")));
 
         RiskManagementKernelExtension.PositionRisk retrieved = extension.getPositionRisk(positionId);
 
@@ -190,11 +191,11 @@ class RiskManagementKernelExtensionTest {
     void shouldRetrievePortfolioRiskById() {
         String portfolioId = "tracked-portfolio";
 
-        RiskManagementKernelExtension.PositionRisk risk = extension.calculatePositionRisk(
+        RiskManagementKernelExtension.PositionRisk risk = runPromise(() -> extension.calculatePositionRisk(
             "pos-1", new BigDecimal("100"), new BigDecimal("150"), new BigDecimal("145")
-        ).getResult();
+        ));
 
-        extension.calculatePortfolioRisk(portfolioId, Map.of("pos-1", risk)).getResult();
+        runPromise(() -> extension.calculatePortfolioRisk(portfolioId, Map.of("pos-1", risk)));
 
         RiskManagementKernelExtension.PortfolioRisk retrieved = extension.getPortfolioRisk(portfolioId);
         assertNotNull(retrieved);
@@ -205,7 +206,7 @@ class RiskManagementKernelExtensionTest {
     @DisplayName("Should handle empty portfolio correctly")
     void shouldHandleEmptyPortfolioCorrectly() {
         var promise = extension.calculatePortfolioRisk("empty-portfolio", Map.of());
-        RiskManagementKernelExtension.PortfolioRisk risk = promise.getResult();
+        RiskManagementKernelExtension.PortfolioRisk risk = runPromise(() -> promise);
 
         assertNotNull(risk);
         assertEquals(BigDecimal.ZERO, risk.getTotalMarketValue());
@@ -219,13 +220,13 @@ class RiskManagementKernelExtensionTest {
     @DisplayName("Should calculate concentration risk correctly")
     void shouldCalculateConcentrationRiskCorrectly() {
         // Create positions with varying sizes
-        RiskManagementKernelExtension.PositionRisk largePosition = extension.calculatePositionRisk(
+        RiskManagementKernelExtension.PositionRisk largePosition = runPromise(() -> extension.calculatePositionRisk(
             "large", new BigDecimal("1000"), new BigDecimal("100"), new BigDecimal("95")
-        ).getResult();
+        ));
 
-        RiskManagementKernelExtension.PositionRisk smallPosition = extension.calculatePositionRisk(
+        RiskManagementKernelExtension.PositionRisk smallPosition = runPromise(() -> extension.calculatePositionRisk(
             "small", new BigDecimal("100"), new BigDecimal("100"), new BigDecimal("95")
-        ).getResult();
+        ));
 
         Map<String, RiskManagementKernelExtension.PositionRisk> positions = Map.of(
             "large", largePosition,
@@ -233,7 +234,7 @@ class RiskManagementKernelExtensionTest {
         );
 
         var promise = extension.calculatePortfolioRisk("concentrated-portfolio", positions);
-        RiskManagementKernelExtension.PortfolioRisk portfolioRisk = promise.getResult();
+        RiskManagementKernelExtension.PortfolioRisk portfolioRisk = runPromise(() -> promise);
 
         // Concentration = largest position / total = 100000 / 110000 = ~0.909
         assertTrue(portfolioRisk.getConcentrationRisk().compareTo(new BigDecimal("0.8")) > 0);
@@ -245,8 +246,8 @@ class RiskManagementKernelExtensionTest {
     void shouldRejectOperationsWhenNotStarted() {
         extension.onModuleStopped(null);
 
-        var promise = extension.calculatePositionRisk("test", BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE);
-        assertTrue(promise.isException());
+        assertThrows(Exception.class, () -> runPromise(() ->
+            extension.calculatePositionRisk("test", BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE)));
     }
 
     @Test
@@ -261,7 +262,7 @@ class RiskManagementKernelExtensionTest {
     void positionRiskShouldTrackCalculationTimestamp() {
         var promise = extension.calculatePositionRisk("timestamp-test",
             new BigDecimal("100"), new BigDecimal("150"), new BigDecimal("145"));
-        RiskManagementKernelExtension.PositionRisk risk = promise.getResult();
+        RiskManagementKernelExtension.PositionRisk risk = runPromise(() -> promise);
 
         assertNotNull(risk.getCalculatedAt());
         // Should be recent
@@ -272,7 +273,7 @@ class RiskManagementKernelExtensionTest {
     @DisplayName("Portfolio risk should track calculation timestamp")
     void portfolioRiskShouldTrackCalculationTimestamp() {
         var promise = extension.calculatePortfolioRisk("timestamp-portfolio", Map.of());
-        RiskManagementKernelExtension.PortfolioRisk risk = promise.getResult();
+        RiskManagementKernelExtension.PortfolioRisk risk = runPromise(() -> promise);
 
         assertNotNull(risk.getCalculatedAt());
     }
@@ -283,7 +284,7 @@ class RiskManagementKernelExtensionTest {
         // Short position
         var promise = extension.calculatePositionRisk("short-position",
             new BigDecimal("-100"), new BigDecimal("150"), new BigDecimal("145"));
-        RiskManagementKernelExtension.PositionRisk risk = promise.getResult();
+        RiskManagementKernelExtension.PositionRisk risk = runPromise(() -> promise);
 
         assertNotNull(risk);
         // Delta should reflect short position

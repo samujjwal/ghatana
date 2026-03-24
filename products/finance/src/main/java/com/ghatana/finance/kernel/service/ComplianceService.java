@@ -6,11 +6,10 @@ import com.ghatana.kernel.context.KernelContext;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
-import com.ghatana.kernel.util.JsonUtils;
+import com.ghatana.kernel.util.TypedDataSerializer;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -375,15 +374,15 @@ public class ComplianceService {
     }
 
     private byte[] serialize(ComplianceRecord record) {
-        return JsonUtils.toJson(record).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(record, "ComplianceRecord", 1);
     }
 
     private byte[] serializeAlert(ComplianceAlert alert) {
-        return JsonUtils.toJson(alert).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(alert, "ComplianceAlert", 1);
     }
 
     private byte[] serialize(SuspiciousActivityRecord record) {
-        return JsonUtils.toJson(record).getBytes(StandardCharsets.UTF_8);
+        return TypedDataSerializer.toBytes(record, "SuspiciousActivityRecord", 1);
     }
 
     private String generateId() {

@@ -56,6 +56,7 @@ include(":platform:java:connectors")
 include(":platform:java:audit")
 include(":platform:java:kernel")
 include(":platform:java:kernel-capabilities")  // Merged: authentication + config + event-store + audit + resilience + observability + secrets
+include(":platform:java:distributed-cache")    // KRQ-05: Generic Redis-backed distributed cache abstraction
 
 // =============================================================================
 // Product: AEP — Autonomous Event Processing

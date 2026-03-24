@@ -3,6 +3,7 @@ package com.ghatana.products.finance.domains.oms.service;
 
 import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.products.finance.domains.oms.domain.*;
+import com.ghatana.products.finance.domains.oms.port.DualCalendarPort;
 import com.ghatana.products.finance.domains.oms.port.OrderStore;
 import com.ghatana.products.finance.domains.referencedata.port.InstrumentStore;
 import com.ghatana.products.finance.domains.marketdata.port.L1Cache;
@@ -34,11 +35,13 @@ public class OrderCaptureService {
     private final OrderValidationService validationService;
     private final Executor executor;
     private final EventBusPort eventBusPort;
+    private final DualCalendarPort dualCalendar;
     private final Counter ordersPlacedCounter;
 
     public OrderCaptureService(OrderStore orderStore, InstrumentStore instrumentStore,
                                 L1Cache l1Cache, OrderValidationService validationService,
                                 Executor executor, EventBusPort eventBusPort,
+                                DualCalendarPort dualCalendar,
                                 MeterRegistry meterRegistry) {
         this.orderStore = orderStore;
         this.instrumentStore = instrumentStore;
@@ -46,6 +49,7 @@ public class OrderCaptureService {
         this.validationService = validationService;
         this.executor = executor;
         this.eventBusPort = eventBusPort;
+        this.dualCalendar = dualCalendar;
         this.ordersPlacedCounter = meterRegistry.counter("oms.orders.placed");
     }
 
@@ -54,62 +58,83 @@ public class OrderCaptureService {
      * Returns the persisted order or fails with a domain exception.
      */
     public Promise<Order> captureOrder(OrderCaptureRequest request) {
-        return Promise.ofBlocking(executor, () -> {
-            // 1. Idempotency check
-            var existing = orderStore.findByIdempotencyKey(request.idempotencyKey())
-                    .getResult();
-            if (existing.isPresent()) {
-                log.debug("Idempotent order replay: idempotencyKey={}", request.idempotencyKey());
-                return existing.get();
-            }
+        // Validate idempotencyKey: must be non-null, non-blank, alphanumeric/dash/underscore only
+        if (request.idempotencyKey() == null || request.idempotencyKey().isBlank()) {
+            return Promise.ofException(new IllegalArgumentException("idempotencyKey must not be blank"));
+        }
+        if (!request.idempotencyKey().matches("[a-zA-Z0-9_-]{1,128}")) {
+            return Promise.ofException(new IllegalArgumentException(
+                    "idempotencyKey must be 1-128 alphanumeric, dash, or underscore characters"));
+        }
 
-            // 2. Instrument lookup + must be ACTIVE
-            var instrument = instrumentStore
-                    .findCurrentById(UUID.fromString(request.instrumentId()))
-                    .getResult()
-                    .orElseThrow(() -> new UnknownInstrumentException(request.instrumentId()));
+        // 1. Idempotency check (async promise chain — no .getResult())
+        return orderStore.findByIdempotencyKey(request.idempotencyKey())
+                .then(existing -> {
+                    if (existing.isPresent()) {
+                        log.debug("Idempotent order replay: idempotencyKey={}", request.idempotencyKey());
+                        return Promise.of(existing.get());
+                    }
 
-            if (instrument.status().name().equals("ACTIVE") == false) {
-                throw new InactiveInstrumentException(request.instrumentId(), instrument.status().name());
-            }
+                    // 2. Instrument lookup + must be ACTIVE
+                    return instrumentStore.findCurrentById(UUID.fromString(request.instrumentId()))
+                            .then(instrumentOpt -> {
+                                var instrument = instrumentOpt.orElseThrow(
+                                        () -> new UnknownInstrumentException(request.instrumentId()));
 
-            // 3. Field validation (type-specific, lot size, tick size)
-            validationService.validateFields(request, instrument);
+                                if (!instrument.status().name().equals("ACTIVE")) {
+                                    return Promise.<Order>ofException(
+                                            new InactiveInstrumentException(request.instrumentId(),
+                                                    instrument.status().name()));
+                                }
 
-            // 4. Enrich with market price (D01-002)
-            BigDecimal arrivalPrice = l1Cache.getL1(request.instrumentId())
-                    .getResult()
-                    .map(q -> q.lastPrice())
-                    .orElse(BigDecimal.ZERO);
+                                // 3. Field validation (type-specific, lot size, tick size)
+                                validationService.validateFields(request, instrument);
 
-            BigDecimal orderValue = request.price() != null
-                    ? request.quantity().multiply(request.price())
-                    : request.quantity().multiply(arrivalPrice);
+                                // 4. Enrich with market price (D01-002)
+                                return l1Cache.getL1(request.instrumentId())
+                                        .then(quoteOpt -> {
+                                            BigDecimal arrivalPrice = quoteOpt
+                                                    .map(q -> q.lastPrice())
+                                                    .orElse(BigDecimal.ZERO);
 
-            // 5. Dual-calendar timestamp (simplified — K-15 would provide bsDate)
-            Instant now = Instant.now();
-            String nowBs = ""; // populated by K-15 in production
+                                            BigDecimal orderValue = request.price() != null
+                                                    ? request.quantity().multiply(request.price())
+                                                    : request.quantity().multiply(arrivalPrice);
 
-            Order order = Order.newOrder(
-                    UUID.randomUUID().toString(),
-                    request.clientId(), request.accountId(), request.instrumentId(),
-                    request.side(), request.orderType(), request.timeInForce(),
-                    request.quantity(), request.price(), request.stopPrice(),
-                    request.idempotencyKey(), now, nowBs
-            ).withEnrichment(instrument.symbol(), instrument.exchange(),
-                    instrument.currency(), orderValue, arrivalPrice);
+                                            // 5. Dual-calendar timestamp (K-15 DualCalendarKernelExtension)
+                                            Instant now = Instant.now();
+                                            String nowBs = dualCalendar.toBsDateString(now);
 
-            orderStore.save(order).getResult();
+                                            Order order = Order.newOrder(
+                                                    UUID.randomUUID().toString(),
+                                                    request.clientId(), request.accountId(),
+                                                    request.instrumentId(),
+                                                    request.side(), request.orderType(),
+                                                    request.timeInForce(),
+                                                    request.quantity(), request.price(),
+                                                    request.stopPrice(),
+                                                    request.idempotencyKey(), now, nowBs
+                                            ).withEnrichment(instrument.symbol(), instrument.exchange(),
+                                                    instrument.currency(), orderValue, arrivalPrice);
 
-            eventBusPort.publish(new OrderPlacedEvent(order.orderId(), request.clientId(),
-                    request.instrumentId(), request.side(), request.quantity(), now));
+                                            // 6. Persist (async — no .getResult())
+                                            return orderStore.save(order)
+                                                    .map($ -> {
+                                                        eventBusPort.publish(new OrderPlacedEvent(
+                                                                order.orderId(), request.clientId(),
+                                                                request.instrumentId(), request.side(),
+                                                                request.quantity(), now));
 
-            ordersPlacedCounter.increment();
-            log.info("Order captured: orderId={} client={} instrument={} side={} qty={}",
-                    order.orderId(), request.clientId(), request.instrumentId(),
-                    request.side(), request.quantity());
-            return order;
-        });
+                                                        ordersPlacedCounter.increment();
+                                                        log.info("Order captured: orderId={} client={} instrument={} side={} qty={}",
+                                                                order.orderId(), request.clientId(),
+                                                                request.instrumentId(),
+                                                                request.side(), request.quantity());
+                                                        return order;
+                                                    });
+                                        });
+                            });
+                });
     }
 
     // ─── Domain events ────────────────────────────────────────────────────────
