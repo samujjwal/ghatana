@@ -3,21 +3,32 @@ rootProject.name = "audio-video"
 // Detect build mode
 val isStandaloneBuild = gradle.parent == null
 val monorepoRoot = if (isStandaloneBuild) rootDir.parentFile.parentFile else rootDir.parentFile.parentFile
+val productProjectPrefix = "products:audio-video"
 
 // Store context
 extra["isStandaloneBuild"] = isStandaloneBuild
 extra["monorepoRoot"] = monorepoRoot
 
-// Helper function to include libs from monorepo
-fun includeLib(name: String, subPath: String = "java") {
-    val libDir = File(monorepoRoot, "libs/$subPath/$name")
-    if (libDir.exists()) {
-        include("libs:$name")
-        project(":libs:$name").projectDir = libDir
-    } else {
-        logger.warn("Library not found: libs:$name at $libDir")
-    }
+fun includeProject(projectPath: String, projectDir: File) {
+    include(projectPath)
+    project(":$projectPath").projectDir = projectDir
 }
+
+include("products")
+project(":products").projectDir = File(monorepoRoot, "products")
+include(productProjectPrefix)
+project(":$productProjectPrefix").projectDir = File(monorepoRoot, "products")
+include("$productProjectPrefix:modules")
+project(":$productProjectPrefix:modules").projectDir = File(rootDir, "modules")
+include("$productProjectPrefix:modules:speech")
+project(":$productProjectPrefix:modules:speech").projectDir = File(rootDir, "modules/speech")
+include("$productProjectPrefix:modules:vision")
+project(":$productProjectPrefix:modules:vision").projectDir = File(rootDir, "modules/vision")
+include("$productProjectPrefix:modules:intelligence")
+project(":$productProjectPrefix:modules:intelligence").projectDir = File(rootDir, "modules/intelligence")
+include("$productProjectPrefix:libs")
+project(":$productProjectPrefix:libs").projectDir = File(rootDir, "libs")
+
 // Include contracts (needed by domain-models and other libs)
 val contractsDir = File(monorepoRoot, "contracts")
 if (contractsDir.exists()) {
@@ -33,6 +44,38 @@ if (contractsDir.exists()) {
         }
     }
 }
+
+val platformContractsDir = File(monorepoRoot, "platform/contracts")
+if (platformContractsDir.exists()) {
+    include("platform")
+    project(":platform").projectDir = File(monorepoRoot, "platform")
+    include("platform:java")
+    project(":platform:java").projectDir = File(monorepoRoot, "platform/java")
+    includeProject("platform:contracts", platformContractsDir)
+}
+
+val sharedServicesDir = File(monorepoRoot, "shared-services")
+if (sharedServicesDir.exists()) {
+    include("shared-services")
+    project(":shared-services").projectDir = sharedServicesDir
+
+    val authGatewayDir = File(sharedServicesDir, "auth-gateway")
+    if (authGatewayDir.exists()) {
+        includeProject("shared-services:auth-gateway", authGatewayDir)
+    }
+}
+
+// Include top-level platform/java modules used directly or transitively by audio-video.
+fileTree(File(monorepoRoot, "platform/java")) {
+    include("*/build.gradle.kts")
+    include("*/build.gradle")
+}.forEach { buildFile ->
+    val projectDir = buildFile.parentFile
+    val relativePath = projectDir.relativeTo(File(monorepoRoot, "platform/java")).path
+    val projectName = "platform:java:${relativePath.replace("/", ":")}"
+    includeProject(projectName, projectDir)
+}
+
 // Include audio-video modules
 fileTree("modules") {
     include("**/build.gradle.kts")
@@ -40,70 +83,19 @@ fileTree("modules") {
 }.forEach { buildFile ->
     val projectDir = buildFile.parentFile
     val relativePath = projectDir.relativeTo(rootDir).path
-    val projectName = relativePath.replace("/", ":")
-    include(projectName)
-    project(":$projectName").projectDir = projectDir
+    val projectName = "$productProjectPrefix:${relativePath.replace("/", ":")}"
+    includeProject(projectName, projectDir)
 }
 
 // Include audio-video libs
-fileTree("libs/java") {
+fileTree("libs") {
     include("**/build.gradle.kts")
     include("**/build.gradle")
 }.forEach { buildFile ->
     val projectDir = buildFile.parentFile
     val relativePath = projectDir.relativeTo(rootDir).path
-    val projectName = relativePath.replace("/", ":")
-    include(projectName)
-    project(":$projectName").projectDir = projectDir
-}
-
-// Include required shared libs from monorepo
-// Note: Including comprehensive list to avoid cascading transitive dependency issues
-
-// Core infrastructure
-listOf(
-    "activej-runtime",
-    "activej-websocket",
-    "http-server", 
-    "http-client",
-    "observability",
-    "observability-http",
-    "observability-clickhouse",
-    "database",
-    "validation",
-    "validation-api",
-    "validation-common",
-    "validation-spi",
-    "common-utils",
-    "types",
-    "redis-cache",
-    "state",
-    "security",
-    "governance",
-    "config-runtime",
-    "domain-models",
-    "ai-integration",
-    "event-cloud",
-    "event-cloud-factory",
-    "event-cloud-contract",
-    "event-spi",
-    "audit"
-).forEach { includeLib(it) }
-
-// Include testing libs from libs/java/testing/
-listOf(
-    "activej-test-utils",
-    "test-utils",
-    "test-fixtures",
-    "test-data",
-    "test-containers",
-    "native-test-support"
-).forEach { name ->
-    val testLibDir = File(monorepoRoot, "libs/java/testing/$name")
-    if (testLibDir.exists()) {
-        include("libs:$name")
-        project(":libs:$name").projectDir = testLibDir
-    }
+    val projectName = "$productProjectPrefix:${relativePath.replace("/", ":")}"
+    includeProject(projectName, projectDir)
 }
 
 // Plugin management - use version catalog from root

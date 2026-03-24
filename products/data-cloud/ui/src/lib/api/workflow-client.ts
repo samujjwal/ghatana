@@ -106,7 +106,7 @@ export class WorkflowApiClient {
     page: number = 0,
     pageSize: number = 50
   ): Promise<WorkflowListResponse> {
-    return apiClient.get<WorkflowListResponse>('/workflows', {
+    return apiClient.get<WorkflowListResponse>('/pipelines', {
       params: { collectionId, page, pageSize },
       headers: this.getHeaders(),
     });
@@ -119,7 +119,7 @@ export class WorkflowApiClient {
    * @returns the workflow definition
    */
   async getWorkflow(workflowId: string): Promise<WorkflowDefinition> {
-    return apiClient.get<WorkflowDefinition>(`/workflows/${workflowId}`, {
+    return apiClient.get<WorkflowDefinition>(`/pipelines/${workflowId}`, {
       headers: this.getHeaders(),
     });
   }
@@ -131,7 +131,7 @@ export class WorkflowApiClient {
    * @returns the created workflow
    */
   async createWorkflow(request: CreateWorkflowRequest): Promise<WorkflowDefinition> {
-    return apiClient.post<WorkflowDefinition>('/workflows', request, {
+    return apiClient.post<WorkflowDefinition>('/pipelines', request, {
       headers: this.getHeaders(),
     });
   }
@@ -148,7 +148,7 @@ export class WorkflowApiClient {
     request: UpdateWorkflowRequest
   ): Promise<WorkflowDefinition> {
     return apiClient.put<WorkflowDefinition>(
-      `/workflows/${workflowId}`,
+      `/pipelines/${workflowId}`,
       request,
       { headers: this.getHeaders() }
     );
@@ -160,7 +160,7 @@ export class WorkflowApiClient {
    * @param workflowId the workflow ID
    */
   async deleteWorkflow(workflowId: string): Promise<void> {
-    await apiClient.delete(`/workflows/${workflowId}`, {
+    await apiClient.delete(`/pipelines/${workflowId}`, {
       headers: this.getHeaders(),
     });
   }
@@ -177,7 +177,7 @@ export class WorkflowApiClient {
     request: ExecuteWorkflowRequest = {}
   ): Promise<ExecutionCreatedResponse> {
     return apiClient.post<ExecutionCreatedResponse>(
-      `/workflows/${workflowId}/execute`,
+      `/pipelines/${workflowId}/execute`,
       request,
       { headers: this.getHeaders() }
     );
@@ -190,7 +190,9 @@ export class WorkflowApiClient {
    * @returns the execution status
    */
   async getExecutionStatus(executionId: string): Promise<WorkflowExecution> {
-    return apiClient.get<WorkflowExecution>(`/executions/${executionId}`, {
+    // No dedicated execution endpoint in the current backend.
+    // Query events API for execution status by event correlation ID.
+    return apiClient.get<WorkflowExecution>(`/events/${executionId}`, {
       headers: this.getHeaders(),
     });
   }
@@ -201,7 +203,8 @@ export class WorkflowApiClient {
    * @param executionId the execution ID
    */
   async cancelExecution(executionId: string): Promise<void> {
-    await apiClient.post(`/executions/${executionId}/cancel`, undefined, {
+    // No dedicated cancel endpoint in the current backend.
+    await apiClient.post(`/events/${executionId}/cancel`, undefined, {
       headers: this.getHeaders(),
     });
   }
@@ -213,7 +216,7 @@ export class WorkflowApiClient {
    * @returns the suggestions response
    */
   async getSuggestions(collectionId: string): Promise<SuggestionsResponse> {
-    return apiClient.get<SuggestionsResponse>('/workflows/suggestions', {
+    return apiClient.get<SuggestionsResponse>('/pipelines/suggestions', {
       params: { collectionId },
       headers: this.getHeaders(),
     });
@@ -226,7 +229,7 @@ export class WorkflowApiClient {
    * @returns the templates response
    */
   async getTemplates(category?: string): Promise<TemplatesResponse> {
-    return apiClient.get<TemplatesResponse>('/workflows/templates', {
+    return apiClient.get<TemplatesResponse>('/pipelines/templates', {
       params: category ? { category } : undefined,
       headers: this.getHeaders(),
     });
@@ -240,7 +243,7 @@ export class WorkflowApiClient {
    */
   async validateWorkflow(workflow: WorkflowDefinition): Promise<ValidateWorkflowResponse> {
     return apiClient.post<ValidateWorkflowResponse>(
-      '/workflows/validate',
+      '/pipelines/validate',
       workflow,
       { headers: this.getHeaders() }
     );
@@ -256,7 +259,7 @@ export class WorkflowApiClient {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-    return `${protocol}//${host}${baseURL}/executions/${executionId}/stream?tenantId=${this.tenantId}&userId=${this.userId}`;
+    return `${protocol}//${host}${baseURL}/events/${executionId}/stream?tenantId=${this.tenantId}&userId=${this.userId}`;
   }
 }
 

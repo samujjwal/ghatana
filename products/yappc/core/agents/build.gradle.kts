@@ -15,10 +15,26 @@ java {
 }
 
 dependencies {
+    // AEP Agent Services (PRIMARY - use AEP instead of custom implementation)
+    implementation(project(":products:aep:aep-registry"))
+    
+    // Platform Agent Framework (SECONDARY - for base interfaces)
+    implementation(project(":platform:java:agent-core"))
+    implementation(project(":platform:java:agent-registry"))
+    
+    // Platform Shared Utilities
+    implementation(project(":platform:java:core"))
+    implementation(project(":platform:java:domain"))
+    
+    // Platform Contracts (for AgentManifestProto, etc.)
+    implementation(project(":platform:contracts"))
+    
     // Sub-modules (transitively provide all platform/framework deps)
     api(project(":products:yappc:core:agents:runtime"))
     api(project(":products:yappc:core:agents:workflow"))
-    api(project(":products:yappc:core:agents:specialists"))
+    api(project(":products:yappc:core:agents:code-specialists"))
+    api(project(":products:yappc:core:agents:architecture-specialists"))
+    api(project(":products:yappc:core:agents:testing-specialists"))
 
     // Direct platform deps used by learning/ and eval/ (not exposed by sub-modules as api)
     implementation(project(":products:yappc:backend:persistence"))

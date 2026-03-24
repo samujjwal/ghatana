@@ -11,6 +11,48 @@
 
 import { apiClient, PaginatedResponse } from './client';
 
+// ---------------------------------------------------------------------------
+// Backend entity response shapes (raw responses from /api/v1/entities/…)
+// ---------------------------------------------------------------------------
+
+interface BackendEntity {
+    id: string;
+    collection: string;
+    data: Record<string, unknown>;
+    version?: number;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+interface BackendEntityListResponse {
+    entities: BackendEntity[];
+    count: number;
+    tenantId?: string;
+    timestamp?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Transformation helpers
+// ---------------------------------------------------------------------------
+
+function entityToCollection(e: BackendEntity): Collection {
+    const d = e.data as Partial<Collection>;
+    return {
+        id: e.id,
+        name: String(d.name ?? ''),
+        description: String(d.description ?? ''),
+        schemaType: (d.schemaType ?? 'entity') as Collection['schemaType'],
+        status: (d.status ?? 'draft') as Collection['status'],
+        isActive: d.isActive ?? (d.status === 'active'),
+        entityCount: Number(d.entityCount ?? 0),
+        schema: (d.schema ?? { fields: [] }) as CollectionSchema,
+        tags: Array.isArray(d.tags) ? (d.tags as string[]) : [],
+        createdAt: e.createdAt ?? String(d.createdAt ?? new Date().toISOString()),
+        updatedAt: e.updatedAt ?? String(d.updatedAt ?? new Date().toISOString()),
+        createdBy: String(d.createdBy ?? 'unknown'),
+    };
+}
+
 export interface CollectionSchemaField {
     id?: string;
     name: string;
@@ -83,66 +125,113 @@ export interface CollectionQueryParams {
 
 /**
  * Collections API
+ *
+ * Routes now backed by /api/v1/entities/dc_collections (Option A,
+ * DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 2).
  */
 export const collectionsApi = {
     /**
-     * List all collections
+     * List all collections.
+     * GET /api/v1/entities/dc_collections
      */
     list: async (params?: CollectionQueryParams): Promise<PaginatedResponse<Collection>> => {
-        return apiClient.get<PaginatedResponse<Collection>>('/collections', { params });
+        const limit = params?.pageSize ?? 50;
+        const offset = ((params?.page ?? 1) - 1) * limit;
+        const raw = await apiClient.get<BackendEntityListResponse>('/entities/dc_collections', {
+            params: { limit, offset, ...(params?.search ? { search: params.search } : {}) },
+        });
+        const items = (raw.entities ?? []).map(entityToCollection);
+        const page = params?.page ?? 1;
+        return {
+            items,
+            total: raw.count ?? items.length,
+            page,
+            pageSize: limit,
+            hasMore: offset + items.length < (raw.count ?? items.length),
+        };
     },
 
     /**
-     * Get collection by ID
+     * Get collection by ID.
+     * GET /api/v1/entities/dc_collections/:id
      */
     get: async (id: string): Promise<Collection> => {
-        return apiClient.get<Collection>(`/collections/${id}`);
+        const raw = await apiClient.get<BackendEntity>(`/entities/dc_collections/${id}`);
+        return entityToCollection(raw);
     },
 
     /**
-     * Create new collection
+     * Create new collection.
+     * POST /api/v1/entities/dc_collections
      */
     create: async (data: CreateCollectionDto): Promise<Collection> => {
-        return apiClient.post<Collection, CreateCollectionDto>('/collections', data);
+        // The backend entity save returns {id, collection, version, createdAt, timestamp}
+        const saved = await apiClient.post<{ id: string; collection: string; createdAt: string; timestamp: string }>(
+            '/entities/dc_collections',
+            { ...data } as Record<string, unknown>
+        );
+        return {
+            id: saved.id,
+            name: data.name,
+            description: data.description,
+            schemaType: data.schemaType,
+            status: 'draft',
+            isActive: false,
+            entityCount: 0,
+            schema: data.schema,
+            tags: data.tags ?? [],
+            createdAt: saved.createdAt ?? new Date().toISOString(),
+            updatedAt: saved.createdAt ?? new Date().toISOString(),
+            createdBy: 'current-user',
+        };
     },
 
     /**
-     * Update collection
+     * Update collection (upsert via POST with existing ID in payload).
+     * POST /api/v1/entities/dc_collections
      */
     update: async (id: string, data: UpdateCollectionDto): Promise<Collection> => {
-        return apiClient.put<Collection, UpdateCollectionDto>(`/collections/${id}`, data);
+        await apiClient.post('/entities/dc_collections', { id, ...data } as Record<string, unknown>);
+        return collectionsApi.get(id);
     },
 
     /**
-     * Delete collection
+     * Delete collection.
+     * DELETE /api/v1/entities/dc_collections/:id
      */
     delete: async (id: string): Promise<void> => {
-        return apiClient.delete(`/collections/${id}`);
+        return apiClient.delete(`/entities/dc_collections/${id}`);
     },
 
     /**
-     * Get collection schema
+     * Get collection schema (stored in the collection entity data.schema field).
      */
     getSchema: async (id: string): Promise<Record<string, unknown>> => {
-        return apiClient.get<Record<string, unknown>>(`/collections/${id}/schema`);
+        const col = await collectionsApi.get(id);
+        return col.schema as Record<string, unknown>;
     },
 
     /**
-     * Update collection schema
+     * Update collection schema via upsert.
      */
     updateSchema: async (id: string, schema: Record<string, unknown>): Promise<Collection> => {
-        return apiClient.put<Collection>(`/collections/${id}/schema`, schema);
+        return collectionsApi.update(id, { schema });
     },
 
     /**
-     * Get collection stats
+     * Get collection entity count from the collection metadata entity.
      */
     getStats: async (id: string): Promise<{
         entityCount: number;
         storageSize: number;
         lastUpdated: string;
     }> => {
-        return apiClient.get(`/collections/${id}/stats`);
+        const col = await collectionsApi.get(id);
+        return {
+            entityCount: col.entityCount,
+            storageSize: 0,
+            lastUpdated: col.updatedAt,
+        };
     },
 };
 

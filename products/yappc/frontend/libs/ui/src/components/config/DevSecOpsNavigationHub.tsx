@@ -52,7 +52,7 @@ import {
 
 // DevSecOps persona integration - use canonical types and hook
 import type { PersonaType } from '@yappc/core/types/devsecops';
-import { usePersonas } from '@yappc/config-hooks';
+import { usePersonas } from '@yappc/state/config-hooks';
 import { getPersonaDashboard } from './persona-configs';
 
 // Domain icons mapping

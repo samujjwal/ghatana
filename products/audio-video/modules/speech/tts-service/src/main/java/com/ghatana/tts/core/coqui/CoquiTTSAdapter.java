@@ -1,9 +1,8 @@
 package com.ghatana.tts.core.coqui;
 
 import com.ghatana.tts.core.config.EngineConfig;
-import com.ghatana.tts.core.model.AudioData;
-import com.ghatana.tts.core.model.SynthesisOptions;
-import com.ghatana.tts.core.model.VoiceOptions;
+import com.ghatana.tts.core.api.AudioData;
+import com.ghatana.tts.core.api.SynthesisOptions;
 import org.scijava.nativelib.NativeLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +24,7 @@ public class CoquiTTSAdapter {
     
     private static final Logger LOG = LoggerFactory.getLogger(CoquiTTSAdapter.class);
     private static final boolean NATIVE_LIBRARY_AVAILABLE;
+    private static final int OUTPUT_SAMPLE_RATE = 22050;
     
     static {
         boolean loaded = false;
@@ -125,7 +125,7 @@ public class CoquiTTSAdapter {
             float[] audioSamples = performSynthesis(coquiContext, processedText);
             
             // Apply prosody modifications if needed
-            if (options.enableProsody()) {
+            if (options.speed() != 1.0f || options.pitch() != 0.0f || options.energy() != 1.0f) {
                 audioSamples = applyProsodyWithSox(audioSamples, options);
             }
             
@@ -135,7 +135,7 @@ public class CoquiTTSAdapter {
             // Create audio data
             return AudioData.builder()
                 .data(audioData)
-                .sampleRate(options.sampleRate())
+                .sampleRate(OUTPUT_SAMPLE_RATE)
                 .channels(1)
                 .format(AudioData.AudioFormat.PCM_16BIT)
                 .build();
@@ -185,16 +185,16 @@ public class CoquiTTSAdapter {
     
     private void configureDefaultParams() {
         // Set default parameters for optimal performance
-        setParam(coquiContext, "sample_rate", 22050);
+        setParam(coquiContext, "sample_rate", OUTPUT_SAMPLE_RATE);
         setParam(coquiContext, "voice_speed", 1.0);
         setParam(coquiContext, "pitch_shift", 0.0);
         setParam(coquiContext, "energy", 1.0);
     }
     
     private void setSynthesisParams(SynthesisOptions options) {
-        setParam(coquiContext, "voice_speed", options.speakingRate());
+        setParam(coquiContext, "voice_speed", options.speed());
         setParam(coquiContext, "pitch_shift", options.pitch());
-        setParam(coquiContext, "energy", options.volume());
+        setParam(coquiContext, "energy", options.energy());
         setParam(coquiContext, "language", options.language());
     }
     
@@ -243,16 +243,16 @@ public class CoquiTTSAdapter {
         // Apply prosody modifications using Sox (if available)
         // This is a simplified implementation - in production, use native Sox integration
         
-        if (options.speakingRate() != 1.0) {
-            audio = adjustSpeed(audio, options.speakingRate());
+        if (options.speed() != 1.0f) {
+            audio = adjustSpeed(audio, options.speed());
         }
         
-        if (options.pitch() != 1.0) {
-            audio = adjustPitch(audio, options.pitch() - 1.0);
+        if (options.pitch() != 0.0f) {
+            audio = adjustPitch(audio, options.pitch());
         }
         
-        if (options.volume() != 1.0) {
-            audio = adjustEnergy(audio, options.volume());
+        if (options.energy() != 1.0f) {
+            audio = adjustEnergy(audio, options.energy());
         }
         
         return audio;

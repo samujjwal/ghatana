@@ -1,0 +1,84 @@
+name: Quality Gates
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  quality-checks:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+      
+      - name: Check Module Sizes
+        run: ./gradlew checkModuleSize
+        working-directory: products/yappc
+      
+      - name: Check TODO Count
+        run: |
+          TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX\|HACK" . --include="*.java" --include="*.ts" --include="*.tsx" | wc -l)
+          echo "TODO count: $TODO_COUNT"
+          if [ $TODO_COUNT -gt 100 ]; then
+            echo "❌ Too many TODOs: $TODO_COUNT (max: 100)"
+            exit 1
+          fi
+          echo "✅ TODO count within limits"
+        working-directory: products/yappc
+      
+      - name: Run Backend Tests
+        run: ./gradlew test
+        working-directory: products/yappc
+      
+      - name: Run Frontend Tests
+        run: |
+          cd frontend
+          pnpm install
+          pnpm test
+        working-directory: products/yappc
+      
+      - name: Check Import Restrictions
+        run: |
+          cd frontend
+          pnpm lint
+        working-directory: products/yappc
+      
+      - name: Type Check
+        run: |
+          cd frontend
+          pnpm typecheck
+        working-directory: products/yappc
+
+  architecture-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      
+      - name: Run ArchUnit Tests
+        run: ./gradlew test --tests "*BoundaryTest"
+        working-directory: products/yappc

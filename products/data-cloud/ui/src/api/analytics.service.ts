@@ -11,6 +11,7 @@
  */
 
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiClient } from '../lib/api/client';
 
 const API_BASE = '/api/v1';
 
@@ -128,3 +129,127 @@ export function useCollectionEntityCounts(collections: string[]) {
     staleTime: 120_000,
   });
 }
+
+// =============================================================================
+// AI SUGGESTIONS FOR ANALYTICS PAGE  (E3 — Pervasive AI/ML)
+// =============================================================================
+
+/**
+ * Shape of a single AI-derived analytics suggestion returned by
+ * POST /api/v1/analytics/suggest  and  GET /api/v1/brain/workspace.
+ */
+export interface AnalyticsAiSuggestion {
+  /** Stable client-side key (not from server — prevents key churn on refetch). */
+  key: string;
+  /** Suggestion category — drives icon and colour choices. */
+  type: 'optimization' | 'anomaly' | 'insight' | 'warning';
+  /** Short, action-oriented title. */
+  title: string;
+  /** Single-sentence description with enough context to act. */
+  description: string;
+  /** 0-1 confidence score from the AI model. */
+  confidence: number;
+  /** Human-readable reason codes / model labels. */
+  reasons: string[];
+  /** Whether this was produced by the deterministic fallback path. */
+  fallback: boolean;
+}
+
+/** Internal response shape expected from POST /api/v1/analytics/suggest */
+interface AnalyticsSuggestResponse {
+  data?: {
+    suggestions?: Array<{
+      type?: string;
+      title?: string;
+      description?: string;
+      reasons?: string[];
+    }>;
+  };
+  ai?: { confidence?: number; fallback?: boolean };
+}
+
+/** Fetch AI suggestions by calling POST /api/v1/analytics/suggest */
+async function fetchAnalyticsSuggestions(tenantId: string): Promise<AnalyticsAiSuggestion[]> {
+  try {
+    const resp = await apiClient.post<AnalyticsSuggestResponse>(
+      '/api/v1/analytics/suggest',
+      { context: 'anomaly_and_optimization', limit: 5 },
+      { headers: { 'X-Tenant-ID': tenantId } },
+    );
+    const raw = resp.data?.data?.suggestions ?? [];
+    const isFallback = resp.data?.ai?.fallback ?? false;
+    const confidence = resp.data?.ai?.confidence ?? 0.5;
+    return raw.map((s, i): AnalyticsAiSuggestion => ({
+      key: `analytics-${i}`,
+      type: mapSuggestionType(s.type),
+      title: s.title ?? 'Suggestion',
+      description: s.description ?? '',
+      confidence,
+      reasons: s.reasons ?? [],
+      fallback: isFallback,
+    }));
+  } catch {
+    // Analytics suggest service offline — return deterministic fallback
+    return deterministicAnalyticsFallback();
+  }
+}
+
+/** Deterministic fallback: shown when AI service is unavailable (E3 requirement). */
+function deterministicAnalyticsFallback(): AnalyticsAiSuggestion[] {
+  return [
+    {
+      key: 'fallback-0',
+      type: 'optimization',
+      title: 'Review high-frequency queries',
+      description: 'Queries running more than 50×/hour may benefit from result caching.',
+      confidence: 0.0,
+      reasons: ['heuristic'],
+      fallback: true,
+    },
+    {
+      key: 'fallback-1',
+      type: 'insight',
+      title: 'Schema documentation incomplete',
+      description: 'Several collections lack descriptions — adding them improves query suggestions.',
+      confidence: 0.0,
+      reasons: ['heuristic'],
+      fallback: true,
+    },
+  ];
+}
+
+function mapSuggestionType(raw?: string): AnalyticsAiSuggestion['type'] {
+  switch (raw?.toLowerCase()) {
+    case 'optimization': return 'optimization';
+    case 'anomaly':
+    case 'anomaly_hint': return 'anomaly';
+    case 'warning': return 'warning';
+    default: return 'insight';
+  }
+}
+
+/**
+ * React Query hook: AI-generated analytics suggestions.
+ *
+ * Calls POST /api/v1/analytics/suggest.  Falls back deterministically when
+ * the service is unavailable so the panel is never empty.
+ *
+ * Refresh every 5 minutes; do not refetch on window focus to avoid distraction.
+ *
+ * @example
+ * const { data: suggestions, isLoading, isFallback } = useAnalyticsAiSuggestions();
+ */
+export function useAnalyticsAiSuggestions() {
+  const tenantId =
+    typeof localStorage !== 'undefined' ? (localStorage.getItem('tenantId') ?? 'default-tenant') : 'default-tenant';
+
+  return useQuery<AnalyticsAiSuggestion[]>({
+    queryKey: ['analytics', 'ai-suggestions', tenantId],
+    queryFn: () => fetchAnalyticsSuggestions(tenantId),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    // Never throw — always resolve to at least the fallback list
+    retry: false,
+  });
+}
+

@@ -16,14 +16,12 @@ data:
   DATACLOUD_CACHE_ENABLED: "true"
   DATACLOUD_METRICS_ENABLED: "true"
   DATACLOUD_CORS_ALLOWED_ORIGINS: "https://app.ghatana.com"
-  DB_HOST: "postgres.shared-services.svc.cluster.local"
-  DB_PORT: "5432"
-  DB_NAME: "datacloud"
-  KAFKA_BOOTSTRAP_SERVERS: "kafka.shared-services.svc.cluster.local:9092"
-  KAFKA_ENABLED: "true"
-  CLICKHOUSE_HOST: "clickhouse.shared-services.svc.cluster.local"
-  CLICKHOUSE_PORT: "8123"
-  CLICKHOUSE_ENABLED: "true"
+  DATACLOUD_DB_URL: "jdbc:postgresql://postgres.shared-services.svc.cluster.local:5432/datacloud"
+  DATACLOUD_KAFKA_ENABLED: "true"
+  DATACLOUD_KAFKA_BOOTSTRAP: "kafka.shared-services.svc.cluster.local:9092"
+  DATACLOUD_CLICKHOUSE_ENABLED: "true"
+  DATACLOUD_CLICKHOUSE_HOST: "clickhouse.shared-services.svc.cluster.local"
+  DATACLOUD_CLICKHOUSE_PORT: "8123"
   JAVA_OPTS: >-
     -XX:+UseZGC
     -XX:InitialRAMPercentage=50.0

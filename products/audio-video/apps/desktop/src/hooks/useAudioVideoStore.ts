@@ -6,7 +6,7 @@
  */
 
 import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
-import type { AudioVideoSettings, ServiceType } from '@ghatana/audio-video-product-types';
+import type { AudioVideoSettings, ServiceType } from '@audio-video/types';
 
 interface AudioVideoStore {
   // Settings

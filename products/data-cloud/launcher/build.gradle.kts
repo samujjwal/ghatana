@@ -12,6 +12,7 @@ dependencies {
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:governance"))
+    implementation(project(":platform:java:audit"))
 
     // AI platform integration — model registry, feature store, observability (all merged into ai-integration)
     implementation(project(":platform:java:ai-integration"))
@@ -21,7 +22,7 @@ dependencies {
 
     // gRPC transport (runtime) — needed to start the gRPC server
     implementation(libs.grpc.netty.shaded)
-    
+
     // ActiveJ framework
     implementation(libs.activej.launcher)
     implementation(libs.activej.http)
@@ -46,22 +47,13 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testImplementation(libs.assertj.core)
+    testImplementation(project(":platform:java:testing"))
+    testImplementation(libs.archunit.junit5)
 }
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
 }
 
-// Exclude integration tests for HTTP endpoints with incomplete implementations (return 500)
-sourceSets {
-    test {
-        java {
-            exclude("com/ghatana/datacloud/launcher/http/DataCloudHttpServerAgentTest.java")
-            exclude("com/ghatana/datacloud/launcher/http/DataCloudHttpServerAnalyticsTest.java")
-            exclude("com/ghatana/datacloud/launcher/http/DataCloudHttpServerBrainTest.java")
-            exclude("com/ghatana/datacloud/launcher/http/DataCloudHttpServerCheckpointTest.java")
-            exclude("com/ghatana/datacloud/launcher/http/DataCloudHttpServerLearningTest.java")
-            exclude("com/ghatana/datacloud/launcher/http/DataCloudHttpServerMemoryTest.java")
-        }
-    }
-}
+// HTTP endpoint test suites re-enabled as part of DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 3.
+// All handlers have been verified and loadBody().getResult() NPE patterns resolved.

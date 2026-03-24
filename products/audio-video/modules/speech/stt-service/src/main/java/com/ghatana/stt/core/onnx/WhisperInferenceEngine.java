@@ -122,6 +122,7 @@ public final class WhisperInferenceEngine implements AutoCloseable {
      */
     public TranscriptionResult transcribe(float[] audioSamples, TranscriptionOptions options) {
         long startTime = System.currentTimeMillis();
+        String language = options != null && options.language() != null ? options.language() : "en";
 
         try {
             // 1. Extract mel spectrogram
@@ -133,7 +134,6 @@ public final class WhisperInferenceEngine implements AutoCloseable {
             LOG.debug("Encoder output: {} x {}", encoderOutput.length, encoderOutput[0].length);
 
             // 3. Decode tokens
-            String language = options != null && options.language() != null ? options.language() : "en";
             List<Integer> tokens = decodeTokens(encoderOutput, language, options);
 
             // 4. Convert tokens to text
@@ -155,6 +155,7 @@ public final class WhisperInferenceEngine implements AutoCloseable {
                 .isFinal(true)
                 .processingTimeMs(processingTime)
                 .modelUsed(activeModelId)
+                .language(language)
                 .wordTimings(extractWordTimings(tokens, audioDurationMs))
                 .build();
 
@@ -166,6 +167,7 @@ public final class WhisperInferenceEngine implements AutoCloseable {
                 .isFinal(true)
                 .processingTimeMs(System.currentTimeMillis() - startTime)
                 .modelUsed(activeModelId)
+                .language(language)
                 .build();
         }
     }

@@ -5,9 +5,10 @@
  * Used in development (browser) and tests (Node / Vitest) to mock
  * the Data Cloud backend without a running server.
  *
- * <p>Endpoint coverage matches the production API client surface:
- * - /api/v1/collections
- * - /api/v1/workflows
+ * <p>Endpoint coverage matches the production API client surface (Option A
+ * mapping from DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 2):
+ * - /api/v1/entities/dc_collections  (was /collections)
+ * - /api/v1/pipelines                (was /workflows)
  * - /api/v1/data-fabric/profiles
  * - /api/v1/data-fabric/connectors
  * - /api/v1/ai/*
@@ -21,8 +22,6 @@
 import { http, HttpResponse, delay } from 'msw';
 import { MOCK_COLLECTIONS, MOCK_WORKFLOWS } from '../lib/mock-data';
 import {
-  CollectionSchema,
-  PaginatedCollectionResponseSchema,
   StorageProfileSchema,
   ConnectorSchema,
 } from '../contracts/schemas';
@@ -178,16 +177,43 @@ function generateId(prefix: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Collection handlers
+// Collection handlers  (Option A — DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 2)
+//
+// The UI collectionsApi now calls /api/v1/entities/dc_collections, which is
+// the real backend entity CRUD route.  Responses follow the BackendEntity /
+// BackendEntityListResponse shape consumed by entityToCollection() in
+// collections.ts.  The old /api/v1/collections route no longer exists in the
+// production backend.
 // ---------------------------------------------------------------------------
 
+function collectionToEntity(c: (typeof collections)[0]) {
+  return {
+    id: c.id,
+    collection: 'dc_collections',
+    data: {
+      name: c.name,
+      description: c.description,
+      schemaType: c.schemaType,
+      status: c.status,
+      isActive: c.isActive,
+      entityCount: c.entityCount,
+      schema: c.schema,
+      tags: c.tags,
+      createdBy: c.createdBy,
+    },
+    version: 1,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+  };
+}
+
 const collectionHandlers = [
-  // GET /api/v1/collections
-  http.get(`${BASE}/collections`, async ({ request }) => {
+  // GET /api/v1/entities/dc_collections
+  http.get(`${BASE}/entities/dc_collections`, async ({ request }) => {
     await delay(SIMULATED_DELAY_MS);
     const url = new URL(request.url);
-    const page = Number(url.searchParams.get('page') ?? 1);
-    const pageSize = Number(url.searchParams.get('pageSize') ?? 20);
+    const limit = Number(url.searchParams.get('limit') ?? 50);
+    const offset = Number(url.searchParams.get('offset') ?? 0);
     const search = url.searchParams.get('search') ?? '';
     const filtered = search
       ? collections.filter(
@@ -196,53 +222,71 @@ const collectionHandlers = [
             c.description.toLowerCase().includes(search.toLowerCase())
         )
       : collections;
-    return contractJson(PaginatedCollectionResponseSchema, paginate(filtered, page, pageSize));
+    const slice = filtered.slice(offset, offset + limit);
+    return HttpResponse.json({
+      entities: slice.map(collectionToEntity),
+      count: filtered.length,
+      tenantId: 'default',
+      timestamp: new Date().toISOString(),
+    });
   }),
 
-  // POST /api/v1/collections
-  http.post(`${BASE}/collections`, async ({ request }) => {
+  // POST /api/v1/entities/dc_collections  (create)
+  http.post(`${BASE}/entities/dc_collections`, async ({ request }) => {
     await delay(SIMULATED_DELAY_MS);
-    const body = (await request.json()) as Partial<(typeof collections)[0]>;
+    const body = (await request.json()) as Record<string, unknown>;
     const now = new Date().toISOString();
+    // If an id is present it is an upsert (update); otherwise create.
+    const existingIdx = body.id ? collections.findIndex((c) => c.id === body.id) : -1;
+    if (existingIdx >= 0) {
+      const updated = {
+        ...collections[existingIdx],
+        ...(body as Partial<(typeof collections)[0]>),
+        updatedAt: now,
+      };
+      collections = collections.map((c, i) => (i === existingIdx ? updated : c));
+      return HttpResponse.json({
+        id: updated.id,
+        collection: 'dc_collections',
+        version: 2,
+        createdAt: updated.createdAt,
+        timestamp: now,
+      });
+    }
     const created = {
       id: generateId('col'),
       entityCount: 0,
-      tags: [],
+      tags: [] as string[],
       status: 'draft' as const,
+      schemaType: 'entity' as const,
+      isActive: false,
+      schema: { fields: [] as (typeof collections)[0]['schema']['fields'], constraints: [] as (typeof collections)[0]['schema']['constraints'] },
       createdAt: now,
       updatedAt: now,
       createdBy: 'mock-user',
-      ...body,
+      name: '',
+      description: '',
+      ...(body as Partial<(typeof collections)[0]>),
     } as (typeof collections)[0];
     collections = [...collections, created];
-    return contractJson(CollectionSchema, created, { status: 201 });
+    return HttpResponse.json(
+      { id: created.id, collection: 'dc_collections', version: 1, createdAt: created.createdAt, timestamp: now },
+      { status: 201 }
+    );
   }),
 
-  // GET /api/v1/collections/:id
-  http.get(`${BASE}/collections/:id`, async ({ params }) => {
+  // GET /api/v1/entities/dc_collections/:id
+  http.get(`${BASE}/entities/dc_collections/:id`, async ({ params }) => {
     await delay(SIMULATED_DELAY_MS);
     const col = collections.find((c) => c.id === params.id);
     if (!col) {
       return HttpResponse.json({ code: 'NOT_FOUND', message: 'Collection not found' }, { status: 404 });
     }
-    return contractJson(CollectionSchema, col);
+    return HttpResponse.json(collectionToEntity(col));
   }),
 
-  // PUT /api/v1/collections/:id
-  http.put(`${BASE}/collections/:id`, async ({ params, request }) => {
-    await delay(SIMULATED_DELAY_MS);
-    const idx = collections.findIndex((c) => c.id === params.id);
-    if (idx === -1) {
-      return HttpResponse.json({ code: 'NOT_FOUND', message: 'Collection not found' }, { status: 404 });
-    }
-    const body = (await request.json()) as Partial<(typeof collections)[0]>;
-    const updated = { ...collections[idx], ...body, updatedAt: new Date().toISOString() };
-    collections = collections.map((c, i) => (i === idx ? updated : c));
-    return contractJson(CollectionSchema, updated);
-  }),
-
-  // DELETE /api/v1/collections/:id
-  http.delete(`${BASE}/collections/:id`, async ({ params }) => {
+  // DELETE /api/v1/entities/dc_collections/:id
+  http.delete(`${BASE}/entities/dc_collections/:id`, async ({ params }) => {
     await delay(SIMULATED_DELAY_MS);
     const exists = collections.some((c) => c.id === params.id);
     if (!exists) {
@@ -254,21 +298,48 @@ const collectionHandlers = [
 ];
 
 // ---------------------------------------------------------------------------
-// Workflow handlers
+// Pipeline handlers  (Option A — DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 2)
+//
+// The backend exposes /api/v1/pipelines (not /api/v1/workflows).
+// GET /pipelines  → { tenantId, pipelines: [...flatPipeline], count, timestamp }
+// GET /pipelines/:pipelineId → { id, tenantId, ...dataFields }
+// POST / PUT → save/update pipeline; { id, tenantId, ...dataFields }
+// DELETE → { deleted, pipelineId, tenantId, timestamp }
 // ---------------------------------------------------------------------------
 
+function workflowToPipeline(w: (typeof workflows)[0]) {
+  return {
+    id: w.id,
+    tenantId: 'default',
+    name: w.name,
+    description: w.description,
+    status: w.status,
+    nodes: w.nodes,
+    edges: w.edges,
+    tags: w.tags,
+    createdAt: w.createdAt,
+    updatedAt: w.updatedAt,
+    createdBy: w.createdBy,
+    lastExecutedAt: w.lastExecutedAt,
+  };
+}
+
 const workflowHandlers = [
-  // GET /api/v1/workflows
-  http.get(`${BASE}/workflows`, async ({ request }) => {
+  // GET /api/v1/pipelines
+  http.get(`${BASE}/pipelines`, async ({ request }) => {
     await delay(SIMULATED_DELAY_MS);
     const url = new URL(request.url);
-    const page = Number(url.searchParams.get('page') ?? 1);
-    const pageSize = Number(url.searchParams.get('pageSize') ?? 20);
-    return HttpResponse.json(paginate(workflows, page, pageSize));
+    const limit = Number(url.searchParams.get('limit') ?? 500);
+    return HttpResponse.json({
+      tenantId: 'default',
+      pipelines: workflows.slice(0, limit).map(workflowToPipeline),
+      count: workflows.length,
+      timestamp: new Date().toISOString(),
+    });
   }),
 
-  // POST /api/v1/workflows
-  http.post(`${BASE}/workflows`, async ({ request }) => {
+  // POST /api/v1/pipelines  (create)
+  http.post(`${BASE}/pipelines`, async ({ request }) => {
     await delay(SIMULATED_DELAY_MS);
     const body = (await request.json()) as Partial<(typeof workflows)[0]>;
     const now = new Date().toISOString();
@@ -276,89 +347,73 @@ const workflowHandlers = [
       id: generateId('wf'),
       nodes: [],
       edges: [],
-      tags: [],
+      tags: [] as string[],
       status: 'draft' as const,
       createdAt: now,
       updatedAt: now,
       createdBy: 'mock-user',
+      name: '',
+      description: '',
       ...body,
     } as (typeof workflows)[0];
     workflows = [...workflows, created];
-    return HttpResponse.json(created, { status: 201 });
+    return HttpResponse.json(workflowToPipeline(created), { status: 201 });
   }),
 
-  // GET /api/v1/workflows/:id
-  http.get(`${BASE}/workflows/:id`, async ({ params }) => {
+  // GET /api/v1/pipelines/:pipelineId
+  http.get(`${BASE}/pipelines/:pipelineId`, async ({ params }) => {
     await delay(SIMULATED_DELAY_MS);
-    const wf = workflows.find((w) => w.id === params.id);
+    const wf = workflows.find((w) => w.id === params.pipelineId);
     if (!wf) {
-      return HttpResponse.json({ code: 'NOT_FOUND', message: 'Workflow not found' }, { status: 404 });
+      return HttpResponse.json({ code: 'NOT_FOUND', message: 'Pipeline not found' }, { status: 404 });
     }
-    return HttpResponse.json(wf);
+    return HttpResponse.json(workflowToPipeline(wf));
   }),
 
-  // PUT /api/v1/workflows/:id
-  http.put(`${BASE}/workflows/:id`, async ({ params, request }) => {
+  // PUT /api/v1/pipelines/:pipelineId
+  http.put(`${BASE}/pipelines/:pipelineId`, async ({ params, request }) => {
     await delay(SIMULATED_DELAY_MS);
-    const idx = workflows.findIndex((w) => w.id === params.id);
+    const idx = workflows.findIndex((w) => w.id === params.pipelineId);
     if (idx === -1) {
-      return HttpResponse.json({ code: 'NOT_FOUND', message: 'Workflow not found' }, { status: 404 });
+      return HttpResponse.json({ code: 'NOT_FOUND', message: 'Pipeline not found' }, { status: 404 });
     }
     const body = (await request.json()) as Partial<(typeof workflows)[0]>;
     const updated = { ...workflows[idx], ...body, updatedAt: new Date().toISOString() };
     workflows = workflows.map((w, i) => (i === idx ? updated : w));
-    return HttpResponse.json(updated);
+    return HttpResponse.json(workflowToPipeline(updated));
   }),
 
-  // DELETE /api/v1/workflows/:id
-  http.delete(`${BASE}/workflows/:id`, async ({ params }) => {
+  // DELETE /api/v1/pipelines/:pipelineId
+  http.delete(`${BASE}/pipelines/:pipelineId`, async ({ params }) => {
     await delay(SIMULATED_DELAY_MS);
-    const exists = workflows.some((w) => w.id === params.id);
+    const exists = workflows.some((w) => w.id === params.pipelineId);
     if (!exists) {
-      return HttpResponse.json({ code: 'NOT_FOUND', message: 'Workflow not found' }, { status: 404 });
+      return HttpResponse.json({ code: 'NOT_FOUND', message: 'Pipeline not found' }, { status: 404 });
     }
-    workflows = workflows.filter((w) => w.id !== params.id);
-    return new HttpResponse(null, { status: 204 });
+    workflows = workflows.filter((w) => w.id !== params.pipelineId);
+    return HttpResponse.json({
+      deleted: true,
+      pipelineId: params.pipelineId,
+      tenantId: 'default',
+      timestamp: new Date().toISOString(),
+    });
   }),
 
-  // POST /api/v1/workflows/:id/execute
-  http.post(`${BASE}/workflows/:id/execute`, async ({ params }) => {
+  // POST /api/v1/pipelines/:pipelineId/execute  (no backend equivalent; stub for dev)
+  http.post(`${BASE}/pipelines/:pipelineId/execute`, async ({ params }) => {
     await delay(SIMULATED_DELAY_MS);
-    const wf = workflows.find((w) => w.id === params.id);
+    const wf = workflows.find((w) => w.id === params.pipelineId);
     if (!wf) {
-      return HttpResponse.json({ code: 'NOT_FOUND', message: 'Workflow not found' }, { status: 404 });
+      return HttpResponse.json({ code: 'NOT_FOUND', message: 'Pipeline not found' }, { status: 404 });
     }
-    const execution = {
+    return HttpResponse.json({
       id: generateId('exec'),
-      workflowId: params.id,
+      workflowId: params.pipelineId,
       status: 'running',
       startedAt: new Date().toISOString(),
-      nodeExecutions: wf.nodes.map((n) => ({
-        nodeId: n.id,
-        status: 'pending',
-      })),
+      nodeExecutions: wf.nodes.map((n) => ({ nodeId: n.id, status: 'pending' })),
       triggeredBy: 'manual',
-    };
-    return HttpResponse.json(execution, { status: 202 });
-  }),
-
-  // GET /api/v1/workflows/:id/executions
-  http.get(`${BASE}/workflows/:id/executions`, async ({ params }) => {
-    await delay(SIMULATED_DELAY_MS);
-    const now = new Date();
-    const executions = [
-      {
-        id: generateId('exec'),
-        workflowId: params.id,
-        status: 'completed',
-        startedAt: new Date(now.getTime() - 3600000).toISOString(),
-        completedAt: new Date(now.getTime() - 3540000).toISOString(),
-        duration: 60000,
-        nodeExecutions: [],
-        triggeredBy: 'schedule',
-      },
-    ];
-    return HttpResponse.json(paginate(executions));
+    }, { status: 202 });
   }),
 ];
 

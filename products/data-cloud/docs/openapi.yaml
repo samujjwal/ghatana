@@ -1078,3 +1078,443 @@ paths:
 
                   event: heartbeat
                   data: {"ts":"2025-01-01T00:00:00Z"}
+
+  # ── Entity extended endpoints (search, export, anomalies, batch, SSE) ──────
+
+  /api/v1/entities/{collection}/search:
+    get:
+      summary: Full-text entity search via OpenSearch
+      tags: [entities]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: List of matching entities }
+        "501": { description: OpenSearch connector not configured }
+
+  /api/v1/entities/{collection}/export:
+    get:
+      summary: Bulk export entities as CSV or NDJSON
+      tags: [entities]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: format
+          in: query
+          schema: { type: string, enum: [csv, ndjson], default: ndjson }
+      responses:
+        "200": { description: Exported entity file }
+        "501": { description: Export service not configured }
+
+  /api/v1/entities/{collection}/anomalies:
+    post:
+      summary: Detect statistical anomalies in a collection
+      tags: [entities, analytics]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Anomaly detection results }
+        "501": { description: Anomaly detector not configured }
+
+  /api/v1/entities/{collection}/batch:
+    post:
+      summary: Upsert multiple entities in a single request
+      tags: [entities]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Batch upsert results }
+    delete:
+      summary: Delete multiple entities by ID
+      tags: [entities]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Batch delete results }
+
+  /api/v1/entities/{collection}/stream:
+    get:
+      summary: SSE CDC stream for entity changes
+      tags: [entities, sse]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: SSE CDC stream
+          content:
+            text/event-stream:
+              schema: { type: string }
+
+  /api/v1/entities/{collection}/query/stream:
+    get:
+      summary: SSE streaming query snapshot + tail
+      tags: [entities, sse]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: follow
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: SSE streaming query results
+          content:
+            text/event-stream:
+              schema: { type: string }
+
+  /api/v1/entities/{collection}/suggest:
+    post:
+      summary: AI-assisted entity schema suggestions (DC-E3)
+      tags: [entities, ai]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Schema suggestions with AI metadata }
+
+  # ── Analytics AI and reports ─────────────────────────────────────────────
+
+  /api/v1/analytics/suggest:
+    post:
+      summary: AI-assisted analytics query suggestions (DC-E3)
+      tags: [analytics, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Suggested analytics queries with AI metadata }
+
+  /api/v1/reports:
+    post:
+      summary: Generate a report
+      tags: [analytics, reports]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Generated report or report ID }
+    get:
+      summary: List cached reports
+      tags: [analytics, reports]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: List of reports }
+
+  /api/v1/reports/{reportId}:
+    get:
+      summary: Retrieve a cached report
+      tags: [analytics, reports]
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Report document }
+
+  # ── Pipeline AI hint ─────────────────────────────────────────────────────
+
+  /api/v1/pipelines/{pipelineId}/optimise-hint:
+    post:
+      summary: AI-assisted pipeline optimisation hints (DC-E3)
+      tags: [pipelines, ai]
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Optimisation hints with AI metadata }
+
+  # ── Brain AI explain ─────────────────────────────────────────────────────
+
+  /api/v1/brain/explain:
+    post:
+      summary: AI-assisted brain status explanation (DC-E3)
+      tags: [brain, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Human-readable explanation with remediation steps }
+
+  # ── AI/ML Model registry (DC-11) ────────────────────────────────────────
+
+  /api/v1/models:
+    get:
+      summary: List registered AI models
+      tags: [models]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: List of models }
+    post:
+      summary: Register an AI model
+      tags: [models]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Registered model }
+
+  /api/v1/models/{modelName}:
+    get:
+      summary: Get an AI model by name
+      tags: [models]
+      parameters:
+        - name: modelName
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Model details }
+
+  /api/v1/models/{modelName}/promote:
+    post:
+      summary: Promote a model version to production
+      tags: [models]
+      parameters:
+        - name: modelName
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Model promoted }
+
+  # ── Feature store (DC-11) ────────────────────────────────────────────────
+
+  /api/v1/features:
+    post:
+      summary: Ingest a feature vector
+      tags: [features]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Feature ingested }
+
+  /api/v1/features/{entityId}:
+    get:
+      summary: Get features for an entity
+      tags: [features]
+      parameters:
+        - name: entityId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Feature vector for the entity }
+
+  # ── Voice gateway (DC-E4) ────────────────────────────────────────────────
+
+  /api/v1/voice/intent:
+    post:
+      summary: Resolve and execute a voice intent
+      tags: [voice]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [utterance]
+              properties:
+                utterance: { type: string }
+                parameters: { type: object }
+                confirm: { type: boolean }
+      responses:
+        "200": { description: Intent resolution and execution result }
+
+  /api/v1/voice/intents:
+    get:
+      summary: List all registered voice intents
+      tags: [voice]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Complete voice intent catalog }
+
+  /api/v1/voice/intent/classify:
+    post:
+      summary: Classify an utterance without executing the intent
+      tags: [voice]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [utterance]
+              properties:
+                utterance: { type: string }
+      responses:
+        "200": { description: Classification result }
+
+  # ── Data lifecycle and governance (DC-E5) ───────────────────────────────
+
+  /api/v1/governance/retention/classify:
+    post:
+      summary: Assign a retention tier to a collection
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [collection, tier]
+              properties:
+                collection: { type: string }
+                tier:
+                  type: string
+                  enum: [transient, short-term, standard, compliance, permanent]
+                reason: { type: string }
+      responses:
+        "200": { description: Classification result with retention days and expiry }
+
+  /api/v1/governance/retention/policy:
+    get:
+      summary: Get the retention policy for a collection
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: collection
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Retention policy details }
+
+  /api/v1/governance/retention/purge:
+    post:
+      summary: Trigger a data purge for expired entities (CRITICAL)
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [collection, confirmationToken]
+              properties:
+                collection: { type: string }
+                confirmationToken: { type: string }
+                dryRun: { type: boolean }
+      responses:
+        "200": { description: Purge scheduled or dry-run estimation }
+
+  /api/v1/governance/privacy/redact:
+    post:
+      summary: Redact PII fields from an entity
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [collection, entityId]
+              properties:
+                collection: { type: string }
+                entityId: { type: string }
+                fields:
+                  type: array
+                  items: { type: string }
+                reason: { type: string }
+      responses:
+        "200": { description: Redaction result with list of redacted fields }
+
+  /api/v1/governance/privacy/pii-fields:
+    get:
+      summary: List registered PII field mappings
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Global and tenant-specific PII field registry }
+
+  /api/v1/governance/compliance/summary:
+    get:
+      summary: Tenant compliance posture summary
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Compliance dashboard summary }

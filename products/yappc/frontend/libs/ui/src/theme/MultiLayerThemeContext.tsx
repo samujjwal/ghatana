@@ -22,4 +22,4 @@ export {
   type MultiLayerThemeContextValue,
   type MultiLayerThemeProviderProps,
   type ThemeLayer,
-} from '@yappc/theme';
+} from '@yappc/ui/theme';

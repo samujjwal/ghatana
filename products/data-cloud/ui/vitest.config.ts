@@ -5,13 +5,14 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 const workspaceAliases = {
-  '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/capabilities/design-system/src/index.ts'),
+  '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/design-system/src/index.ts'),
   '@ghatana/theme': path.resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
   '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
   // Both @ghatana/utils and @ghatana/platform-utils resolve to the same foundation library
   '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
   '@ghatana/utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
-  '@ghatana/canvas': path.resolve(__dirname, '../../../platform/typescript/capabilities/canvas-core/src/index.ts'),
+  '@ghatana/canvas': path.resolve(__dirname, '../../../platform/typescript/canvas'),
+  '@ghatana/realtime': path.resolve(__dirname, '../../../platform/typescript/realtime/src/index.ts'),
 };
 
 /**

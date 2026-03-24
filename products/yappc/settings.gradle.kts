@@ -73,6 +73,9 @@ include(":core:domain:task")
 include(":core:scaffold")
 include(":core:scaffold:api")
 include(":core:scaffold:core") // absorbs core:scaffold:packs
+include(":core:scaffold:engine")
+include(":core:scaffold:generators")
+include(":core:scaffold:templates")
 // NOTE: core:scaffold:packs removed — sources merged into core:scaffold:core
 
 // --- Core: AI & Agents ---
@@ -81,6 +84,9 @@ include(":core:agents")
 include(":core:agents:runtime")
 include(":core:agents:workflow")
 include(":core:agents:specialists")
+include(":core:agents:code-specialists")
+include(":core:agents:architecture-specialists")
+include(":core:agents:testing-specialists")
 
 // --- Core: Refactorer ---
 include(":core:refactorer:api")

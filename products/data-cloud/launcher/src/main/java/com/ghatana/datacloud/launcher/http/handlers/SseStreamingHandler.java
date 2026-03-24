@@ -549,16 +549,13 @@ public class SseStreamingHandler {
             .filter(q).limit(snapshotLimit).offset(0).build();
 
         Promise<StorageConnector.QueryResult> snapshotPromise =
-            Promise.ofBlocking(blockingExecutor, () -> {
-                try {
-                    return openSearchConnector.query((java.util.UUID) null, tenantId, snapshotSpec)
-                        .toCompletableFuture().get(30, TimeUnit.SECONDS);
-                } catch (Exception ex) {
+            openSearchConnector.query((java.util.UUID) null, tenantId, snapshotSpec)
+                .mapException(ex -> {
                     log.warn("[query-stream] snapshot failed tenant={} collection={} q='{}': {}",
                         tenantId, collection, q, ex.getMessage(), ex);
-                    return StorageConnector.QueryResult.empty();
-                }
-            });
+                    return null;
+                })
+                .then((result, ex) -> Promise.of(ex == null ? result : StorageConnector.QueryResult.empty()));
 
         Set<String> entityEventTypes = Set.of(
             "entity.saved", "entity.deleted",

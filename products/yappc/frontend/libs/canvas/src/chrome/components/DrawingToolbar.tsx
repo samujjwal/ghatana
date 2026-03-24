@@ -23,7 +23,7 @@ import {
   Divider,
 } from '@ghatana/design-system';
 import { ToggleButtonGroup } from '@ghatana/design-system';
-import { Popover } from '@yappc/base-ui';
+import { Popover } from '@yappc/ui/base-ui';
 import React, { useState } from 'react';
 
 import { CANVAS_TOKENS } from '../tokens';

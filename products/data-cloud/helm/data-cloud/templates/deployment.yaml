@@ -66,48 +66,48 @@ spec:
             - name: LOG_LEVEL
               value: {{ .Values.config.logLevel | quote }}
             # Kafka
-            - name: KAFKA_BOOTSTRAP_SERVERS
+            - name: DATACLOUD_KAFKA_BOOTSTRAP
               value: {{ .Values.kafka.bootstrapServers | quote }}
-            - name: KAFKA_PARTITIONS
+            - name: DATACLOUD_KAFKA_PARTITIONS
               value: {{ .Values.kafka.partitions | quote }}
-            - name: KAFKA_REPLICATION_FACTOR
+            - name: DATACLOUD_KAFKA_REPLICATION_FACTOR
               value: {{ .Values.kafka.replicationFactor | quote }}
-            - name: KAFKA_READ_TIMEOUT_MS
+            - name: DATACLOUD_KAFKA_READ_TIMEOUT_MS
               value: {{ .Values.kafka.readTimeoutMs | quote }}
             # ClickHouse
-            - name: CLICKHOUSE_HOST
+            - name: DATACLOUD_CLICKHOUSE_HOST
               value: {{ .Values.clickhouse.host | quote }}
-            - name: CLICKHOUSE_PORT
+            - name: DATACLOUD_CLICKHOUSE_PORT
               value: {{ .Values.clickhouse.port | quote }}
             # OpenSearch
-            - name: OPENSEARCH_HOST
+            - name: DATACLOUD_OPENSEARCH_HOST
               value: {{ .Values.opensearch.host | quote }}
-            - name: OPENSEARCH_PORT
+            - name: DATACLOUD_OPENSEARCH_PORT
               value: {{ .Values.opensearch.port | quote }}
-            - name: OPENSEARCH_SCHEME
+            - name: DATACLOUD_OPENSEARCH_SCHEME
               value: {{ .Values.opensearch.scheme | quote }}
-            - name: OPENSEARCH_USERNAME
+            - name: DATACLOUD_OPENSEARCH_USERNAME
               value: {{ .Values.opensearch.username | quote }}
-            - name: OPENSEARCH_PASSWORD
+            - name: DATACLOUD_OPENSEARCH_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "data-cloud.secretName" . }}
                   key: opensearch-password
                   optional: true
             # Ceph / S3
-            - name: CEPH_ENDPOINT
+            - name: DATACLOUD_CEPH_ENDPOINT
               value: {{ .Values.ceph.endpoint | quote }}
-            - name: CEPH_BUCKET
+            - name: DATACLOUD_CEPH_BUCKET
               value: {{ .Values.ceph.bucket | quote }}
-            - name: CEPH_REGION
+            - name: DATACLOUD_CEPH_REGION
               value: {{ .Values.ceph.region | quote }}
-            - name: CEPH_ACCESS_KEY
+            - name: DATACLOUD_CEPH_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "data-cloud.secretName" . }}
                   key: ceph-access-key
                   optional: true
-            - name: CEPH_SECRET_KEY
+            - name: DATACLOUD_CEPH_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "data-cloud.secretName" . }}

@@ -58,6 +58,7 @@ dependencies {
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
+    testImplementation(project(":platform:java:testing"))
 }
 
 application {

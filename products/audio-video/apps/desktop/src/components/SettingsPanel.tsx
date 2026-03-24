@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Card, Button, Input } from '@ghatana/audio-video-product-ui';
+import { Card, Button, Input } from '@audio-video/ui';
 
 const SettingsPanel: React.FC = () => {
   const [settings, setSettings] = React.useState({

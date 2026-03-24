@@ -55,16 +55,23 @@ These modules form the dependency base — everything else can depend on them, b
 
 | Module | Gradle Path | Main Files | Purpose |
 |--------|-------------|-----------|---------|
-| `agents` (parent) | `:products:yappc:core:agents` | 459 total | Aggregate of agents sub-tree |
-| `agents/specialists` | `:products:yappc:core:agents:specialists` | 324 | Domain-specific agent implementations |
+| `agents` (parent) | `:products:yappc:core:agents` | 323 total | Aggregate of agents sub-tree |
 | `agents/runtime` | `:products:yappc:core:agents:runtime` | 60 | Agent execution runtime, context management |
 | `agents/workflow` | `:products:yappc:core:agents:workflow` | 59 | Workflow orchestration for multi-agent pipelines |
+| `agents/common` | `:products:yappc:core:agents:common` | 0 | Shared Input/Output classes and interfaces |
+| `agents/code-specialists` | `:products:yappc:core:agents:code-specialists` | 195 | Code analysis, generation, refactoring agents |
+| `agents/architecture-specialists` | `:products:yappc:core:agents:architecture-specialists` | 59 | Design patterns, architecture, cloud, security agents |
+| `agents/testing-specialists` | `:products:yappc:core:agents:testing-specialists` | 69 | Test generation, validation, quality assurance agents |
 
 **Dependency rules:**
 - `agents/runtime` → `domain`, `spi`, `platform:java:agent-core`
-- `agents/specialists` → `agents/runtime`, `ai`, `domain`, `platform:java:agent-core`
+- `agents/common` → `domain`, `platform:java:agent-core` (shared base classes only)
+- `agents/code-specialists` → `agents/runtime`, `agents/common`, `ai`, `domain`
+- `agents/architecture-specialists` → `agents/runtime`, `agents/common`, `agents/code-specialists`, `ai`, `domain`
+- `agents/testing-specialists` → `agents/runtime`, `agents/common`, `agents/code-specialists`, `agents/architecture-specialists`, `ai`, `domain`
 - `agents/workflow` → `agents/runtime`, `platform:java:workflow`
-- **CRITICAL:** `agents/specialists` must NOT import from `scaffold` or `refactorer`
+- **CRITICAL:** Agent modules must NOT import from `scaffold` or `refactorer`
+- **NOTE:** Dependency order: common → code → architecture → testing (to resolve circular dependencies)
 
 ---
 

@@ -1,5 +1,10 @@
 package com.ghatana.stt.core.api;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.*;
@@ -14,6 +19,8 @@ import java.util.*;
  * @doc.purpose User profile for STT personalization
  * @doc.layer api
  */
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserProfile implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -45,7 +52,11 @@ public class UserProfile implements Serializable {
     private Instant createdAt;
     private Instant lastUpdatedAt;
 
-    public UserProfile(UUID userId, String displayName) {
+    @JsonCreator
+    public UserProfile(
+        @JsonProperty("userId") UUID userId,
+        @JsonProperty("displayName") String displayName
+    ) {
         this.userId = Objects.requireNonNull(userId);
         this.displayName = displayName;
         this.mllrTransforms = new ArrayList<>();

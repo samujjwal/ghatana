@@ -1,6 +1,7 @@
 package com.ghatana.audio.video.vision.detection;
 
 import ai.onnxruntime.*;
+import com.ghatana.audio.video.vision.model.BoundingBox;
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -25,7 +26,7 @@ import java.util.Map;
  * @doc.purpose YOLOv8 object detection with ONNX Runtime
  * @doc.layer ml-inference
  */
-public class OnnxYoloV8Detector implements AutoCloseable {
+public class OnnxYoloV8Detector implements VisionDetector, AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(OnnxYoloV8Detector.class);
 
@@ -87,8 +88,8 @@ public class OnnxYoloV8Detector implements AutoCloseable {
      * @return List of detected objects
      * @throws IOException If detection fails
      */
-    public List<YoloV8Detector.Detection> detect(Path imagePath, 
-                                                  YoloV8Detector.DetectionConfig config) 
+    @Override
+    public List<Detection> detect(Path imagePath, DetectionConfig config) 
             throws IOException {
         Mat image = Imgcodecs.imread(imagePath.toString());
         if (image.empty()) {
@@ -109,8 +110,8 @@ public class OnnxYoloV8Detector implements AutoCloseable {
      * @param config Detection configuration
      * @return List of detected objects
      */
-    public List<YoloV8Detector.Detection> detect(Mat image, 
-                                                  YoloV8Detector.DetectionConfig config) {
+    @Override
+    public List<Detection> detect(Mat image, DetectionConfig config) {
         int originalWidth = image.width();
         int originalHeight = image.height();
 
@@ -140,8 +141,8 @@ public class OnnxYoloV8Detector implements AutoCloseable {
      * @return List of detected objects
      * @throws IOException If detection fails
      */
-    public List<YoloV8Detector.Detection> detectFromBytes(byte[] imageBytes, 
-                                                           YoloV8Detector.DetectionConfig config) 
+    @Override
+    public List<Detection> detectFromBytes(byte[] imageBytes, DetectionConfig config) 
             throws IOException {
         MatOfByte matOfByte = new MatOfByte(imageBytes);
         Mat image = Imgcodecs.imdecode(matOfByte, Imgcodecs.IMREAD_COLOR);
@@ -213,11 +214,11 @@ public class OnnxYoloV8Detector implements AutoCloseable {
         return output;
     }
 
-    private List<YoloV8Detector.Detection> postProcess(float[][][] output, 
+    private List<Detection> postProcess(float[][][] output, 
                                                         int originalWidth, 
                                                         int originalHeight, 
-                                                        YoloV8Detector.DetectionConfig config) {
-        List<YoloV8Detector.Detection> allDetections = new ArrayList<>();
+                                                        DetectionConfig config) {
+        List<Detection> allDetections = new ArrayList<>();
         
         int numDetections = output[0][0].length;
         
@@ -263,12 +264,17 @@ public class OnnxYoloV8Detector implements AutoCloseable {
             float width = w * scaleX;
             float height = h * scaleY;
             
-            YoloV8Detector.BoundingBox bbox = new YoloV8Detector.BoundingBox(x, y, width, height);
-            allDetections.add(new YoloV8Detector.Detection(className, maxScore, bbox, maxClassId));
+            BoundingBox bbox = BoundingBox.builder()
+                .x(x)
+                .y(y)
+                .width(width)
+                .height(height)
+                .build();
+            allDetections.add(new Detection(className, maxScore, bbox, maxClassId));
         }
         
         // Apply Non-Maximum Suppression
-        List<YoloV8Detector.Detection> nmsDetections = applyNMS(allDetections, config.getNmsThreshold());
+        List<Detection> nmsDetections = applyNMS(allDetections, config.getNmsThreshold());
         
         // Limit to max detections
         if (nmsDetections.size() > config.getMaxDetections()) {
@@ -279,30 +285,30 @@ public class OnnxYoloV8Detector implements AutoCloseable {
         return nmsDetections;
     }
 
-    private List<YoloV8Detector.Detection> applyNMS(List<YoloV8Detector.Detection> detections, 
+    private List<Detection> applyNMS(List<Detection> detections, 
                                                      float nmsThreshold) {
         // Sort by confidence (descending)
         detections.sort((a, b) -> Float.compare(b.getConfidence(), a.getConfidence()));
         
-        List<YoloV8Detector.Detection> result = new ArrayList<>();
+        List<Detection> result = new ArrayList<>();
         boolean[] suppressed = new boolean[detections.size()];
         
         for (int i = 0; i < detections.size(); i++) {
             if (suppressed[i]) continue;
             
-            YoloV8Detector.Detection current = detections.get(i);
+            Detection current = detections.get(i);
             result.add(current);
             
             // Suppress overlapping detections
             for (int j = i + 1; j < detections.size(); j++) {
                 if (suppressed[j]) continue;
                 
-                YoloV8Detector.Detection other = detections.get(j);
+                Detection other = detections.get(j);
                 
                 // Only suppress if same class
                 if (current.getClassId() != other.getClassId()) continue;
                 
-                float iou = current.getBbox().iou(other.getBbox());
+                double iou = current.getBbox().calculateIoU(other.getBbox());
                 if (iou > nmsThreshold) {
                     suppressed[j] = true;
                 }

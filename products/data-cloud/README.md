@@ -27,12 +27,17 @@ Producers (AEP, Products)  →  data-cloud/event  →  EventLog (Kafka)
 
 | Module | Purpose |
 |--------|---------|
-| `platform/` | Core SPI: `EventPublisher`, `EventConsumer`, `EventLog` interfaces |
-| `event/` | Package `com.ghatana.datacloud.event` — canonical event streaming |
+| `platform/` | Core SPI: `EventPublisher`, `EventConsumer`, `EventLog` interfaces; includes `com.ghatana.datacloud.event` package for canonical event streaming |
+| `spi/` | Shared interfaces and types for cross-product integration (`EventLogStore`, `AgentRegistry` SPI) |
 | `agent-registry/` | `DataCloudAgentRegistry` — implements platform `AgentRegistry` SPI |
-| `launcher/` | ActiveJ bootstrap |
-| `k8s/` | Kubernetes manifests |
-| `helm/` | Helm charts |
+| `agent-catalog/` | YAML definitions for built-in agent capabilities and operator catalogue |
+| `feature-store-ingest/` | Real-time feature ingestion pipeline from EventCloud → Feature Store (ML pipelines); migrated from `shared-services` per ADR-013 |
+| `sdk/` | Generated client libraries for the Data-Cloud REST API (Java, TypeScript, Python) — run `./gradlew :products:data-cloud:sdk:generateAllSdks` |
+| `launcher/` | ActiveJ bootstrap; hosts the HTTP server with all API routes |
+| `ui/` | React 19 frontend for the Data-Cloud product |
+| `k8s/` | Raw Kubernetes manifests (ConfigMap, Deployment, Service, Ingress) |
+| `helm/` | Helm charts for production deployment |
+| `terraform/` | AWS infrastructure provisioning (private subnets, no public exposure) |
 
 ## Prerequisites
 

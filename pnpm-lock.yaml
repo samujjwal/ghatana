@@ -770,6 +770,9 @@ importers:
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@axe-core/react':
         specifier: ^4.10.2
@@ -2890,6 +2893,9 @@ importers:
       react-konva:
         specifier: ^19.2.2
         version: 19.2.3(@types/react@19.2.14)(konva@10.2.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react-router-dom:
+        specifier: ^7.0.0
+        version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       three:
         specifier: ^0.182.0
         version: 0.182.0
@@ -3370,9 +3376,6 @@ importers:
       '@yappc/ai':
         specifier: workspace:*
         version: link:../ai
-      '@yappc/base-ui':
-        specifier: workspace:*
-        version: link:../base-ui
       '@yappc/core':
         specifier: workspace:*
         version: link:../core
@@ -3462,9 +3465,9 @@ importers:
 
   products/yappc/frontend/libs/chat:
     dependencies:
-      '@yappc/messaging':
+      '@yappc/ai':
         specifier: workspace:*
-        version: link:../messaging
+        version: link:../ai
     devDependencies:
       typescript:
         specifier: ^5.9.3
@@ -3586,9 +3589,9 @@ importers:
       '@yappc/config':
         specifier: workspace:*
         version: link:../config
-      '@yappc/utils':
+      '@yappc/core':
         specifier: workspace:*
-        version: link:../utils
+        version: 'link:'
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -3791,9 +3794,9 @@ importers:
 
   products/yappc/frontend/libs/notifications:
     dependencies:
-      '@yappc/messaging':
+      '@yappc/ai':
         specifier: workspace:*
-        version: link:../messaging
+        version: link:../ai
     devDependencies:
       typescript:
         specifier: ^5.9.3
@@ -3944,39 +3947,21 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
-      '@yappc/base-ui':
+      '@yappc/ai':
         specifier: workspace:*
-        version: link:../base-ui
+        version: link:../ai
       '@yappc/canvas':
         specifier: workspace:*
         version: link:../canvas
       '@yappc/collab':
         specifier: workspace:*
         version: link:../collab
-      '@yappc/config-hooks':
-        specifier: workspace:*
-        version: link:../config-hooks
-      '@yappc/development-ui':
-        specifier: workspace:*
-        version: link:../development-ui
-      '@yappc/initialization-ui':
-        specifier: workspace:*
-        version: link:../initialization-ui
-      '@yappc/navigation-ui':
-        specifier: workspace:*
-        version: link:../navigation-ui
-      '@yappc/realtime':
-        specifier: workspace:*
-        version: link:../realtime
-      '@yappc/shortcuts':
-        specifier: workspace:*
-        version: link:../shortcuts
       '@yappc/state':
         specifier: workspace:*
         version: link:../state
-      '@yappc/theme':
+      '@yappc/ui':
         specifier: workspace:*
-        version: link:../theme
+        version: 'link:'
       framer-motion:
         specifier: ^12.35.0
         version: 12.35.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -4201,30 +4186,15 @@ importers:
       '@yappc/collab':
         specifier: workspace:*
         version: link:../libs/collab
-      '@yappc/config-hooks':
-        specifier: workspace:*
-        version: link:../libs/config-hooks
       '@yappc/core':
         specifier: workspace:*
         version: link:../libs/core
-      '@yappc/crdt':
-        specifier: workspace:*
-        version: link:../libs/crdt
-      '@yappc/development-ui':
-        specifier: workspace:*
-        version: link:../libs/development-ui
       '@yappc/ide':
         specifier: workspace:*
         version: link:../libs/ide
-      '@yappc/initialization-ui':
+      '@yappc/state':
         specifier: workspace:*
-        version: link:../libs/initialization-ui
-      '@yappc/navigation-ui':
-        specifier: workspace:*
-        version: link:../libs/navigation-ui
-      '@yappc/shortcuts':
-        specifier: workspace:*
-        version: link:../libs/shortcuts
+        version: link:../libs/state
       '@yappc/testing':
         specifier: workspace:*
         version: link:../libs/testing

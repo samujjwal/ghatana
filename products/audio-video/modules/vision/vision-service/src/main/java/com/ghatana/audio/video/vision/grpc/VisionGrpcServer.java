@@ -1,5 +1,7 @@
 package com.ghatana.audio.video.vision.grpc;
 
+import com.ghatana.audio.video.common.GrpcInterceptorChain;
+import com.ghatana.audio.video.common.health.HealthMetricsServer;
 import com.ghatana.platform.governance.security.TenantGrpcInterceptor;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -9,40 +11,61 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-public class VisionGrpcServer {
+/**
+ * Standalone gRPC server for the Vision (object detection) service.
+ *
+ * @doc.type class
+ * @doc.purpose Vision gRPC server bootstrap
+ * @doc.layer product
+ * @doc.pattern Service
+ */
+public class VisionGrpcServer implements AutoCloseable {
     
     private static final Logger LOG = LoggerFactory.getLogger(VisionGrpcServer.class);
+    private static final int DEFAULT_PORT = 50054;
     
     private final int port;
     private final Server server;
+    private final HealthMetricsServer healthServer;
     
     public VisionGrpcServer(int port) {
         this.port = port;
-        this.server = ServerBuilder.forPort(port)
-            .intercept(TenantGrpcInterceptor.lenient())
+        ServerBuilder<?> builder = ServerBuilder.forPort(port)
+            .intercept(TenantGrpcInterceptor.lenient());
+        GrpcInterceptorChain.build().forEach(builder::intercept);
+        this.server = builder
             .addService(new VisionGrpcService())
             .build();
+        this.healthServer = new HealthMetricsServer("vision-service", () -> !server.isShutdown());
     }
     
     public void start() throws IOException {
         server.start();
+        healthServer.start();
         LOG.info("Vision gRPC server started on port {}", port);
         
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LOG.info("Shutting down Vision gRPC server");
             try {
-                VisionGrpcServer.this.stop();
-            } catch (InterruptedException e) {
+                close();
+            } catch (Exception e) {
                 LOG.error("Error during shutdown", e);
             }
         }));
     }
-    
-    public void stop() throws InterruptedException {
+
+    @Override
+    public void close() {
         if (server != null) {
-            server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
-            LOG.info("Vision gRPC server stopped");
+            server.shutdown();
+            try {
+                server.awaitTermination(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
+        healthServer.close();
+        LOG.info("Vision gRPC server stopped");
     }
     
     public void blockUntilShutdown() throws InterruptedException {
@@ -52,7 +75,8 @@ public class VisionGrpcServer {
     }
     
     public static void main(String[] args) {
-        int port = Integer.parseInt(System.getenv().getOrDefault("VISION_GRPC_PORT", "50054"));
+        int port = Integer.parseInt(System.getenv().getOrDefault("VISION_GRPC_PORT",
+            String.valueOf(DEFAULT_PORT)));
         
         VisionGrpcServer server = new VisionGrpcServer(port);
         try {

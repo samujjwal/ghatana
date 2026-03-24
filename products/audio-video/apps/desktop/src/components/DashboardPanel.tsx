@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Card } from '@ghatana/audio-video-product-ui';
+import { Card } from '@audio-video/ui';
 
 const DashboardPanel: React.FC = () => {
   return (

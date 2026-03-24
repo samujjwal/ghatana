@@ -1,0 +1,88 @@
+{
+  "name": "@yappc/ai",
+  "version": "1.0.0",
+  "description": "YAPPC AI Components - Consolidated AI and chat functionality",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./components": {
+      "import": "./dist/components/index.mjs",
+      "require": "./dist/components/index.js",
+      "types": "./dist/components/index.d.ts"
+    },
+    "./hooks": {
+      "import": "./dist/hooks/index.mjs",
+      "require": "./dist/hooks/index.js",
+      "types": "./dist/hooks/index.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.mjs",
+      "require": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts"
+    },
+    "./chat": {
+      "import": "./dist/chat/index.mjs",
+      "require": "./dist/chat/index.js",
+      "types": "./dist/chat/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@yappc/core": "workspace:*",
+    "@yappc/ui": "workspace:*",
+    "@yappc/theme": "workspace:*",
+    "openai": "^4.20.0",
+    "ai": "^2.2.0",
+    "nanostores": "^0.9.0",
+    "zod": "^3.22.0",
+    "clsx": "^2.0.0",
+    "tslib": "^2.6.2"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@testing-library/react": "^14.1.0",
+    "@testing-library/jest-dom": "^6.1.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghatana/ghatana.git",
+    "directory": "products/yappc/frontend/libs/yappc-ai"
+  },
+  "keywords": [
+    "yappc",
+    "ai",
+    "chat",
+    "openai",
+    "react",
+    "typescript"
+  ],
+  "author": "Ghatana AI Platform",
+  "license": "Apache-2.0"
+}

@@ -1,4 +1,4 @@
-export { theme, lightTheme, darkTheme } from '@yappc/theme';
+export { theme, lightTheme, darkTheme } from '@yappc/ui/theme';
 
 // Common theme settings
 const getThemeOptions = (mode: PaletteMode): ThemeOptions => {

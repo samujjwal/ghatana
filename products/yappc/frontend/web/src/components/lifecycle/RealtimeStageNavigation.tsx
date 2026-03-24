@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { StageNavigation, StageNavigationProps } from '@yappc/navigation-ui';
+import { StageNavigation, StageNavigationProps } from '@yappc/ui/navigation-ui';
 import { useRealtimeLifecycle } from '../../hooks/useRealtimeLifecycle';
 
 // Define lifecycle stage type locally to avoid import issues

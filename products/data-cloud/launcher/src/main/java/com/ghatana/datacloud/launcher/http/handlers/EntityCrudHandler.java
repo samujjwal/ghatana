@@ -92,58 +92,60 @@ public class EntityCrudHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSaveEntity(HttpRequest request) {
-        try {
-            String collection = request.getPathParameter("collection");
-            String tenantId = http.resolveTenantId(request);
-            final String resolvedTenantId = tenantId;
+        String collection = request.getPathParameter("collection");
+        String tenantId = http.resolveTenantId(request);
+        final String resolvedTenantId = tenantId;
 
-            Optional<String> tenantErr = ApiInputValidator.validateTenantId(resolvedTenantId);
-            if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
-            Optional<String> collErr = ApiInputValidator.validateCollection(collection);
-            if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(resolvedTenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
 
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> data = http.objectMapper().readValue(body, Map.class);
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> data = http.objectMapper().readValue(body, Map.class);
 
-            Optional<String> payloadErr = ApiInputValidator.validateEntityPayload(data);
-            if (payloadErr.isPresent()) return Promise.of(http.errorResponse(400, payloadErr.get()));
+                Optional<String> payloadErr = ApiInputValidator.validateEntityPayload(data);
+                if (payloadErr.isPresent()) return Promise.of(http.errorResponse(400, payloadErr.get()));
 
-            if (schemaValidator != null) {
-                ValidationResult vr = schemaValidator.validate(resolvedTenantId, collection, data);
-                if (!vr.valid()) {
-                    return Promise.of(http.errorResponse(422, "Schema validation failed: " + vr.violationSummary()));
+                if (schemaValidator != null) {
+                    ValidationResult vr = schemaValidator.validate(resolvedTenantId, collection, data);
+                    if (!vr.valid()) {
+                        return Promise.of(http.errorResponse(422, "Schema validation failed: " + vr.violationSummary()));
+                    }
                 }
-            }
 
-            return client.save(resolvedTenantId, collection, data)
-                .then(entity -> {
-                    DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.saved", Map.of(
-                        "collection", entity.collection(),
+                return client.save(resolvedTenantId, collection, data)
+                    .then(entity -> {
+                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.saved", Map.of(
+                            "collection", entity.collection(),
+                            "id", entity.id(),
+                            "version", entity.version(),
+                            "operation", "upsert"
+                        ));
+                        return client.appendEvent(resolvedTenantId, cdcEvent)
+                            .map(ignored -> {
+                                wsBroadcaster.accept("collection.saved", Map.of(
+                                    "entityId",  entity.id(),
+                                    "collection", entity.collection(),
+                                    "tenantId",  resolvedTenantId
+                                ));
+                                return entity;
+                            });
+                    })
+                    .map(entity -> http.jsonResponse(Map.of(
                         "id", entity.id(),
+                        "collection", entity.collection(),
                         "version", entity.version(),
-                        "operation", "upsert"
-                    ));
-                    return client.appendEvent(resolvedTenantId, cdcEvent)
-                        .map(ignored -> {
-                            wsBroadcaster.accept("collection.saved", Map.of(
-                                "entityId",  entity.id(),
-                                "collection", entity.collection(),
-                                "tenantId",  resolvedTenantId
-                            ));
-                            return entity;
-                        });
-                })
-                .map(entity -> http.jsonResponse(Map.of(
-                    "id", entity.id(),
-                    "collection", entity.collection(),
-                    "version", entity.version(),
-                    "createdAt", entity.createdAt().toString(),
-                    "timestamp", Instant.now().toString()
-                )));
-        } catch (Exception e) {
-            log.error("Error saving entity", e);
-            return Promise.of(http.errorResponse(400, "Invalid entity data: " + e.getMessage()));
-        }
+                        "createdAt", entity.createdAt().toString(),
+                        "timestamp", Instant.now().toString()
+                    )));
+            } catch (Exception e) {
+                log.error("Error saving entity", e);
+                return Promise.of(http.errorResponse(400, "Invalid entity data: " + e.getMessage()));
+            }
+        });
     }
 
     public Promise<HttpResponse> handleGetEntity(HttpRequest request) {
@@ -217,48 +219,55 @@ public class EntityCrudHandler {
         Optional<String> idErr = ApiInputValidator.validateId(id);
         if (idErr.isPresent()) return Promise.of(http.errorResponse(400, idErr.get()));
 
-        return client.delete(resolvedTenantId, collection, id)
-            .then(v -> {
-                DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.deleted", Map.of(
-                    "collection", collection,
-                    "id", id,
-                    "operation", "delete"
-                ));
-                return client.appendEvent(resolvedTenantId, cdcEvent)
-                    .map(ignored -> {
-                        wsBroadcaster.accept("collection.deleted", Map.of(
-                            "entityId",  id,
+        return client.findById(resolvedTenantId, collection, id)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.of(http.errorResponse(404, "Entity not found: " + id));
+                }
+                return client.delete(resolvedTenantId, collection, id)
+                    .then(v -> {
+                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.deleted", Map.of(
                             "collection", collection,
-                            "tenantId",  resolvedTenantId
+                            "id", id,
+                            "operation", "delete"
                         ));
-                        return v;
-                    });
-            })
-            .map(v -> http.jsonResponse(Map.of(
-                "deleted", true,
-                "id", id,
-                "collection", collection,
-                "timestamp", Instant.now().toString()
-            )));
+                        return client.appendEvent(resolvedTenantId, cdcEvent)
+                            .map(ignored -> {
+                                wsBroadcaster.accept("collection.deleted", Map.of(
+                                    "entityId",  id,
+                                    "collection", collection,
+                                    "tenantId",  resolvedTenantId
+                                ));
+                                return v;
+                            });
+                    })
+                    .map(v -> http.jsonResponse(Map.of(
+                        "deleted", true,
+                        "id", id,
+                        "collection", collection,
+                        "timestamp", Instant.now().toString()
+                    )));
+            });
     }
 
     // ==================== Bulk Entity Endpoints ====================
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleBatchSaveEntities(HttpRequest request) {
-        try {
-            String collection = request.getPathParameter("collection");
-            String tenantId = http.resolveTenantId(request);
+        String collection = request.getPathParameter("collection");
+        String tenantId = http.resolveTenantId(request);
 
-            Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
-            if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
-            Optional<String> collErr = ApiInputValidator.validateCollection(collection);
-            if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
 
-            final String resolvedTenant = tenantId;
+        final String resolvedTenant = tenantId;
 
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
 
             Object rawEntities = payload.get("entities");
             if (!(rawEntities instanceof List)) {
@@ -321,25 +330,27 @@ public class EntityCrudHandler {
             log.error("Error parsing batch save request", e);
             return Promise.of(http.errorResponse(400, "Invalid batch request body: " + e.getMessage()));
         }
+        });
     }
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleBatchDeleteEntities(HttpRequest request) {
-        try {
-            String collection = request.getPathParameter("collection");
-            String tenantId = http.resolveTenantId(request);
+        String collection = request.getPathParameter("collection");
+        String tenantId = http.resolveTenantId(request);
 
-            Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
-            if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
-            Optional<String> collErr = ApiInputValidator.validateCollection(collection);
-            if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
 
-            final String resolvedTenant = tenantId;
+        final String resolvedTenant = tenantId;
 
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
 
-            Object rawIds = payload.get("ids");
+                Object rawIds = payload.get("ids");
             if (!(rawIds instanceof List)) {
                 return Promise.of(http.errorResponse(400, "Request body must contain an 'ids' array"));
             }
@@ -383,6 +394,7 @@ public class EntityCrudHandler {
             log.error("Error parsing batch delete request", e);
             return Promise.of(http.errorResponse(400, "Invalid batch request body: " + e.getMessage()));
         }
+        });
     }
 
     // ==================== Export ====================
@@ -450,64 +462,68 @@ public class EntityCrudHandler {
             return Promise.of(http.errorResponse(501, "Anomaly detection not configured on this server"));
         }
 
-        try {
-            String collection = request.getPathParameter("collection");
-            String tenantId   = http.resolveTenantId(request);
+        String collection = request.getPathParameter("collection");
+        String tenantId   = http.resolveTenantId(request);
 
-            Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
-            if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
-            Optional<String> collErr = ApiInputValidator.validateCollection(collection);
-            if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
 
-            final String finalTenant     = tenantId;
-            final String finalCollection = collection;
+        final String finalTenant     = tenantId;
+        final String finalCollection = collection;
 
-            double threshold = StatisticalAnomalyDetector.DEFAULT_Z_THRESHOLD;
-            DetectionType detectionType = DetectionType.DATA_QUALITY;
+        final Map<String, Object> responseEnvelope = Map.of(
+                "collection", finalCollection,
+                "tenant", finalTenant,
+                "timestamp", Instant.now().toString());
 
-            String rawBody = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            if (rawBody != null && !rawBody.isBlank()) {
-                Map<String, Object> bodyMap = http.objectMapper().readValue(rawBody, Map.class);
-                if (bodyMap.containsKey("threshold")) {
-                    Object t = bodyMap.get("threshold");
-                    threshold = t instanceof Number n ? n.doubleValue() : Double.parseDouble(t.toString());
-                }
-                if (bodyMap.containsKey("detectionType")) {
-                    try {
-                        detectionType = DetectionType.valueOf(bodyMap.get("detectionType").toString());
-                    } catch (IllegalArgumentException e) {
-                        return Promise.of(http.errorResponse(400, "Unknown detectionType: " + bodyMap.get("detectionType")));
+        return request.loadBody().then(buf -> {
+            try {
+                String rawBody = buf.getString(StandardCharsets.UTF_8);
+
+                // Mutable holders so lambda-captured variables remain effectively final.
+                double[] threshold   = {StatisticalAnomalyDetector.DEFAULT_Z_THRESHOLD};
+                DetectionType[] type = {DetectionType.DATA_QUALITY};
+
+                if (rawBody != null && !rawBody.isBlank()) {
+                    Map<String, Object> bodyMap = http.objectMapper().readValue(rawBody, Map.class);
+                    if (bodyMap.containsKey("threshold")) {
+                        Object t = bodyMap.get("threshold");
+                        threshold[0] = t instanceof Number n ? n.doubleValue() : Double.parseDouble(t.toString());
+                    }
+                    if (bodyMap.containsKey("detectionType")) {
+                        try {
+                            type[0] = DetectionType.valueOf(bodyMap.get("detectionType").toString());
+                        } catch (IllegalArgumentException e) {
+                            return Promise.of(http.errorResponse(400, "Unknown detectionType: " + bodyMap.get("detectionType")));
+                        }
                     }
                 }
+
+                AnomalyContext ctx = AnomalyContext.builder()
+                        .tenantId(finalTenant)
+                        .collectionName(finalCollection)
+                        .detectionType(type[0])
+                        .threshold(threshold[0])
+                        .build();
+
+                return anomalyDetector.detect(ctx)
+                        .map(anomalies -> {
+                            Map<String, Object> body2 = new LinkedHashMap<>(responseEnvelope);
+                            body2.put("count", anomalies.size());
+                            body2.put("anomalies", anomalies);
+                            return http.jsonResponse(body2);
+                        })
+                        .then(Promise::of, e -> {
+                            log.error("Anomaly detection failed tenant={} collection={}", finalTenant, finalCollection, e);
+                            return Promise.of(http.errorResponse(500, "Anomaly detection failed: " + e.getMessage()));
+                        });
+            } catch (Exception e) {
+                log.error("Error processing anomaly detection request", e);
+                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
             }
-
-            AnomalyContext ctx = AnomalyContext.builder()
-                    .tenantId(finalTenant)
-                    .collectionName(finalCollection)
-                    .detectionType(detectionType)
-                    .threshold(threshold)
-                    .build();
-
-            final Map<String, Object> responseEnvelope = Map.of(
-                    "collection", finalCollection,
-                    "tenant", finalTenant,
-                    "timestamp", Instant.now().toString());
-
-            return anomalyDetector.detect(ctx)
-                    .map(anomalies -> {
-                        Map<String, Object> body2 = new LinkedHashMap<>(responseEnvelope);
-                        body2.put("count", anomalies.size());
-                        body2.put("anomalies", anomalies);
-                        return http.jsonResponse(body2);
-                    })
-                    .then(Promise::of, e -> {
-                        log.error("Anomaly detection failed tenant={} collection={}", finalTenant, finalCollection, e);
-                        return Promise.of(http.errorResponse(500, "Anomaly detection failed: " + e.getMessage()));
-                    });
-        } catch (Exception e) {
-            log.error("Error processing anomaly detection request", e);
-            return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
-        }
+        });
     }
 
     // ==================== Full-Text Search ====================

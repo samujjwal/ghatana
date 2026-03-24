@@ -12,10 +12,7 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +29,11 @@ import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
 
 
+import com.ghatana.ai.llm.CompletionService;
+import com.ghatana.platform.audit.AuditService;
+import com.ghatana.platform.governance.security.ApiKeyResolver;
+import com.ghatana.platform.governance.security.RateLimitFilter;
+import com.ghatana.governance.PolicyEngine;
 import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.launcher.http.handlers.EntityCrudHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EventHandler;
@@ -43,6 +45,14 @@ import com.ghatana.datacloud.launcher.http.handlers.AnalyticsHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AiModelHandler;
 import com.ghatana.datacloud.launcher.http.handlers.HealthHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SseStreamingHandler;
+import com.ghatana.datacloud.launcher.http.handlers.AiAssistHandler;
+import com.ghatana.datacloud.launcher.http.handlers.VoiceGatewayHandler;
+import com.ghatana.datacloud.launcher.http.handlers.DataLifecycleHandler;
+import com.ghatana.datacloud.launcher.http.voice.HttpWhisperSttAdapter;
+import com.ghatana.datacloud.launcher.http.voice.NopVoiceSttAdapter;
+import com.ghatana.datacloud.launcher.http.voice.NopVoiceTtsAdapter;
+import com.ghatana.datacloud.launcher.http.voice.VoiceSttPort;
+import com.ghatana.datacloud.launcher.http.voice.WhisperSttConfig;
 
 /**
  * HTTP Server for Data-Cloud Standalone deployment.
@@ -81,10 +91,8 @@ public class DataCloudHttpServer {
     // ==================== Rate Limiting Constants ====================
     /** Maximum number of requests allowed per IP per window. */
     private static final int RATE_LIMIT_REQUESTS = 200;
-    /** Fixed-window duration in milliseconds (60 seconds). */
-    private static final long RATE_LIMIT_WINDOW_MS = 60_000L;
-    /** Maximum distinct IP entries kept in memory before oldest are evicted. */
-    private static final int RATE_LIMIT_MAX_ENTRIES = 10_000;
+    /** Sliding-window size in seconds (60 s). */
+    private static final long RATE_LIMIT_WINDOW_SECONDS = 60L;
 
     /** Heartbeat interval: block this long waiting for the next event before sending a heartbeat. */
     private static final long SSE_HEARTBEAT_TIMEOUT_SEC = 30L;
@@ -117,13 +125,14 @@ public class DataCloudHttpServer {
     private final Executor blockingExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     /**
-     * Per-IP rate limit state: maps remote address → [requestCount, windowStartMs].
-     * Entries are invalidated when the window expires. The map is bounded to
-     * {@link #RATE_LIMIT_MAX_ENTRIES} to prevent unbounded memory growth from
-     * IP-spoofing attacks.
+     * Sliding-window rate limiter (platform:java:governance).
+     * Wraps the delegate servlet and enforces {@link #RATE_LIMIT_REQUESTS} requests
+     * per {@link #RATE_LIMIT_WINDOW_SECONDS}-second sliding window per client IP.
+     * The raw 429 from the platform filter is upgraded in {@link #rateLimitFilter}
+     * to include a JSON body and CORS headers required by the Data-Cloud API contract.
      */
-    private final Map<String, long[]> rateLimitState =
-            new ConcurrentHashMap<>(RATE_LIMIT_MAX_ENTRIES);
+    private final RateLimitFilter platformRateLimiter =
+            new RateLimitFilter(RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS);
 
     /**
      * Optional schema validator for entity data.
@@ -182,6 +191,32 @@ public class DataCloudHttpServer {
      */
     private MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop();
 
+    // ==================== AI, Voice & Security (E3, E4, E1) ====================
+
+    /**
+     * Optional LLM completion service for AI assist routes (DC-E3).
+     * When {@code null}, AI routes use static heuristic fallbacks.
+     */
+    private CompletionService completionService;
+
+    /**
+     * Optional audit service for voice gateway and security filter (DC-E1, DC-E4).
+     * When {@code null}, audit emission is silently skipped.
+     */
+    private AuditService auditService;
+
+    /**
+     * Optional API-key resolver for the security filter (DC-E1).
+     * When {@code null}, the security filter is not activated.
+     */
+    private ApiKeyResolver apiKeyResolver;
+
+    /**
+     * Optional policy engine for CRITICAL-route enforcement (DC-E1).
+     * When {@code null}, policy checks are skipped (advisory mode).
+     */
+    private PolicyEngine policyEngine;
+
     // ==================== Extracted Handler Delegates ====================
     private HttpHandlerSupport httpSupport;
     private EntityCrudHandler entityHandler;
@@ -194,6 +229,9 @@ public class DataCloudHttpServer {
     private AiModelHandler aiModelHandler;
     private HealthHandler healthHandler;
     private SseStreamingHandler sseHandler;  // DCHTTP-1: extracted SSE + WebSocket handler
+    private AiAssistHandler aiAssistHandler; // DC-E3: pervasive AI assist endpoints
+    private VoiceGatewayHandler voiceHandler; // DC-E4: voice intent gateway
+    private DataLifecycleHandler dataLifecycleHandler; // DC-E5: data lifecycle and governance
 
     /**
      * Creates a new Data-Cloud HTTP server without optional extensions.
@@ -395,6 +433,78 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Attaches a {@link CompletionService} to enable AI assist routes (DC-E3).
+     *
+     * <p>When not called, AI assist endpoints operate in heuristic-fallback mode.
+     *
+     * @param service the LLM completion service; must not be {@code null}
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Attach LLM completion service for pervasive AI assist (DC-E3)
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withCompletionService(CompletionService service) {
+        this.completionService = service;
+        return this;
+    }
+
+    /**
+     * Attaches an {@link AuditService} to enable security event auditing (DC-E1, DC-E4).
+     *
+     * @param service the audit service; must not be {@code null}
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Attach audit service for security and voice event recording
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withAuditService(AuditService service) {
+        this.auditService = service;
+        return this;
+    }
+
+    /**
+     * Attaches an {@link ApiKeyResolver} and activates the security filter (DC-E1).
+     *
+     * <p>When called, all non-public routes will require a valid API key.  Pair with
+     * {@link #withPolicyEngine} to also enforce CRITICAL-route governance policies.
+     *
+     * @param resolver the API-key resolver; must not be {@code null}
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Enable API-key authentication for all protected routes
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withApiKeyResolver(ApiKeyResolver resolver) {
+        this.apiKeyResolver = resolver;
+        return this;
+    }
+
+    /**
+     * Attaches a {@link PolicyEngine} for CRITICAL-route governance enforcement (DC-E1).
+     *
+     * <p>Requires {@link #withApiKeyResolver} to also be called — the security filter
+     * only activates when an {@link ApiKeyResolver} is present.
+     *
+     * @param engine the policy engine; must not be {@code null}
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Enforce governance policies on CRITICAL routes (DC-E1)
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withPolicyEngine(PolicyEngine engine) {
+        this.policyEngine = engine;
+        return this;
+    }
+
+    /**
      * Starts the HTTP server.
      *
      * @throws Exception if the server fails to start
@@ -426,9 +536,30 @@ public class DataCloudHttpServer {
 
         healthHandler = new HealthHandler(httpSupport);
 
+        // DC-E3: AI assist handler — nullable completionService enables graceful degradation
+        aiAssistHandler = new AiAssistHandler(completionService, objectMapper, httpSupport, blockingExecutor);
+
+        // DC-E4: Voice gateway handler — wire Whisper STT adapter if DC_STT_URL is configured
+        WhisperSttConfig sttConfig = WhisperSttConfig.fromEnv();
+        VoiceSttPort sttPort = sttConfig.enabled()
+            ? new HttpWhisperSttAdapter(sttConfig, objectMapper, blockingExecutor)
+            : NopVoiceSttAdapter.INSTANCE;
+        voiceHandler = new VoiceGatewayHandler(
+            completionService,
+            auditService,
+            objectMapper,
+            httpSupport,
+            blockingExecutor,
+            sttPort,
+            NopVoiceTtsAdapter.INSTANCE);
+
+        // DC-E5: Data lifecycle and governance handler
+        dataLifecycleHandler = new DataLifecycleHandler(objectMapper, httpSupport, auditService);
+
         RoutingServlet router = RoutingServlet.builder(eventloop)
             // Health endpoints — delegated to HealthHandler (P7-2b)
             .with(HttpMethod.GET, "/health", healthHandler::handleHealth)
+            .with(HttpMethod.GET, "/health/detail", healthHandler::handleHealthDetail)
             .with(HttpMethod.GET, "/ready", healthHandler::handleReady)
             .with(HttpMethod.GET, "/live", healthHandler::handleLive)
             
@@ -530,14 +661,49 @@ public class DataCloudHttpServer {
             // WebSocket endpoint for real-time collection change notifications (DC-12)
             .withWebSocket("/ws", sseHandler::handleWebSocketConnection)
 
+            // AI Assist routes (DC-E3) — gracefully degrade to heuristics when LLM unavailable
+            .with(HttpMethod.POST, "/api/v1/entities/:collection/suggest",    aiAssistHandler::handleEntitySuggest)
+            .with(HttpMethod.POST, "/api/v1/analytics/suggest",               aiAssistHandler::handleAnalyticsSuggest)
+            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/optimise-hint", aiAssistHandler::handlePipelineOptimiseHint)
+            .with(HttpMethod.POST, "/api/v1/brain/explain",                   aiAssistHandler::handleBrainExplain)
+
+            // Voice gateway routes (DC-E4)
+            .with(HttpMethod.POST, "/api/v1/voice/intent",          voiceHandler::handleVoiceIntent)
+            .with(HttpMethod.GET,  "/api/v1/voice/intents",         voiceHandler::handleListIntents)
+            .with(HttpMethod.POST, "/api/v1/voice/intent/classify",  voiceHandler::handleClassifyOnly)
+
+            // Governance / data-lifecycle routes (DC-E5)
+            .with(HttpMethod.POST, "/api/v1/governance/retention/classify", dataLifecycleHandler::handleClassifyRetention)
+            .with(HttpMethod.GET,  "/api/v1/governance/retention/policy",   dataLifecycleHandler::handleGetRetentionPolicy)
+            .with(HttpMethod.POST, "/api/v1/governance/retention/purge",    dataLifecycleHandler::handlePurge)
+            .with(HttpMethod.POST, "/api/v1/governance/privacy/redact",     dataLifecycleHandler::handleRedact)
+            .with(HttpMethod.GET,  "/api/v1/governance/privacy/pii-fields", dataLifecycleHandler::handleListPiiFields)
+            .with(HttpMethod.GET,  "/api/v1/governance/compliance/summary", dataLifecycleHandler::handleComplianceSummary)
+
             .build();
 
+        // DC-E1: wrap router with security filter when apiKeyResolver is configured
+        AsyncServlet rootServlet;
+        if (apiKeyResolver != null) {
+            DataCloudSecurityFilter securityFilter = DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .build();
+            rootServlet = securityFilter.apply(router);
+            log.info("[DC-E1] security filter active (policy engine: {})",
+                policyEngine != null ? "enabled" : "advisory-only");
+        } else {
+            rootServlet = router;
+            log.info("[DC-E1] security filter inactive — withApiKeyResolver not called");
+        }
+
         server = HttpServer.builder(eventloop,
-                corsFilter(rateLimitFilter(payloadSizeLimitFilter(contentTypeFilter(router)))))
+                corsFilter(rateLimitFilter(payloadSizeLimitFilter(contentTypeFilter(rootServlet)))))
             .withListenPort(port)
             .build();
 
-        CompletableFuture.runAsync(() -> {
+        blockingExecutor.execute(() -> {
             try {
                 server.listen();
                 log.info("Data-Cloud HTTP Server started on port {}", port);
@@ -606,65 +772,46 @@ public class DataCloudHttpServer {
     }
 
     /**
-     * Middleware: fixed-window per-IP rate limiter.
+     * Middleware: sliding-window per-IP rate limiter, backed by
+     * {@code platform:java:governance} {@link RateLimitFilter}.
      *
      * <p>Each unique remote address is allowed at most {@link #RATE_LIMIT_REQUESTS} requests
-     * within a {@link #RATE_LIMIT_WINDOW_MS}-millisecond sliding window.
-     * Requests that exceed the limit receive HTTP 429 with a {@code Retry-After} header
-     * indicating the seconds remaining until the window resets.
+     * within a {@link #RATE_LIMIT_WINDOW_SECONDS}-second sliding window (evaluated by
+     * the platform filter's deque-based algorithm).
      *
-     * <p>The internal state map is bounded to {@link #RATE_LIMIT_MAX_ENTRIES} entries.
-     * When the bound is reached the oldest entries are evicted to prevent memory exhaustion
-     * under IP-spoofing / amplification attacks.
+     * <p>The raw 429 response emitted by the platform filter (plain text, no CORS) is
+     * upgraded here to include:
+     * <ul>
+     *   <li>A JSON body: {@code {"error":"Too Many Requests","retryAfterSeconds":60}}</li>
+     *   <li>{@code Access-Control-Allow-Origin} matching the configured CORS policy</li>
+     * </ul>
+     * so that browser clients receive a parsable, CORS-safe error response.
      *
      * @doc.type method
-     * @doc.purpose Protect the HTTP API from per-IP request flooding
+     * @doc.purpose Protect the HTTP API from per-IP request flooding using platform rate limiter
      * @doc.layer product
      * @doc.pattern Middleware
      */
     private AsyncServlet rateLimitFilter(AsyncServlet delegate) {
-        return request -> {
-            String ip = remoteIp(request);
-            long now = System.currentTimeMillis();
-
-            long[] state = rateLimitState.compute(ip, (key, existing) -> {
-                if (existing == null || (now - existing[1]) >= RATE_LIMIT_WINDOW_MS) {
-                    // New window: [count=1, windowStart=now]
-                    return new long[]{1L, now};
-                }
-                existing[0]++;
-                return existing;
-            });
-
-            long count       = state[0];
-            long windowStart = state[1];
-            long windowRemainingMs = RATE_LIMIT_WINDOW_MS - (now - windowStart);
-            long retryAfterSec = Math.max(1L, (windowRemainingMs + 999) / 1000);
-
-            if (count > RATE_LIMIT_REQUESTS) {
-                log.warn("Rate limit exceeded for ip={} count={}", ip, count);
-                String body = String.format(
-                        "{\"error\":\"Too Many Requests\",\"retryAfterSeconds\":%d}",
-                        retryAfterSec);
-                return Promise.of(HttpResponse.ofCode(429)
-                        .withHeader(HttpHeaders.CONTENT_TYPE,
-                                HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
-                        .withHeader(HttpHeaders.of("Retry-After"),
-                                HttpHeaderValue.of(String.valueOf(retryAfterSec)))
-                        .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
-                                HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
-                        .withBody(body.getBytes(StandardCharsets.UTF_8))
-                        .build());
+        AsyncServlet platformGuarded = platformRateLimiter.wrap(delegate);
+        return request -> platformGuarded.serve(request).map(response -> {
+            if (response.getCode() != 429) {
+                return response;
             }
-
-            // Evict excess entries after successful admit to keep the map bounded
-            if (rateLimitState.size() > RATE_LIMIT_MAX_ENTRIES) {
-                rateLimitState.entrySet().removeIf(e ->
-                        (now - e.getValue()[1]) >= RATE_LIMIT_WINDOW_MS);
-            }
-
-            return delegate.serve(request);
-        };
+            // Upgrade platform's plain-text 429 → JSON 429 with CORS header
+            String body = String.format(
+                    "{\"error\":\"Too Many Requests\",\"retryAfterSeconds\":%d}",
+                    RATE_LIMIT_WINDOW_SECONDS);
+            return HttpResponse.ofCode(429)
+                    .withHeader(HttpHeaders.CONTENT_TYPE,
+                            HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                    .withHeader(HttpHeaders.of("Retry-After"),
+                            HttpHeaderValue.of(String.valueOf(RATE_LIMIT_WINDOW_SECONDS)))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
+                            HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                    .withBody(body.getBytes(StandardCharsets.UTF_8))
+                    .build();
+        });
     }
 
     /**

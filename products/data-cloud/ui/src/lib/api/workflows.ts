@@ -1,8 +1,12 @@
 /**
  * Workflows API
- * 
- * API endpoints for workflow management.
- * 
+ *
+ * Routes backed by /api/v1/pipelines (Option A,
+ * DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 2).
+ * The backend pipeline registry is the source of truth for workflow/pipeline
+ * definitions.  Raw responses are transformed to the Workflow UI type via
+ * {@link pipelineToWorkflow}.
+ *
  * @doc.type service
  * @doc.purpose Workflows API endpoints
  * @doc.layer frontend
@@ -11,6 +15,54 @@
 
 import { apiClient, PaginatedResponse } from './client';
 
+// ---------------------------------------------------------------------------
+// Backend pipeline response shapes
+// ---------------------------------------------------------------------------
+
+interface BackendPipeline {
+    id: string;
+    tenantId?: string;
+    name?: string;
+    description?: string;
+    status?: string;
+    nodes?: unknown[];
+    edges?: unknown[];
+    schedule?: string;
+    tags?: string[];
+    createdAt?: string;
+    updatedAt?: string;
+    createdBy?: string;
+    lastExecutedAt?: string;
+    [key: string]: unknown;
+}
+
+interface BackendPipelineListResponse {
+    tenantId: string;
+    pipelines: BackendPipeline[];
+    count: number;
+    timestamp: string;
+}
+
+// ---------------------------------------------------------------------------
+// Transformation helpers
+// ---------------------------------------------------------------------------
+
+function pipelineToWorkflow(p: BackendPipeline): Workflow {
+    return {
+        id: p.id,
+        name: String(p.name ?? ''),
+        description: String(p.description ?? ''),
+        status: (p.status ?? 'draft') as Workflow['status'],
+        nodes: Array.isArray(p.nodes) ? (p.nodes as WorkflowNode[]) : [],
+        edges: Array.isArray(p.edges) ? (p.edges as WorkflowEdge[]) : [],
+        schedule: p.schedule,
+        tags: Array.isArray(p.tags) ? p.tags : [],
+        createdAt: String(p.createdAt ?? new Date().toISOString()),
+        updatedAt: String(p.updatedAt ?? new Date().toISOString()),
+        createdBy: String(p.createdBy ?? 'unknown'),
+        lastExecutedAt: p.lastExecutedAt ? String(p.lastExecutedAt) : undefined,
+    };
+}
 /**
  * Workflow node
  */
@@ -111,87 +163,125 @@ export interface WorkflowQueryParams {
 
 /**
  * Workflows API
+ *
+ * All CRUD routes delegate to /api/v1/pipelines (the real backend pipeline
+ * registry).  No execution sub-routes exist; execute/cancel are stubs for
+ * forward-compatibility.
  */
 export const workflowsApi = {
     /**
-     * List all workflows
+     * List all workflows (pipelines).
+     * GET /api/v1/pipelines
      */
     list: async (params?: WorkflowQueryParams): Promise<PaginatedResponse<Workflow>> => {
-        return apiClient.get<PaginatedResponse<Workflow>>('/workflows', { params });
+        const limit = params?.pageSize ?? 50;
+        const raw = await apiClient.get<BackendPipelineListResponse>('/pipelines', {
+            params: { limit, ...(params?.status ? { status: params.status } : {}) },
+        });
+        const items = (raw.pipelines ?? []).map(pipelineToWorkflow);
+        const page = params?.page ?? 1;
+        const offset = (page - 1) * limit;
+        return {
+            items,
+            total: raw.count ?? items.length,
+            page,
+            pageSize: limit,
+            hasMore: offset + items.length < (raw.count ?? items.length),
+        };
     },
 
     /**
-     * Get workflow by ID
+     * Get workflow (pipeline) by ID.
+     * GET /api/v1/pipelines/:pipelineId
      */
     get: async (id: string): Promise<Workflow> => {
-        return apiClient.get<Workflow>(`/workflows/${id}`);
+        const raw = await apiClient.get<BackendPipeline>(`/pipelines/${id}`);
+        return pipelineToWorkflow(raw);
     },
 
     /**
-     * Create new workflow
+     * Create new workflow (pipeline).
+     * POST /api/v1/pipelines
      */
     create: async (data: CreateWorkflowDto): Promise<Workflow> => {
-        return apiClient.post<Workflow, CreateWorkflowDto>('/workflows', data);
+        const raw = await apiClient.post<BackendPipeline, CreateWorkflowDto>('/pipelines', data);
+        return pipelineToWorkflow(raw);
     },
 
     /**
-     * Update workflow
+     * Update workflow (pipeline).
+     * PUT /api/v1/pipelines/:pipelineId
      */
     update: async (id: string, data: UpdateWorkflowDto): Promise<Workflow> => {
-        return apiClient.put<Workflow, UpdateWorkflowDto>(`/workflows/${id}`, data);
+        const raw = await apiClient.put<BackendPipeline, UpdateWorkflowDto>(`/pipelines/${id}`, data);
+        return pipelineToWorkflow(raw);
     },
 
     /**
-     * Delete workflow
+     * Delete workflow (pipeline).
+     * DELETE /api/v1/pipelines/:pipelineId
      */
     delete: async (id: string): Promise<void> => {
-        return apiClient.delete(`/workflows/${id}`);
+        return apiClient.delete(`/pipelines/${id}`);
     },
 
     /**
-     * Execute workflow
+     * Execute workflow — stub; no dedicated execute endpoint in the backend.
+     * Kept for forward-compatibility.
+     * POST /api/v1/pipelines/:pipelineId/execute
      */
     execute: async (id: string, params?: Record<string, unknown>): Promise<WorkflowExecution> => {
-        return apiClient.post<WorkflowExecution>(`/workflows/${id}/execute`, params);
+        return apiClient.post<WorkflowExecution>(`/pipelines/${id}/execute`, params);
     },
 
     /**
-     * Get workflow executions
+     * Get workflow executions — no dedicated backend route; returns empty list.
+     * Events can be queried via the events API if needed.
      */
-    getExecutions: async (id: string, params?: {
+    getExecutions: async (_id: string, _params?: {
         page?: number;
         pageSize?: number;
         status?: WorkflowExecution['status'];
     }): Promise<PaginatedResponse<WorkflowExecution>> => {
-        return apiClient.get<PaginatedResponse<WorkflowExecution>>(`/workflows/${id}/executions`, { params });
+        return { items: [], total: 0, page: 1, pageSize: 20, hasMore: false };
     },
 
     /**
-     * Get execution by ID
+     * Get execution by ID — no dedicated backend route; stub.
      */
-    getExecution: async (workflowId: string, executionId: string): Promise<WorkflowExecution> => {
-        return apiClient.get<WorkflowExecution>(`/workflows/${workflowId}/executions/${executionId}`);
+    getExecution: async (_workflowId: string, _executionId: string): Promise<WorkflowExecution> => {
+        throw new Error('getExecution not supported by the current backend');
     },
 
     /**
-     * Cancel execution
+     * Cancel execution — no dedicated backend route; stub.
      */
-    cancelExecution: async (workflowId: string, executionId: string): Promise<WorkflowExecution> => {
-        return apiClient.post<WorkflowExecution>(`/workflows/${workflowId}/executions/${executionId}/cancel`);
+    cancelExecution: async (_workflowId: string, _executionId: string): Promise<WorkflowExecution> => {
+        throw new Error('cancelExecution not supported by the current backend');
     },
 
     /**
-     * Activate workflow
+     * Activate workflow — updates pipeline status to 'active'.
+     * PUT /api/v1/pipelines/:pipelineId
      */
     activate: async (id: string): Promise<Workflow> => {
-        return apiClient.post<Workflow>(`/workflows/${id}/activate`);
+        const raw = await apiClient.put<BackendPipeline, Partial<UpdateWorkflowDto>>(
+            `/pipelines/${id}`,
+            { status: 'active' }
+        );
+        return pipelineToWorkflow(raw);
     },
 
     /**
-     * Deactivate workflow
+     * Deactivate workflow — updates pipeline status to 'paused'.
+     * PUT /api/v1/pipelines/:pipelineId
      */
     deactivate: async (id: string): Promise<Workflow> => {
-        return apiClient.post<Workflow>(`/workflows/${id}/deactivate`);
+        const raw = await apiClient.put<BackendPipeline, Partial<UpdateWorkflowDto>>(
+            `/pipelines/${id}`,
+            { status: 'paused' }
+        );
+        return pipelineToWorkflow(raw);
     },
 };
 

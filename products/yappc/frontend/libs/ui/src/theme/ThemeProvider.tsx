@@ -5,5 +5,5 @@ export {
   type ThemeContextType,
   type ThemeMode,
   type ThemeProviderProps,
-} from '@yappc/theme';
-export { ThemeProvider as default } from '@yappc/theme';
+} from '@yappc/ui/theme';
+export { ThemeProvider as default } from '@yappc/ui/theme';

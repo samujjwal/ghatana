@@ -2,10 +2,11 @@
  * EntityBrowserPage — Browse and manage Data-Cloud entities with schema info.
  *
  * Provides unified entity CRUD browser backed by the DC entity store,
- * with schema inspection from the Schema Registry.
+ * with schema inspection from the Schema Registry and pervasive AI/ML
+ * suggestions for entity exploration (Workstream C — DC-E3).
  *
  * @doc.type component
- * @doc.purpose Entity browser for Data-Cloud entity store
+ * @doc.purpose Entity browser for Data-Cloud entity store with AI suggestions
  * @doc.layer product
  * @doc.pattern Page
  */
@@ -50,6 +51,27 @@ interface EntityListResponse {
   hasMore: boolean;
 }
 
+/** AI suggestion returned by POST /api/v1/entities/:collection/suggest */
+interface EntitySuggestionItem {
+  type: 'explore_related' | 'anomaly_hint' | 'filter_optimization' | 'data_quality' | string;
+  title: string;
+  description: string;
+  confidence: number;
+  /** Machine-readable reason codes, e.g. ["low_cardinality", "frequent_nulls"] */
+  reasons?: string[];
+}
+
+interface EntitySuggestResponse {
+  data?: {
+    suggestions?: EntitySuggestionItem[];
+  };
+  ai?: {
+    confidence: number;
+    model: string;
+    fallback: boolean;
+  };
+}
+
 // =============================================================================
 // API helpers
 // =============================================================================
@@ -82,9 +104,136 @@ async function deleteEntity(namespace: string, id: string, tenantId?: string): P
   });
 }
 
+/**
+ * Fetch AI/ML suggestions for the given entity collection.
+ *
+ * Calls POST /api/v1/entities/:collection/suggest with an exploration context.
+ * If the AI service is unavailable the backend returns a deterministic fallback
+ * (confidence=0.2) — we display those suggestions but mark them as heuristic.
+ *
+ * Fails silently (returns null) on network errors so the page remains usable
+ * without AI assistance.
+ */
+async function fetchEntitySuggestions(
+  collection: string,
+): Promise<EntitySuggestResponse | null> {
+  try {
+    return await apiClient.post<EntitySuggestResponse>(
+      `/api/v1/entities/${encodeURIComponent(collection)}/suggest`,
+      { context: `Explore collection: ${collection}`, limit: 5 },
+    );
+  } catch {
+    return null;
+  }
+}
+
 // =============================================================================
 // Sub-components
 // =============================================================================
+
+/**
+ * AI/ML suggestions panel (Workstream C — pervasive native AI/ML, DC-E3).
+ *
+ * Renders exploration hints, anomaly flags, and filter-optimization tips
+ * returned by the AiAssistHandler backend for the selected collection.
+ * Falls back gracefully when the AI service is offline or the confidence
+ * is below usable thresholds.
+ */
+function AiSuggestionPanel({
+  suggestions,
+  isLoading,
+  isFallback,
+  onDismiss,
+}: {
+  suggestions: EntitySuggestionItem[];
+  isLoading: boolean;
+  isFallback: boolean;
+  onDismiss: () => void;
+}): React.ReactElement | null {
+  const [expanded, setExpanded] = useState(true);
+
+  if (!isLoading && suggestions.length === 0) return null;
+
+  const typeIcon: Record<string, string> = {
+    anomaly_hint: '⚠',
+    explore_related: '🔗',
+    filter_optimization: '⚡',
+    data_quality: '🔍',
+  };
+
+  const confidenceLabel = (c: number): string =>
+    c >= 0.8 ? 'High' : c >= 0.6 ? 'Medium' : 'Heuristic';
+
+  const confidenceClass = (c: number): string =>
+    c >= 0.8
+      ? 'bg-green-50 text-green-700 border-green-200'
+      : c >= 0.6
+        ? 'bg-amber-50 text-amber-700 border-amber-200'
+        : 'bg-gray-50 text-gray-500 border-gray-200';
+
+  return (
+    <div
+      className="border-b border-indigo-100 bg-indigo-50"
+      data-testid="ai-suggestion-panel"
+      role="complementary"
+      aria-label="AI exploration suggestions"
+    >
+      <div className="flex items-center gap-2 px-4 py-2 cursor-pointer select-none" onClick={() => setExpanded((v) => !v)}>
+        <span className="text-indigo-500 text-sm">✨</span>
+        <span className="text-xs font-semibold text-indigo-700">
+          AI Suggestions
+          {isFallback && (
+            <span className="ml-1.5 text-indigo-400 font-normal">(heuristic)</span>
+          )}
+        </span>
+        <span className="ml-auto text-gray-400 text-xs">{expanded ? '▲' : '▼'}</span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDismiss(); }}
+          className="ml-2 text-gray-300 hover:text-gray-500 text-xs"
+          aria-label="Dismiss AI suggestions"
+        >
+          ✕
+        </button>
+      </div>
+      {expanded && (
+        <div className="px-4 pb-3">
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-xs text-indigo-400 py-1">
+              <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+              Generating exploration hints…
+            </div>
+          ) : (
+            <ul className="space-y-1.5" role="list">
+              {suggestions.map((s, idx) => (
+                <li
+                  key={idx}
+                  className={`flex items-start gap-2 rounded border px-3 py-2 text-xs ${confidenceClass(s.confidence)}`}
+                >
+                  <span className="text-base leading-none mt-0.5 select-none" aria-hidden>
+                    {typeIcon[s.type] ?? '💡'}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{s.title}</p>
+                    <p className="text-gray-600 mt-0.5 leading-snug">{s.description}</p>
+                  </div>
+                  <span
+                    className="ml-auto shrink-0 text-xs opacity-70 font-mono"
+                    title={`Confidence: ${(s.confidence * 100).toFixed(0)}%`}
+                  >
+                    {confidenceLabel(s.confidence)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SchemaPanel({ schema }: { schema: EntitySchema }): React.ReactElement {
   return (
@@ -218,6 +367,7 @@ export function EntityBrowserPage(): React.ReactElement {
   const [namespace, setNamespace] = useState<string>('');
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [aiDismissed, setAiDismissed] = useState(false);
 
   const { data: namespaces = [], isLoading: nsLoading } = useQuery({
     queryKey: ['dc', 'entities', 'namespaces'],
@@ -246,6 +396,19 @@ export function EntityBrowserPage(): React.ReactElement {
     staleTime: 120_000,
   });
 
+  // AI suggestions: fetched per-namespace, non-blocking (graceful fallback)
+  const { data: suggestResponse, isFetching: suggestLoading } = useQuery({
+    queryKey: ['dc', 'entity-suggest', namespace],
+    queryFn: () => fetchEntitySuggestions(namespace),
+    enabled: !!namespace && !aiDismissed,
+    staleTime: 300_000, // suggestions are stable for 5 minutes
+    retry: false,       // never retry — AI service unavailability is graceful
+  });
+
+  const suggestions: EntitySuggestionItem[] =
+    suggestResponse?.data?.suggestions ?? [];
+  const isFallback = suggestResponse?.ai?.fallback ?? false;
+
   const deleteMutation = useMutation({
     mutationFn: ({ ns, id }: { ns: string; id: string }) => deleteEntity(ns, id),
     onSuccess: () => {
@@ -261,6 +424,12 @@ export function EntityBrowserPage(): React.ReactElement {
           JSON.stringify(e.data).toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : (entityList?.entities ?? []);
+
+  const handleNamespaceChange = (ns: string): void => {
+    setNamespace(ns);
+    setSelectedEntity(null);
+    setAiDismissed(false); // reset dismissal so suggestions reload for new namespace
+  };
 
   return (
     <div className="flex flex-col h-full bg-white" data-testid="entity-browser-page">
@@ -284,7 +453,7 @@ export function EntityBrowserPage(): React.ReactElement {
           {namespaces.map((ns) => (
             <button
               key={ns}
-              onClick={() => { setNamespace(ns); setSelectedEntity(null); }}
+              onClick={() => handleNamespaceChange(ns)}
               className={`w-full text-left px-4 py-2 text-sm truncate transition-colors ${
                 namespace === ns
                   ? 'bg-indigo-50 text-indigo-700 font-medium'
@@ -302,6 +471,16 @@ export function EntityBrowserPage(): React.ReactElement {
         {/* Main — entity list */}
         <div className="flex flex-1 overflow-hidden">
           <div className="flex flex-col flex-1 overflow-hidden">
+            {/* AI Suggestions panel — pervasive AI/ML (Workstream C) */}
+            {namespace && !aiDismissed && (
+              <AiSuggestionPanel
+                suggestions={suggestions}
+                isLoading={suggestLoading}
+                isFallback={isFallback}
+                onDismiss={() => setAiDismissed(true)}
+              />
+            )}
+
             {/* Toolbar */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white">
               <input

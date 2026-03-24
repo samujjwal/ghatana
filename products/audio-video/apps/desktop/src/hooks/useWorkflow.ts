@@ -14,7 +14,7 @@ import type {
   TTSResult, 
   AIVoiceResult,
   AudioData 
-} from '@ghatana/audio-video-product-types';
+} from '@audio-video/types';
 
 interface UseWorkflowOptions {
   onProgress?: (step: number, total: number, message: string) => void;

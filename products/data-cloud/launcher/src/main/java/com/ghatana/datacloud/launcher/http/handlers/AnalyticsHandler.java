@@ -47,39 +47,41 @@ public class AnalyticsHandler {
         if (analyticsEngine == null) {
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
-        try {
-            String tenantId = http.resolveTenantId(request);
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
-            String queryText = (String) payload.get("query");
-            if (queryText == null || queryText.isBlank()) {
-                return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
+        String tenantId = http.resolveTenantId(request);
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
+                String queryText = (String) payload.get("query");
+                if (queryText == null || queryText.isBlank()) {
+                    return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
+                }
+                Map<String, Object> params = payload.containsKey("parameters")
+                    ? (Map<String, Object>) payload.get("parameters")
+                    : Map.of();
+                return analyticsEngine.submitQuery(tenantId, queryText, params)
+                    .map(result -> http.jsonResponse(Map.of(
+                        "queryId",         result.getQueryId(),
+                        "queryType",       result.getQueryType(),
+                        "rowCount",        result.getRowCount(),
+                        "columnCount",     result.getColumnCount(),
+                        "rows",            result.getRows(),
+                        "executionTimeMs", result.getExecutionTimeMs(),
+                        "optimized",       result.isOptimized(),
+                        "timestamp",       Instant.now().toString()
+                    )))
+                    .then(
+                        response -> Promise.of(response),
+                        e -> {
+                            log.error("[DC-9] analytics query failed: {}", e.getMessage(), e);
+                            return Promise.of(http.errorResponse(500, "Query execution failed: " + e.getMessage()));
+                        }
+                    );
+            } catch (Exception e) {
+                log.error("[DC-9] analytics query request parse error: {}", e.getMessage(), e);
+                return Promise.of(http.errorResponse(400, "Invalid request: " + e.getMessage()));
             }
-            Map<String, Object> params = payload.containsKey("parameters")
-                ? (Map<String, Object>) payload.get("parameters")
-                : Map.of();
-            return analyticsEngine.submitQuery(tenantId, queryText, params)
-                .map(result -> http.jsonResponse(Map.of(
-                    "queryId",         result.getQueryId(),
-                    "queryType",       result.getQueryType(),
-                    "rowCount",        result.getRowCount(),
-                    "columnCount",     result.getColumnCount(),
-                    "rows",            result.getRows(),
-                    "executionTimeMs", result.getExecutionTimeMs(),
-                    "optimized",       result.isOptimized(),
-                    "timestamp",       Instant.now().toString()
-                )))
-                .then(
-                    response -> Promise.of(response),
-                    e -> {
-                        log.error("[DC-9] analytics query failed: {}", e.getMessage(), e);
-                        return Promise.of(http.errorResponse(500, "Query execution failed: " + e.getMessage()));
-                    }
-                );
-        } catch (Exception e) {
-            log.error("[DC-9] analytics query request parse error: {}", e.getMessage(), e);
-            return Promise.of(http.errorResponse(400, "Invalid request: " + e.getMessage()));
-        }
+        });
     }
 
     public Promise<HttpResponse> handleAnalyticsGetResult(HttpRequest request) {
@@ -122,14 +124,13 @@ public class AnalyticsHandler {
                 if (plan == null) {
                     return http.errorResponse(404, "No query plan found for queryId: " + queryId);
                 }
-                // Flatten plan fields into top-level response (consistent with query/result endpoints)
                 Map<String, Object> response = new LinkedHashMap<>();
                 response.put("queryId", queryId);
-                if (plan instanceof Map<?, ?> planMap) {
-                    planMap.forEach((k, v) -> response.put(String.valueOf(k), v));
-                } else {
-                    response.put("plan", plan);
-                }
+                // Flatten the QueryPlan POJO into top-level response fields.
+                // convertValue serialises enum constants to their name() string.
+                @SuppressWarnings("unchecked")
+                Map<String, Object> planFields = http.objectMapper().convertValue(plan, Map.class);
+                response.putAll(planFields);
                 response.put("timestamp", Instant.now().toString());
                 return http.jsonResponse(response);
             })

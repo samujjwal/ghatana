@@ -57,10 +57,35 @@ describe('Contract-Backed Route Tests', () => {
     });
 
     it('should render collection data that passes contract validation', async () => {
-      // Override MSW with contract-validated response
+      // Override MSW with entity-format response at the real backend route.
+      // collectionsApi.list() now calls /api/v1/entities/dc_collections (Option A
+      // mapping, DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 2).
       server.use(
-        http.get('/api/v1/collections', () =>
-          HttpResponse.json(contractPaginatedResponse)
+        http.get('/api/v1/entities/dc_collections', () =>
+          HttpResponse.json({
+            entities: [
+              {
+                id: contractCollection.id,
+                collection: 'dc_collections',
+                data: {
+                  name: contractCollection.name,
+                  description: contractCollection.description,
+                  schemaType: contractCollection.schemaType,
+                  status: contractCollection.status,
+                  entityCount: contractCollection.entityCount,
+                  schema: contractCollection.schema,
+                  tags: contractCollection.tags,
+                  createdBy: contractCollection.createdBy,
+                },
+                version: 1,
+                createdAt: contractCollection.createdAt,
+                updatedAt: contractCollection.updatedAt,
+              },
+            ],
+            count: 1,
+            tenantId: 'default',
+            timestamp: new Date().toISOString(),
+          })
         )
       );
 

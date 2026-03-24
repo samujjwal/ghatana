@@ -3,13 +3,14 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 const workspaceAliases = {
-  '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/capabilities/design-system/src/index.ts'),
-  '@ghatana/flow-canvas': path.resolve(__dirname, '../../../platform/typescript/capabilities/canvas-core/flow-canvas/src/index.ts'),
+  '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/design-system/src/index.ts'),
+  '@ghatana/flow-canvas': path.resolve(__dirname, '../../../platform/typescript/canvas/flow-canvas/src/index.ts'),
   '@ghatana/theme': path.resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
   '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
   '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
   '@ghatana/utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
-  '@ghatana/canvas': path.resolve(__dirname, '../../../platform/typescript/capabilities/canvas-core'),
+  '@ghatana/canvas': path.resolve(__dirname, '../../../platform/typescript/canvas'),
+  '@ghatana/realtime': path.resolve(__dirname, '../../../platform/typescript/realtime/src/index.ts'),
 }
 
 /**

@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useCallback, useState } from 'react';
-import { WebSocketClient } from '@yappc/realtime';
+import { WebSocketClient } from '@yappc/ai/realtime';
 
 /**
  * Notification types

@@ -1,4 +1,7 @@
 packages:
+  # Audio-video shared libraries
+  - "products/audio-video/libs/*"
+
   # Platform TypeScript libraries
   - "platform/typescript/*"
   - "platform/typescript/canvas/flow-canvas"

@@ -3,5 +3,5 @@ export {
   useCommandPalette,
   type Command,
   type CommandPaletteProps,
-} from '@yappc/shortcuts';
-export { DefaultCommandPalette as default } from '@yappc/shortcuts';
+} from '@yappc/ui/shortcuts';
+export { DefaultCommandPalette as default } from '@yappc/ui/shortcuts';

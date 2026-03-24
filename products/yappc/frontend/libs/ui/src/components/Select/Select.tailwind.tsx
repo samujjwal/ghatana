@@ -6,4 +6,4 @@ export {
   type SelectProps,
   type SelectOptionProps,
   type SelectGroupProps,
-} from '@yappc/base-ui';
+} from '@yappc/ui/base-ui';

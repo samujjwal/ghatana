@@ -8,8 +8,8 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { invoke } from '@tauri-apps/api/core';
-import type { ServiceType, ServiceStatus, AudioVideoSettings } from '@ghatana/audio-video-product-types';
-import { Tabs, Card, Status, Loading } from '@ghatana/audio-video-product-ui';
+import type { ServiceType, ServiceStatus, AudioVideoSettings } from '@audio-video/types';
+import { Tabs, Card, Status, Loading } from '@audio-video/ui';
 import STTPanel from './components/STTPanel';
 import TTSPanel from './components/TTSPanel';
 import AIVoicePanel from './components/AIVoicePanel';

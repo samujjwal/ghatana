@@ -9,7 +9,9 @@ import com.ghatana.yappc.agent.*;
 import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.prompts.AgentPromptTemplate;
 import com.ghatana.yappc.agent.prompts.YAPPCPromptTemplates;
-import com.ghatana.yappc.agent.specialists.*;
+import com.ghatana.yappc.agents.code.*;
+import com.ghatana.yappc.agents.architecture.*;
+import com.ghatana.yappc.agents.testing.*;
 import java.util.*;
 import org.jetbrains.annotations.NotNull;
 

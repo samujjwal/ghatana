@@ -398,3 +398,17 @@ export const Modal: React.FC<ModalProps> = ({
   );
 };
 
+// ── Speech hooks ─────────────────────────────────────────────────────────────
+// Re-exported so consumers can import from a single entry point.
+export {
+  useSpeechSynthesis,
+  useSpeechRecognition,
+} from './hooks';
+export type {
+  UseSpeechSynthesisResult,
+  SpeechSynthesisOptions,
+  UseSpeechRecognitionResult,
+  SpeechRecognitionOptions,
+  SpeechRecognitionCallbacks,
+} from './hooks';
+

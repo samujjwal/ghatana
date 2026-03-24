@@ -38,16 +38,10 @@
     "@xyflow/react": "^12.10.0",
     "@yappc/api": "workspace:*",
     "@yappc/auth": "workspace:*",
-    "@yappc/config-hooks": "workspace:*",
     "@yappc/code-editor": "workspace:*",
-    "@yappc/development-ui": "workspace:*",
-    "@yappc/initialization-ui": "workspace:*",
-    "@yappc/navigation-ui": "workspace:*",
     "@yappc/ide": "workspace:*",
-    "@yappc/shortcuts": "workspace:*",
     "@yappc/testing": "workspace:*",
     "@yappc/core": "workspace:*",
-    "@yappc/crdt": "workspace:*",
     "@yappc/collab": "workspace:*",
     "axe-core": "^4.11.1",
     "cmdk": "^1.1.1",
@@ -76,7 +70,8 @@
     "@yappc/ui": "workspace:*",
     "@yappc/ai": "workspace:*",
     "@yappc/canvas": "workspace:*",
-    "@ghatana/design-system": "workspace:*"
+    "@ghatana/design-system": "workspace:*",
+    "@yappc/state": "workspace:*"
   },
   "devDependencies": {
     "@graphql-codegen/introspection": "^5.0.0",

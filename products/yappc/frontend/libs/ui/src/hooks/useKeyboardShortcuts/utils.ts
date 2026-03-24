@@ -1,1 +1,1 @@
-export { ShortcutRegistry } from '@yappc/shortcuts';
+export { ShortcutRegistry } from '@yappc/ui/shortcuts';

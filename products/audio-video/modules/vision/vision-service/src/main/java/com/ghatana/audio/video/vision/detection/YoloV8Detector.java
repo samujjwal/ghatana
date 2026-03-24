@@ -1,5 +1,7 @@
 package com.ghatana.audio.video.vision.detection;
 
+import com.ghatana.audio.video.vision.model.BoundingBox;
+
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -22,7 +24,7 @@ import java.util.List;
  * @doc.purpose YOLOv8 object detection engine
  * @doc.layer ml-inference
  */
-public class YoloV8Detector {
+public class YoloV8Detector implements VisionDetector {
 
     private static final Logger LOG = LoggerFactory.getLogger(YoloV8Detector.class);
 
@@ -49,134 +51,6 @@ public class YoloV8Detector {
     @SuppressWarnings("unused") // Will be used when ONNX Runtime is integrated
     private final float nmsThreshold;
 
-    /**
-     * Detection result.
-     */
-    public static class Detection {
-        private final String className;
-        private final float confidence;
-        private final BoundingBox bbox;
-        private final int classId;
-
-        public Detection(String className, float confidence, BoundingBox bbox, int classId) {
-            this.className = className;
-            this.confidence = confidence;
-            this.bbox = bbox;
-            this.classId = classId;
-        }
-
-        public String getClassName() { return className; }
-        public float getConfidence() { return confidence; }
-        public BoundingBox getBbox() { return bbox; }
-        public int getClassId() { return classId; }
-
-        @Override
-        public String toString() {
-            return String.format("Detection{class=%s, conf=%.2f, bbox=%s}", 
-                className, confidence, bbox);
-        }
-    }
-
-    /**
-     * Bounding box coordinates.
-     */
-    public static class BoundingBox {
-        private final float x;
-        private final float y;
-        private final float width;
-        private final float height;
-
-        public BoundingBox(float x, float y, float width, float height) {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-        }
-
-        public float getX() { return x; }
-        public float getY() { return y; }
-        public float getWidth() { return width; }
-        public float getHeight() { return height; }
-
-        public float getArea() {
-            return width * height;
-        }
-
-        public float iou(BoundingBox other) {
-            float x1 = Math.max(this.x, other.x);
-            float y1 = Math.max(this.y, other.y);
-            float x2 = Math.min(this.x + this.width, other.x + other.width);
-            float y2 = Math.min(this.y + this.height, other.y + other.height);
-
-            float intersectionArea = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
-            float unionArea = this.getArea() + other.getArea() - intersectionArea;
-
-            return unionArea > 0 ? intersectionArea / unionArea : 0;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("BBox{x=%.1f, y=%.1f, w=%.1f, h=%.1f}", x, y, width, height);
-        }
-    }
-
-    /**
-     * Detection configuration.
-     */
-    public static class DetectionConfig {
-        private final float confidenceThreshold;
-        private final float nmsThreshold;
-        private final int maxDetections;
-        private final List<String> targetClasses;
-
-        private DetectionConfig(Builder builder) {
-            this.confidenceThreshold = builder.confidenceThreshold;
-            this.nmsThreshold = builder.nmsThreshold;
-            this.maxDetections = builder.maxDetections;
-            this.targetClasses = builder.targetClasses;
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder {
-            private float confidenceThreshold = CONFIDENCE_THRESHOLD;
-            private float nmsThreshold = NMS_THRESHOLD;
-            private int maxDetections = 100;
-            private List<String> targetClasses = new ArrayList<>();
-
-            public Builder confidenceThreshold(float threshold) {
-                this.confidenceThreshold = threshold;
-                return this;
-            }
-
-            public Builder nmsThreshold(float threshold) {
-                this.nmsThreshold = threshold;
-                return this;
-            }
-
-            public Builder maxDetections(int max) {
-                this.maxDetections = max;
-                return this;
-            }
-
-            public Builder targetClasses(List<String> classes) {
-                this.targetClasses = new ArrayList<>(classes);
-                return this;
-            }
-
-            public DetectionConfig build() {
-                return new DetectionConfig(this);
-            }
-        }
-
-        public float getConfidenceThreshold() { return confidenceThreshold; }
-        public float getNmsThreshold() { return nmsThreshold; }
-        public int getMaxDetections() { return maxDetections; }
-        public List<String> getTargetClasses() { return targetClasses; }
-    }
-
     public YoloV8Detector(Path modelPath, List<String> classNames) {
         this(modelPath, classNames, CONFIDENCE_THRESHOLD, NMS_THRESHOLD);
     }
@@ -200,6 +74,7 @@ public class YoloV8Detector {
      * @return List of detected objects
      * @throws IOException If detection fails
      */
+    @Override
     public List<Detection> detect(Path imagePath, DetectionConfig config) throws IOException {
         Mat image = Imgcodecs.imread(imagePath.toString());
         if (image.empty()) {
@@ -220,6 +95,7 @@ public class YoloV8Detector {
      * @param config Detection configuration
      * @return List of detected objects
      */
+    @Override
     public List<Detection> detect(Mat image, DetectionConfig config) {
         // Preprocess image
         Mat preprocessed = preprocessImage(image);
@@ -244,6 +120,7 @@ public class YoloV8Detector {
      * @return List of detected objects
      * @throws IOException If detection fails
      */
+    @Override
     public List<Detection> detectFromBytes(byte[] imageBytes, DetectionConfig config) throws IOException {
         MatOfByte matOfByte = new MatOfByte(imageBytes);
         Mat image = Imgcodecs.imdecode(matOfByte, Imgcodecs.IMREAD_COLOR);
@@ -365,7 +242,12 @@ public class YoloV8Detector {
             float width = w * scaleX;
             float height = h * scaleY;
             
-            BoundingBox bbox = new BoundingBox(x, y, width, height);
+            BoundingBox bbox = BoundingBox.builder()
+                .x(x)
+                .y(y)
+                .width(width)
+                .height(height)
+                .build();
             allDetections.add(new Detection(className, maxScore, bbox, maxClassId));
         }
         
@@ -402,7 +284,7 @@ public class YoloV8Detector {
                 // Only suppress if same class
                 if (current.getClassId() != other.getClassId()) continue;
                 
-                float iou = current.getBbox().iou(other.getBbox());
+                double iou = current.getBbox().calculateIoU(other.getBbox());
                 if (iou > nmsThreshold) {
                     suppressed[j] = true;
                 }

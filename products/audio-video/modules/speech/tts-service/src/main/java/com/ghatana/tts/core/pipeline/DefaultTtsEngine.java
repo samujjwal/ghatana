@@ -4,7 +4,6 @@ package com.ghatana.tts.core.pipeline;
 import com.ghatana.tts.core.api.*;
 import com.ghatana.tts.core.coqui.CoquiTTSAdapter;
 import com.ghatana.tts.core.config.EngineConfig;
-import com.ghatana.tts.core.model.AudioData;
 import com.ghatana.tts.core.registry.VoiceModelRegistry;
 import com.ghatana.tts.core.storage.ProfileEncryption;
 import com.ghatana.tts.core.storage.ProfileStorage;
@@ -515,19 +514,17 @@ public class DefaultTtsEngine implements TtsEngine {
         try {
             // Use Coqui TTS adapter for synthesis
             if (coquiAdapter.isInitialized()) {
-                // Convert API SynthesisOptions to model SynthesisOptions
-                com.ghatana.tts.core.model.SynthesisOptions modelOptions = 
-                    com.ghatana.tts.core.model.SynthesisOptions.builder()
-                        .voiceId(activeVoiceId)
-                        .language("en-US")
-                        .speakingRate(1.0)
-                        .pitch(1.0)
-                        .volume(1.0)
-                        .enableSSML(false)
-                        .enableProsody(true)
+                SynthesisOptions synthesisOptions = SynthesisOptions.builder()
+                        .voiceId(options.voiceId() != null ? options.voiceId() : activeVoiceId)
+                        .profileId(options.profileId())
+                        .language(options.language())
+                        .speed(options.speed())
+                        .pitch(options.pitch())
+                        .energy(options.energy())
+                        .emotion(options.emotion())
                         .build();
                 
-                AudioData audioData = coquiAdapter.synthesize(phonemes, modelOptions);
+                AudioData audioData = coquiAdapter.synthesize(phonemes, synthesisOptions);
                 return audioData.data();
             } else {
                 LOG.warn("Coqui TTS not initialized, using fallback synthesis");

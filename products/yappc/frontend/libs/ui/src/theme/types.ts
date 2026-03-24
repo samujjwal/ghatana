@@ -2,4 +2,4 @@ export type {
   PaletteMode,
   ThemeOptions,
   PaletteOptions,
-} from '@yappc/theme';
+} from '@yappc/ui/theme';

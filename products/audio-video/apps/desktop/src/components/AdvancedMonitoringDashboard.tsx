@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, Status, Loading } from '@ghatana/audio-video-product-ui';
+import { Card, Status, Loading } from '@audio-video/ui';
 
 interface ServiceMetrics {
   service: string;

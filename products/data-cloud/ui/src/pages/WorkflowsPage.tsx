@@ -25,7 +25,14 @@ import {
     Filter,
     Search,
     RefreshCw,
+    Sparkles,
+    AlertTriangle,
+    TrendingUp,
+    Zap,
+    Shield,
+    BarChart2,
 } from 'lucide-react';
+import { getPipelineOptimisationHints, aiQueryKeys, type PipelineOptimisationHint } from '../lib/api/ai';
 import { cn } from '../lib/theme';
 import { workflowsApi, type Workflow } from '../lib/api/workflows';
 
@@ -87,6 +94,99 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
                     </button>
                 </div>
             )}
+        </div>
+    );
+}
+
+// ── Hint type icon mapping ─────────────────────────────────────────────────
+function HintTypeIcon({ type }: { type: PipelineOptimisationHint['type'] }) {
+    switch (type) {
+        case 'performance':     return <Zap       className="h-4 w-4 text-yellow-500" />;
+        case 'parallelisation': return <TrendingUp className="h-4 w-4 text-blue-500" />;
+        case 'error_handling':  return <Shield    className="h-4 w-4 text-red-500" />;
+        case 'data_quality':    return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+        case 'cost':            return <BarChart2 className="h-4 w-4 text-green-500" />;
+        default:                return <Sparkles  className="h-4 w-4 text-purple-500" />;
+    }
+}
+
+/**
+ * AI Pipeline Optimisation Hints panel.
+ *
+ * Fetches and renders AI-generated hints for the selected pipeline workflow
+ * by calling POST /api/v1/pipelines/:pipelineId/optimise-hint.
+ *
+ * DC-E5-S1 — AI Journey #4.
+ */
+function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
+    const { data, isLoading, isError } = useQuery({
+        queryKey: aiQueryKeys.pipelineHints(pipelineId),
+        queryFn: () => getPipelineOptimisationHints(pipelineId),
+        staleTime: 5 * 60 * 1_000,
+        retry: false,
+        refetchOnWindowFocus: false,
+    });
+
+    const hints = data?.data?.hints ?? [];
+
+    if (isLoading) {
+        return (
+            <div className="rounded-lg bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 p-3">
+                <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Analysing pipeline with AI…
+                </div>
+            </div>
+        );
+    }
+
+    if (isError || hints.length === 0) {
+        return null; // Fail silently — hints are advisory, not critical
+    }
+
+    return (
+        <div>
+            <h3 className="flex items-center gap-1.5 text-sm font-medium text-purple-700 dark:text-purple-300 mb-2">
+                <Sparkles className="h-4 w-4" />
+                AI Optimisation Hints
+                {data?.data?.hints.some(h => h.fallback) && (
+                    <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 px-1.5 py-0.5 rounded ml-1">
+                        estimated
+                    </span>
+                )}
+            </h3>
+            <div className="rounded-lg bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 divide-y divide-purple-100 dark:divide-purple-900">
+                {hints.map((hint, i) => (
+                    <div key={i} className="px-3 py-2.5">
+                        <div className="flex items-start gap-2">
+                            <div className="mt-0.5 shrink-0">
+                                <HintTypeIcon type={hint.type} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                        {hint.title}
+                                    </span>
+                                    <span className={cn(
+                                        'text-xs font-medium px-1.5 py-0.5 rounded',
+                                        hint.impact === 'high'   ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                                        hint.impact === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
+                                                                   'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                                    )}>
+                                        {hint.impact} impact
+                                    </span>
+                                    <span className="text-xs text-gray-400">
+                                        {Math.round(hint.confidence * 100)}% confidence
+                                    </span>
+                                </div>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                                    {hint.description}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
@@ -405,7 +505,7 @@ export function WorkflowsPage() {
                                 </div>
                             </div>
 
-                            {selectedWorkflow.tags && selectedWorkflow.tags.length > 0 && (
+            {selectedWorkflow.tags && selectedWorkflow.tags.length > 0 && (
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Tags</h3>
                                     <div className="flex gap-2 flex-wrap">
@@ -417,6 +517,9 @@ export function WorkflowsPage() {
                                     </div>
                                 </div>
                             )}
+
+                            {/* AI Pipeline Optimisation Hints — DC-E5-S1 (AI Journey #4) */}
+                            <PipelineAiHintsPanel pipelineId={selectedWorkflow.id} />
 
                             <div className="flex gap-2 pt-4">
                                 <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">

@@ -20,6 +20,8 @@ import {
   executeAnalyticsQuery,
   useCollectionEntityCounts,
   useAnalyticsQuery,
+  useAnalyticsAiSuggestions,
+  type AnalyticsAiSuggestion,
   type CollectionStat,
   type QueryResultData,
 } from '../api/analytics.service';
@@ -36,13 +38,12 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Clock3,
-  Plus,
   RefreshCw,
   Play,
   Database,
   Table2,
   Layers,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '../lib/theme';
 import {
@@ -376,15 +377,64 @@ function QuickQueryConsole() {
  * Fetches entity counts per collection via POST /api/v1/analytics/query and
  * renders a distribution chart alongside summary metrics and an interactive
  * SQL console. Replaces the previous static placeholder dashboard cards.
+ *
+ * Also renders an AI anomaly hints panel (E3: Pervasive AI/ML) driven by the
+ * same {@link useAnalyticsAiSuggestions} hook used by the sidebar — no extra
+ * network round-trips, deduped by TanStack Query's cache key.
  */
 function AnalyticsTab({ collections }: { collections: string[] }) {
   const { data: stats, isLoading: statsLoading } = useCollectionEntityCounts(collections);
+  const { data: suggestions, isLoading: suggestionsLoading } = useAnalyticsAiSuggestions();
 
   const totalEntities = stats?.reduce((sum, s) => sum + s.count, 0) ?? 0;
   const maxCount = stats ? Math.max(...stats.map((s) => s.count), 1) : 1;
 
+  // Surface anomaly and warning suggestions inline within the analytics tab
+  const anomalySuggestions = (suggestions ?? []).filter(
+    (s) => s.type === 'anomaly' || s.type === 'warning'
+  );
+
   return (
     <div className="space-y-6">
+      {/* AI Anomaly Hints Panel (E3 sprint-3 acceptance) */}
+      {(suggestionsLoading || anomalySuggestions.length > 0) && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <h3 className="text-sm font-medium text-amber-900 dark:text-amber-100">
+              AI Anomaly &amp; Warning Hints
+            </h3>
+            {!suggestionsLoading && anomalySuggestions.some((s) => s.fallback) && (
+              <span className="text-xs text-amber-600 italic">(heuristic — AI offline)</span>
+            )}
+          </div>
+          {suggestionsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-amber-600">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Analyzing patterns…
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {anomalySuggestions.map((s) => (
+                <div key={s.key} className="flex items-start gap-3">
+                  <AiSuggestionIcon type={s.type} />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                      {s.title}
+                      {s.confidence > 0 && (
+                        <span className="ml-2 text-xs text-amber-600">
+                          {Math.round(s.confidence * 100)}% confidence
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300">{s.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {/* Live Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
@@ -724,6 +774,16 @@ function CostBar({
 // MAIN COMPONENT
 // =============================================================================
 
+/** Maps analytics suggestion type to icon + colour. */
+function AiSuggestionIcon({ type }: { type: AnalyticsAiSuggestion['type'] }) {
+  switch (type) {
+    case 'optimization': return <TrendingUp className="h-4 w-4 text-green-600" />;
+    case 'anomaly':    return <AlertTriangle className="h-4 w-4 text-amber-600" />;
+    case 'warning':    return <AlertTriangle className="h-4 w-4 text-red-500" />;
+    default:           return <Sparkles className="h-4 w-4 text-purple-600" />;
+  }
+}
+
 export function InsightsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
@@ -758,6 +818,9 @@ export function InsightsPage() {
     ?.map((c: any) => c.name ?? c.id ?? '')
     .filter(Boolean) ?? [];
 
+  // AI sidebar: fetch real suggestions from POST /api/v1/analytics/suggest
+  const { data: aiSuggestions, isLoading: aiLoading } = useAnalyticsAiSuggestions();
+
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <Activity className="h-4 w-4" /> },
     { id: 'brain', label: 'AI Brain', icon: <Brain className="h-4 w-4" /> },
@@ -765,32 +828,37 @@ export function InsightsPage() {
     { id: 'cost', label: 'Cost', icon: <DollarSign className="h-4 w-4" /> },
   ];
 
-  // AI Sidebar content
+  // AI Sidebar content — wired to real POST /api/v1/analytics/suggest
   const aiSidebarContent = (
     <AISidebar title="AI Insights">
-      <div className="space-y-3">
-        <AISuggestion
-          icon={<TrendingUp className="h-4 w-4 text-green-600" />}
-          title="Optimize query patterns"
-          description="3 queries identified for potential 40% cost reduction"
-          confidence={0.92}
-          onAction={() => { }}
-        />
-        <AISuggestion
-          icon={<Clock className="h-4 w-4 text-blue-600" />}
-          title="Schedule off-peak jobs"
-          description="Moving 2 pipelines could save $35/month"
-          confidence={0.85}
-          onAction={() => { }}
-        />
-        <AISuggestion
-          icon={<AlertTriangle className="h-4 w-4 text-amber-600" />}
-          title="Data freshness concern"
-          description="'inventory' table is 12 hours stale"
-          confidence={0.98}
-          onAction={() => { }}
-        />
-      </div>
+      {aiLoading ? (
+        <div className="flex items-center gap-2 text-sm text-gray-400 py-4 justify-center">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading suggestions…
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {(aiSuggestions ?? []).map((s) => (
+            <AISuggestion
+              key={s.key}
+              icon={<AiSuggestionIcon type={s.type} />}
+              title={s.title}
+              description={s.description}
+              confidence={s.confidence > 0 ? s.confidence : undefined}
+              actionLabel={s.fallback ? undefined : 'View'}
+              onAction={s.fallback ? undefined : () => { /* TODO: deep-link to relevant view */ }}
+            />
+          ))}
+          {(aiSuggestions ?? []).length === 0 && (
+            <p className="text-xs text-gray-400 text-center py-4">No suggestions right now</p>
+          )}
+          {aiSuggestions?.some((s) => s.fallback) && (
+            <p className="text-xs text-gray-400 mt-2 italic">
+              AI service offline — showing heuristic suggestions.
+            </p>
+          )}
+        </div>
+      )}
     </AISidebar>
   );
 

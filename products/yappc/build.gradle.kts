@@ -170,3 +170,43 @@ tasks.register("checkNoThinModuleReintroduction") {
 tasks.named("check") {
     dependsOn("checkNoThinModuleReintroduction")
 }
+
+// ============================================================================
+// Module Size Enforcement
+// ============================================================================
+tasks.register("checkModuleSize") {
+    description = "Fails if any module exceeds size limits"
+    group = "verification"
+    
+    doLast {
+        val maxJavaFiles = 150
+        val violations = mutableListOf<String>()
+        
+        subprojects.forEach { project ->
+            val srcDir = project.file("src/main/java")
+            if (srcDir.exists()) {
+                val fileCount = srcDir.walkTopDown()
+                    .filter { it.isFile && it.extension == "java" }
+                    .count()
+                
+                if (fileCount > maxJavaFiles) {
+                    violations.add("${project.path}: $fileCount files (max: $maxJavaFiles)")
+                }
+            }
+        }
+        
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Modules exceed size limit:\n" +
+                violations.joinToString("\n") { "  - $it" } + "\n" +
+                "Consider splitting large modules into focused submodules."
+            )
+        }
+        
+        logger.lifecycle("✓ All modules within size limits")
+    }
+}
+
+tasks.named("check") {
+    dependsOn("checkModuleSize")
+}

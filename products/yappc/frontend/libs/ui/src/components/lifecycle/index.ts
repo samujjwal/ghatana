@@ -7,7 +7,7 @@
 export { LifecycleStage, LIFECYCLE_STAGES, lifecycleStageStyles } from './LifecycleStage';
 export { ProjectDashboard, projectDashboardStyles } from './ProjectDashboard';
 export { TaskList, taskListStyles } from './TaskList';
-export { StageNavigation, stageNavigationStyles, type StageNavigationProps } from '@yappc/navigation-ui';
+export { StageNavigation, stageNavigationStyles, type StageNavigationProps } from '@yappc/ui/navigation-ui';
 
 // Hooks (from parent directory)
 export {

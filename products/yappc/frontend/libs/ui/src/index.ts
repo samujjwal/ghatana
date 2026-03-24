@@ -219,23 +219,23 @@ export type {
 export * as DevSecOps from './components/DevSecOps';
 
 // YAPPC-specific theme extensions
-export { ThemeProvider, ThemeContext, useThemeContext } from '@yappc/theme';
-export { ThemeProvider as defaultThemeProvider } from '@yappc/theme';
-export { theme, lightTheme, darkTheme } from '@yappc/theme';
-export type { ThemeContextType, ThemeMode, ThemeProviderProps } from '@yappc/theme';
+export { ThemeProvider, ThemeContext, useThemeContext } from '@yappc/ui/theme';
+export { ThemeProvider as defaultThemeProvider } from '@yappc/ui/theme';
+export { theme, lightTheme, darkTheme } from '@yappc/ui/theme';
+export type { ThemeContextType, ThemeMode, ThemeProviderProps } from '@yappc/ui/theme';
 
 // Command Palette
-export { CommandPalette, useCommandPalette, ShortcutHelper, useKeyboardShortcuts, shortcutRegistry } from '@yappc/shortcuts';
-export { CommandPalette as defaultCommandPalette } from '@yappc/shortcuts';
-export type { Command, CommandPaletteProps, ShortcutHelperProps, KeyboardShortcut, ShortcutContext, UseKeyboardShortcutsOptions, UseKeyboardShortcutsReturn } from '@yappc/shortcuts';
-export { Breadcrumb, TabNavigation, StageNavigation, stageNavigationStyles } from '@yappc/navigation-ui';
+export { CommandPalette, useCommandPalette, ShortcutHelper, useKeyboardShortcuts, shortcutRegistry } from '@yappc/ui/shortcuts';
+export { CommandPalette as defaultCommandPalette } from '@yappc/ui/shortcuts';
+export type { Command, CommandPaletteProps, ShortcutHelperProps, KeyboardShortcut, ShortcutContext, UseKeyboardShortcutsOptions, UseKeyboardShortcutsReturn } from '@yappc/ui/shortcuts';
+export { Breadcrumb, TabNavigation, StageNavigation, stageNavigationStyles } from '@yappc/ui/navigation-ui';
 export type {
   BreadcrumbItemType,
   BreadcrumbProps,
   TabNavigationItem,
   TabNavigationProps,
   StageNavigationProps,
-} from '@yappc/navigation-ui';
+} from '@yappc/ui/navigation-ui';
 
 // Error Boundary
 export { ErrorBoundary } from './components/ErrorBoundary';
@@ -271,11 +271,11 @@ export {
   SelectTailwind,
   SelectOption,
   SelectGroup,
-} from '@yappc/base-ui';
-export type { SelectProps as SelectTailwindProps, SelectOptionProps, SelectGroupProps } from '@yappc/base-ui';
-export { Popover, PopoverTrigger, PopoverClose } from '@yappc/base-ui';
-export type { PopoverProps, PopoverPlacement } from '@yappc/base-ui';
-export { StoryCard, VelocityChart, BurndownChart } from '@yappc/development-ui';
+} from '@yappc/ui/base-ui';
+export type { SelectProps as SelectTailwindProps, SelectOptionProps, SelectGroupProps } from '@yappc/ui/base-ui';
+export { Popover, PopoverTrigger, PopoverClose } from '@yappc/ui/base-ui';
+export type { PopoverProps, PopoverPlacement } from '@yappc/ui/base-ui';
+export { StoryCard, VelocityChart, BurndownChart } from '@yappc/ui/development-ui';
 export type {
   Story,
   StoryType,
@@ -289,8 +289,8 @@ export type {
   VelocityChartProps,
   BurndownDataPoint,
   BurndownChartProps,
-} from '@yappc/development-ui';
-export { PresetCard, ResourcesList } from '@yappc/initialization-ui';
+} from '@yappc/ui/development-ui';
+export { PresetCard, ResourcesList } from '@yappc/ui/initialization-ui';
 export type {
   PresetCategory,
   TechStack,
@@ -305,7 +305,7 @@ export type {
   Resource,
   ResourceAction,
   ResourcesListProps,
-} from '@yappc/initialization-ui';
+} from '@yappc/ui/initialization-ui';
 
 // Action Components
 export { BulkActionBar } from './components/Actions/BulkActionBar';
@@ -368,14 +368,14 @@ export {
   useWorkflow,
   useTasks,
   useTask,
-} from '@yappc/config-hooks';
+} from '@yappc/state/config-hooks';
 export type {
   PersonaConfig,
   TaskDomain,
   TaskTemplate,
   TaskData,
   WorkflowConfig,
-} from '@yappc/config-hooks';
+} from '@yappc/state/config-hooks';
 
 export {
   EnhancedThemeProvider,
@@ -385,11 +385,11 @@ export {
   useWorkspaceTheme,
   useAppTheme,
   LayerPriority,
-} from '@yappc/theme';
+} from '@yappc/ui/theme';
 export type {
   ThemeLayer,
   MultiLayerThemeContextValue,
-} from '@yappc/theme';
+} from '@yappc/ui/theme';
 
 // YAPPC-specific utilities
 export { PlatformWrapper } from './utils/PlatformWrapper';
@@ -403,7 +403,7 @@ export {
 } from './utils/responsive';
 
 // YAPPC design tokens (extends root tokens)
-export * from '@yappc/theme';
+export * from '@yappc/ui/theme';
 
 // YAPPC-specific hooks
 export * from './hooks';
@@ -435,7 +435,7 @@ export { cn } from './utils/cn';
 // PREVIOUSLY MUI-SOURCED COMPONENTS — now re-exported from @mui/material at top of file
 // Consumers should import from @ghatana/yappc-ui directly.
 // ============================================================================
-export { useTheme as useMuiTheme } from '@yappc/theme';
+export { useTheme as useMuiTheme } from '@yappc/ui/theme';
 
 // ============================================================================
 // LEGACY MUI TYPES — consumers should remove these
@@ -448,7 +448,7 @@ export type SxProps<T = unknown> = Record<string, unknown>;
 export type SystemSxProps = Record<string, unknown>;
 
 // Theme-related types (local replacements)
-export type { PaletteMode, ThemeOptions, PaletteOptions } from '@yappc/theme';
+export type { PaletteMode, ThemeOptions, PaletteOptions } from '@yappc/ui/theme';
 
 /**
  * @deprecated — Color alpha utility. Use Tailwind opacity utilities instead.
@@ -474,7 +474,7 @@ export function alpha(color: string, opacity: number): string {
 // ============================================================================
 
 // Safe palette color resolution utilities
-export { resolveMuiColor, getPaletteMain } from '@yappc/theme';
+export { resolveMuiColor, getPaletteMain } from '@yappc/ui/theme';
 
 // ============================================================================
 // CONFIGURATION SYSTEM

@@ -7,9 +7,10 @@
 #   docker run -p 8082:8082 -p 9090:9090 \
 #     -e DATACLOUD_HTTP_PORT=8082 \
 #     -e DATACLOUD_GRPC_PORT=9090 \
-#     -e DB_HOST=postgres \
-#     -e KAFKA_BOOTSTRAP_SERVERS=kafka:9092 \
-#     -e CLICKHOUSE_HOST=clickhouse \
+#     -e DATACLOUD_DB_URL=jdbc:postgresql://postgres:5432/datacloud \
+#     -e DATACLOUD_KAFKA_BOOTSTRAP=kafka:9092 \
+#     -e DATACLOUD_CLICKHOUSE_HOST=clickhouse \
+#     -e DATACLOUD_CLICKHOUSE_PORT=8123 \
 #     ghatana/data-cloud:latest
 
 # ---------------------------------------------------------------------------

@@ -358,6 +358,44 @@ export async function findRelatedEntities(
 }
 
 // ============================================================================
+// Pipeline Optimisation Hints (AI Journey #4 — DC-E5-S1)
+// ============================================================================
+
+/**
+ * A single AI-generated optimisation hint for a data pipeline / workflow.
+ * Maps to the backend AiAssistHandler#handlePipelineOptimiseHint response.
+ */
+export interface PipelineOptimisationHint {
+    type: 'redundancy' | 'parallelisation' | 'error_handling' | 'data_quality' | 'performance' | 'cost';
+    title: string;
+    description: string;
+    confidence: number;
+    impact: 'high' | 'medium' | 'low';
+    fallback: boolean;
+}
+
+export interface PipelineOptimisationHintsResponse {
+    pipelineId: string;
+    hints: PipelineOptimisationHint[];
+    generatedAt: string;
+    modelVersion?: string;
+}
+
+/**
+ * Fetch AI optimisation hints for a specific pipeline / workflow.
+ * Calls POST /api/v1/pipelines/:pipelineId/optimise-hint
+ */
+export async function getPipelineOptimisationHints(
+    pipelineId: string
+): Promise<ApiResponse<PipelineOptimisationHintsResponse>> {
+    const data = await apiClient.post<PipelineOptimisationHintsResponse>(
+        `/api/v1/pipelines/${pipelineId}/optimise-hint`,
+        {}
+    );
+    return wrapResponse(data);
+}
+
+// ============================================================================
 // React Query Hooks
 // ============================================================================
 
@@ -368,6 +406,7 @@ export const aiQueryKeys = {
     anomalies: (tenantId: string, collection: string) => ['ai', 'anomalies', tenantId, collection] as const,
     quality: (tenantId: string, collection: string) => ['ai', 'quality', tenantId, collection] as const,
     search: (tenantId: string, query: string) => ['ai', 'search', tenantId, query] as const,
+    pipelineHints: (pipelineId: string) => ['ai', 'pipeline-hints', pipelineId] as const,
 };
 
 export default {
@@ -381,4 +420,5 @@ export default {
     assessDataQuality,
     suggestEntity,
     findRelatedEntities,
+    getPipelineOptimisationHints,
 };

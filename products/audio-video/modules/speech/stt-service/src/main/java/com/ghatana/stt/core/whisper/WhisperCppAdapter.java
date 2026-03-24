@@ -1,9 +1,9 @@
 package com.ghatana.stt.core.whisper;
 
 import com.ghatana.stt.core.config.EngineConfig;
-import com.ghatana.stt.core.model.AudioData;
-import com.ghatana.stt.core.model.TranscriptionOptions;
-import com.ghatana.stt.core.model.TranscriptionResult;
+import com.ghatana.stt.core.api.AudioData;
+import com.ghatana.stt.core.api.TranscriptionOptions;
+import com.ghatana.stt.core.api.TranscriptionResult;
 import org.scijava.nativelib.NativeLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,6 +107,8 @@ public class WhisperCppAdapter {
         ensureInitialized();
         
         try {
+            long startTime = System.currentTimeMillis();
+
             // Convert audio data to format expected by Whisper.cpp
             float[] audioSamples = convertAudioSamples(audio);
             
@@ -119,10 +121,11 @@ public class WhisperCppAdapter {
             // Create result
             return TranscriptionResult.builder()
                 .text(transcription)
-                .confidence(calculateConfidence(transcription))
+                .confidence((float) calculateConfidence(transcription))
                 .language(detectedLanguage())
-                .processingTime(new com.ghatana.stt.core.model.TranscriptionResult.ProcessingTime(
-                    System.currentTimeMillis(), 0, 0, 0))
+                .processingTimeMs(System.currentTimeMillis() - startTime)
+                .modelUsed("whisper-cpp")
+                .isFinal(true)
                 .build();
                 
         } catch (Exception e) {
@@ -177,13 +180,13 @@ public class WhisperCppAdapter {
         setParam(whisperContext, "print_timestamps", false);
     }
     
-    private void setTranscriptionParams(com.ghatana.stt.core.model.TranscriptionOptions options) {
+    private void setTranscriptionParams(TranscriptionOptions options) {
         setParam(whisperContext, "language", options.language());
         setParam(whisperContext, "translate", false);
-        setParam(whisperContext, "print_timestamps", options.enableTimestamps());
+        setParam(whisperContext, "print_timestamps", options.enableWordTimings());
     }
     
-    private float[] convertAudioSamples(com.ghatana.stt.core.model.AudioData audio) {
+    private float[] convertAudioSamples(AudioData audio) {
         // Convert audio data to 16kHz mono float array expected by Whisper.cpp
         // This is a simplified conversion - in production, use proper audio processing
         byte[] rawData = audio.data();

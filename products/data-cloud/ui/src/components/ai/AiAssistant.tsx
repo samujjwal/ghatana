@@ -68,29 +68,101 @@ const suggestedPrompts = [
 
 /**
  * Route user message to the appropriate backend service.
- * SQL-intent queries are executed via the analytics engine for real results.
- * Other intents use local knowledge-base responses until an AI service is wired.
+ *
+ * Intent routing (in priority order):
+ *  1. SQL/query intent  → POST /api/v1/analytics/suggest for optimised SQL, then execute
+ *  2. All other intents → POST /api/v1/brain/explain (general AI explanation)
+ *
+ * Graceful fallback: if the AI service is offline (confidence < 0.5 or network
+ * error) we fall back to deterministic guidance text so the component remains
+ * usable.  The fallback flag from the server is surfaced in the message metadata.
  */
 async function generateResponse(userMessage: string): Promise<ChatMessage> {
     const lowerMessage = userMessage.toLowerCase();
     const id = `msg-${Date.now()}`;
 
-    if (lowerMessage.includes('sql') || lowerMessage.includes('convert') || lowerMessage.includes('query')) {
-        // Extract table name heuristically from the user's message
+    // ── SQL / analytics intent → analytics suggest + execute ─────────────────
+    if (lowerMessage.includes('sql') || lowerMessage.includes('query') || lowerMessage.includes('convert') || lowerMessage.includes('show me')) {
+        try {
+            const suggestResp = await fetch('/api/v1/analytics/suggest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userMessage, context: 'sql_generation' }),
+            });
+            if (suggestResp.ok) {
+                const payload = await suggestResp.json() as {
+                    data?: { sql?: string; explanation?: string };
+                    ai?: { confidence?: number; fallback?: boolean };
+                };
+                const sql = payload.data?.sql;
+                const explanation = payload.data?.explanation ?? '';
+                const confidence = payload.ai?.confidence ?? 0;
+                const isFallback = payload.ai?.fallback ?? false;
+
+                if (sql) {
+                    const execResp = await executeAnalyticsQuery(sql);
+                    return {
+                        id,
+                        role: 'assistant',
+                        content: `${explanation}\n\nQuery executed — **${execResp.rowCount} row(s)** returned in ${execResp.executionTimeMs}ms.${isFallback ? '\n\n_AI service unavailable — using heuristic SQL._' : ''}`,
+                        type: 'sql',
+                        timestamp: new Date(),
+                        metadata: { sql, confidence },
+                    };
+                }
+            }
+        } catch {
+            // network error — fall through to deterministic fallback below
+        }
+        // Deterministic fallback: extract table name heuristically
         const tableMatch = lowerMessage.match(/from ([a-z_]+)/) || lowerMessage.match(/in ([a-z_]+)/);
         const table = tableMatch?.[1] ?? 'events';
-        const sql = `SELECT * FROM ${table} ORDER BY created_at DESC LIMIT 50;`;
-        const result = await executeAnalyticsQuery(sql);
+        const fallbackSql = `SELECT * FROM ${table} ORDER BY created_at DESC LIMIT 50;`;
+        const result = await executeAnalyticsQuery(fallbackSql);
         return {
             id,
             role: 'assistant',
-            content: `Query executed — ${result.rowCount} row(s) returned in ${result.executionTimeMs}ms.`,
+            content: `Query executed — ${result.rowCount} row(s) returned in ${result.executionTimeMs}ms.\n\n_AI service unavailable — used heuristic SQL generation._`,
             type: 'sql',
             timestamp: new Date(),
-            metadata: { sql, confidence: 0.85 },
+            metadata: { sql: fallbackSql, confidence: 0.2 },
         };
     }
 
+    // ── General AI explanation intent → POST /api/v1/brain/explain ───────────
+    try {
+        const explainResp = await fetch('/api/v1/brain/explain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: userMessage }),
+        });
+        if (explainResp.ok) {
+            const payload = await explainResp.json() as {
+                data?: { explanation?: string; suggestions?: string[] };
+                ai?: { confidence?: number; fallback?: boolean };
+            };
+            const explanation = payload.data?.explanation;
+            const suggestions = payload.data?.suggestions ?? [];
+            const confidence = payload.ai?.confidence ?? 0;
+            if (explanation) {
+                const body = suggestions.length > 0
+                    ? `${explanation}\n\n**Suggestions:**\n${suggestions.map((s) => `- ${s}`).join('\n')}`
+                    : explanation;
+                return {
+                    id,
+                    role: 'assistant',
+                    content: body,
+                    type: 'text',
+                    timestamp: new Date(),
+                    metadata: { confidence },
+                };
+            }
+        }
+    } catch {
+        // network error — deterministic fallback below
+    }
+
+    // ── Deterministic fallback (AI service offline) ───────────────────────────
     if (lowerMessage.includes('schema') || lowerMessage.includes('explain')) {
         return {
             id,
@@ -98,6 +170,7 @@ async function generateResponse(userMessage: string): Promise<ChatMessage> {
             content: 'Open the Data Fabric explorer and select a collection to inspect its live schema.',
             type: 'text',
             timestamp: new Date(),
+            metadata: { confidence: 0.2 },
         };
     }
 
@@ -108,6 +181,7 @@ async function generateResponse(userMessage: string): Promise<ChatMessage> {
             content: 'Navigate to the Lineage view in Data Fabric to visualise upstream and downstream dependencies for any collection.',
             type: 'lineage',
             timestamp: new Date(),
+            metadata: { confidence: 0.2 },
         };
     }
 
@@ -123,6 +197,7 @@ async function generateResponse(userMessage: string): Promise<ChatMessage> {
 What would you like to know?`,
         type: 'text',
         timestamp: new Date(),
+        metadata: { confidence: 0.2 },
     };
 }
 

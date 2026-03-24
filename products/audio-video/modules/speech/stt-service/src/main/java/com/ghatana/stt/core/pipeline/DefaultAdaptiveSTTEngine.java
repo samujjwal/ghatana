@@ -136,15 +136,8 @@ public class DefaultAdaptiveSTTEngine implements AdaptiveSTTEngine {
                         + "Install Whisper.cpp native libs or configure AI_INFERENCE_URL.");
             }
 
-            // Convert API classes to model classes for Whisper.cpp
-            com.ghatana.stt.core.model.AudioData modelAudio = convertToModelAudioData(audio);
-            com.ghatana.stt.core.model.TranscriptionOptions modelOptions = convertToModelTranscriptionOptions(options);
-            
             // Use Whisper.cpp for transcription (cost-optimized)
-            com.ghatana.stt.core.model.TranscriptionResult modelResult = whisperAdapter.transcribe(modelAudio, modelOptions);
-            
-            // Convert model result back to API result
-            TranscriptionResult result = convertToApiTranscriptionResult(modelResult);
+            TranscriptionResult result = whisperAdapter.transcribe(audio, options);
             
             // Apply user profile adaptations if available
             if (profileStorage != null && options.profileId() != null) {
@@ -567,36 +560,6 @@ public class DefaultAdaptiveSTTEngine implements AdaptiveSTTEngine {
         if (metricsCollector != null) {
             metricsCollector.recordSessionEnd();
         }
-    }
-    
-    // Conversion methods between API and model classes
-    private com.ghatana.stt.core.model.AudioData convertToModelAudioData(AudioData apiAudio) {
-        return new com.ghatana.stt.core.model.AudioData(
-            apiAudio.data(),
-            apiAudio.sampleRate(),
-            apiAudio.channels(),
-            com.ghatana.stt.core.model.AudioData.AudioFormat.PCM_16BIT
-        );
-    }
-    
-    private com.ghatana.stt.core.model.TranscriptionOptions convertToModelTranscriptionOptions(TranscriptionOptions apiOptions) {
-        return com.ghatana.stt.core.model.TranscriptionOptions.builder()
-            .language(apiOptions.language())
-            .enablePunctuation(apiOptions.enablePunctuation())
-            .enableWordTiming(apiOptions.enableWordTimings())
-            .maxAlternatives(apiOptions.maxAlternatives())
-            .build();
-    }
-    
-    private TranscriptionResult convertToApiTranscriptionResult(com.ghatana.stt.core.model.TranscriptionResult modelResult) {
-        return TranscriptionResult.builder()
-            .text(modelResult.text())
-            .confidence((float) modelResult.confidence())
-            .processingTimeMs(modelResult.processingTime().totalMs())
-            .modelUsed("whisper-cpp")
-            .language(modelResult.language())
-            .isFinal(true)
-            .build();
     }
     
     // Streaming session implementation with callback support and audio buffering

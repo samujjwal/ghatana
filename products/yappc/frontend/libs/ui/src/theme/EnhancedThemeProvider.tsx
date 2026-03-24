@@ -9,4 +9,4 @@ export {
   type EnhancedThemeProviderProps,
   type MultiLayerThemeContextValue,
   type ThemeLayer,
-} from '@yappc/theme';
+} from '@yappc/ui/theme';

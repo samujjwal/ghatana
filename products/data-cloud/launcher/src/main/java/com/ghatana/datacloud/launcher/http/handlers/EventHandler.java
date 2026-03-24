@@ -36,34 +36,36 @@ public class EventHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAppendEvent(HttpRequest request) {
-        try {
-            String tenantId = http.resolveTenantId(request);
+        String tenantId = http.resolveTenantId(request);
 
-            Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
-            if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
 
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> eventData = http.objectMapper().readValue(body, Map.class);
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> eventData = http.objectMapper().readValue(body, Map.class);
 
-            Optional<String> payloadErr = ApiInputValidator.validateEntityPayload(eventData);
-            if (payloadErr.isPresent()) return Promise.of(http.errorResponse(400, payloadErr.get()));
+                Optional<String> payloadErr = ApiInputValidator.validateEntityPayload(eventData);
+                if (payloadErr.isPresent()) return Promise.of(http.errorResponse(400, payloadErr.get()));
 
-            String eventType = (String) eventData.getOrDefault("type", "unknown");
-            @SuppressWarnings("unchecked")
-            Map<String, Object> payload = (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
+                String eventType = (String) eventData.getOrDefault("type", "unknown");
+                @SuppressWarnings("unchecked")
+                Map<String, Object> payload = (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
 
-            DataCloudClient.Event event = DataCloudClient.Event.of(eventType, payload);
+                DataCloudClient.Event event = DataCloudClient.Event.of(eventType, payload);
 
-            return client.appendEvent(tenantId, event)
-                .map(offset -> http.jsonResponse(Map.of(
-                    "offset", offset.value(),
-                    "eventType", eventType,
-                    "timestamp", Instant.now().toString()
-                )));
-        } catch (Exception e) {
-            log.error("Error appending event", e);
-            return Promise.of(http.errorResponse(400, "Invalid event data: " + e.getMessage()));
-        }
+                return client.appendEvent(tenantId, event)
+                    .map(offset -> http.jsonResponse(Map.of(
+                        "offset", offset.value(),
+                        "eventType", eventType,
+                        "timestamp", Instant.now().toString()
+                    )));
+            } catch (Exception e) {
+                log.error("Error appending event", e);
+                return Promise.of(http.errorResponse(400, "Invalid event data: " + e.getMessage()));
+            }
+        });
     }
 
     public Promise<HttpResponse> handleQueryEvents(HttpRequest request) {
@@ -88,6 +90,7 @@ public class EventHandler {
                     "timestamp", e.timestamp().toString()
                 )).toList(),
                 "count", events.size(),
+                "tenantId", tenantId,
                 "timestamp", Instant.now().toString()
             )));
     }

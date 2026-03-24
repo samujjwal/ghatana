@@ -13,10 +13,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@yappc/messaging": "workspace:*"
+    "@yappc/ai": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
   }
 }
-

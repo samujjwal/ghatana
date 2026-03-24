@@ -21,7 +21,7 @@ import {
   Typography,
 } from '@ghatana/design-system';
 import { CardMedia, TextField } from '@ghatana/design-system';
-import { SelectTailwind as Select, SelectOption } from '@yappc/base-ui';
+import { SelectTailwind as Select, SelectOption } from '@yappc/ui/base-ui';
 import { useCallback, useMemo, useState } from 'react';
 
 import type { DocumentTemplate } from '../history/historyManager';

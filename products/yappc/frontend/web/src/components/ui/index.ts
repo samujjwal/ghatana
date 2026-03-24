@@ -12,8 +12,8 @@ export {
   resolveMuiColor,
   getPaletteMain,
 } from '@yappc/ui';
-export { usePersonas } from '@yappc/config-hooks';
-export { useKeyboardShortcuts } from '@yappc/shortcuts';
+export { usePersonas } from '@yappc/state/config-hooks';
+export { useKeyboardShortcuts } from '@yappc/ui/shortcuts';
 
 /**
  * UI Components Index

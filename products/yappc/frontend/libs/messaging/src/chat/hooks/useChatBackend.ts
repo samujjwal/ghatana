@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useCallback, useState, useRef } from 'react';
-import { WebSocketClient } from '@yappc/realtime';
+import { WebSocketClient } from '@yappc/ai/realtime';
 
 /**
  * Chat message structure

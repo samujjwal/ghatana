@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Card, Button, Input, Loading } from '@ghatana/audio-video-product-ui';
+import { Card, Button, Input, Loading } from '@audio-video/ui';
 
 const STTPanel: React.FC = () => {
   const [isRecording, setIsRecording] = React.useState(false);

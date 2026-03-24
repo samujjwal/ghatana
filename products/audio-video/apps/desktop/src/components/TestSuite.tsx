@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Card, Button, Loading, Status } from '@ghatana/audio-video-product-ui';
+import { Card, Button, Loading, Status } from '@audio-video/ui';
 
 interface TestResult {
   name: string;

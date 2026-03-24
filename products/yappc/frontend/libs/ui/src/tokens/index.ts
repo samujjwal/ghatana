@@ -1,1 +1,1 @@
-export * from '@yappc/theme';
+export * from '@yappc/ui/theme';

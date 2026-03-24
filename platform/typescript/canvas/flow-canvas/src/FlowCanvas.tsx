@@ -31,7 +31,8 @@
  * @doc.pattern CompositeComponent
  */
 import React, { useMemo, useCallback } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   ReactFlowProvider,
   Background,
   BackgroundVariant,

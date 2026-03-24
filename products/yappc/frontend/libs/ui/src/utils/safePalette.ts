@@ -3,4 +3,4 @@ export {
   resolveThemeColor,
   resolveMuiColor,
   getPaletteMain,
-} from '@yappc/theme';
+} from '@yappc/ui/theme';
