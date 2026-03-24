@@ -1,8 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import type {
-  TenantId,
-  UserId,
-} from "@tutorputor/contracts/v1/types";
+import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
 import { GamificationService } from "./service";
 
 /**
@@ -15,6 +12,78 @@ import { GamificationService } from "./service";
  */
 export const gamificationRoutes: FastifyPluginAsync = async (app) => {
   const service = new GamificationService(app.prisma);
+
+  /**
+   * GET /gamification/progress
+   * Get current authenticated user's full gamification progress.
+   * Alias consistent with frontend GET /api/v1/gamification/progress.
+   */
+  app.get("/gamification/progress", async (request, reply) => {
+    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    // JWT user (populated by fastify-jwt authenticate hook) or header fallback
+    const userId = ((request as any).user?.sub ||
+      request.headers["x-user-id"]) as UserId;
+
+    if (!tenantId || !userId) {
+      return reply.code(401).send({ error: "Authentication required" });
+    }
+
+    try {
+      const progress = await service.getUserProgress(tenantId, userId);
+      return reply.code(200).send(progress);
+    } catch (error) {
+      app.log.error(error, "Failed to get gamification progress");
+      return reply.code(500).send({ error: "Failed to get progress" });
+    }
+  });
+
+  /**
+   * GET /gamification/achievements
+   * Get current authenticated user's achievements.
+   */
+  app.get("/gamification/achievements", async (request, reply) => {
+    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const userId = ((request as any).user?.sub ||
+      request.headers["x-user-id"]) as UserId;
+
+    if (!tenantId || !userId) {
+      return reply.code(401).send({ error: "Authentication required" });
+    }
+
+    try {
+      const achievements = await service.getUserAchievements(tenantId, userId);
+      return reply.send(achievements);
+    } catch (error) {
+      app.log.error(error, "Failed to get achievements");
+      return reply.code(500).send({ error: "Failed to fetch achievements" });
+    }
+  });
+
+  /**
+   * GET /gamification/leaderboard
+   * Alias consistent with frontend GET /api/v1/gamification/leaderboard.
+   */
+  app.get("/gamification/leaderboard", async (request, reply) => {
+    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const { period, limit } = request.query as {
+      period?: string;
+      limit?: number;
+    };
+
+    if (!tenantId) return reply.code(401).send({ error: "Auth required" });
+
+    try {
+      const leaderboard = await service.getLeaderboard({
+        tenantId,
+        limit: limit ? Number(limit) : 10,
+        offset: 0,
+      });
+      return reply.send(leaderboard);
+    } catch (error) {
+      app.log.error(error);
+      return reply.code(500).send({ error: "Failed to get leaderboard" });
+    }
+  });
 
   /**
    * GET /users/:userId/points
@@ -30,13 +99,11 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
 
     try {
       const progress = await service.getUserProgress(tenantId, userId);
-      return reply
-        .code(200)
-        .send({
-          userId: progress.userId,
-          totalPoints: progress.totalPoints,
-          level: progress.level
-        });
+      return reply.code(200).send({
+        userId: progress.userId,
+        totalPoints: progress.totalPoints,
+        level: progress.level,
+      });
     } catch (error) {
       app.log.error(error, "Failed to get user points");
       return reply.code(500).send({
@@ -65,7 +132,7 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
         userId,
         points,
         reason: reason || "Admin award",
-        sourceType: sourceType || "bonus"
+        sourceType: sourceType || "bonus",
       });
       return reply.code(200).send(result);
     } catch (error) {
@@ -81,7 +148,10 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/leaderboard", async (request, reply) => {
     const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const { limit, offset } = request.query as { limit?: number; offset?: number };
+    const { limit, offset } = request.query as {
+      limit?: number;
+      offset?: number;
+    };
 
     if (!tenantId) return reply.code(401).send({ error: "Auth required" });
 
@@ -89,7 +159,7 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
       const leaderboard = await service.getLeaderboard({
         tenantId,
         limit: limit ? Number(limit) : 10,
-        offset: offset ? Number(offset) : 0
+        offset: offset ? Number(offset) : 0,
       });
       return reply.send(leaderboard);
     } catch (error) {

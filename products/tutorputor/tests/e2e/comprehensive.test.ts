@@ -47,7 +47,7 @@ class AuthHelper {
   async login(user: keyof typeof TEST_USERS) {
     const userData = TEST_USERS[user];
     
-    const response = await this.request.post('/api/auth/login', {
+    const response = await this.request.post('/api/v1/auth/login', {
       data: {
         email: userData.email,
         password: userData.password,
@@ -61,7 +61,7 @@ class AuthHelper {
   }
 
   async logout(token: string) {
-    const response = await this.request.post('/api/auth/logout', {
+    const response = await this.request.post('/api/v1/auth/logout', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -71,7 +71,7 @@ class AuthHelper {
   }
 
   async register(userData: typeof TEST_USERS.student) {
-    const response = await this.request.post('/api/auth/register', {
+    const response = await this.request.post('/api/v1/auth/register', {
       data: userData,
     });
 
@@ -94,7 +94,7 @@ class SecurityHelper {
     ];
 
     for (const input of maliciousInputs) {
-      const response = await this.request.post('/api/auth/login', {
+      const response = await this.request.post('/api/v1/auth/login', {
         data: {
           email: input,
           password: 'test',
@@ -118,7 +118,7 @@ class SecurityHelper {
     ];
 
     for (const payload of xssPayloads) {
-      const response = await this.request.post('/api/modules', {
+      const response = await this.request.post('/api/v1/modules', {
         data: {
           title: payload,
           description: 'Test module',
@@ -139,11 +139,11 @@ class SecurityHelper {
 
   async testAuthenticationBypass() {
     // Test without token
-    const response1 = await this.request.get('/api/modules');
+    const response1 = await this.request.get('/api/v1/modules');
     expect(response1.status()).toBe(401);
 
     // Test with invalid token
-    const response2 = await this.request.get('/api/modules', {
+    const response2 = await this.request.get('/api/v1/modules', {
       headers: {
         Authorization: 'Bearer invalid-token',
       },
@@ -151,7 +151,7 @@ class SecurityHelper {
     expect(response2.status()).toBe(401);
 
     // Test with expired token
-    const response3 = await this.request.get('/api/modules', {
+    const response3 = await this.request.get('/api/v1/modules', {
       headers: {
         Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
       },
@@ -346,7 +346,7 @@ test.describe('Authentication', () => {
   });
 
   test('should reject invalid credentials', async ({ request }) => {
-    const response = await request.post('/api/auth/login', {
+    const response = await request.post('/api/v1/auth/login', {
       data: {
         email: 'invalid@test.com',
         password: 'invalid',
@@ -362,7 +362,7 @@ test.describe('Authentication', () => {
     await authHelper.logout(token);
     
     // Token should be invalidated
-    const response = await request.get('/api/modules', {
+    const response = await request.get('/api/v1/modules', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -404,7 +404,7 @@ test.describe('Performance', () => {
   test('should respond to API calls within acceptable time', async ({ request }) => {
     const perfHelper = new PerformanceHelper(null as any);
     
-    const endpoints = ['/api/modules', '/api/user/profile', '/api/assessments'];
+    const endpoints = ['/api/v1/modules', '/api/v1/user/profile', '/api/v1/assessments'];
     
     for (const endpoint of endpoints) {
       const result = await perfHelper.measureAPIResponse(endpoint, request);
@@ -415,7 +415,7 @@ test.describe('Performance', () => {
   test('should handle concurrent users', async ({ request }) => {
     const perfHelper = new PerformanceHelper(null as any);
     
-    const result = await perfHelper.testConcurrentUsers('/api/modules', request, 10);
+    const result = await perfHelper.testConcurrentUsers('/api/v1/modules', request, 10);
     expect(result.averageResponseTime).toBeLessThan(1500);
   });
 });
@@ -443,7 +443,7 @@ test.describe('API Integration', () => {
     const token = await authHelper.login('instructor');
     
     // Create
-    const createResponse = await request.post('/api/modules', {
+    const createResponse = await request.post('/api/v1/modules', {
       data: {
         title: 'Test Module',
         description: 'Test Description',
@@ -496,7 +496,7 @@ test.describe('API Integration', () => {
     const token = await authHelper.login('student');
     
     // Get assessments
-    const assessmentsResponse = await request.get('/api/assessments', {
+    const assessmentsResponse = await request.get('/api/v1/assessments', {
       headers: {
         Authorization: `Bearer ${token}`,
       },

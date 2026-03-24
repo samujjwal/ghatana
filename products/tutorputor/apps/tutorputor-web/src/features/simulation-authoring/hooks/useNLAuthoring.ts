@@ -184,9 +184,9 @@ function createAPIClient(baseUrl: string): SimAuthorAPIClient {
   };
 
   return {
-    generate: (req) => fetchJSON("/api/sim-author/generate", req),
-    refine: (req) => fetchJSON("/api/sim-author/refine", req),
-    suggest: (req) => fetchJSON("/api/sim-author/suggest", req),
+    generate: (req) => fetchJSON("/sim-author/generate", req),
+    refine: (req) => fetchJSON("/sim-author/refine", req),
+    suggest: (req) => fetchJSON("/sim-author/suggest", req),
   };
 }
 

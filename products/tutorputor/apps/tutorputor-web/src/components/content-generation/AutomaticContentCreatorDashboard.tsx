@@ -58,46 +58,18 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
     qualityMetrics: [] as QualityData[],
   });
 
-  const [automationRules, setAutomationRules] = useState<AutomationRule[]>([
-    {
-      id: "1",
-      name: "Daily Math Practice",
-      trigger: "scheduled",
-      schedule: "0 9 * * *",
-      condition: "User has active math course",
-      action: "Generate 5 practice problems",
-      quality: "auto",
-      delivery: ["learning-path", "email"],
-      status: "active",
-      lastRun: "2024-01-20 09:00:00",
-      nextRun: "2024-01-21 09:00:00",
-      successRate: 98.5,
-    },
-    {
-      id: "2",
-      name: "New User Onboarding",
-      trigger: "event",
-      condition: "User registration event",
-      action: "Create welcome content + first lesson",
-      quality: "full",
-      delivery: ["instant", "email", "dashboard"],
-      status: "active",
-      lastRun: "2024-01-20 14:23:00",
-      successRate: 99.2,
-    },
-    {
-      id: "3",
-      name: "Performance Gap Detection",
-      trigger: "ai-suggested",
-      condition: "Score < 60% on assessment",
-      action: "Generate remedial content",
-      quality: "review",
-      delivery: ["learning-path", "notification"],
-      status: "active",
-      lastRun: "2024-01-20 16:45:00",
-      successRate: 95.8,
-    },
-  ]);
+  const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
+
+  // Load automation rules from API on mount
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    fetch("/api/content-studio/automation-rules", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
+      .then((data: AutomationRule[]) => setAutomationRules(data))
+      .catch((err) => console.error("Failed to load automation rules", err));
+  }, []);
 
   // Simulate real-time metrics updates
   useEffect(() => {
@@ -297,15 +269,14 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      rule.trigger === "scheduled"
+                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${rule.trigger === "scheduled"
                         ? "bg-blue-100 text-blue-800"
                         : rule.trigger === "event"
                           ? "bg-green-100 text-green-800"
                           : rule.trigger === "api"
                             ? "bg-yellow-100 text-yellow-800"
                             : "bg-purple-100 text-purple-800"
-                    }`}
+                      }`}
                   >
                     {rule.trigger}
                   </span>
@@ -320,13 +291,12 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      rule.quality === "auto"
+                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${rule.quality === "auto"
                         ? "bg-green-100 text-green-800"
                         : rule.quality === "review"
                           ? "bg-yellow-100 text-yellow-800"
                           : "bg-red-100 text-red-800"
-                    }`}
+                      }`}
                   >
                     {rule.quality}
                   </span>
@@ -343,13 +313,12 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      rule.status === "active"
+                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${rule.status === "active"
                         ? "bg-green-100 text-green-800"
                         : rule.status === "paused"
                           ? "bg-red-100 text-red-800"
                           : "bg-gray-100 text-gray-800"
-                    }`}
+                      }`}
                   >
                     {rule.status}
                   </span>
@@ -357,11 +326,10 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
                     onClick={() => toggleRuleStatus(rule.id)}
-                    className={`px-3 py-1 rounded text-xs font-medium ${
-                      rule.status === "active"
+                    className={`px-3 py-1 rounded text-xs font-medium ${rule.status === "active"
                         ? "bg-red-100 text-red-800 hover:bg-red-200"
                         : "bg-green-100 text-green-800 hover:bg-green-200"
-                    }`}
+                      }`}
                   >
                     {rule.status === "active" ? "Pause" : "Start"}
                   </button>
@@ -628,11 +596,10 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveView(tab.id as any)}
-                className={`${
-                  activeView === tab.id
+                className={`${activeView === tab.id
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
               >
                 <span>{tab.icon}</span>
                 <span>{tab.name}</span>

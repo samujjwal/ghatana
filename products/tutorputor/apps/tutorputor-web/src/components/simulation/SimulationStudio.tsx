@@ -74,7 +74,7 @@ export const SimulationStudio: React.FC<SimulationStudioProps> = ({
   const [nlHistory, setNlHistory] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const [isProcessingNL, setIsProcessingNL] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
-  const [aiDomain, setAiDomain] = useState<SimulationDomain>('discrete');
+  const [aiDomain, setAiDomain] = useState<SimulationDomain>('CS_DISCRETE');
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -257,11 +257,10 @@ export const SimulationStudio: React.FC<SimulationStudioProps> = ({
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 px-4 py-3 text-sm font-medium capitalize transition-colors ${
-                  activeTab === tab
+                className={`flex-1 px-4 py-3 text-sm font-medium capitalize transition-colors ${activeTab === tab
                     ? 'text-blue-600 border-b-2 border-blue-600'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -374,11 +373,10 @@ export const SimulationStudio: React.FC<SimulationStudioProps> = ({
               {nlHistory.map((msg, i) => (
                 <div
                   key={i}
-                  className={`p-3 rounded-lg text-sm ${
-                    msg.role === 'user'
+                  className={`p-3 rounded-lg text-sm ${msg.role === 'user'
                       ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 ml-4'
                       : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 mr-4'
-                  }`}
+                    }`}
                 >
                   {msg.content}
                 </div>
@@ -468,11 +466,10 @@ const EntitiesPanel: React.FC<EntitiesPanelProps> = ({
           <div
             key={entity.id}
             onClick={() => onSelectEntity(entity)}
-            className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-              selectedEntity?.id === entity.id
+            className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${selectedEntity?.id === entity.id
                 ? 'bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700'
                 : 'bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-3">
               <div
@@ -540,11 +537,10 @@ const StepsPanel: React.FC<StepsPanelProps> = ({
           <div
             key={step.id}
             onClick={() => onSelectStep(index)}
-            className={`p-3 rounded-lg cursor-pointer transition-colors ${
-              currentStepIndex === index
+            className={`p-3 rounded-lg cursor-pointer transition-colors ${currentStepIndex === index
                 ? 'bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700'
                 : 'bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -605,12 +601,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ manifest, onUpdateManifes
           onChange={(e) => onUpdateManifest({ domain: e.target.value as SimulationDomain })}
           className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="discrete">Discrete (Algorithms)</option>
-          <option value="physics">Physics</option>
-          <option value="chemistry">Chemistry</option>
-          <option value="biology">Biology</option>
-          <option value="economics">Economics</option>
-          <option value="medicine">Medicine</option>
+          <option value="CS_DISCRETE">Discrete (Algorithms)</option>
+          <option value="PHYSICS">Physics</option>
+          <option value="CHEMISTRY">Chemistry</option>
+          <option value="BIOLOGY">Biology</option>
+          <option value="ECONOMICS">Economics</option>
+          <option value="MEDICINE">Medicine</option>
+          <option value="ENGINEERING">Engineering</option>
+          <option value="MATHEMATICS">Mathematics</option>
         </select>
       </div>
     </div>
@@ -655,12 +653,14 @@ const AIPanel: React.FC<AIPanelProps> = ({
           onChange={(e) => onDomainChange(e.target.value as SimulationDomain)}
           className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="discrete">Algorithms</option>
-          <option value="physics">Physics</option>
-          <option value="chemistry">Chemistry</option>
-          <option value="biology">Biology</option>
-          <option value="economics">Economics</option>
-          <option value="medicine">Medicine</option>
+          <option value="CS_DISCRETE">CS / Algorithms</option>
+          <option value="PHYSICS">Physics</option>
+          <option value="CHEMISTRY">Chemistry</option>
+          <option value="BIOLOGY">Biology</option>
+          <option value="ECONOMICS">Economics</option>
+          <option value="MEDICINE">Medicine</option>
+          <option value="ENGINEERING">Engineering</option>
+          <option value="MATHEMATICS">Mathematics</option>
         </select>
       </div>
 
@@ -709,7 +709,7 @@ function createEmptyManifest(): SimulationManifest {
   return {
     id: crypto.randomUUID(),
     version: '1.0',
-    domain: 'discrete',
+    domain: 'CS_DISCRETE',
     title: 'New Simulation',
     description: '',
     entities: [],

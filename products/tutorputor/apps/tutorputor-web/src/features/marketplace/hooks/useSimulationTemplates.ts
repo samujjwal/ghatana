@@ -10,7 +10,12 @@
  */
 
 import { useState, useCallback, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import type {
   SimulationTemplate,
   TemplateFilters,
@@ -33,7 +38,8 @@ export const templateQueryKeys = {
   detail: (id: string) => [...templateQueryKeys.details(), id] as const,
   featured: () => [...templateQueryKeys.all, "featured"] as const,
   collections: () => [...templateQueryKeys.all, "collections"] as const,
-  favorites: (userId: string) => [...templateQueryKeys.all, "favorites", userId] as const,
+  favorites: (userId: string) =>
+    [...templateQueryKeys.all, "favorites", userId] as const,
 };
 
 // =============================================================================
@@ -63,7 +69,8 @@ const STUB_TEMPLATES: SimulationTemplate[] = [
   {
     id: "stub-physics-lab",
     title: "Physics Lab: Harmonic Oscillator",
-    description: "Explore mass-spring systems and visualize simple harmonic motion.",
+    description:
+      "Explore mass-spring systems and visualize simple harmonic motion.",
     domain: "PHYSICS",
     difficulty: "beginner",
     tags: ["physics", "oscillation", "lab"],
@@ -95,7 +102,8 @@ const STUB_TEMPLATES: SimulationTemplate[] = [
   {
     id: "stub-chemistry-simulation",
     title: "Chemistry: Reaction Kinetics Studio",
-    description: "Simulate reaction rates, concentration curves, and activation energy.",
+    description:
+      "Simulate reaction rates, concentration curves, and activation energy.",
     domain: "CHEMISTRY",
     difficulty: "intermediate",
     tags: ["chemistry", "kinetics", "simulation"],
@@ -126,7 +134,10 @@ const STUB_TEMPLATES: SimulationTemplate[] = [
   },
 ];
 
-function createTemplatesStub(page: number, pageSize: number): TemplatesResponse {
+function createTemplatesStub(
+  page: number,
+  pageSize: number,
+): TemplatesResponse {
   const templates = STUB_TEMPLATES.slice(0, pageSize);
   return {
     templates,
@@ -141,7 +152,7 @@ async function fetchTemplates(
   filters: TemplateFilters,
   sort: TemplateSort,
   page: number,
-  pageSize: number
+  pageSize: number,
 ): Promise<TemplatesResponse> {
   const params = new URLSearchParams();
 
@@ -173,21 +184,25 @@ async function fetchTemplates(
   params.set("pageSize", String(pageSize));
 
   try {
-    const response = await fetch(`${API_BASE_URL}/templates?${params.toString()}`, {
-      headers: getRequestHeaders(),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/templates?${params.toString()}`,
+      {
+        headers: getRequestHeaders(),
+      },
+    );
 
     if (!response.ok) {
-      console.error(
-        `Failed to fetch templates: ${response.status} ${response.statusText}`
+      throw new Error(
+        `Failed to fetch simulation templates: ${response.status} ${response.statusText}`,
       );
-      return createTemplatesStub(page, pageSize);
     }
 
     return response.json();
   } catch (error) {
-    console.error("Failed to fetch templates", error);
-    return createTemplatesStub(page, pageSize);
+    console.error("Failed to fetch simulation templates", error);
+    throw error instanceof Error
+      ? error
+      : new Error("Failed to fetch simulation templates");
   }
 }
 
@@ -198,28 +213,17 @@ async function fetchTemplateById(id: string): Promise<TemplateDetailResponse> {
     });
 
     if (!response.ok) {
-      console.error(
-        `Failed to fetch template: ${response.status} ${response.statusText}`
+      throw new Error(
+        `Failed to fetch simulation template: ${response.status} ${response.statusText}`,
       );
-      const fallback = STUB_TEMPLATES[0];
-      return {
-        template: fallback,
-        relatedTemplates: STUB_TEMPLATES.slice(1),
-        userFavorited: false,
-        userRating: undefined,
-      };
     }
 
     return response.json();
   } catch (error) {
-    console.error("Failed to fetch template", error);
-    const fallback = STUB_TEMPLATES[0];
-    return {
-      template: fallback,
-      relatedTemplates: STUB_TEMPLATES.slice(1),
-      userFavorited: false,
-      userRating: undefined,
-    };
+    console.error("Failed to fetch simulation template", error);
+    throw error instanceof Error
+      ? error
+      : new Error("Failed to fetch simulation template");
   }
 }
 
@@ -230,24 +234,30 @@ async function fetchFeaturedTemplates(): Promise<SimulationTemplate[]> {
     });
 
     if (!response.ok) {
-      console.error(
-        `Failed to fetch featured templates: ${response.status} ${response.statusText}`
+      throw new Error(
+        `Failed to fetch featured templates: ${response.status} ${response.statusText}`,
       );
-      return STUB_TEMPLATES.slice(0, 3);
     }
 
     return response.json();
   } catch (error) {
     console.error("Failed to fetch featured templates", error);
-    return STUB_TEMPLATES.slice(0, 3);
+    throw error instanceof Error
+      ? error
+      : new Error("Failed to fetch featured templates");
   }
 }
 
-async function toggleFavorite(templateId: string): Promise<{ favorited: boolean }> {
-  const response = await fetch(`${API_BASE_URL}/templates/${templateId}/favorite`, {
-    method: "POST",
-    headers: getRequestHeaders(),
-  });
+async function toggleFavorite(
+  templateId: string,
+): Promise<{ favorited: boolean }> {
+  const response = await fetch(
+    `${API_BASE_URL}/templates/${templateId}/favorite`,
+    {
+      method: "POST",
+      headers: getRequestHeaders(),
+    },
+  );
 
   if (!response.ok) {
     throw new Error(`Failed to toggle favorite: ${response.statusText}`);
@@ -259,7 +269,7 @@ async function toggleFavorite(templateId: string): Promise<{ favorited: boolean 
 async function rateTemplate(
   templateId: string,
   rating: number,
-  review?: string
+  review?: string,
 ): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/templates/${templateId}/rate`, {
     method: "POST",
@@ -272,7 +282,9 @@ async function rateTemplate(
   }
 }
 
-async function useTemplate(templateId: string): Promise<{ manifestId: string }> {
+async function useTemplate(
+  templateId: string,
+): Promise<{ manifestId: string }> {
   const response = await fetch(`${API_BASE_URL}/templates/${templateId}/use`, {
     method: "POST",
     headers: getRequestHeaders(),
@@ -314,7 +326,7 @@ export interface UseSimulationTemplatesReturn {
   setFilters: (filters: TemplateFilters) => void;
   updateFilter: <K extends keyof TemplateFilters>(
     key: K,
-    value: TemplateFilters[K]
+    value: TemplateFilters[K],
   ) => void;
   clearFilters: () => void;
 
@@ -357,7 +369,8 @@ export function useSimulationTemplates({
     refetch,
   } = useInfiniteQuery({
     queryKey: templateQueryKeys.list(filters, sort),
-    queryFn: ({ pageParam = 1 }) => fetchTemplates(filters, sort, pageParam, pageSize),
+    queryFn: ({ pageParam = 1 }) =>
+      fetchTemplates(filters, sort, pageParam, pageSize),
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.page + 1 : undefined,
     initialPageParam: 1,
@@ -384,7 +397,7 @@ export function useSimulationTemplates({
     <K extends keyof TemplateFilters>(key: K, value: TemplateFilters[K]) => {
       setFilters((prev) => ({ ...prev, [key]: value }));
     },
-    []
+    [],
   );
 
   const clearFilters = useCallback(() => {
@@ -492,7 +505,7 @@ export function useTemplateDetail({
       queryClient.setQueryData(
         templateQueryKeys.detail(templateId),
         (old: TemplateDetailResponse | undefined) =>
-          old ? { ...old, userFavorited: result.favorited } : old
+          old ? { ...old, userFavorited: result.favorited } : old,
       );
     },
   });
@@ -502,7 +515,9 @@ export function useTemplateDetail({
     mutationFn: ({ rating, review }: { rating: number; review?: string }) =>
       rateTemplate(templateId, rating, review),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: templateQueryKeys.detail(templateId) });
+      queryClient.invalidateQueries({
+        queryKey: templateQueryKeys.detail(templateId),
+      });
     },
   });
 
@@ -511,7 +526,9 @@ export function useTemplateDetail({
     mutationFn: () => useTemplate(templateId),
     onSuccess: () => {
       // Update usage count
-      queryClient.invalidateQueries({ queryKey: templateQueryKeys.detail(templateId) });
+      queryClient.invalidateQueries({
+        queryKey: templateQueryKeys.detail(templateId),
+      });
     },
   });
 

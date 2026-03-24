@@ -83,6 +83,12 @@ export const router = createBrowserRouter([
         path: "ai-tutor",
         element: <AITutorPage />,
       },
+
+      // === SIMULATION AUTHORING ===
+      {
+        path: "simulations/studio/:id?",
+        lazy: () => import("../pages/SimulationStudio"),
+      },
     ],
   },
 ]);

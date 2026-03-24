@@ -7,7 +7,7 @@
     "dev": "pnpm -C ../../libs/tutorputor-core build && vite",
     "build": "pnpm -C ../../libs/tutorputor-core build && tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint src/",
+    "lint": "eslint src/ --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"

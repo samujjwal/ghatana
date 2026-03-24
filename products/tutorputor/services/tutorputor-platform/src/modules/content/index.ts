@@ -6,6 +6,7 @@ import { registerCMSRoutes } from "./cms/routes.js";
 import { CMSServiceImpl } from "./cms/service.js";
 import { registerContentRoutes } from "./routes.js";
 import { ContentServiceImpl } from "./service.js";
+import { createAnimationContentIntegration } from "./animation-integration.js";
 
 /**
  * Content module - consolidates:
@@ -28,8 +29,18 @@ export const contentModule: FastifyPluginAsync = async (app) => {
     model: process.env.OPENAI_MODEL || "gpt-4",
   });
 
-  const contentService = new ContentServiceImpl(prisma, /* aiProxy */ undefined);
-  const cmsService = new CMSServiceImpl(prisma, contentService, /* aiProxy */ undefined);
+  const contentService = new ContentServiceImpl(
+    prisma,
+    /* aiProxy */ undefined,
+  );
+  const cmsService = new CMSServiceImpl(
+    prisma,
+    contentService,
+    /* aiProxy */ undefined,
+  );
+
+  // Initialize Animation Content Integration with Prisma for persistence
+  const animationIntegration = createAnimationContentIntegration(prisma);
 
   // Register Content routes (ContentService)
   await registerContentRoutes(app, { contentService });
@@ -37,6 +48,7 @@ export const contentModule: FastifyPluginAsync = async (app) => {
   // Register Content Studio routes
   registerContentStudioRoutes(app, {
     contentStudioService,
+    animationIntegration,
     prefixes: ["/content-studio"],
   });
 

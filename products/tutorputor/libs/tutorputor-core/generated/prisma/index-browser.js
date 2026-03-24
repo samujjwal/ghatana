@@ -1648,6 +1648,34 @@ exports.Prisma.AutoRevisionMetricsScalarFieldEnum = {
   failedJobs24h: 'failedJobs24h'
 };
 
+exports.Prisma.KernelPluginScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  pluginId: 'pluginId',
+  name: 'name',
+  version: 'version',
+  description: 'description',
+  author: 'author',
+  kernelType: 'kernelType',
+  capabilities: 'capabilities',
+  dependencies: 'dependencies',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AutomationRuleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  experienceId: 'experienceId',
+  name: 'name',
+  description: 'description',
+  trigger: 'trigger',
+  action: 'action',
+  enabled: 'enabled',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2189,7 +2217,9 @@ exports.Prisma.ModelName = {
   DriftSignal: 'DriftSignal',
   RegenerationInsight: 'RegenerationInsight',
   AutoRevisionConfig: 'AutoRevisionConfig',
-  AutoRevisionMetrics: 'AutoRevisionMetrics'
+  AutoRevisionMetrics: 'AutoRevisionMetrics',
+  KernelPlugin: 'KernelPlugin',
+  AutomationRule: 'AutomationRule'
 };
 
 /**

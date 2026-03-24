@@ -56,7 +56,7 @@ export default async function learningRoutes(
   // ---------------------------------------------------------------------------
 
   fastify.get(
-    "/dashboard",
+    "/learning/dashboard",
     {
       schema: {
         description:
