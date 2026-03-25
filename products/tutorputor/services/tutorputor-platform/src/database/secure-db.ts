@@ -1,6 +1,6 @@
 /**
  * Secure Database Access Layer
- * 
+ *
  * Provides secure database operations with:
  * - SQL injection prevention
  * - Parameterized queries only
@@ -10,9 +10,13 @@
  * - Query logging and monitoring
  */
 
-import { PrismaClient } from '@tutorputor/core/db';
-import { getConfig } from '../config/config.js';
-import { createLogger, LogContext } from '../utils/logger.js';
+import {
+  Prisma,
+  createPrismaClient,
+  type TutorPrismaClient,
+} from "@tutorputor/core/db";
+import { getConfig } from "../config/config.js";
+import { createLogger } from "../utils/logger.js";
 
 export interface DatabaseConfig {
   url: string;
@@ -40,8 +44,8 @@ export interface DatabaseMetrics {
  * Secure Database Manager
  */
 export class SecureDatabaseManager {
-  private prisma: PrismaClient;
-  private logger = createLogger('database');
+  private prisma: TutorPrismaClient;
+  private logger = createLogger("database");
   private metrics: DatabaseMetrics = {
     totalQueries: 0,
     slowQueries: 0,
@@ -53,29 +57,13 @@ export class SecureDatabaseManager {
 
   constructor(config?: DatabaseConfig) {
     const dbConfig = getConfig();
-    
-    this.prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: config?.url || dbConfig.DATABASE_URL,
-        },
-      },
-      log: [
-        {
-          emit: 'event',
-          level: 'query',
-        },
-        {
-          emit: 'event',
-          level: 'error',
-        },
-        {
-          emit: 'event',
-          level: 'info',
-        },
-      ],
-      errorFormat: 'pretty',
-    });
+    const databaseUrl = config?.url || dbConfig.DATABASE_URL;
+
+    if (databaseUrl) {
+      process.env.TUTORPUTOR_DATABASE_URL = databaseUrl;
+    }
+
+    this.prisma = createPrismaClient();
 
     this.setupLogging();
   }
@@ -84,55 +72,16 @@ export class SecureDatabaseManager {
    * Setup query logging and monitoring
    */
   private setupLogging(): void {
-    this.prisma.$on('query', (e: any) => {
-      const queryTime = Date.now() - e.timestamp;
-      this.queryTimes.push(queryTime);
-      
-      // Keep only last 100 query times for average calculation
-      if (this.queryTimes.length > 100) {
-        this.queryTimes.shift();
-      }
-
-      this.metrics.totalQueries++;
-      this.metrics.averageQueryTime = this.queryTimes.reduce((a, b) => a + b, 0) / this.queryTimes.length;
-
-      // Log slow queries (> 1 second)
-      if (queryTime > 1000) {
-        this.metrics.slowQueries++;
-        this.logger.warn({
-          query: e.query,
-          duration: queryTime,
-          params: e.params,
-        }, 'Slow database query detected');
-      }
-
-      this.logger.debug({
-        query: e.query,
-        duration: queryTime,
-        params: e.params,
-      }, 'Database query executed');
-    });
-
-    this.prisma.$on('error', (e: any) => {
-      this.metrics.failedQueries++;
-      this.logger.error({
-        error: e.message,
-        target: e.target,
-      }, 'Database error occurred');
-    });
-
-    this.prisma.$on('info', (e: any) => {
-      this.logger.info({
-        message: e.message,
-        target: e.target,
-      }, 'Database info');
-    });
+    this.logger.debug(
+      { operation: "database_monitoring_initialized" },
+      "Database monitoring initialized",
+    );
   }
 
   /**
    * Get Prisma client with security wrapper
    */
-  get client(): PrismaClient {
+  get client(): TutorPrismaClient {
     return this.prisma;
   }
 
@@ -140,37 +89,48 @@ export class SecureDatabaseManager {
    * Execute a secure query with validation and monitoring
    */
   async executeQuery<T>(
-    operation: (prisma: PrismaClient) => Promise<T>,
-    options: QueryOptions = {}
+    operation: (prisma: TutorPrismaClient) => Promise<T>,
+    options: QueryOptions = {},
   ): Promise<T> {
     const startTime = Date.now();
     const timeout = options.timeout || 30000; // 30 seconds default
 
     try {
-      this.logger.debug({ operation: 'query_start' }, 'Starting database query');
+      this.logger.debug(
+        { operation: "query_start" },
+        "Starting database query",
+      );
 
       // Execute with timeout
       const result = await Promise.race([
         operation(this.prisma),
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Query timeout')), timeout)
-        )
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Query timeout")), timeout),
+        ),
       ]);
 
       const duration = Date.now() - startTime;
-      this.logger.debug({ duration, operation: 'query_success' }, 'Database query completed');
+      this.logger.debug(
+        { duration, operation: "query_success" },
+        "Database query completed",
+      );
 
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.logger.error({
-        error: error instanceof Error ? error.message : 'Unknown error',
-        duration,
-        operation: 'query_failed'
-      }, 'Database query failed');
+      this.logger.error(
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+          duration,
+          operation: "query_failed",
+        },
+        "Database query failed",
+      );
 
       // Don't expose internal database errors to callers
-      throw new Error(`Database operation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Database operation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -178,31 +138,45 @@ export class SecureDatabaseManager {
    * Execute a transaction with rollback on error
    */
   async executeTransaction<T>(
-    operations: (prisma: PrismaClient) => Promise<T>,
-    options: QueryOptions = {}
+    operations: (prisma: Prisma.TransactionClient) => Promise<T>,
+    options: QueryOptions = {},
   ): Promise<T> {
     const startTime = Date.now();
 
     try {
-      this.logger.debug({ operation: 'transaction_start' }, 'Starting database transaction');
+      this.logger.debug(
+        { operation: "transaction_start" },
+        "Starting database transaction",
+      );
 
-      const result = await this.prisma.$transaction(operations, {
-        timeout: options.timeout || 30000,
-      });
+      const result = await this.prisma.$transaction(
+        (prisma) => operations(prisma),
+        {
+          timeout: options.timeout || 30000,
+        },
+      );
 
       const duration = Date.now() - startTime;
-      this.logger.debug({ duration, operation: 'transaction_success' }, 'Database transaction completed');
+      this.logger.debug(
+        { duration, operation: "transaction_success" },
+        "Database transaction completed",
+      );
 
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.logger.error({
-        error: error instanceof Error ? error.message : 'Unknown error',
-        duration,
-        operation: 'transaction_failed'
-      }, 'Database transaction failed');
+      this.logger.error(
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+          duration,
+          operation: "transaction_failed",
+        },
+        "Database transaction failed",
+      );
 
-      throw new Error(`Transaction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Transaction failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -210,7 +184,7 @@ export class SecureDatabaseManager {
    * Validate and sanitize input parameters
    */
   private validateInput(input: any): any {
-    if (typeof input === 'string') {
+    if (typeof input === "string") {
       // Basic SQL injection prevention
       const dangerousPatterns = [
         /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/i,
@@ -221,19 +195,19 @@ export class SecureDatabaseManager {
 
       for (const pattern of dangerousPatterns) {
         if (pattern.test(input)) {
-          throw new Error('Potentially dangerous input detected');
+          throw new Error("Potentially dangerous input detected");
         }
       }
 
       // Escape special characters
-      return input.replace(/['"\\]/g, '\\$&');
+      return input.replace(/['"\\]/g, "\\$&");
     }
 
     if (Array.isArray(input)) {
-      return input.map(item => this.validateInput(item));
+      return input.map((item) => this.validateInput(item));
     }
 
-    if (typeof input === 'object' && input !== null) {
+    if (typeof input === "object" && input !== null) {
       const sanitized: any = {};
       for (const [key, value] of Object.entries(input)) {
         sanitized[key] = this.validateInput(value);
@@ -259,12 +233,10 @@ export class SecureDatabaseManager {
         data: {
           email: sanitizedData.email,
           tenantId: sanitizedData.tenantId,
-          isActive: true,
+          displayName: sanitizedData.email.split("@")[0],
+          role: sanitizedData.roles?.[0] || "student",
           createdAt: new Date(),
           updatedAt: new Date(),
-        },
-        include: {
-          roles: true,
         },
       });
     });
@@ -294,7 +266,7 @@ export class SecureDatabaseManager {
           difficulty: sanitizedData.difficulty as any,
           description: sanitizedData.description,
           estimatedTimeMinutes: sanitizedData.estimatedTimeMinutes,
-          status: 'DRAFT',
+          status: "DRAFT",
           version: 1,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -311,17 +283,23 @@ export class SecureDatabaseManager {
     moduleId: string;
     tenantId: string;
     type: string;
+    createdBy?: string;
   }) {
     const sanitizedData = this.validateInput(assessmentData);
+    const actorId = sanitizedData.createdBy || "system";
 
     return this.executeQuery(async (prisma) => {
       return prisma.assessment.create({
         data: {
           title: sanitizedData.title,
-          moduleId: sanitizedData.moduleId,
+          module: {
+            connect: { id: sanitizedData.moduleId },
+          },
           tenantId: sanitizedData.tenantId,
           type: sanitizedData.type as any,
-          status: 'DRAFT',
+          status: "DRAFT",
+          createdBy: actorId,
+          updatedBy: actorId,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -344,7 +322,10 @@ export class SecureDatabaseManager {
       await this.prisma.$queryRaw`SELECT 1 as health_check`;
       return true;
     } catch (error) {
-      this.logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Database health check failed');
+      this.logger.error(
+        { error: error instanceof Error ? error.message : "Unknown error" },
+        "Database health check failed",
+      );
       return false;
     }
   }
@@ -354,7 +335,7 @@ export class SecureDatabaseManager {
    */
   async close(): Promise<void> {
     await this.prisma.$disconnect();
-    this.logger.info({}, 'Database connection closed');
+    this.logger.info({}, "Database connection closed");
   }
 }
 
@@ -369,8 +350,8 @@ export class DatabaseConnectionPool {
    * Get database instance for tenant
    */
   static getInstance(tenantId?: string): SecureDatabaseManager {
-    const key = tenantId || 'default';
-    
+    const key = tenantId || "default";
+
     if (!this.instances.has(key)) {
       this.instances.set(key, new SecureDatabaseManager());
     }
@@ -382,7 +363,9 @@ export class DatabaseConnectionPool {
    * Close all connections
    */
   static async closeAll(): Promise<void> {
-    const closePromises = Array.from(this.instances.values()).map(instance => instance.close());
+    const closePromises = Array.from(this.instances.values()).map((instance) =>
+      instance.close(),
+    );
     await Promise.all(closePromises);
     this.instances.clear();
   }

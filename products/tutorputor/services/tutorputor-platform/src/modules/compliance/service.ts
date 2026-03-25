@@ -14,12 +14,7 @@ import type {
 import { randomBytes } from "crypto";
 import { DataExporter } from "./exporter";
 import { DataDeleter } from "./deleter";
-import type {
-  DataRequestStatus,
-  ComplianceReport,
-  DataRetentionPolicy,
-  ConsentRecord,
-} from "./types";
+import type { ComplianceReport } from "./types";
 
 // Mock interface if not in Prisma
 interface DataRequest {
@@ -63,11 +58,16 @@ export class ComplianceServiceImpl implements ComplianceService {
     tenantId: TenantId;
     requestedBy: UserId;
   }): Promise<DataExportRequest> {
-    // Fetch email
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const user = await this.prisma.user.findUnique({
-      where: { id: params.userId },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: params.userId,
+        tenantId: params.tenantId,
+      },
     });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
 
     const requestId = `req_${Date.now()}_${randomBytes(4).toString("hex")}`;
     const now = new Date();
@@ -119,7 +119,7 @@ export class ComplianceServiceImpl implements ComplianceService {
     } as DataExportRequest;
   }
 
-  async downloadExport(args: {
+  async downloadExport(_args: {
     requestId: string;
     tenantId: TenantId;
   }): Promise<{ downloadUrl: string; expiresAt: string }> {
@@ -154,7 +154,7 @@ export class ComplianceServiceImpl implements ComplianceService {
     };
   }
 
-  async getDeletionStatus(args: {
+  async getDeletionStatus(_args: {
     requestId: string;
     tenantId: TenantId;
   }): Promise<any> {
@@ -170,8 +170,8 @@ export class ComplianceServiceImpl implements ComplianceService {
       const result = await this.exporter.exportUserData(userId, tenantId);
       console.log(`Export ${requestId} completed: ${result.filePath}`);
       // Update status in DB if model existed
-    } catch (e) {
-      console.error(`Export ${requestId} failed`, e);
+    } catch (_e) {
+      console.error(`Export ${requestId} failed`);
     }
   }
 
@@ -259,7 +259,7 @@ export class ComplianceServiceImpl implements ComplianceService {
     return true;
   }
 
-  async queryAuditEvents(args: any): Promise<any> {
+  async queryAuditEvents(_args: any): Promise<any> {
     return { items: [], totalCount: 0, hasMore: false };
   }
 }

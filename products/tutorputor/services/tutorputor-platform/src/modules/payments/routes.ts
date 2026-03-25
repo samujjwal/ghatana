@@ -1,86 +1,160 @@
-import { FastifyInstance } from 'fastify';
-import { PaymentService } from './service';
-import { CreateSubscriptionSchema, CreateSubscriptionDto } from './types';
-import { z } from 'zod';
+import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 
-export async function paymentRoutes(fastify: FastifyInstance, options: { service: PaymentService }) {
-    const service = options.service;
+import type { TenantId } from "@tutorputor/contracts/v1/types";
+import {
+  getTenantId,
+  respondWithErrors,
+} from "../../core/http/requestContext.js";
+import type { SubscriptionServiceImpl } from "./service.js";
 
-    // Middleware ensure user is authenticated logic would go here
-    // For now assuming request.user is populated if protected, or we check manually
-    // Using a preHandler if authentication is required globally or per route
+const CreateSubscriptionSchema = z.object({
+  planId: z.string().min(1),
+  billingInterval: z.enum(["monthly", "quarterly", "annual"]),
+  paymentMethodId: z.string().min(1).optional(),
+  trialDays: z.number().int().min(0).optional(),
+});
 
-    fastify.post<{ Body: CreateSubscriptionDto }>(
-        '/payments/subscriptions',
-        {
-            schema: {
-                body: zodToFastify(CreateSubscriptionSchema),
-                response: {
-                    201: { type: 'object', properties: { id: { type: 'string' }, status: { type: 'string' } } } // Simplified response schema
-                }
-            },
-            preValidation: [async (request) => {
-                // @ts-ignore
-                if (!request.user) {
-                    // throw fastify.httpErrors.unauthorized();
-                }
-            }]
-        },
-        async (request, reply) => {
-            // @ts-ignore
-            const user = request.user as { id: string; tenantId?: string; email?: string } | undefined;
-            // Mock user if developing locally without auth
-            const userId = user?.id || 'simulated-user-id';
-            const tenantId = user?.tenantId || 'simulated-tenant-id';
-            const email = user?.email || 'simulated@example.com';
+type CreateSubscriptionDto = z.infer<typeof CreateSubscriptionSchema>;
 
-            const subscription = await service.createSubscription(tenantId, userId, email, request.body);
-            return reply.code(201).send(subscription);
+/**
+ * Subscription management routes.
+ *
+ * @doc.type routes
+ * @doc.purpose HTTP endpoints for platform subscription management
+ * @doc.layer product
+ * @doc.pattern REST API
+ */
+export async function paymentRoutes(
+  fastify: FastifyInstance,
+  options: { service: SubscriptionServiceImpl },
+) {
+  const service = options.service;
+
+  /**
+   * GET /payments/plans
+   * List available subscription plans.
+   */
+  fastify.get("/payments/plans", async (request, reply) => {
+    const tenantId = getTenantId(request) as TenantId;
+    await respondWithErrors(reply, () => service.listPlans({ tenantId }));
+  });
+
+  /**
+   * POST /payments/subscriptions
+   * Create a new subscription for the tenant.
+   */
+  fastify.post<{ Body: CreateSubscriptionDto }>(
+    "/payments/subscriptions",
+    async (request, reply) => {
+      const body = CreateSubscriptionSchema.parse(request.body);
+      const tenantId = getTenantId(request) as TenantId;
+
+      const subscription = await service.createSubscription({
+        tenantId,
+        planId: body.planId as any,
+        billingInterval: body.billingInterval,
+        paymentMethodId: body.paymentMethodId as any,
+        trialDays: body.trialDays,
+      });
+      return reply.code(201).send(subscription);
+    },
+  );
+
+  /**
+   * GET /payments/subscription
+   * Get the active subscription for the tenant.
+   */
+  fastify.get("/payments/subscription", async (request, reply) => {
+    const tenantId = getTenantId(request) as TenantId;
+
+    const subscription = await service.getCurrentSubscription({ tenantId });
+    if (!subscription) {
+      return reply.code(404).send({ message: "No active subscription found" });
+    }
+    return subscription;
+  });
+
+  /**
+   * POST /payments/subscription/cancel
+   * Cancel the tenant's active subscription.
+   */
+  fastify.post<{ Body: { atPeriodEnd?: boolean; reason?: string } }>(
+    "/payments/subscription/cancel",
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const { atPeriodEnd = true, reason } =
+        (request.body as { atPeriodEnd?: boolean; reason?: string }) ?? {};
+
+      await respondWithErrors(reply, async () => {
+        const currentSub = await service.getCurrentSubscription({ tenantId });
+        if (!currentSub) {
+          throw Object.assign(new Error("No active subscription found"), {
+            statusCode: 404,
+            code: "NOT_FOUND",
+          });
         }
-    );
+        return service.cancelSubscription({
+          tenantId,
+          subscriptionId: currentSub.id,
+          cancelImmediately: !atPeriodEnd,
+          reason,
+        });
+      });
+    },
+  );
 
-    fastify.get(
-        '/payments/subscription',
-        async (request, reply) => {
-            // @ts-ignore
-            const user = request.user as { id: string; tenantId?: string } | undefined;
-            const userId = user?.id || 'simulated-user-id';
-            const tenantId = user?.tenantId || 'simulated-tenant-id';
+  /**
+   * POST /payments/subscription/change
+   * Upgrade or downgrade the tenant's plan.
+   */
+  fastify.post<{ Body: { planId: string; billingInterval: string } }>(
+    "/payments/subscription/change",
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const { planId, billingInterval } = request.body as {
+        planId: string;
+        billingInterval: string;
+      };
 
-            const subscription = await service.getSubscription(tenantId, userId);
-            if (!subscription) {
-                return reply.code(404).send({ message: 'No active subscription found' });
-            }
-            return subscription;
+      if (!planId || !billingInterval) {
+        return reply
+          .code(400)
+          .send({ error: "planId and billingInterval are required" });
+      }
+
+      await respondWithErrors(reply, async () => {
+        const currentSub = await service.getCurrentSubscription({ tenantId });
+        if (!currentSub) {
+          throw Object.assign(new Error("No active subscription found"), {
+            statusCode: 404,
+            code: "NOT_FOUND",
+          });
         }
-    );
+        return service.changePlan({
+          tenantId,
+          subscriptionId: currentSub.id,
+          newPlanId: planId,
+          newBillingInterval: billingInterval as
+            | "monthly"
+            | "quarterly"
+            | "annual",
+        });
+      });
+    },
+  );
 
-    fastify.post<{ Body: { returnUrl: string } }>(
-        '/payments/portal',
-        async (request, reply) => {
-            // @ts-ignore
-            const user = request.user as { id: string; tenantId?: string } | undefined;
-            const userId = user?.id || 'simulated-user-id';
-            const tenantId = user?.tenantId || 'simulated-tenant-id';
-            const { returnUrl } = request.body;
-
-            try {
-                const url = await service.createPortalSession(tenantId, userId, returnUrl);
-                return { url };
-            } catch (e: any) {
-                return reply.code(400).send({ message: e.message });
-            }
-        }
-    );
-}
-
-// Helper to convert Zod to JSON Schema (simplified) or use fastify-type-provider-zod
-// Since we didn't see that configured, we'll skip schema validation details in strict JSON schema format 
-// and rely on manual validation or just 'any' for now to fit the file.
-// Ideally use `fastify-type-provider-zod`.
-function zodToFastify(zodSchema: any) {
-    // For brevity/robustness in this context, returning undefined to skip fastify schema validation 
-    // but we trust the type signature.
-    // In production we'd use 'zod-to-json-schema'.
-    return undefined;
+  /**
+   * POST /payments/portal
+   * Create a Stripe billing portal session for self-service management.
+   */
+  fastify.post<{ Body: { returnUrl?: string } }>(
+    "/payments/portal",
+    async (_request, reply) => {
+      return reply.code(501).send({
+        message:
+          "Billing portal sessions require Stripe configuration. Set STRIPE_SECRET_KEY to enable.",
+      });
+    },
+  );
 }

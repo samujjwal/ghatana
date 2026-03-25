@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Box, Card, Text, Button, Badge, Spinner } from "@/components/ui";
 import { PageHeader } from "../components/PageHeader";
+import { apiClient } from "../api/tutorputorClient";
 
 interface MarketplaceListing {
     id: string;
@@ -28,14 +29,71 @@ interface MarketplaceResponse {
  */
 export function MarketplacePage() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [filter, setFilter] = useState<"all" | "free" | "paid">("all");
+    const [feedback, setFeedback] = useState<string | null>(null);
 
     const { data, isLoading, error } = useQuery<MarketplaceResponse>({
         queryKey: ["marketplace", "listings", filter],
         queryFn: async (): Promise<MarketplaceResponse> => {
-            // Placeholder - listMarketplaceListings to be implemented on apiClient
-            return { items: [] };
+            const response = await apiClient.listMarketplaceListings({
+                status: "ACTIVE",
+                visibility: "PUBLIC",
+                limit: 50,
+            });
+            return { items: response.items };
         }
+    });
+
+    const { data: purchases } = useQuery({
+        queryKey: ["marketplace", "purchases"],
+        queryFn: async () => {
+            try {
+                return await apiClient.listMarketplacePurchases();
+            } catch {
+                return { items: [] };
+            }
+        },
+    });
+
+    const ownedModuleIds = useMemo(
+        () => new Set((purchases?.items ?? []).map((purchase) => purchase.moduleId)),
+        [purchases],
+    );
+
+    const checkoutMutation = useMutation({
+        mutationFn: async (listing: MarketplaceListing) => {
+            const session = await apiClient.createMarketplaceCheckoutSession({
+                listingId: listing.id,
+                successUrl: window.location.href,
+                cancelUrl: window.location.href,
+            });
+
+            if (session.paymentUrl?.includes("pay.mock.tutorputor.com")) {
+                await apiClient.verifyMarketplaceCheckout(session.id);
+                return { mode: "verified" as const, listing };
+            }
+
+            if (session.paymentUrl) {
+                window.location.assign(session.paymentUrl);
+                return { mode: "redirected" as const, listing };
+            }
+
+            throw new Error("Checkout session did not include a payment URL");
+        },
+        onSuccess: async ({ mode, listing }) => {
+            if (mode === "verified") {
+                setFeedback(`Purchased ${listing.moduleTitle ?? listing.moduleId}.`);
+                await queryClient.invalidateQueries({ queryKey: ["marketplace", "purchases"] });
+            }
+        },
+        onError: (mutationError) => {
+            setFeedback(
+                mutationError instanceof Error
+                    ? mutationError.message
+                    : "Failed to start checkout.",
+            );
+        },
     });
 
     if (isLoading) {
@@ -83,6 +141,12 @@ export function MarketplacePage() {
                     }
                 />
 
+                {feedback ? (
+                    <Card className="mb-4 p-4">
+                        <Text className="text-sm text-gray-700 dark:text-gray-200">{feedback}</Text>
+                    </Card>
+                ) : null}
+
                 {listings.length === 0 ? (
                     <Card className="p-8 text-center">
                         <Text className="text-gray-500 dark:text-gray-300">No listings found.</Text>
@@ -104,14 +168,19 @@ export function MarketplacePage() {
                                         <Text className="font-semibold text-gray-900 line-clamp-2">
                                             {listing.moduleTitle ?? `Module ${listing.moduleId}`}
                                         </Text>
-                                        <Badge
-                                            variant="soft"
-                                            tone={listing.priceCents === 0 ? "success" : "neutral"}
-                                        >
-                                            {listing.priceCents === 0
-                                                ? "Free"
-                                                : `$${(listing.priceCents / 100).toFixed(2)}`}
-                                        </Badge>
+                                        <Box className="flex items-center gap-2">
+                                            {ownedModuleIds.has(listing.moduleId) ? (
+                                                <Badge variant="soft" tone="success">Owned</Badge>
+                                            ) : null}
+                                            <Badge
+                                                variant="soft"
+                                                tone={listing.priceCents === 0 ? "success" : "neutral"}
+                                            >
+                                                {listing.priceCents === 0
+                                                    ? "Free"
+                                                    : `$${(listing.priceCents / 100).toFixed(2)}`}
+                                            </Badge>
+                                        </Box>
                                     </Box>
 
                                     <Text className="text-sm text-gray-500 mb-4 line-clamp-2">
@@ -124,12 +193,22 @@ export function MarketplacePage() {
                                                 {listing.visibility}
                                             </Badge>
                                         </Box>
-                                        <Button
-                                            size="sm"
-                                            onClick={() => navigate(`/modules/${listing.moduleSlug ?? listing.moduleId}`)}
-                                        >
-                                            View Details
-                                        </Button>
+                                        {ownedModuleIds.has(listing.moduleId) ? (
+                                            <Button
+                                                size="sm"
+                                                onClick={() => navigate(`/modules/${listing.moduleSlug ?? listing.moduleId}`)}
+                                            >
+                                                Open Module
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                disabled={checkoutMutation.isPending}
+                                                onClick={() => checkoutMutation.mutate(listing)}
+                                            >
+                                                {checkoutMutation.isPending ? "Starting..." : listing.priceCents === 0 ? "Get Free" : "Buy Now"}
+                                            </Button>
+                                        )}
                                     </Box>
                                 </Box>
                             </Card>

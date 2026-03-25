@@ -34,18 +34,13 @@ import {
   Pause,
   Square,
   Settings,
-  Calendar,
   Zap,
   CheckCircle,
-  XCircle,
-  AlertCircle,
 } from "lucide-react";
 import { Button } from "@ghatana/design-system";
 import { useContentStudioApi } from "../services/contentStudioApi";
-import { AIAssistant, SmartDashboard, aiServiceManager } from "./ai";
+import { AIAssistant, SmartDashboard } from "./ai";
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -55,10 +50,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
-  AreaChart,
-  Area,
 } from "recharts";
 
 // Types from AdminContentCreationDashboard
@@ -230,14 +222,13 @@ interface GenerationMetrics {
 }
 
 export function UnifiedContentStudio() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const experienceId = searchParams.get("id");
+  const [searchParams] = useSearchParams();
   const viewParam = searchParams.get("view") as ContentStudioView | null;
 
   const [currentView, setCurrentView] = useState<ContentStudioView>(
     viewParam || "dashboard",
   );
-  const [currentExperience, setCurrentExperience] =
+  const [_currentExperience, setCurrentExperience] =
     useState<LearningExperience | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationRequest, setGenerationRequest] = useState({
@@ -532,11 +523,10 @@ export function UnifiedContentStudio() {
           <button
             key={tab.id}
             onClick={() => navigateToView(tab.id as ContentStudioView)}
-            className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              currentView === tab.id
+            className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${currentView === tab.id
                 ? "border-purple-500 text-purple-600 dark:text-purple-400"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
-            }`}
+              }`}
           >
             <tab.icon className="h-5 w-5" />
             <span>{tab.name}</span>
@@ -639,11 +629,10 @@ export function UnifiedContentStudio() {
                     <div className="flex items-center justify-between">
                       <span className="font-medium capitalize">{model}</span>
                       <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          status.status === "healthy"
+                        className={`px-2 py-1 text-xs rounded-full ${status.status === "healthy"
                             ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                             : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                        }`}
+                          }`}
                       >
                         {status.status}
                       </span>
@@ -733,12 +722,12 @@ export function UnifiedContentStudio() {
               data={
                 contentStats
                   ? Object.entries(contentStats.byDomain).map(
-                      ([domain, count]) => ({
-                        domain:
-                          domain.charAt(0).toUpperCase() + domain.slice(1),
-                        count,
-                      }),
-                    )
+                    ([domain, count]) => ({
+                      domain:
+                        domain.charAt(0).toUpperCase() + domain.slice(1),
+                      count,
+                    }),
+                  )
                   : []
               }
             >
@@ -762,23 +751,23 @@ export function UnifiedContentStudio() {
                 data={
                   contentStats
                     ? [
-                        {
-                          name: "Excellent",
-                          value: contentStats.qualityDistribution.excellent,
-                        },
-                        {
-                          name: "Good",
-                          value: contentStats.qualityDistribution.good,
-                        },
-                        {
-                          name: "Fair",
-                          value: contentStats.qualityDistribution.fair,
-                        },
-                        {
-                          name: "Poor",
-                          value: contentStats.qualityDistribution.poor,
-                        },
-                      ]
+                      {
+                        name: "Excellent",
+                        value: contentStats.qualityDistribution.excellent,
+                      },
+                      {
+                        name: "Good",
+                        value: contentStats.qualityDistribution.good,
+                      },
+                      {
+                        name: "Fair",
+                        value: contentStats.qualityDistribution.fair,
+                      },
+                      {
+                        name: "Poor",
+                        value: contentStats.qualityDistribution.poor,
+                      },
+                    ]
                     : []
                 }
                 cx="50%"
@@ -1127,13 +1116,12 @@ export function UnifiedContentStudio() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      job.status === "active"
+                    className={`px-2 py-1 text-xs rounded-full ${job.status === "active"
                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                         : job.status === "paused"
                           ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
                           : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                    }`}
+                      }`}
                   >
                     {job.status}
                   </span>

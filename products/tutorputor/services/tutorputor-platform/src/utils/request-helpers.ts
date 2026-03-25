@@ -17,25 +17,35 @@
 import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
 
 /** Shape of the JWT payload as decoded by @fastify/jwt */
-interface JwtUser {
+export interface JwtUser {
   sub?: string;
   userId?: string;
   tenantId?: string;
   role?: string;
 }
 
-type RequestWithContext = {
+export type RequestWithContext = {
   headers: Record<string, string | string[] | undefined>;
-  user?: JwtUser;
+  user?: JwtUser | string | object | Buffer;
 };
+
+function getJwtUser(user: RequestWithContext["user"]): JwtUser | undefined {
+  if (!user || typeof user !== "object" || Buffer.isBuffer(user)) {
+    return undefined;
+  }
+
+  return user as JwtUser;
+}
 
 /**
  * Extract the tenant ID from JWT claims or gateway headers.
  * JWT claim `tenantId` takes precedence over `x-tenant-id` header.
  */
 export function getTenantId(req: RequestWithContext): TenantId {
+  const user = getJwtUser(req.user);
+
   // Prefer JWT claim (set by global auth guard)
-  if (req.user?.tenantId) return req.user.tenantId as TenantId;
+  if (user?.tenantId) return user.tenantId as TenantId;
 
   // Fallback: gateway-injected header (trusted proxy only)
   const tenantId = req.headers["x-tenant-id"];
@@ -48,9 +58,11 @@ export function getTenantId(req: RequestWithContext): TenantId {
  * JWT claim `sub` takes precedence over `x-user-id` header.
  */
 export function getUserId(req: RequestWithContext): UserId {
+  const user = getJwtUser(req.user);
+
   // Prefer JWT subject claim (set by global auth guard)
-  if (req.user?.sub) return req.user.sub as UserId;
-  if (req.user?.userId) return req.user.userId as UserId;
+  if (user?.sub) return user.sub as UserId;
+  if (user?.userId) return user.userId as UserId;
 
   // Fallback: gateway-injected header (trusted proxy only)
   const userId = req.headers["x-user-id"];
@@ -64,8 +76,10 @@ export function getUserId(req: RequestWithContext): UserId {
  * Throws an Error if the role check fails.
  */
 export function requireRole(req: RequestWithContext, roles: string[]): void {
+  const user = getJwtUser(req.user);
+
   // Prefer JWT claim
-  const jwtRole = req.user?.role;
+  const jwtRole = user?.role;
   if (jwtRole && roles.includes(jwtRole)) return;
 
   // Fallback: gateway-injected header

@@ -15,11 +15,9 @@
  *   AUTH_GATEWAY_URL — base URL, e.g. http://auth-gateway:8080
  */
 
-import { logger as rootLogger } from '../core/observability/metrics.js';
+import { createLogger } from "../utils/logger.js";
 
-const logger = rootLogger?.child
-  ? rootLogger.child({ component: 'AuthGatewayClient' })
-  : console;
+const logger = createLogger("auth-gateway-client");
 
 export interface PlatformIdentity {
   /** Whether the presented token is valid. */
@@ -34,16 +32,19 @@ export interface PlatformIdentity {
 
 const REQUEST_TIMEOUT_MS = 5_000;
 
+function logWarning(message: string): void {
+  logger.warn({}, message);
+}
+
 class AuthGatewayClient {
   private static instance: AuthGatewayClient;
   private readonly baseUrl: string | undefined;
 
   private constructor() {
-    this.baseUrl = process.env['AUTH_GATEWAY_URL'];
+    this.baseUrl = process.env["AUTH_GATEWAY_URL"];
     if (!this.baseUrl) {
-      (logger.warn ?? logger.log).call(
-        logger,
-        'AUTH_GATEWAY_URL not configured — platform token validation is disabled',
+      logWarning(
+        "AUTH_GATEWAY_URL not configured — platform token validation is disabled",
       );
     }
   }
@@ -63,10 +64,10 @@ class AuthGatewayClient {
    */
   async validate(token: string): Promise<PlatformIdentity> {
     if (!this.baseUrl) {
-      return { valid: false, error: 'Auth-gateway not configured' };
+      return { valid: false, error: "Auth-gateway not configured" };
     }
     if (!token) {
-      return { valid: false, error: 'No token provided' };
+      return { valid: false, error: "No token provided" };
     }
 
     const controller = new AbortController();
@@ -74,19 +75,16 @@ class AuthGatewayClient {
 
     try {
       const res = await fetch(`${this.baseUrl}/auth/validate`, {
-        method: 'GET',
+        method: "GET",
         headers: { Authorization: `Bearer ${token}` },
         signal: controller.signal,
       });
 
       if (res.status === 401) {
-        return { valid: false, error: 'Token rejected by auth-gateway' };
+        return { valid: false, error: "Token rejected by auth-gateway" };
       }
       if (!res.ok) {
-        (logger.warn ?? logger.log).call(
-          logger,
-          `Auth-gateway returned HTTP ${res.status}`,
-        );
+        logWarning(`Auth-gateway returned HTTP ${res.status}`);
         return { valid: false, error: `Upstream error: HTTP ${res.status}` };
       }
 
@@ -94,10 +92,7 @@ class AuthGatewayClient {
       return body;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      (logger.warn ?? logger.log).call(
-        logger,
-        `Auth-gateway request failed: ${msg}`,
-      );
+      logWarning(`Auth-gateway request failed: ${msg}`);
       return { valid: false, error: msg };
     } finally {
       clearTimeout(timeoutId);

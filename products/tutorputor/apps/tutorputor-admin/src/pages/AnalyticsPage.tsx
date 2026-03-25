@@ -5,7 +5,6 @@ import {
   Button,
   Spinner,
   ResponsiveTable,
-  type TableColumn,
   PullToRefresh,
 } from "@ghatana/design-system";
 import { LineChart, BarChart, PieChart, AreaChart } from "@ghatana/charts";
@@ -259,11 +258,10 @@ export function AnalyticsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                activeTab === tab.id
+              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${activeTab === tab.id
                   ? "border-blue-500 text-blue-600 dark:text-blue-400"
                   : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              }`}
+                }`}
             >
               {tab.icon}
               {tab.label}
@@ -330,9 +328,8 @@ function StatCard({
           {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
           {trend && (
             <p
-              className={`mt-1 text-sm ${
-                trend.positive ? "text-green-600" : "text-red-600"
-              }`}
+              className={`mt-1 text-sm ${trend.positive ? "text-green-600" : "text-red-600"
+                }`}
             >
               {trend.positive ? "↑" : "↓"} {Math.abs(trend.value)}%
             </p>

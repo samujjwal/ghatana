@@ -262,7 +262,7 @@ class AIServiceManager {
     );
   }
 
-  private analyzeKnowledgeGaps(content: any): string[] {
+  private analyzeKnowledgeGaps(_content: any): string[] {
     // AI-powered knowledge gap analysis
     return [
       "Consider adding more practical examples",
@@ -271,7 +271,7 @@ class AIServiceManager {
     ];
   }
 
-  private generateOptimizations(content: any, validation: any): string[] {
+  private generateOptimizations(_content: any, _validation: any): string[] {
     // AI optimization suggestions
     return [
       "Add interactive elements to increase engagement",
@@ -280,7 +280,7 @@ class AIServiceManager {
     ];
   }
 
-  private assessPerformance(content: any): any {
+  private assessPerformance(_content: any): any {
     return {
       completionTime: 15, // minutes
       difficulty: "medium",
@@ -305,7 +305,7 @@ class AIServiceManager {
     return health;
   }
 
-  private optimizePipeline(plugins: any[]): any {
+  private optimizePipeline(_plugins: any[]): any {
     return {
       bottlenecks: ["Plugin processing time"],
       recommendations: ["Enable parallel processing"],
@@ -349,7 +349,7 @@ class AIServiceManager {
     return entities;
   }
 
-  private calculateConfidence(input: string, intent: string): number {
+  private calculateConfidence(_input: string, intent: string): number {
     // Simple confidence calculation
     return intent === "unknown" ? 0.3 : 0.8;
   }
@@ -366,11 +366,11 @@ class AIServiceManager {
     return content.realWorldUseCases ? 0.8 : 0.4;
   }
 
-  private isAppropriateDifficulty(content: any): number {
+  private isAppropriateDifficulty(_content: any): number {
     return 0.7; // Would be calculated based on grade level
   }
 
-  private calculateAIEnhancement(validation: any): number {
+  private calculateAIEnhancement(_validation: any): number {
     return 10; // AI enhancement points
   }
 

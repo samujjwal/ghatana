@@ -3,6 +3,7 @@ import { TenantId } from "@tutorputor/contracts/v1";
 import {
   getTenantId,
   requireRole,
+  requireTenantAccess,
   respondWithErrors,
 } from "../../core/http/requestContext.js";
 import { createTenantService, type DomainPack } from "./service.js";
@@ -122,9 +123,19 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
    * GET /domain-packs/:id
    */
   app.get("/domain-packs/:id", async (req, reply) => {
+    const tenantId = getTenantId(req);
     const { id } = req.params as { id: string };
     const pack = await tenantService.getDomainPack(id);
     if (!pack) return reply.code(404).send({ error: "Domain Pack not found" });
+
+    if (pack.visibility !== "public") {
+      requireTenantAccess(
+        pack.tenantId,
+        tenantId,
+        "Domain Pack is not accessible for the current tenant",
+      );
+    }
+
     return reply.send(pack);
   });
 

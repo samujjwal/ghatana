@@ -223,6 +223,33 @@ interface Achievement {
   category: AchievementCategory;
 }
 
+interface MarketplaceListingSummary {
+  id: string;
+  moduleId: string;
+  moduleTitle?: string;
+  moduleSlug?: string;
+  description?: string;
+  priceCents: number;
+  visibility: string;
+  status?: string;
+}
+
+interface MarketplaceCheckoutSession {
+  id: string;
+  listingId: string;
+  amountCents: number;
+  status: string;
+  paymentUrl?: string;
+}
+
+interface MarketplacePurchase {
+  id: string;
+  moduleId: string;
+  listingId: string;
+  amountCents: number;
+  purchasedAt?: string;
+}
+
 export interface ApiError {
   message: string;
   statusCode: number;
@@ -524,6 +551,70 @@ export class TutorPutorApiClient {
     return await this.request<{ achievements: Achievement[] }>(
       "/v1/gamification/achievements",
     );
+  }
+
+  // ========== Marketplace ===========
+
+  async listMarketplaceListings(filters?: {
+    status?: string;
+    visibility?: string;
+    limit?: number;
+  }): Promise<{
+    items: MarketplaceListingSummary[];
+    nextCursor?: string | null;
+  }> {
+    const params = new URLSearchParams();
+    if (filters?.status) params.set("status", filters.status);
+    if (filters?.visibility) params.set("visibility", filters.visibility);
+    if (typeof filters?.limit === "number") {
+      params.set("limit", String(filters.limit));
+    }
+
+    const query = params.toString();
+    const path = query
+      ? `/v1/integration/marketplace/listings?${query}`
+      : "/v1/integration/marketplace/listings";
+
+    return await this.request<{
+      items: MarketplaceListingSummary[];
+      nextCursor?: string | null;
+    }>(path);
+  }
+
+  async createMarketplaceCheckoutSession(args: {
+    listingId: string;
+    successUrl?: string;
+    cancelUrl?: string;
+  }): Promise<MarketplaceCheckoutSession> {
+    return await this.request<MarketplaceCheckoutSession>(
+      "/v1/integration/billing/checkout",
+      {
+        method: "POST",
+        body: JSON.stringify(args),
+      },
+    );
+  }
+
+  async verifyMarketplaceCheckout(
+    sessionId: string,
+  ): Promise<MarketplaceCheckoutSession> {
+    return await this.request<MarketplaceCheckoutSession>(
+      "/v1/integration/billing/verify",
+      {
+        method: "POST",
+        body: JSON.stringify({ sessionId }),
+      },
+    );
+  }
+
+  async listMarketplacePurchases(): Promise<{
+    items: MarketplacePurchase[];
+    nextCursor?: string | null;
+  }> {
+    return await this.request<{
+      items: MarketplacePurchase[];
+      nextCursor?: string | null;
+    }>("/v1/integration/billing/purchases");
   }
 
   // ========== Search ==========

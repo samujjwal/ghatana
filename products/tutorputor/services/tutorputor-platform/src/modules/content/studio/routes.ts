@@ -13,7 +13,11 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { getTenantId, getUserId } from "../../../core/http/requestContext.js";
+import {
+  getTenantId,
+  getUserId,
+  roleGuard,
+} from "../../../core/http/requestContext.js";
 import type {
   LearningExperience,
   LearningClaim,
@@ -72,6 +76,29 @@ export function registerContentStudioRoutes(
       : ["/content-studio"];
 
   for (const prefix of prefixes) {
+    const contentStudioPreHandler = roleGuard([
+      "admin",
+      "content_creator",
+      "superadmin",
+    ]);
+
+    fastify.addHook("onRoute", (routeOptions) => {
+      if (
+        typeof routeOptions.url !== "string" ||
+        !routeOptions.url.startsWith(prefix) ||
+        routeOptions.url === `${prefix}/health`
+      ) {
+        return;
+      }
+
+      const existingPreHandler = routeOptions.preHandler;
+      routeOptions.preHandler = Array.isArray(existingPreHandler)
+        ? [contentStudioPreHandler, ...existingPreHandler]
+        : existingPreHandler
+          ? [contentStudioPreHandler, existingPreHandler]
+          : [contentStudioPreHandler];
+    });
+
     // =========================================================================
     // Experience CRUD Routes
     // =========================================================================
@@ -233,6 +260,152 @@ export function registerContentStudioRoutes(
           request.body,
         );
         return reply.send({ data: tasks });
+      },
+    );
+
+    fastify.post<{
+      Params: { id: string };
+      Body: { text: string; bloomLevel?: string; contentNeeds?: unknown };
+    }>(`${prefix}/experiences/:id/claims`, async (request, reply) => {
+      const { id } = request.params;
+      const tenantId = getTenantId(request);
+
+      const existing = await contentStudioService.getExperience(id);
+      if (!existing) {
+        return reply.code(404).send({ error: "Experience not found" });
+      }
+
+      if (tenantId && existing.tenantId !== tenantId) {
+        return reply.code(403).send({ error: "Access denied" });
+      }
+
+      const claim = await contentStudioService.addClaim(id, request.body);
+      return reply.code(201).send({ data: claim });
+    });
+
+    fastify.patch<{
+      Params: { experienceId: string; claimId: string };
+      Body: { text?: string; bloomLevel?: string; contentNeeds?: unknown };
+    }>(
+      `${prefix}/experiences/:experienceId/claims/:claimId`,
+      async (request, reply) => {
+        const { experienceId, claimId } = request.params;
+        const tenantId = getTenantId(request);
+
+        const existing = await contentStudioService.getExperience(experienceId);
+        if (!existing) {
+          return reply.code(404).send({ error: "Experience not found" });
+        }
+
+        if (tenantId && existing.tenantId !== tenantId) {
+          return reply.code(403).send({ error: "Access denied" });
+        }
+
+        const claim = await contentStudioService.updateClaim(
+          experienceId,
+          claimId,
+          request.body,
+        );
+        return reply.send({ data: claim });
+      },
+    );
+
+    fastify.delete<{
+      Params: { experienceId: string; claimId: string };
+    }>(
+      `${prefix}/experiences/:experienceId/claims/:claimId`,
+      async (request, reply) => {
+        const { experienceId, claimId } = request.params;
+        const tenantId = getTenantId(request);
+
+        const existing = await contentStudioService.getExperience(experienceId);
+        if (!existing) {
+          return reply.code(404).send({ error: "Experience not found" });
+        }
+
+        if (tenantId && existing.tenantId !== tenantId) {
+          return reply.code(403).send({ error: "Access denied" });
+        }
+
+        await contentStudioService.deleteClaim(experienceId, claimId);
+        return reply.code(204).send();
+      },
+    );
+
+    fastify.post<{
+      Params: { experienceId: string; claimId: string };
+      Body: { prompt: string; type?: string; instructions?: string };
+    }>(
+      `${prefix}/experiences/:experienceId/claims/:claimId/tasks`,
+      async (request, reply) => {
+        const { experienceId, claimId } = request.params;
+        const tenantId = getTenantId(request);
+
+        const existing = await contentStudioService.getExperience(experienceId);
+        if (!existing) {
+          return reply.code(404).send({ error: "Experience not found" });
+        }
+
+        if (tenantId && existing.tenantId !== tenantId) {
+          return reply.code(403).send({ error: "Access denied" });
+        }
+
+        const task = await contentStudioService.addTask(
+          experienceId,
+          claimId,
+          request.body,
+        );
+        return reply.code(201).send({ data: task });
+      },
+    );
+
+    fastify.patch<{
+      Params: { experienceId: string; taskId: string };
+      Body: { prompt?: string; type?: string; instructions?: string };
+    }>(
+      `${prefix}/experiences/:experienceId/tasks/:taskId`,
+      async (request, reply) => {
+        const { experienceId, taskId } = request.params;
+        const tenantId = getTenantId(request);
+
+        const existing = await contentStudioService.getExperience(experienceId);
+        if (!existing) {
+          return reply.code(404).send({ error: "Experience not found" });
+        }
+
+        if (tenantId && existing.tenantId !== tenantId) {
+          return reply.code(403).send({ error: "Access denied" });
+        }
+
+        const task = await contentStudioService.updateTask(
+          experienceId,
+          "",
+          taskId,
+          request.body,
+        );
+        return reply.send({ data: task });
+      },
+    );
+
+    fastify.delete<{
+      Params: { experienceId: string; taskId: string };
+    }>(
+      `${prefix}/experiences/:experienceId/tasks/:taskId`,
+      async (request, reply) => {
+        const { experienceId, taskId } = request.params;
+        const tenantId = getTenantId(request);
+
+        const existing = await contentStudioService.getExperience(experienceId);
+        if (!existing) {
+          return reply.code(404).send({ error: "Experience not found" });
+        }
+
+        if (tenantId && existing.tenantId !== tenantId) {
+          return reply.code(403).send({ error: "Access denied" });
+        }
+
+        await contentStudioService.deleteTask(experienceId, "", taskId);
+        return reply.code(204).send();
       },
     );
 
@@ -565,6 +738,7 @@ export function registerContentStudioRoutes(
           difficulty: body.difficulty ?? "medium",
           estimatedDuration: body.estimatedDuration ?? 30,
         },
+        spec: body.spec,
       });
 
       return reply.code(201).send({ status: "linked" });
@@ -747,8 +921,24 @@ export function registerContentStudioRoutes(
 
     // =========================================================================
     // Automation Rules
-    // Per-experience automation rule CRUD.
+    // Tenant-wide listing plus per-experience automation rule CRUD.
     // =========================================================================
+
+    /**
+     * GET /automation-rules
+     * List automation rules for the current tenant across all experiences.
+     */
+    fastify.get(`${prefix}/automation-rules`, async (request, reply) => {
+      const tenantId = getTenantId(request);
+      const prisma = (fastify as any).prisma;
+
+      const rules = await prisma.automationRule.findMany({
+        where: { tenantId },
+        orderBy: [{ experienceId: "asc" }, { createdAt: "asc" }],
+      });
+
+      return reply.send({ data: rules });
+    });
 
     /**
      * GET /experiences/:id/automation-rules

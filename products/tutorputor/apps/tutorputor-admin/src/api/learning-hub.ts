@@ -10,7 +10,7 @@
  * @doc.pattern Repository
  */
 
-import { LearningUnit } from "@tutorputor/contracts/v1/learning-unit";
+import type { LearningUnit } from "@tutorputor/contracts/v1/learning-unit";
 import { allLearningUnits } from "../data/learningUnitSeedData";
 import {
   type SimulationBlueprintSeed,

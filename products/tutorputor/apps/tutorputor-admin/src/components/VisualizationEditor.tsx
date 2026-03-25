@@ -165,7 +165,7 @@ export function VisualizationEditor({
             } else {
                 createMutation.mutate(data);
             }
-        } catch (error) {
+        } catch (_error) {
             alert('Invalid JSON in configuration');
         }
     };

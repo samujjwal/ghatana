@@ -19,12 +19,14 @@ import type {
   ModuleDraftPatch,
   ModuleId,
   ModuleSummary,
+  TenantId,
+  UserId,
 } from "@tutorputor/contracts/v1/types";
 import {
   getTenantId,
   getUserId,
   requireRole,
-} from "../../../utils/request-helpers.js";
+} from "../../../core/http/requestContext.js";
 
 // =============================================================================
 // Types
@@ -92,7 +94,7 @@ export function registerCMSRoutes(
   fastify.get<{
     Querystring: { status?: string; cursor?: string; limit?: number };
   }>(`${prefix}/modules`, async (req, reply) => {
-    const tenantId = getTenantId(req);
+    const tenantId = getTenantId(req) as TenantId;
     const { status, cursor, limit } = req.query;
 
     await respondWithErrors(reply, () =>
@@ -112,8 +114,8 @@ export function registerCMSRoutes(
   fastify.post<{
     Body: ModuleDraftInput;
   }>(`${prefix}/modules`, async (req, reply) => {
-    const tenantId = getTenantId(req);
-    const userId = getUserId(req);
+    const tenantId = getTenantId(req) as TenantId;
+    const userId = getUserId(req) as UserId;
     requireRole(req, ["teacher", "admin", "creator"]);
 
     const input = req.body;
@@ -138,8 +140,8 @@ export function registerCMSRoutes(
     Params: { moduleId: string };
     Body: ModuleDraftPatch;
   }>(`${prefix}/modules/:moduleId`, async (req, reply) => {
-    const tenantId = getTenantId(req);
-    const userId = getUserId(req);
+    const tenantId = getTenantId(req) as TenantId;
+    const userId = getUserId(req) as UserId;
     requireRole(req, ["teacher", "admin", "creator"]);
 
     const { moduleId } = req.params;
@@ -162,8 +164,8 @@ export function registerCMSRoutes(
   fastify.post<{
     Params: { moduleId: string };
   }>(`${prefix}/modules/:moduleId/publish`, async (req, reply) => {
-    const tenantId = getTenantId(req);
-    const userId = getUserId(req);
+    const tenantId = getTenantId(req) as TenantId;
+    const userId = getUserId(req) as UserId;
     requireRole(req, ["teacher", "admin"]);
 
     const { moduleId } = req.params;
@@ -188,8 +190,8 @@ export function registerCMSRoutes(
   fastify.post<{
     Body: { intent: string };
   }>(`${prefix}/modules/generate`, async (req, reply) => {
-    const tenantId = getTenantId(req);
-    const userId = getUserId(req);
+    const tenantId = getTenantId(req) as TenantId;
+    const userId = getUserId(req) as UserId;
     requireRole(req, ["teacher", "admin", "creator"]);
 
     const { intent } = req.body;

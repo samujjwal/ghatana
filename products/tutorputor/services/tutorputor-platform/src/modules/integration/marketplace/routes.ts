@@ -1,11 +1,23 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { MarketplaceListing, ModuleId, MarketplaceListingId, TenantId, UserId } from "@tutorputor/contracts/v1/types";
-import { getTenantId, getUserId, requireRole, respondWithErrors } from "../../../core/http/requestContext.js";
+import type {
+  MarketplaceListing,
+  ModuleId,
+  MarketplaceListingId,
+  TenantId,
+  UserId,
+} from "@tutorputor/contracts/v1/types";
+import {
+  getTenantId,
+  getUserId,
+  getUserRole,
+  requireRole,
+  respondWithErrors,
+} from "../../../core/http/requestContext.js";
 import { createMarketplaceService } from "./service.js";
 
 /**
  * Marketplace routes.
- * 
+ *
  * @doc.type module
  * @doc.purpose Marketplace HTTP Endpoints
  * @doc.layer product
@@ -25,7 +37,7 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
       status,
       visibility,
       cursor,
-      limit: limit ? Number(limit) : undefined
+      limit: limit ? Number(limit) : undefined,
     });
     reply.send(listings);
   });
@@ -48,8 +60,8 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
         moduleId: payload.moduleId as ModuleId,
         creatorId: creatorId as UserId,
         priceCents: payload.priceCents,
-        visibility: payload.visibility
-      })
+        visibility: payload.visibility,
+      }),
     );
   });
 
@@ -58,19 +70,31 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
     requireRole(req, ["creator", "admin", "teacher"]);
+    const userRole = getUserRole(req);
     const { listingId } = req.params as { listingId: string };
-    const body = req.body as Partial<Pick<MarketplaceListing, "status" | "visibility" | "priceCents">>;
+    const body = req.body as Partial<
+      Pick<MarketplaceListing, "status" | "visibility" | "priceCents">
+    >;
 
-    await respondWithErrors(reply, () =>
-      marketplaceService.updateListing({
+    await respondWithErrors(reply, async () => {
+      if (userRole === "admin" || userRole === "superadmin") {
+        return marketplaceService.adminUpdateListing({
+          tenantId: tenantId as TenantId,
+          listingId: listingId as MarketplaceListingId,
+          status: body.status,
+          visibility: body.visibility,
+        });
+      }
+
+      return marketplaceService.updateListing({
         tenantId: tenantId as TenantId,
         listingId: listingId as MarketplaceListingId,
         userId: userId as UserId,
         status: body.status,
         visibility: body.visibility,
-        priceCents: body.priceCents
-      })
-    );
+        priceCents: body.priceCents,
+      });
+    });
   });
 
   // GET /templates
@@ -96,15 +120,17 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
         page: page ? Number(page) : 1,
         pageSize: pageSize ? Number(pageSize) : 12,
         domains: domains ? (domains as string).split(",") : undefined,
-        difficulties: difficulties ? (difficulties as string).split(",") as any[] : undefined,
+        difficulties: difficulties
+          ? ((difficulties as string).split(",") as any[])
+          : undefined,
         tags: tags ? (tags as string).split(",") : undefined,
         isPremium: isPremium === "true",
         isVerified: isVerified === "true",
         minRating: minRating ? Number(minRating) : undefined,
         search,
         sortBy,
-        sortOrder
-      })
+        sortOrder,
+      }),
     );
   });
 

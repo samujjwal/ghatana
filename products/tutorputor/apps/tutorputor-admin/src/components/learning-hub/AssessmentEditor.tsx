@@ -28,7 +28,7 @@ export function AssessmentEditor({ assessment, onChange }: AssessmentEditorProps
                 }
             });
         } else {
-            const { vivaTrigger, ...rest } = assessment;
+            const { vivaTrigger: _vivaTrigger, ...rest } = assessment;
             onChange(rest as AssessmentConfig);
         }
     };

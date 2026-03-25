@@ -1,14 +1,16 @@
 /**
  * AI Cost Tracking Service
- * 
+ *
  * Tracks token usage, costs, and performance metrics across all AI providers.
  * Provides cost optimization recommendations and budget alerts.
- * 
+ *
  * @module @tutorputor/platform/ai-cost-tracking
  */
 
-import { EventEmitter } from 'events';
-import { logger } from '../utils/logger';
+import { EventEmitter } from "events";
+import { createLogger } from "../utils/logger.js";
+
+const logger = createLogger("ai-cost-tracking");
 
 export interface AICostMetrics {
   provider: string;
@@ -33,8 +35,8 @@ export interface AICostConfig {
 }
 
 export interface CostAlert {
-  type: 'daily_threshold' | 'monthly_threshold' | 'spike' | 'error_rate';
-  severity: 'warning' | 'critical';
+  type: "daily_threshold" | "monthly_threshold" | "spike" | "error_rate";
+  severity: "warning" | "critical";
   message: string;
   currentSpend: number;
   budget: number;
@@ -52,20 +54,23 @@ export class AICostTracker extends EventEmitter {
   private lastResetDate: Date;
 
   // Pricing per 1K tokens (approximate, updated regularly)
-  private static readonly PRICING: Record<string, Record<string, { input: number; output: number }>> = {
+  private static readonly PRICING: Record<
+    string,
+    Record<string, { input: number; output: number }>
+  > = {
     openai: {
-      'gpt-4': { input: 0.03, output: 0.06 },
-      'gpt-4-turbo': { input: 0.01, output: 0.03 },
-      'gpt-3.5-turbo': { input: 0.0005, output: 0.0015 },
+      "gpt-4": { input: 0.03, output: 0.06 },
+      "gpt-4-turbo": { input: 0.01, output: 0.03 },
+      "gpt-3.5-turbo": { input: 0.0005, output: 0.0015 },
     },
     anthropic: {
-      'claude-3-opus': { input: 0.015, output: 0.075 },
-      'claude-3-sonnet': { input: 0.003, output: 0.015 },
-      'claude-3-haiku': { input: 0.00025, output: 0.00125 },
+      "claude-3-opus": { input: 0.015, output: 0.075 },
+      "claude-3-sonnet": { input: 0.003, output: 0.015 },
+      "claude-3-haiku": { input: 0.00025, output: 0.00125 },
     },
     azure: {
-      'gpt-4': { input: 0.03, output: 0.06 },
-      'gpt-35-turbo': { input: 0.0005, output: 0.0015 },
+      "gpt-4": { input: 0.03, output: 0.06 },
+      "gpt-35-turbo": { input: 0.0005, output: 0.0015 },
     },
   };
 
@@ -78,10 +83,10 @@ export class AICostTracker extends EventEmitter {
       enabled: config.enabled !== false,
     };
     this.lastResetDate = new Date();
-    
+
     // Reset daily spend at midnight
     this.scheduleDailyReset();
-    
+
     // Reset monthly spend on 1st of month
     this.scheduleMonthlyReset();
   }
@@ -89,7 +94,7 @@ export class AICostTracker extends EventEmitter {
   /**
    * Track an AI API call
    */
-  track(metrics: Omit<AICostMetrics, 'costUsd' | 'timestamp'>): AICostMetrics {
+  track(metrics: Omit<AICostMetrics, "costUsd" | "timestamp">): AICostMetrics {
     if (!this.config.enabled) {
       return { ...metrics, costUsd: 0, timestamp: new Date() } as AICostMetrics;
     }
@@ -98,7 +103,7 @@ export class AICostTracker extends EventEmitter {
       metrics.provider,
       metrics.model,
       metrics.inputTokens,
-      metrics.outputTokens
+      metrics.outputTokens,
     );
 
     const fullMetrics: AICostMetrics = {
@@ -112,18 +117,21 @@ export class AICostTracker extends EventEmitter {
     this.monthlySpend += cost;
 
     // Emit for real-time monitoring
-    this.emit('metric', fullMetrics);
+    this.emit("metric", fullMetrics);
 
     // Check budget thresholds
     this.checkBudgetAlerts();
 
     // Log for debugging
-    logger.debug('AI cost tracked', {
-      provider: metrics.provider,
-      model: metrics.model,
-      cost: cost.toFixed(4),
-      operation: metrics.operation,
-    });
+    logger.debug(
+      {
+        provider: metrics.provider,
+        model: metrics.model,
+        cost: cost.toFixed(4),
+        operation: metrics.operation,
+      },
+      "AI cost tracked",
+    );
 
     return fullMetrics;
   }
@@ -135,25 +143,40 @@ export class AICostTracker extends EventEmitter {
     provider: string,
     model: string,
     inputTokens: number,
-    outputTokens: number
+    outputTokens: number,
   ): number {
     const pricing = AICostTracker.PRICING[provider.toLowerCase()];
     if (!pricing) {
-      logger.warn(`Unknown provider for cost calculation: ${provider}`);
+      logger.warn(
+        { provider },
+        `Unknown provider for cost calculation: ${provider}`,
+      );
       return 0;
     }
 
     // Find matching model (partial match for versions like gpt-4-0613)
-    const modelKey = Object.keys(pricing).find(key => model.toLowerCase().includes(key));
+    const modelKey = Object.keys(pricing).find((key) =>
+      model.toLowerCase().includes(key),
+    );
     if (!modelKey) {
-      logger.warn(`Unknown model for cost calculation: ${model}`);
+      logger.warn(
+        { provider, model },
+        `Unknown model for cost calculation: ${model}`,
+      );
       return 0;
     }
 
     const rates = pricing[modelKey];
+    if (!rates) {
+      logger.warn(
+        { provider, model },
+        `Missing pricing rates for model: ${model}`,
+      );
+      return 0;
+    }
     const inputCost = (inputTokens / 1000) * rates.input;
     const outputCost = (outputTokens / 1000) * rates.output;
-    
+
     return Number((inputCost + outputCost).toFixed(6));
   }
 
@@ -161,13 +184,18 @@ export class AICostTracker extends EventEmitter {
    * Check budget thresholds and emit alerts
    */
   private checkBudgetAlerts(): void {
-    const dailyThreshold = this.config.dailyBudgetUsd * (this.config.alertThresholdPercent / 100);
-    const monthlyThreshold = this.config.monthlyBudgetUsd * (this.config.alertThresholdPercent / 100);
+    const dailyThreshold =
+      this.config.dailyBudgetUsd * (this.config.alertThresholdPercent / 100);
+    const monthlyThreshold =
+      this.config.monthlyBudgetUsd * (this.config.alertThresholdPercent / 100);
 
-    if (this.dailySpend >= dailyThreshold && this.dailySpend < this.config.dailyBudgetUsd) {
+    if (
+      this.dailySpend >= dailyThreshold &&
+      this.dailySpend < this.config.dailyBudgetUsd
+    ) {
       this.emitAlert({
-        type: 'daily_threshold',
-        severity: 'warning',
+        type: "daily_threshold",
+        severity: "warning",
         message: `Daily AI spend at ${this.config.alertThresholdPercent}% of budget`,
         currentSpend: this.dailySpend,
         budget: this.config.dailyBudgetUsd,
@@ -177,19 +205,22 @@ export class AICostTracker extends EventEmitter {
 
     if (this.dailySpend >= this.config.dailyBudgetUsd) {
       this.emitAlert({
-        type: 'daily_threshold',
-        severity: 'critical',
-        message: 'Daily AI budget exceeded',
+        type: "daily_threshold",
+        severity: "critical",
+        message: "Daily AI budget exceeded",
         currentSpend: this.dailySpend,
         budget: this.config.dailyBudgetUsd,
         timestamp: new Date(),
       });
     }
 
-    if (this.monthlySpend >= monthlyThreshold && this.monthlySpend < this.config.monthlyBudgetUsd) {
+    if (
+      this.monthlySpend >= monthlyThreshold &&
+      this.monthlySpend < this.config.monthlyBudgetUsd
+    ) {
       this.emitAlert({
-        type: 'monthly_threshold',
-        severity: 'warning',
+        type: "monthly_threshold",
+        severity: "warning",
         message: `Monthly AI spend at ${this.config.alertThresholdPercent}% of budget`,
         currentSpend: this.monthlySpend,
         budget: this.config.monthlyBudgetUsd,
@@ -202,8 +233,8 @@ export class AICostTracker extends EventEmitter {
    * Emit cost alert
    */
   private emitAlert(alert: CostAlert): void {
-    this.emit('alert', alert);
-    logger.warn('AI cost alert', alert);
+    this.emit("alert", alert);
+    logger.warn(alert, "AI cost alert");
   }
 
   /**
@@ -218,23 +249,33 @@ export class AICostTracker extends EventEmitter {
     topOperations: Array<{ operation: string; cost: number; count: number }>;
   } {
     const cutoff = new Date(Date.now() - timeWindowHours * 60 * 60 * 1000);
-    const windowMetrics = this.metrics.filter(m => m.timestamp > cutoff);
+    const windowMetrics = this.metrics.filter((m) => m.timestamp > cutoff);
 
     const totalCost = windowMetrics.reduce((sum, m) => sum + m.costUsd, 0);
-    const totalTokens = windowMetrics.reduce((sum, m) => sum + m.totalTokens, 0);
+    const totalTokens = windowMetrics.reduce(
+      (sum, m) => sum + m.totalTokens,
+      0,
+    );
     const requestCount = windowMetrics.length;
-    const averageLatency = windowMetrics.reduce((sum, m) => sum + m.latencyMs, 0) / requestCount || 0;
-    const successfulRequests = windowMetrics.filter(m => m.success).length;
-    const successRate = requestCount > 0 ? (successfulRequests / requestCount) * 100 : 0;
+    const averageLatency =
+      windowMetrics.reduce((sum, m) => sum + m.latencyMs, 0) / requestCount ||
+      0;
+    const successfulRequests = windowMetrics.filter((m) => m.success).length;
+    const successRate =
+      requestCount > 0 ? (successfulRequests / requestCount) * 100 : 0;
 
     // Aggregate by operation
     const operationCosts: Record<string, { cost: number; count: number }> = {};
-    windowMetrics.forEach(m => {
+    windowMetrics.forEach((m) => {
       if (!operationCosts[m.operation]) {
         operationCosts[m.operation] = { cost: 0, count: 0 };
       }
-      operationCosts[m.operation].cost += m.costUsd;
-      operationCosts[m.operation].count++;
+      const currentOperationCost = operationCosts[m.operation];
+      if (!currentOperationCost) {
+        return;
+      }
+      currentOperationCost.cost += m.costUsd;
+      currentOperationCost.count++;
     });
 
     const topOperations = Object.entries(operationCosts)
@@ -256,41 +297,47 @@ export class AICostTracker extends EventEmitter {
    * Get recommendations for cost optimization
    */
   getRecommendations(): Array<{
-    type: 'model_downgrade' | 'cache' | 'batch' | 'reduce_context';
+    type: "model_downgrade" | "cache" | "batch" | "reduce_context";
     description: string;
     potentialSavings: string;
-    priority: 'high' | 'medium' | 'low';
+    priority: "high" | "medium" | "low";
   }> {
-    const recommendations = [];
+    const recommendations: Array<{
+      type: "model_downgrade" | "cache" | "batch" | "reduce_context";
+      description: string;
+      potentialSavings: string;
+      priority: "high" | "medium" | "low";
+    }> = [];
     const stats = this.getStats(24);
 
     // Check for expensive operations
-    const expensiveOps = stats.topOperations.filter(op => op.cost > 5);
+    const expensiveOps = stats.topOperations.filter((op) => op.cost > 5);
     if (expensiveOps.length > 0) {
       recommendations.push({
-        type: 'model_downgrade',
+        type: "model_downgrade",
         description: `Consider using cheaper models for ${expensiveOps.length} high-cost operations`,
-        potentialSavings: '~30-50% on affected operations',
-        priority: 'high',
+        potentialSavings: "~30-50% on affected operations",
+        priority: "high",
       });
     }
 
     // Check token usage
     if (stats.totalTokens > 1000000) {
       recommendations.push({
-        type: 'reduce_context',
-        description: 'High token usage detected. Consider truncating or summarizing context.',
-        potentialSavings: '~20-40% on token costs',
-        priority: 'medium',
+        type: "reduce_context",
+        description:
+          "High token usage detected. Consider truncating or summarizing context.",
+        potentialSavings: "~20-40% on token costs",
+        priority: "medium",
       });
     }
 
     // Cache recommendation
     recommendations.push({
-      type: 'cache',
-      description: 'Enable response caching for repeated similar queries',
-      potentialSavings: '~15-25% on repeated operations',
-      priority: 'medium',
+      type: "cache",
+      description: "Enable response caching for repeated similar queries",
+      potentialSavings: "~15-25% on repeated operations",
+      priority: "medium",
     });
 
     return recommendations;
@@ -306,7 +353,7 @@ export class AICostTracker extends EventEmitter {
     tomorrow.setHours(0, 0, 0, 0);
 
     const msUntilMidnight = tomorrow.getTime() - now.getTime();
-    
+
     setTimeout(() => {
       this.dailySpend = 0;
       this.scheduleDailyReset();
@@ -319,9 +366,9 @@ export class AICostTracker extends EventEmitter {
   private scheduleMonthlyReset(): void {
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    
+
     const msUntilFirst = nextMonth.getTime() - now.getTime();
-    
+
     setTimeout(() => {
       this.monthlySpend = 0;
       this.scheduleMonthlyReset();
@@ -333,7 +380,7 @@ export class AICostTracker extends EventEmitter {
    */
   exportMetrics(): string {
     const stats = this.getStats(1);
-    
+
     return `# AI Cost Metrics
 # TYPE ai_requests_total counter
 ai_requests_total ${stats.requestCount}
@@ -356,21 +403,39 @@ ai_success_rate ${stats.successRate}
    * Get current budget status
    */
   getBudgetStatus(): {
-    daily: { spent: number; budget: number; remaining: number; percentUsed: number };
-    monthly: { spent: number; budget: number; remaining: number; percentUsed: number };
+    daily: {
+      spent: number;
+      budget: number;
+      remaining: number;
+      percentUsed: number;
+    };
+    monthly: {
+      spent: number;
+      budget: number;
+      remaining: number;
+      percentUsed: number;
+    };
   } {
     return {
       daily: {
         spent: Number(this.dailySpend.toFixed(2)),
         budget: this.config.dailyBudgetUsd,
-        remaining: Number((this.config.dailyBudgetUsd - this.dailySpend).toFixed(2)),
-        percentUsed: Number(((this.dailySpend / this.config.dailyBudgetUsd) * 100).toFixed(1)),
+        remaining: Number(
+          (this.config.dailyBudgetUsd - this.dailySpend).toFixed(2),
+        ),
+        percentUsed: Number(
+          ((this.dailySpend / this.config.dailyBudgetUsd) * 100).toFixed(1),
+        ),
       },
       monthly: {
         spent: Number(this.monthlySpend.toFixed(2)),
         budget: this.config.monthlyBudgetUsd,
-        remaining: Number((this.config.monthlyBudgetUsd - this.monthlySpend).toFixed(2)),
-        percentUsed: Number(((this.monthlySpend / this.config.monthlyBudgetUsd) * 100).toFixed(1)),
+        remaining: Number(
+          (this.config.monthlyBudgetUsd - this.monthlySpend).toFixed(2),
+        ),
+        percentUsed: Number(
+          ((this.monthlySpend / this.config.monthlyBudgetUsd) * 100).toFixed(1),
+        ),
       },
     };
   }
@@ -384,23 +449,27 @@ export function aiCostTrackingMiddleware() {
   return async (request: any, reply: any) => {
     if (request.body?.provider && request.body?.model) {
       const startTime = Date.now();
-      
-      reply.then(() => {
-        const latency = Date.now() - startTime;
-        globalAICostTracker.track({
-          provider: request.body.provider,
-          model: request.body.model,
-          inputTokens: request.body.inputTokens || 0,
-          outputTokens: reply.payload?.outputTokens || 0,
-          totalTokens: (request.body.inputTokens || 0) + (reply.payload?.outputTokens || 0),
-          latencyMs: latency,
-          operation: request.routerPath || 'unknown',
-          tenantId: request.user?.tenantId,
-          success: reply.statusCode < 400,
+
+      reply
+        .then(() => {
+          const latency = Date.now() - startTime;
+          globalAICostTracker.track({
+            provider: request.body.provider,
+            model: request.body.model,
+            inputTokens: request.body.inputTokens || 0,
+            outputTokens: reply.payload?.outputTokens || 0,
+            totalTokens:
+              (request.body.inputTokens || 0) +
+              (reply.payload?.outputTokens || 0),
+            latencyMs: latency,
+            operation: request.routerPath || "unknown",
+            tenantId: request.user?.tenantId,
+            success: reply.statusCode < 400,
+          });
+        })
+        .catch(() => {
+          // Error handled elsewhere
         });
-      }).catch(() => {
-        // Error handled elsewhere
-      });
     }
   };
 }

@@ -27,7 +27,7 @@ import {
   type KernelIntelligence,
 } from "../../services/aiServiceManager";
 import { globalRegistry } from "@tutorputor/learning-kernel";
-import { PluginMetadata } from "@tutorputor/contracts/v1/plugin-interfaces";
+import type { PluginMetadata } from "@tutorputor/contracts/v1/plugin-interfaces";
 
 interface LivingKernelDashboardProps {
   className?: string;
@@ -345,7 +345,7 @@ export function LivingKernelDashboard({
                 <span className="font-medium text-green-600">
                   {Math.round(
                     plugins.reduce((sum, p) => sum + p.health, 0) /
-                      plugins.length,
+                    plugins.length,
                   )}
                   %
                 </span>
@@ -407,7 +407,7 @@ export function LivingKernelDashboard({
                 <span className="font-medium">
                   {Math.round(
                     pipelineFlows.reduce((sum, f) => sum + f.throughput, 0) /
-                      pipelineFlows.length,
+                    pipelineFlows.length,
                   )}{" "}
                   ops/min
                 </span>

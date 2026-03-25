@@ -1,6 +1,6 @@
 /**
  * Centralized Authentication System
- * 
+ *
  * Provides secure authentication with:
  * - JWT token validation and refresh
  * - Role-based access control
@@ -9,13 +9,12 @@
  * - Security best practices
  */
 
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { getConfig } from '../config/config.js';
-import { secretManager } from '../config/secrets.js';
-import './types.js';
-import { authGatewayClient } from '../clients/auth-gateway.client.js';
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import type { FastifyRequest, FastifyReply } from "fastify";
+import { getConfig } from "../config/config.js";
+import "./types.js";
+import { authGatewayClient } from "../clients/auth-gateway.client.js";
 
 export interface User {
   id: string;
@@ -43,7 +42,7 @@ export interface Permission {
 export interface AuthToken {
   accessToken: string;
   refreshToken: string;
-  tokenType: 'Bearer';
+  tokenType: "Bearer";
   expiresIn: number;
   scope: string;
 }
@@ -74,21 +73,21 @@ export class JWTManager {
       sub: user.id,
       email: user.email,
       tenantId: user.tenantId,
-      roles: user.roles.map(role => role.id),
-      permissions: user.permissions.map(perm => ({
+      roles: user.roles.map((role) => role.id),
+      permissions: user.permissions.map((perm) => ({
         resource: perm.resource,
         action: perm.action,
       })),
-      type: 'access',
+      type: "access",
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (15 * 60), // 15 minutes
+      exp: Math.floor(Date.now() / 1000) + 15 * 60, // 15 minutes
       jti: crypto.randomUUID(),
     };
 
     return jwt.sign(payload, this.jwtSecret, {
-      algorithm: 'HS256',
-      issuer: 'tutorputor',
-      audience: 'tutorputor-api',
+      algorithm: "HS256",
+      issuer: "tutorputor",
+      audience: "tutorputor-api",
     });
   }
 
@@ -99,16 +98,16 @@ export class JWTManager {
     const payload = {
       sub: user.id,
       tenantId: user.tenantId,
-      type: 'refresh',
+      type: "refresh",
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 days
+      exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days
       jti: crypto.randomUUID(),
     };
 
     return jwt.sign(payload, this.jwtSecret, {
-      algorithm: 'HS256',
-      issuer: 'tutorputor',
-      audience: 'tutorputor-api',
+      algorithm: "HS256",
+      issuer: "tutorputor",
+      audience: "tutorputor-api",
     });
   }
 
@@ -118,19 +117,19 @@ export class JWTManager {
   async validateToken(token: string): Promise<any> {
     try {
       const decoded = jwt.verify(token, this.jwtSecret, {
-        algorithms: ['HS256'],
-        issuer: 'tutorputor',
-        audience: 'tutorputor-api',
+        algorithms: ["HS256"],
+        issuer: "tutorputor",
+        audience: "tutorputor-api",
       });
 
       return decoded;
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
-        throw new Error('Token expired');
+        throw new Error("Token expired");
       } else if (error instanceof jwt.JsonWebTokenError) {
-        throw new Error('Invalid token');
+        throw new Error("Invalid token");
       } else {
-        throw new Error('Token validation failed');
+        throw new Error("Token validation failed");
       }
     }
   }
@@ -140,16 +139,16 @@ export class JWTManager {
    */
   async refreshToken(refreshToken: string): Promise<AuthToken> {
     const decoded = await this.validateToken(refreshToken);
-    
-    if (decoded.type !== 'refresh') {
-      throw new Error('Invalid token type for refresh');
+
+    if (decoded.type !== "refresh") {
+      throw new Error("Invalid token type for refresh");
     }
 
     // In a real implementation, fetch user from database
     const user = await this.getUserById(decoded.sub);
-    
+
     if (!user || !user.isActive) {
-      throw new Error('User not found or inactive');
+      throw new Error("User not found or inactive");
     }
 
     const accessToken = await this.generateAccessToken(user);
@@ -158,9 +157,9 @@ export class JWTManager {
     return {
       accessToken,
       refreshToken: newRefreshToken,
-      tokenType: 'Bearer',
+      tokenType: "Bearer",
       expiresIn: 15 * 60, // 15 minutes
-      scope: 'read write',
+      scope: "read write",
     };
   }
 
@@ -172,8 +171,8 @@ export class JWTManager {
     // For now, return a mock user
     return {
       id: userId,
-      email: 'user@example.com',
-      tenantId: 'default',
+      email: "user@example.com",
+      tenantId: "default",
       roles: [],
       permissions: [],
       isActive: true,
@@ -198,20 +197,20 @@ export class RBACManager {
    */
   private initializeDefaultPermissions(): void {
     const defaultPermissions: Permission[] = [
-      { id: 'user.read', resource: 'user', action: 'read' },
-      { id: 'user.write', resource: 'user', action: 'write' },
-      { id: 'user.delete', resource: 'user', action: 'delete' },
-      { id: 'module.read', resource: 'module', action: 'read' },
-      { id: 'module.write', resource: 'module', action: 'write' },
-      { id: 'module.delete', resource: 'module', action: 'delete' },
-      { id: 'assessment.read', resource: 'assessment', action: 'read' },
-      { id: 'assessment.write', resource: 'assessment', action: 'write' },
-      { id: 'simulation.read', resource: 'simulation', action: 'read' },
-      { id: 'simulation.write', resource: 'simulation', action: 'write' },
-      { id: 'admin.system', resource: 'system', action: 'admin' },
+      { id: "user.read", resource: "user", action: "read" },
+      { id: "user.write", resource: "user", action: "write" },
+      { id: "user.delete", resource: "user", action: "delete" },
+      { id: "module.read", resource: "module", action: "read" },
+      { id: "module.write", resource: "module", action: "write" },
+      { id: "module.delete", resource: "module", action: "delete" },
+      { id: "assessment.read", resource: "assessment", action: "read" },
+      { id: "assessment.write", resource: "assessment", action: "write" },
+      { id: "simulation.read", resource: "simulation", action: "read" },
+      { id: "simulation.write", resource: "simulation", action: "write" },
+      { id: "admin.system", resource: "system", action: "admin" },
     ];
 
-    defaultPermissions.forEach(perm => {
+    defaultPermissions.forEach((perm) => {
       this.permissions.set(perm.id, perm);
     });
   }
@@ -221,49 +220,58 @@ export class RBACManager {
    */
   private initializeDefaultRoles(): void {
     const studentRole: Role = {
-      id: 'student',
-      name: 'Student',
+      id: "student",
+      name: "Student",
       permissions: [
-        this.permissions.get('module.read')!,
-        this.permissions.get('assessment.read')!,
-        this.permissions.get('simulation.read')!,
+        this.permissions.get("module.read")!,
+        this.permissions.get("assessment.read")!,
+        this.permissions.get("simulation.read")!,
       ],
     };
 
     const instructorRole: Role = {
-      id: 'instructor',
-      name: 'Instructor',
+      id: "instructor",
+      name: "Instructor",
       permissions: [
-        this.permissions.get('module.read')!,
-        this.permissions.get('module.write')!,
-        this.permissions.get('assessment.read')!,
-        this.permissions.get('assessment.write')!,
-        this.permissions.get('simulation.read')!,
-        this.permissions.get('simulation.write')!,
+        this.permissions.get("module.read")!,
+        this.permissions.get("module.write")!,
+        this.permissions.get("assessment.read")!,
+        this.permissions.get("assessment.write")!,
+        this.permissions.get("simulation.read")!,
+        this.permissions.get("simulation.write")!,
       ],
     };
 
     const adminRole: Role = {
-      id: 'admin',
-      name: 'Administrator',
+      id: "admin",
+      name: "Administrator",
       permissions: Array.from(this.permissions.values()),
     };
 
-    this.roles.set('student', studentRole);
-    this.roles.set('instructor', instructorRole);
-    this.roles.set('admin', adminRole);
+    this.roles.set("student", studentRole);
+    this.roles.set("instructor", instructorRole);
+    this.roles.set("admin", adminRole);
   }
 
   /**
    * Check if user has permission
    */
-  hasPermission(user: User, resource: string, action: string, context?: Record<string, any>): boolean {
-    const userPermissions = user.roles.flatMap(role => role.permissions).concat(user.permissions);
-    
-    return userPermissions.some(permission => {
-      const matchesResource = permission.resource === resource || permission.resource === '*';
-      const matchesAction = permission.action === action || permission.action === '*';
-      
+  hasPermission(
+    user: User,
+    resource: string,
+    action: string,
+    context?: Record<string, any>,
+  ): boolean {
+    const userPermissions = user.roles
+      .flatMap((role) => role.permissions)
+      .concat(user.permissions);
+
+    return userPermissions.some((permission) => {
+      const matchesResource =
+        permission.resource === resource || permission.resource === "*";
+      const matchesAction =
+        permission.action === action || permission.action === "*";
+
       if (!matchesResource || !matchesAction) {
         return false;
       }
@@ -280,7 +288,10 @@ export class RBACManager {
   /**
    * Evaluate permission conditions
    */
-  private evaluateConditions(conditions: Record<string, any>, context?: Record<string, any>): boolean {
+  private evaluateConditions(
+    conditions: Record<string, any>,
+    context?: Record<string, any>,
+  ): boolean {
     if (!context) return false;
 
     return Object.entries(conditions).every(([key, value]) => {
@@ -313,30 +324,35 @@ export class AuthMiddleware {
   /**
    * Authentication middleware for Fastify
    */
-  async authenticate(request: FastifyRequest, reply: FastifyReply): Promise<AuthContext> {
+  async authenticate(
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<AuthContext> {
     const authHeader = request.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      reply.code(401).send({ error: 'Missing or invalid authorization header' });
-      throw new Error('Authentication required');
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      reply
+        .code(401)
+        .send({ error: "Missing or invalid authorization header" });
+      throw new Error("Authentication required");
     }
 
     const token = authHeader.substring(7);
-    
+
     try {
       const decoded = await this.jwtManager.validateToken(token);
-      
-      if (decoded.type !== 'access') {
-        reply.code(401).send({ error: 'Invalid token type' });
-        throw new Error('Invalid token type');
+
+      if (decoded.type !== "access") {
+        reply.code(401).send({ error: "Invalid token type" });
+        throw new Error("Invalid token type");
       }
 
       // In a real implementation, fetch user from database
       const user = await this.getUserFromToken(decoded);
-      
+
       if (!user || !user.isActive) {
-        reply.code(401).send({ error: 'User not found or inactive' });
-        throw new Error('User not found or inactive');
+        reply.code(401).send({ error: "User not found or inactive" });
+        throw new Error("User not found or inactive");
       }
 
       const authContext: AuthContext = {
@@ -348,7 +364,7 @@ export class AuthMiddleware {
 
       // Add auth context to request
       request.authContext = authContext;
-      
+
       return authContext;
     } catch (localError) {
       // Platform token fallback: accept tokens issued by the central auth-service
@@ -358,8 +374,8 @@ export class AuthMiddleware {
           if (platformIdentity.valid && platformIdentity.userId) {
             const platformUser: User = {
               id: platformIdentity.userId,
-              email: platformIdentity.email ?? '',
-              tenantId: (request.headers['x-tenant-id'] as string) ?? 'default',
+              email: platformIdentity.email ?? "",
+              tenantId: (request.headers["x-tenant-id"] as string) ?? "default",
               roles: [],
               permissions: [],
               isActive: true,
@@ -378,7 +394,7 @@ export class AuthMiddleware {
         }
       }
 
-      reply.code(401).send({ error: 'Invalid or expired token' });
+      reply.code(401).send({ error: "Invalid or expired token" });
       throw localError;
     }
   }
@@ -389,22 +405,22 @@ export class AuthMiddleware {
   authorize(resource: string, action: string) {
     return async (request: FastifyRequest, reply: FastifyReply) => {
       const authContext = request.authContext;
-      
+
       if (!authContext) {
-        reply.code(401).send({ error: 'Authentication required' });
-        throw new Error('Authentication required');
+        reply.code(401).send({ error: "Authentication required" });
+        throw new Error("Authentication required");
       }
 
       const hasPermission = this.rbacManager.hasPermission(
         authContext.user,
         resource,
         action,
-        { tenantId: authContext.tenantId, request }
+        { tenantId: authContext.tenantId, request },
       );
 
       if (!hasPermission) {
-        reply.code(403).send({ error: 'Insufficient permissions' });
-        throw new Error('Insufficient permissions');
+        reply.code(403).send({ error: "Insufficient permissions" });
+        throw new Error("Insufficient permissions");
       }
     };
   }
@@ -415,19 +431,20 @@ export class AuthMiddleware {
   requireTenantAccess() {
     return async (request: FastifyRequest, reply: FastifyReply) => {
       const authContext = request.authContext;
-      
+
       if (!authContext) {
-        reply.code(401).send({ error: 'Authentication required' });
-        throw new Error('Authentication required');
+        reply.code(401).send({ error: "Authentication required" });
+        throw new Error("Authentication required");
       }
 
       // Ensure user can only access their tenant data
       const requestParams = request.params as Record<string, any>;
-      const requestTenantId = requestParams?.tenantId || request.headers['x-tenant-id'];
-      
+      const requestTenantId =
+        requestParams?.tenantId || request.headers["x-tenant-id"];
+
       if (requestTenantId && requestTenantId !== authContext.tenantId) {
-        reply.code(403).send({ error: 'Tenant access denied' });
-        throw new Error('Tenant access denied');
+        reply.code(403).send({ error: "Tenant access denied" });
+        throw new Error("Tenant access denied");
       }
     };
   }
@@ -442,7 +459,9 @@ export class AuthMiddleware {
       id: decoded.sub,
       email: decoded.email,
       tenantId: decoded.tenantId,
-      roles: decoded.roles.map((roleId: string) => this.rbacManager.getRole(roleId)!).filter(Boolean),
+      roles: decoded.roles
+        .map((roleId: string) => this.rbacManager.getRole(roleId)!)
+        .filter(Boolean),
       permissions: decoded.permissions.map((perm: any) => ({
         id: `${perm.resource}.${perm.action}`,
         resource: perm.resource,
@@ -463,12 +482,16 @@ export class AuthService {
   /**
    * User login
    */
-  async login(email: string, password: string, tenantId: string): Promise<AuthToken> {
+  async login(
+    email: string,
+    password: string,
+    tenantId: string,
+  ): Promise<AuthToken> {
     // In a real implementation, validate credentials against database
     const user = await this.validateCredentials(email, password, tenantId);
-    
+
     if (!user || !user.isActive) {
-      throw new Error('Invalid credentials or user inactive');
+      throw new Error("Invalid credentials or user inactive");
     }
 
     const accessToken = await this.jwtManager.generateAccessToken(user);
@@ -481,16 +504,16 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      tokenType: 'Bearer',
+      tokenType: "Bearer",
       expiresIn: 15 * 60, // 15 minutes
-      scope: 'read write',
+      scope: "read write",
     };
   }
 
   /**
    * User logout
    */
-  async logout(refreshToken: string): Promise<void> {
+  async logout(_refreshToken: string): Promise<void> {
     // In a real implementation, invalidate refresh token
     // This could involve adding it to a blacklist or removing it from database
   }
@@ -505,14 +528,18 @@ export class AuthService {
   /**
    * Validate credentials (placeholder)
    */
-  private async validateCredentials(email: string, password: string, tenantId: string): Promise<User | null> {
+  private async validateCredentials(
+    email: string,
+    password: string,
+    tenantId: string,
+  ): Promise<User | null> {
     // This would integrate with your user service/database
     // For now, return a mock user
     return {
-      id: 'user-123',
+      id: "user-123",
       email,
       tenantId,
-      roles: [this.rbacManager.getRole('student')!],
+      roles: [this.rbacManager.getRole("student")!],
       permissions: [],
       isActive: true,
     };
@@ -521,7 +548,7 @@ export class AuthService {
   /**
    * Update user last login (placeholder)
    */
-  private async updateUserLastLogin(userId: string): Promise<void> {
+  private async updateUserLastLogin(_userId: string): Promise<void> {
     // This would update the user in the database
   }
 }

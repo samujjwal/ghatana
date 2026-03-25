@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, Bot, User, X, Check } from 'lucide-react';
+import { Sparkles, Send, Bot, User } from 'lucide-react';
 
 import type { SimulationManifest } from '@tutorputor/contracts/v1/simulation';
 

@@ -150,12 +150,12 @@ export async function setupHealthChecks(
   });
 
   // Liveness probe (for Kubernetes)
-  app.get("/health/live", async (request, reply) => {
+  app.get("/health/live", async (_request, _reply) => {
     return { status: "alive", timestamp: new Date().toISOString() };
   });
 
   // Readiness probe (for Kubernetes)
-  app.get("/health/ready", async (request, reply) => {
+  app.get("/health/ready", async (_request, reply) => {
     // Check if service is ready to accept traffic
     try {
       await prisma.$queryRaw`SELECT 1`;

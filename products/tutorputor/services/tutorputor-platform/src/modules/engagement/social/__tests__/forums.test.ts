@@ -6,489 +6,657 @@
  * @doc.layer platform
  * @doc.pattern UnitTest
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ForumServiceImpl } from '../forums';
-import type { PrismaClient } from '@tutorputor/core/db';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { ForumServiceImpl } from "../forums";
+import type { PrismaClient } from "@tutorputor/core/db";
 
 function makeMockPrisma() {
-    return {
-        forum: {
-            create: vi.fn(),
-            findFirst: vi.fn(),
-            findUnique: vi.fn(),
-            findMany: vi.fn(),
-            count: vi.fn(),
-            update: vi.fn(),
-        },
-        forumTopic: {
-            create: vi.fn(),
-            findUnique: vi.fn(),
-            findMany: vi.fn(),
-            count: vi.fn(),
-            update: vi.fn(),
-        },
-        forumPost: {
-            create: vi.fn(),
-            findUnique: vi.fn(),
-            findMany: vi.fn(),
-            count: vi.fn(),
-            update: vi.fn(),
-        },
-        postReaction: {
-            findFirst: vi.fn(),
-            create: vi.fn(),
-            delete: vi.fn(),
-        },
-        socialActivity: { create: vi.fn() },
-        socialNotification: { create: vi.fn() },
-    } as unknown as PrismaClient;
+  return {
+    forum: {
+      create: vi.fn(),
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      update: vi.fn(),
+    },
+    forumTopic: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      update: vi.fn(),
+    },
+    forumPost: {
+      create: vi.fn(),
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      update: vi.fn(),
+    },
+    postReaction: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      delete: vi.fn(),
+    },
+    socialActivity: { create: vi.fn() },
+    socialNotification: { create: vi.fn() },
+  } as unknown as PrismaClient;
 }
 
 function makeForumRow(overrides: Record<string, unknown> = {}) {
-    return {
-        id: 'forum-1',
-        tenantId: 't1',
-        name: 'General Discussion',
-        description: 'Talk about anything',
-        scope: 'GLOBAL',
-        scopeId: null,
-        studyGroupId: null,
-        categories: null,
-        allowAnonymousPosts: false,
-        requireModeration: false,
-        allowAttachments: true,
-        allowPolls: true,
-        topicCount: 0,
-        postCount: 0,
-        lastPostAt: null,
-        status: 'ACTIVE',
-        iconUrl: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        ...overrides,
-    };
+  return {
+    id: "forum-1",
+    tenantId: "t1",
+    name: "General Discussion",
+    description: "Talk about anything",
+    scope: "GLOBAL",
+    scopeId: null,
+    studyGroupId: null,
+    categories: null,
+    allowAnonymousPosts: false,
+    requireModeration: false,
+    allowAttachments: true,
+    allowPolls: true,
+    topicCount: 0,
+    postCount: 0,
+    lastPostAt: null,
+    status: "ACTIVE",
+    iconUrl: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
 }
 
 function makeTopicRow(overrides: Record<string, unknown> = {}) {
-    return {
-        id: 'topic-1',
-        forumId: 'forum-1',
-        categoryId: null,
-        title: 'Test Topic',
-        slug: 'test-topic-abc123',
-        authorId: 'u1',
-        authorName: 'User One',
-        content: 'Hello world',
-        contentFormat: 'markdown',
-        attachments: null,
-        viewCount: 0,
-        replyCount: 0,
-        likeCount: 0,
-        isPinned: false,
-        isLocked: false,
-        isAnswered: false,
-        answerId: null,
-        lastReplyAt: null,
-        lastReplyBy: null,
-        status: 'PUBLISHED',
-        moderatedBy: null,
-        moderatedAt: null,
-        moderationNote: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        ...overrides,
-    };
+  return {
+    id: "topic-1",
+    forumId: "forum-1",
+    categoryId: null,
+    title: "Test Topic",
+    slug: "test-topic-abc123",
+    authorId: "u1",
+    authorName: "User One",
+    content: "Hello world",
+    contentFormat: "markdown",
+    attachments: null,
+    viewCount: 0,
+    replyCount: 0,
+    likeCount: 0,
+    isPinned: false,
+    isLocked: false,
+    isAnswered: false,
+    answerId: null,
+    lastReplyAt: null,
+    lastReplyBy: null,
+    status: "PUBLISHED",
+    moderatedBy: null,
+    moderatedAt: null,
+    moderationNote: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
 }
 
 function makePostRow(overrides: Record<string, unknown> = {}) {
-    return {
-        id: 'post-1',
-        topicId: 'topic-1',
-        authorId: 'u2',
-        authorName: 'User Two',
-        isAnonymous: false,
-        content: 'A reply',
-        contentFormat: 'markdown',
-        attachments: null,
-        parentId: null,
-        depth: 0,
-        likeCount: 0,
-        isAcceptedAnswer: false,
-        status: 'PUBLISHED',
-        moderatedBy: null,
-        moderatedAt: null,
-        isEdited: false,
-        editedAt: null,
-        editHistory: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        ...overrides,
-    };
+  return {
+    id: "post-1",
+    topicId: "topic-1",
+    authorId: "u2",
+    authorName: "User Two",
+    isAnonymous: false,
+    content: "A reply",
+    contentFormat: "markdown",
+    attachments: null,
+    parentId: null,
+    depth: 0,
+    likeCount: 0,
+    isAcceptedAnswer: false,
+    status: "PUBLISHED",
+    moderatedBy: null,
+    moderatedAt: null,
+    isEdited: false,
+    editedAt: null,
+    editHistory: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
 }
 
-describe('ForumServiceImpl', () => {
-    let service: ForumServiceImpl;
-    let prisma: ReturnType<typeof makeMockPrisma>;
+describe("ForumServiceImpl", () => {
+  let service: ForumServiceImpl;
+  let prisma: ReturnType<typeof makeMockPrisma>;
 
-    beforeEach(() => {
-        vi.clearAllMocks();
-        prisma = makeMockPrisma();
-        service = new ForumServiceImpl({ prisma });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prisma = makeMockPrisma();
+    service = new ForumServiceImpl({ prisma });
+  });
+
+  // =========================================================================
+  // Forum Management
+  // =========================================================================
+  describe("createForum", () => {
+    it("creates a forum with default settings", async () => {
+      (prisma.forum.create as any).mockResolvedValue(makeForumRow());
+
+      const forum = await service.createForum({
+        tenantId: "t1" as any,
+        name: "General Discussion",
+        description: "Talk about anything",
+        scope: "global",
+      });
+
+      expect(forum.name).toBe("General Discussion");
+      expect(forum.scope).toBe("global");
+      expect(prisma.forum.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            allowAnonymousPosts: false,
+            requireModeration: false,
+          }),
+        }),
+      );
     });
 
-    // =========================================================================
-    // Forum Management
-    // =========================================================================
-    describe('createForum', () => {
-        it('creates a forum with default settings', async () => {
-            (prisma.forum.create as any).mockResolvedValue(makeForumRow());
+    it("creates forum with categories", async () => {
+      (prisma.forum.create as any).mockResolvedValue(
+        makeForumRow({
+          categories: JSON.stringify([{ id: "c1", name: "Homework" }]),
+        }),
+      );
 
-            const forum = await service.createForum({
-                tenantId: 't1' as any,
-                name: 'General Discussion',
-                description: 'Talk about anything',
-                scope: 'global',
-            });
+      const forum = await service.createForum({
+        tenantId: "t1" as any,
+        name: "Class Forum",
+        description: "desc",
+        scope: "classroom",
+        categories: [{ name: "Homework", color: "#ff0000" }],
+      });
 
-            expect(forum.name).toBe('General Discussion');
-            expect(forum.scope).toBe('global');
-            expect(prisma.forum.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({
-                        allowAnonymousPosts: false,
-                        requireModeration: false,
-                    }),
-                }),
-            );
-        });
+      expect(forum.categories).toHaveLength(1);
+    });
+  });
 
-        it('creates forum with categories', async () => {
-            (prisma.forum.create as any).mockResolvedValue(
-                makeForumRow({ categories: JSON.stringify([{ id: 'c1', name: 'Homework' }]) }),
-            );
+  describe("getForum", () => {
+    it("returns forum when found", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(makeForumRow());
 
-            const forum = await service.createForum({
-                tenantId: 't1' as any,
-                name: 'Class Forum',
-                description: 'desc',
-                scope: 'classroom',
-                categories: [{ name: 'Homework', color: '#ff0000' }],
-            });
-
-            expect(forum.categories).toHaveLength(1);
-        });
+      const forum = await service.getForum({
+        tenantId: "t1" as any,
+        forumId: "forum-1",
+      });
+      expect(forum.id).toBe("forum-1");
     });
 
-    describe('getForum', () => {
-        it('returns forum when found', async () => {
-            (prisma.forum.findFirst as any).mockResolvedValue(makeForumRow());
+    it("throws when forum not found", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(null);
 
-            const forum = await service.getForum({ tenantId: 't1' as any, forumId: 'forum-1' });
-            expect(forum.id).toBe('forum-1');
-        });
+      await expect(
+        service.getForum({ tenantId: "t1" as any, forumId: "nonexistent" }),
+      ).rejects.toThrow("Forum not found");
+    });
+  });
 
-        it('throws when forum not found', async () => {
-            (prisma.forum.findFirst as any).mockResolvedValue(null);
+  describe("listForums", () => {
+    it("returns paginated list", async () => {
+      (prisma.forum.findMany as any).mockResolvedValue([makeForumRow()]);
+      (prisma.forum.count as any).mockResolvedValue(1);
 
-            await expect(
-                service.getForum({ tenantId: 't1' as any, forumId: 'nonexistent' }),
-            ).rejects.toThrow('Forum not found');
-        });
+      const result = await service.listForums({
+        tenantId: "t1" as any,
+        pagination: { limit: 20 },
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.totalCount).toBe(1);
+    });
+  });
+
+  // =========================================================================
+  // Topics
+  // =========================================================================
+  describe("createTopic", () => {
+    it("creates a published topic when no moderation", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(
+        makeForumRow({ requireModeration: false }),
+      );
+      (prisma.forumTopic.create as any).mockResolvedValue(makeTopicRow());
+      (prisma.forum.update as any).mockResolvedValue({});
+
+      const topic = await service.createTopic({
+        tenantId: "t1" as any,
+        forumId: "forum-1",
+        authorId: "u1" as any,
+        title: "Test Topic",
+        content: "Hello world",
+      });
+
+      expect(topic.title).toBe("Test Topic");
+      expect(prisma.forumTopic.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: "PUBLISHED" }),
+        }),
+      );
     });
 
-    describe('listForums', () => {
-        it('returns paginated list', async () => {
-            (prisma.forum.findMany as any).mockResolvedValue([makeForumRow()]);
-            (prisma.forum.count as any).mockResolvedValue(1);
+    it("creates a pending topic when moderation required", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(
+        makeForumRow({ requireModeration: true }),
+      );
+      (prisma.forumTopic.create as any).mockResolvedValue(
+        makeTopicRow({ status: "PENDING" }),
+      );
+      (prisma.forum.update as any).mockResolvedValue({});
 
-            const result = await service.listForums({
-                tenantId: 't1' as any,
-                pagination: { limit: 20 },
-            });
+      await service.createTopic({
+        tenantId: "t1" as any,
+        forumId: "forum-1",
+        authorId: "u1" as any,
+        title: "Test Topic",
+        content: "Hello",
+      });
 
-            expect(result.items).toHaveLength(1);
-            expect(result.totalCount).toBe(1);
-        });
+      expect(prisma.forumTopic.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: "PENDING" }),
+        }),
+      );
     });
 
-    // =========================================================================
-    // Topics
-    // =========================================================================
-    describe('createTopic', () => {
-        it('creates a published topic when no moderation', async () => {
-            (prisma.forum.findUnique as any).mockResolvedValue(makeForumRow({ requireModeration: false }));
-            (prisma.forumTopic.create as any).mockResolvedValue(makeTopicRow());
-            (prisma.forum.update as any).mockResolvedValue({});
+    it("increments forum topic count", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(makeForumRow());
+      (prisma.forumTopic.create as any).mockResolvedValue(makeTopicRow());
+      (prisma.forum.update as any).mockResolvedValue({});
 
-            const topic = await service.createTopic({
-                tenantId: 't1' as any,
-                forumId: 'forum-1',
-                authorId: 'u1' as any,
-                title: 'Test Topic',
-                content: 'Hello world',
-            });
+      await service.createTopic({
+        tenantId: "t1" as any,
+        forumId: "forum-1",
+        authorId: "u1" as any,
+        title: "Topic",
+        content: "Content",
+      });
 
-            expect(topic.title).toBe('Test Topic');
-            expect(prisma.forumTopic.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({ status: 'PUBLISHED' }),
-                }),
-            );
-        });
-
-        it('creates a pending topic when moderation required', async () => {
-            (prisma.forum.findUnique as any).mockResolvedValue(makeForumRow({ requireModeration: true }));
-            (prisma.forumTopic.create as any).mockResolvedValue(makeTopicRow({ status: 'PENDING' }));
-            (prisma.forum.update as any).mockResolvedValue({});
-
-            await service.createTopic({
-                tenantId: 't1' as any,
-                forumId: 'forum-1',
-                authorId: 'u1' as any,
-                title: 'Test Topic',
-                content: 'Hello',
-            });
-
-            expect(prisma.forumTopic.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({ status: 'PENDING' }),
-                }),
-            );
-        });
-
-        it('increments forum topic count', async () => {
-            (prisma.forum.findUnique as any).mockResolvedValue(makeForumRow());
-            (prisma.forumTopic.create as any).mockResolvedValue(makeTopicRow());
-            (prisma.forum.update as any).mockResolvedValue({});
-
-            await service.createTopic({
-                tenantId: 't1' as any,
-                forumId: 'forum-1',
-                authorId: 'u1' as any,
-                title: 'Topic',
-                content: 'Content',
-            });
-
-            expect(prisma.forum.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({ topicCount: { increment: 1 } }),
-                }),
-            );
-        });
+      expect(prisma.forum.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ topicCount: { increment: 1 } }),
+        }),
+      );
     });
 
-    describe('updateTopic', () => {
-        it('allows author to edit', async () => {
-            (prisma.forumTopic.findUnique as any).mockResolvedValue(makeTopicRow({ authorId: 'u1' }));
-            (prisma.forumTopic.update as any).mockResolvedValue(makeTopicRow({ title: 'Updated' }));
+    it("rejects topic creation for a forum outside the tenant", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(null);
 
-            const topic = await service.updateTopic({
-                tenantId: 't1' as any,
-                topicId: 'topic-1',
-                userId: 'u1' as any,
-                patch: { title: 'Updated' },
-            });
+      await expect(
+        service.createTopic({
+          tenantId: "t1" as any,
+          forumId: "forum-foreign",
+          authorId: "u1" as any,
+          title: "Test Topic",
+          content: "Hello world",
+        }),
+      ).rejects.toThrow("Forum not found");
+    });
+  });
 
-            expect(topic.title).toBe('Updated');
-        });
+  describe("listTopics", () => {
+    it("rejects listing topics for a forum outside the tenant", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(null);
 
-        it('rejects non-author edit', async () => {
-            (prisma.forumTopic.findUnique as any).mockResolvedValue(makeTopicRow({ authorId: 'u1' }));
+      await expect(
+        service.listTopics({
+          tenantId: "t1" as any,
+          forumId: "forum-foreign",
+          pagination: { limit: 20 },
+        }),
+      ).rejects.toThrow("Forum not found");
+    });
+  });
 
-            await expect(
-                service.updateTopic({
-                    tenantId: 't1' as any,
-                    topicId: 'topic-1',
-                    userId: 'u2' as any,
-                    patch: { title: 'Hacked' },
-                }),
-            ).rejects.toThrow('Only the author');
-        });
+  describe("updateTopic", () => {
+    it("allows author to edit", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(makeForumRow());
+      (prisma.forumTopic.findUnique as any).mockResolvedValue(
+        makeTopicRow({ authorId: "u1" }),
+      );
+      (prisma.forumTopic.update as any).mockResolvedValue(
+        makeTopicRow({ title: "Updated" }),
+      );
+
+      const topic = await service.updateTopic({
+        tenantId: "t1" as any,
+        topicId: "topic-1",
+        userId: "u1" as any,
+        patch: { title: "Updated" },
+      });
+
+      expect(topic.title).toBe("Updated");
     });
 
-    describe('deleteTopic', () => {
-        it('soft-deletes and decrements forum count', async () => {
-            (prisma.forumTopic.findUnique as any).mockResolvedValue(makeTopicRow({ authorId: 'u1' }));
-            (prisma.forumTopic.update as any).mockResolvedValue({});
-            (prisma.forum.update as any).mockResolvedValue({});
+    it("rejects non-author edit", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(makeForumRow());
+      (prisma.forumTopic.findUnique as any).mockResolvedValue(
+        makeTopicRow({ authorId: "u1" }),
+      );
 
-            await service.deleteTopic({ tenantId: 't1' as any, topicId: 'topic-1', userId: 'u1' as any });
+      await expect(
+        service.updateTopic({
+          tenantId: "t1" as any,
+          topicId: "topic-1",
+          userId: "u2" as any,
+          patch: { title: "Hacked" },
+        }),
+      ).rejects.toThrow("Only the author");
+    });
+  });
 
-            expect(prisma.forumTopic.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: { status: 'DELETED' },
-                }),
-            );
-            expect(prisma.forum.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: { topicCount: { decrement: 1 } },
-                }),
-            );
-        });
+  describe("deleteTopic", () => {
+    it("soft-deletes and decrements forum count", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(makeForumRow());
+      (prisma.forumTopic.findUnique as any).mockResolvedValue(
+        makeTopicRow({ authorId: "u1" }),
+      );
+      (prisma.forumTopic.update as any).mockResolvedValue({});
+      (prisma.forum.update as any).mockResolvedValue({});
 
-        it('rejects non-author delete', async () => {
-            (prisma.forumTopic.findUnique as any).mockResolvedValue(makeTopicRow({ authorId: 'u1' }));
+      await service.deleteTopic({
+        tenantId: "t1" as any,
+        topicId: "topic-1",
+        userId: "u1" as any,
+      });
 
-            await expect(
-                service.deleteTopic({ tenantId: 't1' as any, topicId: 'topic-1', userId: 'u2' as any }),
-            ).rejects.toThrow('Permission denied');
-        });
+      expect(prisma.forumTopic.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { status: "DELETED" },
+        }),
+      );
+      expect(prisma.forum.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { topicCount: { decrement: 1 } },
+        }),
+      );
     });
 
-    // =========================================================================
-    // Posts
-    // =========================================================================
-    describe('createPost', () => {
-        it('creates a reply and updates topic stats', async () => {
-            (prisma.forumTopic.findUnique as any).mockResolvedValue({
-                ...makeTopicRow(),
-                forum: makeForumRow(),
-            });
-            (prisma.forumPost.create as any).mockResolvedValue(makePostRow());
-            (prisma.forumTopic.update as any).mockResolvedValue({});
-            (prisma.forum.update as any).mockResolvedValue({});
+    it("rejects non-author delete", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(makeForumRow());
+      (prisma.forumTopic.findUnique as any).mockResolvedValue(
+        makeTopicRow({ authorId: "u1" }),
+      );
 
-            const post = await service.createPost({
-                tenantId: 't1' as any,
-                topicId: 'topic-1',
-                authorId: 'u2' as any,
-                content: 'A reply',
-            });
+      await expect(
+        service.deleteTopic({
+          tenantId: "t1" as any,
+          topicId: "topic-1",
+          userId: "u2" as any,
+        }),
+      ).rejects.toThrow("Permission denied");
+    });
+  });
 
-            expect(post.content).toBe('A reply');
-            expect(prisma.forumTopic.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({ replyCount: { increment: 1 } }),
-                }),
-            );
-        });
+  // =========================================================================
+  // Posts
+  // =========================================================================
+  describe("createPost", () => {
+    it("creates a reply and updates topic stats", async () => {
+      (prisma.forumTopic.findUnique as any).mockResolvedValue({
+        ...makeTopicRow(),
+        forum: makeForumRow(),
+      });
+      (prisma.forumPost.create as any).mockResolvedValue(makePostRow());
+      (prisma.forumTopic.update as any).mockResolvedValue({});
+      (prisma.forum.update as any).mockResolvedValue({});
 
-        it('rejects post on locked topic', async () => {
-            (prisma.forumTopic.findUnique as any).mockResolvedValue({
-                ...makeTopicRow({ isLocked: true }),
-                forum: makeForumRow(),
-            });
+      const post = await service.createPost({
+        tenantId: "t1" as any,
+        topicId: "topic-1",
+        authorId: "u2" as any,
+        content: "A reply",
+      });
 
-            await expect(
-                service.createPost({
-                    tenantId: 't1' as any,
-                    topicId: 'topic-1',
-                    authorId: 'u2' as any,
-                    content: 'A reply',
-                }),
-            ).rejects.toThrow('Topic is locked');
-        });
+      expect(post.content).toBe("A reply");
+      expect(prisma.forumTopic.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ replyCount: { increment: 1 } }),
+        }),
+      );
     });
 
-    // =========================================================================
-    // Reactions
-    // =========================================================================
-    describe('reactToPost', () => {
-        it('creates a reaction and increments like count', async () => {
-            (prisma.postReaction.findFirst as any).mockResolvedValue(null);
-            (prisma.postReaction.create as any).mockResolvedValue({});
-            (prisma.forumPost.update as any).mockResolvedValue({});
-            (prisma.forumPost.findUnique as any).mockResolvedValue(makePostRow({ likeCount: 1 }));
+    it("rejects replies to topics outside the tenant", async () => {
+      (prisma.forumTopic.findUnique as any).mockResolvedValue({
+        ...makeTopicRow(),
+        forum: makeForumRow({ tenantId: "t2" }),
+      });
 
-            const post = await service.reactToPost({
-                tenantId: 't1' as any,
-                postId: 'post-1',
-                userId: 'u3' as any,
-                reaction: 'like',
-            });
-
-            expect(prisma.forumPost.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: { likeCount: { increment: 1 } },
-                }),
-            );
-        });
-
-        it('throws if already reacted', async () => {
-            (prisma.postReaction.findFirst as any).mockResolvedValue({ id: 'r1' });
-
-            await expect(
-                service.reactToPost({
-                    tenantId: 't1' as any,
-                    postId: 'post-1',
-                    userId: 'u3' as any,
-                    reaction: 'like',
-                }),
-            ).rejects.toThrow('Already reacted');
-        });
+      await expect(
+        service.createPost({
+          tenantId: "t1" as any,
+          topicId: "topic-1",
+          authorId: "u2" as any,
+          content: "A reply",
+        }),
+      ).rejects.toThrow("Topic not found");
     });
 
-    // =========================================================================
-    // Moderation
-    // =========================================================================
-    describe('moderateContent', () => {
-        it('approves a topic', async () => {
-            (prisma.forumTopic.update as any).mockResolvedValue({});
+    it("rejects post on locked topic", async () => {
+      (prisma.forumTopic.findUnique as any).mockResolvedValue({
+        ...makeTopicRow({ isLocked: true }),
+        forum: makeForumRow(),
+      });
 
-            await service.moderateContent({
-                tenantId: 't1' as any,
-                contentType: 'topic',
-                contentId: 'topic-1',
-                moderatorId: 'mod-1' as any,
-                action: 'approve',
-            });
-
-            expect(prisma.forumTopic.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({ status: 'PUBLISHED' }),
-                }),
-            );
-        });
-
-        it('hides a post', async () => {
-            (prisma.forumPost.update as any).mockResolvedValue({});
-
-            await service.moderateContent({
-                tenantId: 't1' as any,
-                contentType: 'post',
-                contentId: 'post-1',
-                moderatorId: 'mod-1' as any,
-                action: 'hide',
-            });
-
-            expect(prisma.forumPost.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({ status: 'HIDDEN' }),
-                }),
-            );
-        });
+      await expect(
+        service.createPost({
+          tenantId: "t1" as any,
+          topicId: "topic-1",
+          authorId: "u2" as any,
+          content: "A reply",
+        }),
+      ).rejects.toThrow("Topic is locked");
     });
 
-    // =========================================================================
-    // Mark as Answer
-    // =========================================================================
-    describe('markAsAnswer', () => {
-        it('marks a post as accepted answer', async () => {
-            (prisma.forumTopic.findUnique as any).mockResolvedValue(makeTopicRow({ authorId: 'u1', answerId: null }));
-            (prisma.forumPost.update as any).mockResolvedValue(makePostRow({ isAcceptedAnswer: true }));
-            (prisma.forumTopic.update as any).mockResolvedValue({});
+    it("rejects replies with a parent post outside the topic", async () => {
+      (prisma.forumTopic.findUnique as any).mockResolvedValue({
+        ...makeTopicRow(),
+        forum: makeForumRow(),
+      });
+      (prisma.forumPost.findFirst as any).mockResolvedValue(null);
 
-            const post = await service.markAsAnswer({
-                tenantId: 't1' as any,
-                topicId: 'topic-1',
-                postId: 'post-1',
-                userId: 'u1' as any,
-            });
-
-            expect(post.isAcceptedAnswer).toBe(true);
-        });
-
-        it('rejects non-topic-author', async () => {
-            (prisma.forumTopic.findUnique as any).mockResolvedValue(makeTopicRow({ authorId: 'u1' }));
-
-            await expect(
-                service.markAsAnswer({
-                    tenantId: 't1' as any,
-                    topicId: 'topic-1',
-                    postId: 'post-1',
-                    userId: 'u2' as any,
-                }),
-            ).rejects.toThrow('Only the topic author');
-        });
+      await expect(
+        service.createPost({
+          tenantId: "t1" as any,
+          topicId: "topic-1",
+          authorId: "u2" as any,
+          content: "Nested reply",
+          parentId: "post-foreign",
+        }),
+      ).rejects.toThrow("Post not found");
     });
+  });
+
+  describe("updatePost", () => {
+    it("rejects edits for posts outside the tenant", async () => {
+      (prisma.forumPost.findFirst as any).mockResolvedValue(null);
+
+      await expect(
+        service.updatePost({
+          tenantId: "t1" as any,
+          postId: "post-foreign",
+          userId: "u2" as any,
+          content: "Edited",
+        }),
+      ).rejects.toThrow("Post not found");
+    });
+  });
+
+  describe("deletePost", () => {
+    it("rejects deletes for posts outside the tenant", async () => {
+      (prisma.forumPost.findFirst as any).mockResolvedValue(null);
+
+      await expect(
+        service.deletePost({
+          tenantId: "t1" as any,
+          postId: "post-foreign",
+          userId: "u2" as any,
+        }),
+      ).rejects.toThrow("Post not found");
+    });
+  });
+
+  // =========================================================================
+  // Reactions
+  // =========================================================================
+  describe("reactToPost", () => {
+    it("creates a reaction and increments like count", async () => {
+      (prisma.forumPost.findFirst as any).mockResolvedValue(makePostRow());
+      (prisma.postReaction.findFirst as any).mockResolvedValue(null);
+      (prisma.postReaction.create as any).mockResolvedValue({});
+      (prisma.forumPost.update as any).mockResolvedValue({});
+      (prisma.forumPost.findUnique as any).mockResolvedValue(
+        makePostRow({ likeCount: 1 }),
+      );
+
+      const post = await service.reactToPost({
+        tenantId: "t1" as any,
+        postId: "post-1",
+        userId: "u3" as any,
+        reaction: "like",
+      });
+
+      expect(prisma.forumPost.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { likeCount: { increment: 1 } },
+        }),
+      );
+    });
+
+    it("throws if already reacted", async () => {
+      (prisma.forumPost.findFirst as any).mockResolvedValue(makePostRow());
+      (prisma.postReaction.findFirst as any).mockResolvedValue({ id: "r1" });
+
+      await expect(
+        service.reactToPost({
+          tenantId: "t1" as any,
+          postId: "post-1",
+          userId: "u3" as any,
+          reaction: "like",
+        }),
+      ).rejects.toThrow("Already reacted");
+    });
+
+    it("rejects reactions for posts outside the tenant", async () => {
+      (prisma.forumPost.findFirst as any).mockResolvedValue(null);
+
+      await expect(
+        service.reactToPost({
+          tenantId: "t1" as any,
+          postId: "post-foreign",
+          userId: "u3" as any,
+          reaction: "like",
+        }),
+      ).rejects.toThrow("Post not found");
+    });
+  });
+
+  // =========================================================================
+  // Moderation
+  // =========================================================================
+  describe("moderateContent", () => {
+    it("approves a topic", async () => {
+      (prisma.forumTopic.update as any).mockResolvedValue({});
+
+      await service.moderateContent({
+        tenantId: "t1" as any,
+        contentType: "topic",
+        contentId: "topic-1",
+        moderatorId: "mod-1" as any,
+        action: "approve",
+      });
+
+      expect(prisma.forumTopic.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: "PUBLISHED" }),
+        }),
+      );
+    });
+
+    it("hides a post", async () => {
+      (prisma.forumPost.update as any).mockResolvedValue({});
+
+      await service.moderateContent({
+        tenantId: "t1" as any,
+        contentType: "post",
+        contentId: "post-1",
+        moderatorId: "mod-1" as any,
+        action: "hide",
+      });
+
+      expect(prisma.forumPost.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: "HIDDEN" }),
+        }),
+      );
+    });
+  });
+
+  // =========================================================================
+  // Mark as Answer
+  // =========================================================================
+  describe("markAsAnswer", () => {
+    it("marks a post as accepted answer", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(makeForumRow());
+      (prisma.forumTopic.findUnique as any).mockResolvedValue(
+        makeTopicRow({ authorId: "u1", answerId: null }),
+      );
+      (prisma.forumPost.findFirst as any).mockResolvedValue(makePostRow());
+      (prisma.forumPost.update as any).mockResolvedValue(
+        makePostRow({ isAcceptedAnswer: true }),
+      );
+      (prisma.forumTopic.update as any).mockResolvedValue({});
+
+      const post = await service.markAsAnswer({
+        tenantId: "t1" as any,
+        topicId: "topic-1",
+        postId: "post-1",
+        userId: "u1" as any,
+      });
+
+      expect(post.isAcceptedAnswer).toBe(true);
+    });
+
+    it("rejects non-topic-author", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(makeForumRow());
+      (prisma.forumTopic.findUnique as any).mockResolvedValue(
+        makeTopicRow({ authorId: "u1" }),
+      );
+
+      await expect(
+        service.markAsAnswer({
+          tenantId: "t1" as any,
+          topicId: "topic-1",
+          postId: "post-1",
+          userId: "u2" as any,
+        }),
+      ).rejects.toThrow("Only the topic author");
+    });
+
+    it("rejects posts that do not belong to the topic", async () => {
+      (prisma.forum.findFirst as any).mockResolvedValue(makeForumRow());
+      (prisma.forumTopic.findUnique as any).mockResolvedValue(
+        makeTopicRow({ authorId: "u1" }),
+      );
+      (prisma.forumPost.findFirst as any).mockResolvedValue(null);
+
+      await expect(
+        service.markAsAnswer({
+          tenantId: "t1" as any,
+          topicId: "topic-1",
+          postId: "post-foreign",
+          userId: "u1" as any,
+        }),
+      ).rejects.toThrow("Post not found");
+    });
+  });
 });

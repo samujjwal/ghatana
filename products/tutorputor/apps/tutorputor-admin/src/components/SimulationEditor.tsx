@@ -156,7 +156,7 @@ export function SimulationEditor({ conceptId, onClose }: SimulationEditorProps) 
             } else {
                 createMutation.mutate(data);
             }
-        } catch (error) {
+        } catch (_error) {
             alert('Invalid JSON in parameters');
         }
     };
@@ -308,7 +308,7 @@ export function SimulationEditor({ conceptId, onClose }: SimulationEditorProps) 
                                     Edit
                                 </Button>
                                 <Button
-                                    variant="danger"
+                                    variant="destructive"
                                     size="sm"
                                     onClick={() => {
                                         if (window.confirm('Delete this simulation?')) {

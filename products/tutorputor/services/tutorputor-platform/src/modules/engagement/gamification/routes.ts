@@ -1,6 +1,12 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
 import { GamificationService } from "./service";
+import {
+  getTenantId,
+  getUserId,
+  requireSelfOrRole,
+  requireRole,
+} from "../../../core/http/requestContext.js";
 
 /**
  * Gamification routes - points, leaderboards, and achievements.
@@ -11,7 +17,23 @@ import { GamificationService } from "./service";
  * @doc.pattern REST API
  */
 export const gamificationRoutes: FastifyPluginAsync = async (app) => {
-  const service = new GamificationService(app.prisma);
+  type GamificationServicePrisma = ConstructorParameters<
+    typeof GamificationService
+  >[0];
+  type GamificationRoutePrisma = typeof app.prisma & {
+    badge: GamificationServicePrisma["badge"];
+    badgeEarned: GamificationServicePrisma["badgeEarned"];
+    userPoints: GamificationServicePrisma["userPoints"];
+    userAchievement: {
+      create(args: unknown): Promise<unknown>;
+    };
+    learningStreak: {
+      findFirst(args: unknown): Promise<unknown>;
+    };
+  };
+
+  const prisma = app.prisma as GamificationRoutePrisma;
+  const service = new GamificationService(prisma);
 
   /**
    * GET /gamification/progress
@@ -19,14 +41,8 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    * Alias consistent with frontend GET /api/v1/gamification/progress.
    */
   app.get("/gamification/progress", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    // JWT user (populated by fastify-jwt authenticate hook) or header fallback
-    const userId = ((request as any).user?.sub ||
-      request.headers["x-user-id"]) as UserId;
-
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    const tenantId = getTenantId(request) as TenantId;
+    const userId = getUserId(request) as UserId;
 
     try {
       const progress = await service.getUserProgress(tenantId, userId);
@@ -42,13 +58,8 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    * Get current authenticated user's achievements.
    */
   app.get("/gamification/achievements", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = ((request as any).user?.sub ||
-      request.headers["x-user-id"]) as UserId;
-
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    const tenantId = getTenantId(request) as TenantId;
+    const userId = getUserId(request) as UserId;
 
     try {
       const achievements = await service.getUserAchievements(tenantId, userId);
@@ -64,13 +75,8 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    * Alias consistent with frontend GET /api/v1/gamification/leaderboard.
    */
   app.get("/gamification/leaderboard", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const { period, limit } = request.query as {
-      period?: string;
-      limit?: number;
-    };
-
-    if (!tenantId) return reply.code(401).send({ error: "Auth required" });
+    const tenantId = getTenantId(request) as TenantId;
+    const { limit } = request.query as { limit?: number };
 
     try {
       const leaderboard = await service.getLeaderboard({
@@ -90,12 +96,9 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    * Get user's points balance
    */
   app.get("/users/:userId/points", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request) as TenantId;
     const { userId } = request.params as { userId: UserId };
-
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    requireSelfOrRole(request, userId, ["teacher", "admin", "superadmin"]);
 
     try {
       const progress = await service.getUserProgress(tenantId, userId);
@@ -118,13 +121,10 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    * Award points to a user
    */
   app.post("/points/award", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request) as TenantId;
+    requireRole(request, ["teacher", "admin", "superadmin"]);
     // @ts-ignore
     const { userId, points, reason, sourceType } = request.body as any;
-
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
 
     try {
       const result = await service.awardPoints({
@@ -147,13 +147,11 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    * GET /leaderboard
    */
   app.get("/leaderboard", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request) as TenantId;
     const { limit, offset } = request.query as {
       limit?: number;
       offset?: number;
     };
-
-    if (!tenantId) return reply.code(401).send({ error: "Auth required" });
 
     try {
       const leaderboard = await service.getLeaderboard({
@@ -172,10 +170,9 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    * GET /users/:userId/achievements
    */
   app.get("/users/:userId/achievements", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request) as TenantId;
     const { userId } = request.params as { userId: UserId };
-
-    if (!tenantId) return reply.code(401).send({ error: "Auth required" });
+    requireSelfOrRole(request, userId, ["teacher", "admin", "superadmin"]);
 
     try {
       const achievements = await service.getUserAchievements(tenantId, userId);
@@ -191,15 +188,12 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    * Unlock an achievement for a user
    */
   app.post("/achievements/unlock", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request) as TenantId;
+    requireRole(request, ["teacher", "admin", "superadmin"]);
     const { userId, achievementId } = request.body as {
       userId: UserId;
       achievementId: string;
     };
-
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
 
     if (!userId || !achievementId) {
       return reply
@@ -208,7 +202,7 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
     }
 
     try {
-      const userAchievement = await app.prisma.userAchievement.create({
+      const userAchievement = await prisma.userAchievement.create({
         data: {
           tenantId,
           userId,
@@ -231,15 +225,12 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    * Get user's learning streak
    */
   app.get("/streaks/:userId", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request) as TenantId;
     const { userId } = request.params as { userId: UserId };
-
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    requireSelfOrRole(request, userId, ["teacher", "admin", "superadmin"]);
 
     try {
-      const streak = await app.prisma.learningStreak.findFirst({
+      const streak = await prisma.learningStreak.findFirst({
         where: { tenantId, userId },
       });
       return reply

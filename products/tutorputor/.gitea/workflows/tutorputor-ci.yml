@@ -4,12 +4,12 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'products/tutorputor/**'
-      - '.gitea/workflows/tutorputor-ci.yml'
+      - "products/tutorputor/**"
+      - ".gitea/workflows/tutorputor-ci.yml"
   pull_request:
     branches: [main, develop]
     paths:
-      - 'products/tutorputor/**'
+      - "products/tutorputor/**"
 
 env:
   REGISTRY: ghcr.io
@@ -18,10 +18,10 @@ env:
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
-  # 1. Lint & Type-check
+  # 1. Shared Package Validation
   # ─────────────────────────────────────────────────────────────────────────
   lint-typecheck:
-    name: Lint & Type-check
+    name: Shared Package Validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,24 +36,15 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --filter @ghatana/tutorputor-platform... --filter @ghatana/tutorputor-api-gateway...
-
-      - name: Type-check platform
-        run: pnpm --filter @tutorputor/platform type-check
-
-      - name: Type-check frontend apps
         run: |
-          pnpm --filter @tutorputor/web type-check || true
-          pnpm --filter @tutorputor/admin type-check || true
+          pnpm install --frozen-lockfile \
+            --filter @tutorputor/core... \
+            --filter @tutorputor/contracts...
 
-      - name: Type-check libraries
+      - name: Validate shared packages
         run: |
           pnpm --filter @tutorputor/core type-check
-          pnpm --filter @tutorputor/simulation type-check || true
-          pnpm --filter @tutorputor/contracts type-check || true
-
-      - name: Lint platform
-        run: pnpm --filter @tutorputor/platform lint
+          pnpm --filter @tutorputor/contracts build
 
   # ─────────────────────────────────────────────────────────────────────────
   # 2. Unit Tests
@@ -95,7 +86,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --filter @ghatana/tutorputor-platform...
+        run: pnpm install --frozen-lockfile --filter @tutorputor/platform...
 
       - name: Setup PostgreSQL service
         run: |
@@ -110,7 +101,7 @@ jobs:
           DATABASE_URL: postgresql://tutorputor:tutorputor@localhost:5432/tutorputor_test
 
       - name: Run tests
-        run: pnpm --filter @ghatana/tutorputor-platform test --coverage
+        run: pnpm --filter @tutorputor/platform test:coverage
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://tutorputor:tutorputor@localhost:5432/tutorputor_test

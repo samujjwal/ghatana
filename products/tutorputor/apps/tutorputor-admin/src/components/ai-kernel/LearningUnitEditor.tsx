@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card, Button, Input, Badge } from '@ghatana/design-system';
-import { LearningUnit, LearningUnitStatus } from '@tutorputor/contracts/v1/learning-unit';
-import { LearningUnitValidator, ValidationResult } from '@tutorputor/learning-kernel';
+import type { LearningUnit, LearningUnitStatus } from '@tutorputor/contracts/v1/learning-unit';
+import { LearningUnitValidator } from '@tutorputor/learning-kernel';
+import type { ValidationResult } from '@tutorputor/learning-kernel';
 
 interface LearningUnitEditorProps {
     initialUnit?: Partial<LearningUnit>;
@@ -142,8 +143,8 @@ export function LearningUnitEditor({ initialUnit, onSave }: LearningUnitEditorPr
 
                             {validation.issues.map((issue, i) => (
                                 <div key={i} className={`p-3 rounded-lg text-sm ${issue.severity === 'error' ? 'bg-red-50 text-red-800 border border-red-100' :
-                                        issue.severity === 'warning' ? 'bg-amber-50 text-amber-800 border border-amber-100' :
-                                            'bg-blue-50 text-blue-800 border border-blue-100'
+                                    issue.severity === 'warning' ? 'bg-amber-50 text-amber-800 border border-amber-100' :
+                                        'bg-blue-50 text-blue-800 border border-blue-100'
                                     }`}>
                                     <div className="font-medium capitalize mb-1 flex items-center gap-2">
                                         {issue.severity === 'error' && '🔴'}

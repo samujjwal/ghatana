@@ -1,6 +1,6 @@
 /**
  * Kernel Registry Fastify Routes
- * Converted from Hono to Fastify
+ * Fastify route registration for the kernel registry module
  *
  * @doc.type routes
  * @doc.purpose Kernel plugin registry API routes for Fastify

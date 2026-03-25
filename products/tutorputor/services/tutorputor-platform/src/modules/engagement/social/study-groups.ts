@@ -5,1045 +5,1196 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@tutorputor/core/db';
-import type { Redis } from 'ioredis';
+import type { PrismaClient } from "@tutorputor/core/db";
+import type { Redis } from "ioredis";
 import type {
-    StudyGroupService,
-    TenantId,
-    UserId,
-    ModuleId,
-    PaginationArgs,
-    PaginatedResult,
-} from '@tutorputor/contracts';
+  StudyGroupService,
+  TenantId,
+  UserId,
+  ModuleId,
+  PaginationArgs,
+  PaginatedResult,
+} from "@tutorputor/contracts";
 
 import type {
-    StudyGroup,
-    StudyGroupVisibility,
-    StudyGroupMember,
-    StudyGroupRole,
-    StudyGroupJoinRequest,
-    StudyGroupInvite,
-    StudySession,
-    StudySessionType,
-    SessionRsvp,
-} from '@tutorputor/contracts/v1/social';
-import { nanoid } from 'nanoid';
+  StudyGroup,
+  StudyGroupVisibility,
+  StudyGroupMember,
+  StudyGroupRole,
+  StudyGroupJoinRequest,
+  StudyGroupInvite,
+  StudySession,
+  StudySessionType,
+  SessionRsvp,
+} from "@tutorputor/contracts/v1/social";
+import { nanoid } from "nanoid";
+import { createSocialNotification } from "../../notifications/delivery.js";
 
 /**
  * Configuration for StudyGroupServiceImpl
  */
 export interface StudyGroupServiceConfig {
-    prisma: PrismaClient;
-    redis?: Redis;
-    defaultMaxMembers?: number;
-    inviteExpirationDays?: number;
+  prisma: PrismaClient;
+  redis?: Redis;
+  defaultMaxMembers?: number;
+  inviteExpirationDays?: number;
 }
 
 /**
  * Implementation of the Study Group service.
  */
 export class StudyGroupServiceImpl implements StudyGroupService {
-    private readonly prisma: PrismaClient;
-    private readonly redis?: Redis;
-    private readonly defaultMaxMembers: number;
-    private readonly inviteExpirationDays: number;
+  private readonly prisma: PrismaClient;
+  private readonly redis?: Redis;
+  private readonly defaultMaxMembers: number;
+  private readonly inviteExpirationDays: number;
 
-    constructor(config: StudyGroupServiceConfig) {
-        this.prisma = config.prisma;
-        this.redis = config.redis;
-        this.defaultMaxMembers = config.defaultMaxMembers ?? 50;
-        this.inviteExpirationDays = config.inviteExpirationDays ?? 7;
+  constructor(config: StudyGroupServiceConfig) {
+    this.prisma = config.prisma;
+    this.redis = config.redis;
+    this.defaultMaxMembers = config.defaultMaxMembers ?? 50;
+    this.inviteExpirationDays = config.inviteExpirationDays ?? 7;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Group CRUD
+  // ---------------------------------------------------------------------------
+
+  async createGroup(args: {
+    tenantId: TenantId;
+    createdBy: UserId;
+    name: string;
+    description: string;
+    visibility: StudyGroupVisibility;
+    subjects: string[];
+    moduleIds?: ModuleId[];
+    maxMembers?: number;
+    requireApproval?: boolean;
+  }): Promise<StudyGroup> {
+    const group = await this.prisma.studyGroup.create({
+      data: {
+        tenantId: args.tenantId,
+        name: args.name,
+        description: args.description,
+        createdBy: args.createdBy,
+        visibility: this.mapVisibilityToDb(args.visibility),
+        subjects: JSON.stringify(args.subjects),
+        modules: args.moduleIds ? JSON.stringify(args.moduleIds) : null,
+        maxMembers: args.maxMembers ?? this.defaultMaxMembers,
+        requireApproval: args.requireApproval ?? false,
+        memberCount: 1,
+        members: {
+          create: {
+            userId: args.createdBy,
+            role: "OWNER",
+          },
+        },
+      },
+      include: { members: true },
+    });
+
+    return this.mapGroupFromDb(group);
+  }
+
+  async getGroup(args: {
+    tenantId: TenantId;
+    groupId: string;
+    userId?: UserId;
+  }): Promise<StudyGroup & { membership?: StudyGroupMember }> {
+    const group = await this.prisma.studyGroup.findFirst({
+      where: {
+        id: args.groupId,
+        tenantId: args.tenantId,
+      },
+      include: {
+        members: args.userId ? { where: { userId: args.userId } } : false,
+      },
+    });
+
+    if (!group) {
+      throw new Error("Study group not found");
     }
 
-    // ---------------------------------------------------------------------------
-    // Group CRUD
-    // ---------------------------------------------------------------------------
+    const mapped = this.mapGroupFromDb(group);
+    const membership =
+      args.userId && (group as any).members?.[0]
+        ? this.mapMemberFromDb((group as any).members[0])
+        : undefined;
 
-    async createGroup(args: {
-        tenantId: TenantId;
-        createdBy: UserId;
-        name: string;
-        description: string;
-        visibility: StudyGroupVisibility;
-        subjects: string[];
-        moduleIds?: ModuleId[];
-        maxMembers?: number;
-        requireApproval?: boolean;
-    }): Promise<StudyGroup> {
-        const group = await this.prisma.studyGroup.create({
-            data: {
-                tenantId: args.tenantId,
-                name: args.name,
-                description: args.description,
-                createdBy: args.createdBy,
-                visibility: this.mapVisibilityToDb(args.visibility),
-                subjects: JSON.stringify(args.subjects),
-                modules: args.moduleIds ? JSON.stringify(args.moduleIds) : null,
-                maxMembers: args.maxMembers ?? this.defaultMaxMembers,
-                requireApproval: args.requireApproval ?? false,
-                memberCount: 1,
-                members: {
-                    create: {
-                        userId: args.createdBy,
-                        role: 'OWNER',
-                    },
-                },
-            },
-            include: { members: true },
-        });
-
-        return this.mapGroupFromDb(group);
+    if (group.visibility !== "PUBLIC" && !membership) {
+      throw new Error("Study group not found");
     }
 
-    async getGroup(args: {
-        tenantId: TenantId;
-        groupId: string;
-        userId?: UserId;
-    }): Promise<StudyGroup & { membership?: StudyGroupMember }> {
-        const group = await this.prisma.studyGroup.findFirst({
-            where: {
-                id: args.groupId,
-                tenantId: args.tenantId,
-            },
-            include: {
-                members: args.userId
-                    ? { where: { userId: args.userId } }
-                    : false,
-            },
-        });
+    return { ...mapped, membership };
+  }
 
-        if (!group) {
-            throw new Error('Study group not found');
-        }
+  async listGroups(args: {
+    tenantId: TenantId;
+    userId?: UserId;
+    visibility?: StudyGroupVisibility;
+    subject?: string;
+    moduleId?: ModuleId;
+    searchQuery?: string;
+    memberOf?: boolean;
+    pagination: PaginationArgs;
+  }): Promise<PaginatedResult<StudyGroup>> {
+    const where: any = {
+      tenantId: args.tenantId,
+      status: "ACTIVE",
+    };
 
-        const mapped = this.mapGroupFromDb(group);
-        const membership = args.userId && (group as any).members?.[0]
-            ? this.mapMemberFromDb((group as any).members[0])
-            : undefined;
-
-        return { ...mapped, membership };
+    if (args.visibility) {
+      where.visibility = this.mapVisibilityToDb(args.visibility);
     }
 
-    async listGroups(args: {
-        tenantId: TenantId;
-        userId?: UserId;
-        visibility?: StudyGroupVisibility;
-        subject?: string;
-        moduleId?: ModuleId;
-        searchQuery?: string;
-        memberOf?: boolean;
-        pagination: PaginationArgs;
-    }): Promise<PaginatedResult<StudyGroup>> {
-        const where: any = {
-            tenantId: args.tenantId,
-            status: 'ACTIVE',
-        };
-
-        if (args.visibility) {
-            where.visibility = this.mapVisibilityToDb(args.visibility);
-        }
-
-        if (args.searchQuery) {
-            where.OR = [
-                { name: { contains: args.searchQuery } },
-                { description: { contains: args.searchQuery } },
-            ];
-        }
-
-        if (args.memberOf && args.userId) {
-            where.members = { some: { userId: args.userId } };
-        }
-
-        const [items, total] = await Promise.all([
-            this.prisma.studyGroup.findMany({
-                where,
-                skip: args.pagination.offset ?? 0,
-                take: args.pagination.limit ?? 20,
-                orderBy: { lastActivityAt: 'desc' },
-            }),
-            this.prisma.studyGroup.count({ where }),
-        ]);
-
-        return {
-            items: items.map((g: any) => this.mapGroupFromDb(g)),
-            totalCount: total,
-            total,
-            hasMore: (args.pagination.offset ?? 0) + items.length < total,
-        };
+    if (args.searchQuery) {
+      where.OR = [
+        { name: { contains: args.searchQuery } },
+        { description: { contains: args.searchQuery } },
+      ];
     }
 
-    async updateGroup(args: {
-        tenantId: TenantId;
-        groupId: string;
-        userId: UserId;
-        patch: Partial<Pick<StudyGroup, 'name' | 'description' | 'visibility' | 'maxMembers' | 'requireApproval' | 'subjects' | 'coverImageUrl'>>;
-    }): Promise<StudyGroup> {
-        await this.requireRole(args.groupId, args.userId, ['OWNER', 'ADMIN']);
-
-        const data: any = {};
-        if (args.patch.name !== undefined) data.name = args.patch.name;
-        if (args.patch.description !== undefined) data.description = args.patch.description;
-        if (args.patch.visibility !== undefined) data.visibility = this.mapVisibilityToDb(args.patch.visibility);
-        if (args.patch.maxMembers !== undefined) data.maxMembers = args.patch.maxMembers;
-        if (args.patch.requireApproval !== undefined) data.requireApproval = args.patch.requireApproval;
-        if (args.patch.subjects !== undefined) data.subjects = JSON.stringify(args.patch.subjects);
-        if (args.patch.coverImageUrl !== undefined) data.coverImageUrl = args.patch.coverImageUrl;
-
-        const group = await this.prisma.studyGroup.update({
-            where: { id: args.groupId },
-            data,
-        });
-
-        return this.mapGroupFromDb(group);
+    if (args.memberOf && args.userId) {
+      where.members = { some: { userId: args.userId } };
     }
 
-    async archiveGroup(args: {
-        tenantId: TenantId;
-        groupId: string;
-        userId: UserId;
-    }): Promise<StudyGroup> {
-        await this.requireRole(args.groupId, args.userId, ['OWNER']);
+    const [items, total] = await Promise.all([
+      this.prisma.studyGroup.findMany({
+        where,
+        skip: args.pagination.offset ?? 0,
+        take: args.pagination.limit ?? 20,
+        orderBy: { lastActivityAt: "desc" },
+      }),
+      this.prisma.studyGroup.count({ where }),
+    ]);
 
-        const group = await this.prisma.studyGroup.update({
-            where: { id: args.groupId },
-            data: {
-                status: 'ARCHIVED',
-                archivedAt: new Date(),
-            },
-        });
+    return {
+      items: items.map((g: any) => this.mapGroupFromDb(g)),
+      totalCount: total,
+      total,
+      hasMore: (args.pagination.offset ?? 0) + items.length < total,
+    };
+  }
 
-        return this.mapGroupFromDb(group);
+  async updateGroup(args: {
+    tenantId: TenantId;
+    groupId: string;
+    userId: UserId;
+    patch: Partial<
+      Pick<
+        StudyGroup,
+        | "name"
+        | "description"
+        | "visibility"
+        | "maxMembers"
+        | "requireApproval"
+        | "subjects"
+        | "coverImageUrl"
+      >
+    >;
+  }): Promise<StudyGroup> {
+    await this.requireRole(args.tenantId, args.groupId, args.userId, [
+      "OWNER",
+      "ADMIN",
+    ]);
+
+    const data: any = {};
+    if (args.patch.name !== undefined) data.name = args.patch.name;
+    if (args.patch.description !== undefined)
+      data.description = args.patch.description;
+    if (args.patch.visibility !== undefined)
+      data.visibility = this.mapVisibilityToDb(args.patch.visibility);
+    if (args.patch.maxMembers !== undefined)
+      data.maxMembers = args.patch.maxMembers;
+    if (args.patch.requireApproval !== undefined)
+      data.requireApproval = args.patch.requireApproval;
+    if (args.patch.subjects !== undefined)
+      data.subjects = JSON.stringify(args.patch.subjects);
+    if (args.patch.coverImageUrl !== undefined)
+      data.coverImageUrl = args.patch.coverImageUrl;
+
+    const group = await this.prisma.studyGroup.update({
+      where: { id: args.groupId },
+      data,
+    });
+
+    return this.mapGroupFromDb(group);
+  }
+
+  async archiveGroup(args: {
+    tenantId: TenantId;
+    groupId: string;
+    userId: UserId;
+  }): Promise<StudyGroup> {
+    await this.requireRole(args.tenantId, args.groupId, args.userId, ["OWNER"]);
+
+    const group = await this.prisma.studyGroup.update({
+      where: { id: args.groupId },
+      data: {
+        status: "ARCHIVED",
+        archivedAt: new Date(),
+      },
+    });
+
+    return this.mapGroupFromDb(group);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Membership
+  // ---------------------------------------------------------------------------
+
+  async joinGroup(args: {
+    tenantId: TenantId;
+    groupId: string;
+    userId: UserId;
+  }): Promise<StudyGroupMember> {
+    const group = await this.prisma.studyGroup.findFirst({
+      where: { id: args.groupId, tenantId: args.tenantId },
+      include: { _count: { select: { members: true } } },
+    });
+
+    if (!group) {
+      throw new Error("Study group not found");
     }
 
-    // ---------------------------------------------------------------------------
-    // Membership
-    // ---------------------------------------------------------------------------
-
-    async joinGroup(args: {
-        tenantId: TenantId;
-        groupId: string;
-        userId: UserId;
-    }): Promise<StudyGroupMember> {
-        const group = await this.prisma.studyGroup.findFirst({
-            where: { id: args.groupId, tenantId: args.tenantId },
-            include: { _count: { select: { members: true } } },
-        });
-
-        if (!group) {
-            throw new Error('Study group not found');
-        }
-
-        if (group.visibility !== 'PUBLIC') {
-            throw new Error('Cannot join non-public group directly');
-        }
-
-        if (group._count.members >= group.maxMembers) {
-            throw new Error('Group is full');
-        }
-
-        const member = await this.prisma.studyGroupMember.create({
-            data: {
-                groupId: args.groupId,
-                userId: args.userId,
-                role: 'MEMBER',
-            },
-        });
-
-        await this.prisma.studyGroup.update({
-            where: { id: args.groupId },
-            data: {
-                memberCount: { increment: 1 },
-                lastActivityAt: new Date(),
-            },
-        });
-
-        await this.publishActivity(args.tenantId, {
-            type: 'JOINED_GROUP',
-            actorId: args.userId,
-            targetType: 'study_group',
-            targetId: args.groupId,
-            targetTitle: group.name,
-            studyGroupId: args.groupId,
-        });
-
-        return this.mapMemberFromDb(member);
+    if (group.visibility !== "PUBLIC") {
+      throw new Error("Cannot join non-public group directly");
     }
 
-    async requestJoin(args: {
-        tenantId: TenantId;
-        groupId: string;
-        userId: UserId;
-        message?: string;
-    }): Promise<StudyGroupJoinRequest> {
-        const existing = await this.prisma.studyGroupJoinRequest.findFirst({
-            where: {
-                groupId: args.groupId,
-                userId: args.userId,
-                status: 'PENDING',
-            },
-        });
-
-        if (existing) {
-            throw new Error('Join request already pending');
-        }
-
-        const request = await this.prisma.studyGroupJoinRequest.create({
-            data: {
-                groupId: args.groupId,
-                userId: args.userId,
-                message: args.message,
-                status: 'PENDING',
-            },
-        });
-
-        // Notify group admins
-        const admins = await this.prisma.studyGroupMember.findMany({
-            where: {
-                groupId: args.groupId,
-                role: { in: ['OWNER', 'ADMIN'] },
-            },
-        });
-
-        for (const admin of admins) {
-            await this.createNotification(args.tenantId, admin.userId, {
-                type: 'GROUP_JOIN_REQUEST',
-                title: 'New join request',
-                body: `Someone wants to join your study group`,
-                targetType: 'study_group',
-                targetId: args.groupId,
-                actorId: args.userId,
-            });
-        }
-
-        return this.mapJoinRequestFromDb(request);
+    if (group._count.members >= group.maxMembers) {
+      throw new Error("Group is full");
     }
 
-    async handleJoinRequest(args: {
-        tenantId: TenantId;
-        requestId: string;
-        reviewerId: UserId;
-        approved: boolean;
-        rejectionReason?: string;
-    }): Promise<StudyGroupJoinRequest> {
-        const request = await this.prisma.studyGroupJoinRequest.findUnique({
-            where: { id: args.requestId },
-        });
+    const member = await this.prisma.studyGroupMember.create({
+      data: {
+        groupId: args.groupId,
+        userId: args.userId,
+        role: "MEMBER",
+      },
+    });
 
-        if (!request) {
-            throw new Error('Join request not found');
-        }
+    await this.prisma.studyGroup.update({
+      where: { id: args.groupId },
+      data: {
+        memberCount: { increment: 1 },
+        lastActivityAt: new Date(),
+      },
+    });
 
-        await this.requireRole(request.groupId, args.reviewerId, ['OWNER', 'ADMIN', 'MODERATOR']);
+    await this.publishActivity(args.tenantId, {
+      type: "JOINED_GROUP",
+      actorId: args.userId,
+      targetType: "study_group",
+      targetId: args.groupId,
+      targetTitle: group.name,
+      studyGroupId: args.groupId,
+    });
 
-        const updated = await this.prisma.studyGroupJoinRequest.update({
-            where: { id: args.requestId },
-            data: {
-                status: args.approved ? 'APPROVED' : 'REJECTED',
-                reviewedBy: args.reviewerId,
-                reviewedAt: new Date(),
-                rejectionReason: args.rejectionReason,
-            },
-        });
+    return this.mapMemberFromDb(member);
+  }
 
-        if (args.approved) {
-            await this.prisma.studyGroupMember.create({
-                data: {
-                    groupId: request.groupId,
-                    userId: request.userId,
-                    role: 'MEMBER',
-                },
-            });
+  async requestJoin(args: {
+    tenantId: TenantId;
+    groupId: string;
+    userId: UserId;
+    message?: string;
+  }): Promise<StudyGroupJoinRequest> {
+    const existing = await this.prisma.studyGroupJoinRequest.findFirst({
+      where: {
+        groupId: args.groupId,
+        userId: args.userId,
+        status: "PENDING",
+      },
+    });
 
-            await this.prisma.studyGroup.update({
-                where: { id: request.groupId },
-                data: { memberCount: { increment: 1 } },
-            });
-        }
-
-        return this.mapJoinRequestFromDb(updated);
+    if (existing) {
+      throw new Error("Join request already pending");
     }
 
-    async listJoinRequests(args: {
-        tenantId: TenantId;
-        groupId: string;
-        pagination: PaginationArgs;
-    }): Promise<PaginatedResult<StudyGroupJoinRequest>> {
-        const [items, total] = await Promise.all([
-            this.prisma.studyGroupJoinRequest.findMany({
-                where: {
-                    groupId: args.groupId,
-                    status: 'PENDING',
-                },
-                skip: args.pagination.offset ?? 0,
-                take: args.pagination.limit ?? 20,
-                orderBy: { createdAt: 'desc' },
-            }),
-            this.prisma.studyGroupJoinRequest.count({
-                where: {
-                    groupId: args.groupId,
-                    status: 'PENDING',
-                },
-            }),
-        ]);
+    const request = await this.prisma.studyGroupJoinRequest.create({
+      data: {
+        groupId: args.groupId,
+        userId: args.userId,
+        message: args.message,
+        status: "PENDING",
+      },
+    });
 
-        return {
-            items: items.map((r: any) => this.mapJoinRequestFromDb(r)),
-            totalCount: total,
-            total,
-            hasMore: (args.pagination.offset ?? 0) + items.length < total,
-        };
+    // Notify group admins
+    const admins = await this.prisma.studyGroupMember.findMany({
+      where: {
+        groupId: args.groupId,
+        role: { in: ["OWNER", "ADMIN"] },
+      },
+    });
+
+    for (const admin of admins) {
+      await this.createNotification(args.tenantId, admin.userId, {
+        type: "GROUP_JOIN_REQUEST",
+        title: "New join request",
+        body: `Someone wants to join your study group`,
+        targetType: "study_group",
+        targetId: args.groupId,
+        actorId: args.userId,
+      });
     }
 
-    async inviteMember(args: {
-        tenantId: TenantId;
-        groupId: string;
-        invitedBy: UserId;
-        invitedEmail: string;
-    }): Promise<StudyGroupInvite> {
-        await this.requireRole(args.groupId, args.invitedBy, ['OWNER', 'ADMIN', 'MODERATOR']);
+    return this.mapJoinRequestFromDb(request);
+  }
 
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + this.inviteExpirationDays);
+  async handleJoinRequest(args: {
+    tenantId: TenantId;
+    requestId: string;
+    reviewerId: UserId;
+    approved: boolean;
+    rejectionReason?: string;
+  }): Promise<StudyGroupJoinRequest> {
+    const request = await this.requireJoinRequestInTenant(
+      args.tenantId,
+      args.requestId,
+    );
 
-        const invite = await this.prisma.studyGroupInvite.create({
-            data: {
-                groupId: args.groupId,
-                invitedEmail: args.invitedEmail,
-                invitedBy: args.invitedBy,
-                expiresAt,
-                status: 'PENDING',
-            },
-        });
+    await this.requireRole(args.tenantId, request.groupId, args.reviewerId, [
+      "OWNER",
+      "ADMIN",
+      "MODERATOR",
+    ]);
 
-        return this.mapInviteFromDb(invite);
+    const updated = await this.prisma.studyGroupJoinRequest.update({
+      where: { id: args.requestId },
+      data: {
+        status: args.approved ? "APPROVED" : "REJECTED",
+        reviewedBy: args.reviewerId,
+        reviewedAt: new Date(),
+        rejectionReason: args.rejectionReason,
+      },
+    });
+
+    if (args.approved) {
+      await this.prisma.studyGroupMember.create({
+        data: {
+          groupId: request.groupId,
+          userId: request.userId,
+          role: "MEMBER",
+        },
+      });
+
+      await this.prisma.studyGroup.update({
+        where: { id: request.groupId },
+        data: { memberCount: { increment: 1 } },
+      });
     }
 
-    async respondToInvite(args: {
-        tenantId: TenantId;
-        inviteId: string;
-        userId: UserId;
-        accepted: boolean;
-    }): Promise<StudyGroupInvite> {
-        const invite = await this.prisma.studyGroupInvite.findUnique({
-            where: { id: args.inviteId },
-        });
+    return this.mapJoinRequestFromDb(updated);
+  }
 
-        if (!invite || invite.status !== 'PENDING') {
-            throw new Error('Invite not found or already processed');
-        }
+  async listJoinRequests(args: {
+    tenantId: TenantId;
+    groupId: string;
+    pagination: PaginationArgs;
+  }): Promise<PaginatedResult<StudyGroupJoinRequest>> {
+    const [items, total] = await Promise.all([
+      this.prisma.studyGroupJoinRequest.findMany({
+        where: {
+          groupId: args.groupId,
+          status: "PENDING",
+        },
+        skip: args.pagination.offset ?? 0,
+        take: args.pagination.limit ?? 20,
+        orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.studyGroupJoinRequest.count({
+        where: {
+          groupId: args.groupId,
+          status: "PENDING",
+        },
+      }),
+    ]);
 
-        if (new Date() > invite.expiresAt) {
-            await this.prisma.studyGroupInvite.update({
-                where: { id: args.inviteId },
-                data: { status: 'EXPIRED' },
-            });
-            throw new Error('Invite has expired');
-        }
+    return {
+      items: items.map((r: any) => this.mapJoinRequestFromDb(r)),
+      totalCount: total,
+      total,
+      hasMore: (args.pagination.offset ?? 0) + items.length < total,
+    };
+  }
 
-        const updated = await this.prisma.studyGroupInvite.update({
-            where: { id: args.inviteId },
-            data: {
-                status: args.accepted ? 'ACCEPTED' : 'DECLINED',
-                acceptedAt: args.accepted ? new Date() : null,
-            },
-        });
+  async inviteMember(args: {
+    tenantId: TenantId;
+    groupId: string;
+    invitedBy: UserId;
+    invitedEmail: string;
+  }): Promise<StudyGroupInvite> {
+    await this.requireRole(args.tenantId, args.groupId, args.invitedBy, [
+      "OWNER",
+      "ADMIN",
+      "MODERATOR",
+    ]);
 
-        if (args.accepted) {
-            await this.prisma.studyGroupMember.create({
-                data: {
-                    groupId: invite.groupId,
-                    userId: args.userId,
-                    role: 'MEMBER',
-                    invitedBy: invite.invitedBy,
-                },
-            });
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + this.inviteExpirationDays);
 
-            await this.prisma.studyGroup.update({
-                where: { id: invite.groupId },
-                data: { memberCount: { increment: 1 } },
-            });
-        }
+    const invite = await this.prisma.studyGroupInvite.create({
+      data: {
+        groupId: args.groupId,
+        invitedEmail: args.invitedEmail,
+        invitedBy: args.invitedBy,
+        expiresAt,
+        status: "PENDING",
+      },
+    });
 
-        return this.mapInviteFromDb(updated);
+    return this.mapInviteFromDb(invite);
+  }
+
+  async respondToInvite(args: {
+    tenantId: TenantId;
+    inviteId: string;
+    userId: UserId;
+    accepted: boolean;
+  }): Promise<StudyGroupInvite> {
+    const invite = await this.requireInviteInTenant(
+      args.tenantId,
+      args.inviteId,
+    );
+
+    if (invite.status !== "PENDING") {
+      throw new Error("Invite not found or already processed");
     }
 
-    async listMembers(args: {
-        tenantId: TenantId;
-        groupId: string;
-        pagination: PaginationArgs;
-    }): Promise<PaginatedResult<StudyGroupMember>> {
-        const [items, total] = await Promise.all([
-            this.prisma.studyGroupMember.findMany({
-                where: { groupId: args.groupId },
-                skip: args.pagination.offset ?? 0,
-                take: args.pagination.limit ?? 20,
-                orderBy: [
-                    { role: 'asc' }, // Owner first, then admin, etc.
-                    { joinedAt: 'asc' },
-                ],
-            }),
-            this.prisma.studyGroupMember.count({
-                where: { groupId: args.groupId },
-            }),
-        ]);
-
-        return {
-            items: items.map((m: any) => this.mapMemberFromDb(m)),
-            totalCount: total,
-            total,
-            hasMore: (args.pagination.offset ?? 0) + items.length < total,
-        };
+    if (new Date() > invite.expiresAt) {
+      await this.prisma.studyGroupInvite.update({
+        where: { id: args.inviteId },
+        data: { status: "EXPIRED" },
+      });
+      throw new Error("Invite has expired");
     }
 
-    async updateMemberRole(args: {
-        tenantId: TenantId;
-        groupId: string;
-        memberId: string;
-        updatedBy: UserId;
-        newRole: StudyGroupRole;
-    }): Promise<StudyGroupMember> {
-        await this.requireRole(args.groupId, args.updatedBy, ['OWNER']);
+    const updated = await this.prisma.studyGroupInvite.update({
+      where: { id: args.inviteId },
+      data: {
+        status: args.accepted ? "ACCEPTED" : "DECLINED",
+        acceptedAt: args.accepted ? new Date() : null,
+      },
+    });
 
-        const member = await this.prisma.studyGroupMember.update({
-            where: { id: args.memberId },
-            data: { role: this.mapRoleToDb(args.newRole) },
-        });
+    if (args.accepted) {
+      await this.prisma.studyGroupMember.create({
+        data: {
+          groupId: invite.groupId,
+          userId: args.userId,
+          role: "MEMBER",
+          invitedBy: invite.invitedBy,
+        },
+      });
 
-        return this.mapMemberFromDb(member);
+      await this.prisma.studyGroup.update({
+        where: { id: invite.groupId },
+        data: { memberCount: { increment: 1 } },
+      });
     }
 
-    async removeMember(args: {
-        tenantId: TenantId;
-        groupId: string;
-        memberId: string;
-        removedBy: UserId;
-    }): Promise<void> {
-        const member = await this.prisma.studyGroupMember.findUnique({
-            where: { id: args.memberId },
-        });
+    return this.mapInviteFromDb(updated);
+  }
 
-        if (!member) {
-            throw new Error('Member not found');
-        }
+  async listMembers(args: {
+    tenantId: TenantId;
+    groupId: string;
+    pagination: PaginationArgs;
+  }): Promise<PaginatedResult<StudyGroupMember>> {
+    const [items, total] = await Promise.all([
+      this.prisma.studyGroupMember.findMany({
+        where: { groupId: args.groupId },
+        skip: args.pagination.offset ?? 0,
+        take: args.pagination.limit ?? 20,
+        orderBy: [
+          { role: "asc" }, // Owner first, then admin, etc.
+          { joinedAt: "asc" },
+        ],
+      }),
+      this.prisma.studyGroupMember.count({
+        where: { groupId: args.groupId },
+      }),
+    ]);
 
-        if (member.role === 'OWNER') {
-            throw new Error('Cannot remove group owner');
-        }
+    return {
+      items: items.map((m: any) => this.mapMemberFromDb(m)),
+      totalCount: total,
+      total,
+      hasMore: (args.pagination.offset ?? 0) + items.length < total,
+    };
+  }
 
-        await this.requireRole(args.groupId, args.removedBy, ['OWNER', 'ADMIN', 'MODERATOR']);
+  async updateMemberRole(args: {
+    tenantId: TenantId;
+    groupId: string;
+    memberId: string;
+    updatedBy: UserId;
+    newRole: StudyGroupRole;
+  }): Promise<StudyGroupMember> {
+    await this.requireRole(args.tenantId, args.groupId, args.updatedBy, [
+      "OWNER",
+    ]);
 
-        await this.prisma.studyGroupMember.delete({
-            where: { id: args.memberId },
-        });
+    const member = await this.requireMemberInGroup(
+      args.tenantId,
+      args.groupId,
+      args.memberId,
+    );
 
-        await this.prisma.studyGroup.update({
-            where: { id: args.groupId },
-            data: { memberCount: { decrement: 1 } },
-        });
+    const updatedMember = await this.prisma.studyGroupMember.update({
+      where: { id: member.id },
+      data: { role: this.mapRoleToDb(args.newRole) },
+    });
+
+    return this.mapMemberFromDb(updatedMember);
+  }
+
+  async removeMember(args: {
+    tenantId: TenantId;
+    groupId: string;
+    memberId: string;
+    removedBy: UserId;
+  }): Promise<void> {
+    const member = await this.requireMemberInGroup(
+      args.tenantId,
+      args.groupId,
+      args.memberId,
+    );
+
+    if (member.role === "OWNER") {
+      throw new Error("Cannot remove group owner");
     }
 
-    async leaveGroup(args: {
-        tenantId: TenantId;
-        groupId: string;
-        userId: UserId;
-    }): Promise<void> {
-        const member = await this.prisma.studyGroupMember.findFirst({
-            where: {
-                groupId: args.groupId,
-                userId: args.userId,
-            },
-        });
+    await this.requireRole(args.tenantId, args.groupId, args.removedBy, [
+      "OWNER",
+      "ADMIN",
+      "MODERATOR",
+    ]);
 
-        if (!member) {
-            throw new Error('Not a member of this group');
-        }
+    await this.prisma.studyGroupMember.delete({
+      where: { id: args.memberId },
+    });
 
-        if (member.role === 'OWNER') {
-            throw new Error('Owner cannot leave. Transfer ownership first.');
-        }
+    await this.prisma.studyGroup.update({
+      where: { id: args.groupId },
+      data: { memberCount: { decrement: 1 } },
+    });
+  }
 
-        await this.prisma.studyGroupMember.delete({
-            where: { id: member.id },
-        });
+  async leaveGroup(args: {
+    tenantId: TenantId;
+    groupId: string;
+    userId: UserId;
+  }): Promise<void> {
+    const member = await this.prisma.studyGroupMember.findFirst({
+      where: {
+        groupId: args.groupId,
+        userId: args.userId,
+      },
+    });
 
-        await this.prisma.studyGroup.update({
-            where: { id: args.groupId },
-            data: { memberCount: { decrement: 1 } },
-        });
+    if (!member) {
+      throw new Error("Not a member of this group");
     }
 
-    // ---------------------------------------------------------------------------
-    // Study Sessions
-    // ---------------------------------------------------------------------------
-
-    async scheduleSession(args: {
-        tenantId: TenantId;
-        groupId: string;
-        createdBy: UserId;
-        title: string;
-        description?: string;
-        scheduledAt: Date;
-        duration: number;
-        type: StudySessionType;
-        moduleId?: ModuleId;
-        lessonIds?: string[];
-        maxParticipants?: number;
-    }): Promise<StudySession> {
-        await this.requireRole(args.groupId, args.createdBy, ['OWNER', 'ADMIN', 'MODERATOR', 'MEMBER']);
-
-        const session = await this.prisma.studySession.create({
-            data: {
-                groupId: args.groupId,
-                title: args.title,
-                description: args.description,
-                createdBy: args.createdBy,
-                scheduledAt: args.scheduledAt,
-                duration: args.duration,
-                type: this.mapSessionTypeToDb(args.type),
-                moduleId: args.moduleId,
-                lessonIds: args.lessonIds ? JSON.stringify(args.lessonIds) : null,
-                maxParticipants: args.maxParticipants,
-                status: 'SCHEDULED',
-            },
-        });
-
-        // Auto-RSVP creator
-        await this.prisma.sessionRsvp.create({
-            data: {
-                sessionId: session.id,
-                userId: args.createdBy,
-                status: 'ATTENDING',
-            },
-        });
-
-        const group = await this.prisma.studyGroup.findUnique({
-            where: { id: args.groupId },
-        });
-
-        await this.publishActivity(args.tenantId, {
-            type: 'SCHEDULED_SESSION',
-            actorId: args.createdBy,
-            targetType: 'study_session',
-            targetId: session.id,
-            targetTitle: args.title,
-            studyGroupId: args.groupId,
-        });
-
-        return this.mapSessionFromDb(session);
+    if (member.role === "OWNER") {
+      throw new Error("Owner cannot leave. Transfer ownership first.");
     }
 
-    async listSessions(args: {
-        tenantId: TenantId;
-        groupId: string;
-        includeCompleted?: boolean;
-        pagination: PaginationArgs;
-    }): Promise<PaginatedResult<StudySession>> {
-        const where: any = { groupId: args.groupId };
+    await this.prisma.studyGroupMember.delete({
+      where: { id: member.id },
+    });
 
-        if (!args.includeCompleted) {
-            where.status = { in: ['SCHEDULED', 'IN_PROGRESS'] };
-        }
+    await this.prisma.studyGroup.update({
+      where: { id: args.groupId },
+      data: { memberCount: { decrement: 1 } },
+    });
+  }
 
-        const [items, total] = await Promise.all([
-            this.prisma.studySession.findMany({
-                where,
-                skip: args.pagination.offset ?? 0,
-                take: args.pagination.limit ?? 20,
-                orderBy: { scheduledAt: 'asc' },
-            }),
-            this.prisma.studySession.count({ where }),
-        ]);
+  // ---------------------------------------------------------------------------
+  // Study Sessions
+  // ---------------------------------------------------------------------------
 
-        return {
-            items: items.map((s: any) => this.mapSessionFromDb(s)),
-            totalCount: total,
-            total,
-            hasMore: (args.pagination.offset ?? 0) + items.length < total,
-        };
+  async scheduleSession(args: {
+    tenantId: TenantId;
+    groupId: string;
+    createdBy: UserId;
+    title: string;
+    description?: string;
+    scheduledAt: Date;
+    duration: number;
+    type: StudySessionType;
+    moduleId?: ModuleId;
+    lessonIds?: string[];
+    maxParticipants?: number;
+  }): Promise<StudySession> {
+    await this.requireRole(args.tenantId, args.groupId, args.createdBy, [
+      "OWNER",
+      "ADMIN",
+      "MODERATOR",
+      "MEMBER",
+    ]);
+
+    const session = await this.prisma.studySession.create({
+      data: {
+        groupId: args.groupId,
+        title: args.title,
+        description: args.description,
+        createdBy: args.createdBy,
+        scheduledAt: args.scheduledAt,
+        duration: args.duration,
+        type: this.mapSessionTypeToDb(args.type),
+        moduleId: args.moduleId,
+        lessonIds: args.lessonIds ? JSON.stringify(args.lessonIds) : null,
+        maxParticipants: args.maxParticipants,
+        status: "SCHEDULED",
+      },
+    });
+
+    // Auto-RSVP creator
+    await this.prisma.sessionRsvp.create({
+      data: {
+        sessionId: session.id,
+        userId: args.createdBy,
+        status: "ATTENDING",
+      },
+    });
+
+    const group = await this.prisma.studyGroup.findUnique({
+      where: { id: args.groupId },
+    });
+
+    await this.publishActivity(args.tenantId, {
+      type: "SCHEDULED_SESSION",
+      actorId: args.createdBy,
+      targetType: "study_session",
+      targetId: session.id,
+      targetTitle: args.title,
+      studyGroupId: args.groupId,
+    });
+
+    return this.mapSessionFromDb(session);
+  }
+
+  async listSessions(args: {
+    tenantId: TenantId;
+    groupId: string;
+    includeCompleted?: boolean;
+    pagination: PaginationArgs;
+  }): Promise<PaginatedResult<StudySession>> {
+    const where: any = { groupId: args.groupId };
+
+    if (!args.includeCompleted) {
+      where.status = { in: ["SCHEDULED", "IN_PROGRESS"] };
     }
 
-    async rsvpSession(args: {
-        tenantId: TenantId;
-        sessionId: string;
-        userId: UserId;
-        status: SessionRsvp['status'];
-        note?: string;
-    }): Promise<SessionRsvp> {
-        const rsvp = await this.prisma.sessionRsvp.upsert({
-            where: {
-                sessionId_userId: {
-                    sessionId: args.sessionId,
-                    userId: args.userId,
-                },
-            },
-            create: {
-                sessionId: args.sessionId,
-                userId: args.userId,
-                status: this.mapRsvpStatusToDb(args.status),
-                note: args.note,
-            },
-            update: {
-                status: this.mapRsvpStatusToDb(args.status),
-                note: args.note,
-            },
-        });
+    const [items, total] = await Promise.all([
+      this.prisma.studySession.findMany({
+        where,
+        skip: args.pagination.offset ?? 0,
+        take: args.pagination.limit ?? 20,
+        orderBy: { scheduledAt: "asc" },
+      }),
+      this.prisma.studySession.count({ where }),
+    ]);
 
-        return this.mapRsvpFromDb(rsvp);
+    return {
+      items: items.map((s: any) => this.mapSessionFromDb(s)),
+      totalCount: total,
+      total,
+      hasMore: (args.pagination.offset ?? 0) + items.length < total,
+    };
+  }
+
+  async rsvpSession(args: {
+    tenantId: TenantId;
+    sessionId: string;
+    userId: UserId;
+    status: SessionRsvp["status"];
+    note?: string;
+  }): Promise<SessionRsvp> {
+    const session = await this.requireSessionInTenant(
+      args.tenantId,
+      args.sessionId,
+    );
+
+    await this.requireRole(args.tenantId, session.groupId, args.userId, [
+      "OWNER",
+      "ADMIN",
+      "MODERATOR",
+      "MEMBER",
+    ]);
+
+    const rsvp = await this.prisma.sessionRsvp.upsert({
+      where: {
+        sessionId_userId: {
+          sessionId: args.sessionId,
+          userId: args.userId,
+        },
+      },
+      create: {
+        sessionId: args.sessionId,
+        userId: args.userId,
+        status: this.mapRsvpStatusToDb(args.status),
+        note: args.note,
+      },
+      update: {
+        status: this.mapRsvpStatusToDb(args.status),
+        note: args.note,
+      },
+    });
+
+    return this.mapRsvpFromDb(rsvp);
+  }
+
+  async startSession(args: {
+    tenantId: TenantId;
+    sessionId: string;
+    userId: UserId;
+  }): Promise<StudySession> {
+    const session = await this.requireSessionInTenant(
+      args.tenantId,
+      args.sessionId,
+    );
+
+    await this.requireRole(args.tenantId, session.groupId, args.userId, [
+      "OWNER",
+      "ADMIN",
+      "MODERATOR",
+    ]);
+
+    const updated = await this.prisma.studySession.update({
+      where: { id: args.sessionId },
+      data: {
+        status: "IN_PROGRESS",
+        startedAt: new Date(),
+      },
+    });
+
+    return this.mapSessionFromDb(updated);
+  }
+
+  async endSession(args: {
+    tenantId: TenantId;
+    sessionId: string;
+    userId: UserId;
+    notes?: string;
+    recordingUrl?: string;
+  }): Promise<StudySession> {
+    const session = await this.requireSessionInTenant(
+      args.tenantId,
+      args.sessionId,
+    );
+
+    await this.requireRole(args.tenantId, session.groupId, args.userId, [
+      "OWNER",
+      "ADMIN",
+      "MODERATOR",
+    ]);
+
+    const updated = await this.prisma.studySession.update({
+      where: { id: args.sessionId },
+      data: {
+        status: "COMPLETED",
+        endedAt: new Date(),
+        notes: args.notes,
+        recordingUrl: args.recordingUrl,
+      },
+    });
+
+    await this.publishActivity(args.tenantId, {
+      type: "COMPLETED_SESSION",
+      actorId: args.userId,
+      targetType: "study_session",
+      targetId: args.sessionId,
+      targetTitle: session.title,
+      studyGroupId: session.groupId,
+    });
+
+    return this.mapSessionFromDb(updated);
+  }
+
+  async cancelSession(args: {
+    tenantId: TenantId;
+    sessionId: string;
+    userId: UserId;
+    reason?: string;
+  }): Promise<StudySession> {
+    const session = await this.requireSessionInTenant(
+      args.tenantId,
+      args.sessionId,
+    );
+
+    await this.requireRole(args.tenantId, session.groupId, args.userId, [
+      "OWNER",
+      "ADMIN",
+      "MODERATOR",
+    ]);
+
+    const updated = await this.prisma.studySession.update({
+      where: { id: args.sessionId },
+      data: {
+        status: "CANCELLED",
+        notes: args.reason,
+      },
+    });
+
+    return this.mapSessionFromDb(updated);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private Helpers
+  // ---------------------------------------------------------------------------
+
+  private async requireRole(
+    tenantId: string,
+    groupId: string,
+    userId: string,
+    roles: string[],
+  ): Promise<any> {
+    const member = await this.prisma.studyGroupMember.findFirst({
+      where: {
+        groupId,
+        userId,
+        group: {
+          tenantId,
+        },
+      },
+    } as any);
+
+    if (!member || !roles.includes(member.role)) {
+      throw new Error("Insufficient permissions");
     }
 
-    async startSession(args: {
-        tenantId: TenantId;
-        sessionId: string;
-        userId: UserId;
-    }): Promise<StudySession> {
-        const session = await this.prisma.studySession.findUnique({
-            where: { id: args.sessionId },
-        });
+    return member;
+  }
 
-        if (!session) {
-            throw new Error('Session not found');
-        }
+  private async requireJoinRequestInTenant(
+    tenantId: string,
+    requestId: string,
+  ): Promise<any> {
+    const request = await this.prisma.studyGroupJoinRequest.findFirst({
+      where: {
+        id: requestId,
+        group: {
+          tenantId,
+        },
+      },
+    } as any);
 
-        await this.requireRole(session.groupId, args.userId, ['OWNER', 'ADMIN', 'MODERATOR']);
-
-        const updated = await this.prisma.studySession.update({
-            where: { id: args.sessionId },
-            data: {
-                status: 'IN_PROGRESS',
-                startedAt: new Date(),
-            },
-        });
-
-        return this.mapSessionFromDb(updated);
+    if (!request) {
+      throw new Error("Join request not found");
     }
 
-    async endSession(args: {
-        tenantId: TenantId;
-        sessionId: string;
-        userId: UserId;
-        notes?: string;
-        recordingUrl?: string;
-    }): Promise<StudySession> {
-        const session = await this.prisma.studySession.findUnique({
-            where: { id: args.sessionId },
-        });
+    return request;
+  }
 
-        if (!session) {
-            throw new Error('Session not found');
-        }
+  private async requireInviteInTenant(
+    tenantId: string,
+    inviteId: string,
+  ): Promise<any> {
+    const invite = await this.prisma.studyGroupInvite.findFirst({
+      where: {
+        id: inviteId,
+        group: {
+          tenantId,
+        },
+      },
+    } as any);
 
-        await this.requireRole(session.groupId, args.userId, ['OWNER', 'ADMIN', 'MODERATOR']);
-
-        const updated = await this.prisma.studySession.update({
-            where: { id: args.sessionId },
-            data: {
-                status: 'COMPLETED',
-                endedAt: new Date(),
-                notes: args.notes,
-                recordingUrl: args.recordingUrl,
-            },
-        });
-
-        await this.publishActivity(args.tenantId, {
-            type: 'COMPLETED_SESSION',
-            actorId: args.userId,
-            targetType: 'study_session',
-            targetId: args.sessionId,
-            targetTitle: session.title,
-            studyGroupId: session.groupId,
-        });
-
-        return this.mapSessionFromDb(updated);
+    if (!invite) {
+      throw new Error("Invite not found or already processed");
     }
 
-    async cancelSession(args: {
-        tenantId: TenantId;
-        sessionId: string;
-        userId: UserId;
-        reason?: string;
-    }): Promise<StudySession> {
-        const session = await this.prisma.studySession.findUnique({
-            where: { id: args.sessionId },
-        });
+    return invite;
+  }
 
-        if (!session) {
-            throw new Error('Session not found');
-        }
+  private async requireMemberInGroup(
+    tenantId: string,
+    groupId: string,
+    memberId: string,
+  ): Promise<any> {
+    const member = await this.prisma.studyGroupMember.findFirst({
+      where: {
+        id: memberId,
+        groupId,
+        group: {
+          tenantId,
+        },
+      },
+    } as any);
 
-        await this.requireRole(session.groupId, args.userId, ['OWNER', 'ADMIN', 'MODERATOR']);
-
-        const updated = await this.prisma.studySession.update({
-            where: { id: args.sessionId },
-            data: {
-                status: 'CANCELLED',
-                notes: args.reason,
-            },
-        });
-
-        return this.mapSessionFromDb(updated);
+    if (!member) {
+      throw new Error("Member not found");
     }
 
-    // ---------------------------------------------------------------------------
-    // Private Helpers
-    // ---------------------------------------------------------------------------
+    return member;
+  }
 
-    private async requireRole(
-        groupId: string,
-        userId: string,
-        roles: string[]
-    ): Promise<void> {
-        const member = await this.prisma.studyGroupMember.findFirst({
-            where: { groupId, userId },
-        });
+  private async requireSessionInTenant(
+    tenantId: string,
+    sessionId: string,
+  ): Promise<any> {
+    const session = await this.prisma.studySession.findFirst({
+      where: {
+        id: sessionId,
+        group: {
+          tenantId,
+        },
+      },
+    } as any);
 
-        if (!member || !roles.includes(member.role)) {
-            throw new Error('Insufficient permissions');
-        }
+    if (!session) {
+      throw new Error("Session not found");
     }
 
-    private async publishActivity(
-        tenantId: string,
-        activity: {
-            type: string;
-            actorId: string;
-            targetType: string;
-            targetId: string;
-            targetTitle: string;
-            studyGroupId?: string;
-        }
-    ): Promise<void> {
-        await this.prisma.socialActivity.create({
-            data: {
-                tenantId,
-                actorId: activity.actorId,
-                actorName: '', // Would be populated from user service
-                type: activity.type as any,
-                targetType: activity.targetType,
-                targetId: activity.targetId,
-                targetTitle: activity.targetTitle,
-                studyGroupId: activity.studyGroupId,
-            },
-        });
+    return session;
+  }
 
-        // Redis usage commented out if not available, or keep if supported
-        if (this.redis) {
-            await this.redis.publish(
-                `social:activity:${tenantId}`,
-                JSON.stringify(activity)
-            );
-        }
+  private async publishActivity(
+    tenantId: string,
+    activity: {
+      type: string;
+      actorId: string;
+      targetType: string;
+      targetId: string;
+      targetTitle: string;
+      studyGroupId?: string;
+    },
+  ): Promise<void> {
+    await this.prisma.socialActivity.create({
+      data: {
+        tenantId,
+        actorId: activity.actorId,
+        actorName: "", // Would be populated from user service
+        type: activity.type as any,
+        targetType: activity.targetType,
+        targetId: activity.targetId,
+        targetTitle: activity.targetTitle,
+        studyGroupId: activity.studyGroupId,
+      },
+    });
+
+    // Redis usage commented out if not available, or keep if supported
+    if (this.redis) {
+      await this.redis.publish(
+        `social:activity:${tenantId}`,
+        JSON.stringify(activity),
+      );
     }
+  }
 
-    private async createNotification(
-        tenantId: string,
-        userId: string,
-        notification: {
-            type: string;
-            title: string;
-            body: string;
-            targetType?: string;
-            targetId?: string;
-            actorId?: string;
-        }
-    ): Promise<void> {
-        await this.prisma.socialNotification.create({
-            data: {
-                tenantId,
-                userId,
-                type: notification.type as any,
-                title: notification.title,
-                body: notification.body,
-                targetType: notification.targetType,
-                targetId: notification.targetId,
-                actorId: notification.actorId,
-            },
-        });
+  private async createNotification(
+    tenantId: string,
+    userId: string,
+    notification: {
+      type: string;
+      title: string;
+      body: string;
+      targetType?: string;
+      targetId?: string;
+      actorId?: string;
+    },
+  ): Promise<void> {
+    await createSocialNotification(this.prisma as any, {
+      tenantId,
+      userId,
+      type: notification.type,
+      title: notification.title,
+      body: notification.body,
+      targetType: notification.targetType,
+      targetId: notification.targetId,
+      actorId: notification.actorId,
+    });
 
-        if (this.redis) {
-            await this.redis.publish(
-                `social:notification:${userId}`,
-                JSON.stringify(notification)
-            );
-        }
+    if (this.redis) {
+      await this.redis.publish(
+        `social:notification:${userId}`,
+        JSON.stringify(notification),
+      );
     }
+  }
 
-    // Mapping helpers
-    private mapVisibilityToDb(visibility: StudyGroupVisibility): string {
-        const map: Record<StudyGroupVisibility, string> = {
-            public: 'PUBLIC',
-            private: 'PRIVATE',
-            classroom_only: 'CLASSROOM_ONLY',
-        };
-        return map[visibility];
-    }
+  // Mapping helpers
+  private mapVisibilityToDb(visibility: StudyGroupVisibility): string {
+    const map: Record<StudyGroupVisibility, string> = {
+      public: "PUBLIC",
+      private: "PRIVATE",
+      classroom_only: "CLASSROOM_ONLY",
+    };
+    return map[visibility];
+  }
 
-    private mapVisibilityFromDb(visibility: string): StudyGroupVisibility {
-        const map: Record<string, StudyGroupVisibility> = {
-            PUBLIC: 'public',
-            PRIVATE: 'private',
-            CLASSROOM_ONLY: 'classroom_only',
-        };
-        return map[visibility] ?? 'public';
-    }
+  private mapVisibilityFromDb(visibility: string): StudyGroupVisibility {
+    const map: Record<string, StudyGroupVisibility> = {
+      PUBLIC: "public",
+      PRIVATE: "private",
+      CLASSROOM_ONLY: "classroom_only",
+    };
+    return map[visibility] ?? "public";
+  }
 
-    private mapRoleToDb(role: StudyGroupRole): string {
-        const map: Record<StudyGroupRole, string> = {
-            owner: 'OWNER',
-            admin: 'ADMIN',
-            moderator: 'MODERATOR',
-            member: 'MEMBER',
-        };
-        return map[role];
-    }
+  private mapRoleToDb(role: StudyGroupRole): string {
+    const map: Record<StudyGroupRole, string> = {
+      owner: "OWNER",
+      admin: "ADMIN",
+      moderator: "MODERATOR",
+      member: "MEMBER",
+    };
+    return map[role];
+  }
 
-    private mapRoleFromDb(role: string): StudyGroupRole {
-        const map: Record<string, StudyGroupRole> = {
-            OWNER: 'owner',
-            ADMIN: 'admin',
-            MODERATOR: 'moderator',
-            MEMBER: 'member',
-        };
-        return map[role] ?? 'member';
-    }
+  private mapRoleFromDb(role: string): StudyGroupRole {
+    const map: Record<string, StudyGroupRole> = {
+      OWNER: "owner",
+      ADMIN: "admin",
+      MODERATOR: "moderator",
+      MEMBER: "member",
+    };
+    return map[role] ?? "member";
+  }
 
-    private mapSessionTypeToDb(type: StudySessionType): string {
-        const map: Record<StudySessionType, string> = {
-            discussion: 'DISCUSSION',
-            review: 'REVIEW',
-            quiz_practice: 'QUIZ_PRACTICE',
-            video_call: 'VIDEO_CALL',
-            collaborative: 'COLLABORATIVE',
-        };
-        return map[type];
-    }
+  private mapSessionTypeToDb(type: StudySessionType): string {
+    const map: Record<StudySessionType, string> = {
+      discussion: "DISCUSSION",
+      review: "REVIEW",
+      quiz_practice: "QUIZ_PRACTICE",
+      video_call: "VIDEO_CALL",
+      collaborative: "COLLABORATIVE",
+    };
+    return map[type];
+  }
 
-    private mapSessionTypeFromDb(type: string): StudySessionType {
-        const map: Record<string, StudySessionType> = {
-            DISCUSSION: 'discussion',
-            REVIEW: 'review',
-            QUIZ_PRACTICE: 'quiz_practice',
-            VIDEO_CALL: 'video_call',
-            COLLABORATIVE: 'collaborative',
-        };
-        return map[type] ?? 'discussion';
-    }
+  private mapSessionTypeFromDb(type: string): StudySessionType {
+    const map: Record<string, StudySessionType> = {
+      DISCUSSION: "discussion",
+      REVIEW: "review",
+      QUIZ_PRACTICE: "quiz_practice",
+      VIDEO_CALL: "video_call",
+      COLLABORATIVE: "collaborative",
+    };
+    return map[type] ?? "discussion";
+  }
 
-    private mapRsvpStatusToDb(status: SessionRsvp['status']): string {
-        const map: Record<SessionRsvp['status'], string> = {
-            attending: 'ATTENDING',
-            maybe: 'MAYBE',
-            not_attending: 'NOT_ATTENDING',
-        };
-        return map[status];
-    }
+  private mapRsvpStatusToDb(status: SessionRsvp["status"]): string {
+    const map: Record<SessionRsvp["status"], string> = {
+      attending: "ATTENDING",
+      maybe: "MAYBE",
+      not_attending: "NOT_ATTENDING",
+    };
+    return map[status];
+  }
 
-    private mapRsvpStatusFromDb(status: string): SessionRsvp['status'] {
-        const map: Record<string, SessionRsvp['status']> = {
-            ATTENDING: 'attending',
-            MAYBE: 'maybe',
-            NOT_ATTENDING: 'not_attending',
-        };
-        return map[status] ?? 'attending';
-    }
+  private mapRsvpStatusFromDb(status: string): SessionRsvp["status"] {
+    const map: Record<string, SessionRsvp["status"]> = {
+      ATTENDING: "attending",
+      MAYBE: "maybe",
+      NOT_ATTENDING: "not_attending",
+    };
+    return map[status] ?? "attending";
+  }
 
-    private mapGroupFromDb(group: any): StudyGroup {
-        return {
-            id: group.id,
-            tenantId: group.tenantId,
-            name: group.name,
-            description: group.description,
-            coverImageUrl: group.coverImageUrl ?? undefined,
-            createdBy: group.createdBy,
-            createdAt: group.createdAt,
-            updatedAt: group.updatedAt,
-            visibility: this.mapVisibilityFromDb(group.visibility),
-            maxMembers: group.maxMembers,
-            requireApproval: group.requireApproval,
-            allowGuestView: group.allowGuestView,
-            subjects: JSON.parse(group.subjects || '[]'),
-            modules: JSON.parse(group.modules || '[]'),
-            memberCount: group.memberCount,
-            lastActivityAt: group.lastActivityAt,
-            status: group.status.toLowerCase() as any,
-            archivedAt: group.archivedAt ?? undefined,
-        };
-    }
+  private mapGroupFromDb(group: any): StudyGroup {
+    return {
+      id: group.id,
+      tenantId: group.tenantId,
+      name: group.name,
+      description: group.description,
+      coverImageUrl: group.coverImageUrl ?? undefined,
+      createdBy: group.createdBy,
+      createdAt: group.createdAt,
+      updatedAt: group.updatedAt,
+      visibility: this.mapVisibilityFromDb(group.visibility),
+      maxMembers: group.maxMembers,
+      requireApproval: group.requireApproval,
+      allowGuestView: group.allowGuestView,
+      subjects: JSON.parse(group.subjects || "[]"),
+      modules: JSON.parse(group.modules || "[]"),
+      memberCount: group.memberCount,
+      lastActivityAt: group.lastActivityAt,
+      status: group.status.toLowerCase() as any,
+      archivedAt: group.archivedAt ?? undefined,
+    };
+  }
 
-    private mapMemberFromDb(member: any): StudyGroupMember {
-        return {
-            id: member.id,
-            groupId: member.groupId,
-            userId: member.userId,
-            role: this.mapRoleFromDb(member.role),
-            joinedAt: member.joinedAt,
-            invitedBy: member.invitedBy ?? undefined,
-            messagesCount: member.messagesCount,
-            lastActiveAt: member.lastActiveAt,
-            notificationsEnabled: member.notificationsEnabled,
-            mutedUntil: member.mutedUntil ?? undefined,
-        };
-    }
+  private mapMemberFromDb(member: any): StudyGroupMember {
+    return {
+      id: member.id,
+      groupId: member.groupId,
+      userId: member.userId,
+      role: this.mapRoleFromDb(member.role),
+      joinedAt: member.joinedAt,
+      invitedBy: member.invitedBy ?? undefined,
+      messagesCount: member.messagesCount,
+      lastActiveAt: member.lastActiveAt,
+      notificationsEnabled: member.notificationsEnabled,
+      mutedUntil: member.mutedUntil ?? undefined,
+    };
+  }
 
-    private mapJoinRequestFromDb(request: any): StudyGroupJoinRequest {
-        return {
-            id: request.id,
-            groupId: request.groupId,
-            userId: request.userId,
-            message: request.message ?? undefined,
-            createdAt: request.createdAt,
-            status: request.status.toLowerCase() as any,
-            reviewedBy: request.reviewedBy ?? undefined,
-            reviewedAt: request.reviewedAt ?? undefined,
-            rejectionReason: request.rejectionReason ?? undefined,
-        };
-    }
+  private mapJoinRequestFromDb(request: any): StudyGroupJoinRequest {
+    return {
+      id: request.id,
+      groupId: request.groupId,
+      userId: request.userId,
+      message: request.message ?? undefined,
+      createdAt: request.createdAt,
+      status: request.status.toLowerCase() as any,
+      reviewedBy: request.reviewedBy ?? undefined,
+      reviewedAt: request.reviewedAt ?? undefined,
+      rejectionReason: request.rejectionReason ?? undefined,
+    };
+  }
 
-    private mapInviteFromDb(invite: any): StudyGroupInvite {
-        return {
-            id: invite.id,
-            groupId: invite.groupId,
-            invitedEmail: invite.invitedEmail,
-            invitedBy: invite.invitedBy,
-            createdAt: invite.createdAt,
-            expiresAt: invite.expiresAt,
-            status: invite.status.toLowerCase() as any,
-            acceptedAt: invite.acceptedAt ?? undefined,
-        };
-    }
+  private mapInviteFromDb(invite: any): StudyGroupInvite {
+    return {
+      id: invite.id,
+      groupId: invite.groupId,
+      invitedEmail: invite.invitedEmail,
+      invitedBy: invite.invitedBy,
+      createdAt: invite.createdAt,
+      expiresAt: invite.expiresAt,
+      status: invite.status.toLowerCase() as any,
+      acceptedAt: invite.acceptedAt ?? undefined,
+    };
+  }
 
-    private mapSessionFromDb(session: any): StudySession {
-        return {
-            id: session.id,
-            groupId: session.groupId,
-            title: session.title,
-            description: session.description ?? undefined,
-            createdBy: session.createdBy,
-            scheduledAt: session.scheduledAt,
-            duration: session.duration,
-            timezone: session.timezone,
-            type: this.mapSessionTypeFromDb(session.type),
-            meetingUrl: session.meetingUrl ?? undefined,
-            maxParticipants: session.maxParticipants ?? undefined,
-            rsvpDeadline: session.rsvpDeadline ?? undefined,
-            moduleId: session.moduleId ?? undefined,
-            lessonIds: session.lessonIds ? JSON.parse(session.lessonIds) : undefined,
-            agenda: session.agenda ?? undefined,
-            attachments: session.attachments ? JSON.parse(session.attachments) : undefined,
-            status: session.status.toLowerCase() as any,
-            startedAt: session.startedAt ?? undefined,
-            endedAt: session.endedAt ?? undefined,
-            notes: session.notes ?? undefined,
-            recordingUrl: session.recordingUrl ?? undefined,
-        };
-    }
+  private mapSessionFromDb(session: any): StudySession {
+    return {
+      id: session.id,
+      groupId: session.groupId,
+      title: session.title,
+      description: session.description ?? undefined,
+      createdBy: session.createdBy,
+      scheduledAt: session.scheduledAt,
+      duration: session.duration,
+      timezone: session.timezone,
+      type: this.mapSessionTypeFromDb(session.type),
+      meetingUrl: session.meetingUrl ?? undefined,
+      maxParticipants: session.maxParticipants ?? undefined,
+      rsvpDeadline: session.rsvpDeadline ?? undefined,
+      moduleId: session.moduleId ?? undefined,
+      lessonIds: session.lessonIds ? JSON.parse(session.lessonIds) : undefined,
+      agenda: session.agenda ?? undefined,
+      attachments: session.attachments
+        ? JSON.parse(session.attachments)
+        : undefined,
+      status: session.status.toLowerCase() as any,
+      startedAt: session.startedAt ?? undefined,
+      endedAt: session.endedAt ?? undefined,
+      notes: session.notes ?? undefined,
+      recordingUrl: session.recordingUrl ?? undefined,
+    };
+  }
 
-    private mapRsvpFromDb(rsvp: any): SessionRsvp {
-        return {
-            sessionId: rsvp.sessionId,
-            userId: rsvp.userId,
-            status: this.mapRsvpStatusFromDb(rsvp.status),
-            respondedAt: rsvp.createdAt,
-            note: rsvp.note ?? undefined,
-        };
-    }
+  private mapRsvpFromDb(rsvp: any): SessionRsvp {
+    return {
+      sessionId: rsvp.sessionId,
+      userId: rsvp.userId,
+      status: this.mapRsvpStatusFromDb(rsvp.status),
+      respondedAt: rsvp.createdAt,
+      note: rsvp.note ?? undefined,
+    };
+  }
 }

@@ -5,17 +5,19 @@
  * @doc.pattern REST API
  */
 
-import type { FastifyPluginAsync } from "fastify";
 import {
   getTenantId,
   getUserId,
   respondWithErrors,
 } from "../../core/http/requestContext.js";
 
+type RouteRequest = any;
+type RouteReply = any;
+
 /**
  * Notification routes. Registered at prefix /api/v1/notifications.
  */
-export const notificationRoutes: FastifyPluginAsync = async (app) => {
+export const notificationRoutes = async (app: any) => {
   const prisma = app.prisma as any;
 
   // ===========================================================================
@@ -27,7 +29,7 @@ export const notificationRoutes: FastifyPluginAsync = async (app) => {
    * List notifications for the current user.
    * Query: ?unreadOnly=true&page=1&limit=20
    */
-  app.get("/", async (req, reply) => {
+  app.get("/", async (req: RouteRequest, reply: RouteReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
     const query = (req.query ?? {}) as any;
@@ -65,7 +67,7 @@ export const notificationRoutes: FastifyPluginAsync = async (app) => {
    * PATCH /:id/read
    * Mark a single notification as read.
    */
-  app.patch("/:id/read", async (req, reply) => {
+  app.patch("/:id/read", async (req: RouteRequest, reply: RouteReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
     const { id } = req.params as { id: string };
@@ -90,7 +92,7 @@ export const notificationRoutes: FastifyPluginAsync = async (app) => {
    * PATCH /read-all
    * Mark all notifications for the current user as read.
    */
-  app.patch("/read-all", async (req, reply) => {
+  app.patch("/read-all", async (req: RouteRequest, reply: RouteReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
 
@@ -107,7 +109,7 @@ export const notificationRoutes: FastifyPluginAsync = async (app) => {
    * DELETE /:id
    * Delete a single notification.
    */
-  app.delete("/:id", async (req, reply) => {
+  app.delete("/:id", async (req: RouteRequest, reply: RouteReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
     const { id } = req.params as { id: string };
@@ -134,7 +136,7 @@ export const notificationRoutes: FastifyPluginAsync = async (app) => {
    * GET /preferences
    * Get notification preferences for the current user.
    */
-  app.get("/preferences", async (req, reply) => {
+  app.get("/preferences", async (req: RouteRequest, reply: RouteReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
 
@@ -160,7 +162,7 @@ export const notificationRoutes: FastifyPluginAsync = async (app) => {
    * PATCH /preferences
    * Upsert notification preferences for the current user.
    */
-  app.patch("/preferences", async (req, reply) => {
+  app.patch("/preferences", async (req: RouteRequest, reply: RouteReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
     const body = (req.body ?? {}) as any;
@@ -191,4 +193,112 @@ export const notificationRoutes: FastifyPluginAsync = async (app) => {
       }),
     );
   });
+
+  // ===========================================================================
+  // Device Token Management (first-class push notification device registry)
+  // ===========================================================================
+
+  /**
+   * POST /device-tokens
+   * Register or refresh a device token for push notifications.
+   * Body: { token, platform, endpoint?, p256dhKey?, authKey? }
+   */
+  app.post("/device-tokens", async (req: RouteRequest, reply: RouteReply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+    const body = (req.body ?? {}) as {
+      token: string;
+      platform: string;
+      endpoint?: string;
+      p256dhKey?: string;
+      authKey?: string;
+    };
+
+    if (!body.token || !body.platform) {
+      return reply.code(400).send({ error: "token and platform are required" });
+    }
+    const allowedPlatforms = ["ios", "android", "web"];
+    if (!allowedPlatforms.includes(body.platform)) {
+      return reply
+        .code(400)
+        .send({ error: "platform must be one of: ios, android, web" });
+    }
+
+    await respondWithErrors(reply, () =>
+      prisma.deviceToken.upsert({
+        where: { token: body.token },
+        create: {
+          tenantId,
+          userId,
+          token: body.token,
+          platform: body.platform,
+          endpoint: body.endpoint ?? null,
+          p256dhKey: body.p256dhKey ?? null,
+          authKey: body.authKey ?? null,
+          isActive: true,
+          lastSeen: new Date(),
+        },
+        update: {
+          tenantId,
+          userId,
+          isActive: true,
+          lastSeen: new Date(),
+          ...(body.endpoint !== undefined && { endpoint: body.endpoint }),
+          ...(body.p256dhKey !== undefined && { p256dhKey: body.p256dhKey }),
+          ...(body.authKey !== undefined && { authKey: body.authKey }),
+        },
+      }),
+    );
+  });
+
+  /**
+   * GET /device-tokens
+   * List all active device tokens for the current user.
+   */
+  app.get("/device-tokens", async (req: RouteRequest, reply: RouteReply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+
+    await respondWithErrors(reply, () =>
+      prisma.deviceToken.findMany({
+        where: { tenantId, userId, isActive: true },
+        select: {
+          id: true,
+          platform: true,
+          lastSeen: true,
+          createdAt: true,
+          // Exclude raw token and push keys from the list response for security
+        },
+        orderBy: { lastSeen: "desc" },
+      }),
+    );
+  });
+
+  /**
+   * DELETE /device-tokens/:tokenId
+   * Deregister a device token (soft-delete via isActive=false).
+   */
+  app.delete(
+    "/device-tokens/:tokenId",
+    async (req: RouteRequest, reply: RouteReply) => {
+      const tenantId = getTenantId(req);
+      const userId = getUserId(req);
+      const { tokenId } = req.params as { tokenId: string };
+
+      await respondWithErrors(reply, async () => {
+        const record = await prisma.deviceToken.findFirst({
+          where: { id: tokenId, tenantId, userId },
+        });
+        if (!record) {
+          reply.code(404);
+          throw new Error("Device token not found");
+        }
+        await prisma.deviceToken.update({
+          where: { id: tokenId },
+          data: { isActive: false },
+        });
+        return { deregistered: true };
+      });
+    },
+  );
 };

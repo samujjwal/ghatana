@@ -11,7 +11,7 @@
  * @doc.pattern Middleware
  */
 
-import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { PrismaClient } from '@tutorputor/core/db';
 
 // =============================================================================

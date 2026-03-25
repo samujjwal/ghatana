@@ -2792,6 +2792,83 @@ model AutoRevisionMetrics {
 }
 
 // =============================================================================
+// Gamification – Badge catalogue, earned achievements, and user points
+// =============================================================================
+
+/// Badge definition (tenant-scoped catalogue of available badges).
+model Badge {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  description String
+  icon        String
+  category    String   @default("LEARNING") // "LEARNING" | "SOCIAL" | "ACHIEVEMENT" | "STREAK"
+  criteria    String   // JSON: { type, threshold, customRule? }
+  isActive    Boolean  @default(true)
+  points      Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  earned BadgeEarned[]
+
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+}
+
+/// Earned badge / achievement record linking a user to a badge.
+model BadgeEarned {
+  id       String   @id @default(cuid())
+  tenantId String
+  userId   String
+  badgeId  String
+  badge    Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  earnedAt DateTime @default(now())
+
+  @@unique([tenantId, userId, badgeId])
+  @@index([tenantId, userId])
+  @@index([tenantId, badgeId])
+}
+
+/// Aggregated point totals and level for a user within a tenant.
+model UserPoints {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String
+  totalPoints Int      @default(0)
+  level       Int      @default(1)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, userId])
+  @@index([tenantId, totalPoints(sort: Desc)])
+}
+
+// =============================================================================
+// Device Token Registry – first-class push-notification device management
+// =============================================================================
+
+/// Registered push-notification device or web-push subscription for a user.
+model DeviceToken {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  /// Raw FCM / APNs token, or a unique identifier for web push.
+  token     String   @unique
+  platform  String   // "ios" | "android" | "web"
+  /// Web-push: subscription endpoint URL.
+  endpoint  String?
+  /// Web-push: VAPID p256dh key (base64url).
+  p256dhKey String?
+  /// Web-push: VAPID auth key (base64url).
+  authKey   String?
+  isActive  Boolean  @default(true)
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, userId])
+  @@index([tenantId, userId, isActive])
+}
+
+// =============================================================================
 // Kernel Plugin Registry (persistent storage for registered domain kernels)
 // =============================================================================
 

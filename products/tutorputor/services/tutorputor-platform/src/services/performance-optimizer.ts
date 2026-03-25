@@ -1,17 +1,19 @@
 /**
  * Performance Optimization Module
- * 
+ *
  * Implements caching, query optimization, and bundle optimization strategies.
- * 
+ *
  * @module @tutorputor/platform/performance
  */
 
-import { logger } from '../utils/logger';
+import { createLogger } from "../utils/logger.js";
+
+const logger = createLogger("performance-optimizer");
 
 export interface CacheConfig {
   ttl: number; // Time to live in seconds
   maxSize: number; // Maximum cache entries
-  strategy: 'lru' | 'lfu' | 'fifo';
+  strategy: "lru" | "lfu" | "fifo";
 }
 
 export interface QueryOptimizationConfig {
@@ -46,25 +48,25 @@ export class LRUCache<K, V> {
 
   get(key: K): V | undefined {
     const value = this.cache.get(key);
-    
+
     if (value !== undefined) {
       const timestamp = this.timestamps.get(key);
-      
+
       if (timestamp && Date.now() - timestamp > this.ttl) {
         // Expired
         this.cache.delete(key);
         this.timestamps.delete(key);
         return undefined;
       }
-      
+
       // Move to front (LRU)
       this.cache.delete(key);
       this.cache.set(key, value);
       this.timestamps.set(key, Date.now());
-      
+
       return value;
     }
-    
+
     return undefined;
   }
 
@@ -74,10 +76,12 @@ export class LRUCache<K, V> {
     } else if (this.cache.size >= this.maxSize) {
       // Evict oldest
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
-      this.timestamps.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+        this.timestamps.delete(firstKey);
+      }
     }
-    
+
     this.cache.set(key, value);
     this.timestamps.set(key, Date.now());
   }
@@ -107,7 +111,11 @@ export class LRUCache<K, V> {
  */
 export class QueryOptimizer {
   private config: QueryOptimizationConfig;
-  private queryLog: Array<{ query: string; duration: number; timestamp: Date }> = [];
+  private queryLog: Array<{
+    query: string;
+    duration: number;
+    timestamp: Date;
+  }> = [];
 
   constructor(config: Partial<QueryOptimizationConfig> = {}) {
     this.config = {
@@ -122,20 +130,26 @@ export class QueryOptimizer {
   /**
    * Optimize Prisma query options
    */
-  optimizePrismaQuery<T extends Record<string, any>>(
+  optimizePrismaQuery<T extends { take?: number; select?: unknown }>(
     options: T,
-    entity: string
+    entity: string,
   ): T {
     const optimized = { ...options };
 
     // Add pagination limits
-    if (optimized.take === undefined || optimized.take > this.config.maxPaginationLimit) {
+    if (
+      optimized.take === undefined ||
+      optimized.take > this.config.maxPaginationLimit
+    ) {
       optimized.take = this.config.defaultPaginationLimit;
     }
 
     // Add select optimization for large tables
-    if (!optimized.select && entity !== 'User') {
-      logger.warn(`Query on ${entity} missing select clause - may impact performance`);
+    if (!optimized.select && entity !== "User") {
+      logger.warn(
+        { entity },
+        `Query on ${entity} missing select clause - may impact performance`,
+      );
     }
 
     return optimized;
@@ -149,12 +163,14 @@ export class QueryOptimizer {
 
     // Simple heuristic: multiple similar queries in short timeframe
     const recentQueries = this.queryLog.filter(
-      q => q.query === query && 
-           Date.now() - q.timestamp.getTime() < 1000
+      (q) => q.query === query && Date.now() - q.timestamp.getTime() < 1000,
     );
 
     if (recentQueries.length > 5) {
-      logger.warn(`Potential N+1 detected in ${context}: ${query}`);
+      logger.warn(
+        { context, query },
+        `Potential N+1 detected in ${context}: ${query}`,
+      );
       return true;
     }
 
@@ -178,7 +194,10 @@ export class QueryOptimizer {
 
     // Log slow queries
     if (duration > 500) {
-      logger.warn(`Slow query detected (${duration}ms): ${query.substring(0, 100)}...`);
+      logger.warn(
+        { duration, query: query.substring(0, 100) },
+        `Slow query detected (${duration}ms): ${query.substring(0, 100)}...`,
+      );
     }
   }
 
@@ -189,14 +208,19 @@ export class QueryOptimizer {
     totalQueries: number;
     averageDuration: number;
     slowQueryCount: number;
-    topSlowQueries: Array<{ query: string; avgDuration: number; count: number }>;
+    topSlowQueries: Array<{
+      query: string;
+      avgDuration: number;
+      count: number;
+    }>;
   } {
-    const slowQueries = this.queryLog.filter(q => q.duration > 500);
+    const slowQueries = this.queryLog.filter((q) => q.duration > 500);
     const totalDuration = this.queryLog.reduce((sum, q) => sum + q.duration, 0);
 
     // Group by query pattern
-    const queryGroups: Record<string, { durations: number[]; count: number }> = {};
-    this.queryLog.forEach(q => {
+    const queryGroups: Record<string, { durations: number[]; count: number }> =
+      {};
+    this.queryLog.forEach((q) => {
       const key = q.query.substring(0, 50);
       if (!queryGroups[key]) {
         queryGroups[key] = { durations: [], count: 0 };
@@ -208,16 +232,18 @@ export class QueryOptimizer {
     const topSlowQueries = Object.entries(queryGroups)
       .map(([query, data]) => ({
         query,
-        avgDuration: data.durations.reduce((a, b) => a + b, 0) / data.durations.length,
+        avgDuration:
+          data.durations.reduce((a, b) => a + b, 0) / data.durations.length,
         count: data.count,
       }))
-      .filter(q => q.avgDuration > 100)
+      .filter((q) => q.avgDuration > 100)
       .sort((a, b) => b.avgDuration - a.avgDuration)
       .slice(0, 10);
 
     return {
       totalQueries: this.queryLog.length,
-      averageDuration: this.queryLog.length > 0 ? totalDuration / this.queryLog.length : 0,
+      averageDuration:
+        this.queryLog.length > 0 ? totalDuration / this.queryLog.length : 0,
       slowQueryCount: slowQueries.length,
       topSlowQueries,
     };
@@ -226,11 +252,15 @@ export class QueryOptimizer {
   /**
    * Get pagination with safe defaults
    */
-  getPaginationParams(params: { page?: number; limit?: number }): { page: number; limit: number; skip: number } {
+  getPaginationParams(params: { page?: number; limit?: number }): {
+    page: number;
+    limit: number;
+    skip: number;
+  } {
     const page = Math.max(1, params.page || 1);
     const limit = Math.min(
       this.config.maxPaginationLimit,
-      Math.max(1, params.limit || this.config.defaultPaginationLimit)
+      Math.max(1, params.limit || this.config.defaultPaginationLimit),
     );
 
     return {
@@ -257,26 +287,28 @@ export class BundleOptimizer {
     // Simulated analysis - in real implementation would parse webpack stats
     const suggestions: string[] = [];
 
-    if (modules.includes('lodash')) {
-      suggestions.push('Replace lodash with specific lodash.* packages');
+    if (modules.includes("lodash")) {
+      suggestions.push("Replace lodash with specific lodash.* packages");
     }
 
-    if (modules.includes('moment')) {
-      suggestions.push('Replace moment with date-fns (smaller bundle)');
+    if (modules.includes("moment")) {
+      suggestions.push("Replace moment with date-fns (smaller bundle)");
     }
 
-    if (modules.filter(m => m.includes('chart')).length > 1) {
-      suggestions.push('Multiple charting libraries detected - consolidate to one');
+    if (modules.filter((m) => m.includes("chart")).length > 1) {
+      suggestions.push(
+        "Multiple charting libraries detected - consolidate to one",
+      );
     }
 
     return {
-      totalSize: '2.4 MB',
+      totalSize: "2.4 MB",
       largestModules: [
-        { name: 'react-dom', size: '130 KB' },
-        { name: 'recharts', size: '95 KB' },
-        { name: 'prismjs', size: '75 KB' },
+        { name: "react-dom", size: "130 KB" },
+        { name: "recharts", size: "95 KB" },
+        { name: "prismjs", size: "75 KB" },
       ],
-      duplicateDependencies: ['classnames', 'clsx'],
+      duplicateDependencies: ["classnames", "clsx"],
       optimizationSuggestions: suggestions,
     };
   }
@@ -287,33 +319,33 @@ export class BundleOptimizer {
   static getCodeSplittingRecommendations(): Array<{
     route: string;
     component: string;
-    priority: 'high' | 'medium' | 'low';
+    priority: "high" | "medium" | "low";
     estimatedSavings: string;
   }> {
     return [
       {
-        route: '/simulations',
-        component: 'PhysicsSimulation',
-        priority: 'high',
-        estimatedSavings: '450 KB',
+        route: "/simulations",
+        component: "PhysicsSimulation",
+        priority: "high",
+        estimatedSavings: "450 KB",
       },
       {
-        route: '/animations/editor',
-        component: 'AnimationEditor',
-        priority: 'high',
-        estimatedSavings: '320 KB',
+        route: "/animations/editor",
+        component: "AnimationEditor",
+        priority: "high",
+        estimatedSavings: "320 KB",
       },
       {
-        route: '/assessments',
-        component: 'AssessmentBuilder',
-        priority: 'medium',
-        estimatedSavings: '180 KB',
+        route: "/assessments",
+        component: "AssessmentBuilder",
+        priority: "medium",
+        estimatedSavings: "180 KB",
       },
       {
-        route: '/analytics',
-        component: 'AnalyticsDashboard',
-        priority: 'medium',
-        estimatedSavings: '200 KB',
+        route: "/analytics",
+        component: "AnalyticsDashboard",
+        priority: "medium",
+        estimatedSavings: "200 KB",
       },
     ];
   }
@@ -335,13 +367,19 @@ export class MemoryMonitor {
       const heapUsed = usage.heapUsed;
 
       if (heapUsed > this.thresholds.critical) {
-        logger.error(`CRITICAL: Memory usage ${(heapUsed / 1024 / 1024).toFixed(2)} MB`);
+        logger.error(
+          { heapUsed },
+          `CRITICAL: Memory usage ${(heapUsed / 1024 / 1024).toFixed(2)} MB`,
+        );
         // Trigger garbage collection if available
         if (global.gc) {
           global.gc();
         }
       } else if (heapUsed > this.thresholds.warning) {
-        logger.warn(`High memory usage: ${(heapUsed / 1024 / 1024).toFixed(2)} MB`);
+        logger.warn(
+          { heapUsed },
+          `High memory usage: ${(heapUsed / 1024 / 1024).toFixed(2)} MB`,
+        );
       }
     }, intervalMs);
   }
@@ -421,25 +459,29 @@ export class ConnectionPoolOptimizer {
  * Performance Middleware for Fastify
  */
 export function performanceMiddleware() {
-  const cache = new LRUCache<string, any>({ ttl: 300, maxSize: 1000, strategy: 'lru' });
-  const queryOptimizer = new QueryOptimizer();
-
   return async (request: any, reply: any) => {
     const startTime = Date.now();
 
     // Add cache headers
-    reply.header('X-Cache-Status', 'MISS');
+    reply.header("X-Cache-Status", "MISS");
 
     // Monitor response time
     reply.then(() => {
       const duration = Date.now() - startTime;
-      
+
       if (duration > 1000) {
-        logger.warn(`Slow request: ${request.method} ${request.url} (${duration}ms)`);
+        logger.warn(
+          {
+            duration,
+            method: request.method,
+            url: request.url,
+          },
+          "Slow request detected",
+        );
       }
 
       // Add performance headers
-      reply.header('X-Response-Time', `${duration}ms`);
+      reply.header("X-Response-Time", `${duration}ms`);
     });
   };
 }

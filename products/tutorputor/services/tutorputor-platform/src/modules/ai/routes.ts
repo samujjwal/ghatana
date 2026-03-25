@@ -8,19 +8,22 @@
  */
 import type { FastifyInstance } from "fastify";
 import type { AIProxyService } from "@tutorputor/contracts/v1/services";
-import type { ModuleId } from "@tutorputor/contracts/v1/types";
+import type {
+  ModuleId,
+  TenantId,
+  UserId,
+} from "@tutorputor/contracts/v1/types";
 import { AIContentGenerationService } from "./AIContentGenerationService.js";
 import {
   getTenantId,
   getUserId,
   requireRole,
-} from "../../utils/request-helpers.js";
+} from "../../core/http/requestContext.js";
 import type { AiRegistryClient } from "../../clients/ai-registry.client.js";
 
 interface AIRouteDeps {
   aiProxyService: AIProxyService & {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
+    [key: string]: unknown;
     generateQuestionsFromContent?: (args: {
       tenantId: string;
       moduleId: string;
@@ -47,8 +50,8 @@ export async function registerAIRoutes(
 
   // AI Tutor query endpoint
   app.post("/tutor/query", async (req, reply) => {
-    const tenantId = getTenantId(req);
-    const userId = getUserId(req);
+    const tenantId = getTenantId(req) as TenantId;
+    const userId = getUserId(req) as UserId;
     const { moduleId, question, locale } = req.body as {
       moduleId?: ModuleId;
       question: string;
@@ -98,7 +101,7 @@ export async function registerAIRoutes(
 
   // AI-generated questions from module content
   app.post("/generate-questions", async (req, reply) => {
-    const tenantId = getTenantId(req);
+    const tenantId = getTenantId(req) as TenantId;
     const {
       moduleId,
       count = 5,
@@ -173,7 +176,7 @@ export async function registerAIRoutes(
   app.post("/generate-concept", async (req, reply) => {
     try {
       requireRole(req, ["admin"]);
-      const tenantId = getTenantId(req);
+      const tenantId = getTenantId(req) as TenantId;
       const { conceptName, domain } = req.body as {
         conceptName: string;
         domain: string;
@@ -211,7 +214,7 @@ export async function registerAIRoutes(
   app.post("/generate-simulation", async (req, reply) => {
     try {
       requireRole(req, ["admin"]);
-      const tenantId = getTenantId(req);
+      const tenantId = getTenantId(req) as TenantId;
       const { description, conceptName, domain } = req.body as {
         description: string;
         conceptName: string;

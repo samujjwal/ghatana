@@ -230,7 +230,7 @@ export function AIAssistant({
       };
 
       aiServiceManager.addToHistory(interaction);
-    } catch (error) {
+    } catch (_error) {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: "ai",
@@ -352,11 +352,10 @@ export function AIAssistant({
                     className={`max-w-[80%] ${message.type === "user" ? "order-1" : ""}`}
                   >
                     <div
-                      className={`p-3 rounded-lg ${
-                        message.type === "user"
+                      className={`p-3 rounded-lg ${message.type === "user"
                           ? "bg-purple-500 text-white"
                           : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
-                      }`}
+                        }`}
                     >
                       <p className="text-sm">{message.content}</p>
                       {message.isLoading && (

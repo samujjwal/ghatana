@@ -4,6 +4,7 @@ import Redis from "ioredis";
 import jwt from "@fastify/jwt";
 import helmet from "@fastify/helmet";
 import cors from "@fastify/cors";
+import Stripe from "stripe";
 
 import {
   setupMetrics,
@@ -30,6 +31,8 @@ import { searchModule } from "./modules/search/index.js";
 import { registerKernelRegistryRoutes } from "./modules/kernel-registry/fastify-routes.js";
 import { vrRoutes } from "./modules/vr/vr-routes.js";
 import { notificationRoutes } from "./modules/notifications/index.js";
+import { paymentRoutes } from "./modules/payments/routes.js";
+import { SubscriptionServiceImpl } from "./modules/payments/service.js";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
@@ -137,6 +140,18 @@ export async function setupPlatform(
     // Public auth sub-routes (only under /api/v1/)
     if (url.startsWith("/api/v1/auth/sso/") || url === "/api/v1/auth/health")
       return;
+    // Public LTI interoperability routes are invoked by external LMS platforms.
+    if (
+      url === "/api/v1/integration/lti/launch" ||
+      url === "/api/v1/integration/lti/jwks" ||
+      url.startsWith("/api/v1/integration/lti/config/") ||
+      url === "/api/v1/integration/lti/deep-linking" ||
+      url === "/api/v1/integration/lti/grade-passback"
+    ) {
+      return;
+    }
+    // Stripe webhook endpoint – authentication is via Stripe-Signature header.
+    if (url === "/api/v1/integration/billing/webhook") return;
     // Content-studio health is public
     if (url === "/api/content-studio/health") return;
 
@@ -201,6 +216,23 @@ export async function setupPlatform(
   // Notifications: /api/v1/notifications, /api/v1/notifications/preferences
   await app.register(notificationRoutes, { prefix: "/api/v1/notifications" });
   app.log.info("✅ Notification routes registered");
+
+  // Subscription payments: /api/v1/payments/...
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  const stripe = new Stripe(stripeKey ?? "sk_test_placeholder", {
+    apiVersion: "2023-10-16" as any,
+  });
+  const subscriptionService = new SubscriptionServiceImpl(prisma, stripe);
+  await app.register(
+    (fastify, _opts, done) => {
+      paymentRoutes(fastify, { service: subscriptionService }).then(
+        () => done(),
+        done,
+      );
+    },
+    { prefix: "/api/v1" },
+  );
+  app.log.info("✅ Payment/subscription routes registered");
 
   const shouldStartContentWorker =
     options.startContentWorker ??

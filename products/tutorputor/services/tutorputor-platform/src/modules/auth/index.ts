@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import { TenantId } from "@tutorputor/contracts/v1";
+import type { TenantId } from "@tutorputor/contracts/v1";
 import { createSsoService } from "./service.js";
 import { getTenantId } from "../../core/http/requestContext.js";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
@@ -115,7 +115,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
           role: decoded.role || "student",
           tenantId: decoded.tenantId || "default",
         });
-      } catch (err) {
+      } catch {
         return reply.code(401).send({ error: "Invalid or expired token" });
       }
     },
@@ -143,9 +143,8 @@ export const authModule: FastifyPluginAsync = async (app) => {
    */
   app.get("/sso/login/:providerId", async (req, reply) => {
     const { providerId } = req.params as { providerId: string };
-    const { redirect_uri, state } = req.query as {
+    const { redirect_uri } = req.query as {
       redirect_uri?: string;
-      state?: string;
     };
 
     let tenantId: TenantId;
@@ -179,7 +178,6 @@ export const authModule: FastifyPluginAsync = async (app) => {
   app.get("/sso/callback/:providerId", async (req, reply) => {
     const { providerId } = req.params as { providerId: string };
     const { code, state } = req.query as { code: string; state: string };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const tenantId = (state?.split(":")[0] || "default") as TenantId;
 
     try {

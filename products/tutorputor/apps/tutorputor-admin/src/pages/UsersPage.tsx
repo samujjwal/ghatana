@@ -4,7 +4,6 @@ import { Card, Badge } from "../components/ui";
 import {
   Button,
   TextField,
-  Spinner,
   ResponsiveTable,
   PullToRefresh,
   ResponsiveImage,
@@ -274,7 +273,6 @@ export function UsersPage() {
 }
 
 function ImportUsersModal({ onClose }: { onClose: () => void }) {
-  const [file, setFile] = useState<File | null>(null);
   const [parsedUsers, setParsedUsers] = useState<
     Array<{ email: string; role: string; displayName: string }>
   >([]);
@@ -303,7 +301,6 @@ function ImportUsersModal({ onClose }: { onClose: () => void }) {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
-    setFile(selectedFile);
     setParseError("");
     setParsedUsers([]);
 

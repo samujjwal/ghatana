@@ -129,6 +129,10 @@ export class PerformanceMonitor extends EventEmitter {
         }, 5000); // Collect metrics every 5 seconds
     }
 
+    private async collectMetrics(): Promise<void> {
+        await this.collectSystemMetrics();
+    }
+
     /**
      * Stop performance monitoring
      */
@@ -370,7 +374,7 @@ export class PerformanceMonitor extends EventEmitter {
 
         if (!prev || prev.length !== current.length) {
             // First sample — fall back to normalised 1-min load average
-            const load = os.loadavg()[0];
+            const load = os.loadavg()[0] ?? 0;
             return Math.min(Math.round((load / Math.max(1, current.length)) * 100 * 10) / 10, 100);
         }
 
@@ -378,8 +382,13 @@ export class PerformanceMonitor extends EventEmitter {
         let totalDelta = 0;
         let idleDelta = 0;
         for (let i = 0; i < current.length; i++) {
-            const c = current[i].times;
-            const p = prev[i].times;
+            const currentCpu = current[i];
+            const previousCpu = prev[i];
+            if (!currentCpu || !previousCpu) {
+                continue;
+            }
+            const c = currentCpu.times;
+            const p = previousCpu.times;
             const delta =
                 (c.user - p.user) + (c.nice - p.nice) +
                 (c.sys - p.sys)   + (c.irq - p.irq)   +

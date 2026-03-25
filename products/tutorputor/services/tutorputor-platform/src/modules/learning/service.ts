@@ -17,6 +17,7 @@ import type {
   Enrollment,
   ModuleSummary,
   ModuleId,
+  EnrollmentId,
   TenantId,
   UserId,
 } from "@tutorputor/contracts/v1/types";
@@ -26,7 +27,17 @@ import type { TutorPrismaClient } from "@tutorputor/core/db";
 // Types
 // =============================================================================
 
-export type HealthAwareLearningService = LearningService & {
+export type HealthAwareLearningService = Omit<
+  LearningService,
+  "updateProgress"
+> & {
+  updateProgress: (args: {
+    tenantId: TenantId;
+    userId: UserId;
+    enrollmentId: EnrollmentId;
+    progressPercent: number;
+    timeSpentSecondsDelta: number;
+  }) => Promise<Enrollment>;
   checkHealth: () => Promise<boolean>;
 };
 
@@ -78,7 +89,9 @@ export function createLearningService(
       return {
         user: buildUserSummary(userId),
         currentEnrollments: enrollments.map(mapEnrollment),
-        recommendedModules: modules.map((module: any) => mapModuleSummary(module)),
+        recommendedModules: modules.map((module: any) =>
+          mapModuleSummary(module),
+        ),
       };
     },
 
@@ -112,17 +125,18 @@ export function createLearningService(
 
     async updateProgress({
       tenantId,
+      userId,
       enrollmentId,
       progressPercent,
       timeSpentSecondsDelta,
     }) {
       const enrollment = await prisma.enrollment.findFirst({
-        where: { id: enrollmentId, tenantId },
+        where: { id: enrollmentId, tenantId, userId },
       });
 
       if (!enrollment) {
         throw new Error(
-          `Enrollment ${enrollmentId} not found for tenant ${tenantId}`,
+          `Enrollment ${enrollmentId} not found for tenant ${tenantId} and user ${userId}`,
         );
       }
 

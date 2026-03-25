@@ -1,5 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 
+type HttpError = Error & { statusCode: number; code: string };
+
 /** Shape of the JWT payload as decoded by @fastify/jwt into req.user */
 interface JwtUser {
   sub?: string;
@@ -20,7 +22,9 @@ export function getTenantId(req: FastifyRequest): string {
   // Fallback: API gateway header for trusted proxy deployments
   const tenantId = req.headers["x-tenant-id"];
   if (!tenantId) {
-    throw new Error(
+    throw createHttpError(
+      401,
+      "UNAUTHORIZED",
       "Missing tenant context: no JWT tenantId claim or x-tenant-id header",
     );
   }
@@ -38,11 +42,28 @@ export function getUserId(req: FastifyRequest): string {
   // Fallback: API gateway header for trusted proxy deployments
   const userId = req.headers["x-user-id"];
   if (!userId) {
-    throw new Error(
+    throw createHttpError(
+      401,
+      "UNAUTHORIZED",
       "Missing user context: no JWT sub claim or x-user-id header",
     );
   }
   return (Array.isArray(userId) ? userId[0] : userId) as string;
+}
+
+/**
+ * Extract the caller's role from JWT claims or a trusted proxy header.
+ */
+export function getUserRole(req: FastifyRequest): string | null {
+  const user = (req as FastifyRequest & { user?: JwtUser }).user;
+  if (user?.role) return user.role;
+
+  const userRole = req.headers["x-user-role"];
+  if (!userRole) {
+    return null;
+  }
+
+  return (Array.isArray(userRole) ? userRole[0] : userRole) as string;
 }
 
 /**
@@ -52,15 +73,12 @@ export function getUserId(req: FastifyRequest): string {
  * @param allowedRoles Array of allowed roles
  */
 export function requireRole(req: FastifyRequest, allowedRoles: string[]) {
-  const user = (req as FastifyRequest & { user?: JwtUser }).user;
-  if (user?.role && allowedRoles.includes(user.role)) return;
-
-  // Fallback: gateway-injected role header
-  const userRole = req.headers["x-user-role"];
-  const role = Array.isArray(userRole) ? userRole[0] : userRole;
+  const role = getUserRole(req);
 
   if (!role || !allowedRoles.includes(role)) {
-    throw new Error(
+    throw createHttpError(
+      403,
+      "FORBIDDEN",
       `Insufficient permissions. Required one of: ${allowedRoles.join(", ")}`,
     );
   }
@@ -113,4 +131,55 @@ export function roleGuard(
       });
     }
   };
+}
+
+export function requireOwnership(
+  ownerId: string,
+  currentUserId: string,
+  message: string,
+): void {
+  if (ownerId !== currentUserId) {
+    throw createHttpError(403, "FORBIDDEN", message);
+  }
+}
+
+export function requireSelfOrRole(
+  req: FastifyRequest,
+  targetUserId: string,
+  allowedRoles: string[],
+  message = "You are not allowed to access this user's resource",
+): void {
+  const currentUserId = getUserId(req);
+
+  if (currentUserId === targetUserId) {
+    return;
+  }
+
+  const role = getUserRole(req);
+  if (role && allowedRoles.includes(role)) {
+    return;
+  }
+
+  throw createHttpError(403, "FORBIDDEN", message);
+}
+
+export function requireTenantAccess(
+  resourceTenantId: string,
+  currentTenantId: string,
+  message = "Resource is not accessible for the current tenant",
+): void {
+  if (resourceTenantId !== currentTenantId) {
+    throw createHttpError(403, "FORBIDDEN", message);
+  }
+}
+
+export function createHttpError(
+  statusCode: number,
+  code: string,
+  message: string,
+): HttpError {
+  const error = new Error(message) as HttpError;
+  error.statusCode = statusCode;
+  error.code = code;
+  return error;
 }

@@ -9,10 +9,12 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { AnimationTimeline } from "./AnimationTimeline";
 import {
   AnimationRuntime,
-  AnimationRenderer,
   createAnimationSpec,
 } from "../../../../../services/tutorputor-platform/src/modules/animation-runtime/service";
-import type { AnimationSpec } from "../../../../../services/tutorputor-platform/src/modules/animation-runtime/service";
+import type {
+  AnimationRenderer,
+  AnimationSpec,
+} from "../../../../../services/tutorputor-platform/src/modules/animation-runtime/service";
 import "./AnimationStudio.css";
 
 interface AnimationStudioProps {
@@ -98,18 +100,18 @@ export const AnimationStudio: React.FC<AnimationStudioProps> = ({
 }) => {
   const [animation, setAnimation] = useState<AnimationSpec>(
     initialAnimation ||
-      createAnimationSpec({
-        id: `anim-${Date.now()}`,
-        title: "New Animation",
-        description: "Animation description",
-        duration: 5,
-        keyframes: [
-          { time: 0, properties: { x: 100, y: 100, rotation: 0 } },
-          { time: 5, properties: { x: 300, y: 100, rotation: 360 } },
-        ],
-        loop: false,
-        autoplay: false,
-      }),
+    createAnimationSpec({
+      id: `anim-${Date.now()}`,
+      title: "New Animation",
+      description: "Animation description",
+      duration: 5,
+      keyframes: [
+        { time: 0, properties: { x: 100, y: 100, rotation: 0 } },
+        { time: 5, properties: { x: 300, y: 100, rotation: 360 } },
+      ],
+      loop: false,
+      autoplay: false,
+    }),
   );
 
   const [currentTime, setCurrentTime] = useState(0);

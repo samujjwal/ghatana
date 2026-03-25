@@ -1,5 +1,10 @@
 import type { FastifyPluginAsync } from "fastify";
 import { TeacherServiceImpl } from "./service";
+import {
+  getTenantId,
+  getUserId,
+  requireRole,
+} from "../../core/http/requestContext.js";
 import type {
   TenantId,
   UserId,
@@ -17,18 +22,16 @@ import type {
  */
 export const teacherRoutes: FastifyPluginAsync = async (app) => {
   const teacherService = new TeacherServiceImpl(app.prisma);
+  const teacherRoles = ["teacher", "admin", "superadmin"];
 
   /**
    * GET /teacher/dashboard
    * Get teacher dashboard with classrooms, students, and recent activity
    */
   app.get("/dashboard", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const teacherId = request.headers["x-user-id"] as UserId;
-
-    if (!tenantId || !teacherId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    const tenantId = getTenantId(request) as TenantId;
+    const teacherId = getUserId(request) as UserId;
+    requireRole(request, teacherRoles);
 
     try {
       const dashboard = await teacherService.getTeacherDashboard({
@@ -50,12 +53,9 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
    * Create a new classroom
    */
   app.post("/classrooms", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const teacherId = request.headers["x-user-id"] as UserId;
-
-    if (!tenantId || !teacherId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    const tenantId = getTenantId(request) as TenantId;
+    const teacherId = getUserId(request) as UserId;
+    requireRole(request, teacherRoles);
 
     const { name, description } = request.body as {
       name: string;
@@ -88,12 +88,9 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
    * Get classroom details with roster and assignments
    */
   app.get("/classrooms/:classroomId", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request) as TenantId;
     const { classroomId } = request.params as { classroomId: ClassroomId };
-
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    requireRole(request, teacherRoles);
 
     try {
       const classroom = await teacherService.getClassroom({
@@ -118,7 +115,7 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
    * Add a student to a classroom
    */
   app.post("/classrooms/:classroomId/students", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request) as TenantId;
     const { classroomId } = request.params as { classroomId: ClassroomId };
     const { studentId, displayName, email } = request.body as {
       studentId: UserId;
@@ -126,9 +123,7 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
       email?: string;
     };
 
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    requireRole(request, teacherRoles);
 
     if (!studentId || !displayName) {
       return reply
@@ -164,15 +159,12 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
   app.delete(
     "/classrooms/:classroomId/students/:studentId",
     async (request, reply) => {
-      const tenantId = request.headers["x-tenant-id"] as TenantId;
+      const tenantId = getTenantId(request) as TenantId;
       const { classroomId, studentId } = request.params as {
         classroomId: ClassroomId;
         studentId: UserId;
       };
-
-      if (!tenantId) {
-        return reply.code(401).send({ error: "Authentication required" });
-      }
+      requireRole(request, teacherRoles);
 
       try {
         const classroom = await teacherService.removeStudentFromClassroom({
@@ -199,16 +191,14 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
    * Assign a module to a classroom
    */
   app.post("/classrooms/:classroomId/assignments", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request) as TenantId;
     const { classroomId } = request.params as { classroomId: ClassroomId };
     const { moduleId, dueAt } = request.body as {
       moduleId: ModuleId;
       dueAt?: string;
     };
 
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    requireRole(request, teacherRoles);
 
     if (!moduleId) {
       return reply.code(400).send({ error: "Module ID is required" });
@@ -239,12 +229,9 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
    * Get progress report for all students in a classroom
    */
   app.get("/classrooms/:classroomId/progress", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request) as TenantId;
     const { classroomId } = request.params as { classroomId: ClassroomId };
-
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    requireRole(request, teacherRoles);
 
     try {
       const progress = await teacherService.getClassroomProgress({

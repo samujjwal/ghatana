@@ -4,6 +4,6 @@
  * Keeping this re-export module preserves all existing '\@/lib/utils' import
  * paths while the actual implementation lives in one authoritative location.
  *
- * @see @ghatana/tutorputor-ui-shared
+ * @see @tutorputor/ui
  */
-export { cn } from '@tutorputor/ui-shared';
+export { cn } from '@tutorputor/ui';

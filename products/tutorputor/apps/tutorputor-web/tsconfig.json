@@ -1,21 +1,15 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "types": [
-      "@testing-library/jest-dom"
-    ],
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": false,
+    "noEmit": true,
     "jsx": "react-jsx",
     "strict": false,
     "noImplicitAny": false,
@@ -25,18 +19,33 @@
     "noFallthroughCasesInSwitch": false,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@ghatana/design-system": [
+        "../../../../platform/typescript/design-system/src/index.ts"
+      ],
+      "@ghatana/theme": ["../../../../platform/typescript/theme/src/index.ts"],
+      "@ghatana/tokens": [
+        "../../../../platform/typescript/tokens/src/index.ts"
+      ],
+      "@ghatana/utils": ["../../../../platform/typescript/utils/src/index.ts"],
+      "@ghatana/platform-utils": [
+        "../../../../platform/typescript/foundation/platform-utils/src/index.ts"
+      ],
+      "@tutorputor/core": ["../../libs/tutorputor-core/src/index.ts"],
+      "@tutorputor/core/*": ["../../libs/tutorputor-core/src/*"],
+      "@tutorputor/simulation": [
+        "../../libs/tutorputor-simulation/src/index.ts"
+      ],
+      "@tutorputor/simulation/*": ["../../libs/tutorputor-simulation/src/*"],
+      "@tutorputor/ui": ["../../libs/tutorputor-ui/src/index.ts"],
+      "@tutorputor/ui/*": ["../../libs/tutorputor-ui/src/*"]
     },
     "outDir": "./dist",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": [
-    "src"
-  ],
+  "include": ["src"],
   "exclude": [
     "src/components/simulation/**",
     "src/components/offline/**",

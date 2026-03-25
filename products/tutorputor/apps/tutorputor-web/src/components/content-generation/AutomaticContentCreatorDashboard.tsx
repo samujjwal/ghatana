@@ -31,11 +31,88 @@ import { SimulationPreview } from "./SimulationPreview";
 import type {
   AutomationRule,
   AutomationMetrics,
-  ViewType,
   DomainData,
   PerformanceData,
   QualityData,
 } from "../../types/content-generation";
+
+type AutomationRuleRecord = {
+  id: string;
+  experienceId?: string;
+  name: string;
+  description?: string | null;
+  trigger: string;
+  action: string;
+  enabled?: boolean;
+  updatedAt?: string;
+};
+
+function parseJsonString(value: string): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return parsed && typeof parsed === "object"
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeTriggerType(value: unknown): AutomationRule["trigger"] {
+  return value === "scheduled" ||
+    value === "event" ||
+    value === "api" ||
+    value === "ai-suggested"
+    ? value
+    : "event";
+}
+
+function normalizeQuality(value: unknown): AutomationRule["quality"] {
+  return value === "auto" || value === "review" || value === "full"
+    ? value
+    : "review";
+}
+
+function mapAutomationRule(record: AutomationRuleRecord): AutomationRule {
+  const parsedTrigger = parseJsonString(record.trigger);
+  const parsedAction = parseJsonString(record.action);
+  const triggerType = normalizeTriggerType(
+    parsedTrigger?.type ?? parsedTrigger?.mode ?? record.trigger,
+  );
+  const quality = normalizeQuality(
+    parsedAction?.quality ?? parsedAction?.reviewMode,
+  );
+  const schedule =
+    typeof parsedTrigger?.schedule === "string"
+      ? parsedTrigger.schedule
+      : typeof parsedTrigger?.cron === "string"
+        ? parsedTrigger.cron
+        : undefined;
+  const actionLabel =
+    typeof parsedAction?.type === "string"
+      ? parsedAction.type
+      : typeof parsedAction?.name === "string"
+        ? parsedAction.name
+        : record.action;
+
+  return {
+    id: record.id,
+    name: record.name,
+    trigger: triggerType,
+    schedule,
+    condition:
+      record.description ??
+      (record.experienceId
+        ? `Applies to experience ${record.experienceId}`
+        : "Tenant-wide automation rule"),
+    action: actionLabel,
+    quality,
+    delivery: [],
+    status: record.enabled === false ? "paused" : "active",
+    lastRun: record.updatedAt,
+    successRate: 100,
+  };
+}
 
 /**
  * Automatic Content Creator Dashboard Component
@@ -67,7 +144,9 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
-      .then((data: AutomationRule[]) => setAutomationRules(data))
+      .then((payload: { data?: AutomationRuleRecord[] }) =>
+        setAutomationRules((payload.data ?? []).map(mapAutomationRule)),
+      )
       .catch((err) => console.error("Failed to load automation rules", err));
   }, []);
 
@@ -270,12 +349,12 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${rule.trigger === "scheduled"
-                        ? "bg-blue-100 text-blue-800"
-                        : rule.trigger === "event"
-                          ? "bg-green-100 text-green-800"
-                          : rule.trigger === "api"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-purple-100 text-purple-800"
+                      ? "bg-blue-100 text-blue-800"
+                      : rule.trigger === "event"
+                        ? "bg-green-100 text-green-800"
+                        : rule.trigger === "api"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-purple-100 text-purple-800"
                       }`}
                   >
                     {rule.trigger}
@@ -292,10 +371,10 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${rule.quality === "auto"
-                        ? "bg-green-100 text-green-800"
-                        : rule.quality === "review"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
+                      ? "bg-green-100 text-green-800"
+                      : rule.quality === "review"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-red-100 text-red-800"
                       }`}
                   >
                     {rule.quality}
@@ -314,10 +393,10 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${rule.status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : rule.status === "paused"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-gray-100 text-gray-800"
+                      ? "bg-green-100 text-green-800"
+                      : rule.status === "paused"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-gray-100 text-gray-800"
                       }`}
                   >
                     {rule.status}
@@ -327,8 +406,8 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
                   <button
                     onClick={() => toggleRuleStatus(rule.id)}
                     className={`px-3 py-1 rounded text-xs font-medium ${rule.status === "active"
-                        ? "bg-red-100 text-red-800 hover:bg-red-200"
-                        : "bg-green-100 text-green-800 hover:bg-green-200"
+                      ? "bg-red-100 text-red-800 hover:bg-red-200"
+                      : "bg-green-100 text-green-800 hover:bg-green-200"
                       }`}
                   >
                     {rule.status === "active" ? "Pause" : "Start"}
@@ -597,8 +676,8 @@ export const AutomaticContentCreatorDashboard: React.FC = () => {
                 key={tab.id}
                 onClick={() => setActiveView(tab.id as any)}
                 className={`${activeView === tab.id
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
               >
                 <span>{tab.icon}</span>

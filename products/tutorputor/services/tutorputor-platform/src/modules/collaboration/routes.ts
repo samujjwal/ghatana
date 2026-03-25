@@ -7,6 +7,13 @@ import type {
   PostId,
   ModuleId,
 } from "@tutorputor/contracts/v1/types";
+import {
+  getTenantId,
+  getUserId,
+  requireOwnership,
+  requireTenantAccess,
+  respondWithErrors,
+} from "../../core/http/requestContext.js";
 
 /**
  * Collaboration routes - discussion threads and shared notes.
@@ -15,6 +22,7 @@ import type {
  * @doc.purpose HTTP endpoints for collaborative learning features
  * @doc.layer product
  * @doc.pattern REST API
+ * @doc.gaa.security Resource ownership verified for all write operations
  */
 export const collaborationRoutes: FastifyPluginAsync = async (app) => {
   const collaborationService = new CollaborationServiceImpl(app.prisma);
@@ -24,8 +32,8 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
    * Post a new question/discussion thread
    */
   app.post("/threads", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = request.headers["x-user-id"] as UserId;
+    const tenantId = getTenantId(request);
+    const userId = getUserId(request);
     const { authorName, moduleId, title, content } = request.body as {
       authorName: string;
       moduleId?: ModuleId;
@@ -33,41 +41,30 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
       content: string;
     };
 
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
-
     if (!title || !content || !authorName) {
       return reply
         .code(400)
         .send({ error: "Title, content, and author name are required" });
     }
 
-    try {
-      const thread = await collaborationService.postQuestion({
-        tenantId,
-        userId,
+    await respondWithErrors(reply, () =>
+      collaborationService.postQuestion({
+        tenantId: tenantId as TenantId,
+        userId: userId as UserId,
         authorName,
         moduleId,
         title,
         content,
-      });
-      return reply.code(201).send(thread);
-    } catch (error) {
-      app.log.error(error, "Failed to post question");
-      return reply.code(500).send({
-        error: "Failed to post question",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+      }),
+    );
   });
 
   /**
    * GET /threads
-   * List discussion threads with filters
+   * List discussion threads with filters (scoped to tenant)
    */
   app.get("/threads", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request);
     const { moduleId, status, cursor, limit } = request.query as {
       moduleId?: ModuleId;
       status?: "OPEN" | "RESOLVED" | "CLOSED";
@@ -75,74 +72,45 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
       limit?: string;
     };
 
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
-
-    try {
-      const threads = await collaborationService.listThreads({
-        tenantId,
+    await respondWithErrors(reply, () =>
+      collaborationService.listThreads({
+        tenantId: tenantId as TenantId,
         moduleId,
         status,
         cursor,
         limit: limit ? parseInt(limit, 10) : 20,
-      });
-      return reply.code(200).send(threads);
-    } catch (error) {
-      app.log.error(error, "Failed to list threads");
-      return reply.code(500).send({
-        error: "Failed to list threads",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+      }),
+    );
   });
 
   /**
    * GET /threads/:threadId
-   * Get thread details with all posts
+   * Get thread details with all posts (tenant-scoped)
    */
   app.get("/threads/:threadId", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request);
     const { threadId } = request.params as { threadId: ThreadId };
 
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
-
-    try {
-      const thread = await collaborationService.getThread({
-        tenantId,
+    await respondWithErrors(reply, () =>
+      collaborationService.getThread({
+        tenantId: tenantId as TenantId,
         threadId,
-      });
-      return reply.code(200).send(thread);
-    } catch (error) {
-      app.log.error(error, "Failed to get thread");
-      if (error instanceof Error && error.message.includes("not found")) {
-        return reply.code(404).send({ error: error.message });
-      }
-      return reply.code(500).send({
-        error: "Failed to get thread",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+      }),
+    );
   });
 
   /**
    * POST /threads/:threadId/reply
-   * Reply to a discussion thread
+   * Reply to a discussion thread (any authenticated user)
    */
   app.post("/threads/:threadId/reply", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = request.headers["x-user-id"] as UserId;
+    const tenantId = getTenantId(request);
+    const userId = getUserId(request);
     const { threadId } = request.params as { threadId: ThreadId };
     const { authorName, content } = request.body as {
       authorName: string;
       content: string;
     };
-
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
 
     if (!content || !authorName) {
       return reply
@@ -150,104 +118,57 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
         .send({ error: "Content and author name are required" });
     }
 
-    try {
-      const post = await collaborationService.reply({
-        tenantId,
-        userId,
+    await respondWithErrors(reply, () =>
+      collaborationService.reply({
+        tenantId: tenantId as TenantId,
+        userId: userId as UserId,
         authorName,
         threadId,
         content,
-      });
-      return reply.code(201).send(post);
-    } catch (error) {
-      app.log.error(error, "Failed to reply to thread");
-      if (error instanceof Error && error.message.includes("not found")) {
-        return reply.code(404).send({ error: error.message });
-      }
-      if (error instanceof Error && error.message.includes("closed")) {
-        return reply.code(400).send({ error: error.message });
-      }
-      return reply.code(500).send({
-        error: "Failed to reply",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+      }),
+    );
   });
 
   /**
    * POST /threads/:threadId/mark-answer
-   * Mark a post as the answer to the question
+   * Mark a post as the answer to the question (thread owner only)
    */
   app.post("/threads/:threadId/mark-answer", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = request.headers["x-user-id"] as UserId;
+    const tenantId = getTenantId(request);
+    const userId = getUserId(request);
     const { threadId } = request.params as { threadId: ThreadId };
     const { postId } = request.body as { postId: PostId };
-
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
 
     if (!postId) {
       return reply.code(400).send({ error: "Post ID is required" });
     }
 
-    try {
-      const thread = await collaborationService.markAsAnswer({
-        tenantId,
-        userId,
+    await respondWithErrors(reply, () =>
+      collaborationService.markAsAnswer({
+        tenantId: tenantId as TenantId,
+        userId: userId as UserId,
         threadId,
         postId,
-      });
-      return reply.code(200).send(thread);
-    } catch (error) {
-      app.log.error(error, "Failed to mark answer");
-      if (error instanceof Error && error.message.includes("not found")) {
-        return reply.code(404).send({ error: error.message });
-      }
-      if (error instanceof Error && error.message.includes("author")) {
-        return reply.code(403).send({ error: error.message });
-      }
-      return reply.code(500).send({
-        error: "Failed to mark answer",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+      }),
+    );
   });
 
   /**
    * POST /threads/:threadId/close
-   * Close a discussion thread
+   * Close a discussion thread (thread owner only)
    */
   app.post("/threads/:threadId/close", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = request.headers["x-user-id"] as UserId;
+    const tenantId = getTenantId(request);
+    const userId = getUserId(request);
     const { threadId } = request.params as { threadId: ThreadId };
 
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
-
-    try {
-      const thread = await collaborationService.closeThread({
-        tenantId,
-        userId,
+    await respondWithErrors(reply, () =>
+      collaborationService.closeThread({
+        tenantId: tenantId as TenantId,
+        userId: userId as UserId,
         threadId,
-      });
-      return reply.code(200).send(thread);
-    } catch (error) {
-      app.log.error(error, "Failed to close thread");
-      if (error instanceof Error && error.message.includes("not found")) {
-        return reply.code(404).send({ error: error.message });
-      }
-      if (error instanceof Error && error.message.includes("author")) {
-        return reply.code(403).send({ error: error.message });
-      }
-      return reply.code(500).send({
-        error: "Failed to close thread",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+      }),
+    );
   });
 
   /**
@@ -255,8 +176,8 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
    * Create a shared note
    */
   app.post("/notes", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = request.headers["x-user-id"] as UserId;
+    const tenantId = getTenantId(request);
+    const userId = getUserId(request);
     const {
       title,
       content,
@@ -275,18 +196,14 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
       allowComments?: boolean;
     };
 
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
-
     if (!title || !content) {
       return reply.code(400).send({ error: "Title and content are required" });
     }
 
-    try {
-      const note = await collaborationService.createSharedNote({
-        tenantId,
-        createdBy: userId,
+    await respondWithErrors(reply, () =>
+      collaborationService.createSharedNote({
+        tenantId: tenantId as TenantId,
+        createdBy: userId as UserId,
         title,
         content,
         moduleId,
@@ -294,97 +211,59 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
         studyGroupId,
         allowEditing,
         allowComments,
-      });
-      return reply.code(201).send(note);
-    } catch (error) {
-      app.log.error(error, "Failed to create shared note");
-      return reply.code(500).send({
-        error: "Failed to create note",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+      }),
+    );
   });
 
   /**
    * GET /notes/:noteId
-   * Get shared note details
+   * Get shared note details (tenant-scoped, user has access)
    */
   app.get("/notes/:noteId", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = request.headers["x-user-id"] as UserId;
+    const tenantId = getTenantId(request);
+    const userId = getUserId(request);
     const { noteId } = request.params as { noteId: string };
 
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
-
-    try {
-      const note = await collaborationService.getSharedNote({
-        tenantId,
+    await respondWithErrors(reply, () =>
+      collaborationService.getSharedNote({
+        tenantId: tenantId as TenantId,
         noteId,
-        userId,
-      });
-      return reply.code(200).send(note);
-    } catch (error) {
-      app.log.error(error, "Failed to get shared note");
-      if (error instanceof Error && error.message.includes("not found")) {
-        return reply.code(404).send({ error: error.message });
-      }
-      return reply.code(500).send({
-        error: "Failed to get note",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+        userId: userId as UserId,
+      }),
+    );
   });
 
   /**
    * PATCH /notes/:noteId
-   * Update shared note content
+   * Update shared note content (note creator or collaborator with edit permission only)
    */
   app.patch("/notes/:noteId", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = request.headers["x-user-id"] as UserId;
+    const tenantId = getTenantId(request);
+    const userId = getUserId(request);
     const { noteId } = request.params as { noteId: string };
     const { content } = request.body as { content: string };
-
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
 
     if (!content) {
       return reply.code(400).send({ error: "Content is required" });
     }
 
-    try {
-      const note = await collaborationService.updateSharedNote({
-        tenantId,
+    await respondWithErrors(reply, () =>
+      collaborationService.updateSharedNote({
+        tenantId: tenantId as TenantId,
         noteId,
-        userId,
+        editorId: userId as UserId,
         content,
-      });
-      return reply.code(200).send(note);
-    } catch (error) {
-      app.log.error(error, "Failed to update shared note");
-      if (error instanceof Error && error.message.includes("not found")) {
-        return reply.code(404).send({ error: error.message });
-      }
-      if (error instanceof Error && error.message.includes("permission")) {
-        return reply.code(403).send({ error: error.message });
-      }
-      return reply.code(500).send({
-        error: "Failed to update note",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+      }),
+    );
   });
 
   /**
    * POST /notes/:noteId/share
-   * Share note with other users
+   * Share note with other users (note owner only)
    */
   app.post("/notes/:noteId/share", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = request.headers["x-user-id"] as UserId;
+    const tenantId = getTenantId(request);
+    const userId = getUserId(request);
     const { noteId } = request.params as { noteId: string };
     const { shareWith } = request.body as {
       shareWith: Array<{
@@ -393,41 +272,43 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
       }>;
     };
 
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
-
     if (!shareWith || !Array.isArray(shareWith) || shareWith.length === 0) {
       return reply.code(400).send({ error: "Share with list is required" });
     }
 
     try {
-      const note = await collaborationService.shareNote({
-        tenantId,
-        noteId,
-        sharedBy: userId,
-        shareWith,
-      });
+      let note = null;
+      for (const share of shareWith) {
+        note = await collaborationService.shareNote({
+          tenantId: tenantId as TenantId,
+          noteId,
+          sharedById: userId as UserId,
+          userId: share.userId,
+          permission: share.permission,
+        });
+      }
       return reply.code(200).send(note);
     } catch (error) {
-      app.log.error(error, "Failed to share note");
-      if (error instanceof Error && error.message.includes("not found")) {
-        return reply.code(404).send({ error: error.message });
-      }
-      return reply.code(500).send({
-        error: "Failed to share note",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
+      return reply
+        .code(
+          error instanceof Error && error.message.includes("permission")
+            ? 403
+            : 500,
+        )
+        .send({
+          error:
+            error instanceof Error ? error.message : "Failed to share note",
+        });
     }
   });
 
   /**
    * GET /notes
-   * List shared notes with filters
+   * List shared notes accessible to current user (tenant-scoped)
    */
   app.get("/notes", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = request.headers["x-user-id"] as UserId;
+    const tenantId = getTenantId(request);
+    const userId = getUserId(request);
     const { studyGroupId, moduleId, cursor, limit } = request.query as {
       studyGroupId?: string;
       moduleId?: ModuleId;
@@ -435,29 +316,18 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
       limit?: string;
     };
 
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
-
-    try {
-      const notes = await collaborationService.listSharedNotes({
-        tenantId,
-        userId,
+    await respondWithErrors(reply, () =>
+      collaborationService.listSharedNotes({
+        tenantId: tenantId as TenantId,
+        userId: userId as UserId,
         studyGroupId,
         moduleId,
         pagination: {
           cursor,
           limit: limit ? parseInt(limit, 10) : 20,
         },
-      });
-      return reply.code(200).send(notes);
-    } catch (error) {
-      app.log.error(error, "Failed to list shared notes");
-      return reply.code(500).send({
-        error: "Failed to list notes",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+      }),
+    );
   });
 
   /**

@@ -6,7 +6,7 @@
  */
 
 import type { PrismaClient } from '@tutorputor/core/db';
-import { ModuleStatus } from "@tutorputor/contracts/v1";
+import type { ModuleStatus } from "@tutorputor/contracts/v1";
 import type {
     CMSService,
     AIProxyService,

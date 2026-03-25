@@ -1,5 +1,11 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
+import {
+  getTenantId,
+  getUserId,
+  requireSelfOrRole,
+  requireRole,
+} from "../../../core/http/requestContext.js";
 
 /**
  * Credentials routes - badges and certificates.
@@ -15,11 +21,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
    * List available badges
    */
   app.get("/badges", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    const tenantId = getTenantId(request) as TenantId;
 
     try {
       const badges = await app.prisma.badge.findMany({
@@ -41,12 +43,9 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
    * Get user's earned badges
    */
   app.get("/users/:userId/badges", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
+    const tenantId = getTenantId(request) as TenantId;
     const { userId } = request.params as { userId: UserId };
-
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    requireSelfOrRole(request, userId, ["teacher", "admin", "superadmin"]);
 
     try {
       const userBadges = await app.prisma.userBadge.findMany({
@@ -69,17 +68,14 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
    * Award a badge to a user
    */
   app.post("/badges/award", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const adminUserId = request.headers["x-user-id"] as UserId;
+    const tenantId = getTenantId(request) as TenantId;
+    const adminUserId = getUserId(request) as UserId;
+    requireRole(request, ["teacher", "admin", "superadmin"]);
     const { userId, badgeId, reason } = request.body as {
       userId: UserId;
       badgeId: string;
       reason?: string;
     };
-
-    if (!tenantId || !adminUserId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
 
     if (!userId || !badgeId) {
       return reply
@@ -113,12 +109,8 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
    * List user's certificates
    */
   app.get("/certificates", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = request.headers["x-user-id"] as UserId;
-
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    const tenantId = getTenantId(request) as TenantId;
+    const userId = getUserId(request) as UserId;
 
     try {
       const certificates = await app.prisma.certificate.findMany({
@@ -140,16 +132,12 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
    * Generate a certificate for module completion
    */
   app.post("/certificates/generate", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const userId = request.headers["x-user-id"] as UserId;
+    const tenantId = getTenantId(request) as TenantId;
+    const userId = getUserId(request) as UserId;
     const { moduleId, completionDate } = request.body as {
       moduleId: string;
       completionDate?: string;
     };
-
-    if (!tenantId || !userId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
 
     if (!moduleId) {
       return reply.code(400).send({ error: "Module ID is required" });

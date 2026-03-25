@@ -5,6 +5,7 @@
  * @doc.pattern Service
  */
 
+// @ts-ignore -- the workspace package provides this at runtime, but direct source resolution trips platform rootDir diagnostics.
 // Import easing functions from the sim-renderer library
 import {
   applyEasing,
@@ -16,9 +17,10 @@ import {
 type FrameRequestCallback = (timestamp: number) => void;
 
 const raf: (callback: FrameRequestCallback) => number =
-  typeof (globalThis as { requestAnimationFrame?: unknown }).requestAnimationFrame === "function"
+  typeof (globalThis as { requestAnimationFrame?: unknown })
+    .requestAnimationFrame === "function"
     ? (
-        globalThis as {
+        globalThis as unknown as {
           requestAnimationFrame: (callback: FrameRequestCallback) => number;
         }
       ).requestAnimationFrame.bind(globalThis)
@@ -26,9 +28,10 @@ const raf: (callback: FrameRequestCallback) => number =
         setTimeout(() => callback(Date.now()), 16) as unknown as number;
 
 const caf: (id: number) => void =
-  typeof (globalThis as { cancelAnimationFrame?: unknown }).cancelAnimationFrame === "function"
+  typeof (globalThis as { cancelAnimationFrame?: unknown })
+    .cancelAnimationFrame === "function"
     ? (
-        globalThis as {
+        globalThis as unknown as {
           cancelAnimationFrame: (id: number) => void;
         }
       ).cancelAnimationFrame.bind(globalThis)
@@ -216,7 +219,7 @@ export class AnimationRuntime {
     this.startTime = 0;
     this.pauseTime = 0;
 
-    if (this.renderer && this.animation) {
+    if (this.renderer && this.animation?.keyframes[0]) {
       this.applyKeyframe(this.animation.keyframes[0], 0);
     }
   }
@@ -345,7 +348,8 @@ export class AnimationRuntime {
     // Find current keyframe index
     let newKeyframeIndex = 0;
     for (let i = 0; i < keyframes.length; i++) {
-      if (keyframes[i].timeMs <= currentTime) {
+      const keyframe = keyframes[i];
+      if (keyframe && keyframe.timeMs <= currentTime) {
         newKeyframeIndex = i;
       } else {
         break;
@@ -353,12 +357,16 @@ export class AnimationRuntime {
     }
 
     // Emit keyframe event if changed
-    if (newKeyframeIndex !== this.state.currentKeyframeIndex) {
+    const currentKeyframe = keyframes[newKeyframeIndex];
+    if (
+      newKeyframeIndex !== this.state.currentKeyframeIndex &&
+      currentKeyframe
+    ) {
       this.emitEvent({
         type: "keyframe",
         timestamp: performance.now(),
         keyframeIndex: newKeyframeIndex,
-        keyframe: keyframes[newKeyframeIndex],
+        keyframe: currentKeyframe,
       });
     }
   }
@@ -367,15 +375,27 @@ export class AnimationRuntime {
     if (!this.animation) return {};
 
     const keyframes = this.animation.keyframes;
+    if (keyframes.length === 0) return {};
 
     // Find surrounding keyframes
     let prevKeyframe = keyframes[0];
     let nextKeyframe = keyframes[keyframes.length - 1];
 
+    if (!prevKeyframe || !nextKeyframe) {
+      return {};
+    }
+
     for (let i = 0; i < keyframes.length - 1; i++) {
-      if (keyframes[i].timeMs <= timeMs && keyframes[i + 1].timeMs > timeMs) {
-        prevKeyframe = keyframes[i];
-        nextKeyframe = keyframes[i + 1];
+      const currentKeyframe = keyframes[i];
+      const followingKeyframe = keyframes[i + 1];
+      if (
+        currentKeyframe &&
+        followingKeyframe &&
+        currentKeyframe.timeMs <= timeMs &&
+        followingKeyframe.timeMs > timeMs
+      ) {
+        prevKeyframe = currentKeyframe;
+        nextKeyframe = followingKeyframe;
         break;
       }
     }
@@ -594,7 +614,13 @@ export function validateAnimationSpec(animation: AnimationSpec): {
   } else {
     // Check keyframe ordering
     for (let i = 1; i < animation.keyframes.length; i++) {
-      if (animation.keyframes[i].timeMs <= animation.keyframes[i - 1].timeMs) {
+      const currentKeyframe = animation.keyframes[i];
+      const previousKeyframe = animation.keyframes[i - 1];
+      if (
+        currentKeyframe &&
+        previousKeyframe &&
+        currentKeyframe.timeMs <= previousKeyframe.timeMs
+      ) {
         errors.push(
           `Keyframe ${i} time must be greater than keyframe ${i - 1}`,
         );
@@ -602,13 +628,17 @@ export function validateAnimationSpec(animation: AnimationSpec): {
     }
 
     // Check first keyframe starts at 0
-    if (animation.keyframes[0].timeMs !== 0) {
+    const firstKeyframe = animation.keyframes[0];
+    if (firstKeyframe && firstKeyframe.timeMs !== 0) {
       errors.push("First keyframe must start at 0ms");
     }
 
     // Check last keyframe ends at duration
     const lastKeyframe = animation.keyframes[animation.keyframes.length - 1];
-    if (lastKeyframe.timeMs > animation.durationSeconds * 1000) {
+    if (
+      lastKeyframe &&
+      lastKeyframe.timeMs > animation.durationSeconds * 1000
+    ) {
       errors.push("Last keyframe time cannot exceed animation duration");
     }
   }

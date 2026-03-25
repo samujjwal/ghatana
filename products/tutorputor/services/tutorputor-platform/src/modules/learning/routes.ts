@@ -20,10 +20,15 @@ import type {
   AssessmentId,
   AssessmentAttemptId,
   ClassroomId,
-  AssessmentItemId,
   AssessmentStatus,
+  TenantId,
+  UserId,
 } from "@tutorputor/contracts/v1/types";
-import { getTenantId, getUserId } from "../../utils/request-helpers.js";
+import {
+  getTenantId,
+  getUserId,
+  roleGuard,
+} from "../../core/http/requestContext.js";
 
 // =============================================================================
 // Types
@@ -75,8 +80,8 @@ export default async function learningRoutes(
       },
     },
     async (request, reply: FastifyReply) => {
-      const tenantId = getTenantId(request);
-      const userId = getUserId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       const dashboard = await learningService.getDashboard(tenantId, userId);
       return reply.send(dashboard);
     },
@@ -102,8 +107,8 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
-      const userId = getUserId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       const { moduleId } = request.body;
 
       const enrollment = await learningService.enrollInModule(
@@ -141,14 +146,15 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
-      const userId = getUserId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       const enrollmentId = request.params.id as EnrollmentId;
       const { progressPercent, timeSpentSecondsDelta } = request.body;
 
       try {
         const updated = await learningService.updateProgress({
           tenantId,
+          userId,
           enrollmentId,
           progressPercent,
           timeSpentSecondsDelta: timeSpentSecondsDelta ?? 0,
@@ -184,8 +190,8 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
-      const userId = getUserId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       const { goal, constraints } = request.body;
       const result = await pathwaysService.generatePathway({
         tenantId,
@@ -206,8 +212,8 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
-      const userId = getUserId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       const path = await pathwaysService.getPathwayForUser({
         tenantId,
         userId,
@@ -237,8 +243,8 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
-      const userId = getUserId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       const { title, goal, moduleIds } = request.body;
       const path = await pathwaysService.createPathway({
         tenantId,
@@ -268,8 +274,8 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
-      const userId = getUserId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       const { completedModuleId } = request.body;
 
       try {
@@ -311,7 +317,7 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
+      const tenantId = getTenantId(request) as TenantId;
       const { moduleId, status, limit, cursor } = request.query;
       const result = await assessmentService.listAssessments({
         tenantId,
@@ -334,8 +340,8 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
-      const userId = getUserId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       try {
         const assessment = await assessmentService.getAssessment({
           tenantId,
@@ -361,6 +367,7 @@ export default async function learningRoutes(
   }>(
     "/assessments/generate",
     {
+      preHandler: [roleGuard(["teacher", "admin", "superadmin"])],
       schema: {
         description: "Generate assessment items using AI",
         tags: ["Assessments"],
@@ -377,8 +384,8 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
-      const userId = getUserId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       const { moduleId, count, difficulty, objectiveIds } = request.body;
       const result = await assessmentService.generateAssessmentItems({
         tenantId,
@@ -401,8 +408,8 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
-      const userId = getUserId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       try {
         const attempt = await assessmentService.startAttempt({
           tenantId,
@@ -434,8 +441,8 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
-      const userId = getUserId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       try {
         const attempt = await assessmentService.submitAttempt({
           tenantId,
@@ -472,10 +479,14 @@ export default async function learningRoutes(
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       await analyticsService.recordEvent({
         tenantId,
-        event: request.body.event,
+        event: {
+          ...request.body.event,
+          userId,
+        },
       });
       return reply.status(204).send();
     },
@@ -484,13 +495,14 @@ export default async function learningRoutes(
   fastify.get<{ Querystring: { moduleId?: string } }>(
     "/analytics",
     {
+      preHandler: [roleGuard(["teacher", "admin", "superadmin"])],
       schema: {
         description: "Get analytics summary",
         tags: ["Analytics"],
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
+      const tenantId = getTenantId(request) as TenantId;
       const { moduleId } = request.query;
       const summary = await analyticsService.getSummary({
         tenantId,
@@ -503,13 +515,14 @@ export default async function learningRoutes(
   fastify.get<{ Querystring: { classroomId?: string; period?: string } }>(
     "/analytics/advanced",
     {
+      preHandler: [roleGuard(["teacher", "admin", "superadmin"])],
       schema: {
         description: "Get advanced analytics with predictions",
         tags: ["Analytics"],
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
+      const tenantId = getTenantId(request) as TenantId;
       const { classroomId, period } = request.query;
       const result = await analyticsService.getAdvancedAnalytics({
         tenantId,
@@ -523,13 +536,14 @@ export default async function learningRoutes(
   fastify.get<{ Querystring: { classroomId?: string; minRiskLevel?: string } }>(
     "/analytics/risk",
     {
+      preHandler: [roleGuard(["teacher", "admin", "superadmin"])],
       schema: {
         description: "Identify at-risk students",
         tags: ["Analytics"],
       },
     },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
+      const tenantId = getTenantId(request) as TenantId;
       const { classroomId, minRiskLevel } = request.query;
       const result = await analyticsService.getAtRiskStudents({
         tenantId,

@@ -4,9 +4,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
-import { PrismaClient } from "../../generated/prisma/index.js";
+import { PrismaClient, Prisma } from "../../generated/prisma/index.js";
 
-export { PrismaClient };
+export { PrismaClient, Prisma };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,37 +41,51 @@ export function createPrismaClient(): PrismaClient {
 
   const rootFromDistSrc = path.resolve(__dirname, "..", "..");
   const rootFromSrc = path.resolve(__dirname, "..");
-  const packageRoot = existsSync(path.resolve(rootFromDistSrc, "prisma")) ? rootFromDistSrc : rootFromSrc;
+  const packageRoot = existsSync(path.resolve(rootFromDistSrc, "prisma"))
+    ? rootFromDistSrc
+    : rootFromSrc;
 
-  const dbPath = process.env.TUTORPUTOR_DATABASE_URL?.replace("file:", "")
-    ?? path.resolve(packageRoot, "prisma", "dev.db");
+  const dbPath =
+    process.env.TUTORPUTOR_DATABASE_URL?.replace("file:", "") ??
+    path.resolve(packageRoot, "prisma", "dev.db");
 
   const adapter = new PrismaLibSql({ url: `file:${dbPath}` });
   const client = new PrismaClientClass({
     adapter,
     // Enable detailed logging for debugging
-    log: process.env.PRISMA_DEBUG === 'true' ? ['query', 'error', 'warn'] : []
+    log: process.env.PRISMA_DEBUG === "true" ? ["query", "error", "warn"] : [],
   }) as PrismaClient;
 
   // Log what we got
   console.log("[TutorPutor DB] PrismaClient created");
   console.log("[TutorPutor DB] Database path:", dbPath);
-  console.log("[TutorPutor DB] Has learningExperience model:", "learningExperience" in client);
+  console.log(
+    "[TutorPutor DB] Has learningExperience model:",
+    "learningExperience" in client,
+  );
 
   // Validate that we can connect (but don't execute a query yet)
-  client.$executeRawUnsafe("SELECT 1").then(() => {
-    console.log("[TutorPutor DB] Database connection verified");
-  }).catch((err: Error) => {
-    console.warn("[TutorPutor DB] Database connection test failed:", err.message);
-    console.warn("[TutorPutor DB] This is normal if the database schema hasn't been created yet");
-  });
+  client
+    .$executeRawUnsafe("SELECT 1")
+    .then(() => {
+      console.log("[TutorPutor DB] Database connection verified");
+    })
+    .catch((err: Error) => {
+      console.warn(
+        "[TutorPutor DB] Database connection test failed:",
+        err.message,
+      );
+      console.warn(
+        "[TutorPutor DB] This is normal if the database schema hasn't been created yet",
+      );
+    });
 
   return client;
 }
 
 export async function seedBaseData(
   prisma: PrismaClient,
-  options: SeedOptions = {}
+  options: SeedOptions = {},
 ): Promise<void> {
   const tenantId = options.tenantId ?? DEFAULT_TENANT_ID;
   const seedUserId = options.seedUserId ?? DEFAULT_USER_ID;
@@ -97,28 +111,28 @@ export async function seedBaseData(
         description: module.description,
         version: module.version ?? 1,
         tags: {
-          create: module.tags.map((label) => ({ label }))
+          create: module.tags.map((label) => ({ label })),
         },
         learningObjectives: {
           create: module.learningObjectives.map((objective) => ({
             label: objective.label,
-            taxonomyLevel: objective.taxonomyLevel
-          }))
+            taxonomyLevel: objective.taxonomyLevel,
+          })),
         },
         contentBlocks: {
           create: module.contentBlocks.map((block, index) => ({
             id: block.id,
             orderIndex: block.orderIndex ?? index,
             blockType: block.blockType,
-            payload: block.payload
-          }))
+            payload: block.payload,
+          })),
         },
         prerequisites: {
           create: module.prerequisites.map((prereqId) => ({
-            prerequisiteModuleId: prereqId
-          }))
-        }
-      }
+            prerequisiteModuleId: prereqId,
+          })),
+        },
+      },
     });
   }
 
@@ -131,14 +145,14 @@ export async function seedBaseData(
         status: "IN_PROGRESS",
         progressPercent: 30,
         startedAt: new Date(),
-        timeSpentSeconds: 1800
-      }
+        timeSpentSeconds: 1800,
+      },
     });
 
     await createSeedAssessment(prisma, {
       module: modules[0]!,
       tenantId,
-      createdBy: seedUserId
+      createdBy: seedUserId,
     });
 
     await prisma.marketplaceListing.create({
@@ -149,8 +163,8 @@ export async function seedBaseData(
         priceCents: 0,
         status: "ACTIVE",
         visibility: "PUBLIC",
-        publishedAt: new Date()
-      }
+        publishedAt: new Date(),
+      },
     });
 
     await prisma.learningEvent.createMany({
@@ -160,16 +174,16 @@ export async function seedBaseData(
           userId: seedUserId,
           moduleId: modules[0].id,
           eventType: "module_viewed",
-          timestamp: new Date()
+          timestamp: new Date(),
         },
         {
           tenantId,
           userId: seedUserId,
           moduleId: modules[0].id,
           eventType: "module_completed",
-          timestamp: new Date()
-        }
-      ]
+          timestamp: new Date(),
+        },
+      ],
     });
   }
 
@@ -187,7 +201,10 @@ export async function resetAllData(prisma: PrismaClient): Promise<void> {
   await prisma.simulationManifest.deleteMany();
 }
 
-export async function seedLearningUnits(prisma: PrismaClient, options: { tenantId: string, createdBy: string }) {
+export async function seedLearningUnits(
+  prisma: PrismaClient,
+  options: { tenantId: string; createdBy: string },
+) {
   const { tenantId, createdBy } = options;
 
   const units = [
@@ -200,23 +217,41 @@ export async function seedLearningUnits(prisma: PrismaClient, options: { tenantI
       intent: {
         goal: "Understand Newton's Laws of Motion",
         audience: "High School Physics Students",
-        prerequisites: ["Basic Algebra", "Vectors"]
+        prerequisites: ["Basic Algebra", "Vectors"],
       },
       claims: [
-        { id: "c1", text: "Force equals mass times acceleration (F=ma)", type: "FACT" },
-        { id: "c2", text: "For every action, there is an equal and opposite reaction", type: "PRINCIPLE" }
+        {
+          id: "c1",
+          text: "Force equals mass times acceleration (F=ma)",
+          type: "FACT",
+        },
+        {
+          id: "c2",
+          text: "For every action, there is an equal and opposite reaction",
+          type: "PRINCIPLE",
+        },
       ],
       evidence: [
-        { id: "e1", claimId: "c1", description: "Experimental data from air track glider", source: "Lab Report 101" }
+        {
+          id: "e1",
+          claimId: "c1",
+          description: "Experimental data from air track glider",
+          source: "Lab Report 101",
+        },
       ],
       tasks: [
-        { id: "t1", title: "Calculate Force", description: "Given m=5kg, a=2m/s^2, find F", type: "CALCULATION" }
+        {
+          id: "t1",
+          title: "Calculate Force",
+          description: "Given m=5kg, a=2m/s^2, find F",
+          type: "CALCULATION",
+        },
       ],
       artifacts: {},
       assessment: {
         type: "QUIZ",
-        items: []
-      }
+        items: [],
+      },
     },
     {
       id: "lu-photosynthesis",
@@ -227,16 +262,20 @@ export async function seedLearningUnits(prisma: PrismaClient, options: { tenantI
       intent: {
         goal: "Explain the process of photosynthesis",
         audience: "Biology Students",
-        prerequisites: ["Cell Biology"]
+        prerequisites: ["Cell Biology"],
       },
       claims: [
-        { id: "c1", text: "Plants convert light energy into chemical energy", type: "PROCESS" }
+        {
+          id: "c1",
+          text: "Plants convert light energy into chemical energy",
+          type: "PROCESS",
+        },
       ],
       evidence: [],
       tasks: [],
       artifacts: {},
-      assessment: {}
-    }
+      assessment: {},
+    },
   ];
 
   for (const unit of units) {
@@ -256,14 +295,17 @@ export async function seedLearningUnits(prisma: PrismaClient, options: { tenantI
         tasks: unit.tasks,
         artifacts: unit.artifacts,
         assessment: unit.assessment,
-        createdBy
-      }
+        createdBy,
+      },
     });
   }
   console.log(`✅ Seeded ${units.length} Learning Units`);
 }
 
-export async function seedSimulations(prisma: PrismaClient, options: { tenantId: string }) {
+export async function seedSimulations(
+  prisma: PrismaClient,
+  options: { tenantId: string },
+) {
   const { tenantId } = options;
 
   const manifests = [
@@ -272,36 +314,36 @@ export async function seedSimulations(prisma: PrismaClient, options: { tenantId:
       domain: "PHYSICS",
       version: "1.0.0",
       title: "Projectile Motion Lab",
-      description: "Explore how launch angle and initial velocity affect projectile trajectory.",
+      description:
+        "Explore how launch angle and initial velocity affect projectile trajectory.",
       manifest: {
         entities: [
           { id: "cannon", type: "launcher", position: { x: 0, y: 0 } },
-          { id: "projectile", type: "particle", mass: 1 }
+          { id: "projectile", type: "particle", mass: 1 },
         ],
-        constraints: [
-          { type: "gravity", value: 9.8 }
-        ],
+        constraints: [{ type: "gravity", value: 9.8 }],
         variables: [
           { name: "angle", min: 0, max: 90, default: 45 },
-          { name: "velocity", min: 0, max: 100, default: 50 }
-        ]
-      }
+          { name: "velocity", min: 0, max: 100, default: 50 },
+        ],
+      },
     },
     {
       id: "sim-circuit-builder",
       domain: "PHYSICS",
       version: "1.0.0",
       title: "DC Circuit Builder",
-      description: "Build and analyze simple DC circuits with resistors and batteries.",
+      description:
+        "Build and analyze simple DC circuits with resistors and batteries.",
       manifest: {
         entities: [
           { id: "battery", type: "source", voltage: 9 },
-          { id: "resistor", type: "load", resistance: 100 }
+          { id: "resistor", type: "load", resistance: 100 },
         ],
         constraints: [],
-        variables: []
-      }
-    }
+        variables: [],
+      },
+    },
   ];
 
   for (const sim of manifests) {
@@ -316,13 +358,12 @@ export async function seedSimulations(prisma: PrismaClient, options: { tenantId:
         version: sim.version,
         title: sim.title,
         description: sim.description,
-        manifest: sim.manifest
-      }
+        manifest: sim.manifest,
+      },
     });
   }
   console.log(`✅ Seeded ${manifests.length} Simulation Manifests`);
 }
-
 
 function buildSeedModules() {
   return [
@@ -341,12 +382,12 @@ function buildSeedModules() {
       learningObjectives: [
         {
           label: "Understand variables and constants",
-          taxonomyLevel: "understand"
+          taxonomyLevel: "understand",
         },
         {
           label: "Solve single-variable equations",
-          taxonomyLevel: "apply"
-        }
+          taxonomyLevel: "apply",
+        },
       ],
       contentBlocks: [
         {
@@ -354,19 +395,19 @@ function buildSeedModules() {
           blockType: "text",
           orderIndex: 0,
           payload: {
-            markdown: "Welcome to Algebra Foundations!"
-          }
+            markdown: "Welcome to Algebra Foundations!",
+          },
         },
         {
           id: "block-algebra-2",
           blockType: "exercise",
           orderIndex: 1,
           payload: {
-            prompt: "Solve for x: 2x + 5 = 15"
-          }
-        }
+            prompt: "Solve for x: 2x + 5 = 15",
+          },
+        },
       ],
-      prerequisites: []
+      prerequisites: [],
     },
     {
       id: "mod-statistics",
@@ -383,8 +424,8 @@ function buildSeedModules() {
       learningObjectives: [
         {
           label: "Summarize data using mean, median, and mode",
-          taxonomyLevel: "understand"
-        }
+          taxonomyLevel: "understand",
+        },
       ],
       contentBlocks: [
         {
@@ -392,12 +433,12 @@ function buildSeedModules() {
           blockType: "text",
           orderIndex: 0,
           payload: {
-            markdown: "Statistics help us reason about data."
-          }
-        }
+            markdown: "Statistics help us reason about data.",
+          },
+        },
       ],
-      prerequisites: []
-    }
+      prerequisites: [],
+    },
   ];
 }
 
@@ -409,7 +450,7 @@ interface SeedAssessmentOptions {
 
 async function createSeedAssessment(
   prisma: PrismaClient,
-  options: SeedAssessmentOptions
+  options: SeedAssessmentOptions,
 ): Promise<void> {
   const { module, tenantId, createdBy } = options;
   const assessmentId = `${module.id}-diagnostic`;
@@ -430,8 +471,8 @@ async function createSeedAssessment(
       objectives: {
         create: module.learningObjectives.map((objective) => ({
           label: objective.label,
-          taxonomyLevel: objective.taxonomyLevel
-        }))
+          taxonomyLevel: objective.taxonomyLevel,
+        })),
       },
       items: {
         create: [
@@ -442,19 +483,19 @@ async function createSeedAssessment(
             choices: [
               { id: "choice-a", label: "x = 3" },
               { id: "choice-b", label: "x = 5", isCorrect: true },
-              { id: "choice-c", label: "x = 7" }
+              { id: "choice-c", label: "x = 7" },
             ],
-            points: 10
+            points: 10,
           },
           {
             orderIndex: 1,
             itemType: "short_answer",
             prompt: "Describe what a variable represents in algebra.",
             rubric: "Explain that it is a symbol representing an unknown value",
-            points: 10
-          }
-        ]
-      }
-    }
+            points: 10,
+          },
+        ],
+      },
+    },
   });
 }

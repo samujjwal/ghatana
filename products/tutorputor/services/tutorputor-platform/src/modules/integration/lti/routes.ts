@@ -1,5 +1,16 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
+import type {
+  ModuleId,
+  TenantId,
+  UserId,
+} from "@tutorputor/contracts/v1/types";
+import {
+  getTenantId,
+  requireRole,
+  respondWithErrors,
+} from "../../../core/http/requestContext.js";
+import { createLTIService } from "../../lti/service.js";
+import { createLtiServices } from "../../lti/lti-full-service.js";
 
 /**
  * LTI integration routes - LMS interoperability.
@@ -10,35 +21,44 @@ import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
  * @doc.pattern REST API
  */
 export const ltiRoutes: FastifyPluginAsync = async (app) => {
+  const prisma = app.prisma as any;
+  const ltiService = createLTIService(prisma);
+  const fullLtiServices = await createLtiServices(prisma);
+
   /**
    * POST /launch
    * LTI 1.3 launch endpoint
    */
   app.post("/launch", async (request, reply) => {
-    const { id_token, state } = request.body as {
+    const { id_token, state, nonce } = request.body as {
       id_token: string;
       state: string;
+      nonce?: string;
     };
 
     if (!id_token || !state) {
       return reply.code(400).send({ error: "ID token and state are required" });
     }
 
-    try {
-      // Verify JWT and extract claims
-      const launchData = {
-        state,
-        verified: true,
-        timestamp: new Date().toISOString(),
-      };
-      return reply.code(200).send(launchData);
-    } catch (error) {
-      app.log.error(error, "Failed to process LTI launch");
+    const result = await ltiService.validateLaunch({
+      token: id_token,
+      nonce: nonce ?? state,
+    });
+
+    if (!result.valid) {
       return reply.code(401).send({
         error: "Invalid LTI launch",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: result.error ?? "Unknown error",
+        state,
       });
     }
+
+    return reply.code(200).send({
+      state,
+      verified: true,
+      timestamp: new Date().toISOString(),
+      payload: result.payload,
+    });
   });
 
   /**
@@ -50,27 +70,12 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/jwks", async (request, reply) => {
     try {
-      const ltiPublicKeyN = process.env.LTI_RSA_PUBLIC_N;
-      const ltiKid = process.env.LTI_KEY_ID || "tutorputor-lti-key-1";
+      const toolConfiguration =
+        await fullLtiServices.platformService.getToolConfiguration({
+          tenantId: "public" as TenantId,
+        });
 
-      if (!ltiPublicKeyN) {
-        app.log.warn("LTI_RSA_PUBLIC_N not set — JWKS endpoint returning empty key set");
-        return reply.code(200).send({ keys: [] });
-      }
-
-      const jwks = {
-        keys: [
-          {
-            kty: "RSA",
-            use: "sig",
-            alg: "RS256",
-            kid: ltiKid,
-            n: ltiPublicKeyN,
-            e: process.env.LTI_RSA_PUBLIC_E || "AQAB",
-          },
-        ],
-      };
-      return reply.code(200).send(jwks);
+      return reply.code(200).send(toolConfiguration.publicJwks);
     } catch (error) {
       app.log.error(error, "Failed to get JWKS");
       return reply.code(500).send({
@@ -85,33 +90,48 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
    * Deep linking response handler
    */
   app.post("/deep-linking", async (request, reply) => {
-    const { content_items, deployment_id } = request.body as {
-      content_items: unknown[];
-      deployment_id: string;
-    };
+    const { content_items, deployment_id, moduleIds, baseUrl } =
+      request.body as {
+        content_items: unknown[];
+        deployment_id: string;
+        moduleIds?: string[];
+        baseUrl?: string;
+      };
+
+    if (Array.isArray(moduleIds) && moduleIds.length > 0) {
+      const tenantId = getTenantId(request);
+
+      await respondWithErrors(reply, async () => {
+        const contentItems = await ltiService.getDeepLinkingContent({
+          tenantId: tenantId as TenantId,
+          moduleIds: moduleIds as ModuleId[],
+          baseUrl: baseUrl ?? resolveIntegrationBaseUrl(request),
+        });
+
+        return {
+          deployment_id,
+          content_items: contentItems,
+          content_items_count: contentItems.length,
+          processed: true,
+        };
+      });
+      return;
+    }
 
     if (!content_items || !deployment_id) {
-      return reply
-        .code(400)
-        .send({ error: "Content items and deployment ID are required" });
-    }
-
-    try {
-      const response = {
-        deployment_id,
-        content_items_count: Array.isArray(content_items)
-          ? content_items.length
-          : 0,
-        processed: true,
-      };
-      return reply.code(200).send(response);
-    } catch (error) {
-      app.log.error(error, "Failed to process deep linking");
-      return reply.code(500).send({
-        error: "Failed to process deep linking",
-        message: error instanceof Error ? error.message : "Unknown error",
+      return reply.code(400).send({
+        error:
+          "Either moduleIds or content items and deployment ID are required",
       });
     }
+
+    return reply.code(200).send({
+      deployment_id,
+      content_items_count: Array.isArray(content_items)
+        ? content_items.length
+        : 0,
+      processed: true,
+    });
   });
 
   /**
@@ -119,43 +139,75 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
    * Grade passback to LMS
    */
   app.post("/grade-passback", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const { userId, score, maxScore, lineItemId } = request.body as {
+    let tenantId: TenantId = "public" as TenantId;
+    try {
+      tenantId = getTenantId(request) as TenantId;
+    } catch {
+      // Public LMS passback routes are allowed without JWT; tenant will be derived from the line item.
+    }
+    const {
+      sessionId,
+      userId,
+      score,
+      maxScore,
+      lineItemId,
+      activityProgress,
+      gradingProgress,
+      comment,
+      timestamp,
+    } = request.body as {
+      sessionId?: string;
       userId: UserId;
       score: number;
       maxScore: number;
       lineItemId: string;
+      activityProgress?: string;
+      gradingProgress?: string;
+      comment?: string;
+      timestamp?: string;
     };
 
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
-
     if (!userId || score === undefined || !maxScore || !lineItemId) {
-      return reply
-        .code(400)
-        .send({
-          error: "User ID, score, max score, and line item ID are required",
-        });
-    }
-
-    try {
-      const passback = {
-        userId,
-        score,
-        maxScore,
-        lineItemId,
-        timestamp: new Date().toISOString(),
-        status: "submitted",
-      };
-      return reply.code(200).send(passback);
-    } catch (error) {
-      app.log.error(error, "Failed to submit grade passback");
-      return reply.code(500).send({
-        error: "Failed to submit grade",
-        message: error instanceof Error ? error.message : "Unknown error",
+      return reply.code(400).send({
+        error: "User ID, score, max score, and line item ID are required",
       });
     }
+
+    const validActivityProgress = [
+      "Completed",
+      "Initialized",
+      "Started",
+      "InProgress",
+      "Submitted",
+    ].includes(activityProgress || "")
+      ? (activityProgress as any)
+      : "Completed";
+    const validGradingProgress = [
+      "FullyGraded",
+      "Pending",
+      "PendingManual",
+      "Failed",
+      "NotReady",
+    ].includes(gradingProgress || "")
+      ? (gradingProgress as any)
+      : "FullyGraded";
+
+    await respondWithErrors(reply, () =>
+      fullLtiServices.gradeService.submitScore({
+        tenantId,
+        sessionId: sessionId ?? "",
+        lineItemId,
+        score: {
+          userId,
+          scoreGiven: score,
+          scoreMaximum: maxScore,
+          activityProgress: validActivityProgress,
+          gradingProgress: validGradingProgress,
+          timestamp: timestamp ?? new Date().toISOString(),
+          comment,
+        },
+      }),
+    );
   });
 
   /**
@@ -166,12 +218,20 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
     const { platform } = request.params as { platform: string };
 
     try {
+      const toolConfiguration =
+        await fullLtiServices.platformService.getToolConfiguration({
+          tenantId: "public" as TenantId,
+        });
+      const ltiBaseUrl = `${resolveIntegrationBaseUrl(request)}/lti`;
+
       const config = {
         platform,
-        client_id: `tutorputor-${platform}`,
-        auth_login_url: "/lti/launch",
-        auth_token_url: "/lti/token",
-        key_set_url: "/lti/jwks",
+        issuer: toolConfiguration.issuer,
+        client_id: toolConfiguration.clientId,
+        auth_login_url: `${ltiBaseUrl}/launch`,
+        launch_url: `${ltiBaseUrl}/launch`,
+        deep_linking_url: `${ltiBaseUrl}/deep-linking`,
+        key_set_url: `${ltiBaseUrl}/jwks`,
       };
       return reply.code(200).send(config);
     } catch (error) {
@@ -188,16 +248,18 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
    * Register new LTI platform
    */
   app.post("/register", async (request, reply) => {
-    const tenantId = request.headers["x-tenant-id"] as TenantId;
-    const { platformName, issuer, clientId } = request.body as {
-      platformName: string;
-      issuer: string;
-      clientId: string;
-    };
+    const tenantId = getTenantId(request);
+    requireRole(request, ["admin", "superadmin"]);
 
-    if (!tenantId) {
-      return reply.code(401).send({ error: "Authentication required" });
-    }
+    const { platformName, issuer, clientId, jwksUrl, authUrl, tokenUrl } =
+      request.body as {
+        platformName: string;
+        issuer: string;
+        clientId: string;
+        jwksUrl?: string;
+        authUrl?: string;
+        tokenUrl?: string;
+      };
 
     if (!platformName || !issuer || !clientId) {
       return reply
@@ -205,26 +267,142 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
         .send({ error: "Platform name, issuer, and client ID are required" });
     }
 
-    try {
-      const registration = {
+    await respondWithErrors(reply, async () => {
+      const registration = await ltiService.registerPlatform({
+        tenantId: tenantId as TenantId,
+        platformName,
+        issuer,
+        clientId,
+        jwksUrl: jwksUrl ?? "",
+        authUrl: authUrl ?? "",
+        tokenUrl: tokenUrl ?? "",
+      });
+
+      reply.code(201);
+      return {
         tenantId,
         platformName,
         issuer,
         clientId,
+        platformId: registration.platformId,
         registered: true,
         timestamp: new Date().toISOString(),
       };
-      return reply.code(201).send(registration);
-    } catch (error) {
-      app.log.error(error, "Failed to register LTI platform");
-      return reply.code(500).send({
-        error: "Failed to register platform",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+    });
   });
 
-  app.get("/health", async () => ({ status: "healthy", module: "lti" }));
+  app.get("/health", async () => ({
+    status: (await ltiService.checkHealth()) ? "healthy" : "unhealthy",
+    module: "lti",
+  }));
+
+  // ===========================================================================
+  // LTI Platform Admin Routes (authenticated, admin/superadmin only)
+  // ===========================================================================
+
+  /**
+   * GET /platforms
+   * List all registered LTI platforms for the tenant.
+   */
+  app.get("/platforms", async (request, reply) => {
+    const tenantId = getTenantId(request);
+    requireRole(request, ["admin", "superadmin"]);
+
+    await respondWithErrors(reply, () =>
+      fullLtiServices.platformService.listPlatforms({
+        tenantId: tenantId as TenantId,
+      }),
+    );
+  });
+
+  /**
+   * GET /platforms/:platformId
+   * Get a specific LTI platform registration.
+   */
+  app.get("/platforms/:platformId", async (request, reply) => {
+    const tenantId = getTenantId(request);
+    requireRole(request, ["admin", "superadmin"]);
+    const { platformId } = request.params as { platformId: string };
+
+    await respondWithErrors(reply, async () => {
+      const platform = await fullLtiServices.platformService.getPlatform({
+        tenantId: tenantId as TenantId,
+        platformId: platformId as any,
+      });
+      if (!platform) {
+        reply.code(404);
+        throw new Error(`LTI platform ${platformId} not found`);
+      }
+      return platform;
+    });
+  });
+
+  /**
+   * PATCH /platforms/:platformId
+   * Update an LTI platform registration.
+   */
+  app.patch("/platforms/:platformId", async (request, reply) => {
+    const tenantId = getTenantId(request);
+    requireRole(request, ["admin", "superadmin"]);
+    const { platformId } = request.params as { platformId: string };
+    const updates = request.body as {
+      name?: string;
+      issuer?: string;
+      clientId?: string;
+      deploymentId?: string;
+      authLoginUrl?: string;
+      authTokenUrl?: string;
+      jwksUrl?: string;
+      publicKeyPem?: string;
+      isActive?: boolean;
+    };
+
+    await respondWithErrors(reply, () =>
+      fullLtiServices.platformService.updatePlatform({
+        tenantId: tenantId as TenantId,
+        platformId: platformId as any,
+        updates,
+      }),
+    );
+  });
+
+  /**
+   * DELETE /platforms/:platformId
+   * Deactivate an LTI platform registration (soft delete).
+   */
+  app.delete("/platforms/:platformId", async (request, reply) => {
+    const tenantId = getTenantId(request);
+    requireRole(request, ["admin", "superadmin"]);
+    const { platformId } = request.params as { platformId: string };
+
+    await respondWithErrors(reply, async () => {
+      await fullLtiServices.platformService.deactivatePlatform({
+        tenantId: tenantId as TenantId,
+        platformId: platformId as any,
+      });
+      return { deactivated: true, platformId };
+    });
+  });
 
   app.log.info("LTI routes registered");
 };
+
+function resolveIntegrationBaseUrl(request: {
+  protocol?: string;
+  headers: Record<string, string | string[] | undefined>;
+}): string {
+  const forwardedProto = request.headers["x-forwarded-proto"];
+  const forwardedHost = request.headers["x-forwarded-host"];
+  const host = forwardedHost ?? request.headers.host;
+  const protocol =
+    (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto) ??
+    request.protocol ??
+    "http";
+  const resolvedHost = Array.isArray(host) ? host[0] : host;
+
+  if (!resolvedHost) {
+    return `${process.env.API_BASE_URL || "http://localhost:3000"}/api/v1/integration`;
+  }
+
+  return `${protocol}://${resolvedHost}/api/v1/integration`;
+}

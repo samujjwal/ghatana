@@ -10,7 +10,7 @@
  * @doc.pattern Component
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Stage, Layer } from 'react-konva';
 import { KonvaEntityRenderer, type PhysicsEntity } from '@tutorputor/simulation/physics';
 
@@ -275,7 +275,7 @@ export function SimulationRenderer({
     simulation,
     visualization,
     className = '',
-    interactive = true,
+    interactive: _interactive = true,
 }: SimulationRendererProps) {
     // No simulation or visualization
     if (!simulation && !visualization) {

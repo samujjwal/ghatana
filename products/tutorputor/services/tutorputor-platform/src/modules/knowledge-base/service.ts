@@ -99,6 +99,33 @@ export interface ValidationCheck {
   evidence?: any;
 }
 
+type WikipediaSearchResponse = {
+  query?: {
+    search?: Array<{
+      pageid: number;
+      title: string;
+      snippet: string;
+      timestamp?: string;
+    }>;
+  };
+};
+
+type OpenStaxSearchResponse = {
+  items?: Array<{
+    id?: string;
+    slug?: string;
+    title?: string;
+  }>;
+};
+
+type KhanAcademySearchResponse = {
+  results?: Array<{
+    url?: string;
+    title?: string;
+    description?: string;
+  }>;
+};
+
 // ============================================================================
 // Knowledge Base Service
 // ============================================================================
@@ -371,11 +398,12 @@ export class KnowledgeBaseService {
         // Real Wikipedia API integration
         const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(assertion)}&origin=*`;
         const response = await fetch(searchUrl);
-        const data = await response.json();
+        const data = (await response.json()) as WikipediaSearchResponse;
+        const searchResults = data.query?.search ?? [];
 
-        if (data.query?.search?.length > 0) {
+        if (searchResults.length > 0) {
           // Get top 2 results
-          const topResults = data.query.search.slice(0, 2);
+          const topResults = searchResults.slice(0, 2);
 
           for (const result of topResults) {
             sources.push({
@@ -431,7 +459,7 @@ export class KnowledgeBaseService {
         });
 
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()) as OpenStaxSearchResponse;
           if (data.items && data.items.length > 0) {
             const topResults = data.items.slice(0, 2);
             for (const result of topResults) {
@@ -517,7 +545,7 @@ export class KnowledgeBaseService {
         });
 
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()) as KhanAcademySearchResponse;
           if (data.results && data.results.length > 0) {
             const topResults = data.results.slice(0, 2);
             for (const result of topResults) {

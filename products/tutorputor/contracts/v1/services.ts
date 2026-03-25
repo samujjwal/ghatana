@@ -49,7 +49,7 @@ import type {
   SimulationTemplate,
   SimulationTemplateInput,
   SimulationTemplateUpdate,
-  SimulationTemplateStatus
+  SimulationTemplateStatus,
 } from "./types";
 import type { ParsedIntent } from "./simulation/types";
 
@@ -57,7 +57,7 @@ export interface ContentService {
   getModuleBySlug(
     tenantId: TenantId,
     slug: string,
-    userId?: UserId
+    userId?: UserId,
   ): Promise<{ module: ModuleDetail; enrollment?: Enrollment }>;
 
   listModules(args: {
@@ -77,7 +77,7 @@ export interface LearningService {
   enrollInModule(
     tenantId: TenantId,
     userId: UserId,
-    moduleId: ModuleId
+    moduleId: ModuleId,
   ): Promise<Enrollment>;
 
   updateProgress(args: {
@@ -138,7 +138,7 @@ export interface AssessmentService {
   }): Promise<Assessment>;
 
   generateAssessmentItems(
-    args: AssessmentGenerationInput & { userId: UserId }
+    args: AssessmentGenerationInput & { userId: UserId },
   ): Promise<AssessmentGenerationResult>;
 
   startAttempt(args: {
@@ -244,7 +244,10 @@ export interface MarketplaceService {
     visibility?: MarketplaceListing["visibility"];
     cursor?: MarketplaceListingId | null;
     limit?: number;
-  }): Promise<{ items: MarketplaceListing[]; nextCursor?: MarketplaceListingId | null }>;
+  }): Promise<{
+    items: MarketplaceListing[];
+    nextCursor?: MarketplaceListingId | null;
+  }>;
 
   createListing(args: {
     tenantId: TenantId;
@@ -324,9 +327,7 @@ export interface MarketplaceService {
   /**
    * Admin-only: Get marketplace statistics.
    */
-  getMarketplaceStats(args: {
-    tenantId: TenantId;
-  }): Promise<{
+  getMarketplaceStats(args: { tenantId: TenantId }): Promise<{
     totalListings: number;
     activeListings: number;
     draftListings: number;
@@ -338,9 +339,7 @@ export interface MarketplaceService {
   /**
    * Admin-only: Get simulation template statistics.
    */
-  getTemplateStats(args: {
-    tenantId: TenantId;
-  }): Promise<{
+  getTemplateStats(args: { tenantId: TenantId }): Promise<{
     totalTemplates: number;
     verifiedTemplates: number;
     premiumTemplates: number;
@@ -515,10 +514,7 @@ export interface CollaborationService {
   /**
    * Get a single thread by ID.
    */
-  getThread(args: {
-    tenantId: TenantId;
-    threadId: ThreadId;
-  }): Promise<Thread>;
+  getThread(args: { tenantId: TenantId; threadId: ThreadId }): Promise<Thread>;
 
   /**
    * Mark a post as the accepted answer.
@@ -660,7 +656,7 @@ import type {
 
 /**
  * Service for managing SSO providers and identity federation.
- * 
+ *
  * Reuses libs/java/auth OidcTokenVerifier for OIDC token validation.
  */
 export interface SsoService {
@@ -679,14 +675,14 @@ export interface SsoService {
    * Get enabled providers for login page.
    * Returns only enabled providers with minimal info.
    */
-  getLoginProviders(args: {
-    tenantSlug: string;
-  }): Promise<Array<{
-    id: string;
-    displayName: string;
-    type: "oidc" | "saml";
-    iconUrl?: string;
-  }>>;
+  getLoginProviders(args: { tenantSlug: string }): Promise<
+    Array<{
+      id: string;
+      displayName: string;
+      type: "oidc" | "saml";
+      iconUrl?: string;
+    }>
+  >;
 
   /**
    * Get a specific provider by ID.
@@ -701,7 +697,10 @@ export interface SsoService {
    */
   createProvider(args: {
     tenantId: TenantId;
-    config: Omit<IdentityProviderConfig, "id" | "status" | "createdAt" | "updatedAt">;
+    config: Omit<
+      IdentityProviderConfig,
+      "id" | "status" | "createdAt" | "updatedAt"
+    >;
   }): Promise<IdentityProviderConfig>;
 
   /**
@@ -710,7 +709,9 @@ export interface SsoService {
   updateProvider(args: {
     tenantId: TenantId;
     providerId: string;
-    patch: Partial<Omit<IdentityProviderConfig, "id" | "tenantId" | "createdAt">>;
+    patch: Partial<
+      Omit<IdentityProviderConfig, "id" | "tenantId" | "createdAt">
+    >;
   }): Promise<IdentityProviderConfig>;
 
   /**
@@ -726,10 +727,7 @@ export interface SsoService {
    * Test provider configuration.
    * Attempts to fetch discovery document/metadata.
    */
-  testProvider(args: {
-    tenantId: TenantId;
-    providerId: string;
-  }): Promise<{
+  testProvider(args: { tenantId: TenantId; providerId: string }): Promise<{
     success: boolean;
     discoveryEndpoint?: string;
     error?: string;
@@ -743,9 +741,11 @@ export interface SsoService {
    * Initiate SSO login flow.
    * Returns URL to redirect user to IdP.
    */
-  initiateLogin(args: SsoLoginRequest & {
-    tenantId: TenantId;
-  }): Promise<{
+  initiateLogin(
+    args: SsoLoginRequest & {
+      tenantId: TenantId;
+    },
+  ): Promise<{
     redirectUrl: string;
     state: string;
   }>;
@@ -795,10 +795,7 @@ export interface SsoService {
   /**
    * Unlink an SSO identity from a user.
    */
-  unlinkUser(args: {
-    tenantId: TenantId;
-    linkId: string;
-  }): Promise<void>;
+  unlinkUser(args: { tenantId: TenantId; linkId: string }): Promise<void>;
 
   /**
    * Force re-sync user from IdP claims.
@@ -880,10 +877,7 @@ export interface ComplianceService {
   /**
    * Download completed export.
    */
-  downloadExport(args: {
-    tenantId: TenantId;
-    requestId: string;
-  }): Promise<{
+  downloadExport(args: { tenantId: TenantId; requestId: string }): Promise<{
     downloadUrl: string;
     expiresAt: string;
   }>;
@@ -940,9 +934,7 @@ export interface InstitutionAdminService {
   /**
    * Get summary for a tenant.
    */
-  getTenantSummary(args: {
-    tenantId: TenantId;
-  }): Promise<TenantSummary>;
+  getTenantSummary(args: { tenantId: TenantId }): Promise<TenantSummary>;
 
   /**
    * List users in a tenant.
@@ -1088,7 +1080,18 @@ export interface StudyGroupService {
     tenantId: TenantId;
     groupId: string;
     userId: UserId;
-    patch: Partial<Pick<StudyGroup, 'name' | 'description' | 'visibility' | 'maxMembers' | 'requireApproval' | 'subjects' | 'coverImageUrl'>>;
+    patch: Partial<
+      Pick<
+        StudyGroup,
+        | "name"
+        | "description"
+        | "visibility"
+        | "maxMembers"
+        | "requireApproval"
+        | "subjects"
+        | "coverImageUrl"
+      >
+    >;
   }): Promise<StudyGroup>;
 
   /**
@@ -1240,7 +1243,7 @@ export interface StudyGroupService {
     tenantId: TenantId;
     sessionId: string;
     userId: UserId;
-    status: SessionRsvp['status'];
+    status: SessionRsvp["status"];
     note?: string;
   }): Promise<SessionRsvp>;
 
@@ -1304,10 +1307,7 @@ export interface ForumService {
   /**
    * Get a forum.
    */
-  getForum(args: {
-    tenantId: TenantId;
-    forumId: string;
-  }): Promise<Forum>;
+  getForum(args: { tenantId: TenantId; forumId: string }): Promise<Forum>;
 
   /**
    * List forums.
@@ -1332,7 +1332,7 @@ export interface ForumService {
     authorId: UserId;
     title: string;
     content: string;
-    contentFormat?: 'markdown' | 'html' | 'plain';
+    contentFormat?: "markdown" | "html" | "plain";
     categoryId?: string;
     attachments?: Array<{ name: string; type: string; url: string }>;
   }): Promise<ForumTopic>;
@@ -1356,7 +1356,7 @@ export interface ForumService {
     isPinned?: boolean;
     isAnswered?: boolean;
     searchQuery?: string;
-    sortBy?: 'newest' | 'active' | 'popular';
+    sortBy?: "newest" | "active" | "popular";
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<ForumTopic>>;
 
@@ -1367,7 +1367,7 @@ export interface ForumService {
     tenantId: TenantId;
     topicId: string;
     userId: UserId;
-    patch: Partial<Pick<ForumTopic, 'title' | 'content' | 'categoryId'>>;
+    patch: Partial<Pick<ForumTopic, "title" | "content" | "categoryId">>;
   }): Promise<ForumTopic>;
 
   /**
@@ -1411,7 +1411,7 @@ export interface ForumService {
     topicId: string;
     authorId: UserId;
     content: string;
-    contentFormat?: 'markdown' | 'html' | 'plain';
+    contentFormat?: "markdown" | "html" | "plain";
     parentId?: string;
     isAnonymous?: boolean;
     attachments?: Array<{ name: string; type: string; url: string }>;
@@ -1486,7 +1486,7 @@ export interface ForumService {
    */
   reportContent(args: {
     tenantId: TenantId;
-    contentType: 'topic' | 'post';
+    contentType: "topic" | "post";
     contentId: string;
     reporterId: UserId;
     reason: string;
@@ -1498,10 +1498,10 @@ export interface ForumService {
    */
   moderateContent(args: {
     tenantId: TenantId;
-    contentType: 'topic' | 'post';
+    contentType: "topic" | "post";
     contentId: string;
     moderatorId: UserId;
-    action: 'approve' | 'hide' | 'delete';
+    action: "approve" | "hide" | "delete";
     note?: string;
   }): Promise<void>;
 }
@@ -1524,7 +1524,7 @@ export interface PeerTutoringService {
     bio: string;
     subjects: string[];
     moduleIds?: ModuleId[];
-    sessionTypes: TutoringSession['type'][];
+    sessionTypes: TutoringSession["type"][];
     timezone: string;
     maxSessionsPerWeek?: number;
   }): Promise<TutorProfile>;
@@ -1544,7 +1544,7 @@ export interface PeerTutoringService {
     tenantId: TenantId;
     subject?: string;
     moduleId?: ModuleId;
-    sessionType?: TutoringSession['type'];
+    sessionType?: TutoringSession["type"];
     minRating?: number;
     searchQuery?: string;
     pagination: PaginationArgs;
@@ -1574,10 +1574,10 @@ export interface PeerTutoringService {
     lessonId?: string;
     title: string;
     description: string;
-    preferredTypes: TutoringSession['type'][];
+    preferredTypes: TutoringSession["type"][];
     preferredTime?: Date;
     estimatedDuration?: number;
-    urgency?: 'low' | 'medium' | 'high';
+    urgency?: "low" | "medium" | "high";
   }): Promise<TutoringRequest>;
 
   /**
@@ -1597,8 +1597,8 @@ export interface PeerTutoringService {
   getMyRequests(args: {
     tenantId: TenantId;
     userId: UserId;
-    role: 'student' | 'tutor';
-    status?: TutoringRequest['status'];
+    role: "student" | "tutor";
+    status?: TutoringRequest["status"];
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<TutoringRequest>>;
 
@@ -1634,7 +1634,7 @@ export interface PeerTutoringService {
     tutorId: UserId;
     scheduledAt: Date;
     duration: number;
-    type: TutoringSession['type'];
+    type: TutoringSession["type"];
     meetingUrl?: string;
   }): Promise<TutoringSession>;
 
@@ -1652,8 +1652,8 @@ export interface PeerTutoringService {
   listSessions(args: {
     tenantId: TenantId;
     userId: UserId;
-    role?: 'student' | 'tutor';
-    status?: TutoringSession['status'];
+    role?: "student" | "tutor";
+    status?: TutoringSession["status"];
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<TutoringSession>>;
 
@@ -1732,7 +1732,8 @@ export interface ChatService {
    */
   getOrCreateRoom(args: {
     tenantId: TenantId;
-    type: ChatRoom['type'];
+    createdBy: UserId;
+    type: ChatRoom["type"];
     participants: UserId[];
     studyGroupId?: string;
     tutoringSessionId?: string;
@@ -1753,7 +1754,7 @@ export interface ChatService {
   listRooms(args: {
     tenantId: TenantId;
     userId: UserId;
-    type?: ChatRoom['type'];
+    type?: ChatRoom["type"];
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<ChatRoom>>;
 
@@ -1764,7 +1765,7 @@ export interface ChatService {
     tenantId: TenantId;
     roomId: string;
     senderId: UserId;
-    type: ChatMessage['type'];
+    type: ChatMessage["type"];
     content: string;
     metadata?: Record<string, unknown>;
     replyToId?: string;
@@ -1857,7 +1858,10 @@ export interface CollaborationService {
     tenantId: TenantId;
     noteId: string;
     sharedBy: UserId;
-    shareWith: Array<{ userId: UserId; permission: 'view' | 'comment' | 'edit' }>;
+    shareWith: Array<{
+      userId: UserId;
+      permission: "view" | "comment" | "edit";
+    }>;
   }): Promise<SharedNote>;
 
   /**
@@ -1922,7 +1926,7 @@ export interface SocialActivityService {
     preferences: {
       emailEnabled?: boolean;
       pushEnabled?: boolean;
-      types?: Partial<Record<SocialNotification['type'], boolean>>;
+      types?: Partial<Record<SocialNotification["type"], boolean>>;
     };
   }): Promise<void>;
 }
@@ -1957,7 +1961,7 @@ import type {
   StartVRSessionRequest,
   UpdateVRSessionRequest,
   VRLabListParams,
-} from './vr-labs';
+} from "./vr-labs";
 
 /**
  * Service for managing VR Labs and scenes.
@@ -2051,7 +2055,7 @@ export interface VRLabService {
     tenantId: TenantId;
     sceneId: VRSceneId;
     userId: UserId;
-    data: Omit<VRInteractable, 'id' | 'sceneId'>;
+    data: Omit<VRInteractable, "id" | "sceneId">;
   }): Promise<VRInteractable>;
 
   /**
@@ -2080,7 +2084,7 @@ export interface VRLabService {
     tenantId: TenantId;
     labId: VRLabId;
     userId: UserId;
-    data: Omit<VRLabObjective, 'id' | 'labId'>;
+    data: Omit<VRLabObjective, "id" | "labId">;
   }): Promise<VRLabObjective>;
 
   /**
@@ -2352,7 +2356,7 @@ export interface VRMultiplayerService {
   listSessions(args: {
     tenantId: TenantId;
     labId?: VRLabId;
-    status?: 'lobby' | 'active';
+    status?: "lobby" | "active";
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<VRMultiplayerSession>>;
 }
@@ -2367,16 +2371,13 @@ export interface VRAnalyticsService {
   getLabAnalytics(args: {
     tenantId: TenantId;
     labId: VRLabId;
-    period: 'day' | 'week' | 'month' | 'all';
+    period: "day" | "week" | "month" | "all";
   }): Promise<VRLabAnalytics>;
 
   /**
    * Get user's VR learning progress.
    */
-  getUserProgress(args: {
-    tenantId: TenantId;
-    userId: UserId;
-  }): Promise<{
+  getUserProgress(args: { tenantId: TenantId; userId: UserId }): Promise<{
     totalLabsCompleted: number;
     totalTimeSpent: number;
     averageScore: number;
@@ -2394,7 +2395,7 @@ export interface VRAnalyticsService {
    */
   getAggregatedAnalytics(args: {
     tenantId: TenantId;
-    period: 'day' | 'week' | 'month';
+    period: "day" | "week" | "month";
   }): Promise<{
     totalSessions: number;
     uniqueUsers: number;
@@ -2463,9 +2464,7 @@ export interface SubscriptionService {
   /**
    * Get a specific plan by ID.
    */
-  getPlan(args: {
-    planId: string;
-  }): Promise<SubscriptionPlan | null>;
+  getPlan(args: { planId: string }): Promise<SubscriptionPlan | null>;
 
   // Subscription lifecycle
   /**
@@ -2504,7 +2503,7 @@ export interface SubscriptionService {
     subscriptionId: SubscriptionId;
     newPlanId: string;
     newBillingInterval?: BillingInterval;
-    prorationBehavior?: 'create_prorations' | 'none' | 'always_invoice';
+    prorationBehavior?: "create_prorations" | "none" | "always_invoice";
   }): Promise<Subscription>;
 
   /**
@@ -2548,9 +2547,14 @@ export interface SubscriptionService {
    */
   checkLimit(args: {
     tenantId: TenantId;
-    resource: 'users' | 'modules' | 'classrooms' | 'storage' | 'vrSessions';
+    resource: "users" | "modules" | "classrooms" | "storage" | "vrSessions";
     increment?: number;
-  }): Promise<{ allowed: boolean; current: number; limit: number; message?: string }>;
+  }): Promise<{
+    allowed: boolean;
+    current: number;
+    limit: number;
+    message?: string;
+  }>;
 }
 
 /**
@@ -2563,9 +2567,7 @@ export interface PaymentMethodService {
   /**
    * List tenant's payment methods.
    */
-  listPaymentMethods(args: {
-    tenantId: TenantId;
-  }): Promise<PaymentMethod[]>;
+  listPaymentMethods(args: { tenantId: TenantId }): Promise<PaymentMethod[]>;
 
   /**
    * Get a specific payment method.
@@ -2631,7 +2633,7 @@ export interface InvoiceService {
    */
   listInvoices(args: {
     tenantId: TenantId;
-    status?: Invoice['status'];
+    status?: Invoice["status"];
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<Invoice>>;
 
@@ -2690,8 +2692,8 @@ export interface PaymentTransactionService {
    */
   listTransactions(args: {
     tenantId: TenantId;
-    type?: PaymentTransaction['type'];
-    status?: PaymentTransaction['status'];
+    type?: PaymentTransaction["type"];
+    status?: PaymentTransaction["status"];
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<PaymentTransaction>>;
 
@@ -2735,7 +2737,7 @@ export interface PaymentWebhookService {
   processWebhook(args: {
     payload: string;
     signature: string;
-    provider: 'stripe';
+    provider: "stripe";
   }): Promise<{ processed: boolean; eventType: string; error?: string }>;
 
   /**
@@ -2820,7 +2822,9 @@ export interface LtiPlatformService {
   updatePlatform(args: {
     tenantId: TenantId;
     platformId: LtiPlatformId;
-    updates: Partial<Omit<LtiPlatform, 'id' | 'tenantId' | 'createdAt' | 'updatedAt'>>;
+    updates: Partial<
+      Omit<LtiPlatform, "id" | "tenantId" | "createdAt" | "updatedAt">
+    >;
   }): Promise<LtiPlatform>;
 
   /**
@@ -2834,9 +2838,7 @@ export interface LtiPlatformService {
   /**
    * Get tool configuration for platform setup.
    */
-  getToolConfiguration(args: {
-    tenantId: TenantId;
-  }): Promise<{
+  getToolConfiguration(args: { tenantId: TenantId }): Promise<{
     issuer: string;
     clientId: string;
     publicJwks: object;
@@ -2893,9 +2895,7 @@ export interface LtiLaunchService {
   /**
    * Get active LTI session.
    */
-  getSession(args: {
-    sessionId: string;
-  }): Promise<LtiSession | null>;
+  getSession(args: { sessionId: string }): Promise<LtiSession | null>;
 
   /**
    * Extend session.
@@ -2929,14 +2929,16 @@ export interface LtiDeepLinkingService {
     contentTypes: string[];
     search?: string;
     pagination: PaginationArgs;
-  }): Promise<PaginatedResult<{
-    moduleId: ModuleId;
-    title: string;
-    description: string;
-    thumbnailUrl?: string;
-    domain: string;
-    difficulty: string;
-  }>>;
+  }): Promise<
+    PaginatedResult<{
+      moduleId: ModuleId;
+      title: string;
+      description: string;
+      thumbnailUrl?: string;
+      domain: string;
+      difficulty: string;
+    }>
+  >;
 
   /**
    * Build content item from module.
@@ -2982,7 +2984,7 @@ export interface LtiGradeService {
     tenantId: TenantId;
     platformId: LtiPlatformId;
     contextId: LtiContextId;
-    lineItem: Omit<LtiLineItem, 'id'>;
+    lineItem: Omit<LtiLineItem, "id">;
   }): Promise<LtiLineItem & { id: string }>;
 
   /**
@@ -3070,4 +3072,3 @@ export interface LtiRosterService {
     ltiUserId: string;
   }): Promise<LtiMember | null>;
 }
-

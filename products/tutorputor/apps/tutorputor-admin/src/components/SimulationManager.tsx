@@ -312,7 +312,7 @@ export function SimulationManager({
             JSON.parse(simFormData.manifest);
             if (simFormData.previewConfig) JSON.parse(simFormData.previewConfig);
             simulationMutation.mutate(simFormData);
-        } catch (error) {
+        } catch (_error) {
             alert('Invalid JSON in manifest or preview config');
         }
     };
@@ -322,7 +322,7 @@ export function SimulationManager({
         try {
             JSON.parse(vizFormData.config);
             visualizationMutation.mutate(vizFormData);
-        } catch (error) {
+        } catch (_error) {
             alert('Invalid JSON in config');
         }
     };

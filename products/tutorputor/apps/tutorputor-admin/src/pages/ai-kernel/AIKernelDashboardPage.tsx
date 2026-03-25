@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, Button, Tabs } from "@ghatana/design-system";
 import { globalRegistry } from "@tutorputor/learning-kernel";
 import { PluginCard } from "../../components/ai-kernel/PluginCard";
-import { PluginMetadata } from "@tutorputor/contracts/v1/plugin-interfaces";
+import type { PluginMetadata } from "@tutorputor/contracts/v1/plugin-interfaces";
 
 // Import built-in plugins to ensure they are registered
 import {

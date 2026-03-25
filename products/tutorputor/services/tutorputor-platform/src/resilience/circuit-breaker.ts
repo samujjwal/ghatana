@@ -1,23 +1,23 @@
 /**
  * Circuit Breaker and Resilience Framework
- * 
+ *
  * Provides comprehensive resilience patterns including circuit breakers,
  * bulkheads, retry mechanisms, and timeout handling.
  */
 
-import { EventEmitter } from 'events';
-import { createLogger } from '../utils/logger.js';
+import { EventEmitter } from "events";
+import { createLogger } from "../utils/logger.js";
 
-const logger = createLogger('resilience');
+const logger = createLogger("resilience");
 
 // ============================================================================
 // Circuit Breaker Implementation
 // ============================================================================
 
 export enum CircuitBreakerState {
-  CLOSED = 'CLOSED',
-  OPEN = 'OPEN', 
-  HALF_OPEN = 'HALF_OPEN'
+  CLOSED = "CLOSED",
+  OPEN = "OPEN",
+  HALF_OPEN = "HALF_OPEN",
 }
 
 export interface CircuitBreakerOptions {
@@ -57,7 +57,7 @@ export class CircuitBreaker extends EventEmitter {
     this.failureThreshold = options.failureThreshold || 5;
     this.resetTimeout = options.resetTimeout || 60000; // 1 minute
     this.monitoringPeriod = options.monitoringPeriod || 10000; // 10 seconds
-    this.name = options.name || 'unnamed';
+    this.name = options.name || "unnamed";
   }
 
   getMetrics(): CircuitBreakerMetrics {
@@ -66,7 +66,8 @@ export class CircuitBreaker extends EventEmitter {
       failures: this.failures,
       successes: this.successes,
       totalRequests: this.totalRequests,
-      failureRate: this.totalRequests > 0 ? this.failures / this.totalRequests : 0,
+      failureRate:
+        this.totalRequests > 0 ? this.failures / this.totalRequests : 0,
       lastFailureTime: this.lastFailureTime,
       lastSuccessTime: this.lastSuccessTime,
       nextAttemptTime: this.nextAttemptTime,
@@ -78,7 +79,7 @@ export class CircuitBreaker extends EventEmitter {
       case CircuitBreakerState.CLOSED:
         return true;
       case CircuitBreakerState.OPEN:
-        return Date.now() >= (this.nextAttemptTime || 0);
+        return Date.now() >= (this.nextAttemptTime?.getTime() ?? 0);
       case CircuitBreakerState.HALF_OPEN:
         return true;
       default:
@@ -95,7 +96,7 @@ export class CircuitBreaker extends EventEmitter {
       this.reset();
     }
 
-    this.emit('success', this.getMetrics());
+    this.emit("success", this.getMetrics());
   }
 
   private onFailure(): void {
@@ -111,21 +112,24 @@ export class CircuitBreaker extends EventEmitter {
       }
     }
 
-    this.emit('failure', this.getMetrics());
+    this.emit("failure", this.getMetrics());
   }
 
   private trip(): void {
     this.state = CircuitBreakerState.OPEN;
     this.nextAttemptTime = new Date(Date.now() + this.resetTimeout);
-    
-    logger.warn({
-      circuitBreaker: this.name,
-      failures: this.failures,
-      totalRequests: this.totalRequests,
-      failureRate: this.failures / this.totalRequests,
-    }, 'Circuit breaker tripped');
 
-    this.emit('state_change', CircuitBreakerState.OPEN, this.getMetrics());
+    logger.warn(
+      {
+        circuitBreaker: this.name,
+        failures: this.failures,
+        totalRequests: this.totalRequests,
+        failureRate: this.failures / this.totalRequests,
+      },
+      "Circuit breaker tripped",
+    );
+
+    this.emit("state_change", CircuitBreakerState.OPEN, this.getMetrics());
   }
 
   private reset(): void {
@@ -137,17 +141,22 @@ export class CircuitBreaker extends EventEmitter {
     this.lastSuccessTime = undefined;
     this.nextAttemptTime = undefined;
 
-    logger.info({
-      circuitBreaker: this.name,
-    }, 'Circuit breaker reset');
+    logger.info(
+      {
+        circuitBreaker: this.name,
+      },
+      "Circuit breaker reset",
+    );
 
-    this.emit('state_change', CircuitBreakerState.CLOSED, this.getMetrics());
+    this.emit("state_change", CircuitBreakerState.CLOSED, this.getMetrics());
   }
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
     if (!this.shouldAllowRequest()) {
-      const error = new Error(`Circuit breaker '${this.name}' is ${this.state}`);
-      this.emit('rejected', this.getMetrics());
+      const error = new Error(
+        `Circuit breaker '${this.name}' is ${this.state}`,
+      );
+      this.emit("rejected", this.getMetrics());
       throw error;
     }
 
@@ -192,7 +201,11 @@ export class Bulkhead extends EventEmitter {
   private queuedExecutions = 0;
   private rejectedExecutions = 0;
   private totalExecutions = 0;
-  private queue: Array<{ resolve: Function; reject: Function; operation: Function }> = [];
+  private queue: Array<{
+    resolve: (value: unknown) => void;
+    reject: (reason?: unknown) => void;
+    operation: () => Promise<unknown>;
+  }> = [];
   private maxConcurrent: number;
   private maxQueue: number;
   private name: string;
@@ -201,7 +214,7 @@ export class Bulkhead extends EventEmitter {
     super();
     this.maxConcurrent = options.maxConcurrent || 10;
     this.maxQueue = options.maxQueue || 100;
-    this.name = options.name || 'unnamed';
+    this.name = options.name || "unnamed";
   }
 
   getMetrics(): BulkheadMetrics {
@@ -225,7 +238,7 @@ export class Bulkhead extends EventEmitter {
       } else {
         this.rejectedExecutions++;
         const error = new Error(`Bulkhead '${this.name}' queue is full`);
-        this.emit('rejected', this.getMetrics());
+        this.emit("rejected", this.getMetrics());
         reject(error);
       }
     });
@@ -234,18 +247,18 @@ export class Bulkhead extends EventEmitter {
   private async executeImmediately<T>(
     operation: () => Promise<T>,
     resolve: (value: T) => void,
-    reject: (reason?: any) => void
+    reject: (reason?: any) => void,
   ): Promise<void> {
     this.activeExecutions++;
-    this.emit('execution_started', this.getMetrics());
+    this.emit("execution_started", this.getMetrics());
 
     try {
       const result = await operation();
       resolve(result);
-      this.emit('execution_success', this.getMetrics());
+      this.emit("execution_success", this.getMetrics());
     } catch (error) {
       reject(error);
-      this.emit('execution_failure', this.getMetrics());
+      this.emit("execution_failure", this.getMetrics());
     } finally {
       this.activeExecutions--;
       this.processQueue();
@@ -290,71 +303,86 @@ export class Retry {
     this.maxDelay = options.maxDelay || 30000;
     this.backoffMultiplier = options.backoffMultiplier || 2;
     this.jitter = options.jitter !== false;
-    this.retryableErrors = options.retryableErrors || this.defaultRetryableErrors;
-    this.name = options.name || 'unnamed';
+    this.retryableErrors =
+      options.retryableErrors || this.defaultRetryableErrors;
+    this.name = options.name || "unnamed";
   }
 
   private defaultRetryableErrors(error: any): boolean {
     if (!error) return false;
-    
+
     // Network errors
-    if (error.code === 'ECONNRESET' || error.code === 'ECONNREFUSED') return true;
-    if (error.code === 'ETIMEDOUT' || error.code === 'ENOTFOUND') return true;
-    
+    if (error.code === "ECONNRESET" || error.code === "ECONNREFUSED")
+      return true;
+    if (error.code === "ETIMEDOUT" || error.code === "ENOTFOUND") return true;
+
     // HTTP errors
     if (error.status >= 500 && error.status < 600) return true;
     if (error.status === 408 || error.status === 429) return true;
-    
+
     // Database errors
-    if (error.message?.includes('connection') || error.message?.includes('timeout')) return true;
-    
+    if (
+      error instanceof Error &&
+      (error.message.includes("connection") ||
+        error.message.includes("timeout"))
+    )
+      return true;
+
     return false;
   }
 
   private calculateDelay(attempt: number): number {
     let delay = this.baseDelay * Math.pow(this.backoffMultiplier, attempt - 1);
     delay = Math.min(delay, this.maxDelay);
-    
+
     if (this.jitter) {
       delay = delay * (0.5 + Math.random() * 0.5);
     }
-    
+
     return Math.floor(delay);
   }
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
     let lastError: any;
-    
+
     for (let attempt = 1; attempt <= this.maxAttempts; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error;
-        
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
         if (attempt === this.maxAttempts || !this.retryableErrors(error)) {
-          logger.warn({
+          logger.warn(
+            {
+              retry: this.name,
+              attempt,
+              maxAttempts: this.maxAttempts,
+              error: errorMessage,
+              retryable: false,
+            },
+            "Retry failed - not retryable or max attempts reached",
+          );
+          throw error;
+        }
+
+        const delay = this.calculateDelay(attempt);
+        logger.info(
+          {
             retry: this.name,
             attempt,
             maxAttempts: this.maxAttempts,
-            error: error.message,
-            retryable: false,
-          }, 'Retry failed - not retryable or max attempts reached');
-          throw error;
-        }
-        
-        const delay = this.calculateDelay(attempt);
-        logger.info({
-          retry: this.name,
-          attempt,
-          maxAttempts: this.maxAttempts,
-          delay,
-          error: error.message,
-        }, 'Retrying operation after delay');
-        
-        await new Promise(resolve => setTimeout(resolve, delay));
+            delay,
+            error: errorMessage,
+          },
+          "Retrying operation after delay",
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
-    
+
     throw lastError;
   }
 }
@@ -376,8 +404,10 @@ export class Timeout {
 
   constructor(options: TimeoutOptions = {}) {
     this.timeoutMs = options.timeout || 30000; // 30 seconds default
-    this.onTimeout = options.onTimeout || (() => new Error(`Operation timed out after ${this.timeoutMs}ms`));
-    this.name = options.name || 'unnamed';
+    this.onTimeout =
+      options.onTimeout ||
+      (() => new Error(`Operation timed out after ${this.timeoutMs}ms`));
+    this.name = options.name || "unnamed";
   }
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
@@ -385,13 +415,16 @@ export class Timeout {
       operation(),
       new Promise<never>((_, reject) => {
         setTimeout(() => {
-          logger.warn({
-            timeout: this.name,
-            timeoutMs: this.timeoutMs,
-          }, 'Operation timed out');
+          logger.warn(
+            {
+              timeout: this.name,
+              timeoutMs: this.timeoutMs,
+            },
+            "Operation timed out",
+          );
           reject(this.onTimeout());
         }, this.timeoutMs);
-      })
+      }),
     ]);
   }
 }
@@ -416,22 +449,31 @@ export class ResiliencePipeline {
   private name: string;
 
   constructor(options: ResiliencePipelineOptions = {}) {
-    this.name = options.name || 'unnamed';
-    
+    this.name = options.name || "unnamed";
+
     if (options.circuitBreaker) {
-      this.circuitBreaker = new CircuitBreaker({ ...options.circuitBreaker, name: `${this.name}-circuit-breaker` });
+      this.circuitBreaker = new CircuitBreaker({
+        ...options.circuitBreaker,
+        name: `${this.name}-circuit-breaker`,
+      });
     }
-    
+
     if (options.bulkhead) {
-      this.bulkhead = new Bulkhead({ ...options.bulkhead, name: `${this.name}-bulkhead` });
+      this.bulkhead = new Bulkhead({
+        ...options.bulkhead,
+        name: `${this.name}-bulkhead`,
+      });
     }
-    
+
     if (options.retry) {
       this.retry = new Retry({ ...options.retry, name: `${this.name}-retry` });
     }
-    
+
     if (options.timeout) {
-      this.timeout = new Timeout({ ...options.timeout, name: `${this.name}-timeout` });
+      this.timeout = new Timeout({
+        ...options.timeout,
+        name: `${this.name}-timeout`,
+      });
     }
   }
 
@@ -492,7 +534,10 @@ export class ResiliencePipeline {
 export class ResilienceManager {
   private pipelines = new Map<string, ResiliencePipeline>();
 
-  createPipeline(name: string, options: ResiliencePipelineOptions): ResiliencePipeline {
+  createPipeline(
+    name: string,
+    options: ResiliencePipelineOptions,
+  ): ResiliencePipeline {
     const pipeline = new ResiliencePipeline({ ...options, name });
     this.pipelines.set(name, pipeline);
     return pipeline;

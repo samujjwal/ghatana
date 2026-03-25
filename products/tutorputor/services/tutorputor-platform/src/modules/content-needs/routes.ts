@@ -5,7 +5,7 @@
  * @doc.pattern Routes
  */
 
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import type { ContentNeedsAnalyzer } from "./service";
 
 export function registerContentNeedsRoutes(

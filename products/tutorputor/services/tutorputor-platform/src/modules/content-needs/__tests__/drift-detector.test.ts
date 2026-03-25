@@ -7,7 +7,7 @@
  * @doc.pattern UnitTest
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ContentDriftDetector, type DriftThresholds } from '../drift-detector';
+import { ContentDriftDetector } from '../drift-detector';
 import type { PrismaClient } from '@tutorputor/core/db';
 
 function makeMockPrisma() {

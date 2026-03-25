@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -18,19 +14,36 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": [
-      "node",
-      "@testing-library/jest-dom"
-    ],
+    "types": ["node"],
+    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@ghatana/design-system": [
+        "../../../../platform/typescript/design-system/src/index.ts"
+      ],
+      "@ghatana/theme": ["../../../../platform/typescript/theme/src/index.ts"],
+      "@ghatana/tokens": [
+        "../../../../platform/typescript/tokens/src/index.ts"
+      ],
+      "@ghatana/utils": ["../../../../platform/typescript/utils/src/index.ts"],
+      "@ghatana/platform-utils": [
+        "../../../../platform/typescript/foundation/platform-utils/src/index.ts"
+      ],
+      "@tutorputor/core": ["../../libs/tutorputor-core/src/index.ts"],
+      "@tutorputor/core/*": ["../../libs/tutorputor-core/src/*"],
+      "@tutorputor/simulation": [
+        "../../libs/tutorputor-simulation/src/index.ts"
+      ],
+      "@tutorputor/simulation/*": ["../../libs/tutorputor-simulation/src/*"],
+      "@tutorputor/ui": ["../../libs/tutorputor-ui/src/index.ts"],
+      "@tutorputor/ui/*": ["../../libs/tutorputor-ui/src/*"],
+      "@ghatana/tutorputor-ui-shared": [
+        "../../libs/tutorputor-ui/src/index.ts"
+      ],
+      "@tutorputor/ui-shared": ["../../libs/tutorputor-ui/src/index.ts"]
     }
   },
-  "include": [
-    "src"
-  ],
+  "include": ["src"],
   "references": [
     {
       "path": "./tsconfig.node.json"

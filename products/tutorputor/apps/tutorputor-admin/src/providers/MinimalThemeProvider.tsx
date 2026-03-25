@@ -5,7 +5,7 @@
  * (`'./providers/MinimalThemeProvider'`) while the actual implementation
  * lives in a single authoritative location.
  *
- * @see @ghatana/tutorputor-ui-shared
+ * @see @tutorputor/ui
  */
-export { MinimalThemeProvider } from '@ghatana/tutorputor-ui-shared';
-export type { MinimalThemeProviderProps } from '@ghatana/tutorputor-ui-shared';
+export { MinimalThemeProvider } from '@tutorputor/ui';
+export type { MinimalThemeProviderProps } from '@tutorputor/ui';

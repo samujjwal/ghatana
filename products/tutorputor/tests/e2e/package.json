@@ -4,6 +4,7 @@
   "description": "E2E smoke tests for TutorPutor applications",
   "type": "module",
   "scripts": {
+    "lint": "../../../../node_modules/.bin/eslint . --ext ts --max-warnings 0",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",

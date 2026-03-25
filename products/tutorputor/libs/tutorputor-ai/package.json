@@ -22,6 +22,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "type-check": "tsc --noEmit",
+    "lint": "../../../../node_modules/.bin/eslint src/ --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest"
   },

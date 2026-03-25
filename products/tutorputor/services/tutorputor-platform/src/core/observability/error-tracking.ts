@@ -25,7 +25,7 @@ export function setupErrorTracking(app: FastifyInstance) {
     profilesSampleRate: parseFloat(
       process.env.SENTRY_PROFILES_SAMPLE_RATE || "0.1",
     ),
-    beforeSend(event, hint) {
+    beforeSend(event, _hint) {
       // Filter out sensitive data
       if (event.request) {
         delete event.request.cookies;
