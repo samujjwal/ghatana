@@ -73,6 +73,10 @@
     "./v1/content-studio": {
       "types": "./dist/content-studio.d.ts",
       "import": "./dist/content-studio.js"
+    },
+    "./v1/artifact-manifests": {
+      "types": "./dist/artifact-manifests.d.ts",
+      "import": "./dist/artifact-manifests.js"
     }
   },
   "files": [

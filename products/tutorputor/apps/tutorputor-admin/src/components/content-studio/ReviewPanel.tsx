@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { RiskBadge, type RiskLevel } from './RiskBadge';
+import { contentStudioApi } from '../../services/contentStudioApi';
 
 type ReviewerRole = 'SME' | 'PEDAGOGY' | 'SAFETY' | 'ADMIN';
 type ReviewDecision = 'APPROVE' | 'REJECT' | 'REQUEST_CHANGES' | 'ESCALATE';
@@ -72,22 +73,10 @@ export function ReviewPanel({
         setError(null);
 
         try {
-            const response = await fetch(`/api/content-studio/review-queue/${experienceId}/decision`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': 'current-user',
-                },
-                body: JSON.stringify({
-                    decision,
-                    rationale,
-                    reviewerRole: currentUserRole,
-                }),
+            await contentStudioApi.submitGenerationReviewDecision(experienceId, {
+                status: decision === 'APPROVE' ? 'approved' : decision === 'REJECT' ? 'rejected' : 'regeneration_requested',
+                decisionNote: `[${currentUserRole}] ${rationale}`,
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to submit decision');
-            }
 
             onDecisionSubmitted(decision, rationale);
             setDecision(null);

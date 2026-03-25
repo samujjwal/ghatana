@@ -1,3 +1,11 @@
+import type {
+  HybridSearchResponse,
+  NextStepSuggestion,
+  RelatedAssetsResponse,
+  TrackBatchEventsInput,
+  TrackExplorerEventInput,
+} from "@tutorputor/contracts/v1/content-studio";
+
 // Using native fetch instead of axios due to monorepo aliasing
 
 // Local type definitions
@@ -622,27 +630,64 @@ export class TutorPutorApiClient {
   async search(
     query: string,
     filters?: Record<string, string>,
-  ): Promise<{
-    results: Array<{
-      id: string;
-      type: string;
-      title: string;
-      description: string;
-      score: number;
-    }>;
-    total: number;
-    facets: Record<string, Array<{ value: string; count: number }>>;
-  }> {
-    const params = new URLSearchParams({ q: query, ...filters });
-    return await this.request(`/v1/search?${params}`);
+  ): Promise<HybridSearchResponse> {
+    const params = new URLSearchParams({ q: query });
+
+    for (const [key, value] of Object.entries(filters ?? {})) {
+      if (value) {
+        params.set(key, value);
+      }
+    }
+
+    return await this.request<HybridSearchResponse>(`/search?${params}`);
   }
 
   async getSearchSuggestions(query: string): Promise<{
     suggestions: Array<{ text: string; type: string; id?: string }>;
   }> {
-    return await this.request(
-      `/v1/search/autocomplete?q=${encodeURIComponent(query)}`,
+    const result = await this.search(query, { limit: "5" });
+
+    return {
+      suggestions: result.results.slice(0, 5).map((item) => ({
+        text: item.asset.title,
+        type: item.asset.assetType,
+        id: item.asset.id,
+      })),
+    };
+  }
+
+  async getAssetRecommendations(
+    assetId: string,
+    limit: number = 4,
+  ): Promise<RelatedAssetsResponse> {
+    const result = await this.request<{ data: RelatedAssetsResponse }>(
+      `/assets/${assetId}/recommendations?limit=${limit}`,
     );
+    return result.data;
+  }
+
+  async getNextSteps(
+    assetId: string,
+    limit: number = 4,
+  ): Promise<NextStepSuggestion[]> {
+    const result = await this.request<{ data: NextStepSuggestion[] }>(
+      `/assets/${assetId}/next-steps?limit=${limit}`,
+    );
+    return result.data;
+  }
+
+  async trackExplorerEvent(input: TrackExplorerEventInput): Promise<void> {
+    await this.request("/telemetry/events", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  async trackExplorerEvents(input: TrackBatchEventsInput): Promise<void> {
+    await this.request("/telemetry/events/batch", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
   }
 }
 

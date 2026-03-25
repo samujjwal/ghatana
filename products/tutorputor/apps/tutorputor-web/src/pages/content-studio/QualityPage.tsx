@@ -118,7 +118,7 @@ function ReviewCard({ item }: { item: ContentItemWithReport }) {
             Reject
           </button>
           <button
-            onClick={() => approve({ id: item.id })}
+            onClick={() => approve(item.id)}
             disabled={approving || rejecting}
             className="flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700 disabled:opacity-50"
           >
@@ -177,11 +177,10 @@ export function QualityPage() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              activeTab === tab
+            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${activeTab === tab
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -219,10 +218,10 @@ export function QualityPage() {
                 label: "Avg Quality Score",
                 value: pending?.length
                   ? `${Math.round(
-                      (pending.filter((p) => p.qualityReport)
-                        .reduce((sum: number, p) => sum + (p.qualityReport?.overallScore ?? 0), 0) /
-                        (pending.filter((p) => p.qualityReport).length || 1)) * 100,
-                    )}`
+                    (pending.filter((p) => p.qualityReport)
+                      .reduce((sum: number, p) => sum + (p.qualityReport?.overallScore ?? 0), 0) /
+                      (pending.filter((p) => p.qualityReport).length || 1)) * 100,
+                  )}`
                   : "—",
                 color: "text-primary",
               },

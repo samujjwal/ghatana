@@ -11,6 +11,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import type { ExperienceStatus } from '@tutorputor/contracts/v1/content-studio';
 import { Button } from '@ghatana/design-system';
 import {
     Plus,
@@ -74,7 +75,7 @@ interface LearningExperience {
     slug: string;
     title: string;
     description: string;
-    status: string;
+    status: ExperienceStatus;
     version: number;
     gradeAdaptation: GradeAdaptation;
     claims: LearningClaim[];
@@ -99,8 +100,10 @@ interface ValidationCheck {
     suggestion?: string;
 }
 
+type ValidationStatus = 'valid' | 'invalid' | 'warnings';
+
 interface ValidationResult {
-    status: string;
+    status: ValidationStatus;
     canPublish: boolean;
     checks: ValidationCheck[];
     score: number;
@@ -230,7 +233,7 @@ export function ExperienceEditor({ experience, validation, onExperienceUpdated, 
                             experience.status === 'review' ? 'bg-blue-500' :
                                 'bg-gray-300'
                         }`} />
-                    
+
                     <div className="p-6">
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex-1">
@@ -240,9 +243,9 @@ export function ExperienceEditor({ experience, validation, onExperienceUpdated, 
                                     </h2>
                                     <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide
                                         ${experience.status === 'draft' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
-                                        experience.status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                                            experience.status === 'review' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                                                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                            experience.status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                                                experience.status === 'review' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                                                    'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                                         }`}>
                                         {experience.status}
                                     </span>
@@ -570,7 +573,7 @@ export function ExperienceEditor({ experience, validation, onExperienceUpdated, 
                             <Plus className="h-4 w-4" />
                             Add Claim
                         </button>
-                        <button 
+                        <button
                             onClick={() => setShowSimulationBuilder(!showSimulationBuilder)}
                             className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg flex items-center gap-2"
                         >
@@ -593,7 +596,7 @@ export function ExperienceEditor({ experience, validation, onExperienceUpdated, 
                         onSimulationLinked={async (id, version) => {
                             setLinkedSimulation({ id, version });
                             setShowSimulationBuilder(false);
-                            
+
                             // Save to backend immediately
                             try {
                                 const response = await fetch(`/api/content-studio/experiences/${experience.id}`, {
@@ -606,7 +609,7 @@ export function ExperienceEditor({ experience, validation, onExperienceUpdated, 
                                         simulationVersion: version,
                                     }),
                                 });
-                                
+
                                 if (response.ok) {
                                     const updated = await response.json();
                                     onExperienceUpdated(updated, validation || undefined);

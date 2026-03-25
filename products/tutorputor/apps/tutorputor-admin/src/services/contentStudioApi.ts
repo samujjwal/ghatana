@@ -10,6 +10,19 @@
  * requests carry a valid `Authorization: Bearer <token>` header.
  */
 
+import type {
+  ContentAsset,
+  ContentAssetRevision,
+  EvaluationRecord,
+  EvaluationScorecard,
+  GenerationRequest,
+  GenerationRequestWithJobs,
+  GenerationReviewDecision,
+  PublishResult,
+  RegenerationCandidate,
+  SubmitReviewDecisionInput,
+} from "@tutorputor/contracts/v1/content-studio";
+
 // ---------------------------------------------------------------------------
 // Auth token store — set by useAuth on login / refresh
 // ---------------------------------------------------------------------------
@@ -65,7 +78,7 @@ export interface AdminExperience {
   id: string;
   title: string;
   description: string;
-  status: "draft" | "published" | "in_review" | "archived";
+  status: "draft" | "review" | "published" | "archived";
   gradeLevel: string;
   subject: string;
   claims: AdminClaim[];
@@ -106,11 +119,94 @@ export interface AdminValidationResult {
   validatedAt: Date;
 }
 
+export interface AdminContentAsset {
+  id: string;
+  title: string;
+  assetType: ContentAsset["assetType"];
+  status: ContentAsset["status"];
+  domain: string;
+  targetGrades: string[];
+  authorId: string;
+  updatedAt: string;
+  publishedAt?: string;
+  currentVersion: number;
+  qualityScore?: number;
+  legacyExperienceId?: string;
+}
+
+export interface AdminContentAssetDetail {
+  asset: AdminContentAsset;
+  currentRevision: ContentAssetRevision | null;
+}
+
+export interface AdminExperienceTimelineEvent {
+  id: string;
+  type: string;
+  actorId: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface AdminExperienceAnalytics {
+  experienceId: string;
+  viewCount?: number;
+  completionCount?: number;
+  completionRate?: number;
+  avgTimeMinutes?: number;
+  dropOffRate?: number;
+  simulationStarts?: number;
+  simulationAborts?: number;
+  simulationErrors?: number;
+  hasEngagementDrift?: boolean;
+  hasQualityIssues?: boolean;
+  trends7d?: {
+    dates: string[];
+    views: number[];
+    completions: number[];
+  };
+  driftSignals?: Array<{
+    type: string;
+    severity: "low" | "medium" | "high";
+    metric: string;
+    currentValue: number;
+    threshold: number;
+    recommendation: string;
+  }>;
+  recommendedActions?: Array<{
+    id: string;
+    type: "regenerate" | "review" | "update" | "archive";
+    priority: "low" | "medium" | "high";
+    description: string;
+  }>;
+  latestValidation?: {
+    status: string;
+    validatedAt: string;
+    accessibilityScore?: number;
+    authorityScore?: number;
+    accuracyScore?: number;
+    usefulnessScore?: number;
+    harmlessnessScore?: number;
+    suggestions: string[];
+  } | null;
+  recentEvents: AdminExperienceTimelineEvent[];
+}
+
 export interface CreateExperienceInput {
   title: string;
   description?: string;
   gradeRange?: string;
   moduleId?: string;
+}
+
+export interface GenerationRequestListResult {
+  items: GenerationRequest[];
+  total: number;
+}
+
+export interface PublishGenerationRequestResult {
+  published: number;
+  skipped: number;
+  results: PublishResult[];
 }
 
 // ---------------------------------------------------------------------------
@@ -128,7 +224,7 @@ function mapExpToAdmin(exp: any): AdminExperience {
         : exp.status === "archived"
           ? "archived"
           : exp.status === "review"
-            ? "in_review"
+            ? "review"
             : "draft",
     gradeLevel: exp.gradeAdaptation?.gradeRange ?? "grade_6_8",
     subject: exp.domain ?? "TECH",
@@ -182,7 +278,88 @@ function mapValidationToAdmin(v: any): AdminValidationResult {
   };
 }
 
+function mapAssetToAdmin(asset: ContentAsset): AdminContentAsset {
+  return {
+    id: asset.id,
+    title: asset.title,
+    assetType: asset.assetType,
+    status: asset.status,
+    domain: asset.domain,
+    targetGrades: asset.targetGrades ?? [],
+    authorId: asset.authorId,
+    updatedAt: asset.updatedAt,
+    publishedAt: asset.publishedAt,
+    currentVersion: asset.currentVersion,
+    qualityScore: asset.qualityScore,
+    legacyExperienceId: asset.legacyExperienceId,
+  };
+}
+
 export const contentStudioApi = {
+  // ---------------------------------------------------------------------------
+  // Canonical Asset Reads
+  // ---------------------------------------------------------------------------
+
+  /** List canonical content assets for admin library reads. */
+  async getContentAssets(params?: {
+    assetType?: ContentAsset["assetType"];
+    status?: ContentAsset["status"];
+    domain?: string;
+    authorId?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ items: AdminContentAsset[]; total: number }> {
+    const qs = new URLSearchParams();
+    if (params?.assetType) qs.set("assetType", params.assetType);
+    if (params?.status) qs.set("status", params.status);
+    if (params?.domain) qs.set("domain", params.domain);
+    if (params?.authorId) qs.set("authorId", params.authorId);
+    if (params?.search) qs.set("search", params.search);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.offset) qs.set("offset", String(params.offset));
+    const query = qs.toString() ? `?${qs}` : "";
+
+    const result = await csRequest<{ data: ContentAsset[]; total: number }>(
+      "GET",
+      `/assets${query}`,
+    );
+
+    return {
+      items: (result.data ?? []).map(mapAssetToAdmin),
+      total: result.total ?? 0,
+    };
+  },
+
+  /** Get canonical asset detail with current revision metadata. */
+  async getContentAsset(
+    assetId: string,
+  ): Promise<AdminContentAssetDetail | null> {
+    const result = await csRequest<{
+      data: {
+        asset: ContentAsset;
+        currentRevision: ContentAssetRevision | null;
+      };
+    }>("GET", `/assets/${assetId}`).catch((error: unknown) => {
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes("not found")
+      ) {
+        return null;
+      }
+      throw error;
+    });
+
+    if (!result?.data?.asset) {
+      return null;
+    }
+
+    return {
+      asset: mapAssetToAdmin(result.data.asset),
+      currentRevision: result.data.currentRevision ?? null,
+    };
+  },
+
   // ---------------------------------------------------------------------------
   // CRUD
   // ---------------------------------------------------------------------------
@@ -272,7 +449,7 @@ export const contentStudioApi = {
     if (updates.description !== undefined)
       body.description = updates.description;
     if (updates.status !== undefined) {
-      body.status = updates.status === "in_review" ? "review" : updates.status;
+      body.status = updates.status;
     }
     if (updates.gradeLevel !== undefined) body.gradeRange = updates.gradeLevel;
 
@@ -312,16 +489,177 @@ export const contentStudioApi = {
     return mapExpToAdmin(result.data);
   },
 
-  /** Approve or reject a queued experience via the review queue. */
+  /** Return a published experience to review status. */
+  async unpublishExperience(
+    id: string,
+    reason?: string,
+  ): Promise<AdminExperience> {
+    const result = await csRequest<{ data: any }>(
+      "POST",
+      `/experiences/${id}/unpublish`,
+      reason ? { reason } : {},
+    );
+    return mapExpToAdmin(result.data);
+  },
+
+  /** Approve or reject an experience through canonical publish lifecycle routes. */
   async reviewDecision(
     id: string,
     decision: "approve" | "reject",
     reason?: string,
   ): Promise<void> {
-    await csRequest("POST", `/review-queue/${id}/decision`, {
-      decision,
-      reason,
+    if (decision === "approve") {
+      await contentStudioApi.publishExperience(id);
+      return;
+    }
+
+    await contentStudioApi.unpublishExperience(id, reason);
+  },
+
+  // ---------------------------------------------------------------------------
+  // Governed Generation Control Plane
+  // ---------------------------------------------------------------------------
+
+  /** List governed generation requests for the current tenant. */
+  async getGenerationRequests(params?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<GenerationRequestListResult> {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set("status", params.status);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.offset) qs.set("offset", String(params.offset));
+    const query = qs.toString() ? `?${qs}` : "";
+
+    return csRequest<GenerationRequestListResult>(
+      "GET",
+      `/generation/requests${query}`,
+    );
+  },
+
+  /** Get a single generation request with all planned jobs. */
+  async getGenerationRequest(
+    requestId: string,
+  ): Promise<GenerationRequestWithJobs | null> {
+    const result = await csRequest<GenerationRequestWithJobs>(
+      "GET",
+      `/generation/requests/${requestId}`,
+    ).catch((error: unknown) => {
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes("not found")
+      ) {
+        return null;
+      }
+      throw error;
     });
+
+    return result;
+  },
+
+  /** Run evaluation for a generation request. */
+  async evaluateGenerationRequest(
+    requestId: string,
+  ): Promise<EvaluationScorecard> {
+    return csRequest<EvaluationScorecard>(
+      "POST",
+      `/evaluation/requests/${requestId}/evaluate`,
+    );
+  },
+
+  /** List evaluation records for a generation request. */
+  async getGenerationEvaluations(
+    requestId: string,
+  ): Promise<EvaluationRecord[]> {
+    const result = await csRequest<{ evaluations: EvaluationRecord[] }>(
+      "GET",
+      `/evaluation/requests/${requestId}/evaluations`,
+    );
+    return result.evaluations ?? [];
+  },
+
+  /** List review decisions for a generation request. */
+  async getGenerationReviewDecisions(
+    requestId: string,
+  ): Promise<GenerationReviewDecision[]> {
+    const result = await csRequest<{ decisions: GenerationReviewDecision[] }>(
+      "GET",
+      `/review/requests/${requestId}/decisions`,
+    );
+    return result.decisions ?? [];
+  },
+
+  /** Submit a canonical review decision for a generation request. */
+  async submitGenerationReviewDecision(
+    requestId: string,
+    input: Omit<SubmitReviewDecisionInput, "requestId">,
+  ): Promise<GenerationReviewDecision> {
+    return csRequest<GenerationReviewDecision>(
+      "POST",
+      `/review/requests/${requestId}/decisions`,
+      input,
+    );
+  },
+
+  /** Bulk publish all approved assets emitted by a generation request. */
+  async publishGenerationRequest(
+    requestId: string,
+  ): Promise<PublishGenerationRequestResult> {
+    return csRequest<PublishGenerationRequestResult>(
+      "POST",
+      `/publish/requests/${requestId}/publish-all`,
+      {},
+    );
+  },
+
+  /** List open regeneration candidates. */
+  async getRegenerationCandidates(filters?: {
+    assetId?: string;
+    trigger?: string;
+  }): Promise<RegenerationCandidate[]> {
+    const qs = new URLSearchParams();
+    if (filters?.assetId) qs.set("assetId", filters.assetId);
+    if (filters?.trigger) qs.set("trigger", filters.trigger);
+    const query = qs.toString() ? `?${qs}` : "";
+
+    const result = await csRequest<{ candidates: RegenerationCandidate[] }>(
+      "GET",
+      `/candidates${query}`,
+    );
+    return result.candidates ?? [];
+  },
+
+  /** Dismiss an open regeneration candidate. */
+  async dismissRegenerationCandidate(
+    candidateId: string,
+  ): Promise<RegenerationCandidate> {
+    return csRequest<RegenerationCandidate>(
+      "POST",
+      `/candidates/${candidateId}/dismiss`,
+      {},
+    );
+  },
+
+  /** Queue an open regeneration candidate onto a governed generation request. */
+  async queueRegenerationCandidate(
+    candidateId: string,
+    generationRequestId: string,
+  ): Promise<RegenerationCandidate> {
+    return csRequest<RegenerationCandidate>(
+      "POST",
+      `/candidates/${candidateId}/queue`,
+      { generationRequestId },
+    );
+  },
+
+  /** Create regeneration candidates from recent learner feedback. */
+  async detectRegenerationCandidates(): Promise<{ created: number }> {
+    return csRequest<{ created: number }>(
+      "POST",
+      "/candidates/detect-from-feedback",
+      {},
+    );
   },
 
   // ---------------------------------------------------------------------------
@@ -369,6 +707,35 @@ export const contentStudioApi = {
       `/experiences/${experienceId}/animations`,
     );
     return result.data ?? [];
+  },
+
+  /** Get analytics, latest validation, and recent authoring activity. */
+  async getExperienceAnalytics(
+    experienceId: string,
+  ): Promise<AdminExperienceAnalytics> {
+    const result = await csRequest<{ data: any }>(
+      "GET",
+      `/experiences/${experienceId}/analytics`,
+    );
+
+    return {
+      experienceId,
+      viewCount: result.data?.viewCount ?? 0,
+      completionCount: result.data?.completionCount ?? 0,
+      completionRate: result.data?.completionRate ?? 0,
+      avgTimeMinutes: result.data?.avgTimeMinutes ?? 0,
+      dropOffRate: result.data?.dropOffRate ?? 0,
+      simulationStarts: result.data?.simulationStarts ?? 0,
+      simulationAborts: result.data?.simulationAborts ?? 0,
+      simulationErrors: result.data?.simulationErrors ?? 0,
+      hasEngagementDrift: result.data?.hasEngagementDrift ?? false,
+      hasQualityIssues: result.data?.hasQualityIssues ?? false,
+      trends7d: result.data?.trends7d,
+      driftSignals: result.data?.driftSignals ?? [],
+      recommendedActions: result.data?.recommendedActions ?? [],
+      latestValidation: result.data?.latestValidation ?? null,
+      recentEvents: result.data?.recentEvents ?? [],
+    };
   },
 
   // ---------------------------------------------------------------------------

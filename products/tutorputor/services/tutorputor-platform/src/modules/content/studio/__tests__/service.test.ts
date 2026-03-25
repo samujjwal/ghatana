@@ -81,15 +81,13 @@ function makePrisma() {
     learningExperience: {
       create: vi.fn().mockResolvedValue(mockExperience),
       findFirst: vi.fn().mockResolvedValue(mockExperience),
-      findUnique: vi
-        .fn()
-        .mockResolvedValue({
-          ...mockExperience,
-          claims: [],
-          evidences: [],
-          experienceTasks: [],
-          gradeAdaptations: [],
-        }),
+      findUnique: vi.fn().mockResolvedValue({
+        ...mockExperience,
+        claims: [],
+        evidences: [],
+        experienceTasks: [],
+        gradeAdaptations: [],
+      }),
       findMany: vi.fn().mockResolvedValue([mockExperience]),
       count: vi.fn().mockResolvedValue(1),
       delete: vi.fn().mockResolvedValue(mockExperience),
@@ -101,7 +99,15 @@ function makePrisma() {
     },
     validationRecord: {
       create: vi.fn().mockResolvedValue({ id: "val-1" }),
+      findFirst: vi.fn().mockResolvedValue(null),
       findMany: vi.fn().mockResolvedValue([]),
+    },
+    experienceEvent: {
+      create: vi.fn().mockResolvedValue({ id: "evt-1" }),
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    experienceAnalytics: {
+      findUnique: vi.fn().mockResolvedValue(null),
     },
     $queryRaw: vi.fn().mockResolvedValue([{ "1": 1 }]),
   };
@@ -152,6 +158,15 @@ describe("ContentStudioService", () => {
         authorId: "user-1",
       });
       expect(prisma.learningExperience.create).toHaveBeenCalledOnce();
+      expect(prisma.experienceEvent.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            experienceId: "exp-1",
+            eventType: "CREATED",
+            actorId: "user-1",
+          }),
+        }),
+      );
       expect(result).toBeDefined();
       expect(result?.id ?? (result as any)?.experience?.id).toBeTruthy();
     });
@@ -393,6 +408,25 @@ describe("ContentStudioService", () => {
       );
     });
 
+    it("records a VALIDATED experience event", async () => {
+      prisma.learningExperience.findUnique.mockResolvedValue({
+        ...baseExp,
+        claims: [],
+      });
+
+      await service.validateExperience("exp-1");
+
+      expect(prisma.experienceEvent.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            experienceId: "exp-1",
+            eventType: "VALIDATED",
+            actorId: "system",
+          }),
+        }),
+      );
+    });
+
     it("throws when experience not found", async () => {
       prisma.learningExperience.findUnique.mockResolvedValue(null);
       await expect(service.validateExperience("missing")).rejects.toThrow(
@@ -458,6 +492,451 @@ describe("ContentStudioService", () => {
           data: expect.objectContaining({ status: "PUBLISHED" }),
         }),
       );
+      expect(prisma.experienceEvent.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            experienceId: "exp-1",
+            eventType: "PUBLISHED",
+            actorId: "user-1",
+          }),
+        }),
+      );
+    });
+  });
+
+  describe("getExperienceAnalytics", () => {
+    it("returns analytics enriched with latest validation and recent events", async () => {
+      prisma.experienceAnalytics.findUnique.mockResolvedValue({
+        experienceId: "exp-1",
+        views: 12,
+      });
+      prisma.validationRecord.findFirst.mockResolvedValue({
+        experienceId: "exp-1",
+        overallStatus: "WARN",
+        validatedAt: new Date("2024-02-01T00:00:00.000Z"),
+        accessibilityScore: 85,
+        authorityScore: 75,
+        accuracyScore: 80,
+        usefulnessScore: 70,
+        harmlessnessScore: 100,
+        suggestions: ["Add one more artifact"],
+      });
+      prisma.experienceEvent.findMany.mockResolvedValue([
+        {
+          id: "evt-1",
+          eventType: "VALIDATED",
+          actorId: "system",
+          metadata: { score: 76 },
+          createdAt: new Date("2024-02-02T00:00:00.000Z"),
+        },
+      ]);
+
+      const analytics = await service.getExperienceAnalytics("exp-1");
+
+      expect(prisma.experienceAnalytics.findUnique).toHaveBeenCalledWith({
+        where: { experienceId: "exp-1" },
+      });
+      expect(analytics).toMatchObject({
+        experienceId: "exp-1",
+        views: 12,
+        latestValidation: {
+          status: "WARN",
+          accessibilityScore: 85,
+        },
+        recentEvents: [
+          expect.objectContaining({
+            id: "evt-1",
+            type: "VALIDATED",
+            actorId: "system",
+          }),
+        ],
+      });
+      expect(analytics.latestValidation.validatedAt).toBe(
+        "2024-02-01T00:00:00.000Z",
+      );
+      expect(analytics.recentEvents[0].createdAt).toBe(
+        "2024-02-02T00:00:00.000Z",
+      );
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // P0.2 — Type & Status Convergence
+  // --------------------------------------------------------------------------
+  describe("type convergence (P0.2)", () => {
+    it("getExperience maps DRAFT → 'draft' (contract ExperienceStatus)", async () => {
+      const result = await service.getExperience("exp-1");
+      expect(result?.status).toBe("draft");
+    });
+
+    it("getExperience maps PUBLISHED → 'published'", async () => {
+      prisma.learningExperience.findUnique.mockResolvedValue({
+        ...mockExperience,
+        status: "PUBLISHED",
+        claims: [],
+        evidences: [],
+        experienceTasks: [],
+        gradeAdaptations: [],
+      });
+      const result = await service.getExperience("exp-1");
+      expect(result?.status).toBe("published");
+    });
+
+    it("listExperiences converts contract status 'review' → Prisma 'REVIEW'", async () => {
+      await service.listExperiences({
+        tenantId: "tenant-1",
+        status: "review",
+      });
+      const whereArg =
+        prisma.learningExperience.findMany.mock.calls[0][0].where;
+      expect(whereArg.status).toBe("REVIEW");
+    });
+
+    it("listExperiences converts contract status 'archived' → Prisma 'ARCHIVED'", async () => {
+      await service.listExperiences({
+        tenantId: "tenant-1",
+        status: "archived",
+      });
+      const whereArg =
+        prisma.learningExperience.findMany.mock.calls[0][0].where;
+      expect(whereArg.status).toBe("ARCHIVED");
+    });
+
+    it("validation checks use lowercase pillar values matching ValidationPillar contract", async () => {
+      prisma.learningExperience.findUnique.mockResolvedValue({
+        id: "exp-1",
+        tenantId: "tenant-1",
+        status: "DRAFT",
+        gradeAdaptations: [],
+        claims: [
+          {
+            id: "c1",
+            claimRef: "claim-1",
+            bloomLevel: "UNDERSTAND",
+            examples: [],
+            simulations: [],
+            animations: [],
+          },
+        ],
+        evidences: [],
+        experienceTasks: [],
+      });
+
+      const result = await service.validateExperience("exp-1");
+
+      const validPillars = new Set([
+        "educational",
+        "experiential",
+        "safety",
+        "technical",
+        "accessibility",
+      ]);
+      for (const check of result.checks) {
+        expect(validPillars.has(check.pillar)).toBe(true);
+      }
+    });
+
+    it("validation result status uses contract literal union ('valid' | 'invalid' | 'warnings')", async () => {
+      // Empty claims → should be "invalid"
+      prisma.learningExperience.findUnique.mockResolvedValue({
+        id: "exp-1",
+        tenantId: "tenant-1",
+        status: "DRAFT",
+        gradeAdaptations: [],
+        claims: [],
+        evidences: [],
+        experienceTasks: [],
+      });
+
+      const result = await service.validateExperience("exp-1");
+      expect(["valid", "invalid", "warnings"]).toContain(result.status);
+      expect(result.status).toBe("invalid");
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // P0.3 — Authoring Lifecycle Event Instrumentation
+  // --------------------------------------------------------------------------
+  describe("authoring lifecycle events (P0.3)", () => {
+    it("archiveExperience records an ARCHIVED event (not UPDATED)", async () => {
+      prisma.learningExperience.findUnique.mockResolvedValue({
+        ...mockExperience,
+        status: "ARCHIVED",
+        claims: [],
+        evidences: [],
+        experienceTasks: [],
+        gradeAdaptations: [],
+      });
+
+      await service.archiveExperience("exp-1");
+
+      const eventCalls = prisma.experienceEvent.create.mock.calls;
+      const archiveEvent = eventCalls.find(
+        (call: any) => call[0]?.data?.eventType === "ARCHIVED",
+      );
+      expect(archiveEvent).toBeDefined();
+    });
+
+    it("adaptGrade records a GRADE_ADAPTED event", async () => {
+      prisma.learningExperience.findUnique.mockResolvedValue({
+        ...mockExperience,
+        claims: [],
+        evidences: [],
+        experienceTasks: [],
+        gradeAdaptations: [],
+      });
+
+      await service.adaptGrade("exp-1", {
+        gradeRange: "grade_9_12",
+        userId: "user-1",
+      });
+
+      const eventCalls = prisma.experienceEvent.create.mock.calls;
+      const gradeEvent = eventCalls.find(
+        (call: any) => call[0]?.data?.eventType === "GRADE_ADAPTED",
+      );
+      expect(gradeEvent).toBeDefined();
+      expect(gradeEvent[0].data.actorId).toBe("user-1");
+    });
+
+    it("refineContent records a REFINED event (not CONTENT_CHANGED)", async () => {
+      prisma.learningExperience.findUnique.mockResolvedValue({
+        ...mockExperience,
+        claims: [],
+        evidences: [],
+        experienceTasks: [],
+        gradeAdaptations: [],
+      });
+
+      await service.refineContent("exp-1", {
+        refinementPrompt: "Add more detail",
+        userId: "user-2",
+      });
+
+      const eventCalls = prisma.experienceEvent.create.mock.calls;
+      const refineEvent = eventCalls.find(
+        (call: any) => call[0]?.data?.eventType === "REFINED",
+      );
+      expect(refineEvent).toBeDefined();
+      expect(refineEvent[0].data.actorId).toBe("user-2");
+    });
+
+    it("generateClaims records a CLAIMS_GENERATED event", async () => {
+      await service.generateClaims("exp-1", { maxClaims: 3 });
+
+      const eventCalls = prisma.experienceEvent.create.mock.calls;
+      const claimsEvent = eventCalls.find(
+        (call: any) => call[0]?.data?.eventType === "CLAIMS_GENERATED",
+      );
+      expect(claimsEvent).toBeDefined();
+    });
+
+    it("getExperienceEvents returns timeline ordered by createdAt desc", async () => {
+      prisma.experienceEvent.findMany.mockResolvedValue([
+        {
+          id: "evt-2",
+          eventType: "VALIDATED",
+          actorId: "system",
+          metadata: { score: 80 },
+          createdAt: new Date("2024-03-02"),
+        },
+        {
+          id: "evt-1",
+          eventType: "CREATED",
+          actorId: "user-1",
+          metadata: null,
+          createdAt: new Date("2024-03-01"),
+        },
+      ]);
+
+      const events = await service.getExperienceEvents("exp-1");
+
+      expect(events).toHaveLength(2);
+      expect(events[0].type).toBe("VALIDATED");
+      expect(events[1].type).toBe("CREATED");
+      expect(events[0].actorId).toBe("system");
+    });
+
+    it("getExperienceEvents filters by eventType when specified", async () => {
+      await service.getExperienceEvents("exp-1", { eventType: "PUBLISHED" });
+
+      expect(prisma.experienceEvent.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { experienceId: "exp-1", eventType: "PUBLISHED" },
+        }),
+      );
+    });
+
+    it("getExperienceEvents respects limit parameter", async () => {
+      prisma.experienceEvent.findMany.mockResolvedValue([]);
+
+      await service.getExperienceEvents("exp-1", { limit: 10 });
+
+      expect(prisma.experienceEvent.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 10 }),
+      );
+    });
+  });
+
+  // =========================================================================
+  // P1.1 – Canonical ContentAsset Schema Contract Tests
+  // =========================================================================
+  describe("canonical content asset schema (P1.1)", () => {
+    it("ContentAssetType covers all 8 required asset classes", () => {
+      const assetTypes: import("@tutorputor/contracts/v1/content-studio").ContentAssetType[] =
+        [
+          "explainer",
+          "module",
+          "example_set",
+          "simulation",
+          "animation",
+          "assessment",
+          "pathway",
+          "reference_pack",
+        ];
+      expect(assetTypes).toHaveLength(8);
+      expect(new Set(assetTypes).size).toBe(8);
+    });
+
+    it("ContentAssetStatus follows draft → validating → review → approved → published → archived lifecycle", () => {
+      const statuses: import("@tutorputor/contracts/v1/content-studio").ContentAssetStatus[] =
+        ["draft", "validating", "review", "approved", "published", "archived"];
+      expect(statuses).toHaveLength(6);
+      expect(statuses[0]).toBe("draft");
+      expect(statuses[statuses.length - 1]).toBe("archived");
+    });
+
+    it("ContentBlockType covers all 12 typed block classes", () => {
+      const blockTypes: import("@tutorputor/contracts/v1/content-studio").ContentBlockType[] =
+        [
+          "text_explainer",
+          "worked_example",
+          "data_table",
+          "visual_sequence",
+          "simulation_entry",
+          "animation_entry",
+          "question_set",
+          "task",
+          "reflection",
+          "hint",
+          "tutor_prompt",
+          "evidence_capture",
+        ];
+      expect(blockTypes).toHaveLength(12);
+      expect(new Set(blockTypes).size).toBe(12);
+    });
+
+    it("ArtifactManifestType covers 4 artifact classes", () => {
+      const manifestTypes: import("@tutorputor/contracts/v1/content-studio").ArtifactManifestType[] =
+        ["worked_example", "simulation", "animation", "assessment"];
+      expect(manifestTypes).toHaveLength(4);
+    });
+
+    it("ContentAsset interface carries discovery fields", () => {
+      const asset: import("@tutorputor/contracts/v1/content-studio").ContentAsset =
+        {
+          id: "ca-1",
+          tenantId: "t-1",
+          slug: "newtons-first-law",
+          title: "Newton's First Law",
+          assetType: "explainer",
+          domain: "PHYSICS",
+          status: "draft",
+          currentVersion: 1,
+          targetGrades: ["grade_9_12"],
+          authorId: "author-1",
+          riskLevel: "LOW",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+      expect(asset.slug).toBe("newtons-first-law");
+      expect(asset.assetType).toBe("explainer");
+      expect(asset.status).toBe("draft");
+      expect(asset.targetGrades).toContain("grade_9_12");
+      expect(asset.semanticIndexStatus).toBeUndefined();
+    });
+
+    it("ContentAssetRevision captures immutable version snapshots", () => {
+      const revision: import("@tutorputor/contracts/v1/content-studio").ContentAssetRevision =
+        {
+          id: "rev-1",
+          assetId: "ca-1",
+          version: 1,
+          changeNote: "Initial creation",
+          snapshot: { title: "Newton's First Law", blocks: [] },
+          createdBy: "author-1",
+          createdAt: new Date().toISOString(),
+        };
+
+      expect(revision.version).toBe(1);
+      expect(revision.snapshot).toHaveProperty("title");
+    });
+
+    it("ContentBlock is typed with blockRef and claimRefs", () => {
+      const block: import("@tutorputor/contracts/v1/content-studio").ContentBlock =
+        {
+          id: "blk-1",
+          assetId: "ca-1",
+          blockRef: "B1",
+          blockType: "text_explainer",
+          orderIndex: 0,
+          title: "Introduction",
+          payload: { text: "Newton's First Law states..." },
+          claimRefs: ["C1"],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+      expect(block.blockType).toBe("text_explainer");
+      expect(block.claimRefs).toContain("C1");
+      expect(block.orderIndex).toBe(0);
+    });
+
+    it("ArtifactManifest supports validation state and provenance", () => {
+      const manifest: import("@tutorputor/contracts/v1/content-studio").ArtifactManifest =
+        {
+          id: "am-1",
+          assetId: "ca-1",
+          manifestType: "simulation",
+          version: "1.0.0",
+          claimRef: "C1",
+          manifest: { entities: [], steps: [], keyframes: [] },
+          isValid: true,
+          generatedBy: "ai",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+      expect(manifest.manifestType).toBe("simulation");
+      expect(manifest.isValid).toBe(true);
+      expect(manifest.generatedBy).toBe("ai");
+      expect(manifest.version).toBe("1.0.0");
+    });
+
+    it("ContentAsset carries legacy migration links", () => {
+      const asset: import("@tutorputor/contracts/v1/content-studio").ContentAsset =
+        {
+          id: "ca-2",
+          tenantId: "t-1",
+          slug: "migrated-module",
+          title: "Migrated Module",
+          assetType: "module",
+          domain: "MATH",
+          status: "published",
+          currentVersion: 3,
+          targetGrades: ["grade_6_8"],
+          authorId: "author-1",
+          riskLevel: "LOW",
+          legacyModuleId: "mod-old-1",
+          legacyExperienceId: "exp-old-1",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+      expect(asset.legacyModuleId).toBe("mod-old-1");
+      expect(asset.legacyExperienceId).toBe("exp-old-1");
+      expect(asset.assetType).toBe("module");
     });
   });
 });

@@ -77,6 +77,41 @@ export interface SearchResponse {
 export class SearchServiceImpl {
   constructor(private readonly prisma: PrismaClient) {}
 
+  private normalizeTerms(value: string): string[] {
+    return value
+      .toLowerCase()
+      .split(/\s+/)
+      .map((term) => term.trim())
+      .filter(Boolean);
+  }
+
+  private semanticScore(
+    fields: Array<string | null | undefined>,
+    query: string,
+  ): number {
+    const queryTerms = this.normalizeTerms(query);
+    if (queryTerms.length === 0) return 0;
+
+    const corpus = fields
+      .filter(
+        (field): field is string =>
+          typeof field === "string" && field.trim().length > 0,
+      )
+      .join(" ")
+      .toLowerCase();
+
+    if (!corpus) return 0;
+
+    const corpusTerms = new Set(this.normalizeTerms(corpus));
+    const matchedTerms = queryTerms.filter((term) =>
+      corpusTerms.has(term),
+    ).length;
+    const phraseBonus = corpus.includes(query.toLowerCase()) ? 0.35 : 0;
+    const coverageScore = matchedTerms / queryTerms.length;
+
+    return coverageScore + phraseBonus;
+  }
+
   private matchScore(text: string, query: string): number {
     const lowerText = text.toLowerCase();
     const lowerQuery = query.toLowerCase();
@@ -195,8 +230,25 @@ export class SearchServiceImpl {
           title: m.title,
           description: m.description ?? "",
           thumbnail: undefined,
-          metadata: { price: 0 },
-          score: this.matchScore(`${m.title} ${m.description}`, query),
+          metadata: {
+            price: 0,
+            slug: m.slug,
+            category: m.category,
+            difficulty: m.difficulty,
+          },
+          score:
+            this.matchScore(`${m.title} ${m.description}`, query) * 0.65 +
+            this.semanticScore(
+              [
+                m.title,
+                m.description,
+                m.slug,
+                m.category,
+                ...(Array.isArray(m.tags) ? m.tags : []),
+              ],
+              query,
+            ) *
+              0.35,
           highlights: [this.createHighlight(m.description ?? m.title, query)],
         })),
       );
@@ -288,13 +340,13 @@ export class SearchServiceImpl {
         title: { contains: query },
       },
       take: limit,
-      select: { id: true, title: true },
+      select: { id: true, slug: true, title: true },
     });
 
     return modules.map((m: any) => ({
       text: m.title,
       type: "module" as const,
-      id: m.id,
+      id: m.slug || m.id,
     }));
   }
 
@@ -338,8 +390,11 @@ export class SearchServiceImpl {
       title: m.title,
       description: m.description ?? "",
       thumbnail: undefined,
-      metadata: { price: 0 },
-      score: this.matchScore(m.title, module.title),
+      metadata: { price: 0, slug: m.slug },
+      score:
+        this.matchScore(m.title, module.title) * 0.7 +
+        this.semanticScore([m.title, m.description, m.slug], module.title) *
+          0.3,
       highlights: [],
     }));
   }

@@ -19,6 +19,10 @@ import {
     Sparkles,
     FileText
 } from 'lucide-react';
+import {
+    contentStudioApi,
+    type AdminContentAsset,
+} from '../../services/contentStudioApi';
 
 // Types
 interface LearningExperience {
@@ -40,6 +44,27 @@ interface LearningExperience {
     updatedAt: Date;
 }
 
+function mapAssetToExperience(asset: AdminContentAsset): LearningExperience {
+    return {
+        id: asset.legacyExperienceId ?? asset.id,
+        tenantId: 'default',
+        slug: asset.id,
+        title: asset.title,
+        description: '',
+        status: asset.status,
+        version: asset.currentVersion,
+        gradeAdaptation: {
+            gradeRange: asset.targetGrades[0] ?? '',
+        },
+        claims: [],
+        estimatedTimeMinutes: 0,
+        keywords: [],
+        authorId: asset.authorId,
+        createdAt: new Date(asset.updatedAt),
+        updatedAt: new Date(asset.updatedAt),
+    };
+}
+
 interface ExperienceListProps {
     onSelect: (experience: LearningExperience) => void;
     onCreate: () => void;
@@ -47,9 +72,7 @@ interface ExperienceListProps {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
     draft: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-300' },
-    validating: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300' },
     review: { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-300' },
-    approved: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300' },
     published: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300' },
     archived: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-700 dark:text-gray-300' },
 };
@@ -76,15 +99,18 @@ export function ExperienceList({ onSelect, onCreate }: ExperienceListProps) {
         async function fetchExperiences() {
             setIsLoading(true);
             try {
-                const params = new URLSearchParams({ tenantId: 'default' });
-                if (statusFilter) params.set('status', statusFilter);
-                if (gradeFilter) params.set('gradeRange', gradeFilter);
+                const assetLibrary = await contentStudioApi.getContentAssets({
+                    assetType: 'explainer',
+                    status: statusFilter as AdminContentAsset['status'] | undefined,
+                    limit: 100,
+                });
 
-                const response = await fetch(`/api/content-studio/experiences?${params}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setExperiences(data.experiences || []);
-                }
+                const nextExperiences = assetLibrary.items
+                    .filter((asset) => Boolean(asset.legacyExperienceId))
+                    .filter((asset) => !gradeFilter || asset.targetGrades.includes(gradeFilter))
+                    .map(mapAssetToExperience);
+
+                setExperiences(nextExperiences);
             } catch (error) {
                 console.error('Failed to fetch experiences:', error);
             } finally {

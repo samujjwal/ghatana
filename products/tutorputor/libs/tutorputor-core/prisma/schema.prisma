@@ -2026,12 +2026,6 @@ enum ScaffoldingLevel {
   LOW
 }
 
-enum RiskLevel {
-  LOW
-  MEDIUM
-  HIGH
-}
-
 model LearningExperience {
   id       String @id @default(cuid())
   tenantId String
@@ -2277,7 +2271,13 @@ enum ExperienceEventType {
   VALIDATED
   PUBLISHED
   UNPUBLISHED
+  ARCHIVED
   CONTENT_CHANGED
+  CLAIMS_GENERATED
+  GRADE_ADAPTED
+  REFINED
+  REVIEW_SUBMITTED
+  REVIEW_DECISION
   SIMULATION_LINKED
   SIMULATION_UNLINKED
   ANALYTICS_VIEWED
@@ -2908,4 +2908,613 @@ model AutomationRule {
 
   @@index([tenantId, experienceId])
   @@index([tenantId, enabled])
+}
+
+// =============================================================================
+// Canonical Content Asset Model (P1.1)
+// =============================================================================
+
+enum ContentAssetType {
+  EXPLAINER // Learning experience / explainer content
+  MODULE // Curriculum module
+  EXAMPLE_SET // Collection of worked examples
+  SIMULATION // Interactive simulation
+  ANIMATION // Visual animation sequence
+  ASSESSMENT // Quiz / assessment instrument
+  PATHWAY // Learning pathway / sequence
+  REFERENCE_PACK // Supplementary reference material
+}
+
+enum ContentAssetStatus {
+  DRAFT // Initial authoring state
+  VALIDATING // Validation in progress
+  REVIEW // Awaiting human review
+  APPROVED // Review passed, ready to publish
+  PUBLISHED // Live and discoverable
+  ARCHIVED // Retired from discovery
+}
+
+enum ContentBlockType {
+  TEXT_EXPLAINER // Prose explanation block
+  WORKED_EXAMPLE // Single worked example
+  DATA_TABLE // Tabular data block
+  VISUAL_SEQUENCE // Image or diagram sequence
+  SIMULATION_ENTRY // Embedded simulation reference
+  ANIMATION_ENTRY // Embedded animation reference
+  QUESTION_SET // Assessment question group
+  TASK // Learner task / activity
+  REFLECTION // Reflective prompt
+  HINT // Scaffolding hint
+  TUTOR_PROMPT // AI tutor conversation prompt
+  EVIDENCE_CAPTURE // Evidence collection block
+}
+
+enum ArtifactManifestType {
+  WORKED_EXAMPLE // Manifest for worked examples
+  SIMULATION // Manifest for interactive simulations
+  ANIMATION // Manifest for animations
+  ASSESSMENT // Manifest for assessment instruments
+}
+
+model ContentAsset {
+  id       String @id @default(cuid())
+  tenantId String
+
+  // Identity
+  slug       String
+  title      String
+  assetType  ContentAssetType
+  domain     ModuleDomain
+  conceptId  String?
+
+  // Current state
+  status          ContentAssetStatus @default(DRAFT)
+  currentVersion  Int                @default(1)
+  qualityScore    Float?             // Aggregate quality score (0-1)
+  reviewState     String?            // Current review disposition (JSON)
+
+  // Discovery
+  semanticIndexStatus       String?  // "pending" | "indexed" | "stale"
+  recommendationStatus      String?  // "pending" | "computed" | "stale"
+  searchableText            String?  // Denormalized text for full-text search
+  tags                      Json?    // string[] for categorization
+
+  // Grade & difficulty
+  targetGrades      Json             // GradeRange[]
+  difficultyLevel   String?          // Freeform difficulty descriptor
+
+  // Provenance
+  authorId     String
+  lastEditedBy String?
+  publishedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // AI metadata
+  promptHash      String?
+  riskLevel       RiskLevel @default(LOW)
+  confidenceScore Float?
+
+  // Legacy migration links (nullable, for backfill only)
+  legacyModuleId     String? @unique
+  legacyExperienceId String? @unique
+
+  // Relations
+  revisions          ContentAssetRevision[]
+  blocks             ContentBlock[]
+  artifactManifests  ArtifactManifest[]
+  semanticChunks     SemanticChunk[]
+  sourceEdges        RecommendationEdge[] @relation("sourceEdges")
+  targetEdges        RecommendationEdge[] @relation("targetEdges")
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, assetType, status])
+  @@index([tenantId, domain])
+  @@index([tenantId, status])
+  @@index([authorId])
+  @@index([tenantId, semanticIndexStatus])
+  @@index([legacyModuleId])
+  @@index([legacyExperienceId])
+}
+
+model ContentAssetRevision {
+  id      String @id @default(cuid())
+  assetId String
+  asset   ContentAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  // Version tracking
+  version     Int
+  changeNote  String?
+  changeDiff  Json?          // Structured diff from previous version
+  snapshot    Json           // Full content snapshot at this version
+
+  // Quality at revision time
+  qualityScore    Float?
+  validationId    String?    // Reference to validation record
+
+  // Provenance
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@unique([assetId, version])
+  @@index([assetId])
+}
+
+model ContentBlock {
+  id      String @id @default(cuid())
+  assetId String
+  asset   ContentAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  // Block identity
+  blockRef   String           // "B1", "B2", etc.
+  blockType  ContentBlockType
+  orderIndex Int
+
+  // Content
+  title   String?
+  payload Json               // Block-type-specific content
+
+  // Relations to evidence & claims
+  claimRefs    Json?         // string[] linking to claim references
+  evidenceRefs Json?         // string[] linking to evidence references
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([assetId, blockRef])
+  @@index([assetId, orderIndex])
+  @@index([assetId, blockType])
+}
+
+model ArtifactManifest {
+  id      String @id @default(cuid())
+  assetId String
+  asset   ContentAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  // Manifest identity
+  manifestType ArtifactManifestType
+  version      String                // Semantic version of the manifest
+  claimRef     String?               // Which claim this artifact serves
+
+  // Content
+  manifest     Json                  // Full artifact manifest payload
+  schema       String?               // Schema version for validation
+
+  // Quality & validation
+  isValid      Boolean  @default(false)
+  validationErrors Json?             // ValidationIssue[] from last check
+
+  // Provenance
+  generatedBy  String?              // "ai" | "human" | "hybrid"
+  generationId String?              // Link to generation request
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([assetId, manifestType])
+  @@index([assetId, claimRef])
+}
+
+// =============================================================================
+// P2.1 – Semantic Chunking & Embedding Pipeline
+// =============================================================================
+
+enum ChunkSource {
+  BLOCK       // Extracted from ContentBlock payload
+  CLAIM       // Extracted from a learning claim
+  MANIFEST    // Extracted from an artifact manifest
+  METADATA    // Extracted from asset metadata (title, tags, etc.)
+}
+
+enum EmbeddingStatus {
+  PENDING     // Chunk created, embedding not yet generated
+  PROCESSING  // Embedding generation in progress (Java service)
+  READY       // Embedding vector available
+  FAILED      // Embedding generation failed
+  STALE       // Source content changed, re-embedding required
+}
+
+model SemanticChunk {
+  id       String @id @default(cuid())
+  assetId  String
+  asset    ContentAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  // Chunk identity
+  chunkRef    String      // Deterministic ref e.g. "blk-intro:0", "claim-C1"
+  source      ChunkSource
+  sourceRef   String      // ID of the source (blockId, claimId, manifestId)
+  sequenceIdx Int         // Position within the source for ordered chunks
+
+  // Text content
+  text         String     // Plain-text chunk content
+  tokenCount   Int        // Approximate token count
+  contentHash  String     // SHA-256 of text, for dedup/staleness detection
+
+  // Embedding state
+  embeddingStatus EmbeddingStatus @default(PENDING)
+
+  // Optional metadata
+  domain    String?
+  claimRefs Json?         // string[] of claim refs covered
+  tags      Json?         // string[] tags for faceted retrieval
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Embedding relation
+  embedding EmbeddingVector?
+
+  @@unique([assetId, chunkRef])
+  @@index([assetId, source])
+  @@index([assetId, embeddingStatus])
+  @@index([contentHash])
+}
+
+model EmbeddingVector {
+  id      String @id @default(cuid())
+  chunkId String @unique
+  chunk   SemanticChunk @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+
+  // Vector data
+  vector     Bytes         // Raw embedding vector (float32 array as binary)
+  dimensions Int           // Vector dimensionality (e.g., 1536 for ada-002)
+  model      String        // Model used (e.g., "text-embedding-ada-002")
+
+  // Quality metadata
+  generatedAt DateTime @default(now())
+  generationMs Int?        // Time taken to generate in ms
+  jobId       String?      // Java processing job reference
+
+  @@index([chunkId])
+}
+
+// =============================================================================
+// P2.3 — Recommendation Edges
+// =============================================================================
+
+enum RecommendationEdgeType {
+  PREREQUISITE
+  FOLLOW_UP
+  RELATED
+  ALTERNATIVE
+  DEEPER_DIVE
+}
+
+enum RecommendationSource {
+  RULE_BASED
+  SEMANTIC
+  OUTCOME_AWARE
+  MANUAL
+}
+
+model RecommendationEdge {
+  id String @id @default(cuid())
+
+  // Source → Target direction
+  sourceAssetId String
+  sourceAsset   ContentAsset @relation("sourceEdges", fields: [sourceAssetId], references: [id], onDelete: Cascade)
+  targetAssetId String
+  targetAsset   ContentAsset @relation("targetEdges", fields: [targetAssetId], references: [id], onDelete: Cascade)
+
+  // Edge properties
+  edgeType    RecommendationEdgeType
+  source      RecommendationSource @default(RULE_BASED)
+  weight      Float                @default(1.0)  // Ranking weight [0..1]
+  confidence  Float?                              // Confidence score
+  reason      String?                             // Human-readable explanation
+  metadata    Json?                               // Extra context
+
+  // Lifecycle
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sourceAssetId, targetAssetId, edgeType])
+  @@index([sourceAssetId, edgeType])
+  @@index([targetAssetId, edgeType])
+  @@index([sourceAssetId, weight])
+}
+
+// =============================================================================
+// P3.1 — Generation Planner & Request Model
+// =============================================================================
+
+enum GenerationRequestStatus {
+  DRAFT
+  PLANNING
+  PLANNED
+  EXECUTING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum GenerationJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum GenerationJobType {
+  CLAIM
+  EXPLAINER
+  WORKED_EXAMPLE
+  SIMULATION
+  ANIMATION
+  ASSESSMENT
+  EVALUATION
+}
+
+enum ReviewPath {
+  AUTO_PUBLISH
+  HUMAN_REVIEW
+  EXPERT_REVIEW
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model GenerationRequest {
+  id       String @id @default(cuid())
+  tenantId String
+
+  // Request metadata
+  title       String
+  description String?
+  domain      String
+  conceptId   String?
+  targetGrades Json?       // String[]
+  requestedBy  String      // authorId
+
+  // Planning output
+  status        GenerationRequestStatus @default(DRAFT)
+  plannedAssets Json?       // Array of planned asset descriptors
+  artifactNeeds Json?       // { explainers: N, examples: N, simulations: N, ... }
+  riskLevel     RiskLevel   @default(LOW)
+  riskFactors   Json?       // String[] of risk reasons
+  reviewPath    ReviewPath  @default(HUMAN_REVIEW)
+  estimatedCost Json?       // { tokens: N, embeddingCalls: N, ... }
+
+  // Execution tracking
+  totalJobs     Int @default(0)
+  completedJobs Int @default(0)
+  failedJobs    Int @default(0)
+
+  // Lifecycle
+  plannedAt   DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  jobs GenerationJob[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, requestedBy])
+  @@index([tenantId, domain])
+}
+
+model GenerationJob {
+  id        String @id @default(cuid())
+  requestId String
+  request   GenerationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  // Job specification
+  jobType     GenerationJobType
+  targetRef   String?          // Reference to planned asset/artifact
+  inputPrompt String?          // Generation prompt or config
+  parameters  Json?            // Job-specific parameters
+
+  // Status
+  status     GenerationJobStatus @default(PENDING)
+  progress   Int                 @default(0) // 0-100
+
+  // Output
+  outputAssetId String?         // Resulting ContentAsset id
+  outputData    Json?            // Raw generation output
+  diagnostics   Json?            // Warnings, quality notes
+
+  // Error handling
+  errorMessage String?
+  retryCount   Int    @default(0)
+  maxRetries   Int    @default(3)
+
+  // Timing
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([requestId, status])
+  @@index([requestId, jobType])
+}
+
+// =============================================================================
+// P3.3 – Evaluation & Guardrail Scorecards
+// =============================================================================
+
+enum EvaluationStatus {
+  PENDING
+  RUNNING
+  PASSED
+  FAILED
+  SKIPPED
+}
+
+enum PublishRecommendation {
+  AUTO_PUBLISH
+  MANUAL_REVIEW
+  BLOCK
+}
+
+model EvaluationRecord {
+  id       String @id @default(cuid())
+  tenantId String
+
+  // Links
+  assetId           String?  // ContentAsset id if already created
+  generationJobId   String?  // GenerationJob id
+  generationRequestId String?
+
+  // Scores per dimension (0.0 – 1.0)
+  coherenceScore    Float?
+  completenessScore Float?
+  safetyScore       Float?
+  accessibilityScore Float?
+  manifestValidityScore Float?
+
+  // Aggregate
+  overallScore   Float?
+  status         EvaluationStatus     @default(PENDING)
+  recommendation PublishRecommendation @default(MANUAL_REVIEW)
+
+  // Findings
+  issues      Json?  // EvaluationIssue[]
+  diagnostics Json?
+
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, assetId])
+  @@index([generationJobId])
+  @@index([generationRequestId])
+}
+
+// =============================================================================
+// P3.4 – Generation Review Decision
+// =============================================================================
+
+enum GenerationReviewDecisionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REGENERATION_REQUESTED
+}
+
+model GenerationReviewDecision {
+  id        String @id @default(cuid())
+  tenantId  String
+
+  requestId String
+
+  // Decision
+  status      GenerationReviewDecisionStatus @default(PENDING)
+  reviewedBy  String?    // userId of reviewer
+  decisionNote String?
+
+  // Regeneration
+  regenerateJobIds Json?  // String[] job ids to regenerate
+
+  reviewedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId, requestId])
+  @@index([tenantId, status])
+}
+
+// =============================================================================
+// P4.1 – Explorer Telemetry Events
+// =============================================================================
+
+enum ExplorerEventType {
+  IMPRESSION
+  CLICK
+  QUERY_REFORMULATION
+  ASSET_START
+  ASSET_COMPLETE
+  NEXT_STEP_SELECT
+  RANKING_FEEDBACK
+}
+
+model ExplorerEvent {
+  id       String @id @default(cuid())
+  tenantId String
+  userId   String?
+  sessionId String?
+
+  eventType ExplorerEventType
+
+  // Context
+  query       String?
+  assetId     String?
+  assetType   String?
+  position    Int?     // rank position in results
+  score       Float?   // ranking score at time of event
+
+  // Feedback
+  feedbackLabel String?  // "relevant" | "not_relevant" | "helpful" | etc.
+  feedbackScore Float?
+
+  // Raw
+  metadata Json?
+
+  occurredAt DateTime @default(now())
+
+  @@index([tenantId, eventType])
+  @@index([tenantId, assetId])
+  @@index([tenantId, userId])
+  @@index([occurredAt])
+}
+
+// =============================================================================
+// P4.3 – Regeneration Candidates
+// =============================================================================
+
+enum RegenerationTrigger {
+  POOR_DISCOVERY_PERFORMANCE
+  POOR_LEARNING_OUTCOMES
+  MISCONCEPTION_PATTERN
+  STALE_CURRICULUM
+  SAFETY_CONCERN
+  LOW_EVALUATION_SCORE
+  MANUAL_FLAGGED
+}
+
+enum RegenerationCandidateStatus {
+  OPEN
+  QUEUED
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
+model RegenerationCandidate {
+  id       String @id @default(cuid())
+  tenantId String
+
+  assetId   String
+  assetType String?
+
+  trigger   RegenerationTrigger
+  severity  RiskLevel @default(MEDIUM)
+
+  // Evidence
+  reason      String
+  evidence    Json?  // supporting telemetry / eval data
+  priority    Int    @default(50)  // 0-100, higher wins
+
+  status    RegenerationCandidateStatus @default(OPEN)
+
+  // Action taken
+  generationRequestId String?
+  resolvedBy  String?
+  resolvedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, assetId])
+  @@index([tenantId, trigger])
 }

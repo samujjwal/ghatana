@@ -7,23 +7,13 @@
 
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
+import {
+    contentStudioApi,
+    type AdminExperienceAnalytics,
+    type AdminExperienceTimelineEvent,
+} from '../../services/contentStudioApi';
 
-interface ExperienceAnalytics {
-    experienceId: string;
-    viewCount: number;
-    completionCount: number;
-    completionRate: number;
-    avgTimeMinutes: number;
-    dropOffRate: number;
-    simulationStarts: number;
-    simulationAborts: number;
-    simulationErrors: number;
-    hasEngagementDrift: boolean;
-    hasQualityIssues: boolean;
-    trends7d?: TrendData;
-    driftSignals: DriftSignal[];
-    recommendedActions: RecommendedAction[];
-}
+type ExperienceAnalytics = AdminExperienceAnalytics;
 
 interface TrendData {
     dates: string[];
@@ -70,11 +60,7 @@ export function AnalyticsDashboard({
             setError(null);
 
             try {
-                const response = await fetch(`/api/content-studio/experiences/${experienceId}/analytics`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch analytics');
-                }
-                const data = await response.json();
+                const data = await contentStudioApi.getExperienceAnalytics(experienceId);
                 setAnalytics(data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load analytics');
@@ -209,11 +195,11 @@ export function AnalyticsDashboard({
             )}
 
             {/* Drift Signals */}
-            {analytics.driftSignals.length > 0 && (
+            {(analytics.driftSignals ?? []).length > 0 && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
                     <h4 className="mb-4 text-sm font-medium text-amber-800">Drift Signals Detected</h4>
                     <div className="space-y-3">
-                        {analytics.driftSignals.map((signal, idx) => (
+                        {(analytics.driftSignals ?? []).map((signal, idx) => (
                             <div key={idx} className="rounded-md bg-white p-3">
                                 <div className="flex items-center justify-between">
                                     <span className="font-medium text-gray-900">
@@ -236,11 +222,11 @@ export function AnalyticsDashboard({
             )}
 
             {/* Recommended Actions */}
-            {analytics.recommendedActions.length > 0 && (
+            {(analytics.recommendedActions ?? []).length > 0 && (
                 <div className="rounded-lg border border-gray-200 bg-white p-6">
                     <h4 className="mb-4 text-sm font-medium text-gray-700">Recommended Actions</h4>
                     <div className="space-y-2">
-                        {analytics.recommendedActions.map((action) => (
+                        {(analytics.recommendedActions ?? []).map((action) => (
                             <div key={action.id} className="flex items-center justify-between rounded-md bg-gray-50 p-3">
                                 <div>
                                     <span className="font-medium text-gray-900">{action.description}</span>
@@ -254,6 +240,55 @@ export function AnalyticsDashboard({
                                     </button>
                                 )}
                             </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {analytics.latestValidation && (
+                <div className="rounded-lg border border-gray-200 bg-white p-6">
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <h4 className="text-sm font-medium text-gray-700">Latest Validation</h4>
+                            <p className="mt-1 text-xs text-gray-500">
+                                {new Date(analytics.latestValidation.validatedAt).toLocaleString()}
+                            </p>
+                        </div>
+                        <span className={clsx(
+                            'rounded-full px-2 py-1 text-xs font-medium',
+                            analytics.latestValidation.status === 'PASS' && 'bg-green-100 text-green-800',
+                            analytics.latestValidation.status === 'WARN' && 'bg-amber-100 text-amber-800',
+                            analytics.latestValidation.status === 'FAIL' && 'bg-red-100 text-red-800'
+                        )}>
+                            {analytics.latestValidation.status}
+                        </span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
+                        <ValidationScore label="Authority" value={analytics.latestValidation.authorityScore} />
+                        <ValidationScore label="Accuracy" value={analytics.latestValidation.accuracyScore} />
+                        <ValidationScore label="Usefulness" value={analytics.latestValidation.usefulnessScore} />
+                        <ValidationScore label="Safety" value={analytics.latestValidation.harmlessnessScore} />
+                        <ValidationScore label="Accessibility" value={analytics.latestValidation.accessibilityScore} />
+                    </div>
+                    {analytics.latestValidation.suggestions.length > 0 && (
+                        <div className="mt-4">
+                            <h5 className="text-xs font-medium uppercase tracking-wide text-gray-500">Suggestions</h5>
+                            <ul className="mt-2 space-y-1 text-sm text-gray-600">
+                                {analytics.latestValidation.suggestions.map((suggestion) => (
+                                    <li key={suggestion}>• {suggestion}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {analytics.recentEvents.length > 0 && (
+                <div className="rounded-lg border border-gray-200 bg-white p-6">
+                    <h4 className="mb-4 text-sm font-medium text-gray-700">Recent Authoring Activity</h4>
+                    <div className="space-y-3">
+                        {analytics.recentEvents.map((event) => (
+                            <TimelineEventCard key={event.id} event={event} />
                         ))}
                     </div>
                 </div>
@@ -293,6 +328,46 @@ function MetricCard({ label, value, trend }: MetricCardProps) {
                     </span>
                 )}
             </div>
+        </div>
+    );
+}
+
+function ValidationScore({ label, value }: { label: string; value?: number }) {
+    return (
+        <div className="rounded-md bg-gray-50 p-3">
+            <div className="text-xs text-gray-500">{label}</div>
+            <div className="mt-1 text-lg font-semibold text-gray-900">
+                {typeof value === 'number' ? `${Math.round(value)}` : '—'}
+            </div>
+        </div>
+    );
+}
+
+function TimelineEventCard({ event }: { event: AdminExperienceTimelineEvent }) {
+    return (
+        <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+            <div className="flex items-center justify-between gap-4">
+                <div>
+                    <div className="text-sm font-medium text-gray-900">
+                        {event.type.replace(/_/g, ' ')}
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500">
+                        Actor: {event.actorId} • {new Date(event.createdAt).toLocaleString()}
+                    </div>
+                </div>
+            </div>
+            {event.metadata && Object.keys(event.metadata).length > 0 && (
+                <div className="mt-2 text-xs text-gray-600">
+                    {Object.entries(event.metadata).map(([key, value]) => (
+                        <div key={key}>
+                            <span className="font-medium text-gray-700">{key}:</span>{' '}
+                            {typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+                                ? String(value)
+                                : JSON.stringify(value)}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

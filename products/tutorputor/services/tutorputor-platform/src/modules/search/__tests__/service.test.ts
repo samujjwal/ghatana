@@ -1,67 +1,87 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// ---------------------------------------------------------------------------
-// We test the search module at the route/service layer using the module index
-// ---------------------------------------------------------------------------
-describe("Search Module", () => {
-    let prisma: any;
+import { SearchServiceImpl } from "../service.js";
 
-    beforeEach(() => {
-        prisma = {
-            learningExperience: {
-                findMany: vi.fn().mockResolvedValue([
-                    {
-                        id: "exp-1",
-                        tenantId: "tenant-1",
-                        title: "Physics Basics",
-                        description: "Intro to physics",
-                        status: "PUBLISHED",
-                        gradeRange: "GRADE_6_8",
-                        updatedAt: new Date("2024-01-01"),
-                        claims: [],
-                    },
-                ]),
-                count: vi.fn().mockResolvedValue(1),
-            },
-            user: {
-                findMany: vi.fn().mockResolvedValue([]),
-                count: vi.fn().mockResolvedValue(0),
-            },
-            module: {
-                findMany: vi.fn().mockResolvedValue([]),
-                count: vi.fn().mockResolvedValue(0),
-            },
-        };
+describe("SearchServiceImpl", () => {
+  let prisma: any;
+  let service: SearchServiceImpl;
+
+  beforeEach(() => {
+    prisma = {
+      module: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "module-1",
+            slug: "physics-basics",
+            title: "Physics Basics",
+            description: "Intro to forces and motion",
+            category: "science",
+            difficulty: "beginner",
+            tags: ["physics", "motion"],
+          },
+        ]),
+      },
+      learningPath: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      thread: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      $queryRaw: vi.fn().mockResolvedValue([{ "1": 1 }]),
+    };
+
+    service = new SearchServiceImpl(prisma);
+  });
+
+  it("can be imported without errors", async () => {
+    const mod = await import("../../search/index.js").catch(() => null);
+    expect(mod).not.toBeNull();
+  });
+
+  it("returns module results with slug metadata for learner navigation", async () => {
+    const response = await service.search({
+      tenantId: "tenant-1" as any,
+      query: "physics basics",
     });
 
-    it("can be imported without errors", async () => {
-        const mod = await import("../../search/index.js").catch(() => null);
-        expect(mod).not.toBeNull();
+    expect(response.results).toHaveLength(1);
+    expect(response.results[0]).toMatchObject({
+      id: "module-1",
+      type: "module",
+      title: "Physics Basics",
+      metadata: expect.objectContaining({
+        slug: "physics-basics",
+        category: "science",
+      }),
+    });
+    expect(response.results[0].score).toBeGreaterThan(0);
+  });
+
+  it("uses the slug as autocomplete identifier when present", async () => {
+    const suggestions = await service.autocomplete(
+      "tenant-1" as any,
+      "physics",
+      5,
+    );
+
+    expect(suggestions).toEqual([
+      {
+        text: "Physics Basics",
+        type: "module",
+        id: "physics-basics",
+      },
+    ]);
+  });
+
+  it("returns empty results when no modules match", async () => {
+    prisma.module.findMany.mockResolvedValue([]);
+
+    const response = await service.search({
+      tenantId: "tenant-1" as any,
+      query: "nonexistent",
     });
 
-    describe("Experience search", () => {
-        it("returns experiences matching keyword", async () => {
-            const results = await prisma.learningExperience.findMany({
-                where: {
-                    tenantId: "tenant-1",
-                    OR: [
-                        { title: { contains: "Physics", mode: "insensitive" } },
-                        { description: { contains: "Physics", mode: "insensitive" } },
-                    ],
-                },
-            });
-            expect(results).toHaveLength(1);
-            expect(results[0].title).toContain("Physics");
-        });
-    });
-
-    describe("Empty results", () => {
-        it("returns empty array when no matches", async () => {
-            prisma.learningExperience.findMany.mockResolvedValue([]);
-            const results = await prisma.learningExperience.findMany({
-                where: { title: { contains: "nonexistent" } },
-            });
-            expect(results).toHaveLength(0);
-        });
-    });
+    expect(response.results).toEqual([]);
+    expect(response.total).toBe(0);
+  });
 });

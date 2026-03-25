@@ -122,9 +122,8 @@ export function useApproveContent() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await studioFetch(`/review-queue/${id}/decision`, {
+      await studioFetch(`/experiences/${id}/publish`, {
         method: "POST",
-        body: JSON.stringify({ decision: "approve" }),
       });
     },
     onSuccess: () => {
@@ -140,9 +139,9 @@ export function useRejectContent() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
-      await studioFetch(`/review-queue/${id}/decision`, {
+      await studioFetch(`/experiences/${id}/unpublish`, {
         method: "POST",
-        body: JSON.stringify({ decision: "reject", reason }),
+        body: JSON.stringify(reason ? { reason } : {}),
       });
     },
     onSuccess: () => {

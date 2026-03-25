@@ -11,7 +11,6 @@ import type { RouteObject } from 'react-router-dom';
 
 const AnimationEditor = lazy(() => import('../pages/AnimationEditor.tsx'));
 const SimulationStudio = lazy(() => import('../pages/SimulationStudio.tsx'));
-const ContentExplorer = lazy(() => import('../pages/ContentExplorer.tsx'));
 const AssessmentBuilder = lazy(() => import('../pages/AssessmentBuilder.tsx'));
 const AnalyticsDashboard = lazy(() => import('../pages/AnalyticsDashboard.tsx'));
 const LearningPathDesigner = lazy(() => import('../pages/LearningPathDesigner.tsx'));
@@ -39,14 +38,6 @@ export const lazyRoutes: RouteObject[] = [
   {
     path: '/simulations/studio/:id?',
     Component: SimulationStudio,
-  },
-  {
-    path: '/content',
-    Component: ContentExplorer,
-  },
-  {
-    path: '/content/explore',
-    lazy: () => import('../pages/ContentExplore.tsx'),
   },
   {
     path: '/assessments',
@@ -86,7 +77,7 @@ export const prefetchConfig = {
   idlePrefetch: [
     '/animations',
     '/simulations',
-    '/content',
+    '/search',
   ],
   // Routes to prefetch on hover (with delay)
   hoverPrefetch: {

@@ -7,6 +7,15 @@ import { CMSServiceImpl } from "./cms/service.js";
 import { registerContentRoutes } from "./routes.js";
 import { ContentServiceImpl } from "./service.js";
 import { createAnimationContentIntegration } from "./animation-integration.js";
+import { registerContentAssetRoutes } from "./asset/routes.js";
+import { registerSemanticRoutes } from "./semantic/routes.js";
+import { registerRecommendationRoutes } from "./recommendation/routes.js";
+import { registerGenerationRoutes } from "./generation/routes.js";
+import { registerEvaluationRoutes } from "./evaluation/routes.js";
+import { registerReviewRoutes } from "./review/routes.js";
+import { registerTelemetryRoutes } from "./telemetry/routes.js";
+import { registerCandidateRoutes } from "./candidates/routes.js";
+import { registerPublishRoutes } from "./publish/routes.js";
 
 /**
  * Content module - consolidates:
@@ -54,6 +63,33 @@ export const contentModule: FastifyPluginAsync = async (app) => {
 
   // Register CMS routes
   registerCMSRoutes(app, { cmsService });
+
+  // Register Content Asset read routes
+  registerContentAssetRoutes(app, { prisma });
+
+  // Register Semantic Indexing routes
+  registerSemanticRoutes(app, { prisma });
+
+  // Register Recommendation routes
+  registerRecommendationRoutes(app, { prisma });
+
+  // Register Generation Planner routes
+  registerGenerationRoutes(app, { prisma });
+
+  // Register Evaluation & Guardrail Scorecard routes (P3.3)
+  registerEvaluationRoutes(app, { prisma });
+
+  // Register Admin Review & Regeneration Console routes (P3.4)
+  registerReviewRoutes(app, { prisma });
+
+  // Register Explorer Telemetry routes (P4.1)
+  registerTelemetryRoutes(app, { prisma });
+
+  // Register Regeneration Candidate routes (P4.3)
+  registerCandidateRoutes(app, { prisma });
+
+  // Register Publish & Reindex routes (P4.4)
+  registerPublishRoutes(app, { prisma });
 
   app.log.info("✅ Content module routes registered");
 };

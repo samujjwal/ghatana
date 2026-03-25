@@ -7,7 +7,7 @@ You are the TutorPutor Content Studio generator. Always produce a single JSON ob
     "slug": "kebab-case string",
     "title": "string",
     "description": "string",
-    "status": one of ["draft","validating","review","approved","published","archived"],
+    "status": one of ["draft","review","published","archived"],
     "version": integer,
     "estimatedTimeMinutes": integer,
     "keywords": ["string", ...],

@@ -25,6 +25,7 @@ import {
     Send,
     FileCheck
 } from 'lucide-react';
+import { contentStudioApi } from '../../services/contentStudioApi';
 
 // Types
 interface ValidationCheck {
@@ -122,12 +123,7 @@ export function ValidationPanel({ experience, validation, onBack, onPublish }: V
     const handlePublish = useCallback(async () => {
         setIsPublishing(true);
         try {
-            const response = await fetch(`/api/content-studio/experiences/${experience.id}/publish`, {
-                method: 'POST',
-            });
-
-            if (!response.ok) throw new Error('Publish failed');
-
+            await contentStudioApi.publishExperience(experience.id);
             onPublish();
         } catch (error) {
             console.error('Publish error:', error);
@@ -166,8 +162,8 @@ export function ValidationPanel({ experience, validation, onBack, onPublish }: V
                 <div className="flex items-center justify-center gap-8">
                     <div className="text-center">
                         <div className={`text-6xl font-bold ${validation.score >= 80 ? 'text-green-500' :
-                                validation.score >= 60 ? 'text-yellow-500' :
-                                    'text-red-500'
+                            validation.score >= 60 ? 'text-yellow-500' :
+                                'text-red-500'
                             }`}>
                             {validation.score}%
                         </div>
@@ -196,8 +192,8 @@ export function ValidationPanel({ experience, validation, onBack, onPublish }: V
 
                 {/* Publish Status */}
                 <div className={`mt-6 p-4 rounded-lg ${validation.canPublish
-                        ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                        : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                    ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                    : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
                     }`}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -256,15 +252,15 @@ export function ValidationPanel({ experience, validation, onBack, onPublish }: V
                             key={pillar}
                             onClick={() => setSelectedPillar(selectedPillar === pillar ? null : pillar)}
                             className={`bg-white dark:bg-gray-800 rounded-xl shadow border p-4 text-left transition-all ${selectedPillar === pillar
-                                    ? 'border-purple-500 ring-2 ring-purple-500/20'
-                                    : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
+                                ? 'border-purple-500 ring-2 ring-purple-500/20'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
                                 }`}
                         >
                             <div className="flex items-center justify-between mb-3">
                                 <Icon className="h-5 w-5 text-purple-500" />
                                 <span className={`text-lg font-bold ${pillarScore >= 80 ? 'text-green-500' :
-                                        pillarScore >= 60 ? 'text-yellow-500' :
-                                            'text-red-500'
+                                    pillarScore >= 60 ? 'text-yellow-500' :
+                                        'text-red-500'
                                     }`}>
                                     {pillarScore}%
                                 </span>
@@ -311,12 +307,12 @@ export function ValidationPanel({ experience, validation, onBack, onPublish }: V
                                                 {check.name}
                                             </h4>
                                             <span className={`px-2 py-0.5 text-xs rounded-full ${check.passed
-                                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                                                    : check.severity === 'error'
-                                                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                                                        : check.severity === 'warning'
-                                                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                                : check.severity === 'error'
+                                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                                    : check.severity === 'warning'
+                                                        ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                                                 }`}>
                                                 {check.passed ? 'Passed' : check.severity}
                                             </span>

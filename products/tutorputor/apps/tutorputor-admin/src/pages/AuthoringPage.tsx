@@ -69,6 +69,13 @@ import {
 } from "lucide-react";
 
 import { AnimationStudio } from "../components/animation/AnimationStudio";
+import { AnalyticsDashboard } from "../components/content-studio/AnalyticsDashboard";
+import { GenerationGovernancePanel } from "../components/content-studio/GenerationGovernancePanel";
+import {
+  contentStudioApi,
+  type AdminContentAsset,
+  type AdminContentAssetDetail,
+} from "../services/contentStudioApi";
 import { SimulationStudio } from "../../../tutorputor-web/src/components/simulation/SimulationStudio";
 import type { AnimationSpec } from "../../../../services/tutorputor-platform/src/modules/animation-runtime/service";
 import type {
@@ -79,12 +86,15 @@ import type {
 // Types
 interface ContentItem {
   id: string;
+  assetId?: string;
+  legacyExperienceId?: string;
   title: string;
   description: string;
   type: "learning_experience" | "simulation" | "animation" | "assessment";
   status: "draft" | "review" | "published" | "archived";
   domain: string;
   gradeRange: string;
+  currentVersion?: number;
   updatedAt: Date;
   author: string;
   metrics?: {
@@ -181,9 +191,13 @@ function getAuthoringApiHeaders(
 
 function mapExperienceSummaryToContentItem(
   experience: Record<string, unknown>,
+  existing?: Partial<ContentItem>,
 ): ContentItem {
   return {
     id: experience.id as string,
+    assetId: existing?.assetId,
+    legacyExperienceId:
+      existing?.legacyExperienceId ?? (experience.id as string),
     title: (experience.title as string) ?? "Untitled",
     description: (experience.intentProblem as string) ?? "",
     type: "learning_experience",
@@ -192,8 +206,86 @@ function mapExperienceSummaryToContentItem(
     gradeRange: Array.isArray(experience.targetGrades)
       ? (experience.targetGrades as string[]).join(", ")
       : "",
+    currentVersion: existing?.currentVersion,
     updatedAt: new Date((experience.updatedAt as string) ?? Date.now()),
     author: (experience.createdBy as string) ?? "Unknown",
+  };
+}
+
+function mapAssetTypeToContentType(
+  assetType: AdminContentAsset["assetType"],
+): ContentItem["type"] {
+  switch (assetType) {
+    case "simulation":
+      return "simulation";
+    case "animation":
+      return "animation";
+    case "assessment":
+      return "assessment";
+    default:
+      return "learning_experience";
+  }
+}
+
+function mapContentAssetToContentItem(asset: AdminContentAsset): ContentItem {
+  const routeId = asset.legacyExperienceId ?? asset.id;
+
+  return {
+    id: routeId,
+    assetId: asset.id,
+    legacyExperienceId: asset.legacyExperienceId,
+    title: asset.title,
+    description: "",
+    type: mapAssetTypeToContentType(asset.assetType),
+    status: asset.status as ContentItem["status"],
+    domain: asset.domain,
+    gradeRange: (asset.targetGrades ?? []).join(", "),
+    currentVersion: asset.currentVersion,
+    updatedAt: new Date(asset.updatedAt),
+    author: asset.authorId,
+  };
+}
+
+function getExperienceRouteId(
+  content: Pick<ContentItem, "id" | "legacyExperienceId">,
+): string {
+  return content.legacyExperienceId ?? content.id;
+}
+
+function applyCanonicalAssetDetailToContentItem(
+  item: ContentItem,
+  detail: AdminContentAssetDetail,
+): ContentItem {
+  const snapshot = detail.currentRevision?.snapshot ?? {};
+  const snapshotDescription =
+    typeof snapshot.intentProblem === "string"
+      ? snapshot.intentProblem
+      : typeof snapshot.description === "string"
+        ? snapshot.description
+        : item.description;
+  const snapshotDomain =
+    typeof snapshot.domain === "string" ? snapshot.domain : item.domain;
+  const snapshotTargetGrades = Array.isArray(snapshot.targetGrades)
+    ? snapshot.targetGrades.filter(
+      (grade): grade is string => typeof grade === "string",
+    )
+    : [];
+
+  return {
+    ...item,
+    assetId: detail.asset.id,
+    legacyExperienceId: detail.asset.legacyExperienceId ?? item.legacyExperienceId,
+    title: detail.asset.title || item.title,
+    description: snapshotDescription,
+    status: detail.asset.status as ContentItem["status"],
+    domain: detail.asset.domain || snapshotDomain,
+    gradeRange:
+      snapshotTargetGrades.length > 0
+        ? snapshotTargetGrades.join(", ")
+        : item.gradeRange || detail.asset.targetGrades.join(", "),
+    currentVersion: detail.asset.currentVersion,
+    updatedAt: new Date(detail.asset.updatedAt),
+    author: detail.asset.authorId || item.author,
   };
 }
 
@@ -233,20 +325,42 @@ function AuthoringPageContent() {
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
 
   const loadContentItems = useCallback(async () => {
-    const token = localStorage.getItem("auth_token");
-    const response = await fetch("/api/content-studio/experiences?limit=50", {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    const assetLibrary = await contentStudioApi.getContentAssets({
+      assetType: "explainer",
+      limit: 50,
     });
-
-    if (!response.ok) {
-      throw new Error(`Failed to load content items (${response.status})`);
-    }
-
-    const res = (await response.json()) as { data: Array<Record<string, unknown>> };
-    const items: ContentItem[] = (res.data ?? []).map(mapExperienceSummaryToContentItem);
+    const items: ContentItem[] = assetLibrary.items
+      .filter((asset) => Boolean(asset.legacyExperienceId))
+      .map(mapContentAssetToContentItem);
 
     setContentItems(items);
     return items;
+  }, []);
+
+  const openContentItem = useCallback(async (item: ContentItem) => {
+    setSelectedContent(item);
+    setViewMode("editor");
+
+    if (!item.assetId) {
+      return;
+    }
+
+    try {
+      const detail = await contentStudioApi.getContentAsset(item.assetId);
+      if (!detail) {
+        return;
+      }
+
+      const enriched = applyCanonicalAssetDetailToContentItem(item, detail);
+      setSelectedContent(enriched);
+      setContentItems((prev) =>
+        prev.map((candidate) =>
+          candidate.id === enriched.id ? enriched : candidate,
+        ),
+      );
+    } catch (error) {
+      console.error("Failed to load canonical content detail", error);
+    }
   }, []);
 
   // Pull-to-refresh handler for mobile
@@ -337,18 +451,9 @@ function AuthoringPageContent() {
 
     setIsDeleting(true);
     try {
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch(
-        `/api/content-studio/experiences/${contentToDelete.id}`,
-        {
-          method: "DELETE",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        },
+      await contentStudioApi.deleteExperience(
+        getExperienceRouteId(contentToDelete),
       );
-
-      if (!response.ok && response.status !== 204) {
-        throw new Error(`Delete failed (${response.status})`);
-      }
 
       setContentItems((prev) =>
         prev.filter((item) => item.id !== contentToDelete.id),
@@ -383,10 +488,9 @@ function AuthoringPageContent() {
 
     const existing = contentItems.find((item) => item.id === editId);
     if (existing) {
-      setSelectedContent(existing);
-      setViewMode("editor");
+      void openContentItem(existing);
     }
-  }, [contentItems, editId]);
+  }, [contentItems, editId, openContentItem]);
 
   // Initialize AI suggestions based on context
   useEffect(() => {
@@ -644,8 +748,7 @@ function AuthoringPageContent() {
                     >
                       <button
                         onClick={() => {
-                          setSelectedContent(item);
-                          setViewMode("editor");
+                          void openContentItem(item);
                         }}
                         className="w-full text-left"
                       >
@@ -856,8 +959,7 @@ function AuthoringPageContent() {
                         <button
                           key={item.id}
                           onClick={() => {
-                            setSelectedContent(item);
-                            setViewMode("editor");
+                            void openContentItem(item);
                           }}
                           className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-left hover:shadow-md transition-shadow"
                         >
@@ -939,6 +1041,17 @@ function ContentEditor({
   const [saveStatus, _setSaveStatus] = useState<
     "saved" | "unsaved" | "saving" | "error"
   >("saved");
+  const experienceRouteId = useMemo(
+    () => getExperienceRouteId(content),
+    [content],
+  );
+
+  const handleRegenerateRequested = useCallback(() => {
+    setActiveTab("claims");
+    toast.info(
+      "Review the latest validation findings and regenerate claims or artifacts from the editor tools.",
+    );
+  }, []);
 
   // Build breadcrumb items based on content
   const breadcrumbItems = useMemo(() => {
@@ -1061,13 +1174,13 @@ function ContentEditor({
 
         {/* Tab Content */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          {activeTab === "claims" && <ClaimsEditor contentId={content.id} />}
-          {activeTab === "tasks" && <TasksEditor contentId={content.id} />}
+          {activeTab === "claims" && <ClaimsEditor contentId={experienceRouteId} />}
+          {activeTab === "tasks" && <TasksEditor contentId={experienceRouteId} />}
           {activeTab === "simulation" && (
-            <SimulationEditor contentId={content.id} domain={content.domain} />
+            <SimulationEditor contentId={experienceRouteId} domain={content.domain} />
           )}
           {activeTab === "animation" && (
-            <AnimationEditor contentId={content.id} />
+            <AnimationEditor contentId={experienceRouteId} />
           )}
           {activeTab === "settings" && (
             <SettingsEditor
@@ -1075,6 +1188,20 @@ function ContentEditor({
               onContentUpdated={onContentUpdated}
             />
           )}
+        </div>
+
+        {content.type === "learning_experience" && (
+          <div className="mt-6">
+            <AnalyticsDashboard
+              experienceId={experienceRouteId}
+              experienceTitle={content.title}
+              onRegenerateRequested={handleRegenerateRequested}
+            />
+          </div>
+        )}
+
+        <div className="mt-6">
+          <GenerationGovernancePanel />
         </div>
       </div>{" "}
       {/* End of flex-1 overflow-y-auto */}
@@ -1868,7 +1995,7 @@ function SettingsEditor({
       ],
     },
     onSubmit: async (_formValues) => {
-      const response = await fetch(`/api/content-studio/experiences/${content.id}`, {
+      const response = await fetch(`/api/content-studio/experiences/${getExperienceRouteId(content)}`, {
         method: "PUT",
         headers: getAuthoringApiHeaders(),
         body: JSON.stringify({
@@ -1884,7 +2011,7 @@ function SettingsEditor({
       }
 
       const result = (await response.json()) as { data: Record<string, unknown> };
-      onContentUpdated(mapExperienceSummaryToContentItem(result.data));
+      onContentUpdated(mapExperienceSummaryToContentItem(result.data, content));
       toast.success("Settings saved successfully");
     },
   });
