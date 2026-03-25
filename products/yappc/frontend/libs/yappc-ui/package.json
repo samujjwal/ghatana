@@ -58,8 +58,8 @@
     "tslib": "^2.6.2"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@storybook/addon-essentials": "^7.5.0",
     "@storybook/react": "^7.5.0",
     "@storybook/react-vite": "^7.5.0",
