@@ -75,10 +75,6 @@ public class DistributedHttpDataCloudClient implements DataCloudClient {
 
     // ── HTTP helpers ────────────────────────────────────────────────────
 
-    private <T> Promise<T> post(String path, Object body, Class<T> responseType) {
-        return post(path, body, responseType, null);
-    }
-
     private <T> Promise<T> post(String path, Object body, Class<T> responseType, String tenantId) {
         try {
             String json = MAPPER.writeValueAsString(body);
@@ -125,10 +121,6 @@ public class DistributedHttpDataCloudClient implements DataCloudClient {
         } catch (Exception e) {
             return Promise.ofException(e);
         }
-    }
-
-    private Promise<Void> delete(String path) {
-        return delete(path, null);
     }
 
     private Promise<Void> delete(String path, String tenantId) {

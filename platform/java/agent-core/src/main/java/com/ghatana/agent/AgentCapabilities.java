@@ -20,8 +20,9 @@ import java.util.Set;
  * @doc.type record
  * @doc.purpose Deprecated simple agent metadata — use AgentDescriptor for new code
  * @doc.layer core
+ * @doc.pattern ValueObject
  */
-@Deprecated
+@Deprecated(since = "2.0.0", forRemoval = true)
 public record AgentCapabilities(
     String name,
     String role,

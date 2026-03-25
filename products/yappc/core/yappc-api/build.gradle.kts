@@ -11,7 +11,7 @@ dependencies {
     
     // YAPPC modules
     implementation(project(":products:yappc:core:yappc-services"))
-    implementation(project(":products:yappc:core:yappc-domain"))
+    implementation(project(":products:yappc:core:yappc-domain-impl"))
     implementation(project(":products:yappc:core:yappc-shared"))
     
     // REST API

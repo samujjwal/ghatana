@@ -41,7 +41,8 @@ public class E2eTestRunnerAgent extends YAPPCAgentBase<E2eTestRunnerInput, E2eTe
             "#/definitions/E2eTestRunnerOutput",
             List.of("testing", "e2e", "execution"),
             Map.of("description", "Worker agent that executes end-to-end test suites and reports results", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

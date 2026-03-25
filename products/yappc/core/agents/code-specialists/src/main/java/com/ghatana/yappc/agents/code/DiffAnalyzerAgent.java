@@ -41,7 +41,8 @@ public class DiffAnalyzerAgent extends YAPPCAgentBase<DiffAnalyzerInput, DiffAna
             "#/definitions/DiffAnalyzerOutput",
             List.of("debug", "diff-analysis", "regression"),
             Map.of("description", "Debug micro-agent that analyzes code diffs to identify regression risks", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

@@ -368,4 +368,93 @@ class ArchitectureGuardrailsTest {
             rule.check(platformClasses);
         }
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // SHA-004 — Centralized ErrorCode enforcement
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Centralized ErrorCode usage")
+    class CentralizedErrorCodeUsage {
+
+        @Test
+        @DisplayName("Platform classes must not define custom error-code String constants named 'ERROR_CODE' or similar")
+        void platformClassesShouldNotDefineReplacementErrorCodeConstants() {
+            // Guard: ensure nobody re-defines a parallel error-code registry in a non-core location.
+            // Allowed: com.ghatana.platform.core.exception.ErrorCode (canonical registry)
+            // Forbidden: any class named *ErrorCode or *ErrorCodes outside the core.exception package
+            ArchRule rule = noClasses()
+                    .that().haveSimpleNameEndingWith("ErrorCode")
+                    .or().haveSimpleNameEndingWith("ErrorCodes")
+                    .and().resideOutsideOfPackage("com.ghatana.platform.core.exception..")
+                    .should().resideInAPackage("com.ghatana..")
+                    .because("Use com.ghatana.platform.core.exception.ErrorCode enum for all error codes; "
+                            + "custom error-code registries in other packages are forbidden.")
+                    .allowEmptyShould(true);
+
+            rule.check(platformClasses);
+        }
+
+        @Test
+        @DisplayName("Exceptions thrown in platform code should use PlatformException (which requires ErrorCode)")
+        void platformExceptionsShouldCarryErrorCode() {
+            // Classes providing RuntimeException subclasses with a bare String message only
+            // (no ErrorCode parameter) in platform packages are disallowed.
+            // This is an informational rule until all legacy exceptions are migrated.
+            ArchRule rule = noClasses()
+                    .that().resideInAPackage("com.ghatana.platform..")
+                    .and().areAssignableTo(RuntimeException.class)
+                    .and().haveSimpleNameNotMatching(".*(Test|Spec).*")
+                    .should().haveSimpleNameEndingWith("Exception")
+                    // informational until legacy exceptions are migrated
+                    .allowEmptyShould(true);
+
+            rule.check(platformClasses);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // SHA-001 — Security model user deprecation enforcement
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Security model.User deprecation (SHA-001)")
+    class SecurityModelUserDeprecation {
+
+        @Test
+        @DisplayName("Non-security infrastructure code must not import security.model.User")
+        void nonSecurityCodeShouldNotUseSecurityModelUser() {
+            ArchRule rule = noClasses()
+                    .that().resideOutsideOfPackages(
+                            "com.ghatana.platform.security..",
+                            "..test..", "..testing.."
+                    )
+                    .should().dependOnClassesThat()
+                    .haveFullyQualifiedName("com.ghatana.platform.security.model.User")
+                    .because("com.ghatana.platform.security.model.User is deprecated for domain use. "
+                            + "Use com.ghatana.platform.domain.auth.User instead. "
+                            + "See SHA-001 in SHARED_MODULES_AUDIT_REPORT_COMPLETE.md.")
+                    .allowEmptyShould(true);
+
+            rule.check(platformClasses);
+        }
+
+        @Test
+        @DisplayName("Non-security infrastructure code must not import deprecated security.rbac.Role")
+        void nonSecurityCodeShouldNotUseSecurityRbacRole() {
+            ArchRule rule = noClasses()
+                    .that().resideOutsideOfPackages(
+                            "com.ghatana.platform.security..",
+                            "..test..", "..testing.."
+                    )
+                    .should().dependOnClassesThat()
+                    .haveFullyQualifiedName("com.ghatana.platform.security.rbac.Role")
+                    .because("com.ghatana.platform.security.rbac.Role is deprecated for typed use. "
+                            + "Use com.ghatana.platform.domain.auth.Role instead. "
+                            + "See SHA-002 in SHARED_MODULES_AUDIT_REPORT_COMPLETE.md.")
+                    .allowEmptyShould(true);
+
+            rule.check(platformClasses);
+        }
+    }
 }

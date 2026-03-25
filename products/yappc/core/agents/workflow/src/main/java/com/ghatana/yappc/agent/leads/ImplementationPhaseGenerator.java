@@ -5,7 +5,7 @@ import com.ghatana.agent.framework.api.GeneratorMetadata;
 import com.ghatana.agent.framework.api.OutputGenerator;
 import com.ghatana.yappc.agent.StepResult;
 import com.ghatana.yappc.agent.StepRequest;
-import com.ghatana.yappc.agent.YAPPCAgentRegistry;
+import com.ghatana.yappc.agent.YappcAgentRegistryAdapter;
 import io.activej.promise.Promise;
 import java.time.Duration;
 import java.time.Instant;
@@ -38,9 +38,9 @@ public class ImplementationPhaseGenerator
           "implementation.qualityGate",
           "implementation.publish");
 
-  private final YAPPCAgentRegistry agentRegistry;
+  private final YappcAgentRegistryAdapter agentRegistry;
 
-  public ImplementationPhaseGenerator(@NotNull YAPPCAgentRegistry agentRegistry) {
+  public ImplementationPhaseGenerator(@NotNull YappcAgentRegistryAdapter agentRegistry) {
     this.agentRegistry = agentRegistry;
   }
 

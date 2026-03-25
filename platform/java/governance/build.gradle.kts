@@ -26,6 +26,8 @@ dependencies {
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
 
     // Test
     testImplementation(project(":platform:java:testing"))

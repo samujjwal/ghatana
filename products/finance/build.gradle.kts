@@ -14,11 +14,9 @@ dependencies {
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:observability"))
-    implementation(project(":platform:java:testing"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:plugin"))
-    implementation(project(":platform:java:event-cloud"))
     implementation(project(":platform:java:audit"))
     implementation(project(":platform:java:agent-core"))
 
@@ -57,14 +55,14 @@ dependencies {
     implementation("io.micrometer:micrometer-core")
 
     // PostgreSQL
-    implementation("org.postgresql:postgresql")
+    implementation(libs.postgresql)
     implementation("com.zaxxer:HikariCP")
 
     // Testing
     testImplementation(project(":platform:java:testing"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core")
-    testImplementation("org.mockito:mockito-core")
-    testImplementation("org.mockito:mockito-junit-jupiter")
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
     testImplementation("io.activej:activej-test:6.0-rc2")
 }

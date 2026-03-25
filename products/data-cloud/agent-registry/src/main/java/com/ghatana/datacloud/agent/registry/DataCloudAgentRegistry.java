@@ -12,7 +12,7 @@ package com.ghatana.datacloud.agent.registry;
 import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.AgentDescriptor;
 import com.ghatana.agent.TypedAgent;
-import com.ghatana.agent.registry.AgentRegistry;
+import com.ghatana.agent.spi.AgentRegistry;
 import com.ghatana.datacloud.EntityRecord;
 import com.ghatana.datacloud.agent.registry.event.RegistryEventPublisher;
 import com.ghatana.datacloud.client.DataCloudClient;

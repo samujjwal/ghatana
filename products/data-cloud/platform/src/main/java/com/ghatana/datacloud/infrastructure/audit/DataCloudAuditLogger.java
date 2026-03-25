@@ -111,7 +111,7 @@ public class DataCloudAuditLogger {
      * <ol>
      *   <li>Thread-local {@code TenantContext.current()} principal name</li>
      *   <li>Thread-local {@code TenantContext.getCurrentTenantId()} as fallback</li>
-     *   <li>{@code "SYSTEM"} when no security context is available (explicitly audited)</li>
+     *   <li>{@code "ANONYMOUS"} when no security context is available — treated as a security event</li>
      * </ol>
      *
      * @return the principal identifier; never null
@@ -134,11 +134,14 @@ public class DataCloudAuditLogger {
                 return "tenant:" + tenantId;
             }
         } catch (Exception e) {
-            // Security context not available; fall through to SYSTEM
-            logger.debug("Security context unavailable for audit principal resolution: {}", e.getMessage());
+            // Security context not available — log as WARN: unauthenticated audit entries are security events
+            logger.warn("SECURITY: Unauthenticated request — audit principal resolved as ANONYMOUS: {}", e.getMessage());
         }
 
-        return "SYSTEM";
+        // DC3-H6: Use ANONYMOUS (not SYSTEM) so unauthenticated writes are distinguishable
+        // from legitimate system/daemon operations in the audit trail.
+        logger.warn("SECURITY: Audit entry recorded with ANONYMOUS principal — no active TenantContext");
+        return "ANONYMOUS";
     }
     
     /**

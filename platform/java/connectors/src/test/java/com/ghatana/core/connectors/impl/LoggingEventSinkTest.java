@@ -1,14 +1,10 @@
 package com.ghatana.core.connectors.impl;
 
-import com.ghatana.core.event.cloud.EventRecord;
-import com.ghatana.core.event.cloud.EventTypeRef;
-import com.ghatana.core.event.cloud.Version;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.NoopMetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.platform.types.ContentType;
-import com.ghatana.platform.domain.auth.TenantId;
-import com.ghatana.platform.types.identity.EventId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -46,17 +42,15 @@ class LoggingEventSinkTest extends EventloopTestBase {
 
     // --- Helper ---
 
-    private EventRecord createTestRecord(String eventType) {
-        return EventRecord.builder()
-                .tenantId(TenantId.random())
-                .typeRef(EventTypeRef.of(eventType, 1, 0))
-                .eventId(EventId.random())
-                .occurrenceTime(Instant.now())
-                .detectionTime(Instant.now())
-                .headers(Map.of())
-                .contentType(ContentType.JSON)
-                .schemaUri("urn:test:schema")
+    private EventLogStore.EventEntry createTestEntry(String eventType) {
+        return EventLogStore.EventEntry.builder()
+                .eventId(UUID.randomUUID())
+                .eventType(eventType)
+                .eventVersion("1.0.0")
+                .timestamp(Instant.now())
                 .payload(ByteBuffer.wrap("{\"test\":true}".getBytes()))
+                .contentType("application/json")
+                .headers(Map.of())
                 .build();
     }
 
@@ -93,20 +87,21 @@ class LoggingEventSinkTest extends EventloopTestBase {
         void shouldSendEvent() {
             runPromise(() -> sink.start());
 
-            EventRecord record = createTestRecord("user.created");
-            runPromise(() -> sink.send(record));
+            EventLogStore.EventEntry entry = createTestEntry("user.created");
+            TenantContext tenant = TenantContext.of("test-tenant");
+            runPromise(() -> sink.send(tenant, entry));
 
-            // Verify metrics were recorded
             verify(metricsCollector).incrementCounter("event.sink.logged", "type", "user.created");
         }
 
         @Test
         @DisplayName("should reject send when not started")
         void shouldRejectSendWhenNotStarted() {
-            EventRecord record = createTestRecord("user.created");
+            EventLogStore.EventEntry entry = createTestEntry("user.created");
+            TenantContext tenant = TenantContext.of("test-tenant");
 
             try {
-                runPromise(() -> sink.send(record));
+                runPromise(() -> sink.send(tenant, entry));
                 org.junit.jupiter.api.Assertions.fail("Expected exception for send() on non-started sink");
             } catch (Exception e) {
                 assertThat(e)
@@ -121,10 +116,11 @@ class LoggingEventSinkTest extends EventloopTestBase {
             runPromise(() -> sink.start());
             runPromise(() -> sink.stop());
 
-            EventRecord record = createTestRecord("user.created");
+            EventLogStore.EventEntry entry = createTestEntry("user.created");
+            TenantContext tenant = TenantContext.of("test-tenant");
 
             try {
-                runPromise(() -> sink.send(record));
+                runPromise(() -> sink.send(tenant, entry));
                 org.junit.jupiter.api.Assertions.fail("Expected exception for send() on stopped sink");
             } catch (Exception e) {
                 assertThat(e)
@@ -138,9 +134,10 @@ class LoggingEventSinkTest extends EventloopTestBase {
         void shouldSendMultipleEvents() {
             runPromise(() -> sink.start());
 
-            runPromise(() -> sink.send(createTestRecord("order.placed")));
-            runPromise(() -> sink.send(createTestRecord("order.shipped")));
-            runPromise(() -> sink.send(createTestRecord("order.placed")));
+            TenantContext tenant = TenantContext.of("test-tenant");
+            runPromise(() -> sink.send(tenant, createTestEntry("order.placed")));
+            runPromise(() -> sink.send(tenant, createTestEntry("order.shipped")));
+            runPromise(() -> sink.send(tenant, createTestEntry("order.placed")));
 
             verify(metricsCollector, times(2))
                     .incrementCounter("event.sink.logged", "type", "order.placed");

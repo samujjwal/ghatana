@@ -3,7 +3,7 @@ package com.ghatana.yappc.agent;
 import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.AgentType;
 import com.ghatana.agent.migration.BaseAgentAdapter;
-import com.ghatana.agent.registry.AgentRegistry;
+import com.ghatana.agent.spi.AgentRegistry;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import java.util.*;
@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
  * @doc.layer product
  * @doc.pattern Adapter
  */
-public final class YappcAgentRegistryAdapter {
+public final class YappcAgentRegistryAdapter implements AgentHealthProvider, AgentRegistryView {
 
   private static final Logger log = LoggerFactory.getLogger(YappcAgentRegistryAdapter.class);
 
@@ -40,6 +40,9 @@ public final class YappcAgentRegistryAdapter {
 
   /** YAPPC-specific local index: agentId → agent. */
   private final Map<String, YAPPCAgentBase<?, ?>> agentsById = new ConcurrentHashMap<>();
+
+  /** Local status index for heartbeat monitoring. */
+  private final Map<String, YAPPCAgentRegistry.AgentStatus> statusById = new ConcurrentHashMap<>();
 
   /**
    * Creates the adapter.
@@ -67,6 +70,7 @@ public final class YappcAgentRegistryAdapter {
     // Update local YAPPC indexes
     agentsByStepName.put(stepName, agent);
     agentsById.put(agentId, agent);
+    statusById.put(agentId, YAPPCAgentRegistry.AgentStatus.REGISTERED);
 
     String phase = extractPhase(stepName);
     agentsByPhase.computeIfAbsent(phase, k -> Collections.synchronizedList(new ArrayList<>()))
@@ -114,6 +118,7 @@ public final class YappcAgentRegistryAdapter {
    * @param phase the SDLC phase (e.g., "architecture", "implementation")
    * @return list of agents, empty if none found
    */
+  @Override
   @NotNull
   public List<YAPPCAgentBase<?, ?>> getAgentsByPhase(@NotNull String phase) {
     return List.copyOf(agentsByPhase.getOrDefault(phase, List.of()));
@@ -151,8 +156,14 @@ public final class YappcAgentRegistryAdapter {
     log.info("Initializing {} agents", agentsById.size());
     List<Promise<Void>> promises = agentsById.values().stream()
         .map(agent -> Promise.<Void>complete()
-            .whenResult(v -> log.info("Agent initialized: {}", agent.stepName()))
-            .whenException(e -> log.error("Agent initialization failed: {}", agent.stepName(), e)))
+            .whenResult(v -> {
+              statusById.put(agent.getAgentId(), YAPPCAgentRegistry.AgentStatus.READY);
+              log.info("Agent initialized: {}", agent.stepName());
+            })
+            .whenException(e -> {
+              statusById.put(agent.getAgentId(), YAPPCAgentRegistry.AgentStatus.FAILED);
+              log.error("Agent initialization failed: {}", agent.stepName(), e);
+            }))
         .collect(Collectors.toList());
     return Promises.all(promises).toVoid();
   }
@@ -166,16 +177,33 @@ public final class YappcAgentRegistryAdapter {
   public Promise<Void> shutdownAll() {
     log.info("Shutting down {} agents", agentsById.size());
     List<Promise<Void>> promises = agentsById.entrySet().stream()
-        .map(entry -> platformRegistry.deregister(entry.getKey())
-            .whenResult(v -> log.info("Agent stopped: {}", entry.getValue().stepName()))
-            .whenException(e -> log.error("Agent shutdown failed: {}", entry.getValue().stepName(), e)))
+        .map(entry -> {
+          statusById.put(entry.getKey(), YAPPCAgentRegistry.AgentStatus.STOPPING);
+          return platformRegistry.deregister(entry.getKey())
+              .whenResult(v -> {
+                statusById.put(entry.getKey(), YAPPCAgentRegistry.AgentStatus.STOPPED);
+                log.info("Agent stopped: {}", entry.getValue().stepName());
+              })
+              .whenException(e -> {
+                statusById.put(entry.getKey(), YAPPCAgentRegistry.AgentStatus.FAILED);
+                log.error("Agent shutdown failed: {}", entry.getValue().stepName(), e);
+              });
+        })
         .collect(Collectors.toList());
     return Promises.all(promises).toVoid()
         .whenResult(v -> {
           agentsByStepName.clear();
           agentsByPhase.clear();
           agentsById.clear();
+          statusById.clear();
         });
+  }
+
+  /** Returns a snapshot of agent health status keyed by agent ID. */
+  @Override
+  @NotNull
+  public Map<String, YAPPCAgentRegistry.AgentStatus> getHealthStatus() {
+    return Map.copyOf(statusById);
   }
 
   /** Returns the underlying platform registry for advanced queries. */

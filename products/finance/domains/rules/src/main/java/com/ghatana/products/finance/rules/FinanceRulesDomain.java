@@ -14,6 +14,7 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,6 +45,39 @@ public final class FinanceRulesDomain implements KernelModule {
 
     private static final Logger log = LoggerFactory.getLogger(FinanceRulesDomain.class);
 
+    private static final KernelCapability FINANCE_TRADE_PROCESSING = new KernelCapability(
+        "finance.trade-processing", "Trade Processing",
+        "High-frequency trade order processing and execution",
+        KernelCapability.CapabilityType.BUSINESS_LOGIC,
+        Map.of(
+            "domain", "finance",
+            "latency", "microsecond",
+            "throughput", "100k-tps"
+        )
+    );
+
+    private static final KernelCapability FINANCE_COMPLIANCE_CHECKING = new KernelCapability(
+        "finance.compliance-checking", "Compliance Checking",
+        "Financial compliance monitoring and regulatory reporting",
+        KernelCapability.CapabilityType.COMPLIANCE,
+        Map.of(
+            "domain", "finance",
+            "regulations", "securities,aml,kyc,mifid",
+            "reporting", "automated"
+        )
+    );
+
+    private static final KernelCapability FINANCE_RISK_MANAGEMENT = new KernelCapability(
+        "finance.risk-management", "Risk Management",
+        "Real-time risk assessment and position monitoring",
+        KernelCapability.CapabilityType.BUSINESS_LOGIC,
+        Map.of(
+            "domain", "finance",
+            "types", "market,credit,operational,liquidity",
+            "calculation", "real-time"
+        )
+    );
+
     private FinanceRulesService rulesService;
     private KernelContext context;
 
@@ -61,9 +95,9 @@ public final class FinanceRulesDomain implements KernelModule {
     public Set<KernelCapability> getCapabilities() {
         return Set.of(
             // Finance-specific capabilities
-            KernelCapability.Products.TRADE_PROCESSING,
-            KernelCapability.Products.COMPLIANCE_CHECKING,
-            KernelCapability.Products.RISK_MANAGEMENT,
+            FINANCE_TRADE_PROCESSING,
+            FINANCE_COMPLIANCE_CHECKING,
+            FINANCE_RISK_MANAGEMENT,
             
             // Reused kernel capabilities
             KernelCapability.Core.CONFIG_MANAGEMENT,

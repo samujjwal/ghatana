@@ -46,7 +46,8 @@ public class ImplementSpecialistAgent extends YAPPCAgentBase<ImplementInput, Imp
             "#/definitions/ImplementOutput",
             List.of("implementation", "codegen", "development"),
             Map.of("description", "Implements code for planned units", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

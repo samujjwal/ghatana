@@ -26,6 +26,7 @@ import java.util.Map;
  *   <tr><td>DATACLOUD_PG_USER</td><td>datacloud</td><td>PostgreSQL username (warm tier)</td></tr>
  *   <tr><td>DATACLOUD_PG_PASSWORD</td><td>(empty)</td><td>PostgreSQL password (warm tier)</td></tr>
  *   <tr><td>DATACLOUD_PG_POOL_SIZE</td><td>10</td><td>HikariCP max pool size (warm tier)</td></tr>
+ *   <tr><td>DATACLOUD_PG_VALIDATION_TIMEOUT_MS</td><td>5000</td><td>HikariCP validation timeout in milliseconds</td></tr>
  *   <tr><td>REDIS_HOST</td><td>localhost</td><td>Redis hostname (hot-tier)</td></tr>
  *   <tr><td>REDIS_PORT</td><td>6379</td><td>Redis port</td></tr>
  *   <tr><td>S3_REGION</td><td>us-east-1</td><td>AWS region for S3 cold-tier archive</td></tr>
@@ -56,6 +57,7 @@ public final class DataCloudEnvConfig {
     public static final String DATACLOUD_PG_USER      = "DATACLOUD_PG_USER";
     public static final String DATACLOUD_PG_PASSWORD  = "DATACLOUD_PG_PASSWORD";
     public static final String DATACLOUD_PG_POOL_SIZE = "DATACLOUD_PG_POOL_SIZE";
+    public static final String DATACLOUD_PG_VALIDATION_TIMEOUT_MS = "DATACLOUD_PG_VALIDATION_TIMEOUT_MS";
     public static final String REDIS_HOST             = "REDIS_HOST";
     public static final String REDIS_PORT             = "REDIS_PORT";
     public static final String S3_REGION              = "S3_REGION";
@@ -64,6 +66,8 @@ public final class DataCloudEnvConfig {
     public static final String ICEBERG_WAREHOUSE      = "ICEBERG_WAREHOUSE";
     public static final String DATACLOUD_HTTP_AUTH_TOKEN = "DATACLOUD_HTTP_AUTH_TOKEN";
     public static final String APP_ENV                = "APP_ENV";
+    /** DC3-L5: ClickHouse per-query I/O safety cap. Default 10 GB. */
+    public static final String DC_CH_MAX_BYTES_TO_READ = "DC_CH_MAX_BYTES_TO_READ";
 
     private final Map<String, String> env;
 
@@ -163,6 +167,11 @@ public final class DataCloudEnvConfig {
     /** HikariCP max pool size for warm-tier event log. */
     public int    pgPoolSize()        { return getInt(DATACLOUD_PG_POOL_SIZE, 10); }
 
+    /** HikariCP validation timeout for warm-tier event log, in milliseconds. */
+    public int    pgValidationTimeoutMillis() {
+        return getInt(DATACLOUD_PG_VALIDATION_TIMEOUT_MS, 5_000);
+    }
+
     /** Redis hostname for hot-tier storage. */
     public String redisHost()         { return get(REDIS_HOST, "localhost"); }
 
@@ -181,6 +190,43 @@ public final class DataCloudEnvConfig {
     /** Iceberg warehouse path (empty string if not configured). */
     public String icebergWarehouse()  { return get(ICEBERG_WAREHOUSE, ""); }
 
-    /** Bearer token for Data-Cloud remote client auth. */
-    public String authToken()         { return get(DATACLOUD_HTTP_AUTH_TOKEN, ""); }
+    /**
+     * DC3-L5: Maximum bytes per ClickHouse query (I/O safety cap).
+     * Configurable via {@code DC_CH_MAX_BYTES_TO_READ}. Default: 10 GB.
+     */
+    public long maxBytesPerClickhouseQuery() {
+        String value = env.get(DC_CH_MAX_BYTES_TO_READ);
+        if (value == null || value.isBlank()) return 10_000_000_000L;
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException(
+                "Environment variable 'DC_CH_MAX_BYTES_TO_READ' must be a long integer, but got: " + value, e);
+        }
+    }
+
+    /** Environments where an empty auth token is acceptable (L5: extend to non-prod envs). */
+    private static final java.util.Set<String> TOKEN_OPTIONAL_ENVS =
+        // DC3-L3: "staging" removed — staging must have the same auth requirements as production.
+        // Staging commonly runs with production data snapshots; unauthenticated access is a real risk.
+        java.util.Set.of("development", "test", "local");
+
+    /**
+     * Bearer token for Data-Cloud remote client auth.
+     *
+     * <p>Logs a warning at startup if the token is empty in non-development environments,
+     * because HTTP clients will send empty Authorization headers which will likely be
+     * rejected by remote Data-Cloud nodes.</p>
+     *
+     * @return configured bearer token, or empty string
+     */
+    public String authToken() {
+        String token = get(DATACLOUD_HTTP_AUTH_TOKEN, "");
+        String appEnv = get(APP_ENV, "production").toLowerCase(java.util.Locale.ROOT);
+        if (token.isEmpty() && !TOKEN_OPTIONAL_ENVS.contains(appEnv)) {
+            LOG.warn("DATACLOUD_HTTP_AUTH_TOKEN is not configured; "
+                    + "HTTP clients will send empty bearer tokens — remote nodes may reject requests");
+        }
+        return token;
+    }
 }

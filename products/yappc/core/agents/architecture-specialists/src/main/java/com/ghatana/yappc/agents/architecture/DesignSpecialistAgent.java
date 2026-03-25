@@ -43,7 +43,8 @@ public class DesignSpecialistAgent extends YAPPCAgentBase<DesignInput, DesignOut
             "#/definitions/DesignOutput",
             List.of("architecture", "design", "synthesis"),
             Map.of("description", "Synthesizes system architecture", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

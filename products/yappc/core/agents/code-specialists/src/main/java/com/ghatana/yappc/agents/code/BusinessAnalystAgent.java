@@ -41,7 +41,8 @@ public class BusinessAnalystAgent extends YAPPCAgentBase<BusinessAnalystInput, B
             "#/definitions/BusinessAnalystOutput",
             List.of("requirements", "domain-modeling"),
             Map.of("description", "Expert business analyst for requirements elicitation and domain modeling", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

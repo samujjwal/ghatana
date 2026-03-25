@@ -14,13 +14,18 @@ java {
 }
 
 dependencies {
-    // Platform dependencies
+    // Core platform dependencies — exposed as API since consumers need these types
     api(project(":platform:java:core"))
     api(project(":platform:java:config"))
     api(project(":platform:java:domain"))
     api(project(":platform:java:observability"))
-    api(project(":platform:java:governance"))
-    api(project(":platform:java:http"))
+    // governance and http are internal implementation details:
+    // - governance: only used by RBACFilter and PolicyService internals
+    // - http: only used by PermissionEnforcerFilter (an internal servlet filter)
+    // Keeping these as `implementation` prevents downstream consumers from
+    // accidentally taking transitive governance/http dependencies through security.
+    implementation(project(":platform:java:governance"))
+    implementation(project(":platform:java:http"))
     
     // JWT / Auth / OAuth2 (canonical: Nimbus JOSE+JWT)
     api(libs.nimbus.jose.jwt)
@@ -43,6 +48,8 @@ dependencies {
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
     
     // ActiveJ for async
     api(libs.activej.promise)

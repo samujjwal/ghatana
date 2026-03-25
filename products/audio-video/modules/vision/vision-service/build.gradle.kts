@@ -13,6 +13,9 @@ repositories {
 }
 
 dependencies {
+    // Platform Audio-Video library (replaces legacy implementations)
+    implementation(project(":platform:java:audio-video"))
+
     // Audio-Video common (health/metrics server, gRPC interceptor chain, security)
     implementation(project(":products:audio-video:libs:common"))
 
@@ -35,19 +38,6 @@ dependencies {
     implementation(libs.log4j.api)
     implementation(libs.slf4j.api)
     implementation(libs.log4j.slf4j.impl)
-    
-    // OpenCV for computer vision
-    implementation(libs.opencv.java)
-    
-    // ONNX Runtime for ML inference
-    implementation("com.microsoft.onnxruntime:onnxruntime:1.16.3")
-    
-    // Image processing
-    implementation(libs.twelvemonkeys.imageio.core)
-    implementation(libs.twelvemonkeys.imageio.jpeg)
-    
-    // Native library loader
-    implementation(libs.native.lib.loader)
     
     // JSON processing
     implementation(libs.gson)

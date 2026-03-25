@@ -4,7 +4,7 @@
  */
 
 import { logger } from '../../utils/Logger';
-import { palette } from '@yappc/ui/theme';
+import { palette } from '@yappc/theme';
 
 import type { ExportOptions, ExportResult } from './types';
 import type { CanvasState } from '../../components/canvas/workspace/canvasAtoms';

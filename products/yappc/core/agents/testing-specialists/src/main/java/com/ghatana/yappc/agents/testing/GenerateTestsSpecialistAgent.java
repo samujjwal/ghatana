@@ -42,7 +42,8 @@ public class GenerateTestsSpecialistAgent
             List.of("testing", "generate", "tests"),
             Map.of("description", "Generates executable test code", "version", "1.0.0")),
         (OutputGenerator<StepRequest<GenerateTestsInput>, StepResult<GenerateTestsOutput>>)
-            generators.get("testing.generateTests"));
+            generators.get("testing.generateTests"),
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

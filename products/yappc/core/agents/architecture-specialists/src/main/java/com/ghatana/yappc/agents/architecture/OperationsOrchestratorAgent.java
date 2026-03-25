@@ -60,7 +60,8 @@ public class OperationsOrchestratorAgent
                 "version", "1.0.0",
                 "level", "L1",
                 "reports_to", "head-of-devops")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

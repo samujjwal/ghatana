@@ -8,7 +8,7 @@ import com.ghatana.datacloud.event.common.Offset;
 import com.ghatana.datacloud.event.common.PartitionId;
 import com.ghatana.datacloud.event.model.Event;
 import com.ghatana.datacloud.event.spi.StoragePlugin;
-import com.ghatana.platform.plugin.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
@@ -88,6 +88,11 @@ public class ColdTierArchivePlugin implements StoragePlugin {
     private static final DateTimeFormatter YEAR_MONTH_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM");
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
+    /** DC3-L6: Maximum events to accumulate before flushing to S3. */
+    private static final int DEFAULT_FLUSH_BATCH_SIZE = 500;
+    /** DC3-L6: Maximum time (ms) to hold events before flushing, even if buffer is not full. */
+    private static final long DEFAULT_FLUSH_INTERVAL_MS = 30_000L;
+
     private final S3ArchiveConfig config;
     private final ObjectMapper objectMapper;
     private final AtomicReference<PluginState> state;
@@ -104,6 +109,15 @@ public class ColdTierArchivePlugin implements StoragePlugin {
     private Counter eventsArchivedCounter;
     private Counter archiveFilesCounter;
     private Counter bytesArchivedCounter;
+
+    /**
+     * DC3-L6: Single-event accumulation buffer. Prevents an S3 PUT per event when
+     * {@link #append(Event)} is called in a tight loop. Flushed when either
+     * {@code DEFAULT_FLUSH_BATCH_SIZE} or {@code DEFAULT_FLUSH_INTERVAL_MS} is reached.
+     */
+    private final java.util.concurrent.CopyOnWriteArrayList<Event> appendBuffer =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
+    private volatile long lastFlushTimeMs = System.currentTimeMillis();
 
     // ==================== Constructors ====================
     public ColdTierArchivePlugin() {
@@ -440,8 +454,17 @@ public class ColdTierArchivePlugin implements StoragePlugin {
     @Override
     public Promise<Offset> append(Event event) {
         requireRunning();
-        // L4 doesn't support single event append - use archiveBatch
-        return archiveBatch(List.of(event)).map(r -> new Offset(0));
+        // DC3-L6: Accumulate events rather than issuing one S3 PUT per event.
+        appendBuffer.add(event);
+        boolean batchFull = appendBuffer.size() >= DEFAULT_FLUSH_BATCH_SIZE;
+        boolean intervalExpired = System.currentTimeMillis() - lastFlushTimeMs >= DEFAULT_FLUSH_INTERVAL_MS;
+        if (batchFull || intervalExpired) {
+            java.util.List<Event> batch = new java.util.ArrayList<>(appendBuffer);
+            appendBuffer.clear();
+            lastFlushTimeMs = System.currentTimeMillis();
+            return archiveBatch(batch).map(r -> new Offset(0));
+        }
+        return Promise.of(new Offset(0));
     }
 
     @Override

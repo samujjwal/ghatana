@@ -11,7 +11,11 @@ import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 /**
  * Health check controller for liveness and readiness probes.
@@ -24,16 +28,33 @@ import java.util.Map;
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Kubernetes health probes
+ * @doc.purpose Kubernetes health probes with dependency-status aggregation
  * @doc.layer product
+ * @doc.pattern HealthCheck
  */
 public class HealthController implements AepController {
 
     private volatile boolean ready = false;
     private final String version;
+    /** Synchronous dependency-status checks registered at startup. */
+    private final List<Map.Entry<String, Supplier<String>>> componentChecks = new CopyOnWriteArrayList<>();
 
     public HealthController(String version) {
         this.version = version != null ? version : "unknown";
+    }
+
+    /**
+     * Registers a lightweight, synchronous dependency check displayed in {@code /health} responses.
+     *
+     * <p>The supplier is called on every health request. It must be fast and non-blocking.
+     * Return {@code "ok"} for a healthy component; any other string marks the overall
+     * status as {@code "degraded"}.
+     *
+     * @param name  component label (e.g. "data-cloud", "review-queue")
+     * @param check status supplier — returns "ok" or a short status description
+     */
+    public void addDependencyCheck(String name, Supplier<String> check) {
+        componentChecks.add(Map.entry(name, check));
     }
 
     @Override
@@ -54,11 +75,26 @@ public class HealthController implements AepController {
     }
 
     private Promise<HttpResponse> handleHealth() {
-        return Promise.of(HttpHelper.jsonResponse(Map.of(
-            "status", "healthy",
-            "version", version,
-            "timestamp", Instant.now().toString()
-        )));
+        Map<String, Object> components = new LinkedHashMap<>();
+        boolean allHealthy = true;
+        for (Map.Entry<String, Supplier<String>> entry : componentChecks) {
+            try {
+                String status = entry.getValue().get();
+                components.put(entry.getKey(), status);
+                if (!"ok".equals(status)) allHealthy = false;
+            } catch (Exception e) {
+                components.put(entry.getKey(), "error: " + e.getMessage());
+                allHealthy = false;
+            }
+        }
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", allHealthy ? "healthy" : "degraded");
+        response.put("version", version);
+        response.put("timestamp", Instant.now().toString());
+        if (!components.isEmpty()) {
+            response.put("components", components);
+        }
+        return Promise.of(HttpHelper.jsonResponse(response));
     }
 
     private Promise<HttpResponse> handleReady() {

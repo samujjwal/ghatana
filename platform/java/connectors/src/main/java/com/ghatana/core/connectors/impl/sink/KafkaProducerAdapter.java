@@ -1,6 +1,6 @@
 package com.ghatana.core.connectors.impl.sink;
 
-import com.ghatana.core.event.cloud.EventRecord;
+import com.ghatana.datacloud.spi.EventLogStore;
 import io.activej.promise.Promise;
 
 /**
@@ -266,6 +266,6 @@ import io.activej.promise.Promise;
  * @doc.pattern Port
  */
 public interface KafkaProducerAdapter {
-    Promise<Void> send(EventRecord record);
+    Promise<Void> send(EventLogStore.EventEntry entry);
     void close();
 }

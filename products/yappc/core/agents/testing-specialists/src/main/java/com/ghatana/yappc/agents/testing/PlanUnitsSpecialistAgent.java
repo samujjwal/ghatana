@@ -45,7 +45,8 @@ public class PlanUnitsSpecialistAgent extends YAPPCAgentBase<PlanUnitsInput, Pla
             List.of("implementation", "planning", "units"),
             Map.of(
                 "description", "Plans implementation units with dependencies", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

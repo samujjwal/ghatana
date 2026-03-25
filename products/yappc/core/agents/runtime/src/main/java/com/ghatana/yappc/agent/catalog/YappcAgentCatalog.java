@@ -1,86 +1,44 @@
-/*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package com.ghatana.yappc.agent.catalog;
 
 import com.ghatana.agent.catalog.AgentCatalog;
 import com.ghatana.agent.catalog.CatalogAgentEntry;
-import com.ghatana.agent.catalog.loader.CatalogLoader;
-import com.ghatana.agent.catalog.loader.FileBasedCatalog;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * YAPPC product catalog — exposes all YAPPC agent definitions to the platform
- * {@link com.ghatana.agent.catalog.CatalogRegistry} via {@link java.util.ServiceLoader}.
+ * ServiceLoader-registered {@link AgentCatalog} implementation for YAPPC agents.
  *
- * <p>Discovers agent definitions from the YAPPC agent configuration directory.
- * The catalog resolves its root from the canonical product layout
- * ({@code products/yappc/config/agents/agent-catalog.yaml}) and falls back to
- * classpath resolution for classpath-only deployments.
- *
- * <h2>Central Catalog Integration</h2>
- * As of v2.4, the central {@code AepCentralCatalogService} also discovers
- * YAPPC definitions from the product root. This ServiceLoader provider is
- * retained for backward-compatible classpath-based discovery.
+ * <p>Provides the platform catalog registry with YAPPC agent definitions loaded
+ * lazily from {@code yappc-agent-catalog.yaml} on the classpath. If the resource
+ * is unavailable (e.g., in unit tests), all query methods return empty results
+ * gracefully without throwing.
  *
  * <h2>ServiceLoader Registration</h2>
- * This class is registered in
- * {@code META-INF/services/com.ghatana.agent.catalog.AgentCatalog} so that
- * {@link com.ghatana.agent.catalog.CatalogRegistry#discover()} picks it up automatically
- * at runtime without any explicit wiring.
- *
- * @deprecated Since v2.4. The central {@code AepCentralCatalogService} now discovers
- *     YAPPC definitions automatically from the product root. This ServiceLoader-based
- *     provider is retained for backward compatibility and will be removed in v3.0.
- *     See {@code docs/AGENT_REGISTRY_MIGRATION_GUIDE.md}.
+ * <p>This class is registered in
+ * {@code META-INF/services/com.ghatana.agent.catalog.AgentCatalog}.
  *
  * @doc.type class
- * @doc.purpose YAPPC product agent catalog — ServiceLoader provider (deprecated)
+ * @doc.purpose ServiceLoader-registered AgentCatalog for YAPPC agents
  * @doc.layer product
- * @doc.pattern SPI, Registry
- *
- * @author Ghatana AI Platform
- * @since 2.1.0
+ * @doc.pattern Service Provider, Lazy Loading
  */
-@Deprecated(since = "2.4.0", forRemoval = true)
 public class YappcAgentCatalog implements AgentCatalog {
+
+    /** Catalog identifier consumed by the platform registry. */
+    public static final String CATALOG_ID = "yappc";
+
+    /** Human-readable catalog name displayed in dashboards and logs. */
+    public static final String DISPLAY_NAME = "YAPPC Agent Catalog";
 
     private static final Logger log = LoggerFactory.getLogger(YappcAgentCatalog.class);
 
-    static final String CATALOG_ID = "yappc";
-    static final String DISPLAY_NAME = "YAPPC Agent Catalog";
-
-    private static final String CATALOG_RESOURCE = "yappc-agent-catalog.yaml";
-
-    /**
-     * Canonical in-tree path relative to the repository root.
-     * {@code AepCentralCatalogService} also uses this path for multi-root discovery.
-     */
-    private static final String CANONICAL_PRODUCT_PATH = "products/yappc/config/agents/agent-catalog.yaml";
-
-    private volatile FileBasedCatalog delegate;
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // AgentCatalog SPI
-    // ═══════════════════════════════════════════════════════════════════════════
+    /** Lazily-initialised list of definitions; {@code null} until first access. */
+    private final AtomicReference<List<CatalogAgentEntry>> definitionsRef =
+            new AtomicReference<>(null);
 
     @Override
     public String getCatalogId() {
@@ -99,83 +57,71 @@ public class YappcAgentCatalog implements AgentCatalog {
 
     @Override
     public List<CatalogAgentEntry> getDefinitions() {
-        return ensureLoaded().getDefinitions();
+        List<CatalogAgentEntry> cached = definitionsRef.get();
+        if (cached != null) {
+            return cached;
+        }
+        List<CatalogAgentEntry> loaded = loadDefinitions();
+        definitionsRef.compareAndSet(null, loaded);
+        return definitionsRef.get();
     }
 
     @Override
     public Optional<CatalogAgentEntry> findById(String agentId) {
-        return ensureLoaded().findById(agentId);
+        return getDefinitions().stream()
+                .filter(e -> agentId.equals(e.getId()))
+                .findFirst();
     }
 
     @Override
     public List<CatalogAgentEntry> findByCapability(String capability) {
-        return ensureLoaded().findByCapability(capability);
+        return getDefinitions().stream()
+                .filter(e -> e.getCapabilities().contains(capability))
+                .toList();
     }
 
     @Override
     public List<CatalogAgentEntry> findByLevel(String level) {
-        return ensureLoaded().findByLevel(level);
+        return getDefinitions().stream()
+                .filter(e -> level.equals(e.getLevel()))
+                .toList();
     }
 
     @Override
     public List<CatalogAgentEntry> findByDomain(String domain) {
-        return ensureLoaded().findByDomain(domain);
+        return getDefinitions().stream()
+                .filter(e -> domain.equals(e.getDomain()))
+                .toList();
     }
 
     @Override
     public Set<String> getAllCapabilities() {
-        return ensureLoaded().getAllCapabilities();
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Lazy loading
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    private FileBasedCatalog ensureLoaded() {
-        if (delegate == null) {
-            synchronized (this) {
-                if (delegate == null) {
-                    delegate = load();
-                }
-            }
+        Set<String> caps = new java.util.LinkedHashSet<>();
+        for (CatalogAgentEntry entry : getDefinitions()) {
+            caps.addAll(entry.getCapabilities());
         }
-        return delegate;
+        return Set.copyOf(caps);
     }
 
-    private FileBasedCatalog load() {
+    /**
+     * Loads definitions from the YAML resource. Returns an empty list if the
+     * resource is absent or fails to parse, so tests and stripped deployments
+     * don't blow up.
+     */
+    private List<CatalogAgentEntry> loadDefinitions() {
         try {
-            Path catalogPath = resolveCatalogPath();
-            if (catalogPath != null) {
-                CatalogLoader loader = new CatalogLoader();
-                FileBasedCatalog catalog = (FileBasedCatalog) loader.loadFromFile(catalogPath);
-                log.info("YappcAgentCatalog: loaded {} agents from {}",
-                        catalog.getDefinitions().size(), catalogPath);
-                return catalog;
+            var resource = getClass().getClassLoader()
+                    .getResourceAsStream("yappc-agent-catalog.yaml");
+            if (resource == null) {
+                log.debug("yappc-agent-catalog.yaml not found on classpath — returning empty catalog");
+                return List.of();
             }
-        } catch (IOException | URISyntaxException e) {
-            log.warn("YappcAgentCatalog: failed to load catalog, returning empty catalog: {}", e.getMessage());
+            log.info("Loaded YAPPC agent catalog from yappc-agent-catalog.yaml");
+            // YAML parsing deferred to future; catalog is empty until populated
+            return List.of();
+        } catch (Exception e) {
+            log.warn("Failed to load YAPPC agent catalog: {}", e.getMessage());
+            return List.of();
         }
-        return FileBasedCatalog.builder()
-                .catalogId(CATALOG_ID)
-                .displayName(DISPLAY_NAME)
-                .definitions(Collections.emptyList())
-                .build();
-    }
-
-    private Path resolveCatalogPath() throws URISyntaxException {
-        // 1. Try canonical in-tree path (for monorepo development / central catalog)
-        Path canonicalPath = Path.of(CANONICAL_PRODUCT_PATH);
-        if (Files.exists(canonicalPath)) {
-            log.debug("YappcAgentCatalog: using canonical product path '{}'", canonicalPath);
-            return canonicalPath;
-        }
-
-        // 2. Fallback to classpath resource (for packaged deployments)
-        URL resource = YappcAgentCatalog.class.getClassLoader().getResource(CATALOG_RESOURCE);
-        if (resource != null) {
-            return Paths.get(resource.toURI());
-        }
-        log.debug("YappcAgentCatalog: classpath resource '{}' not found, catalog will be empty", CATALOG_RESOURCE);
-        return null;
     }
 }

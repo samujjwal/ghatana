@@ -256,9 +256,9 @@ public final class FhirR4TransformationEngine {
                 patientId != null ? patientId : java.util.UUID.randomUUID(),
                 "unknown-tenant",  // caller must set tenant
                 null,              // nhsId — look up from identifiers if available
-                firstName,
-                lastName,
-                dob,
+                firstName != null ? firstName : "Unknown",
+                lastName != null ? lastName : "Unknown",
+                dob != null ? dob : java.time.LocalDate.now(),
                 gender,
                 null, null, null, null, null,
                 com.ghatana.phr.healthcare.domain.DataClassification.C2,
@@ -294,9 +294,9 @@ public final class FhirR4TransformationEngine {
                 .put("reference", "Patient/" + rx.patientId());
 
         // Requester (prescriber)
-        if (rx.prescribedBy() != null) {
+if (rx.prescriberId() != null) {
             root.putObject("requester")
-                    .put("reference", "Practitioner/" + rx.prescribedBy());
+                .put("reference", "Practitioner/" + rx.prescriberId());
         }
 
         // Authored on
@@ -305,9 +305,9 @@ public final class FhirR4TransformationEngine {
         }
 
         // Dosage
-        if (rx.dosageInstructions() != null) {
+        if (rx.dosage() != null) {
             ArrayNode dosage = root.putArray("dosageInstruction");
-            dosage.addObject().put("text", rx.dosageInstructions());
+            dosage.addObject().put("text", rx.dosage());
         }
 
         // Supply / dispense
@@ -401,31 +401,29 @@ public final class FhirR4TransformationEngine {
         }
 
         // Effective
-        if (obs.collectedAt() != null) {
-            root.put("effectiveDateTime", FHIR_DATETIME.format(obs.collectedAt()));
+        if (obs.orderedAt() != null) {
+            root.put("effectiveDateTime", FHIR_DATETIME.format(obs.orderedAt()));
         }
         if (obs.resultedAt() != null) {
             root.put("issued", FHIR_DATETIME.format(obs.resultedAt()));
         }
 
         // Performer
-        if (obs.performingLab() != null) {
+        if (obs.performingLabId() != null) {
             root.putArray("performer")
                     .addObject()
-                    .put("display", obs.performingLab());
+                    .put("display", obs.performingLabId());
         }
 
         // Value
-        if (obs.numericValue() != null) {
+        if (obs.value() != null) {
             ObjectNode quantity = root.putObject("valueQuantity");
-            quantity.put("value", obs.numericValue().doubleValue());
+            quantity.put("value", obs.value().doubleValue());
             if (obs.unit() != null) {
                 quantity.put("unit", obs.unit());
                 quantity.put("system", UCUM_SYSTEM);
                 quantity.put("code", obs.unit());
             }
-        } else if (obs.textValue() != null) {
-            root.put("valueString", obs.textValue());
         }
 
         // Interpretation
@@ -447,8 +445,8 @@ public final class FhirR4TransformationEngine {
         }
 
         // Note
-        if (obs.note() != null) {
-            root.putArray("note").addObject().put("text", obs.note());
+        if (obs.notes() != null) {
+            root.putArray("note").addObject().put("text", obs.notes());
         }
 
         return root;
@@ -475,6 +473,17 @@ public final class FhirR4TransformationEngine {
             textValue = root.path("valueString").asText(null);
         }
 
+        // Extract interpretation code from FHIR (e.g. "H", "L", "N", "A")
+        String interpretationCode = null;
+        JsonNode interpArray = root.path("interpretation");
+        if (interpArray.isArray() && interpArray.size() > 0) {
+            JsonNode firstInterp = interpArray.get(0);
+            JsonNode coding = firstInterp.path("coding");
+            if (coding.isArray() && coding.size() > 0) {
+                interpretationCode = coding.get(0).path("code").asText(null);
+            }
+        }
+
         return new LabObservation(
                 id != null ? id : java.util.UUID.randomUUID().toString(),
                 patientId,
@@ -484,14 +493,15 @@ public final class FhirR4TransformationEngine {
                 loincDisplay,
                 testName,
                 numericValue,
-                textValue,
+                null,         // referenceRangeLow
                 quantity.path("unit").asText(null),
                 null,         // referenceRange
-                null,         // performingLab
-                null,         // collectedAt
-                null,         // resultedAt
+                null,         // performingLabId
+                java.time.Instant.now(),  // orderedAt
+                java.time.Instant.now(),  // resultedAt
                 com.ghatana.phr.kernel.service.LabResultService.ObservationStatus.FINAL,
-                null          // note
+                null,         // notes
+                interpretationCode
         );
     }
 
@@ -541,20 +551,20 @@ public final class FhirR4TransformationEngine {
                     .put("reference", "Practitioner/" + imm.administeredBy());
         }
 
-        // Lot number / expiry
+        // Lot number and expiry
         if (imm.lotNumber() != null) {
             root.put("lotNumber", imm.lotNumber());
         }
-        if (imm.expirationDate() != null) {
-            root.put("expirationDate", FHIR_DATE.format(imm.expirationDate()));
+        if (imm.expiresAt() != null) {
+            root.put("expirationDate", FHIR_DATE.format(imm.expiresAt()));
         }
 
         // Route
-        if (imm.routeOfAdministration() != null) {
+        if (imm.route() != null) {
             root.putObject("route").putArray("coding")
                     .addObject()
                     .put("system", "http://terminology.hl7.org/CodeSystem/v3-RouteOfAdministration")
-                    .put("code", imm.routeOfAdministration());
+                    .put("code", imm.route());
         }
 
         // Protocol applied: series, dose number
@@ -599,11 +609,11 @@ public final class FhirR4TransformationEngine {
                 java.time.Instant.now(),
                 java.time.Instant.now(),
                 null,           // lotNumber
-                null,           // expirationDate
-                null,           // routeOfAdministration
+                java.time.LocalDate.now().plusYears(5),  // expiresAt
+                null,           // route
                 null,           // seriesName
                 doseNumber,
-                false,          // seriesComplete
+                false,          // adverseEvent
                 null,           // notes
                 com.ghatana.phr.kernel.service.ImmunizationService.ImmunizationStatus.ADMINISTERED
         );

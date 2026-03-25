@@ -5,6 +5,7 @@ import lombok.*;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 
 /**
  * Retention policy configuration for collections.
@@ -145,8 +146,14 @@ public class RetentionPolicy implements Serializable {
      *
      * @param duration How long to keep records
      * @return RetentionPolicy
+     * @throws NullPointerException     if {@code duration} is null
+     * @throws IllegalArgumentException if {@code duration} is zero or negative
      */
     public static RetentionPolicy keepFor(Duration duration) {
+        Objects.requireNonNull(duration, "duration must not be null");
+        if (duration.isZero() || duration.isNegative()) {
+            throw new IllegalArgumentException("duration must be positive, got: " + duration);
+        }
         return builder()
                 .strategy(RetentionStrategy.TIME_BASED)
                 .retentionDuration(duration)
@@ -175,8 +182,12 @@ public class RetentionPolicy implements Serializable {
      *
      * @param maxCount Maximum records to keep
      * @return RetentionPolicy
+     * @throws IllegalArgumentException if {@code maxCount} is zero or negative
      */
     public static RetentionPolicy keepLastN(long maxCount) {
+        if (maxCount <= 0) {
+            throw new IllegalArgumentException("maxCount must be > 0, got: " + maxCount);
+        }
         return builder()
                 .strategy(RetentionStrategy.COUNT_BASED)
                 .maxRecordCount(maxCount)
@@ -188,8 +199,12 @@ public class RetentionPolicy implements Serializable {
      *
      * @param maxSizeBytes Maximum size in bytes
      * @return RetentionPolicy
+     * @throws IllegalArgumentException if {@code maxSizeBytes} is zero or negative
      */
     public static RetentionPolicy keepUpToSize(long maxSizeBytes) {
+        if (maxSizeBytes <= 0) {
+            throw new IllegalArgumentException("maxSizeBytes must be > 0, got: " + maxSizeBytes);
+        }
         return builder()
                 .strategy(RetentionStrategy.SIZE_BASED)
                 .maxSizeBytes(maxSizeBytes)

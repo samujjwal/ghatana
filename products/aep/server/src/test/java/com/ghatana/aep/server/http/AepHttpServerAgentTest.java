@@ -3,6 +3,8 @@ package com.ghatana.aep.server.http;
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.spi.EntityStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
@@ -45,6 +47,7 @@ class AepHttpServerAgentTest {
 
     private AepEngine engine;
     private DataCloudClient mockDc;
+    private EntityStore mockEntityStore;
     private AepHttpServer server;
     private int port;
     private HttpClient httpClient;
@@ -54,6 +57,8 @@ class AepHttpServerAgentTest {
     void setUp() throws Exception {
         engine = Aep.forTesting();
         mockDc = mock(DataCloudClient.class);
+        mockEntityStore = mock(EntityStore.class);
+        when(mockDc.entityStore()).thenReturn(mockEntityStore);
         port = findFreePort();
         httpClient = HttpClient.newBuilder().build();
     }
@@ -79,20 +84,20 @@ class AepHttpServerAgentTest {
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
         assertThat(body.get("count")).isEqualTo(0);
         assertThat((List<?>) body.get("agents")).isEmpty();
-        assertThat(body.get("note").toString()).contains("DataCloud not configured");
+        assertThat(body.get("note").toString()).contains("Agent store not configured");
     }
 
     @Test
     @DisplayName("listAgents: DC returns 2 entities → 200 with agent summaries")
     void listAgents_withDcReturningEntities_returns200WithCount() throws Exception {
-        List<DataCloudClient.Entity> entities = List.of(
-            DataCloudClient.Entity.of("agent-alpha", "agent-registry",
-                Map.of("name", "Alpha", "type", "LLM", "status", "ACTIVE")),
-            DataCloudClient.Entity.of("agent-beta", "agent-registry",
-                Map.of("name", "Beta", "type", "RULE", "status", "ACTIVE"))
+        List<EntityStore.Entity> entities = List.of(
+            EntityStore.Entity.builder().id("agent-alpha").collection("aep_agents")
+                .data(Map.of("name", "Alpha", "type", "LLM", "status", "ACTIVE")).build(),
+            EntityStore.Entity.builder().id("agent-beta").collection("aep_agents")
+                .data(Map.of("name", "Beta", "type", "RULE", "status", "ACTIVE")).build()
         );
-        when(mockDc.query(anyString(), eq("agent-registry"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(entities));
+        when(mockEntityStore.query(any(TenantContext.class), any(EntityStore.QuerySpec.class)))
+            .thenReturn(Promise.of(EntityStore.QueryResult.of(entities)));
 
         server = new AepHttpServer(engine, port, null, mockDc);
         server.start();
@@ -110,8 +115,8 @@ class AepHttpServerAgentTest {
     @Test
     @DisplayName("listAgents: DC returns empty list → 200 with count=0")
     void listAgents_withEmptyDcResult_returns200WithZeroCount() throws Exception {
-        when(mockDc.query(anyString(), eq("agent-registry"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(List.of()));
+        when(mockEntityStore.query(any(TenantContext.class), any(EntityStore.QuerySpec.class)))
+            .thenReturn(Promise.of(EntityStore.QueryResult.empty()));
 
         server = new AepHttpServer(engine, port, null, mockDc);
         server.start();
@@ -130,10 +135,10 @@ class AepHttpServerAgentTest {
     @Test
     @DisplayName("getAgent: entity found in DC → 200 with agent detail")
     void getAgent_whenEntityFound_returns200WithData() throws Exception {
-        DataCloudClient.Entity entity = DataCloudClient.Entity.of(
-            "agent-42", "agent-registry",
-            Map.of("name", "Sentinel", "type", "LLM", "status", "ACTIVE"));
-        when(mockDc.findById(anyString(), eq("agent-registry"), eq("agent-42")))
+        EntityStore.Entity entity = EntityStore.Entity.builder()
+            .id("agent-42").collection("aep_agents")
+            .data(Map.of("name", "Sentinel", "type", "LLM", "status", "ACTIVE")).build();
+        when(mockEntityStore.findById(any(TenantContext.class), eq(EntityStore.EntityId.of("agent-42"))))
             .thenReturn(Promise.of(Optional.of(entity)));
 
         server = new AepHttpServer(engine, port, null, mockDc);
@@ -153,7 +158,7 @@ class AepHttpServerAgentTest {
     @Test
     @DisplayName("getAgent: entity not found in DC → 404")
     void getAgent_whenEntityNotFound_returns404() throws Exception {
-        when(mockDc.findById(anyString(), eq("agent-registry"), eq("missing-agent")))
+        when(mockEntityStore.findById(any(TenantContext.class), eq(EntityStore.EntityId.of("missing-agent"))))
             .thenReturn(Promise.of(Optional.empty()));
 
         server = new AepHttpServer(engine, port, null, mockDc);

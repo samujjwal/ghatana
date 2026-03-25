@@ -8,13 +8,12 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:observability"))
-    implementation(project(":platform:java:event-cloud"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:agent-core"))
-    implementation(project(":platform:java:agent-runtime"))  // Migrated from agent-memory: MemoryPlane
+    implementation(project(":products:aep:aep-agent-runtime"))  // Migrated from agent-memory: MemoryPlane
 
     // AEP contracts (provides com.ghatana.core.operator.* and com.ghatana.core.pipeline.*)
     implementation(project(":products:aep:aep-operator-contracts"))

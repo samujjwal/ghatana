@@ -41,7 +41,8 @@ public class ReactExpertWorkerAgent extends YAPPCAgentBase<ReactExpertWorkerInpu
             "#/definitions/ReactExpertWorkerOutput",
             List.of("react", "hooks", "components"),
             Map.of("description", "Stack expert worker agent for React component patterns and hooks", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

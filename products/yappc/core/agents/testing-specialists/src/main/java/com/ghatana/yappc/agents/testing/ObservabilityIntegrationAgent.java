@@ -41,7 +41,8 @@ public class ObservabilityIntegrationAgent extends YAPPCAgentBase<ObservabilityI
             "#/definitions/ObservabilityIntegrationOutput",
             List.of("integration", "observability", "metrics"),
             Map.of("description", "Integration bridge agent for observability platform data", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

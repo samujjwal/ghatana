@@ -52,7 +52,8 @@ public class PublishArchitectureSpecialistAgent
                 "1.0.0",
                 "estimatedDuration",
                 "3m")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

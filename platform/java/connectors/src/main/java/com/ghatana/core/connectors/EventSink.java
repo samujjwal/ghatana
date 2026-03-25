@@ -1,19 +1,21 @@
 package com.ghatana.core.connectors;
 
-import com.ghatana.core.event.cloud.EventRecord;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import io.activej.promise.Promise;
 
 /**
  * Abstraction for event sinks where events can be delivered (e.g., Kafka, file, external API).
  *
  * <p><b>Purpose</b><br>
- * Provides a uniform interface for publishing EventRecord instances to external systems.
+ * Provides a uniform interface for publishing {@link EventLogStore.EventEntry} instances
+ * to external systems.
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
  * EventSink sink = KafkaEventSink.create(config);
  * sink.start().get();
- * sink.send(eventRecord).get();
+ * sink.send(tenant, entry).get();
  * sink.stop().get();
  * }</pre>
  *
@@ -39,12 +41,13 @@ public interface EventSink {
     Promise<Void> stop();
 
     /**
-     * Send an event record to the sink.
+     * Send an event entry to the sink.
      *
-     * @param record EventRecord to send
+     * @param tenant the tenant context
+     * @param entry  the event entry to publish
      * @return Promise completes with void on success
      */
-    Promise<Void> send(EventRecord record);
+    Promise<Void> send(TenantContext tenant, EventLogStore.EventEntry entry);
 
     /**
      * Flush any buffered events. Optional.

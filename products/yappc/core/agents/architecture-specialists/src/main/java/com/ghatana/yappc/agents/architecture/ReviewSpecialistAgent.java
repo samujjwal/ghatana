@@ -45,7 +45,8 @@ public class ReviewSpecialistAgent extends YAPPCAgentBase<ReviewInput, ReviewOut
             "#/definitions/ReviewOutput",
             List.of("implementation", "review", "quality"),
             Map.of("description", "Reviews implemented code", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

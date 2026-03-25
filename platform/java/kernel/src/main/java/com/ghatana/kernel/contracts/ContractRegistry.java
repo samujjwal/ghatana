@@ -16,8 +16,12 @@ import java.util.stream.Collectors;
  * <p>Contracts are registered after passing all applicable validators.
  * The registry is thread-safe and supports lookup by family, ID, or name.</p>
  *
+ * <p>In addition to the structured {@link KernelContract} hierarchy, the registry
+ * also accepts lightweight {@link ModuleContract} and {@link SchemaRegistration} registrations
+ * for modules that only need to declare their metadata without implementing the full contract model.</p>
+ *
  * @doc.type class
- * @doc.purpose Central registry for validated kernel contracts
+ * @doc.purpose Central registry for validated kernel contracts and module metadata
  * @doc.layer core
  * @doc.pattern Registry
  * @author Ghatana Kernel Team
@@ -26,6 +30,8 @@ import java.util.stream.Collectors;
 public final class ContractRegistry {
 
     private final Map<String, KernelContract> contracts = new ConcurrentHashMap<>();
+    private final Map<String, ModuleContract> moduleContracts = new ConcurrentHashMap<>();
+    private final Map<String, SchemaRegistration> schemaRegistrations = new ConcurrentHashMap<>();
     private final List<ContractValidator> validators;
 
     /**
@@ -113,4 +119,58 @@ public final class ContractRegistry {
     public int size() {
         return contracts.size();
     }
+
+    // -------------------------------------------------------------------------
+    // Lightweight module/schema registration (promoted from kernel.contract)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Registers a lightweight module contract describing capabilities, dependencies and metadata.
+     *
+     * @param contract the module contract to register
+     * @throws IllegalArgumentException if a module with the same ID is already registered
+     */
+    public void registerModuleContract(ModuleContract contract) {
+        java.util.Objects.requireNonNull(contract, "contract");
+        ModuleContract existing = moduleContracts.putIfAbsent(contract.moduleId(), contract);
+        if (existing != null) {
+            throw new IllegalArgumentException("Module contract already registered: " + contract.moduleId());
+        }
+    }
+
+    /**
+     * Registers a lightweight data-schema registration.
+     *
+     * @param registration the schema registration to register
+     * @throws IllegalArgumentException if a schema with the same ID is already registered
+     */
+    public void registerSchemaContract(SchemaRegistration registration) {
+        java.util.Objects.requireNonNull(registration, "registration");
+        SchemaRegistration existing = schemaRegistrations.putIfAbsent(registration.schemaId(), registration);
+        if (existing != null) {
+            throw new IllegalArgumentException("Schema registration already registered: " + registration.schemaId());
+        }
+    }
+
+    /**
+     * Returns a registered module contract by module ID.
+     */
+    public Optional<ModuleContract> getModuleContract(String moduleId) {
+        return Optional.ofNullable(moduleContracts.get(moduleId));
+    }
+
+    /**
+     * Returns all registered module contracts.
+     */
+    public List<ModuleContract> getAllModuleContracts() {
+        return List.copyOf(moduleContracts.values());
+    }
+
+    /**
+     * Returns all registered schema registrations.
+     */
+    public List<SchemaRegistration> getAllSchemaRegistrations() {
+        return List.copyOf(schemaRegistrations.values());
+    }
 }
+

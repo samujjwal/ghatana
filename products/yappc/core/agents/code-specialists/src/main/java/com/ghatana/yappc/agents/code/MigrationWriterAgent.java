@@ -41,7 +41,8 @@ public class MigrationWriterAgent extends YAPPCAgentBase<MigrationWriterInput, M
             "#/definitions/MigrationWriterOutput",
             List.of("database", "migration", "schema"),
             Map.of("description", "Worker agent that generates database migration scripts", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

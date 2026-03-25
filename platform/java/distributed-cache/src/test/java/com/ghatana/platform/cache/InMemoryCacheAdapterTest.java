@@ -1,5 +1,6 @@
 package com.ghatana.platform.cache;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.pattern TestClass
  */
 @DisplayName("InMemoryCacheAdapter Tests")
-class InMemoryCacheAdapterTest {
+class InMemoryCacheAdapterTest extends EventloopTestBase {
 
     private InMemoryCacheAdapter<String, String> cache;
 
@@ -32,59 +33,59 @@ class InMemoryCacheAdapterTest {
 
     @Test
     @DisplayName("get returns empty for absent key")
-    void getReturnsEmptyForAbsentKey() throws Exception {
-        Optional<String> result = cache.get("missing").get();
+    void getReturnsEmptyForAbsentKey() {
+        Optional<String> result = runPromise(() -> cache.get("missing"));
         assertThat(result).isEmpty();
     }
 
     @Test
     @DisplayName("put and get round-trip succeeds")
-    void putAndGetRoundTripSucceeds() throws Exception {
-        cache.put("key1", "value1").get();
-        Optional<String> result = cache.get("key1").get();
+    void putAndGetRoundTripSucceeds() {
+        runPromise(() -> cache.put("key1", "value1"));
+        Optional<String> result = runPromise(() -> cache.get("key1"));
         assertThat(result).contains("value1");
     }
 
     @Test
     @DisplayName("invalidate removes key")
-    void invalidateRemovesKey() throws Exception {
-        cache.put("key2", "value2").get();
-        cache.invalidate("key2").get();
-        Optional<String> result = cache.get("key2").get();
+    void invalidateRemovesKey() {
+        runPromise(() -> cache.put("key2", "value2"));
+        runPromise(() -> cache.invalidate("key2"));
+        Optional<String> result = runPromise(() -> cache.get("key2"));
         assertThat(result).isEmpty();
     }
 
     @Test
     @DisplayName("invalidateAll removes all keys")
-    void invalidateAllRemovesAllKeys() throws Exception {
-        cache.put("k1", "v1").get();
-        cache.put("k2", "v2").get();
-        cache.invalidateAll().get();
-        assertThat(cache.get("k1").get()).isEmpty();
-        assertThat(cache.get("k2").get()).isEmpty();
+    void invalidateAllRemovesAllKeys() {
+        runPromise(() -> cache.put("k1", "v1"));
+        runPromise(() -> cache.put("k2", "v2"));
+        runPromise(() -> cache.invalidateAll());
+        assertThat(runPromise(() -> cache.get("k1"))).isEmpty();
+        assertThat(runPromise(() -> cache.get("k2"))).isEmpty();
     }
 
     @Test
     @DisplayName("getOrLoad invokes loader on miss")
-    void getOrLoadInvokesLoaderOnMiss() throws Exception {
+    void getOrLoadInvokesLoaderOnMiss() {
         AtomicInteger loadCount = new AtomicInteger(0);
-        String value = cache.getOrLoad("key", k -> {
+        String value = runPromise(() -> cache.getOrLoad("key", k -> {
             loadCount.incrementAndGet();
             return Promise.of("loaded");
-        }).get();
+        }));
         assertThat(value).isEqualTo("loaded");
         assertThat(loadCount.get()).isEqualTo(1);
     }
 
     @Test
     @DisplayName("getOrLoad does not invoke loader on hit")
-    void getOrLoadDoesNotInvokeLoaderOnHit() throws Exception {
-        cache.put("key", "cached").get();
+    void getOrLoadDoesNotInvokeLoaderOnHit() {
+        runPromise(() -> cache.put("key", "cached"));
         AtomicInteger loadCount = new AtomicInteger(0);
-        String value = cache.getOrLoad("key", k -> {
+        String value = runPromise(() -> cache.getOrLoad("key", k -> {
             loadCount.incrementAndGet();
             return Promise.of("loaded");
-        }).get();
+        }));
         assertThat(value).isEqualTo("cached");
         assertThat(loadCount.get()).isEqualTo(0);
     }
@@ -121,16 +122,16 @@ class InMemoryCacheAdapterTest {
 
     @Test
     @DisplayName("put with explicit TTL stores value")
-    void putWithExplicitTtlStoresValue() throws Exception {
-        cache.put("k", "v", Duration.ofMinutes(1)).get();
-        assertThat(cache.get("k").get()).contains("v");
+    void putWithExplicitTtlStoresValue() {
+        runPromise(() -> cache.put("k", "v", Duration.ofMinutes(1)));
+        assertThat(runPromise(() -> cache.get("k"))).contains("v");
     }
 
     @Test
     @DisplayName("second put overwrites first")
-    void secondPutOverwritesFirst() throws Exception {
-        cache.put("k", "first").get();
-        cache.put("k", "second").get();
-        assertThat(cache.get("k").get()).contains("second");
+    void secondPutOverwritesFirst() {
+        runPromise(() -> cache.put("k", "first"));
+        runPromise(() -> cache.put("k", "second"));
+        assertThat(runPromise(() -> cache.get("k"))).contains("second");
     }
 }

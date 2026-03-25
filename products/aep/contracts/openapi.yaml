@@ -17,8 +17,8 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0.html
 
 servers:
-  - url: http://localhost:8081
-    description: Local development (AEP standalone)
+  - url: http://localhost:8090
+    description: Local development (AEP standalone — canonical Java backend on port 8090)
   - url: https://aep.ghatana.local
     description: Production AEP
 

@@ -453,7 +453,7 @@ public class ConsentManagementService implements ConsentService {
                 "expiresAt", "timestamp"
             ),
             Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> emergency = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
             EMERGENCY_DATASET,
@@ -466,7 +466,7 @@ public class ConsentManagementService implements ConsentService {
                 "expiresAt", "timestamp"
             ),
             Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(consent, emergency).map($ -> null);
     }
@@ -480,7 +480,7 @@ public class ConsentManagementService implements ConsentService {
 
         return dataCloud.readData(request)
             .map(result -> Optional.ofNullable(deserialize(result.getData())))
-            .whenException(e -> Promise.of(Optional.empty()));
+            ;
     }
 
     private Promise<ConsentGrant> updateGrant(ConsentGrant grant) {
@@ -551,7 +551,7 @@ public class ConsentManagementService implements ConsentService {
             Map.of("timestamp", Instant.now().toString())
         );
 
-        return dataCloud.writeData(request).whenException(e -> {});
+        return dataCloud.writeData(request);
     }
 
     private byte[] serialize(ConsentGrant grant) {

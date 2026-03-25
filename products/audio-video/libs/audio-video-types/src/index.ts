@@ -142,7 +142,7 @@ export interface DetectedObject {
   class: string;
   confidence: number;
   bbox: BoundingBox;
-  attributes?: Record<string, any>;
+  attributes?: Record<string, unknown>;
 }
 
 export interface BoundingBox {
@@ -170,7 +170,8 @@ export interface MultimodalOptions {
 }
 
 export interface MultimodalResult {
-  result: any; // Varies based on task and output format
+  /** Varies based on task and output format — discriminate on `task` when consuming. */
+  result: unknown;
   confidence: number;
   processingTimeMs: number;
   modalities: string[];
@@ -181,7 +182,7 @@ export interface MultimodalInsight {
   type: string;
   description: string;
   confidence: number;
-  data: any;
+  data: unknown;
 }
 
 // Service status types
@@ -220,10 +221,10 @@ export interface AudioVideoState {
 
 export interface ServiceState {
   status: ServiceStatus;
-  lastResult?: any;
+  lastResult?: unknown;
   isProcessing: boolean;
   error?: string;
-  configuration: Record<string, any>;
+  configuration: Record<string, unknown>;
 }
 
 export interface AudioVideoSettings {
@@ -238,7 +239,7 @@ export interface ServiceSettings {
   endpoint: string;
   timeout: number;
   retries: number;
-  customSettings: Record<string, any>;
+  customSettings: Record<string, unknown>;
 }
 
 export interface UISettings {
@@ -280,14 +281,14 @@ export interface WorkflowStep {
   id: string;
   service: ServiceType;
   operation: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   conditions?: WorkflowCondition[];
 }
 
 export interface WorkflowCondition {
   field: string;
   operator: 'equals' | 'contains' | 'greater' | 'less';
-  value: any;
+  value: string | number | boolean;
 }
 
 export interface WorkflowExecution {
@@ -295,7 +296,7 @@ export interface WorkflowExecution {
   status: 'pending' | 'running' | 'completed' | 'failed';
   startTime: Date;
   endTime?: Date;
-  results: Record<string, any>;
+  results: Record<string, unknown>;
   error?: string;
 }
 
@@ -304,7 +305,7 @@ export interface AudioVideoError {
   code: string;
   message: string;
   service?: ServiceType;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   timestamp: Date;
 }
 
@@ -317,7 +318,7 @@ export interface APIError extends AudioVideoError {
 export interface AudioVideoEvent {
   type: string;
   service?: ServiceType;
-  data: any;
+  data: unknown;
   timestamp: Date;
 }
 
@@ -339,7 +340,7 @@ export type ServiceResponse<T = any> = {
   success: boolean;
   data?: T;
   error?: AudioVideoError;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 };
 
 export type ProgressCallback = (progress: number, message?: string) => void;

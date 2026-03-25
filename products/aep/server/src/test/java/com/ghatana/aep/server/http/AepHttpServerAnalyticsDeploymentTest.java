@@ -72,7 +72,7 @@ class AepHttpServerAnalyticsDeploymentTest {
             HttpResponse<String> resp = post("/api/v1/analytics/anomalies", body);
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
             assertThat(respBody).containsKey("anomalies");
         }
 
@@ -93,7 +93,7 @@ class AepHttpServerAnalyticsDeploymentTest {
             HttpResponse<String> resp = post("/api/v1/analytics/anomalies", body);
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
             assertThat(respBody).containsKey("anomalies");
             assertThat(respBody).containsKey("count");
         }
@@ -139,7 +139,7 @@ class AepHttpServerAnalyticsDeploymentTest {
             HttpResponse<String> resp = post("/api/v1/analytics/forecast", body);
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
             assertThat(respBody).containsKey("metric");
             assertThat(respBody.get("metric")).isEqualTo("cpu_usage");
         }
@@ -211,7 +211,7 @@ class AepHttpServerAnalyticsDeploymentTest {
             HttpResponse<String> resp = delete("/api/v1/deployments/dep-1");
 
             assertThat(resp.statusCode()).isEqualTo(400);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
             assertThat(body.get("error").toString()).contains("tenantId");
         }
     }

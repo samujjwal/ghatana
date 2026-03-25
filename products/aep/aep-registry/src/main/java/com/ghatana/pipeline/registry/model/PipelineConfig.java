@@ -1,5 +1,6 @@
 package com.ghatana.pipeline.registry.model;
 
+import com.ghatana.kernel.descriptor.ResourceRequirements;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

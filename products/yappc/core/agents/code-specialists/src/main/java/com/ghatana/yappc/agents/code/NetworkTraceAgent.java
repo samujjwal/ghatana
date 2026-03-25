@@ -41,7 +41,8 @@ public class NetworkTraceAgent extends YAPPCAgentBase<NetworkTraceInput, Network
             "#/definitions/NetworkTraceOutput",
             List.of("debug", "network-analysis"),
             Map.of("description", "Debug micro-agent that analyzes network traces for latency and connectivity issues", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

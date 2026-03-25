@@ -10,6 +10,7 @@ package com.ghatana.agent.framework.config;
  * @doc.type class
  * @doc.purpose Agent materialization exception
  * @doc.layer platform
+ * @doc.pattern Exception
  *
  * @author Ghatana AI Platform
  * @since 3.0.0

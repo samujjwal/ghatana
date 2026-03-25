@@ -41,7 +41,8 @@ public class FixGeneratorAgent extends YAPPCAgentBase<FixGeneratorInput, FixGene
             "#/definitions/FixGeneratorOutput",
             List.of("debug", "fix-generation", "code-generation"),
             Map.of("description", "Debug micro-agent that generates code fixes for identified bugs", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

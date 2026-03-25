@@ -7,6 +7,7 @@ package com.ghatana.aep.server.store;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.DataCloudClient.Entity;
 import com.ghatana.datacloud.DataCloudClient.Query;
+import com.ghatana.pipeline.registry.model.Pipeline;
 import com.ghatana.platform.core.common.pagination.Page;
 import com.ghatana.platform.domain.auth.TenantId;
 import io.activej.promise.Promise;

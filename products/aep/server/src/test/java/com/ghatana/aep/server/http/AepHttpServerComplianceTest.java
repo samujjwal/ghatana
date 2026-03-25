@@ -155,7 +155,7 @@ class AepHttpServerComplianceTest {
             when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
                 .thenReturn(Promise.of(List.of()));
             when(mockDc.delete(anyString(), anyString(), anyString()))
-                .thenReturn(Promise.of(true));
+                .thenReturn(Promise.of((Void) null));
 
             server = new AepHttpServer(engine, port, null, mockDc);
             server.start();
@@ -240,6 +240,10 @@ class AepHttpServerComplianceTest {
         void ccpaOptOut_withDc_returns200() throws Exception {
             when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
                 .thenReturn(Promise.of(List.of()));
+            when(mockDc.save(anyString(), anyString(), any()))
+                .thenReturn(Promise.of(DataCloudClient.Entity.of(
+                        "consumer-1", "aep_ccpa_opt_out",
+                        java.util.Map.of("id", "consumer-1", "_ccpaOptOut", true))));
 
             server = new AepHttpServer(engine, port, null, mockDc);
             server.start();

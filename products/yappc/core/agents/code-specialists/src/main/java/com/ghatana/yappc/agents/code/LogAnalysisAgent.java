@@ -41,7 +41,8 @@ public class LogAnalysisAgent extends YAPPCAgentBase<LogAnalysisInput, LogAnalys
             "#/definitions/LogAnalysisOutput",
             List.of("debug", "log-analysis"),
             Map.of("description", "Debug micro-agent that analyzes log files for error patterns and anomalies", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

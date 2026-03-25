@@ -14,6 +14,7 @@ import com.ghatana.aep.server.http.controllers.ComplianceController;
 import com.ghatana.aep.server.http.controllers.DeploymentController;
 import com.ghatana.aep.server.http.controllers.HealthController;
 import com.ghatana.aep.server.http.controllers.HitlController;
+import com.ghatana.aep.learning.EpisodeLearningPipeline;
 import com.ghatana.aep.server.http.controllers.LearningController;
 import com.ghatana.aep.server.http.controllers.PatternController;
 import com.ghatana.aep.server.http.controllers.PipelineController;
@@ -30,6 +31,9 @@ import com.ghatana.pipeline.registry.repository.PipelineRepository;
 import com.ghatana.pipeline.registry.service.CapabilitiesService;
 import com.ghatana.pipeline.registry.validation.PipelineValidator;
 import com.ghatana.platform.domain.auth.TenantId;
+import com.ghatana.aep.eventcloud.store.EventCloudRunLedger;
+import com.ghatana.aep.observability.AepSloMetrics;
+import com.ghatana.aep.observability.RunLedgerService;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -96,6 +100,11 @@ public class AepHttpServer {
     @Nullable
     private final AepComplianceService complianceService;
     private final AepSoc2ControlFramework soc2Framework = new AepSoc2ControlFramework();
+
+    /** Phase-6: SLO metrics recorder (intake latency, run rates, etc.). */
+    private final AepSloMetrics sloMetrics;
+    /** Phase-6: Durable run-ledger service for distributed trace correlation. */
+    private final RunLedgerService runLedgerService;
 
     /**
      * Whether pipelines are backed by Data-Cloud durable storage.
@@ -169,6 +178,13 @@ public class AepHttpServer {
         this.humanReviewQueue = humanReviewQueue;
         this.agentDataCloud = agentDataCloud;
         this.complianceService = agentDataCloud != null ? new AepComplianceService(agentDataCloud) : null;
+        this.sloMetrics = new AepSloMetrics(metricsCollector);
+        EventCloudRunLedger runLedger = (agentDataCloud != null && agentDataCloud.eventLogStore() != null)
+            ? new EventCloudRunLedger(agentDataCloud.eventLogStore())
+            : null;
+        this.runLedgerService = runLedger != null
+            ? new RunLedgerService(runLedger)
+            : new RunLedgerService();
         this.objectMapper = JsonUtils.getDefaultMapper();
         DeploymentOrchestrator orchestrator = new DeploymentOrchestrator(
             new EventCloudDeploymentEventPublisher(engine.eventCloud()),
@@ -189,6 +205,12 @@ public class AepHttpServer {
 
         // Initialize controllers (Week 3 decomposition)
         this.healthController = new HealthController("1.0.0-SNAPSHOT");
+        this.healthController.addDependencyCheck("data-cloud",
+            () -> this.agentDataCloud != null ? "ok" : "disabled");
+        this.healthController.addDependencyCheck("review-queue",
+            () -> this.humanReviewQueue != null ? "ok" : "disabled");
+        this.healthController.addDependencyCheck("run-ledger",
+            () -> this.agentDataCloud != null ? "ok" : "disabled");
         this.pipelineController = new PipelineController(this.pipelineRepository, this.objectMapper);
         this.agentController = new AgentController(this.engine, this.agentDataCloud);
         this.patternController = new PatternController(this.engine);
@@ -197,7 +219,14 @@ public class AepHttpServer {
         this.sseController = new SseController();
         this.hitlController = new HitlController(this.humanReviewQueue,
             (tenantId, data) -> sseController.publishSseTo(tenantId, "hitl.update", data));
-        this.learningController = new LearningController(this.agentDataCloud, this.humanReviewQueue);
+        EpisodeLearningPipeline learningPipeline = agentDataCloud != null
+            ? new EpisodeLearningPipeline(agentDataCloud,
+                  com.ghatana.agent.learning.evaluation.CompositeEvaluationGate.defaultGates(),
+                  this.humanReviewQueue != null ? this.humanReviewQueue
+                      : new com.ghatana.agent.learning.review.InMemoryHumanReviewQueue())
+            : null;
+        this.learningController = new LearningController(this.agentDataCloud,
+            this.humanReviewQueue, learningPipeline);
         this.complianceController = new ComplianceController(this.complianceService, this.soc2Framework);
     }
 
@@ -218,6 +247,7 @@ public class AepHttpServer {
             // Info endpoints
             .with(HttpMethod.GET, "/info", this::handleInfo)
             .with(HttpMethod.GET, "/metrics", this::handleMetrics)
+            .with(HttpMethod.GET, "/metrics/slo", this::handleGetSloMetrics)
 
             // Event processing endpoints
             .with(HttpMethod.POST, "/api/v1/events", this::handleProcessEvent)
@@ -264,6 +294,7 @@ public class AepHttpServer {
 
             // Pipeline run & metrics endpoints (AEP-P7)
             .with(HttpMethod.GET, "/api/v1/runs", this::handleListPipelineRuns)
+            .with(HttpMethod.GET, "/api/v1/runs/:runId", this::handleGetRunDetail)
             .with(HttpMethod.POST, "/api/v1/runs/:runId/cancel", this::handleCancelRun)
             .with(HttpMethod.GET, "/api/v1/metrics/pipelines", this::handleGetPipelineMetrics)
 
@@ -358,10 +389,19 @@ public class AepHttpServer {
         )));
     }
 
+    private Promise<HttpResponse> handleGetSloMetrics(HttpRequest request) {
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("runCounts", sloMetrics.runCountSnapshot());
+        body.put("metricsLink", "/metrics");
+        body.put("timestamp", Instant.now().toString());
+        return Promise.of(jsonResponse(body));
+    }
+
     // ==================== Event Processing Endpoints ====================
 
     @SuppressWarnings("unchecked")
     private Promise<HttpResponse> handleProcessEvent(HttpRequest request) {
+        Instant receivedAt = Instant.now();
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
@@ -383,6 +423,7 @@ public class AepHttpServer {
                     .map(result -> {
                         recordRun(result.eventId(), tenantId, null,
                             result.success() ? "SUCCEEDED" : "FAILED", startedAt);
+                        sloMetrics.recordIntakeLatency(receivedAt, startedAt, tenantId);
                         return jsonResponse(Map.of(
                             "eventId", result.eventId(),
                             "success", result.success(),
@@ -725,6 +766,29 @@ public class AepHttpServer {
     }
 
     /**
+     * Returns the detail of a single pipeline run by its ID.
+     *
+     * @return 200 with the run record, 404 if not found in the in-memory buffer
+     *
+     * @doc.type method
+     * @doc.purpose Retrieve a single pipeline run by runId for the unified run detail view
+     * @doc.layer product
+     * @doc.pattern Service
+     */
+    private Promise<HttpResponse> handleGetRunDetail(HttpRequest request) {
+        String runId = request.getPathParameter("runId");
+        if (runId == null || runId.isBlank()) {
+            return Promise.of(errorResponse(400, "runId path parameter is required"));
+        }
+        String tenantId = resolveTenantId(request);
+        return recentRuns.stream()
+            .filter(r -> runId.equals(r.get("runId")) && tenantId.equals(r.get("tenantId")))
+            .findFirst()
+            .map(run -> Promise.of(jsonResponse(run)))
+            .orElseGet(() -> Promise.of(errorResponse(404, "Run not found: " + runId)));
+    }
+
+    /**
      * Cancels a pipeline run. In-memory runs cannot be preempted mid-flight; returns 200
      * once the run entry is marked CANCELLED (idempotent — run may already be complete).
      *
@@ -808,15 +872,27 @@ public class AepHttpServer {
         if (recentRuns.size() >= MAX_RECENT_RUNS) {
             recentRuns.pollFirst();
         }
+        Instant completedAt = Instant.now();
+        long durationMs = java.time.Duration.between(startedAt, completedAt).toMillis();
+        String pipeline = pipelineId != null && !pipelineId.isBlank() ? pipelineId : "event";
         Map<String, Object> run = new java.util.HashMap<>();
         run.put("runId", runId);
         run.put("tenantId", tenantId);
-        run.put("pipelineId", pipelineId != null ? pipelineId : "event");
+        run.put("pipelineId", pipeline);
         run.put("status", status);
         run.put("startedAt", startedAt.toString());
-        run.put("completedAt", Instant.now().toString());
+        run.put("completedAt", completedAt.toString());
+        run.put("durationMs", durationMs);
         recentRuns.addLast(run);
         sseController.publishSseTo(tenantId, "run.update", run);
+        // Phase-6: SLO metrics + durable run ledger (fire-and-forget)
+        if ("SUCCEEDED".equals(status)) {
+            sloMetrics.recordRunCompleted(tenantId, pipeline, durationMs);
+            runLedgerService.recordRunCompleted(runId, tenantId, pipelineId, null, startedAt, 0);
+        } else {
+            sloMetrics.recordRunFailed(tenantId, pipeline, durationMs, "engine_error");
+            runLedgerService.recordRunFailed(runId, tenantId, pipelineId, null, startedAt, "engine_error", null);
+        }
     }
 
     // ==================== SSE Broadcast (Public API) ====================

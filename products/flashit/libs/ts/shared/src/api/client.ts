@@ -19,6 +19,8 @@ import type {
     ClassifySphereResponse,
     UploadUrlRequest,
     UploadUrlResponse,
+    SearchParams,
+    SearchResult,
 } from '../types';
 
 export interface FlashitApiClientConfig {
@@ -217,8 +219,8 @@ export class FlashitApiClient {
      * Enhanced AI Search
      * Uses vector embeddings and hybrid search
      */
-    async search(params: any): Promise<any> {
-        return this.request<any>('/api/search', {
+    async search(params: SearchParams): Promise<SearchResult> {
+        return this.request<SearchResult>('/api/search', {
             method: 'POST',
             body: JSON.stringify(params),
         });

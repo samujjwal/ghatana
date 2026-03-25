@@ -1,7 +1,8 @@
 package com.ghatana.core.connectors.impl.sink;
 
 import com.ghatana.core.connectors.EventSink;
-import com.ghatana.core.event.cloud.EventRecord;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import io.activej.promise.Promise;
 
 import java.util.Objects;
@@ -286,10 +287,10 @@ public final class KafkaEventSink implements EventSink {
     }
 
     @Override
-    public Promise<Void> send(EventRecord record) {
+    public Promise<Void> send(TenantContext tenant, EventLogStore.EventEntry entry) {
         if (!started) {
             return Promise.ofException(new IllegalStateException("sink not started"));
         }
-        return producer.send(record);
+        return producer.send(entry);
     }
 }

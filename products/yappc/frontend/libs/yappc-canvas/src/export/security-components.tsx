@@ -25,7 +25,7 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { ListItemSecondaryAction, Collapse } from '@ghatana/design-system';
-import { useTheme, resolveMuiColor } from '@yappc/ui/theme';
+import { useTheme, resolveMuiColor } from '@yappc/theme';
 import React, { useState, useCallback, useMemo } from 'react';
 
 import { useSecurityAudit } from './hooks';

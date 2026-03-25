@@ -41,7 +41,8 @@ public class ContextGatheringAgent extends YAPPCAgentBase<ContextGatheringInput,
             "#/definitions/ContextGatheringOutput",
             List.of("context", "information-gathering"),
             Map.of("description", "Worker agent that gathers contextual information for decision making", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

@@ -424,8 +424,17 @@ public class PiiMaskingUtil implements ArchiveMigrationScheduler.PiiMaskingFunct
         return "sha256:" + sb;
     }
 
+    /**
+     * Produces a deterministic, non-reversible token using SHA-256(SALT + value).
+     * The same input always produces the same token (idempotent across restarts).
+     *
+     * <p>DC3-M1: Current implementation uses a global SALT — all tenants produce the same
+     * token for the same PII value, enabling cross-tenant correlation. For production
+     * tenant isolation, replace {@code SALT} with a per-tenant HMAC key stored in the
+     * key management service.</p>
+     */
     private String tokenize(String value) {
-        // Simple tokenization - in production, use a secure token vault
+        // Deterministic SHA-256-based tokenization (NOT UUID.randomUUID() — that would break re-identification)
         return "tok_" + hashValue(value).substring(7, 19);
     }
 

@@ -34,6 +34,15 @@ import static io.activej.common.Checks.checkState;
 import static io.activej.common.exception.FatalErrorHandler.handleError;
 import static io.activej.reactor.Reactor.getCurrentReactor;
 
+/**
+ * Vendored copy of {@code io.activej.promise.AbstractPromise} from ActiveJ 6.0-rc2.
+ *
+ * <p><b>Ghatana vendoring status:</b> Documented intent is promise instrumentation
+ * (span correlation and metrics on completion). No {@code // GHATANA-PATCH:} markers
+ * have been identified in this file. A diff against upstream is required to confirm
+ * whether this is a pure copy or if patches exist without annotation.
+ * See {@code io/activej/PATCHES.md} for the full patch manifest and upgrade procedure.
+ */
 @SuppressWarnings({"unchecked", "WeakerAccess", "unused"})
 public abstract class AbstractPromise<T> implements Promise<T> {
 	static {

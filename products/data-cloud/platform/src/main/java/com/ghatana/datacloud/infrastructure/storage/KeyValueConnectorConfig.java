@@ -64,7 +64,7 @@ import java.util.Objects;
  * Immutable value object - all fields final. Safe to share across threads.
  *
  * @see KeyValueConnector
- * @see com.ghatana.core.cache.redis.RedisCacheConfig
+ * @see com.ghatana.platform.database.cache.RedisCacheConfig
  * @doc.type class
  * @doc.purpose Configuration for KeyValueConnector with Redis connection settings
  * @doc.layer product

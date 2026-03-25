@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Periodic heartbeat service that monitors all agents registered in
- * {@link YAPPCAgentRegistry} and updates their health status.
+ * {@link YappcAgentRegistryAdapter} and updates their health status.
  *
  * <p>Runs on the ActiveJ event loop to remain non-blocking. Every
  * {@code heartbeatIntervalMs} milliseconds the service:
@@ -47,7 +47,7 @@ public class AgentHeartbeatService {
     /** Number of consecutive FAILED cycles before we escalate to a WARN-level alert. */
     private static final int FAILURE_ALERT_THRESHOLD = 3;
 
-    private final YAPPCAgentRegistry registry;
+    private final AgentHealthProvider registry;
     private final Eventloop eventloop;
     private final long heartbeatIntervalMs;
 
@@ -68,7 +68,7 @@ public class AgentHeartbeatService {
      * @param eventloop the ActiveJ eventloop on which to schedule ticks
      */
     public AgentHeartbeatService(
-            @NotNull YAPPCAgentRegistry registry,
+            @NotNull AgentHealthProvider registry,
             @NotNull Eventloop eventloop) {
         this(registry, eventloop, DEFAULT_INTERVAL_MS);
     }
@@ -81,7 +81,7 @@ public class AgentHeartbeatService {
      * @param heartbeatIntervalMs poll interval in milliseconds (must be &gt; 0)
      */
     public AgentHeartbeatService(
-            @NotNull YAPPCAgentRegistry registry,
+            @NotNull AgentHealthProvider registry,
             @NotNull Eventloop eventloop,
             long heartbeatIntervalMs) {
         if (heartbeatIntervalMs <= 0) {
@@ -163,7 +163,7 @@ public class AgentHeartbeatService {
             YAPPCAgentRegistry.AgentStatus status = entry.getValue();
 
             if (status == YAPPCAgentRegistry.AgentStatus.FAILED
-                    || status == YAPPCAgentRegistry.AgentStatus.STOPPED) {
+                || status == YAPPCAgentRegistry.AgentStatus.STOPPED) {
                 int count = consecutiveFailures.merge(agentId, 1, Integer::sum);
                 failed++;
 

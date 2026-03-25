@@ -17,7 +17,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 import {
   palette,
   lightColors,

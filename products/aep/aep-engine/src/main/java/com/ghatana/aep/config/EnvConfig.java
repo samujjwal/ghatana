@@ -16,6 +16,7 @@ public class EnvConfig {
     public static final String REDIS_PORT = "redis.port";
     public static final String AEP_DB_POOL_SIZE = "db.pool.size";
     public static final String AEP_CONSOLIDATION_INTERVAL_HOURS = "consolidation.interval.hours";
+    public static final String KAFKA_BOOTSTRAP_SERVERS = "KAFKA_BOOTSTRAP_SERVERS";
 
     private final Map<String, String> config;
     
@@ -98,6 +99,19 @@ public class EnvConfig {
      */
     public static EnvConfig fromSystem() {
         return new EnvConfig();
+    }
+
+    /**
+     * Creates an EnvConfig instance populated from the given map of key/value pairs.
+     *
+     * <p>The supplied map is copied; mutations after construction have no effect.
+     * This factory is intended for testing and programmatic configuration assembly.
+     *
+     * @param config initial configuration entries (must not be {@code null})
+     * @return EnvConfig backed by the given map
+     */
+    public static EnvConfig fromMap(Map<String, String> config) {
+        return new EnvConfig(config);
     }
 
     /**

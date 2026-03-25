@@ -2,43 +2,34 @@ package com.ghatana.flashit.plugin;
 
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
-import com.ghatana.kernel.plugin.ProductPlugin;
-import com.ghatana.kernel.plugin.PluginContext;
-import com.ghatana.kernel.plugin.KernelExtension;
+import com.ghatana.kernel.health.HealthStatus;
+import com.ghatana.kernel.plugin.KernelPlugin;
+import com.ghatana.kernel.plugin.PluginManifest;
+import io.activej.promise.Promise;
 
 import java.util.Set;
 
 /**
- * FlashIt product plugin implementation.
- * 
- * This plugin registers FlashIt-specific capabilities with the kernel
- * without creating tight coupling between FlashIt and the kernel.
+ * FlashIt kernel plugin implementation.
+ *
+ * <p>Registers FlashIt-specific capabilities with the kernel without creating
+ * tight coupling between FlashIt and the kernel.</p>
+ *
+ * @doc.type class
+ * @doc.purpose FlashIt plugin — registers capabilities and lifecycle with kernel
+ * @doc.layer product
+ * @doc.pattern Service
  */
-public class FlashItProductPlugin implements ProductPlugin {
-    private PluginContext context;
-    
-    @Override
-    public String getProductId() {
-        return "flashit";
-    }
+public class FlashItProductPlugin implements KernelPlugin {
 
-    @Override
-    public String getProductVersion() {
-        return "1.0.0";
-    }
-
-    @Override
-    public String getProductDescription() {
-        return "Personal context capture platform with AI-powered reflection";
-    }
-
-    @Override
-    public Set<KernelCapability> getDeclaredCapabilities() {
-        return Set.of(
-            // FlashIt-specific capabilities (no hardcoded kernel knowledge)
-            new KernelCapability(
-                "moment.capture", 
-                "Moment Capture", 
+    private static final PluginManifest MANIFEST = PluginManifest.builder()
+            .pluginId("flashit")
+            .version("1.0.0")
+            .description("Personal context capture platform with AI-powered reflection")
+            .author("FlashIt Team")
+            .capability(new KernelCapability(
+                "moment.capture",
+                "Moment Capture",
                 "Capture and store multimedia moments",
                 KernelCapability.CapabilityType.DATA_MANAGEMENT,
                 java.util.Map.of(
@@ -47,11 +38,10 @@ public class FlashItProductPlugin implements ProductPlugin {
                     "storage_backend", "multimedia",
                     "required_services", "multimedia_processor,classification_service"
                 )
-            ),
-            
-            new KernelCapability(
-                "reflection.engine", 
-                "Reflection Engine", 
+            ))
+            .capability(new KernelCapability(
+                "reflection.engine",
+                "Reflection Engine",
                 "AI-powered reflection generation",
                 KernelCapability.CapabilityType.AI_ML,
                 java.util.Map.of(
@@ -60,11 +50,10 @@ public class FlashItProductPlugin implements ProductPlugin {
                     "personalization", "true",
                     "required_services", "ai_service,reflection_processor"
                 )
-            ),
-            
-            new KernelCapability(
-                "context.search", 
-                "Context Search", 
+            ))
+            .capability(new KernelCapability(
+                "context.search",
+                "Context Search",
                 "Semantic search across captured moments",
                 KernelCapability.CapabilityType.AI_ML,
                 java.util.Map.of(
@@ -73,220 +62,57 @@ public class FlashItProductPlugin implements ProductPlugin {
                     "indexing", "vector",
                     "required_services", "embedding_service,search_service"
                 )
-            )
-        );
+            ))
+            .dependency(new KernelDependency("data.storage", "1.0.0", KernelDependency.DependencyType.CAPABILITY, false))
+            .dependency(new KernelDependency("user.authentication", "1.0.0", KernelDependency.DependencyType.CAPABILITY, false))
+            .dependency(new KernelDependency("ai.ml.framework", "1.0.0", KernelDependency.DependencyType.CAPABILITY, false))
+            .dependency(new KernelDependency("openai-api", "1.0.0", KernelDependency.DependencyType.EXTERNAL_SERVICE, true))
+            .dependency(new KernelDependency("anthropic-api", "1.0.0", KernelDependency.DependencyType.EXTERNAL_SERVICE, true))
+            .build();
+    
+    @Override
+    public PluginManifest getManifest() {
+        return MANIFEST;
     }
 
     @Override
-    public Set<KernelDependency> getRequiredDependencies() {
-        return Set.of(
-            // Depend on core kernel capabilities
-            new KernelDependency("data.storage", "1.0.0", KernelDependency.DependencyType.CAPABILITY, false),
-            new KernelDependency("user.authentication", "1.0.0", KernelDependency.DependencyType.CAPABILITY, false),
-            new KernelDependency("ai.ml.framework", "1.0.0", KernelDependency.DependencyType.CAPABILITY, false),
-            
-            // External services
-            new KernelDependency("openai-api", "1.0.0", KernelDependency.DependencyType.EXTERNAL_SERVICE, true),
-            new KernelDependency("anthropic-api", "1.0.0", KernelDependency.DependencyType.EXTERNAL_SERVICE, true)
-        );
+    public Set<String> getExportedContracts() {
+        return Set.of();
     }
 
     @Override
-    public void initialize(PluginContext context) {
-        this.context = context;
-        
-        // Register FlashIt-specific services
-        registerFlashItServices();
-        
-        // Register FlashIt extensions
-        registerFlashItExtensions();
+    public Set<String> getRequiredContracts() {
+        return Set.of();
     }
 
     @Override
-    public void start() {
-        // Start FlashIt services
-        startMomentCaptureService();
-        startReflectionEngine();
-        startContextSearch();
+    public Promise<Void> install() {
+        return Promise.complete();
     }
 
     @Override
-    public void stop() {
-        // Stop FlashIt services
-        stopMomentCaptureService();
-        stopReflectionEngine();
-        stopContextSearch();
+    public Promise<Void> uninstall() {
+        return Promise.complete();
     }
 
     @Override
-    public void shutdown() {
-        // Cleanup FlashIt resources
-        cleanupFlashItResources();
+    public HealthStatus getHealthStatus() {
+        return HealthStatus.healthy("FlashIt plugin is operational");
     }
 
     @Override
-    public Set<KernelExtension> getExtensions() {
-        return Set.of(
-            new MultimediaProcessingExtension(),
-            new ReflectionGenerationExtension(),
-            new SemanticSearchExtension()
-        );
-    }
-
-    private void registerFlashItServices() {
-        // Register moment capture service
-        context.registerService("moment.capture.service", new MomentCaptureService(context));
-        
-        // Register reflection engine
-        context.registerService("reflection.engine.service", new ReflectionEngine(context));
-        
-        // Register context search
-        context.registerService("context.search.service", new ContextSearchService(context));
-    }
-
-    private void registerFlashItExtensions() {
-        // Register FlashIt-specific extensions
-        context.registerExtension(new MultimediaProcessingExtension());
-        context.registerExtension(new ReflectionGenerationExtension());
-        context.registerExtension(new SemanticSearchExtension());
-    }
-
-    // Service lifecycle methods
-    private void startMomentCaptureService() {
-        // Implementation for starting moment capture service
+    public Promise<Void> start() {
         System.out.println("Starting FlashIt moment capture service...");
-    }
-
-    private void startReflectionEngine() {
-        // Implementation for starting reflection engine
         System.out.println("Starting FlashIt reflection engine...");
-    }
-
-    private void startContextSearch() {
-        // Implementation for starting context search
         System.out.println("Starting FlashIt context search...");
+        return Promise.complete();
     }
 
-    private void stopMomentCaptureService() {
-        // Implementation for stopping moment capture service
+    @Override
+    public Promise<Void> stop() {
         System.out.println("Stopping FlashIt moment capture service...");
-    }
-
-    private void stopReflectionEngine() {
-        // Implementation for stopping reflection engine
         System.out.println("Stopping FlashIt reflection engine...");
-    }
-
-    private void stopContextSearch() {
-        // Implementation for stopping context search
         System.out.println("Stopping FlashIt context search...");
-    }
-
-    private void cleanupFlashItResources() {
-        // Implementation for cleanup
-        System.out.println("Cleaning up FlashIt resources...");
-    }
-
-    // Inner classes for services and extensions (simplified implementations)
-    private static class MomentCaptureService {
-        private final PluginContext context;
-        
-        public MomentCaptureService(PluginContext context) {
-            this.context = context;
-        }
-    }
-
-    private static class ReflectionEngine {
-        private final PluginContext context;
-        
-        public ReflectionEngine(PluginContext context) {
-            this.context = context;
-        }
-    }
-
-    private static class ContextSearchService {
-        private final PluginContext context;
-        
-        public ContextSearchService(PluginContext context) {
-            this.context = context;
-        }
-    }
-
-    private static class MultimediaProcessingExtension implements KernelExtension {
-        @Override
-        public String getExtensionId() { return "multimedia.processing"; }
-        
-        @Override
-        public String getVersion() { return "1.0.0"; }
-        
-        @Override
-        public String getDescription() { return "Multimedia processing extension"; }
-        
-        @Override
-        public String getTargetCapabilityId() { return "moment.capture"; }
-        
-        @Override
-        public void initialize(PluginContext context) {}
-        
-        @Override
-        public void start() {}
-        
-        @Override
-        public void stop() {}
-        
-        @Override
-        public void shutdown() {}
-    }
-
-    private static class ReflectionGenerationExtension implements KernelExtension {
-        @Override
-        public String getExtensionId() { return "reflection.generation"; }
-        
-        @Override
-        public String getVersion() { return "1.0.0"; }
-        
-        @Override
-        public String getDescription() { return "Reflection generation extension"; }
-        
-        @Override
-        public String getTargetCapabilityId() { return "reflection.engine"; }
-        
-        @Override
-        public void initialize(PluginContext context) {}
-        
-        @Override
-        public void start() {}
-        
-        @Override
-        public void stop() {}
-        
-        @Override
-        public void shutdown() {}
-    }
-
-    private static class SemanticSearchExtension implements KernelExtension {
-        @Override
-        public String getExtensionId() { return "semantic.search"; }
-        
-        @Override
-        public String getVersion() { return "1.0.0"; }
-        
-        @Override
-        public String getDescription() { return "Semantic search extension"; }
-        
-        @Override
-        public String getTargetCapabilityId() { return "context.search"; }
-        
-        @Override
-        public void initialize(PluginContext context) {}
-        
-        @Override
-        public void start() {}
-        
-        @Override
-        public void stop() {}
-        
-        @Override
-        public void shutdown() {}
+        return Promise.complete();
     }
 }

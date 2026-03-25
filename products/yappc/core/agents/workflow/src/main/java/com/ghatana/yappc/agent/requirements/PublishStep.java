@@ -2,7 +2,7 @@ package com.ghatana.yappc.agent.requirements;
 
 // ✅ Use EXISTING interfaces from libs/java
 import com.ghatana.core.database.DatabaseClient;
-import com.ghatana.core.event.cloud.EventCloud;
+import com.ghatana.yappc.agent.EventPublisher;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.WorkflowStep;
 import com.ghatana.yappc.agent.WorkflowContextAdapter;
@@ -17,7 +17,7 @@ import java.util.*;
  * downstream phases (Design, Implementation, etc.). Creates trace links back to ideation artifacts.
  *
  * <p>✅ Implements WorkflowStep from libs:workflow-api (EXISTING) ✅ Uses DatabaseClient from
- * libs:database (EXISTING) ✅ Uses EventCloud from libs:event-cloud (EXISTING)
+ * libs:database (EXISTING) ✅ Uses EventPublisher (product-owned facade over EventLogStore)
  *
  * <h3>Publish Actions:</h3>
  *
@@ -36,14 +36,14 @@ import java.util.*;
 public final class PublishStep implements WorkflowStep {
 
   private final DatabaseClient dbClient;
-  private final EventCloud eventClient;
+  private final EventPublisher eventClient;
 
   // Publish status constants
   public static final String STATUS_PUBLISHED = "PUBLISHED";
   public static final String STATUS_SUPERSEDED = "SUPERSEDED";
   public static final String STATUS_DRAFT = "DRAFT";
 
-  public PublishStep(DatabaseClient dbClient, EventCloud eventClient) {
+  public PublishStep(DatabaseClient dbClient, EventPublisher eventClient) {
     this.dbClient = Objects.requireNonNull(dbClient, "dbClient must not be null");
     this.eventClient = Objects.requireNonNull(eventClient, "eventClient must not be null");
   }

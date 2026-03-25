@@ -180,7 +180,7 @@ public enum AgentType {
      *             agent definitions; it resolves to {@code PROBABILISTIC} at runtime.
      *             Will be removed in v3.0.0.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     LLM,
 
     /**

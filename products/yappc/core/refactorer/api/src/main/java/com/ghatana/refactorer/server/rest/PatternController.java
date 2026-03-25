@@ -3,7 +3,6 @@ package com.ghatana.refactorer.server.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
-import com.ghatana.refactorer.server.auth.TenantContextStorage;
 import com.ghatana.refactorer.server.kg.KgService;
 import com.ghatana.refactorer.server.dto.RestModels;
 import io.activej.http.HttpRequest;
@@ -74,7 +73,7 @@ public final class PatternController {
                                 = objectMapper.readValue(
                                         body.getArray(), RestModels.PatternSubmissionRequest.class);
 
-                                String tenantId = TenantContextStorage.getCurrentTenantId();
+                                String tenantId = com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId();
                                 logger.debug("Submitting pattern for tenant: {}", tenantId);
 
                                 return kgService
@@ -132,7 +131,7 @@ public final class PatternController {
         try {
             logger.info("Received pattern query request");
 
-            String tenantId = TenantContextStorage.getCurrentTenantId();
+            String tenantId = com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId();
             String eventTypesParam = request.getQueryParameter("eventTypes");
             List<String> eventTypes
                     = eventTypesParam == null
@@ -204,7 +203,7 @@ public final class PatternController {
                                 = objectMapper.readValue(
                                         body.getArray(), RestModels.PatternAnalysisRequest.class);
 
-                                String tenantId = TenantContextStorage.getCurrentTenantId();
+                                String tenantId = com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId();
                                 logger.debug("Analyzing patterns for tenant: {}", tenantId);
 
                                 return kgService
@@ -261,7 +260,7 @@ public final class PatternController {
         try {
             logger.info("Received KG statistics request");
 
-            String tenantId = TenantContextStorage.getCurrentTenantId();
+            String tenantId = com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId();
 
             return kgService
                     .getStatistics(tenantId)

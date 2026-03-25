@@ -41,7 +41,8 @@ public class FastifyExpertAgent extends YAPPCAgentBase<FastifyExpertInput, Fasti
             "#/definitions/FastifyExpertOutput",
             List.of("fastify", "nodejs", "api"),
             Map.of("description", "Stack expert agent for Fastify/Node.js API patterns and best practices", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

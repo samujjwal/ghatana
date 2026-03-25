@@ -194,7 +194,7 @@ public final class DiagnoseController {
             return Promise.of(ResponseBuilder.ok().json(cfg).build());
         } catch (Exception e) {
             logger.error("Failed to return config", e);
-            return Promise.of(ResponseBuilder.serverError()
+            return Promise.of(ResponseBuilder.internalServerError()
                     .json(Map.of("error", "Failed to fetch config", "details", e.getMessage()))
                     .build());
         }

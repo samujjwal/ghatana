@@ -4,7 +4,7 @@
 
 package com.ghatana.config.runtime.engine;
 
-import com.ghatana.config.runtime.validation.ValidationResult;
+import com.ghatana.platform.core.exception.ConfigurationException;
 import io.activej.eventloop.Eventloop;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;

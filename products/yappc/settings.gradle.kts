@@ -52,30 +52,23 @@ include(":platform")
 
 // --- Application Entry Points ---
 include(":services")
-include(":backend:api")
+// backend modules removed (2026-03-23) — functionality consolidated into core modules
 
 // --- Backend Service Modules ---
-include(":backend:persistence")
-include(":backend:auth")      // includes security scanning (absorbed from infrastructure:security)
-include(":backend:deployment")
-// NOTE: backend:websocket removed — sources merged into backend:api
+// backend modules removed (2026-03-23) — functionality consolidated into core modules
+// NOTE: backend:websocket, backend:api, backend:persistence, backend:auth removed
 
-// --- Unified Service Modules ---
-include(":services:platform")   // canonical combined module (was: domain + infrastructure)
-include(":services:lifecycle")  // absorbs services:ai and services:scaffold
-
-// --- Core Domain Modules ---
-include(":core:domain")
-include(":core:domain:service")
-include(":core:domain:task")
+// --- Core: Reusable Service Modules (Phase 2: moved from services/ to separate deployables from libraries) ---
+include(":core:services-platform")   // was: services:platform — reusable platform service layer
+include(":core:services-lifecycle")  // was: services:lifecycle — reusable lifecycle orchestration library
 
 // --- Core: Scaffold Engine ---
 include(":core:scaffold")
 include(":core:scaffold:api")
-include(":core:scaffold:core") // absorbs core:scaffold:packs
+include(":core:scaffold:core") // aggregator re-exporting templates + engine + generators
+include(":core:scaffold:templates")
 include(":core:scaffold:engine")
 include(":core:scaffold:generators")
-include(":core:scaffold:templates")
 // NOTE: core:scaffold:packs removed — sources merged into core:scaffold:core
 
 // --- Core: AI & Agents ---
@@ -83,10 +76,12 @@ include(":core:ai")
 include(":core:agents")
 include(":core:agents:runtime")
 include(":core:agents:workflow")
-include(":core:agents:specialists")
+include(":core:agents:common")
 include(":core:agents:code-specialists")
+include(":core:agents:delivery-specialists")
 include(":core:agents:architecture-specialists")
 include(":core:agents:testing-specialists")
+// NOTE: core:agents:specialists removed — sources distributed to code/delivery/architecture/testing-specialists
 
 // --- Core: Refactorer ---
 include(":core:refactorer:api")
@@ -95,14 +90,15 @@ include(":core:refactorer:engine")
 // --- Core: Supplementary ---
 include(":core:cli-tools")
 include(":core:knowledge-graph")
-include(":core:lifecycle")
-include(":core:framework")
-include(":core:framework:integration-test")
 include(":core:spi")
+// NOTE: core:lifecycle removed — absorbed into core:yappc-services
+// NOTE: core:framework removed — absorbed into core:yappc-infrastructure
+// NOTE: core:domain removed — absorbed into core:yappc-domain
+// NOTE: core:agents:specialists removed — sources distributed to specialist modules
 
 // --- Infrastructure ---
 include(":infrastructure:datacloud")
-// NOTE: infrastructure:security removed — sources merged into backend:auth
+// NOTE: infrastructure:security removed — sources consolidated
 
 // --- YAPPC Shared Libraries ---
 include(":libs:java:yappc-domain")
@@ -139,37 +135,46 @@ if (isStandaloneBuild) {
         listOf(
             "platform",
             "services",
-            "backend:api",
-            "backend:persistence",
-            "backend:auth",
-            "backend:deployment",
-            // backend:websocket, launcher removed — merged into backend:api
-            "services:platform",
-            "services:lifecycle",
+            // backend modules removed (2026-03-23)
+            // services:platform/lifecycle moved to core (Phase 2: separate deployables from reusables)
+            "core:services-platform",
+            "core:services-lifecycle",
             // services:ai, services:scaffold removed — merged into services:lifecycle
-            "core:domain",
-            "core:domain:service",
-            "core:domain:task",
             "core:scaffold",
             "core:scaffold:api",
             "core:scaffold:core",
+            "core:scaffold:templates",
+            "core:scaffold:engine",
+            "core:scaffold:generators",
             // core:scaffold:packs removed — merged into core:scaffold:core
             "core:ai",
             "core:agents",
             "core:agents:runtime",
             "core:agents:workflow",
-            "core:agents:specialists",
+            "core:agents:common",
+            "core:agents:code-specialists",
+            "core:agents:delivery-specialists",
+            "core:agents:architecture-specialists",
+            "core:agents:testing-specialists",
+            // core:agents:specialists removed — distributed to specialist modules
             "core:refactorer:api",
             "core:refactorer:engine",
             "core:cli-tools",
             "core:knowledge-graph",
-            "core:lifecycle",
-            "core:framework",
-            "core:framework:integration-test",
             "core:spi",
+            // core:lifecycle removed — absorbed into core:yappc-services
+            // core:framework removed — absorbed into core:yappc-infrastructure
+            // core:domain removed — absorbed into core:yappc-domain-impl (renamed from core:yappc-domain, Phase 3)
             "infrastructure:datacloud",
-            // infrastructure:security removed — merged into backend:auth
-            "libs:java:yappc-domain")
+            // infrastructure:security removed — sources consolidated
+            "libs:java:yappc-domain",
+            // Core yappc-* modules (Phase 3: yappc-domain renamed to yappc-domain-impl)
+            "core:yappc-domain-impl",
+            "core:yappc-services",
+            "core:yappc-infrastructure",
+            "core:yappc-agents",
+            "core:yappc-api",
+            "core:yappc-shared")
 
     yappcAliasModules.forEach { modulePath ->
         val pathParts = modulePath.split(":")

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 import { transitions } from '@ghatana/tokens';
 
 import { Drawer, type DrawerProps } from '../molecules/Drawer';

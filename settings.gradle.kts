@@ -44,18 +44,17 @@ include(":platform:java:runtime")
 include(":platform:java:config")
 include(":platform:java:workflow")
 include(":platform:java:plugin")
-include(":platform:java:event-cloud")
 include(":platform:java:ai-integration")  // Merged: registry + observability + feature-store + experimental consolidated
 include(":platform:java:governance")
 include(":platform:java:security")
 include(":platform:java:agent-core")
-include(":platform:java:agent-runtime")   // Merged: agent-memory + agent-learning + agent-dispatch + agent-resilience
-include(":platform:java:agent-registry")
+// agent-runtime RELOCATED to products:aep:aep-agent-runtime (Sprint 4, 2026-03-25 — see audit report Phase 5)
+// agent-registry DELETED (merged into agent-core in Sprint 1, 2026-03-24 — see audit report Phase 1)
 // schema-registry merged into platform:java:domain (SCHM-1, 2026)
 include(":platform:java:connectors")
 include(":platform:java:audit")
 include(":platform:java:kernel")
-include(":platform:java:kernel-capabilities")  // Merged: authentication + config + event-store + audit + resilience + observability + secrets
+// kernel-capabilities DELETED (zero consumers, capabilities merged into kernel/observability — Sprint 5, 2026-03-25)
 include(":platform:java:distributed-cache")    // KRQ-05: Generic Redis-backed distributed cache abstraction
 
 // =============================================================================
@@ -66,10 +65,13 @@ include(":products:aep:contracts")
 include(":products:aep:aep-operator-contracts")
 include(":products:aep:aep-central-runtime")
 include(":products:aep:aep-engine")
+include(":products:aep:aep-runtime-core")    // Backward-compat facade; also hosts shared test infrastructure
 include(":products:aep:aep-registry")
 include(":products:aep:aep-analytics")
 include(":products:aep:aep-security")
 include(":products:aep:aep-connectors")
+include(":products:aep:aep-event-cloud")     // Data-Cloud bridge plugin for AEP event processing
+include(":products:aep:aep-agent-runtime")  // Advanced agent runtime: memory, dispatch, learning, resilience (relocated from platform:java:agent-runtime)
 // aep-agent merged into aep-registry on 2026-03-22 (boundary audit P0)
 include(":products:aep:aep-api")
 include(":products:aep:aep-scaling")
@@ -94,20 +96,19 @@ include(":products:data-cloud:feature-store-ingest")  // migrated from shared-se
 include(":products:yappc")
 include(":products:yappc:platform")
 include(":products:yappc:services")
-include(":products:yappc:services:platform")
+// services:platform moved to core (Phase 2: separate deployables from reusables)
+include(":products:yappc:core:services-platform")
 // services:ai removed — absorbed into services:lifecycle
-include(":products:yappc:services:lifecycle")
+// services:lifecycle moved to core (Phase 2: separate deployables from reusables)
+include(":products:yappc:core:services-lifecycle")
 // services:scaffold removed — absorbed into services:lifecycle
-include(":products:yappc:backend:api")
-include(":products:yappc:backend:persistence")
-include(":products:yappc:backend:auth")
-include(":products:yappc:backend:deployment")
-// backend:websocket removed — sources merged into backend:api
+// backend modules removed (2026-03-23) — functionality consolidated into core modules
 // =============================================================================
 // YAPPC Core — Consolidated Modules (2026-03-23)
 // =============================================================================
 include(":products:yappc:core:yappc-agents")
-include(":products:yappc:core:yappc-domain")
+// core:yappc-domain renamed to yappc-domain-impl (Phase 3: clarify internal-only role)
+include(":products:yappc:core:yappc-domain-impl")
 include(":products:yappc:core:yappc-infrastructure")
 include(":products:yappc:core:yappc-services")
 include(":products:yappc:core:yappc-api")
@@ -116,10 +117,13 @@ include(":products:yappc:core:yappc-shared")
 // =============================================================================
 // YAPPC Core — Legacy Modules (to be removed after migration validation)
 // =============================================================================
-include(":products:yappc:core:domain")
+// core:domain removed (2026-03-24) — absorbed into core:yappc-domain
 include(":products:yappc:core:scaffold")
 include(":products:yappc:core:scaffold:api")
 include(":products:yappc:core:scaffold:core")
+include(":products:yappc:core:scaffold:templates")
+include(":products:yappc:core:scaffold:engine")
+include(":products:yappc:core:scaffold:generators")
 // core:scaffold:packs removed — absorbed into core:scaffold:core
 include(":products:yappc:core:ai")
 include(":products:yappc:core:agents")
@@ -127,14 +131,15 @@ include(":products:yappc:core:agents:runtime")
 include(":products:yappc:core:agents:workflow")
 include(":products:yappc:core:agents:common")
 include(":products:yappc:core:agents:code-specialists")
+include(":products:yappc:core:agents:delivery-specialists")
 include(":products:yappc:core:agents:architecture-specialists")
 include(":products:yappc:core:agents:testing-specialists")
 include(":products:yappc:core:spi")
 include(":products:yappc:core:cli-tools")
 include(":products:yappc:core:knowledge-graph")
-include(":products:yappc:core:lifecycle")
-include(":products:yappc:core:framework")
-include(":products:yappc:core:framework:integration-test")
+// core:lifecycle removed (2026-03-24) — absorbed into core:yappc-services
+// core:framework removed (2026-03-24) — absorbed into core:yappc-infrastructure
+// core:framework:integration-test removed (2026-03-24) — moved to yappc-infrastructure
 include(":products:yappc:core:refactorer:api")
 include(":products:yappc:core:refactorer:engine")
 include(":products:yappc:infrastructure:datacloud")

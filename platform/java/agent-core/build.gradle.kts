@@ -23,7 +23,8 @@ dependencies {
     // Jackson YAML for agent config materialization
     implementation(libs.jackson.databind)
     implementation(libs.jackson.dataformat.yaml)
-    
+    implementation(libs.jackson.datatype.jsr310)
+
     // LangChain4j for LLM integration (optional runtime dependency)
     implementation(libs.langchain4j.core)
     implementation(libs.langchain4j)
@@ -37,6 +38,8 @@ dependencies {
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
     
     // Testing
     testImplementation(libs.junit.jupiter.api)
@@ -45,7 +48,6 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
-
     // JMH Benchmarks
     testImplementation(libs.jmh.core)
     testAnnotationProcessor(libs.jmh.generator.annprocess)

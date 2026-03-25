@@ -13,6 +13,8 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.ghatana.yappc.agents.architecture.*;
+import com.ghatana.yappc.agents.code.*;
 
 /**
  * Smoke tests for generated specialist agents — verifies all agents
@@ -31,7 +33,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   @BeforeEach
   void setUp() {
     memoryStore = new EventLogMemoryStore();
-    YAPPCAgentBase.configureAepEventPublisher(
+    YAPPCAgentBase.setGlobalAepEventPublisher(
         (eventType, tenantId, payload) -> Promise.complete());
   }
 

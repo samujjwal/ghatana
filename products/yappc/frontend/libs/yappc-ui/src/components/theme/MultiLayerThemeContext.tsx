@@ -1,14 +1,8 @@
 /**
  * Multi-Layer Theme Context
  *
- * Implements a composable, multi-layer theming system:
- * - Base Layer: Foundation tokens (colors, typography, spacing)
- * - Brand Layer: Brand-specific customizations
- * - Workspace Layer: Workspace-level preferences
- * - App Layer: Application-specific overrides
- *
- * Each layer can override tokens from previous layers, creating
- * a flexible and maintainable theming hierarchy.
+ * Implements a composable, multi-layer theming system.
+ * Re-exports the canonical implementation from @yappc/theme.
  */
 
 export {
@@ -22,4 +16,5 @@ export {
   type MultiLayerThemeContextValue,
   type MultiLayerThemeProviderProps,
   type ThemeLayer,
-} from '@yappc/ui/theme';
+} from '@yappc/theme';
+

@@ -22,6 +22,7 @@ class GradleDependencyGuardTest {
 
     private static final String ALLOWED_PRODUCT_PREFIX = ":products:data-cloud:event-cloud:";
     private static final String ALLOWED_DATACLOUD_PLATFORM = ":products:data-cloud:platform";
+    private static final String ALLOWED_DATACLOUD_SPI = ":products:data-cloud:spi";
 
     @Test
     void libsShouldNotDependOnProductModulesInGradleBuildFiles() throws IOException {
@@ -52,7 +53,8 @@ class GradleDependencyGuardTest {
                 String line = lines.get(i).trim();
                 if ((line.contains("project(':products:") || line.contains("project(\":products:"))
                         && !line.contains(ALLOWED_PRODUCT_PREFIX)
-                        && !line.contains(ALLOWED_DATACLOUD_PLATFORM)) {
+                        && !line.contains(ALLOWED_DATACLOUD_PLATFORM)
+                        && !line.contains(ALLOWED_DATACLOUD_SPI)) {
                     violations.add(rel + ":" + (i + 1) + " -> " + line);
                 }
             }

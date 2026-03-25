@@ -41,7 +41,8 @@ public class JavaClassWriterAgent extends YAPPCAgentBase<JavaClassWriterInput, J
             "#/definitions/JavaClassWriterOutput",
             List.of("code-generation", "java"),
             Map.of("description", "Worker agent that generates Java classes from specifications", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

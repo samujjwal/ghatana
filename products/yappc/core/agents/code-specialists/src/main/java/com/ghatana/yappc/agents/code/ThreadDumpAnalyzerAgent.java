@@ -41,7 +41,8 @@ public class ThreadDumpAnalyzerAgent extends YAPPCAgentBase<ThreadDumpAnalyzerIn
             "#/definitions/ThreadDumpAnalyzerOutput",
             List.of("debug", "thread-analysis", "concurrency"),
             Map.of("description", "Debug micro-agent that analyzes JVM thread dumps for deadlocks and contention", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

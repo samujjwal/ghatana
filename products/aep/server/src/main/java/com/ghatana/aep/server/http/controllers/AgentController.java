@@ -5,8 +5,10 @@
 package com.ghatana.aep.server.http.controllers;
 
 import com.ghatana.aep.AepEngine;
+import com.ghatana.aep.eventcloud.store.EventCloudAgentStore;
 import com.ghatana.aep.server.http.HttpHelper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.spi.EntityStore;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -23,8 +25,13 @@ import java.util.Map;
  * Controller for agent management endpoints.
  * Handles agent lifecycle, execution, and memory queries.
  *
+ * <p>Agent registry operations (list, get, deregister) are backed by
+ * {@link EventCloudAgentStore} — the canonical Data-Cloud-backed store for AEP agents.
+ * Memory operations (episodes, facts, policies) delegate to {@link DataCloudClient}
+ * for the {@code dc_memory} collection.
+ *
  * @doc.type class
- * @doc.purpose Agent registry and memory management
+ * @doc.purpose Agent registry and memory management via EventCloudAgentStore
  * @doc.layer product
  * @doc.pattern Service
  * @doc.gaa.lifecycle perceive
@@ -34,31 +41,47 @@ public class AgentController {
     private static final Logger log = LoggerFactory.getLogger(AgentController.class);
 
     private final AepEngine engine;
+    /** Agent registry store backed by Data-Cloud EntityStore. Null when Data-Cloud is absent. */
+    @Nullable
+    private final EventCloudAgentStore agentStore;
+    /** Data-Cloud client retained for memory operations (episodes, facts, policies). */
     @Nullable
     private final DataCloudClient agentDataCloud;
 
+    /**
+     * Creates an agent controller backed by the canonical {@link EventCloudAgentStore}.
+     *
+     * @param engine      AEP engine for event processing
+     * @param agentDataCloud optional Data-Cloud client; when non-null a store is created
+     *                       via {@code agentDataCloud.entityStore()} and memory endpoints
+     *                       are also enabled
+     */
     public AgentController(AepEngine engine, @Nullable DataCloudClient agentDataCloud) {
         this.engine = engine;
         this.agentDataCloud = agentDataCloud;
+        EntityStore entityStore = agentDataCloud != null ? agentDataCloud.entityStore() : null;
+        this.agentStore = entityStore != null ? new EventCloudAgentStore(entityStore) : null;
     }
 
     public Promise<HttpResponse> handleListAgents(HttpRequest request) {
         String tenantId = HttpHelper.resolveTenantId(request);
-        if (agentDataCloud == null) {
+        if (agentStore == null) {
             return Promise.of(HttpHelper.jsonResponse(Map.of(
                 "tenantId", tenantId,
                 "agents", List.of(),
                 "count", 0,
                 "timestamp", Instant.now().toString(),
-                "note", "DataCloud not configured; start with DC_SERVER_URL to enable agent registry"
+                "note", "Agent store not configured — start with DC_SERVER_URL to enable agent registry"
             )));
         }
-        return agentDataCloud.query(tenantId, "agent-registry", DataCloudClient.Query.limit(1000))
+        String limitParam = request.getQueryParameter("limit");
+        int limit = limitParam != null ? Math.min(Integer.parseInt(limitParam), 1000) : 1000;
+        return agentStore.listAgents(tenantId, limit)
             .map(entities -> {
                 List<Map<String, Object>> summaries = entities.stream()
                     .map(e -> Map.<String, Object>of(
-                        "id", e.id(),
-                        "name", e.data().getOrDefault("name", e.id()),
+                        "id", e.data().getOrDefault("id", e.id().value()),
+                        "name", e.data().getOrDefault("name", e.id().value()),
                         "type", e.data().getOrDefault("type", "unknown"),
                         "status", e.data().getOrDefault("status", "ACTIVE"),
                         "tenantId", tenantId
@@ -84,15 +107,15 @@ public class AgentController {
             return Promise.of(HttpHelper.errorResponse(400,
                 "agentId path parameter is required"));
         }
-        if (agentDataCloud == null) {
+        if (agentStore == null) {
             return Promise.of(HttpHelper.errorResponse(503,
                 "Agent registry not available — DataCloudClient not configured"));
         }
         String tenantId = HttpHelper.resolveTenantId(request);
-        return agentDataCloud.findById(tenantId, "agent-registry", agentId)
+        return agentStore.findById(tenantId, agentId)
             .map(opt -> opt
                 .map(e -> HttpHelper.jsonResponse(Map.of(
-                    "id", e.id(),
+                    "id", e.data().getOrDefault("id", e.id().value()),
                     "tenantId", tenantId,
                     "data", e.data(),
                     "timestamp", Instant.now().toString()
@@ -346,18 +369,18 @@ public class AgentController {
             return Promise.of(HttpHelper.errorResponse(400,
                 "agentId path parameter is required"));
         }
-        if (agentDataCloud == null) {
+        if (agentStore == null) {
             return Promise.of(HttpHelper.errorResponse(503,
                 "Agent registry not available — DataCloudClient not configured"));
         }
         String tenantId = HttpHelper.resolveTenantId(request);
-        return agentDataCloud.findById(tenantId, "agent-registry", agentId)
+        return agentStore.findById(tenantId, agentId)
             .then(opt -> {
                 if (opt.isEmpty()) {
                     return Promise.of(HttpHelper.errorResponse(404,
                         "Agent not found: " + agentId));
                 }
-                return agentDataCloud.delete(tenantId, "agent-registry", agentId)
+                return agentStore.delete(tenantId, agentId)
                     .map(ignored -> HttpHelper.jsonResponse(Map.of(
                         "deleted", true,
                         "agentId", agentId,

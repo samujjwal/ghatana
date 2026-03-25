@@ -4,6 +4,7 @@
  */
 package com.ghatana.aep.server.http.controllers;
 
+import com.ghatana.aep.learning.EpisodeLearningPipeline;
 import com.ghatana.aep.server.http.HttpHelper;
 import com.ghatana.agent.learning.review.HumanReviewQueue;
 import com.ghatana.agent.learning.review.ReviewDecision;
@@ -39,11 +40,20 @@ public class LearningController {
     private final DataCloudClient agentDataCloud;
     @Nullable
     private final HumanReviewQueue humanReviewQueue;
+    @Nullable
+    private final EpisodeLearningPipeline learningPipeline;
 
     public LearningController(@Nullable DataCloudClient agentDataCloud,
                                @Nullable HumanReviewQueue humanReviewQueue) {
+        this(agentDataCloud, humanReviewQueue, null);
+    }
+
+    public LearningController(@Nullable DataCloudClient agentDataCloud,
+                               @Nullable HumanReviewQueue humanReviewQueue,
+                               @Nullable EpisodeLearningPipeline learningPipeline) {
         this.agentDataCloud = agentDataCloud;
         this.humanReviewQueue = humanReviewQueue;
+        this.learningPipeline = learningPipeline;
     }
 
     public Promise<HttpResponse> handleListEpisodes(HttpRequest request) {
@@ -211,21 +221,43 @@ public class LearningController {
     public Promise<HttpResponse> handleTriggerReflection(HttpRequest request) {
         String tenantId = HttpHelper.resolveTenantId(request);
         log.info("[learning] reflect triggered for tenant={}", tenantId);
-        try {
-            String json = HttpHelper.mapper().writeValueAsString(Map.of(
-                "triggered", true,
-                "tenantId", tenantId,
-                "message", "Reflection cycle scheduled; the consolidation scheduler "
-                    + "will process it in the next interval",
-                "timestamp", Instant.now().toString()
-            ));
-            return Promise.of(HttpResponse.ofCode(202)
-                .withHeader(HttpHeaders.CONTENT_TYPE,
-                    HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
-                .withBody(json.getBytes(StandardCharsets.UTF_8))
-                .build());
-        } catch (Exception e) {
-            return Promise.of(HttpHelper.errorResponse(500, "Failed to trigger reflection"));
+
+        if (learningPipeline == null) {
+            // Degrade gracefully when DataCloud is not configured
+            try {
+                String json = HttpHelper.mapper().writeValueAsString(Map.of(
+                    "triggered", false,
+                    "tenantId", tenantId,
+                    "message", "Learning pipeline not available — start AEP with DataCloud configured",
+                    "timestamp", Instant.now().toString()
+                ));
+                return Promise.of(HttpResponse.ofCode(202)
+                    .withHeader(HttpHeaders.CONTENT_TYPE,
+                        HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                    .withBody(json.getBytes(StandardCharsets.UTF_8))
+                    .build());
+            } catch (Exception e) {
+                return Promise.of(HttpHelper.errorResponse(500, "Failed to trigger reflection"));
+            }
         }
+
+        return learningPipeline.run(tenantId)
+            .map(result -> HttpHelper.jsonResponse(Map.of(
+                "triggered", true,
+                "tenantId", result.tenantId(),
+                "success", result.success(),
+                "episodesRead", result.episodesRead(),
+                "skillsEvaluated", result.skillsEvaluated(),
+                "policiesQueued", result.policiesQueued(),
+                "skillsSkipped", result.skillsSkipped(),
+                "gateFailures", result.gateFailures(),
+                "timestamp", Instant.now().toString()
+            )))
+            .then(Promise::of, e -> {
+                log.error("[learning] reflection pipeline failed for tenant={}: {}",
+                    tenantId, e.getMessage(), e);
+                return Promise.of(HttpHelper.errorResponse(500,
+                    "Reflection pipeline failed: " + e.getMessage()));
+            });
     }
 }

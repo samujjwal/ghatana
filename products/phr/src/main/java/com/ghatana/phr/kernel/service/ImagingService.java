@@ -93,11 +93,12 @@ public class ImagingService {
         ImagingOrder toStore = new ImagingOrder(
                 id,
                 order.patientId(),
+                order.encounterId(),
                 order.orderingProviderId(),
                 order.modalityCode(),
                 order.bodyPart(),
                 order.clinicalIndication(),
-                OrderStatus.PENDING,
+                OrderStatus.REQUESTED,
                 Instant.now(),
                 null
         );
@@ -136,12 +137,12 @@ public class ImagingService {
                 study.orderId(),
                 study.dcmStudyInstanceUid(),
                 study.modalityCode(),
-                study.bodyPart(),
+                study.pacsLocation(),
                 study.seriesCount(),
                 study.instanceCount(),
+                StudyStatus.COMPLETE,
                 Instant.now(),
-                study.pacsLocation(),
-                StudyStatus.AVAILABLE
+                study.bodyPart()
         );
 
         DataWriteRequest request = new DataWriteRequest(
@@ -189,8 +190,8 @@ public class ImagingService {
                 report.findings(),
                 report.impression(),
                 report.recommendations(),
-                Instant.now(),
-                ReportStatus.PRELIMINARY
+                report.status() != null ? report.status() : ReportStatus.PRELIMINARY,
+                Instant.now()
         );
 
         DataWriteRequest request = new DataWriteRequest(
@@ -254,6 +255,25 @@ public class ImagingService {
                         .toList());
     }
 
+    /**
+     * Retrieves a single imaging order by ID.
+     *
+     * @param orderId the order identifier
+     * @return Promise containing the order if found
+     */
+    public Promise<Optional<ImagingOrder>> getOrder(String orderId) {
+        if (!running) {
+            return Promise.of(Optional.empty());
+        }
+
+        return dataCloud.readData(new DataReadRequest(ORDER_DATASET, orderId, Map.of()))
+                .map(result -> {
+                    if (result == null || result.getData() == null) return Optional.empty();
+                    return Optional.ofNullable(
+                            TypedDataSerializer.fromBytes(result.getData(), ImagingOrder.class));
+                });
+    }
+
     // ==================== Private Helpers ====================
 
     private Promise<Void> fulfillOrder(String orderId) {
@@ -263,9 +283,10 @@ public class ImagingService {
                     ImagingOrder existing = TypedDataSerializer.fromBytes(result.getData(), ImagingOrder.class);
                     if (existing == null) return Promise.complete();
                     ImagingOrder fulfilled = new ImagingOrder(
-                            existing.id(), existing.patientId(), existing.orderingProviderId(),
-                            existing.modalityCode(), existing.bodyPart(), existing.clinicalIndication(),
-                            OrderStatus.FULFILLED, existing.orderedAt(), Instant.now()
+                            existing.id(), existing.patientId(), existing.encounterId(),
+                            existing.orderingProviderId(), existing.modalityCode(),
+                            existing.bodyPart(), existing.clinicalIndication(),
+                            OrderStatus.COMPLETED, existing.orderedAt(), Instant.now()
                     );
                     return dataCloud.writeData(new DataWriteRequest(
                             ORDER_DATASET, orderId,
@@ -280,25 +301,25 @@ public class ImagingService {
                 ORDER_DATASET,
                 Map.of("id", "string", "patientId", "string", "status", "string"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> studies = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 STUDY_DATASET,
                 Map.of("id", "string", "patientId", "string", "dcmStudyInstanceUid", "string"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> reports = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 REPORT_DATASET,
                 Map.of("id", "string", "patientId", "string", "studyId", "string"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 AUDIT_DATASET,
                 Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(orders, studies, reports, audit).map($ -> null);
     }
@@ -312,7 +333,7 @@ public class ImagingService {
                         new AuditEntry(auditId, Instant.now(), action, patientId, details),
                         "ImagingAuditEntry", 1),
                 Map.of("timestamp", Instant.now().toString())
-        )).whenException(e -> {});
+        ));
     }
 
     private String generateId(String prefix) {
@@ -337,6 +358,7 @@ public class ImagingService {
     public record ImagingOrder(
             String id,
             String patientId,
+            String encounterId,
             String orderingProviderId,
             String modalityCode,
             String bodyPart,
@@ -367,12 +389,12 @@ public class ImagingService {
             String orderId,
             String dcmStudyInstanceUid,
             String modalityCode,
-            String bodyPart,
+            String pacsLocation,
             int seriesCount,
             int instanceCount,
+            StudyStatus status,
             Instant studyDate,
-            String pacsLocation,
-            StudyStatus status
+            String bodyPart
     ) {}
 
     /**
@@ -396,18 +418,18 @@ public class ImagingService {
             String findings,
             String impression,
             String recommendations,
-            Instant reportedAt,
-            ReportStatus status
+            ReportStatus status,
+            Instant reportedAt
     ) {}
 
     /** Imaging order lifecycle status. */
     public enum OrderStatus {
-        PENDING, SCHEDULED, FULFILLED, CANCELLED
+        REQUESTED, PENDING, SCHEDULED, COMPLETED, FULFILLED, CANCELLED
     }
 
     /** DICOM study availability status. */
     public enum StudyStatus {
-        AVAILABLE, UNAVAILABLE, ENTERED_IN_ERROR
+        COMPLETE, AVAILABLE, UNAVAILABLE, ENTERED_IN_ERROR
     }
 
     /** Radiology report lifecycle status. */

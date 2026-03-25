@@ -30,6 +30,26 @@ public record AepComplianceReport(
 ) {
 
     /**
+     * Returns the compliance operation type (e.g. {@code "GDPR_ACCESS"}).
+     * Alias for {@link #operationType()} for ergonomic test and API access.
+     *
+     * @return operation type string
+     */
+    public String operation() {
+        return operationType;
+    }
+
+    /**
+     * Returns the total number of records affected by this operation.
+     * Alias for {@link #total()} for ergonomic test and API access.
+     *
+     * @return affected record count
+     */
+    public long recordsAffected() {
+        return total;
+    }
+
+    /**
      * Creates a failure report for a compliance operation.
      *
      * @param operationType the type of compliance operation

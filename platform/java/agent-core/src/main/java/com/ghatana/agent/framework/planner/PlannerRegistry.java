@@ -34,8 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <ul>
  *   <li>{@link com.ghatana.agent.registry.AgentFrameworkRegistry} — the in-process
  *       {@link com.ghatana.agent.TypedAgent} lifecycle registry (discovery, init, shutdown)</li>
- *   <li>{@link com.ghatana.agent.registry.AgentRegistry} (in {@code platform:agent-registry})
- *       — the durable platform SPI backed by JDBC or in-memory for distributed use</li>
+ *   <li>{@link com.ghatana.agent.spi.AgentRegistry} — the durable platform SPI backed by JDBC or in-memory for distributed use</li>
  * </ul>
  *
  * <p>Tenant isolation: agent IDs are scoped to a {@code tenantId}. An agent registered
@@ -102,7 +101,7 @@ public class PlannerRegistry {
      * @param agent   the agent instance
      * @deprecated Use {@link #register(String, String, BaseAgent)} with an explicit tenantId.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = true)
     public void register(String agentId, BaseAgent<?, ?> agent) {
         register(DEFAULT_TENANT, agentId, agent);
     }
@@ -132,7 +131,7 @@ public class PlannerRegistry {
      * @return optional containing the agent if found
      * @deprecated Use {@link #lookup(String, String)} with an explicit tenantId.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = true)
     public Optional<BaseAgent<?, ?>> lookup(String agentId) {
         return lookup(DEFAULT_TENANT, agentId);
     }
@@ -184,7 +183,7 @@ public class PlannerRegistry {
      * @return immutable copy of the default-tenant agent map
      * @deprecated Use {@link #getAgents(String)} with an explicit tenantId.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = true)
     public Map<String, BaseAgent<?, ?>> getAgents() {
         return getAgents(DEFAULT_TENANT);
     }

@@ -41,7 +41,8 @@ public class ProjectOnboardingAgent extends YAPPCAgentBase<ProjectOnboardingInpu
             "#/definitions/ProjectOnboardingOutput",
             List.of("onboarding", "project-setup"),
             Map.of("description", "Worker agent that automates project onboarding and setup", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

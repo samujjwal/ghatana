@@ -24,8 +24,7 @@ import java.util.List;
  * a single JVM process.
  *
  * <p><b>Relationship to platform AgentRegistry SPI</b><br>
- * {@code com.ghatana.agent.registry.AgentRegistry} (platform agent-registry module)
- * is the persistent, distributed SPI backed by Data-Cloud. This interface is the
+ * {@code com.ghatana.agent.spi.AgentRegistry} is the persistent, distributed SPI backed by Data-Cloud. This interface is the
  * lightweight, in-process counterpart used by the agent-framework runtime and
  * operator pipeline. Implementations include {@link InMemoryAgentFrameworkRegistry}
  * for tests and single-node deployments.

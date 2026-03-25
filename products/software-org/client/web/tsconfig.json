@@ -45,7 +45,7 @@
       ],
       "@ghatana/theme": ["../../../../platform/typescript/theme/src/index.ts"],
       "@ghatana/platform-utils": [
-        "../../../../platform/typescript/utils/src/index.ts"
+        "../../../../platform/typescript/foundation/platform-utils/src/index.ts"
       ]
     },
     "types": ["vite/client", "vitest/globals", "node", "react", "react-dom"]

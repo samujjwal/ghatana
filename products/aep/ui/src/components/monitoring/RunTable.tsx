@@ -6,6 +6,7 @@
  * @doc.layer frontend
  */
 import React from 'react';
+import { Link } from 'react-router';
 import type { PipelineRun } from '@/api/aep.api';
 
 interface RunTableProps {
@@ -42,7 +43,7 @@ export function RunTable({ runs, onCancel, className = '' }: RunTableProps) {
             <th className="px-3 py-2 text-left font-medium">Started</th>
             <th className="px-3 py-2 text-right font-medium">Events</th>
             <th className="px-3 py-2 text-right font-medium">Errors</th>
-            {onCancel && <th className="px-3 py-2" />}
+            <th className="px-3 py-2" />
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -52,7 +53,12 @@ export function RunTable({ runs, onCancel, className = '' }: RunTableProps) {
               className="hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
             >
               <td className="px-3 py-2 font-medium text-gray-800 dark:text-gray-200 max-w-[14rem] truncate">
-                {run.pipelineName}
+                <Link
+                  to={`/operate/runs/${run.id}`}
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
+                >
+                  {run.pipelineName}
+                </Link>
               </td>
               <td className="px-3 py-2">
                 <span
@@ -87,6 +93,14 @@ export function RunTable({ runs, onCancel, className = '' }: RunTableProps) {
                   )}
                 </td>
               )}
+              <td className="px-3 py-2 text-right">
+                <Link
+                  to={`/operate/runs/${run.id}`}
+                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                >
+                  View
+                </Link>
+              </td>
             </tr>
           ))}
         </tbody>

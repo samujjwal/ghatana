@@ -13,13 +13,15 @@ dependencies {
     implementation(project(":platform:java:governance"))
     
     // YAPPC domain (both core and libs versions)
-    implementation(project(":products:yappc:core:yappc-domain"))
+    implementation(project(":products:yappc:core:yappc-domain-impl"))
     implementation(project(":products:yappc:libs:java:yappc-domain"))
     
     // YAPPC agents runtime (for AepEventPublisher)
     implementation(project(":products:yappc:core:agents:runtime"))
     
     // Data-Cloud platform (for DataCloudClient)
+    // TODO(ADAPTER-SEAM): data-cloud:platform coupling in a domain services module.
+    //   Future: introduce DataCloudPort in core; move impl to infrastructure:datacloud
     implementation(project(":products:data-cloud:platform"))
     
     // YAPPC infrastructure

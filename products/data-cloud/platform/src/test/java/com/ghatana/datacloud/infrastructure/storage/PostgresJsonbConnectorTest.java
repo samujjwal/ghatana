@@ -9,11 +9,12 @@ import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.time.Instant;
 import java.util.*;
@@ -22,8 +23,8 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@Disabled("Temporarily disabled due to assertion issues in test environment")
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class PostgresJsonbConnectorTest extends EventloopTestBase {
 
     @Mock
@@ -46,6 +47,7 @@ class PostgresJsonbConnectorTest extends EventloopTestBase {
         doNothing().when(metrics).incrementCounter(anyString(), any(String[].class));
         doNothing().when(metrics).recordTimer(anyString(), anyLong(), any(String[].class));
         doNothing().when(auditLogger).logDataModification(any(), any(), any(), any(), anyBoolean());
+        when(entityRepository.count(anyString(), anyString())).thenReturn(Promise.of(0L));
         connector = new PostgresJsonbConnector(entityRepository, metrics, auditLogger);
     }
 
@@ -115,11 +117,11 @@ class PostgresJsonbConnectorTest extends EventloopTestBase {
     // ── read ─────────────────────────────────────────────────────────────────
 
     @Test
-    @Disabled("Temporarily disabled due to assertion issues")
     void read_returnsEntity_whenFound() {
         UUID id = UUID.randomUUID();
         Entity found = entity(id);
-        when(entityRepository.findById(TENANT, COLLECTION, id))
+        // M7: connector passes collectionId.toString() — use anyString() not eq(COLLECTION)
+        when(entityRepository.findById(eq(TENANT), anyString(), eq(id)))
                 .thenReturn(Promise.of(Optional.of(found)));
 
         Optional<Entity> result = resolve(connector.read(COLLECTION_ID, TENANT, id));
@@ -131,7 +133,8 @@ class PostgresJsonbConnectorTest extends EventloopTestBase {
     @Test
     void read_returnsEmpty_whenNotFound() {
         UUID id = UUID.randomUUID();
-        when(entityRepository.findById(TENANT, COLLECTION, id))
+        // M7: connector passes collectionId.toString() — use anyString() not eq(COLLECTION)
+        when(entityRepository.findById(eq(TENANT), anyString(), eq(id)))
                 .thenReturn(Promise.of(Optional.empty()));
 
         Optional<Entity> result = resolve(connector.read(COLLECTION_ID, TENANT, id));
@@ -144,8 +147,7 @@ class PostgresJsonbConnectorTest extends EventloopTestBase {
     @Test
     void update_savesAndReturnsUpdatedEntity() {
         Entity input = entity(UUID.randomUUID());
-        when(entityRepository.findById(TENANT, COLLECTION, input.getId()))
-                .thenReturn(Promise.of(Optional.of(input)));
+        // M7: update() calls only save(), not findById()
         when(entityRepository.save(eq(TENANT), any(Entity.class)))
                 .thenReturn(Promise.of(input));
 
@@ -160,13 +162,14 @@ class PostgresJsonbConnectorTest extends EventloopTestBase {
     @Test
     void delete_invokesRepository() {
         UUID id = UUID.randomUUID();
-        when(entityRepository.delete(TENANT, COLLECTION, id))
+        // M7: connector passes collectionId.toString() — use anyString() not eq(COLLECTION)
+        when(entityRepository.delete(eq(TENANT), anyString(), eq(id)))
                 .thenReturn(Promise.of(null));
 
         assertThatCode(() -> resolve(connector.delete(COLLECTION_ID, TENANT, id)))
                 .doesNotThrowAnyException();
 
-        verify(entityRepository).delete(TENANT, COLLECTION, id);
+        verify(entityRepository).delete(eq(TENANT), anyString(), eq(id));
     }
 
     // ── query ────────────────────────────────────────────────────────────────
@@ -174,9 +177,10 @@ class PostgresJsonbConnectorTest extends EventloopTestBase {
     @Test
     void query_delegatesToRepository() {
         List<Entity> entities = List.of(entity(UUID.randomUUID()), entity(UUID.randomUUID()));
-        when(entityRepository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+        // M7: connector calls findByQuery (not findAll) and count (not countByFilter)
+        when(entityRepository.findByQuery(eq(TENANT), anyString(), any()))
                 .thenReturn(Promise.of(entities));
-        when(entityRepository.countByFilter(eq(TENANT), eq(COLLECTION), any()))
+        when(entityRepository.count(eq(TENANT), anyString()))
                 .thenReturn(Promise.of(2L));
 
         QuerySpec spec = QuerySpec.builder().limit(10).offset(0).build();
@@ -190,7 +194,8 @@ class PostgresJsonbConnectorTest extends EventloopTestBase {
 
     @Test
     void count_delegatesToRepository() {
-        when(entityRepository.countByFilter(eq(TENANT), eq(COLLECTION), any()))
+        // M7: connector calls count() not countByFilter(); collectionName = collectionId.toString()
+        when(entityRepository.count(eq(TENANT), anyString()))
                 .thenReturn(Promise.of(5L));
 
         long count = resolve(connector.count(COLLECTION_ID, TENANT, null));

@@ -57,7 +57,8 @@ public class IntakeSpecialistAgent extends YAPPCAgentBase<IntakeInput, IntakeOut
             "#/definitions/IntakeOutput",
             List.of("requirements", "validation"),
             Map.of("description", "Validates and structures requirements", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
     this.llmProvider = llmProvider;
   }

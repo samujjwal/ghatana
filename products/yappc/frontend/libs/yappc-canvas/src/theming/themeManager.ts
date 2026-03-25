@@ -29,7 +29,7 @@ import {
   darkShadows,
   fontFamilies,
   fontWeights,
-} from '@yappc/ui/theme';
+} from '@yappc/theme';
 import * as React from 'react';
 
 import type { CanvasTheme } from '../types/canvas-document';

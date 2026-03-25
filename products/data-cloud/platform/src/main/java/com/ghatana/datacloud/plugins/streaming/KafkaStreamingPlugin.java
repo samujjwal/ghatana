@@ -4,7 +4,7 @@ import com.ghatana.datacloud.event.common.Offset;
 import com.ghatana.datacloud.event.common.PartitionId;
 import com.ghatana.datacloud.event.model.Event;
 import com.ghatana.datacloud.event.spi.StreamingPlugin;
-import com.ghatana.platform.plugin.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;

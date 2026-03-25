@@ -27,6 +27,8 @@ dependencies {
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
     
     // ActiveJ framework
     api(libs.activej.eventloop)

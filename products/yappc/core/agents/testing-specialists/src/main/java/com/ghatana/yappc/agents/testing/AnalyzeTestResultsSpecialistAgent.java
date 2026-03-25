@@ -52,7 +52,8 @@ public class AnalyzeTestResultsSpecialistAgent
                 "1.0.0",
                 "estimatedDuration",
                 "2m")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

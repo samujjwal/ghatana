@@ -48,7 +48,8 @@ public class PromoteOrRollbackSpecialistAgent
             "#/definitions/PromoteOrRollbackOutput",
             List.of("ops", "promotion", "rollback"),
             Map.of("description", "Decides promotion or rollback", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

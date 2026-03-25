@@ -1,6 +1,6 @@
 package com.ghatana.eventprocessing.registry;
 
-import com.ghatana.aep.domain.registry.EventTypeRegistration;
+import com.ghatana.eventprocessing.registry.EventTypeRegistration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

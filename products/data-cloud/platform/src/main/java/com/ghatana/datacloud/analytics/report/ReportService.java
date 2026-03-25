@@ -126,18 +126,6 @@ public final class ReportService implements AutoCloseable {
         this(analyticsEngine, null);
     }
 
-    /**
-     * Creates a {@link ReportService} — kept for test convenience; executor param ignored.
-     *
-     * @deprecated Use {@link #ReportService(AnalyticsQueryEngine, EntityExportService)} directly.
-     */
-    @Deprecated
-    public ReportService(AnalyticsQueryEngine analyticsEngine,
-                         EntityExportService exportService,
-                         ExecutorService executor) {
-        this(analyticsEngine, exportService);
-    }
-
     // ── Core API ───────────────────────────────────────────────────────────────
 
     /**

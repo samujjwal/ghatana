@@ -10,7 +10,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.ghatana.core.database.DatabaseClient;
-import com.ghatana.core.event.cloud.EventCloud;
+import com.ghatana.yappc.agent.EventPublisher;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.workflow.WorkflowContext;
 import io.activej.promise.Promise;
@@ -30,13 +30,13 @@ import org.junit.jupiter.api.Test;
 class GenerateTestsStepTest extends EventloopTestBase {
 
   private DatabaseClient dbClient;
-  private EventCloud eventClient;
+  private EventPublisher eventClient;
   private GenerateTestsStep step;
 
   @BeforeEach
   void setUp() {
     dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventCloud.class);
+    eventClient = mock(EventPublisher.class);
     step = new GenerateTestsStep(dbClient, eventClient);
   }
 

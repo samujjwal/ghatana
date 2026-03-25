@@ -29,7 +29,7 @@
       "@ghatana/tokens": [
         "../../../../platform/typescript/tokens/src/index.ts"
       ],
-      "@ghatana/utils": ["../../../../platform/typescript/utils/src/index.ts"],
+      "@ghatana/utils": ["../../../../platform/typescript/foundation/platform-utils/src/index.ts"],
       "@ghatana/platform-utils": [
         "../../../../platform/typescript/foundation/platform-utils/src/index.ts"
       ],

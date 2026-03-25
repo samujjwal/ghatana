@@ -5,7 +5,7 @@ import com.ghatana.agent.framework.api.GeneratorMetadata;
 import com.ghatana.agent.framework.api.OutputGenerator;
 import com.ghatana.yappc.agent.StepResult;
 import com.ghatana.yappc.agent.StepRequest;
-import com.ghatana.yappc.agent.YAPPCAgentRegistry;
+import com.ghatana.yappc.agent.AgentRegistryView;
 import io.activej.promise.Promise;
 import java.util.*;
 import org.jetbrains.annotations.NotNull;
@@ -34,13 +34,13 @@ public class DeliveryCoordinatorGenerator
 
   private static final Logger log = LoggerFactory.getLogger(DeliveryCoordinatorGenerator.class);
 
-  private final YAPPCAgentRegistry agentRegistry;
+  private final AgentRegistryView agentRegistry;
 
   // Phase execution order based on SDLC dependencies
   private static final List<String> PHASE_ORDER =
       List.of("requirements", "architecture", "implementation", "testing", "ops", "enhancement");
 
-  public DeliveryCoordinatorGenerator(@NotNull YAPPCAgentRegistry agentRegistry) {
+  public DeliveryCoordinatorGenerator(@NotNull AgentRegistryView agentRegistry) {
     this.agentRegistry = agentRegistry;
   }
 

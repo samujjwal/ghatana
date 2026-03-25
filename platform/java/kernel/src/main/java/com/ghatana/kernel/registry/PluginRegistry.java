@@ -3,12 +3,10 @@ package com.ghatana.kernel.registry;
 import com.ghatana.kernel.annotation.KernelInternal;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
-import com.ghatana.kernel.plugin.KernelExtension;
-import com.ghatana.kernel.plugin.KernelOperator;
-import com.ghatana.kernel.plugin.ProductPlugin;
-import com.ghatana.kernel.plugin.PluginContext;
+import com.ghatana.kernel.plugin.KernelPlugin;
+import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -16,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Plugin registry for dynamic plugin management.
  *
- * <p>This registry manages product plugins without creating coupling
+ * <p>This registry manages kernel plugins without creating coupling
  * between the kernel and specific products.</p>
  *
  * <p><b>Internal helper registry.</b> Per KERNEL_CANONICALIZATION_DECISIONS.md (Decision D4),
@@ -24,14 +22,8 @@ import java.util.stream.Collectors;
  * internal implementation helper. External consumers should prefer KernelRegistry for
  * plugin discovery. This class may be refactored into KernelRegistryImpl in a future release.</p>
  *
- * <p>Additionally, this class depends on the transitional {@link ProductPlugin} type
- * and {@code com.ghatana.kernel.plugin.KernelExtension}. When ProductPlugin is retired,
- * this class must migrate to canonical {@link com.ghatana.kernel.plugin.KernelPlugin}
- * abstractions or be absorbed into KernelRegistryImpl. The registerExtension method
- * currently uses the deprecated plugin.KernelExtension interface for compatibility.</p>
- *
  * @doc.type class
- * @doc.purpose Internal plugin sub-registry behind KernelRegistry — uses transitional types
+ * @doc.purpose Internal plugin sub-registry behind KernelRegistry
  * @doc.layer core
  * @doc.pattern Registry
  * @author Ghatana Kernel Team
@@ -39,167 +31,141 @@ import java.util.stream.Collectors;
  */
 @KernelInternal("Use KernelRegistry for plugin discovery")
 public class PluginRegistry {
-    private final Map<String, ProductPlugin> plugins = new ConcurrentHashMap<>();
+    private final Map<String, KernelPlugin> plugins = new ConcurrentHashMap<>();
     private final Map<String, Set<KernelCapability>> capabilitiesByPlugin = new ConcurrentHashMap<>();
     private final CapabilityRegistry capabilityRegistry;
-    private final ServiceRegistry serviceRegistry;
 
-    public PluginRegistry(CapabilityRegistry capabilityRegistry, ServiceRegistry serviceRegistry) {
+    public PluginRegistry(CapabilityRegistry capabilityRegistry) {
         this.capabilityRegistry = Objects.requireNonNull(capabilityRegistry);
-        this.serviceRegistry = Objects.requireNonNull(serviceRegistry);
     }
 
     /**
-     * Register a product plugin dynamically.
-     * 
+     * Register a kernel plugin dynamically.
+     *
      * @param plugin the plugin to register
      * @throws IllegalStateException if plugin is already registered
      */
-    public void registerPlugin(ProductPlugin plugin) {
-        String productId = plugin.getProductId();
-        
-        // Check for conflicts
-        if (plugins.containsKey(productId)) {
-            throw new IllegalStateException("Plugin already registered: " + productId);
+    public void registerPlugin(KernelPlugin plugin) {
+        String pluginId = plugin.getModuleId();
+
+        if (plugins.containsKey(pluginId)) {
+            throw new IllegalStateException("Plugin already registered: " + pluginId);
         }
 
-        // Validate plugin dependencies
         validatePluginDependencies(plugin);
 
-        // Register plugin
-        plugins.put(productId, plugin);
-        
-        // Register plugin capabilities
-        Set<KernelCapability> capabilities = plugin.getDeclaredCapabilities();
-        capabilitiesByPlugin.put(productId, capabilities);
-        
-        // Register capabilities with kernel registry
+        plugins.put(pluginId, plugin);
+
+        Set<KernelCapability> capabilities = plugin.getCapabilities();
+        capabilitiesByPlugin.put(pluginId, capabilities);
+
         for (KernelCapability capability : capabilities) {
             capabilityRegistry.registerCapability(capability);
         }
-
-        // Initialize plugin
-        PluginContext context = new PluginContextImpl(capabilityRegistry, serviceRegistry);
-        plugin.initialize(context);
     }
 
     /**
      * Get plugin by ID.
-     * 
-     * @param productId the product identifier
+     *
+     * @param pluginId the plugin identifier
      * @return optional plugin
      */
-    public Optional<ProductPlugin> getPlugin(String productId) {
-        return Optional.ofNullable(plugins.get(productId));
+    public Optional<KernelPlugin> getPlugin(String pluginId) {
+        return Optional.ofNullable(plugins.get(pluginId));
     }
 
     /**
      * Get all registered plugins.
-     * 
+     *
      * @return set of all plugins
      */
-    public Set<ProductPlugin> getAllPlugins() {
+    public Set<KernelPlugin> getAllPlugins() {
         return new HashSet<>(plugins.values());
     }
 
     /**
      * Get capabilities for a plugin.
-     * 
-     * @param productId the product identifier
+     *
+     * @param pluginId the plugin identifier
      * @return set of capabilities
      */
-    public Set<KernelCapability> getPluginCapabilities(String productId) {
-        return capabilitiesByPlugin.getOrDefault(productId, Set.of());
+    public Set<KernelCapability> getPluginCapabilities(String pluginId) {
+        return capabilitiesByPlugin.getOrDefault(pluginId, Set.of());
     }
 
     /**
      * Find plugins by capability.
-     * 
+     *
      * @param capability the capability to search for
      * @return set of plugins that provide the capability
      */
-    public Set<ProductPlugin> getPluginsByCapability(KernelCapability capability) {
+    public Set<KernelPlugin> getPluginsByCapability(KernelCapability capability) {
         return plugins.values().stream()
-            .filter(plugin -> plugin.getDeclaredCapabilities().contains(capability))
+            .filter(plugin -> plugin.getCapabilities().contains(capability))
             .collect(Collectors.toSet());
     }
 
     /**
      * Start all plugins.
+     *
+     * @return Promise completing when all plugins have started
      */
-    public void startAllPlugins() {
-        plugins.values().forEach(plugin -> {
-            try {
-                plugin.start();
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to start plugin: " + plugin.getProductId(), e);
-            }
-        });
+    public Promise<Void> startAllPlugins() {
+        List<Promise<Void>> starts = plugins.values().stream()
+            .map(plugin -> plugin.start()
+                .mapException(e -> new RuntimeException("Failed to start plugin: " + plugin.getModuleId(), e)))
+            .collect(Collectors.toList());
+        return Promises.all(starts);
     }
 
     /**
      * Stop all plugins.
+     *
+     * @return Promise completing when all plugins have stopped
      */
-    public void stopAllPlugins() {
-        plugins.values().forEach(plugin -> {
-            try {
-                plugin.stop();
-            } catch (Exception e) {
-                // Log error but continue stopping other plugins
-                System.err.println("Error stopping plugin " + plugin.getProductId() + ": " + e.getMessage());
-            }
-        });
-    }
-
-    /**
-     * Shutdown all plugins.
-     */
-    public void shutdownAllPlugins() {
-        plugins.values().forEach(plugin -> {
-            try {
-                plugin.shutdown();
-            } catch (Exception e) {
-                // Log error but continue shutting down other plugins
-                System.err.println("Error shutting down plugin " + plugin.getProductId() + ": " + e.getMessage());
-            }
-        });
+    public Promise<Void> stopAllPlugins() {
+        List<Promise<Void>> stops = plugins.values().stream()
+            .map(plugin -> plugin.stop()
+                .then($ -> Promise.complete(),
+                      e -> {
+                          System.err.println("Error stopping plugin " + plugin.getModuleId() + ": " + e.getMessage());
+                          return Promise.complete();
+                      }))
+            .collect(Collectors.toList());
+        return Promises.all(stops);
     }
 
     /**
      * Unregister a plugin.
-     * 
-     * @param productId the product identifier
+     *
+     * @param pluginId the plugin identifier
+     * @return Promise completing when the plugin has been unregistered
      */
-    public void unregisterPlugin(String productId) {
-        ProductPlugin plugin = plugins.get(productId);
-        if (plugin != null) {
-            // Stop and shutdown plugin
-            plugin.stop();
-            plugin.shutdown();
-            
-            // Remove from registry
-            plugins.remove(productId);
-            capabilitiesByPlugin.remove(productId);
-            
-            // Note: We don't remove capabilities from the capability registry
-            // as other plugins might be using them
+    public Promise<Void> unregisterPlugin(String pluginId) {
+        KernelPlugin plugin = plugins.get(pluginId);
+        if (plugin == null) {
+            return Promise.complete();
         }
+        return plugin.stop()
+            .then($ -> plugin.uninstall())
+            .whenComplete(($, e) -> {
+                plugins.remove(pluginId);
+                capabilitiesByPlugin.remove(pluginId);
+            });
     }
 
     /**
      * Validate plugin dependencies.
-     * 
+     *
      * @param plugin the plugin to validate
      * @throws IllegalStateException if dependencies are not satisfied
      */
-    private void validatePluginDependencies(ProductPlugin plugin) {
-        Set<KernelDependency> dependencies = plugin.getRequiredDependencies();
-        
-        for (KernelDependency dependency : dependencies) {
+    private void validatePluginDependencies(KernelPlugin plugin) {
+        for (KernelDependency dependency : plugin.getDependencies()) {
             if (dependency.getType() == KernelDependency.DependencyType.CAPABILITY) {
                 if (!capabilityRegistry.getCapability(dependency.getDependencyId()).isPresent()) {
                     throw new IllegalStateException(
-                        "Plugin " + plugin.getProductId() + " requires capability: " + dependency.getDependencyId());
+                        "Plugin " + plugin.getModuleId() + " requires capability: " + dependency.getDependencyId());
                 }
             }
         }
@@ -207,7 +173,7 @@ public class PluginRegistry {
 
     /**
      * Get plugin registry statistics.
-     * 
+     *
      * @return statistics map
      */
     public Map<String, Object> getStatistics() {
@@ -215,66 +181,8 @@ public class PluginRegistry {
         stats.put("total_plugins", plugins.size());
         stats.put("total_capabilities", capabilitiesByPlugin.values().stream()
             .mapToInt(Set::size).sum());
-        stats.put("plugins_by_id", new HashMap<>(plugins.keySet().stream()
-            .collect(Collectors.toMap(id -> id, id -> plugins.get(id).getProductVersion()))));
+        stats.put("plugins_by_id", plugins.keySet().stream()
+            .collect(Collectors.toMap(id -> id, id -> plugins.get(id).getVersion())));
         return stats;
-    }
-
-    /**
-     * Plugin context implementation.
-     */
-    private static class PluginContextImpl implements PluginContext {
-        private final CapabilityRegistry capabilityRegistry;
-        private final ServiceRegistry serviceRegistry;
-
-        public PluginContextImpl(CapabilityRegistry capabilityRegistry, ServiceRegistry serviceRegistry) {
-            this.capabilityRegistry = capabilityRegistry;
-            this.serviceRegistry = serviceRegistry;
-        }
-
-        @Override
-        public com.ghatana.kernel.context.KernelContext getKernelContext() {
-            // Return a wrapper around the kernel context
-            return serviceRegistry.getKernelContext();
-        }
-
-        @Override
-        public CapabilityRegistry getCapabilityRegistry() {
-            return capabilityRegistry;
-        }
-
-        @Override
-        public ServiceRegistry getServiceRegistry() {
-            return serviceRegistry;
-        }
-
-        @Override
-        public <T> T getCapability(KernelCapability capability, Class<T> type) {
-            return capabilityRegistry.getCapabilityInstance(capability, type);
-        }
-
-        @Override
-        public <T> Optional<T> getOptionalCapability(KernelCapability capability, Class<T> type) {
-            try {
-                return Optional.ofNullable(getCapability(capability, type));
-            } catch (Exception e) {
-                return Optional.empty();
-            }
-        }
-
-        @Override
-        public void registerService(String serviceId, Object service) {
-            serviceRegistry.registerService(serviceId, service);
-        }
-
-        @Override
-        public void registerExtension(KernelExtension extension) {
-            serviceRegistry.registerService(extension.getExtensionId(), extension);
-        }
-
-        @Override
-        public void registerOperator(KernelOperator operator) {
-            serviceRegistry.registerOperator(operator);
-        }
     }
 }

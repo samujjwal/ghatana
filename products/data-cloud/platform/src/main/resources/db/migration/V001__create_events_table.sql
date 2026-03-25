@@ -44,7 +44,7 @@ COMMENT ON COLUMN events.stream_name IS 'Logical event stream name for partition
 COMMENT ON COLUMN events.event_offset IS 'Sequential offset within (tenant, stream, partition). Assigned by storage layer.';
 COMMENT ON COLUMN events.occurrence_time IS 'When the event actually occurred in the domain';
 COMMENT ON COLUMN events.detection_time IS 'When the event was recorded/detected by the system';
-COMMENT ON COLUMN events.idempotency_key IS 'Optional deduplication key. Unique per tenant when present.';
+COMMENT ON COLUMN events.idempotency_key IS 'Optional deduplication key. Unique per tenant when present. NULL is allowed multiple times (PostgreSQL permits multiple NULLs in a UNIQUE constraint — only non-NULL values are deduplicated).';
 COMMENT ON COLUMN events.correlation_id IS 'Distributed tracing correlation identifier';
 COMMENT ON COLUMN events.causation_id IS 'ID of the event that caused this event (causal chain)';
 COMMENT ON COLUMN events.data IS 'Event payload as JSONB';

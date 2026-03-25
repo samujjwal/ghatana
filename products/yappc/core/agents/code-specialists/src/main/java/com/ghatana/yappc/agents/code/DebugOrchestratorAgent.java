@@ -41,7 +41,8 @@ public class DebugOrchestratorAgent extends YAPPCAgentBase<DebugOrchestratorInpu
             "#/definitions/DebugOrchestratorOutput",
             List.of("debug", "orchestration", "incident-response"),
             Map.of("description", "Orchestrates debugging workflows using specialized debug micro-agents", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

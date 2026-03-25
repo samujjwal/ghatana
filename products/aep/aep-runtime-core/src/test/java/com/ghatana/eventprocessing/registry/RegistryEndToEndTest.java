@@ -1,6 +1,6 @@
 package com.ghatana.eventprocessing.registry;
 
-import com.ghatana.aep.domain.registry.EventTypeRegistration;
+import com.ghatana.eventprocessing.registry.EventTypeRegistration;
 import com.ghatana.platform.domain.event.Event;
 
 import static org.assertj.core.api.Assertions.assertThat;

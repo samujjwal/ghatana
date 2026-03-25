@@ -41,7 +41,8 @@ public class RootCauseAnalysisAgent extends YAPPCAgentBase<RootCauseAnalysisInpu
             "#/definitions/RootCauseAnalysisOutput",
             List.of("debug", "root-cause-analysis"),
             Map.of("description", "Debug micro-agent that performs systematic root cause analysis", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

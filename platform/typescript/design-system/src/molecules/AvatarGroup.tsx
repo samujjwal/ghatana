@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { tokens } from '@ghatana/tokens';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 import { sxToStyle, type SxProps } from '../utils/sx';
 
 export interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {

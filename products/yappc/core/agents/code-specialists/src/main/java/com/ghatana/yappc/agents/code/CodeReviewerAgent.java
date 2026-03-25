@@ -41,7 +41,8 @@ public class CodeReviewerAgent extends YAPPCAgentBase<CodeReviewerInput, CodeRev
             "#/definitions/CodeReviewerOutput",
             List.of("code-review", "quality"),
             Map.of("description", "Expert code reviewer for automated code quality and best practice enforcement", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

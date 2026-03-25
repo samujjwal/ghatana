@@ -5,7 +5,7 @@ import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import com.ghatana.platform.observability.NoopMetricsCollector;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
@@ -72,7 +72,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
                 .scheme("http")
                 .build();
 
-        connector = new OpenSearchConnector(config, new SimpleMeterRegistry());
+        connector = new OpenSearchConnector(config, NoopMetricsCollector.getInstance());
     }
 
     // ──────────────────────────────────────────────────────────────────────

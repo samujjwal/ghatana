@@ -8,8 +8,9 @@ version = "2026.3.1-SNAPSHOT"
 description = "YAPPC SPI - Unified Plugin SPI & Client API (merged: yappc-plugin-spi + yappc-client-api)"
 
 dependencies {
-    // Framework API for legacy plugin support
-    compileOnly(project(":products:yappc:core:framework"))
+    // Legacy plugin migration adapters are disabled (2026-03-24)
+    // See: adapter/LegacyPluginAdapter.java.disabled, migration/PluginMigrationUtil.java.disabled
+    // TODO: Remove when legacy plugin migration is complete
 
     // Platform plugin SPI
     api(project(":platform:java:plugin"))

@@ -41,7 +41,8 @@ public class ImproveOrchestratorAgent extends YAPPCAgentBase<ImproveOrchestrator
             "#/definitions/ImproveOrchestratorOutput",
             List.of("improvement", "orchestration", "refactoring"),
             Map.of("description", "Orchestrates continuous improvement across codebase and processes", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

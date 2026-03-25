@@ -41,7 +41,8 @@ public class IssueTrackerIntegrationAgent extends YAPPCAgentBase<IssueTrackerInt
             "#/definitions/IssueTrackerIntegrationOutput",
             List.of("integration", "issue-tracker", "jira"),
             Map.of("description", "Integration bridge agent for issue tracking systems", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

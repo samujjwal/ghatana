@@ -41,7 +41,8 @@ public class DatabaseIntegrationAgent extends YAPPCAgentBase<DatabaseIntegration
             "#/definitions/DatabaseIntegrationOutput",
             List.of("integration", "database"),
             Map.of("description", "Integration bridge agent for database connectivity and operations", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

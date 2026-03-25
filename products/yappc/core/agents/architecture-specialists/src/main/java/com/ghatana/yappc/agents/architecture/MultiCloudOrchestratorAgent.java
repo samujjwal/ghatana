@@ -59,7 +59,8 @@ public class MultiCloudOrchestratorAgent
                 "level", "L1",
                 "requires_approval", "true",
                 "audit_trail", "comprehensive")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

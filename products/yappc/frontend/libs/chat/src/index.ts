@@ -1,17 +1,13 @@
 /**
- * @yappc/chat — DEPRECATED
+ * @yappc/chat — REMOVED
  *
- * @deprecated Use `@yappc/messaging` instead.
- * This package is a compatibility shim and will be removed in a future release.
- *
- * Migration: replace `@yappc/chat` imports with `@yappc/messaging` or
- * the scoped `@yappc/messaging/chat` sub-path.
+ * This package has been consolidated into `@yappc/messaging`.
+ * All chat functionality is now owned by `@yappc/messaging`.
  *
  * @module chat
  */
+export * from '@yappc/messaging';
 
-// Re-export everything from the canonical messaging library
-export * from '@yappc/ai/messaging/chat';
 
 export type {
   UseChatBackendConfig,

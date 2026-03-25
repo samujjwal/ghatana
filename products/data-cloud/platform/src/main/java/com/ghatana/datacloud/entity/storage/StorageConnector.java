@@ -3,6 +3,7 @@ package com.ghatana.datacloud.entity.storage;
 import com.ghatana.datacloud.entity.Entity;
 import io.activej.promise.Promise;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -174,16 +175,16 @@ public interface StorageConnector {
      * @throws StorageException         on backend errors
      */
     default Promise<Entity> write(String tenantId, String collectionName, Object entityId, Map<String, Object> data) {
-        // Convert entityId to UUID if needed
+        // Convert entityId to UUID if needed (L3: use UTF-8 for deterministic name-based UUIDs)
         UUID id;
         if (entityId instanceof UUID) {
             id = (UUID) entityId;
         } else if (entityId instanceof String) {
-            // Try to parse as UUID; if fails, generate UUID from string
+            // Try to parse as UUID; if fails, generate deterministic UUID from string
             try {
                 id = UUID.fromString((String) entityId);
             } catch (IllegalArgumentException e) {
-                id = UUID.nameUUIDFromBytes(((String) entityId).getBytes());
+                id = UUID.nameUUIDFromBytes(((String) entityId).getBytes(StandardCharsets.UTF_8));
             }
         } else {
             throw new IllegalArgumentException("entityId must be String or UUID");
@@ -196,9 +197,14 @@ public interface StorageConnector {
                 .data(data)
                 .build();
 
-        // Simple approach: try create first, fallback to update on failure
-        // This is a default implementation that subclasses can override
-        return create(entity);
+        // FINDING-H3: Try create first; on failure (e.g. duplicate key), fall back to update.
+        // Connectors with native upsert support (e.g. PostgreSQL ON CONFLICT) should override
+        // this default for a single-round-trip upsert.
+        return create(entity)
+                .then(
+                        created -> Promise.of(created),
+                        err -> update(entity)
+                );
     }
 
     /**
@@ -216,9 +222,12 @@ public interface StorageConnector {
      * @throws StorageException on backend errors
      */
     default Promise<Long> deleteByQuery(String tenantId, String collectionName, Map<String, Object> queryFilters) {
-        // Default implementation: scan all entities and delete individually
-        // Subclasses should override for efficiency
-        return bulkDelete(UUID.randomUUID(), tenantId, List.of());
+        // FINDING-C2: The former default silently deleted nothing (bulkDelete with empty list).
+        // Connectors that support bulk-delete must override this method; callers must not rely on
+        // a silent no-op for data retention / cleanup operations.
+        throw new UnsupportedOperationException(
+            getClass().getSimpleName() + " does not implement deleteByQuery(). "
+            + "Override this method to provide backend-specific bulk-delete support.");
     }
 
     /**
@@ -236,21 +245,13 @@ public interface StorageConnector {
      * @throws StorageException on backend errors
      */
     default Promise<List<Entity>> query(String tenantId, String collectionName, Map<String, Object> filters) {
-        // Default implementation using scan with filters
-        // For internal collections (like _semantic_nodes), use a synthetic UUID
-        UUID syntheticId = UUID.nameUUIDFromBytes(collectionName.getBytes());
-
-        // Build a simple filter expression from the Map
-        // Format: key1=value1 AND key2=value2 ...
-        StringBuilder filterExpr = new StringBuilder();
-        for (Map.Entry<String, Object> entry : filters.entrySet()) {
-            if (filterExpr.length() > 0) {
-                filterExpr.append(" AND ");
-            }
-            filterExpr.append(entry.getKey()).append("=").append("'").append(entry.getValue()).append("'");
-        }
-
-        return scan(syntheticId, tenantId, filterExpr.toString(), 0, 0);
+        // FINDING-C1: The former default built a filter SQL expression by string-concatenating
+        // map keys and values without any parameterization — a SQL injection vector.
+        // Connectors that support Map-based filtering MUST override this method and handle it safely
+        // (e.g., using JSONB containment with parameterized queries).
+        throw new UnsupportedOperationException(
+            getClass().getSimpleName() + " does not implement query(String, String, Map). "
+            + "Override this method and use parameterized queries to avoid SQL injection.");
     }
 
     /**
@@ -295,7 +296,8 @@ public interface StorageConnector {
      * @throws StorageException         on backend errors
      */
     default Promise<QueryResult> query(String tenantId, String collectionName, QuerySpec spec) {
-        UUID syntheticId = UUID.nameUUIDFromBytes(collectionName.getBytes());
+        // L3: Use UTF-8 explicitly so synthetic IDs are stable across JVM locales.
+        UUID syntheticId = UUID.nameUUIDFromBytes(collectionName.getBytes(StandardCharsets.UTF_8));
         return query(syntheticId, tenantId, spec);
     }
 
@@ -344,7 +346,8 @@ public interface StorageConnector {
      * @return Promise of count (never negative)
      */
     default Promise<Long> count(String tenantId, String collectionName) {
-        UUID syntheticId = UUID.nameUUIDFromBytes(collectionName.getBytes());
+        // L3: Use UTF-8 explicitly so synthetic IDs are stable across JVM locales.
+        UUID syntheticId = UUID.nameUUIDFromBytes(collectionName.getBytes(StandardCharsets.UTF_8));
         return count(syntheticId, tenantId, null);
     }
 

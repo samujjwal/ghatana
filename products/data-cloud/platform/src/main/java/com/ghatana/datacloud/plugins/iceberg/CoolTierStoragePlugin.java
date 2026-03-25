@@ -8,7 +8,7 @@ import com.ghatana.datacloud.event.common.Offset;
 import com.ghatana.datacloud.event.common.PartitionId;
 import com.ghatana.datacloud.event.model.Event;
 import com.ghatana.datacloud.event.spi.StoragePlugin;
-import com.ghatana.platform.plugin.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
@@ -359,13 +359,11 @@ public class CoolTierStoragePlugin implements StoragePlugin {
 
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
-            List<Record> records = tableManager.scanTable(
-                    eventsTable,
-                    tenantId,
-                    null, // all streams
-                    null, // no time filter
-                    null,
-                    1000 // scan limit
+            List<Record> records = tableManager.scanAtSnapshot(
+                eventsTable,
+                Instant.now(),
+                tenantId,
+                1000 // snapshot scan limit
             ).getResult();
 
             // Filter by ID (inefficient but works)
@@ -391,13 +389,11 @@ public class CoolTierStoragePlugin implements StoragePlugin {
         requireRunning();
 
         try {
-            List<Record> records = tableManager.scanTable(
-                    eventsTable,
-                    tenantId,
-                    null,
-                    null,
-                    null,
-                    1000
+            List<Record> records = tableManager.scanAtSnapshot(
+                eventsTable,
+                Instant.now(),
+                tenantId,
+                1000
             ).getResult();
 
             for (Record record : records) {
@@ -427,17 +423,16 @@ public class CoolTierStoragePlugin implements StoragePlugin {
 
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
-            List<Record> records = tableManager.scanTable(
-                    eventsTable,
-                    tenantId,
-                    streamName,
-                    null,
-                    null,
-                    limit * 10 // Over-fetch then filter
+            List<Record> records = tableManager.scanAtSnapshot(
+                eventsTable,
+                Instant.now(),
+                tenantId,
+                limit * 10 // Over-fetch then filter from the current snapshot
             ).getResult();
 
             // Filter by partition and offset
             return Promise.of(records.stream()
+                    .filter(r -> Objects.equals(streamName, r.getField("stream_name")))
                     .filter(r -> ((Integer) r.getField("partition_id")).equals(partitionId.value()))
                     .filter(r -> ((Long) r.getField("event_offset")) >= startOffset.value())
                     .limit(limit)

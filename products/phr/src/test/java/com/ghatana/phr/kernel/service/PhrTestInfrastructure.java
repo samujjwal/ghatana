@@ -128,24 +128,28 @@ final class PhrTestInfrastructure {
     /**
      * Minimal DataCloudKernelAdapter that stores data in memory.
      *
-     * <p>Supports read, write, delete, and queryData (returns all stored records
-     * whose storage key starts with the requested dataset prefix).</p>
+     * <p>Supports read, write, delete, and queryData with metadata-based filtering.
+     * Records are stored alongside their metadata so equality filters in queries
+     * match the actual stored values (e.g. {@code patientId = :patientId}).</p>
      */
     static class StubDataCloudAdapter implements DataCloudKernelAdapter {
 
-        final ConcurrentHashMap<String, byte[]> store = new ConcurrentHashMap<>();
+        private record StoredEntry(byte[] data, Map<String, String> metadata) {}
+
+        final ConcurrentHashMap<String, StoredEntry> store = new ConcurrentHashMap<>();
 
         @Override
         public Promise<DataResult> readData(DataReadRequest request) {
-            byte[] data = store.get(storeKey(request.getDatasetId(), request.getRecordId()));
-            if (data == null) return Promise.of(null);
+            StoredEntry entry = store.get(storeKey(request.getDatasetId(), request.getRecordId()));
+            if (entry == null) return Promise.of(null);
             return Promise.of(new DataResult(
-                    request.getRecordId(), data, Map.of(), System.currentTimeMillis()));
+                    request.getRecordId(), entry.data(), Map.of(), System.currentTimeMillis()));
         }
 
         @Override
         public Promise<Void> writeData(DataWriteRequest request) {
-            store.put(storeKey(request.getDatasetId(), request.getRecordId()), request.getData());
+            store.put(storeKey(request.getDatasetId(), request.getRecordId()),
+                    new StoredEntry(request.getData(), Map.copyOf(request.getMetadata())));
             return Promise.complete();
         }
 
@@ -158,14 +162,27 @@ final class PhrTestInfrastructure {
         @Override
         public Promise<QueryResult> queryData(DataQueryRequest request) {
             String prefix = request.getDatasetId() + ":";
+            Map<String, Object> params = request.getParameters();
             List<DataResult> results = store.entrySet().stream()
                     .filter(e -> e.getKey().startsWith(prefix))
+                    .filter(e -> matchesParams(e.getValue().metadata(), params))
                     .map(e -> {
                         String recordId = e.getKey().substring(prefix.length());
-                        return new DataResult(recordId, e.getValue(), Map.of(), System.currentTimeMillis());
+                        return new DataResult(recordId, e.getValue().data(), Map.of(), System.currentTimeMillis());
                     })
                     .toList();
             return Promise.of(new QueryResult(results, results.size(), false));
+        }
+
+        /** Checks that all query parameters match the stored metadata values. */
+        private static boolean matchesParams(Map<String, String> metadata, Map<String, Object> params) {
+            for (Map.Entry<String, Object> param : params.entrySet()) {
+                String stored = metadata.get(param.getKey());
+                if (stored == null || !stored.equals(String.valueOf(param.getValue()))) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         @Override

@@ -17,6 +17,15 @@ java {
     }
 }
 
+sourceSets {
+    main {
+        java.srcDir("domains/healthcare/src/main/java")
+    }
+    test {
+        java.srcDir("domains/healthcare/src/test/java")
+    }
+}
+
 dependencies {
     // Kernel platform — provides KernelContext, KernelModule, KernelExtension,
     // DataCloudKernelAdapter, ClassificationDescriptor, etc.

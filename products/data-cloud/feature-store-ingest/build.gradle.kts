@@ -8,7 +8,9 @@ description = "EventCloud tailing service for real-time feature ingestion (migra
 dependencies {
     // Platform libraries (updated paths)
     implementation(project(":platform:java:ai-integration"))
-    implementation(project(":platform:java:event-cloud"))
+    implementation(project(":products:data-cloud:spi"))
+    // WarmTierEventLogStore is used for the postgres ingest mode (postgres backend)
+    implementation(project(":products:data-cloud:platform"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))

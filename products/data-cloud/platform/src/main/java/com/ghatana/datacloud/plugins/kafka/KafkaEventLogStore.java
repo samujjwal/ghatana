@@ -188,43 +188,40 @@ public class KafkaEventLogStore implements EventLogStore {
 
     @Override
     public Promise<Offset> append(TenantContext tenant, EventEntry entry) {
-        try {
-            return Promise.of(doAppend(tenant, entry));
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        return Promise.ofBlocking(blockingExecutor, () -> doAppend(tenant, entry));
     }
 
     @Override
     public Promise<List<Offset>> appendBatch(TenantContext tenant, List<EventEntry> entries) {
+        if (entries.isEmpty()) return Promise.of(List.of());
+        return Promise.ofBlocking(blockingExecutor, () -> doAppendBatchSync(tenant, entries));
+    }
+
+    private List<Offset> doAppendBatchSync(TenantContext tenant, List<EventEntry> entries) {
+        String topic = topicFor(tenant.tenantId());
+        ensureTopicExists(topic);
+
+        producer.beginTransaction();
         try {
-            String topic = topicFor(tenant.tenantId());
-            ensureTopicExists(topic);
-
-            producer.beginTransaction();
-            try {
-                List<Future<RecordMetadata>> futures = new ArrayList<>(entries.size());
-                for (EventEntry entry : entries) {
-                    ProducerRecord<String, byte[]> record = toProducerRecord(topic, tenant.tenantId(), entry);
-                    futures.add(producer.send(record));
-                }
-                producer.commitTransaction();
-
-                List<Offset> offsets = new ArrayList<>(futures.size());
-                for (Future<RecordMetadata> f : futures) {
-                    RecordMetadata meta = f.get();
-                    offsets.add(Offset.of(meta.offset()));
-                    appendCounter.increment();
-                }
-                return Promise.of(offsets);
-            } catch (Exception e) {
-                producer.abortTransaction();
-                appendErrorCounter.increment();
-                log.error("appendBatch failed for tenant={}", tenant.tenantId(), e);
-                return Promise.ofException(new RuntimeException("Kafka appendBatch failed", e));
+            List<Future<RecordMetadata>> futures = new ArrayList<>(entries.size());
+            for (EventEntry entry : entries) {
+                ProducerRecord<String, byte[]> record = toProducerRecord(topic, tenant.tenantId(), entry);
+                futures.add(producer.send(record));
             }
+            producer.commitTransaction();
+
+            List<Offset> offsets = new ArrayList<>(futures.size());
+            for (Future<RecordMetadata> f : futures) {
+                RecordMetadata meta = f.get();
+                offsets.add(Offset.of(meta.offset()));
+                appendCounter.increment();
+            }
+            return offsets;
         } catch (Exception e) {
-            return Promise.ofException(e);
+            producer.abortTransaction();
+            appendErrorCounter.increment();
+            log.error("appendBatch failed for tenant={}", tenant.tenantId(), e);
+            throw new RuntimeException("Kafka appendBatch failed", e);
         }
     }
 
@@ -234,33 +231,24 @@ public class KafkaEventLogStore implements EventLogStore {
 
     @Override
     public Promise<List<EventEntry>> read(TenantContext tenant, Offset from, int limit) {
-        try {
-            long fromOffset = parseLong(from);
-            return Promise.of(readFromKafka(tenant.tenantId(), fromOffset, limit, null, null, null));
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        long fromOffset = parseLong(from);
+        return Promise.ofBlocking(blockingExecutor,
+                () -> readFromKafka(tenant.tenantId(), fromOffset, limit, null, null, null));
     }
 
     @Override
     public Promise<List<EventEntry>> readByTimeRange(
             TenantContext tenant, Instant startTime, Instant endTime, int limit) {
-        try {
-            return Promise.of(readFromKafka(tenant.tenantId(), 0L, limit, startTime, endTime, null));
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        return Promise.ofBlocking(blockingExecutor,
+                () -> readFromKafka(tenant.tenantId(), 0L, limit, startTime, endTime, null));
     }
 
     @Override
     public Promise<List<EventEntry>> readByType(
             TenantContext tenant, String eventType, Offset from, int limit) {
-        try {
-            long fromOffset = parseLong(from);
-            return Promise.of(readFromKafka(tenant.tenantId(), fromOffset, limit, null, null, eventType));
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        long fromOffset = parseLong(from);
+        return Promise.ofBlocking(blockingExecutor,
+                () -> readFromKafka(tenant.tenantId(), fromOffset, limit, null, null, eventType));
     }
 
     // =========================================================================
@@ -269,36 +257,35 @@ public class KafkaEventLogStore implements EventLogStore {
 
     @Override
     public Promise<Offset> getLatestOffset(TenantContext tenant) {
-        try {
+        return Promise.ofBlocking(blockingExecutor, () -> {
             String topic = topicFor(tenant.tenantId());
             ensureTopicExists(topic);
             try (KafkaConsumer<String, byte[]> consumer = buildConsumer(config, "offset-query-" + UUID.randomUUID())) {
                 TopicPartition tp = new TopicPartition(topic, 0);
                 consumer.assign(Collections.singletonList(tp));
-                Map<TopicPartition, Long> endOffsets = consumer.endOffsets(Collections.singletonList(tp));
+                // Use an explicit timeout to avoid blocking indefinitely if broker is down
+                Map<TopicPartition, Long> endOffsets = consumer.endOffsets(
+                        Collections.singletonList(tp), Duration.ofSeconds(10));
                 Long end = endOffsets.get(tp);
-                return Promise.of(end != null && end > 0 ? Offset.of(end - 1) : Offset.zero());
+                return end != null && end > 0 ? Offset.of(end - 1) : Offset.zero();
             }
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        });
     }
 
     @Override
     public Promise<Offset> getEarliestOffset(TenantContext tenant) {
-        try {
+        return Promise.ofBlocking(blockingExecutor, () -> {
             String topic = topicFor(tenant.tenantId());
             ensureTopicExists(topic);
             try (KafkaConsumer<String, byte[]> consumer = buildConsumer(config, "offset-query-" + UUID.randomUUID())) {
                 TopicPartition tp = new TopicPartition(topic, 0);
                 consumer.assign(Collections.singletonList(tp));
-                Map<TopicPartition, Long> beginOffsets = consumer.beginningOffsets(Collections.singletonList(tp));
+                Map<TopicPartition, Long> beginOffsets = consumer.beginningOffsets(
+                        Collections.singletonList(tp), Duration.ofSeconds(10));
                 Long begin = beginOffsets.get(tp);
-                return Promise.of(begin != null ? Offset.of(begin) : Offset.zero());
+                return begin != null ? Offset.of(begin) : Offset.zero();
             }
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        });
     }
 
     // =========================================================================
@@ -512,6 +499,8 @@ public class KafkaEventLogStore implements EventLogStore {
                 userHeaders.put(h.key(), new String(h.value(), StandardCharsets.UTF_8));
             }
         });
+        // Embed the Kafka offset so consumers can reliably advance their read position
+        userHeaders.put("_x_dc_offset", String.valueOf(record.offset()));
 
         return EventEntry.builder()
                 .eventId(eventId)

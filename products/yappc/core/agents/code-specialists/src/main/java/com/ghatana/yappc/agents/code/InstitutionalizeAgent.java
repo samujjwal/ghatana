@@ -41,7 +41,8 @@ public class InstitutionalizeAgent extends YAPPCAgentBase<InstitutionalizeInput,
             "#/definitions/InstitutionalizeOutput",
             List.of("learning", "institutionalization", "knowledge"),
             Map.of("description", "Worker agent that captures and institutionalizes learned patterns and practices", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

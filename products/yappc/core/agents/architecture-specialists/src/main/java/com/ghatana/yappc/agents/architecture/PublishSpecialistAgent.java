@@ -43,7 +43,8 @@ public class PublishSpecialistAgent extends YAPPCAgentBase<PublishInput, Publish
             List.of("ops", "publish", "release"),
             Map.of("description", "Publishes release notes and announcements", "version", "1.0.0")),
         (OutputGenerator<StepRequest<PublishInput>, StepResult<PublishOutput>>)
-            generators.get("ops.publish"));
+            generators.get("ops.publish"),
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

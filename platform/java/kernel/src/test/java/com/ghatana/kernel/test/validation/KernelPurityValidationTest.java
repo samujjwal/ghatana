@@ -187,23 +187,20 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("Transitional plugin.KernelExtension must be @Deprecated")
-    void transitionalPluginExtensionMustBeDeprecated() {
-        // D2: plugin.KernelExtension is transitional — must carry @Deprecated
-        Class<?> legacyExt = com.ghatana.kernel.plugin.KernelExtension.class;
-        assertTrue(legacyExt.isAnnotationPresent(Deprecated.class),
-            "plugin.KernelExtension must be @Deprecated per KERNEL_CANONICALIZATION_DECISIONS D2. " +
+    @DisplayName("Transitional plugin.KernelExtension has been removed")
+    void transitionalPluginExtensionHasBeenRemoved() {
+        assertThrows(ClassNotFoundException.class, () ->
+                Class.forName("com.ghatana.kernel.plugin.KernelExtension"),
+            "plugin.KernelExtension should have been removed. " +
             "Canonical type is extension.KernelExtension.");
     }
 
     @Test
-    @DisplayName("ProductPlugin must be @Deprecated")
-    void productPluginMustBeDeprecated() {
-        // D3: ProductPlugin is transitional — must carry @Deprecated
-        Class<?> pp = com.ghatana.kernel.plugin.ProductPlugin.class;
-        assertTrue(pp.isAnnotationPresent(Deprecated.class),
-            "ProductPlugin must be @Deprecated per KERNEL_CANONICALIZATION_DECISIONS D3. " +
-            "Canonical runtime model is KernelPlugin.");
+    @DisplayName("ProductPlugin has been removed")
+    void productPluginHasBeenRemoved() {
+        assertThrows(ClassNotFoundException.class, () ->
+                Class.forName("com.ghatana.kernel.plugin.ProductPlugin"),
+            "ProductPlugin should have been removed. Canonical runtime model is KernelPlugin.");
     }
 
     @Test
@@ -218,48 +215,22 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("descriptor.KernelCapability.Products must be @Deprecated")
-    void descriptorProductsInnerClassMustBeDeprecated() {
-        // Products inner class contains product-specific capabilities in canonical kernel code
-        Class<?> productsClass = KernelCapability.Products.class;
-        assertTrue(productsClass.isAnnotationPresent(Deprecated.class),
-            "KernelCapability.Products must be @Deprecated. Product-specific capabilities " +
-            "violate kernel purity and must be declared by products/domain-packs.");
+    @DisplayName("descriptor.KernelCapability.Products has been removed")
+    void descriptorProductsInnerClassHasBeenRemoved() {
+        assertThrows(ClassNotFoundException.class, () ->
+                Class.forName("com.ghatana.kernel.descriptor.KernelCapability$Products"),
+            "KernelCapability.Products should have been removed. Product-specific capabilities " +
+            "must be declared by product/domain modules.");
     }
 
     @Test
-    @DisplayName("Product-specific capabilities must not use core prefixes")
-    void productCapabilitiesMustNotUseCorePrefix() {
-        // Product capabilities in KernelCapability.Products must use product-prefixed ids,
-        // not generic kernel prefixes, to avoid confusion with core capabilities
-        Set<String> coreOnlyPrefixes = Set.of(
-            "data.", "user.", "api.", "workflow.", "event.",
-            "ai.", "observability.", "security.", "config.",
-            "tenant.", "resilience."
-        );
-
-        try {
-            @SuppressWarnings("deprecation")
-            Class<?> productsClass = KernelCapability.Products.class;
-            Field[] fields = productsClass.getDeclaredFields();
-
-            for (Field field : fields) {
-                if (field.getType() == KernelCapability.class) {
-                    KernelCapability cap = (KernelCapability) field.get(null);
-                    if (cap != null) {
-                        String capId = cap.getCapabilityId();
-                        for (String corePrefix : coreOnlyPrefixes) {
-                            assertFalse(capId.startsWith(corePrefix),
-                                "Product capability '" + capId + "' uses core-only prefix '" +
-                                corePrefix + "'. Product capabilities must use product-qualified prefixes " +
-                                "(e.g., 'phr.', 'finance.', 'flashit.', 'aura.').");
-                        }
-                    }
-                }
-            }
-        } catch (IllegalAccessException e) {
-            fail("Failed to access product capabilities: " + e.getMessage());
-        }
+    @DisplayName("descriptor.KernelCapability must not expose product capability inner class")
+    void descriptorMustNotExposeProductCapabilityInnerClass() {
+        boolean hasProductsInnerClass = Arrays.stream(KernelCapability.class.getDeclaredClasses())
+            .anyMatch(c -> c.getSimpleName().equals("Products"));
+        assertFalse(hasProductsInnerClass,
+            "KernelCapability must not expose a Products inner class. Product capabilities " +
+            "must be declared in product-owned modules.");
     }
 
     @Test
@@ -317,18 +288,11 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("KernelInterProductBus must be @Deprecated(forRemoval=true)")
-    void kernelInterProductBusMustBeDeprecated() {
-        try {
-            Class<?> legacy = com.ghatana.kernel.communication.KernelInterProductBus.class;
-            assertTrue(legacy.isAnnotationPresent(Deprecated.class),
-                "KernelInterProductBus must be @Deprecated — use KernelInterScopeBus.");
-            Deprecated d = legacy.getAnnotation(Deprecated.class);
-            assertTrue(d.forRemoval(),
-                "KernelInterProductBus must be @Deprecated(forRemoval=true).");
-        } catch (NoClassDefFoundError e) {
-            // Class has been removed - that's acceptable
-        }
+    @DisplayName("KernelInterProductBus has been removed")
+    void kernelInterProductBusHasBeenRemoved() {
+        assertThrows(ClassNotFoundException.class, () ->
+                Class.forName("com.ghatana.kernel.communication.KernelInterProductBus"),
+            "KernelInterProductBus should have been removed — use KernelInterScopeBus.");
     }
 
     @Test
@@ -345,18 +309,11 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("CrossProductWorkflowEngine must be @Deprecated(forRemoval=true)")
-    void crossProductWorkflowEngineMustBeDeprecated() {
-        try {
-            Class<?> legacy = com.ghatana.kernel.workflow.CrossProductWorkflowEngine.class;
-            assertTrue(legacy.isAnnotationPresent(Deprecated.class),
-                "CrossProductWorkflowEngine must be @Deprecated — use CrossScopeWorkflowEngine.");
-            Deprecated d = legacy.getAnnotation(Deprecated.class);
-            assertTrue(d.forRemoval(),
-                "CrossProductWorkflowEngine must be @Deprecated(forRemoval=true).");
-        } catch (NoClassDefFoundError e) {
-            // Class has been removed - that's acceptable
-        }
+    @DisplayName("CrossProductWorkflowEngine has been removed")
+    void crossProductWorkflowEngineHasBeenRemoved() {
+        assertThrows(ClassNotFoundException.class, () ->
+                Class.forName("com.ghatana.kernel.workflow.CrossProductWorkflowEngine"),
+            "CrossProductWorkflowEngine should have been removed — use CrossScopeWorkflowEngine.");
     }
 
     @Test
@@ -467,19 +424,12 @@ public class KernelPurityValidationTest {
     // ==================== Day 10: Legacy Duplicate Deprecation ====================
 
     @Test
-    @DisplayName("CrossProductConfigResolver must be @Deprecated(forRemoval=true)")
-    void crossProductConfigResolverMustBeDeprecated() {
-        try {
-            Class<?> legacy = com.ghatana.kernel.config.CrossProductConfigResolver.class;
-            assertTrue(legacy.isAnnotationPresent(Deprecated.class),
-                "CrossProductConfigResolver must be @Deprecated — " +
-                "use HierarchicalKernelConfigResolver instead.");
-            Deprecated d = legacy.getAnnotation(Deprecated.class);
-            assertTrue(d.forRemoval(),
-                "CrossProductConfigResolver must be @Deprecated(forRemoval=true).");
-        } catch (NoClassDefFoundError e) {
-            // Class has been removed - that's acceptable
-        }
+    @DisplayName("CrossProductConfigResolver has been removed")
+    void crossProductConfigResolverHasBeenRemoved() {
+        assertThrows(ClassNotFoundException.class, () ->
+                Class.forName("com.ghatana.kernel.config.CrossProductConfigResolver"),
+            "CrossProductConfigResolver should have been removed — " +
+            "use HierarchicalKernelConfigResolver instead.");
     }
 
     @Test
@@ -496,19 +446,11 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("CrossProductModelRegistry must be @Deprecated(forRemoval=true)")
-    void crossProductModelRegistryMustBeDeprecated() {
-        try {
-            Class<?> legacy = com.ghatana.kernel.ai.CrossProductModelRegistry.class;
-            assertTrue(legacy.isAnnotationPresent(Deprecated.class),
-                "CrossProductModelRegistry must be @Deprecated — " +
-                "naming uses product id strings that violate kernel purity.");
-            Deprecated d = legacy.getAnnotation(Deprecated.class);
-            assertTrue(d.forRemoval(),
-                "CrossProductModelRegistry must be @Deprecated(forRemoval=true).");
-        } catch (NoClassDefFoundError e) {
-            // Class has been removed - that's acceptable
-        }
+    @DisplayName("CrossProductModelRegistry has been removed")
+    void crossProductModelRegistryHasBeenRemoved() {
+        assertThrows(ClassNotFoundException.class, () ->
+                Class.forName("com.ghatana.kernel.ai.CrossProductModelRegistry"),
+            "CrossProductModelRegistry should have been removed because it violates kernel purity.");
     }
 
     @Test

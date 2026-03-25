@@ -15,7 +15,7 @@ import { ThemeProvider as GhatanaThemeProvider, useTheme as useGhatanaTheme } fr
 import { Provider as JotaiProvider } from 'jotai';
 import React, { useMemo } from 'react';
 
-import { lightTheme, darkTheme } from '@yappc/ui/theme';
+import { lightTheme, darkTheme } from '@yappc/theme';
 
 /**
  * Props for AppThemeProvider component

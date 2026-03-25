@@ -5,8 +5,11 @@ import com.ghatana.agent.framework.api.GeneratorMetadata;
 import com.ghatana.agent.framework.api.OutputGenerator;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.yappc.agent.*;
+import com.ghatana.yappc.agent.AgentRegistryView;
 import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.YAPPCAgentBase;
+import com.ghatana.yappc.agent.YappcAgentRegistryAdapter;
+import com.ghatana.agent.registry.InMemoryAgentRegistry;
 import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.*;
@@ -34,7 +37,7 @@ public class AgentDispatcherAgent
   private static final Logger log = LoggerFactory.getLogger(AgentDispatcherAgent.class);
 
   private final MemoryStore memoryStore;
-  private final YAPPCAgentRegistry agentRegistry;
+  private final AgentRegistryView agentRegistry;
 
   /**
    * Constructs the agent dispatcher with access to the agent registry for capability lookup.
@@ -47,7 +50,7 @@ public class AgentDispatcherAgent
       @NotNull MemoryStore memoryStore,
       @NotNull OutputGenerator<StepRequest<AgentDispatcherInput>,
           StepResult<AgentDispatcherOutput>> generator,
-      @NotNull YAPPCAgentRegistry agentRegistry) {
+      @NotNull AgentRegistryView agentRegistry) {
     super(
         "AgentDispatcherAgent",
         "expert.agent-dispatcher",
@@ -61,7 +64,8 @@ public class AgentDispatcherAgent
                 "version", "1.0.0",
                 "level", "L2",
                 "escalates_to", "full-lifecycle-orchestrator")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
     this.agentRegistry = Objects.requireNonNull(agentRegistry, "agentRegistry required");
   }
@@ -71,7 +75,7 @@ public class AgentDispatcherAgent
       @NotNull MemoryStore memoryStore,
       @NotNull OutputGenerator<StepRequest<AgentDispatcherInput>,
           StepResult<AgentDispatcherOutput>> generator) {
-    this(memoryStore, generator, new YAPPCAgentRegistry());
+    this(memoryStore, generator, new YappcAgentRegistryAdapter(new InMemoryAgentRegistry()));
   }
 
   @Override

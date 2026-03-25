@@ -1,7 +1,7 @@
 package com.ghatana.yappc.agent.enhancement;
 
 import com.ghatana.core.database.DatabaseClient;
-import com.ghatana.core.event.cloud.EventCloud;
+import com.ghatana.yappc.agent.EventPublisher;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.WorkflowStep;
 import io.activej.promise.Promise;
@@ -43,9 +43,9 @@ import java.util.stream.Collectors;
 public final class PrioritizeStep implements WorkflowStep {
 
   private final DatabaseClient dbClient;
-  private final EventCloud eventClient;
+  private final EventPublisher eventClient;
 
-  public PrioritizeStep(DatabaseClient dbClient, EventCloud eventClient) {
+  public PrioritizeStep(DatabaseClient dbClient, EventPublisher eventClient) {
     this.dbClient = dbClient;
     this.eventClient = eventClient;
   }

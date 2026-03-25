@@ -48,7 +48,8 @@ public class ValidateArchitectureSpecialistAgent
             "#/definitions/ValidateArchitectureOutput",
             List.of("architecture", "validation", "quality"),
             Map.of("description", "Validates architecture design", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

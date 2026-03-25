@@ -41,7 +41,8 @@ public class QualityGuardAgent extends YAPPCAgentBase<QualityGuardInput, Quality
             "#/definitions/QualityGuardOutput",
             List.of("quality", "gate", "standards"),
             Map.of("description", "Expert quality guard agent enforcing code and artifact quality standards", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

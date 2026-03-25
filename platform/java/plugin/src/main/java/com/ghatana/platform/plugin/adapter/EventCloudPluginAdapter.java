@@ -1,6 +1,7 @@
 package com.ghatana.platform.plugin.adapter;
 
-import com.ghatana.core.event.cloud.*;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.types.identity.Offset;
 import com.ghatana.platform.plugin.PluginContext;
@@ -12,25 +13,24 @@ import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
 /**
- * Adapter allowing EventCloud to be used as a StreamingPlugin.
- * Enables embeddable usage of EventCloud within the plugin framework.
+ * Adapter allowing EventLogStore to be used as a StreamingPlugin.
+ * Enables embeddable usage of event log storage within the plugin framework.
  *
  * @doc.type class
- * @doc.purpose Adapter for EventCloud as StreamingPlugin
+ * @doc.purpose Adapter for EventLogStore as StreamingPlugin
  * @doc.layer core
  */
-public class EventCloudPluginAdapter implements StreamingPlugin<EventRecord> {
+public class EventCloudPluginAdapter implements StreamingPlugin<EventLogStore.EventEntry> {
 
-    private final EventCloud eventCloud;
+    private final EventLogStore eventLogStore;
     private PluginState state = PluginState.UNLOADED;
 
-    public EventCloudPluginAdapter(EventCloud eventCloud) {
-        this.eventCloud = eventCloud;
+    public EventCloudPluginAdapter(EventLogStore eventLogStore) {
+        this.eventLogStore = eventLogStore;
     }
 
     @Override
@@ -74,39 +74,16 @@ public class EventCloudPluginAdapter implements StreamingPlugin<EventRecord> {
     }
 
     @Override
-    public @NotNull Promise<Void> publish(@NotNull String topic, @NotNull EventRecord message, @NotNull TenantId tenantId) {
-        EventCloud.AppendRequest request = new EventCloud.AppendRequest(
-            message, 
-            EventCloud.AppendOptions.defaults()
-        );
-        
-        return eventCloud.append(request)
-            .map(result -> null);
+    public @NotNull Promise<Void> publish(@NotNull String topic, @NotNull EventLogStore.EventEntry message, @NotNull TenantId tenantId) {
+        TenantContext tenant = TenantContext.of(tenantId.value());
+        return eventLogStore.append(tenant, message)
+            .map(offset -> null);
     }
 
     @Override
-    public @NotNull Promise<Runnable> subscribe(@NotNull String topic, @NotNull TenantId tenantId, @NotNull Consumer<EventRecord> listener) {
-        EventCloud.Selection selection = EventCloud.Selection.byTypes(topic);
-        EventCloud.StartingPositions start = new EventCloud.StartAtLatest();
-
-        EventStream stream = eventCloud.subscribe(tenantId, selection, start);
-        
-        stream.onEvent(chunk -> {
-            for (EventCloud.EventEnvelope envelope : chunk.events()) {
-                listener.accept(envelope.record());
-            }
-            // Simple backpressure strategy: request more as we consume
-            int count = chunk.events().size();
-            if (count > 0) {
-                stream.request(count);
-            } else {
-                stream.request(1);
-            }
-        });
-        
-        // Initial request
-        stream.request(10);
-        
-        return Promise.of(stream::close);
+    public @NotNull Promise<Runnable> subscribe(@NotNull String topic, @NotNull TenantId tenantId, @NotNull Consumer<EventLogStore.EventEntry> listener) {
+        TenantContext tenant = TenantContext.of(tenantId.value());
+        return eventLogStore.tail(tenant, Offset.zero(), listener)
+            .map(subscription -> subscription::cancel);
     }
 }

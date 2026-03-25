@@ -114,7 +114,15 @@ public class BackpressureManager {
     private volatile double currentLoadFactor;
     private volatile int adaptiveLimit;
     private final ScheduledExecutorService adaptiveScheduler;
-    
+
+    /**
+     * Bounded thread pool used to offload blocking semaphore waits (THROTTLE strategy
+     * and CRITICAL-priority ADAPTIVE requests) off the ActiveJ Eventloop thread.
+     * Without this, {@code semaphore.tryAcquire(timeout)} or {@code semaphore.acquire()}
+     * would park the Eventloop and stall all other in-flight promises.
+     */
+    private final ExecutorService blockingExecutor;
+
     // Metrics
     private final BackpressureMetrics metrics;
     
@@ -136,7 +144,15 @@ public class BackpressureManager {
         this.currentLoadFactor = 0.0;
         this.adaptiveLimit = maxConcurrent;
         this.metrics = new BackpressureMetrics(this);
-        
+
+        // Daemon thread pool for blocking semaphore waits; sized to handle concurrent
+        // throttled requests without exhausting OS threads.
+        this.blockingExecutor = Executors.newCachedThreadPool(r -> {
+            Thread t = new Thread(r, "backpressure-blocking");
+            t.setDaemon(true);
+            return t;
+        });
+
         if (strategy == BackpressureStrategy.ADAPTIVE) {
             this.adaptiveScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r, "backpressure-adaptive");
@@ -259,18 +275,17 @@ public class BackpressureManager {
     }
     
     private <T> Promise<T> executeWithThrottle(Priority priority, Supplier<Promise<T>> operation) {
-        try {
-            // Wait with timeout
+        // Offload the blocking semaphore wait to a dedicated thread pool so that the
+        // ActiveJ Eventloop thread is never parked. The acquired permit is transferred
+        // to executeWithSemaphore which releases it upon Promise completion.
+        return Promise.<Void>ofBlocking(blockingExecutor, () -> {
             if (!semaphore.tryAcquire(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
                 droppedRequests.incrementAndGet();
                 logger.warn("Request timed out waiting for slot");
-                return Promise.ofException(new BackpressureException("Request timed out waiting for slot"));
+                throw new BackpressureException("Request timed out waiting for slot");
             }
-            return executeWithSemaphore(operation);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return Promise.ofException(new BackpressureException("Request interrupted"));
-        }
+            return null;
+        }).then(ignored -> executeWithSemaphore(operation));
     }
     
     private <T> Promise<T> executeWithAdaptive(Priority priority, Supplier<Promise<T>> operation) {
@@ -298,19 +313,18 @@ public class BackpressureManager {
         }
         
         if (!semaphore.tryAcquire()) {
-            // Force acquire for critical
+            // For CRITICAL priority, block until a permit is available — but do so
+            // off the Eventloop thread to avoid stalling other in-flight promises.
             if (priority == Priority.CRITICAL) {
-                try {
+                return Promise.<Void>ofBlocking(blockingExecutor, () -> {
                     semaphore.acquire();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return Promise.ofException(new BackpressureException("Interrupted"));
-                }
+                    return null;
+                }).then(ignored -> executeWithSemaphore(operation));
             } else {
                 return executeWithBuffer(priority, operation);
             }
         }
-        
+
         return executeWithSemaphore(operation);
     }
     
@@ -490,6 +504,15 @@ public class BackpressureManager {
                 adaptiveScheduler.shutdownNow();
                 Thread.currentThread().interrupt();
             }
+        }
+        blockingExecutor.shutdown();
+        try {
+            if (!blockingExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                blockingExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            blockingExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
     

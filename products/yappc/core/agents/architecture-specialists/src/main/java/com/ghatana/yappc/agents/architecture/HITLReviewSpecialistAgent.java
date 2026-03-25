@@ -43,7 +43,8 @@ public class HITLReviewSpecialistAgent extends YAPPCAgentBase<HITLReviewInput, H
             List.of("architecture", "review", "human"),
             Map.of("description", "Coordinates human review", "version", "1.0.0")),
         (OutputGenerator<StepRequest<HITLReviewInput>, StepResult<HITLReviewOutput>>)
-            generators.get("architecture.hitlReview"));
+            generators.get("architecture.hitlReview"),
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

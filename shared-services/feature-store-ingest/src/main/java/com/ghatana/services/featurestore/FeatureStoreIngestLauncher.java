@@ -14,12 +14,12 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
- * EventCloud tailing service for real-time feature ingestion.
+ * EventLogStore tailing service for real-time feature ingestion.
  *
  * <p>
  * <b>Purpose</b><br>
- * Consumes events from EventCloud and ingests features into Feature Store for
- * ML pipelines: - Subscribes to EventCloud partitions - Extracts features from
+ * Consumes events from EventLogStore and ingests features into Feature Store for
+ * ML pipelines: - Subscribes to EventLogStore partitions - Extracts features from
  * events - Enriches features with context - Stores in Feature Store (Redis +
  * PostgreSQL)
  *
@@ -30,7 +30,7 @@ import java.util.Map;
  * ./gradlew :products:shared-services:feature-store-ingest:run
  *
  * // Service automatically:
- * // 1. Subscribes to EventCloud
+ * // 1. Subscribes to EventLogStore
  * // 2. Processes incoming events
  * // 3. Extracts features
  * // 4. Stores in Feature Store
@@ -38,7 +38,7 @@ import java.util.Map;
  *
  * <p>
  * <b>Architecture Role</b><br>
- * Real-time feature engineering pipeline. Bridges EventCloud and Feature Store.
+ * Real-time feature engineering pipeline. Bridges EventLogStore and Feature Store.
  * Integrates with AI Platform for ML model serving.
  *
  * <p>
@@ -51,13 +51,11 @@ import java.util.Map;
  * Thread-safe - uses ActiveJ Eventloop for single-threaded async execution.
  *
  * @doc.type class
- * @doc.purpose Real-time feature ingestion from EventCloud
+ * @doc.purpose Real-time feature ingestion from EventLogStore
  * @doc.layer product
  * @doc.pattern Pipeline
  */
 public class FeatureStoreIngestLauncher {
-
-    private static final String EVENTCLOUD_SUBSCRIPTION = "feature-extraction";
 
     public static void main(String[] args) {
         // Initialize metrics
@@ -69,10 +67,10 @@ public class FeatureStoreIngestLauncher {
         // FeatureStoreService featureStore = FeatureStoreService.create(config);
         System.out.println("FeatureStoreService not configured — using log-only mode");
 
-        // Initialize EventCloud subscriber
-        // Production: Wire EventCloud connection from config
-        // EventCloudSubscriber subscriber = EventCloudSubscriber.create(config);
-        System.out.println("EventCloud subscriber not configured — running mock ingestion");
+        // Initialize EventLogStore subscriber
+        // Production: Wire EventLogStore connection from config
+        // EventLogStoreSubscriber subscriber = EventLogStoreSubscriber.create(config);
+        System.out.println("EventLogStore subscriber not configured — running mock ingestion");
         // Create eventloop
         Eventloop eventloop = Eventloop.create();
 
@@ -80,7 +78,7 @@ public class FeatureStoreIngestLauncher {
             System.out.println("Feature Store Ingest Service starting...");
 
             // Production flow:
-            // eventCloud.subscribe(tenantId, selection, startAt)
+                        // eventLogStore.subscribe(tenantId, selection, startAt)
             //     .thenApply(stream -> processEventStream(stream, featureStore, metrics));
             startMockIngestion(metrics);
         });
@@ -90,9 +88,9 @@ public class FeatureStoreIngestLauncher {
     }
 
     /**
-     * Processes event stream from EventCloud.
+     * Processes event stream from EventLogStore.
      *
-     * GIVEN: EventCloud subscription stream WHEN: Events are received THEN:
+     * GIVEN: EventLogStore subscription stream WHEN: Events are received THEN:
      * Features are extracted and stored
      *
      * @param event raw event payload
@@ -124,7 +122,7 @@ public class FeatureStoreIngestLauncher {
     /**
      * Extracts features from an event.
      *
-     * GIVEN: Event from EventCloud WHEN: extractFeatures() is called THEN: List
+     * GIVEN: Event from EventLogStore WHEN: extractFeatures() is called THEN: List
      * of Feature objects is returned
      *
      * @param event event data
@@ -185,6 +183,6 @@ public class FeatureStoreIngestLauncher {
         processEventStream(sampleEvent, metrics);
 
         System.out.println("Mock ingestion complete. "
-                + "Connect EventCloud subscriber for production use.");
+                + "Connect EventLogStore subscriber for production use.");
     }
 }

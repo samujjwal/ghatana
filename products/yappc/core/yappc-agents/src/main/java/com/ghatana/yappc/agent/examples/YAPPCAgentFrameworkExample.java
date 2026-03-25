@@ -2,8 +2,8 @@ package com.ghatana.yappc.agent.examples;
 
 import com.ghatana.agent.framework.coordination.*;
 import com.ghatana.agent.framework.memory.*;
+import com.ghatana.agent.registry.InMemoryAgentRegistry;
 import com.ghatana.yappc.agent.*;
-import com.ghatana.yappc.agent.YAPPCAgentRegistry;
 import com.ghatana.yappc.agent.coordinator.*;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
@@ -46,7 +46,9 @@ public class YAPPCAgentFrameworkExample {
     eventloop.submit(
         () -> {
           // 1. Create infrastructure components
-          YAPPCAgentRegistry registry = new YAPPCAgentRegistry();
+          YappcAgentRegistryAdapter registry =
+              new YappcAgentRegistryAdapter(new InMemoryAgentRegistry());
+          AepEventPublisher eventPublisher = (type, tenantId, payload) -> Promise.complete();
           MemoryStore memoryStore = createInMemoryStore();
           DelegationManager delegationManager = createDelegationManager();
           OrchestrationStrategy orchestrationStrategy = new SequentialOrchestration();
@@ -55,7 +57,12 @@ public class YAPPCAgentFrameworkExample {
           DeliveryCoordinatorGenerator generator = new DeliveryCoordinatorGenerator(registry);
           PlatformDeliveryCoordinator coordinator =
               new PlatformDeliveryCoordinator(
-                  registry, delegationManager, orchestrationStrategy, memoryStore, generator);
+                registry,
+                delegationManager,
+                orchestrationStrategy,
+                memoryStore,
+                generator,
+                eventPublisher);
 
           // 3. Register the coordinator
           registry.register(coordinator);

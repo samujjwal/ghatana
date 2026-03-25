@@ -16,7 +16,6 @@ java {
 
 dependencies {
     // Agent Registry SPI (interface we implement)
-    api(project(":platform:java:agent-registry"))
 
     // Agent Framework (AgentDescriptor, TypedAgent, AgentConfig, AgentType …)
     api(project(":platform:java:agent-core"))

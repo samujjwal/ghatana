@@ -9,6 +9,6 @@
 -- executes CREATE INDEX CONCURRENTLY outside a transaction (a PostgreSQL
 -- requirement that Flyway SQL migrations cannot satisfy).
 --
--- Next DDL step: V008 will add the NOT NULL constraint on display_name
--- after the backfill has been verified complete across all tenants.
+-- DDL completed: V008 added a GIN index on entities.data for JSONB queries.
+-- V009 documents IF NOT EXISTS semantics for all legacy indexes (see V009).
 -- ============================================================================

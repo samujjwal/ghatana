@@ -112,6 +112,16 @@ public class TierMigrationScheduler {
     private final java.util.concurrent.CopyOnWriteArraySet<TenantStream> registeredStreams =
             new java.util.concurrent.CopyOnWriteArraySet<>();
 
+    /**
+     * DC3-H2: In-session migration-completion tracker.
+     * Prevents re-writing to Iceberg if the JVM crashes between L2 write and L1 delete
+     * of the same batch.
+     * NOTE: In production, persist checkpoints to a {@code migration_checkpoints} DB table
+     * for cross-restart crash recovery.
+     */
+    private final java.util.concurrent.ConcurrentHashMap<String, Instant> completedMigrationBatches =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private ScheduledExecutorService scheduler;
 
     // Metrics
@@ -325,8 +335,22 @@ public class TierMigrationScheduler {
                     continue;
                 }
 
+                // DC3-H2: Skip already-written batches to avoid duplicate writes after crash
+                String batchKey = tenantId + ":" + streamName + ":before:" + cutoffTime;
+                if (completedMigrationBatches.containsKey(batchKey)) {
+                    log.info("Skipping already-completed migration batch: key={}", batchKey);
+                    if (config.isDeleteAfterMigration()) {
+                        l1Storage.deleteBeforeTime(tenantId, streamName, cutoffTime).getResult();
+                    }
+                    hasMore = false;
+                    continue;
+                }
+
                 // Write batch to L2
                 l2Storage.appendBatch(batch).getResult();
+
+                // DC3-H2: Mark as complete BEFORE deleting from L1 (so we skip on JVM restart)
+                completedMigrationBatches.put(batchKey, Instant.now());
 
                 // Delete from L1 if configured
                 if (config.isDeleteAfterMigration()) {

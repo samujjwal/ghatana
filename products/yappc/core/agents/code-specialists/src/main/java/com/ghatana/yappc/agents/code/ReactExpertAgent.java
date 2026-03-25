@@ -41,7 +41,8 @@ public class ReactExpertAgent extends YAPPCAgentBase<ReactExpertInput, ReactExpe
             "#/definitions/ReactExpertOutput",
             List.of("react", "typescript", "frontend"),
             Map.of("description", "Expert React/TypeScript engineer for frontend architecture and patterns", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

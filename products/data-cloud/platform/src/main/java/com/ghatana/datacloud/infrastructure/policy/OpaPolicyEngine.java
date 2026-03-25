@@ -92,37 +92,49 @@ public class OpaPolicyEngine implements PolicyEngine {
         // Build OPA request
         Map<String, Object> opaRequest = Map.of("input", input);
 
-        // Call OPA API
+        // Call OPA API — fail-closed: any exception yields DENY rather than propagating
         return opaClient.evaluate(opaEndpoint, policyName, opaRequest)
-            .map(opaResponse -> {
-                // Parse OPA response
-                boolean allowed = (boolean) opaResponse.getOrDefault("allow", false);
-                String reason = (String) opaResponse.getOrDefault("reason", "No reason provided");
-                
-                @SuppressWarnings("unchecked")
-                Map<String, Object> metadata = (Map<String, Object>) opaResponse.getOrDefault("metadata", Map.of());
+            .then(
+                opaResponse -> {
+                    // Parse OPA response
+                    boolean allowed = (boolean) opaResponse.getOrDefault("allow", false);
+                    String reason = (String) opaResponse.getOrDefault("reason", "No reason provided");
 
-                return allowed 
-                    ? PolicyDecision.allow(reason, metadata)
-                    : PolicyDecision.deny(reason, metadata);
-            })
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> metadata = (Map<String, Object>) opaResponse.getOrDefault("metadata", Map.of());
+
+                    return Promise.of(allowed
+                        ? PolicyDecision.allow(reason, metadata)
+                        : PolicyDecision.deny(reason, metadata));
+                },
+                ex -> {
+                    // DC3-H3: Fail-closed — OPA unavailability returns DENY, never propagates exception.
+                    logger.warn("OPA evaluation failed for policy={}, applying fail-closed deny ({})",
+                        policyName, ex.getMessage());
+                    metrics.incrementCounter("policy.evaluation.unavailable",
+                        "policy", policyName,
+                        "error", ex.getClass().getSimpleName());
+                    return Promise.of(PolicyDecision.deny(
+                        "OPA_UNAVAILABLE: " + ex.getClass().getSimpleName(), Map.of()));
+                }
+            )
             .whenComplete((decision, ex) -> {
                 long duration = System.currentTimeMillis() - startTime;
-                
-                if (ex == null) {
+
+                if (ex == null && decision != null) {
                     metrics.getMeterRegistry()
                         .timer("policy.evaluation.duration",
                             "policy", policyName,
                             "allowed", String.valueOf(decision.isAllowed()))
                         .record(Duration.ofMillis(duration));
-                    
+
                     logger.debug("Policy evaluated: policy={}, allowed={}, duration={}ms",
                         policyName, decision.isAllowed(), duration);
-                } else {
+                } else if (ex != null) {
                     metrics.incrementCounter("policy.evaluation.error",
                         "policy", policyName,
                         "error", ex.getClass().getSimpleName());
-                    
+
                     logger.error("Policy evaluation failed: policy={}, duration={}ms",
                         policyName, duration, ex);
                 }

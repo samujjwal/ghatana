@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 import { lightColors, darkColors, fontSize as tokenFontSize, spacing, componentRadius } from '@ghatana/tokens';
 import { useTheme } from '@ghatana/theme';
 import { useId } from '../hooks/useId';

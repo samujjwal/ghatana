@@ -41,7 +41,8 @@ public class DockerfileGeneratorAgent extends YAPPCAgentBase<DockerfileGenerator
             "#/definitions/DockerfileGeneratorOutput",
             List.of("devops", "docker", "containerization"),
             Map.of("description", "Worker agent that generates optimized Dockerfiles for services", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

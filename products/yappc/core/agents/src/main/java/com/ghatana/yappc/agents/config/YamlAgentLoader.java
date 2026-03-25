@@ -146,7 +146,7 @@ public class YamlAgentLoader {
             .id(dto.agent.id)
             .name(dto.agent.name)
             .description(dto.agent.description)
-            .version(dto.agent.version)
+            .version(dto.agent.version != null ? dto.agent.version : "1.0.0")
             .tags(Set.copyOf(dto.agent.tags))
             .capabilities(Set.copyOf(dto.agent.capabilities))
             .metadata(dto.agent.metadata != null ? dto.agent.metadata : Map.of());

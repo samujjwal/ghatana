@@ -92,19 +92,20 @@ public class ImmunizationService {
         ImmunizationRecord toStore = new ImmunizationRecord(
                 id,
                 immunization.patientId(),
-                immunization.administeredBy(),
+                immunization.encounterId(),
                 immunization.cvxCode(),
                 immunization.vaccineName(),
-                immunization.lotNumber(),
-                immunization.manufacturer(),
+                immunization.administeredBy(),
                 immunization.administeredAt() != null ? immunization.administeredAt() : Instant.now(),
-                immunization.administrationSite(),
+                Instant.now(),
+                immunization.lotNumber(),
+                immunization.expiresAt(),
                 immunization.route(),
-                immunization.doseQuantity(),
+                immunization.seriesName(),
                 immunization.doseNumber(),
-                immunization.seriesTotal(),
-                ImmunizationStatus.COMPLETED,
-                immunization.notes()
+                immunization.adverseEvent(),
+                immunization.notes(),
+                ImmunizationStatus.ADMINISTERED
         );
 
         DataWriteRequest request = new DataWriteRequest(
@@ -162,9 +163,9 @@ public class ImmunizationService {
         return dataCloud.readData(new DataReadRequest(IMMUNIZATION_DATASET, immunizationId, Map.of()))
                 .map(result -> {
                     if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable(TypedDataSerializer.fromBytes(result.getData(), ImmunizationRecord.class));
+                    return Optional.ofNullable((ImmunizationRecord) TypedDataSerializer.fromBytes(result.getData(), ImmunizationRecord.class));
                 })
-                .whenException(e -> Promise.of(Optional.empty()));
+                ;
     }
 
     /**
@@ -184,9 +185,9 @@ public class ImmunizationService {
                 schedule.patientId(),
                 schedule.cvxCode(),
                 schedule.vaccineName(),
-                schedule.dueDate(),
+                schedule.seriesName(),
                 schedule.doseNumber(),
-                schedule.seriesTotal(),
+                schedule.dueDate(),
                 ScheduleStatus.PENDING,
                 schedule.notes()
         );
@@ -195,7 +196,7 @@ public class ImmunizationService {
                 SCHEDULE_DATASET,
                 id,
                 TypedDataSerializer.toBytes(toStore, "VaccinationSchedule", 1),
-                Map.of("patientId", toStore.patientId(), "dueDate", toStore.dueDate().toString())
+                Map.of("patientId", toStore.patientId(), "dueDate", toStore.dueDate().toString(), "status", toStore.status().name())
         );
 
         return dataCloud.writeData(request).map($ -> toStore);
@@ -235,19 +236,19 @@ public class ImmunizationService {
                 Map.of("id", "string", "patientId", "string", "cvxCode", "string",
                         "administeredAt", "timestamp", "status", "string"),
                 Map.of("retention", "permanent")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> sched = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 SCHEDULE_DATASET,
                 Map.of("id", "string", "patientId", "string", "dueDate", "date"),
                 Map.of("retention", "10years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 AUDIT_DATASET,
                 Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(imm, sched, audit).map($ -> null);
     }
@@ -261,7 +262,7 @@ public class ImmunizationService {
                         new AuditEntry(auditId, Instant.now(), action, patientId, details),
                         "ImmunizationAuditEntry", 1),
                 Map.of("timestamp", Instant.now().toString())
-        )).whenException(e -> {});
+        ));
     }
 
     private String generateId(String prefix) {
@@ -292,25 +293,21 @@ public class ImmunizationService {
     public record ImmunizationRecord(
             String id,
             String patientId,
-            String administeredBy,
+            String encounterId,
             String cvxCode,
             String vaccineName,
-            String lotNumber,
-            String manufacturer,
+            String administeredBy,
             Instant administeredAt,
-            String administrationSite,
+            Instant recordedAt,
+            String lotNumber,
+            LocalDate expiresAt,
             String route,
-            String doseQuantity,
+            String seriesName,
             int doseNumber,
-            int seriesTotal,
-            ImmunizationStatus status,
-            String notes
-    ) {
-        /** Returns {@code true} when this dose completes the series. */
-        public boolean completeSeries() {
-            return doseNumber == seriesTotal;
-        }
-    }
+            boolean adverseEvent,
+            String notes,
+            ImmunizationStatus status
+    ) {}
 
     /**
      * A scheduled future vaccination dose.
@@ -330,26 +327,28 @@ public class ImmunizationService {
             String patientId,
             String cvxCode,
             String vaccineName,
-            LocalDate dueDate,
+            String seriesName,
             int doseNumber,
-            int seriesTotal,
+            Instant dueDate,
             ScheduleStatus status,
             String notes
     ) {
-        /** Returns {@code true} when the schedule due date is today or in the past. */
+        /** Returns {@code true} when the schedule due date is now or in the past. */
         public boolean isDue() {
-            return !LocalDate.now().isBefore(dueDate);
+            return !Instant.now().isBefore(dueDate);
         }
 
         /** Returns {@code true} when the schedule is overdue (past due date and still pending). */
         public boolean isOverdue() {
-            return status == ScheduleStatus.PENDING && LocalDate.now().isAfter(dueDate);
+            return status == ScheduleStatus.PENDING && Instant.now().isAfter(dueDate);
         }
     }
 
     /** Lifecycle status of a recorded immunization. */
     public enum ImmunizationStatus {
         /** Vaccine was successfully administered. */
+        ADMINISTERED,
+        /** Vaccine was successfully completed. */
         COMPLETED,
         /** Administration was recorded in error. */
         ENTERED_IN_ERROR,

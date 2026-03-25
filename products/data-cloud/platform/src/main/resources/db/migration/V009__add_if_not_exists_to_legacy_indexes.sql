@@ -1,0 +1,25 @@
+-- V009: Document IF NOT EXISTS semantics for legacy indexes
+--
+-- Context (FINDING-H5):
+-- V001, V002, and V005 create indexes without IF NOT EXISTS guards.
+-- Flyway applies each migration exactly once per schema_version history entry,
+-- so duplicate creation is not expected in managed environments.
+-- However, ad-hoc environments (local dev reset, snapshot restores) may fail if
+-- the index already exists and the Flyway history was wiped.
+--
+-- This migration is a no-op checkpoint. It serves as documentation that:
+--   1. All legacy indexes from V001/V002/V005 are expected to exist.
+--   2. Any environment requiring recreation should use the CONCURRENTLY form below
+--      (run manually outside a transaction; Flyway wraps in a transaction by default).
+--
+-- Manual recreation commands (run outside Flyway if needed):
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_events_tenant_id          ON events(tenant_id);
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_events_collection_name     ON events(collection_name);
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_events_created_at          ON events(created_at);
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_event_log_stream_id        ON event_log(stream_id);
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_event_log_tenant_id        ON event_log(tenant_id);
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_event_log_offset           ON event_log(offset);
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_entities_tenant_collection ON entities(tenant_id, collection_name);
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_entities_created_at        ON entities(created_at);
+--
+SELECT 1; -- no-op DML to satisfy Flyway SQL parser

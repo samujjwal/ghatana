@@ -185,20 +185,6 @@ public class DataCloudMetrics {
         return new DataCloudMetrics(metricsCollector);
     }
 
-    /**
-     * Create metrics collector with a raw MeterRegistry.
-     *
-     * @param registry the Micrometer meter registry
-     * @return metrics instance
-     * @deprecated Prefer {@link #create(MetricsCollector)}. This overload exists for
-     *             backward compatibility and will be removed in a future release.
-     */
-    @Deprecated
-    public static DataCloudMetrics create(MeterRegistry registry) {
-        Objects.requireNonNull(registry, "registry is required");
-        return create(new SimpleMetricsCollector(registry));
-    }
-    
     // ==================== Operation Metrics ====================
     
     /**

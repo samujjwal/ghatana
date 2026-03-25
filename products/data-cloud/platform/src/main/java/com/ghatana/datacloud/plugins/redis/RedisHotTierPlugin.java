@@ -8,7 +8,7 @@ import com.ghatana.datacloud.event.common.Offset;
 import com.ghatana.datacloud.event.common.PartitionId;
 import com.ghatana.datacloud.event.model.Event;
 import com.ghatana.datacloud.event.spi.StoragePlugin;
-import com.ghatana.platform.plugin.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
@@ -57,6 +57,14 @@ import java.util.concurrent.atomic.LongAdder;
  * <li>Consumer group support for at-least-once delivery</li>
  * <li>Automatic flush to L1 (PostgreSQL) tier</li>
  * </ul>
+ *
+ * <p>
+ * <b>Delivery Guarantee</b><br>
+ * DC3-H4: The Disruptor ring buffer provides <b>AT-MOST-ONCE</b> delivery for events
+ * still in the buffer at JVM shutdown. Events written to the ring buffer but not yet
+ * flushed to Redis will be lost on crash. Callers requiring at-least-once durability
+ * must write to L1 (PostgreSQL) directly and treat this HOT tier as a best-effort
+ * read cache only.
  *
  * <p>
  * <b>Architecture</b><br>

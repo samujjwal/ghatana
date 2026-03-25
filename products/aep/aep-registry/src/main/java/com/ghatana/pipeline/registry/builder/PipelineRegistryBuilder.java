@@ -4,6 +4,7 @@ import com.ghatana.core.domain.pipeline.PipelineSpec;
 import com.ghatana.core.domain.pipeline.PipelineStageSpec;
 import com.ghatana.platform.domain.pipeline.ConnectorSpec;
 import com.ghatana.platform.domain.pipeline.ConnectorSpec.ConnectorType;
+import com.ghatana.kernel.descriptor.ResourceRequirements;
 import com.ghatana.pipeline.registry.model.*;
 import com.ghatana.platform.domain.auth.TenantId;
 import lombok.extern.slf4j.Slf4j;

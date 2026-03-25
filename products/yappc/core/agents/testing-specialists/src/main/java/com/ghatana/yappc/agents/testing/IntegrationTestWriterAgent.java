@@ -41,7 +41,8 @@ public class IntegrationTestWriterAgent extends YAPPCAgentBase<IntegrationTestWr
             "#/definitions/IntegrationTestWriterOutput",
             List.of("testing", "integration-test", "code-generation"),
             Map.of("description", "Worker agent that generates integration tests for services and APIs", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

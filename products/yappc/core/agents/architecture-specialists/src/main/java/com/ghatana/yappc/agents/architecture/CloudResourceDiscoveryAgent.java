@@ -41,7 +41,8 @@ public class CloudResourceDiscoveryAgent extends YAPPCAgentBase<CloudResourceDis
             "#/definitions/CloudResourceDiscoveryOutput",
             List.of("cloud", "discovery", "inventory"),
             Map.of("description", "Worker agent that discovers and inventories cloud resources", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

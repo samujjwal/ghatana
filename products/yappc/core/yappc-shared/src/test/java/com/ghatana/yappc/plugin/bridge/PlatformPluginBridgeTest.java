@@ -1,6 +1,6 @@
 package com.ghatana.yappc.plugin.bridge;
 
-import com.ghatana.platform.plugin.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.Plugin;
 import com.ghatana.platform.plugin.PluginRegistry;
 import com.ghatana.platform.plugin.PluginState;
@@ -110,7 +110,7 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
             HealthStatus health = runPromise(bridged::healthCheck);
 
             // THEN
-            assertThat(health.healthy()).isTrue();
+            assertThat(health.isHealthy()).isTrue();
         }
 
         @Test

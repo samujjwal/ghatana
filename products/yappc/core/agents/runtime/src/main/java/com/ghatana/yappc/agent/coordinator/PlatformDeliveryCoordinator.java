@@ -7,7 +7,8 @@ import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.yappc.agent.*;
 import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.YAPPCAgentBase;
-import com.ghatana.yappc.agent.YAPPCAgentRegistry;
+import com.ghatana.yappc.agent.AgentRegistryView;
+import com.ghatana.yappc.agent.AepEventPublisher;
 import io.activej.promise.Promise;
 import java.util.*;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +39,7 @@ public class PlatformDeliveryCoordinator extends YAPPCAgentBase<DeliveryRequest,
 
   private static final Logger log = LoggerFactory.getLogger(PlatformDeliveryCoordinator.class);
 
-  private final YAPPCAgentRegistry agentRegistry;
+  private final AgentRegistryView agentRegistry;
   private final DelegationManager delegationManager;
   private final OrchestrationStrategy orchestrationStrategy;
   private final MemoryStore memoryStore;
@@ -53,13 +54,35 @@ public class PlatformDeliveryCoordinator extends YAPPCAgentBase<DeliveryRequest,
    * @param generator output generator for decision making
    */
   public PlatformDeliveryCoordinator(
-      @NotNull YAPPCAgentRegistry agentRegistry,
+      @NotNull AgentRegistryView agentRegistry,
       @NotNull DelegationManager delegationManager,
       @NotNull OrchestrationStrategy orchestrationStrategy,
       @NotNull MemoryStore memoryStore,
       @NotNull
           OutputGenerator<StepRequest<DeliveryRequest>, StepResult<DeliveryResult>> generator) {
-    super("PlatformDeliveryCoordinator", "platform.coordinate", createContract(), generator);
+    this(agentRegistry, delegationManager, orchestrationStrategy, memoryStore, generator,
+        defaultEventPublisher());
+  }
+
+  /**
+   * Creates the platform delivery coordinator with an explicit event publisher.
+   *
+   * @param agentRegistry registry of all YAPPC agents
+   * @param delegationManager delegation manager for task routing
+   * @param orchestrationStrategy strategy for coordinating multiple agents
+   * @param memoryStore memory store for learning and adaptation
+   * @param generator output generator for decision making
+   * @param eventPublisher AEP event publisher
+   */
+  public PlatformDeliveryCoordinator(
+      @NotNull AgentRegistryView agentRegistry,
+      @NotNull DelegationManager delegationManager,
+      @NotNull OrchestrationStrategy orchestrationStrategy,
+      @NotNull MemoryStore memoryStore,
+      @NotNull
+          OutputGenerator<StepRequest<DeliveryRequest>, StepResult<DeliveryResult>> generator,
+      @NotNull AepEventPublisher eventPublisher) {
+    super("PlatformDeliveryCoordinator", "platform.coordinate", createContract(), generator, eventPublisher);
     this.agentRegistry = agentRegistry;
     this.delegationManager = delegationManager;
     this.orchestrationStrategy = orchestrationStrategy;
@@ -202,7 +225,7 @@ public class PlatformDeliveryCoordinator extends YAPPCAgentBase<DeliveryRequest,
         .forEach(
             (phase, phaseResult) -> {
               log.info("Publishing completion event for phase: {}", phase);
-              // NOTE: Integrate with EventCloudHelper
+              // NOTE: Integrate with EventPublisher
               promises.add(Promise.complete());
             });
 

@@ -48,7 +48,8 @@ public class IncidentResponseSpecialistAgent
             "#/definitions/IncidentResponseOutput",
             List.of("ops", "incident", "response"),
             Map.of("description", "Coordinates incident response", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

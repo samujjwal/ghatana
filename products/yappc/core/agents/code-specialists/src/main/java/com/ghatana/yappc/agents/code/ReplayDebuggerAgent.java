@@ -41,7 +41,8 @@ public class ReplayDebuggerAgent extends YAPPCAgentBase<ReplayDebuggerInput, Rep
             "#/definitions/ReplayDebuggerOutput",
             List.of("debug", "replay", "request-tracing"),
             Map.of("description", "Debug micro-agent that replays request flows for debugging", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

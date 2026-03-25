@@ -26,8 +26,9 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Deprecated untyped agent contract — do not use in new code
  * @doc.layer core
+ * @doc.pattern Service
  */
-@Deprecated
+@Deprecated(since = "2.0.0", forRemoval = true)
 public interface Agent {
 
     /**

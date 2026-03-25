@@ -3,7 +3,7 @@
  */
 package com.ghatana.services.auth;
 
-import com.ghatana.platform.security.jwt.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.model.User;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;

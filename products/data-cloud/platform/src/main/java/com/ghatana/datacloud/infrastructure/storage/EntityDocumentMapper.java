@@ -192,11 +192,19 @@ public final class EntityDocumentMapper {
      * SQL identifiers (table/column names) — use {@link #escapeIdentifier} for
      * those.
      *
+     * <p>DC3-H1: Also strips null bytes ({@code \0}) that can terminate C++ strings
+     * in ClickHouse, and escapes backslashes before single-quote escaping.
+     *
      * @param value the raw string; may be {@code null}
      * @return escaped string, or {@code ""} if {@code null}
      */
     public static String escapeValue(String value) {
-        return value == null ? "" : value.replace("'", "\\'");
+        if (value == null) return "";
+        return value
+                .replace("\0", "")          // null bytes terminate C++ strings in ClickHouse
+                .replace("\\", "\\\\")       // escape backslashes before single-quote escaping
+                .replace("'", "\\'")
+        ;
     }
 
     /**
@@ -206,11 +214,18 @@ public final class EntityDocumentMapper {
      * intent clear — identifiers and values need the same escaping in ClickHouse's
      * string quoting, but conceptually they are different.
      *
+     * <p>DC3-H1: Strips null bytes and escapes backslashes.
+     *
      * @param value the raw identifier string; may be {@code null}
      * @return escaped identifier, or {@code ""} if {@code null}
      */
     public static String escapeIdentifier(String value) {
-        return value == null ? "" : value.replace("'", "\\'");
+        if (value == null) return "";
+        return value
+                .replace("\0", "")
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+        ;
     }
 
     // =========================================================================

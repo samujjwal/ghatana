@@ -1,7 +1,8 @@
 {
   "name": "@ghatana/utils",
   "version": "0.1.0",
-  "description": "Compatibility wrapper for Ghatana platform utility exports",
+  "description": "⚠️ DEPRECATED — This package will be removed. Use @ghatana/platform-utils directly.",
+  "deprecated": "This package is a thin re-export of @ghatana/platform-utils and will be removed. Migrate all imports to use @ghatana/platform-utils instead. See MED-001 in SHARED_MODULES_AUDIT_REPORT.md.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -34,7 +35,8 @@
   "keywords": [
     "ghatana",
     "utilities",
-    "compatibility"
+    "compatibility",
+    "deprecated"
   ],
   "author": "Ghatana Team",
   "license": "MIT"

@@ -92,7 +92,10 @@ public record Patient(
         // Use lastClinicalActivityAt for retention window — fall back to registeredAt
         java.time.Instant retentionStart = (lastClinicalActivityAt != null)
                 ? lastClinicalActivityAt : registeredAt;
-        long yearsRetained = java.time.temporal.ChronoUnit.YEARS.between(retentionStart, now);
+        // Convert to LocalDate (UTC) before computing years — Instant does not support YEARS unit
+        java.time.LocalDate startDate = retentionStart.atOffset(java.time.ZoneOffset.UTC).toLocalDate();
+        java.time.LocalDate nowDate = now.atOffset(java.time.ZoneOffset.UTC).toLocalDate();
+        long yearsRetained = java.time.temporal.ChronoUnit.YEARS.between(startDate, nowDate);
         return yearsRetained >= 25;
     }
 }

@@ -44,7 +44,8 @@ public class ArtifactPublishSpecialistAgent
             List.of("implementation", "publish", "artifact"),
             Map.of("description", "Publishes build artifacts", "version", "1.0.0")),
         (OutputGenerator<StepRequest<ArtifactPublishInput>, StepResult<ArtifactPublishOutput>>)
-            generators.get("implementation.artifactPublish"));
+            generators.get("implementation.artifactPublish"),
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

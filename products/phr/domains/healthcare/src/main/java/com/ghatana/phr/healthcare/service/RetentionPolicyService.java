@@ -60,11 +60,11 @@ public class RetentionPolicyService {
         boolean executed,
         String reason   // EXECUTED | LEGAL_HOLD | ACTIVE_TREATMENT | RETENTION_PERIOD_NOT_ELAPSED
     ) {
-        static ErasureOutcome executed() {
+        public static ErasureOutcome newExecuted() {
             return new ErasureOutcome(true, "EXECUTED");
         }
 
-        static ErasureOutcome blocked(String reason) {
+        public static ErasureOutcome newBlocked(String reason) {
             return new ErasureOutcome(false, reason);
         }
     }
@@ -112,7 +112,7 @@ public class RetentionPolicyService {
             if (patientOpt.isEmpty()) {
                 erasureBlockedCounter.increment();
                 auditErasure(tenantId, patientId, "PATIENT_NOT_FOUND", false);
-                return ErasureOutcome.blocked("PATIENT_NOT_FOUND");
+                return ErasureOutcome.newBlocked("PATIENT_NOT_FOUND");
             }
             Patient patient = patientOpt.get();
 
@@ -120,21 +120,21 @@ public class RetentionPolicyService {
             if (legalHold.hasActiveLegalHold(tenantId, patientId)) {
                 erasureBlockedCounter.increment();
                 auditErasure(tenantId, patientId, "LEGAL_HOLD", false);
-                return ErasureOutcome.blocked("LEGAL_HOLD");
+                return ErasureOutcome.newBlocked("LEGAL_HOLD");
             }
 
             // 2. Active treatment check
             if (activeTreatment.hasActiveTreatment(tenantId, patientId)) {
                 erasureBlockedCounter.increment();
                 auditErasure(tenantId, patientId, "ACTIVE_TREATMENT", false);
-                return ErasureOutcome.blocked("ACTIVE_TREATMENT");
+                return ErasureOutcome.newBlocked("ACTIVE_TREATMENT");
             }
 
             // 3. 25-year retention period check
             if (!patient.isDeletionEligible(Instant.now(), false)) {
                 erasureBlockedCounter.increment();
                 auditErasure(tenantId, patientId, "RETENTION_PERIOD_NOT_ELAPSED", false);
-                return ErasureOutcome.blocked("RETENTION_PERIOD_NOT_ELAPSED");
+                return ErasureOutcome.newBlocked("RETENTION_PERIOD_NOT_ELAPSED");
             }
 
             // All gates passed — soft-delete first, then hard-delete
@@ -142,7 +142,7 @@ public class RetentionPolicyService {
             patientStore.hardDelete(tenantId, patientId);
             erasureExecutedCounter.increment();
             auditErasure(tenantId, patientId, "EXECUTED", true);
-            return ErasureOutcome.executed();
+            return ErasureOutcome.newExecuted();
         });
     }
 

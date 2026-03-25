@@ -41,7 +41,8 @@ public class JavaExpertAgent extends YAPPCAgentBase<JavaExpertInput, JavaExpertO
             "#/definitions/JavaExpertOutput",
             List.of("java", "architecture", "code-review"),
             Map.of("description", "Expert Java engineer for architecture and implementation guidance", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

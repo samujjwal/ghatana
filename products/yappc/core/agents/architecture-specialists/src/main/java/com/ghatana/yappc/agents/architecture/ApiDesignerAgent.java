@@ -41,7 +41,8 @@ public class ApiDesignerAgent extends YAPPCAgentBase<ApiDesignerInput, ApiDesign
             "#/definitions/ApiDesignerOutput",
             List.of("api-design", "openapi", "graphql"),
             Map.of("description", "Expert API designer for REST, GraphQL and contract-first design", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

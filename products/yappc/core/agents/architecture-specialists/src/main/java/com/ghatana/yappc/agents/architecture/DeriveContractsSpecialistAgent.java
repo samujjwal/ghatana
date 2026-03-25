@@ -48,7 +48,8 @@ public class DeriveContractsSpecialistAgent
             "#/definitions/DeriveContractsOutput",
             List.of("architecture", "contracts", "api"),
             Map.of("description", "Derives API contracts from architecture", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

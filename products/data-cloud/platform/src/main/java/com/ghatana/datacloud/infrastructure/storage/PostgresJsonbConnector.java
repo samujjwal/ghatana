@@ -146,6 +146,9 @@ public class PostgresJsonbConnector implements StorageConnector {
     public Promise<Entity> create(Entity entity) {
         Objects.requireNonNull(entity, "Entity must not be null");
         Objects.requireNonNull(entity.getTenantId(), "Entity tenantId must not be null");
+        if (entity.getTenantId().isBlank()) {
+            throw new IllegalArgumentException("Entity tenantId must not be blank");
+        }
         Objects.requireNonNull(entity.getCollectionName(), "Entity collectionName must not be null");
 
         // Generate ID / timestamps before the async boundary so the Promise closure
@@ -271,6 +274,7 @@ public class PostgresJsonbConnector implements StorageConnector {
                     metricsCollector.recordTimer("connector.postgres.duration", duration,
                             "operation", "delete", "tenant", tenantId);
                     logger.debug("Deleted entity: tenant={}, id={}, duration={}ms", tenantId, entityId, duration);
+                    auditLogger.logDataModification(tenantId, "DELETE", collectionName, entityId.toString(), true);
                     return v;
                 })
                 .mapException(e -> {
@@ -284,23 +288,27 @@ public class PostgresJsonbConnector implements StorageConnector {
     /**
      * Execute query against PostgreSQL entities.
      *
-     * @param collectionId Collection ID (required)
-     * @param tenantId     Tenant ID (required)
-     * @param spec         Backend-agnostic query specification (required)
+     * <p>Overrides the default {@link StorageConnector} implementation to
+     * use {@link EntityRepository#findByQuery} with the full {@link QuerySpec}
+     * (including filter expressions) instead of passing an empty filter map.
+     *
+     * @param tenantId       Tenant ID (required)
+     * @param collectionName Collection name (required)
+     * @param spec           Backend-agnostic query specification (required)
      * @return Promise of QueryResult with entities and total count
      */
     @Override
-    public Promise<QueryResult> query(UUID collectionId, String tenantId, QuerySpec spec) {
-        Objects.requireNonNull(collectionId, "Collection ID must not be null");
+    public Promise<QueryResult> query(String tenantId, String collectionName, QuerySpec spec) {
         Objects.requireNonNull(tenantId, "Tenant ID must not be null");
+        Objects.requireNonNull(collectionName, "Collection name must not be null");
         Objects.requireNonNull(spec, "QuerySpec must not be null");
 
         long startTime = System.currentTimeMillis();
-        String collectionName = collectionId.toString();
-        int limit = spec.getLimit();
+        int limit  = spec.getLimit();
         int offset = spec.getOffset();
-        return entityRepository.findAll(tenantId, collectionName, Collections.emptyMap(), formatSort(spec), offset, limit)
-                .then(entities -> entityRepository.countByFilter(tenantId, collectionName, Collections.emptyMap())
+
+        return entityRepository.findByQuery(tenantId, collectionName, spec)
+                .then(entities -> entityRepository.count(tenantId, collectionName)
                         .map(totalCount -> {
                             long duration = System.currentTimeMillis() - startTime;
                             QueryResult result = new QueryResult(entities, totalCount, limit, offset, duration);
@@ -322,7 +330,31 @@ public class PostgresJsonbConnector implements StorageConnector {
     }
 
     /**
+     * Execute query against PostgreSQL entities (UUID-based overload).
+     *
+     * @param collectionId Collection ID (required)
+     * @param tenantId     Tenant ID (required)
+     * @param spec         Backend-agnostic query specification (required)
+     * @return Promise of QueryResult with entities and total count
+     */
+    @Override
+    public Promise<QueryResult> query(UUID collectionId, String tenantId, QuerySpec spec) {
+        Objects.requireNonNull(collectionId, "Collection ID must not be null");
+        Objects.requireNonNull(tenantId, "Tenant ID must not be null");
+        Objects.requireNonNull(spec, "QuerySpec must not be null");
+
+        // Extract collection name from QuerySpec metadata if callers embed it;
+        // otherwise fall back to the UUID string (which only works for callers that
+        // use UUID.nameUUIDFromBytes(collectionName.getBytes()) conventions).
+        String collectionName = spec.getMetadata().getOrDefault("collectionName", collectionId.toString());
+        return query(tenantId, collectionName, spec);
+    }
+
+    /**
      * Scan collection entities with optional filter.
+     *
+     * <p>Uses the filter expression (if non-null) by routing through
+     * {@link EntityRepository#findByQuery} so that predicates are actually applied.
      *
      * @param collectionId     Collection ID (required)
      * @param tenantId         Tenant ID (required)
@@ -337,9 +369,56 @@ public class PostgresJsonbConnector implements StorageConnector {
         Objects.requireNonNull(collectionId, "Collection ID must not be null");
         Objects.requireNonNull(tenantId, "Tenant ID must not be null");
 
-        long startTime = System.currentTimeMillis();
+        // Prefer collection name from a synthetic UUID convention; otherwise use UUID string.
+        // Callers that use UUID.nameUUIDFromBytes(name.getBytes()) will pass a synthetic UUID
+        // whose string form is not the collection name — they should call scan(String, ...) directly.
         String collectionName = collectionId.toString();
-        return entityRepository.findAll(tenantId, collectionName, Collections.emptyMap(), null, offset, limit)
+        long startTime = System.currentTimeMillis();
+
+        QuerySpec spec = QuerySpec.builder()
+                .filter(filterExpression)
+                .limit(limit > 0 ? limit : Integer.MAX_VALUE)
+                .offset(offset)
+                .build();
+
+        return entityRepository.findByQuery(tenantId, collectionName, spec)
+                .map(entities -> {
+                    metricsCollector.recordTimer("connector.postgres.duration",
+                            System.currentTimeMillis() - startTime,
+                            "operation", "scan", "tenant", tenantId);
+                    return entities;
+                })
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "scan", "errorType", e.getClass().getSimpleName());
+                    logger.error("Scan failed: {}", e.getMessage(), e);
+                    return new StorageException("Failed to scan entities from PostgreSQL", e);
+                });
+    }
+
+    /**
+     * Scan using collection name directly (preferred over UUID-based scan).
+     *
+     * @param tenantId         Tenant ID (required)
+     * @param collectionName   Collection name (required)
+     * @param filterExpression Optional filter expression
+     * @param limit            Maximum results
+     * @param offset           Starting position
+     * @return Promise of list of entities
+     */
+    public Promise<List<Entity>> scan(String tenantId, String collectionName, String filterExpression,
+            int limit, int offset) {
+        Objects.requireNonNull(tenantId, "Tenant ID must not be null");
+        Objects.requireNonNull(collectionName, "Collection name must not be null");
+
+        long startTime = System.currentTimeMillis();
+        QuerySpec spec = QuerySpec.builder()
+                .filter(filterExpression)
+                .limit(limit > 0 ? limit : Integer.MAX_VALUE)
+                .offset(offset)
+                .build();
+
+        return entityRepository.findByQuery(tenantId, collectionName, spec)
                 .map(entities -> {
                     metricsCollector.recordTimer("connector.postgres.duration",
                             System.currentTimeMillis() - startTime,
@@ -369,7 +448,7 @@ public class PostgresJsonbConnector implements StorageConnector {
 
         long startTime = System.currentTimeMillis();
         String collectionName = collectionId.toString();
-        return entityRepository.countByFilter(tenantId, collectionName, Collections.emptyMap())
+        return entityRepository.count(tenantId, collectionName)
                 .map(count -> {
                     metricsCollector.recordTimer("connector.postgres.duration",
                             System.currentTimeMillis() - startTime,

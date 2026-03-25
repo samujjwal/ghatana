@@ -41,7 +41,8 @@ public class CloudResourceRiskAgent extends YAPPCAgentBase<CloudResourceRiskInpu
             "#/definitions/CloudResourceRiskOutput",
             List.of("cloud", "risk-assessment", "security"),
             Map.of("description", "Worker agent that assesses risk posture of cloud resources", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

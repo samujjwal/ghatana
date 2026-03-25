@@ -42,7 +42,8 @@ public class DeriveTestPlanSpecialistAgent
             List.of("testing", "plan", "derive"),
             Map.of("description", "Derives comprehensive test plan", "version", "1.0.0")),
         (OutputGenerator<StepRequest<DeriveTestPlanInput>, StepResult<DeriveTestPlanOutput>>)
-            generators.get("testing.deriveTestPlan"));
+            generators.get("testing.deriveTestPlan"),
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

@@ -155,7 +155,7 @@ public class AIInferenceHttpAdapter {
                 })
                 .then(
                         response -> Promise.of(response),
-                        error -> Promise.of(ResponseBuilder.serverError()
+                        error -> Promise.of(ResponseBuilder.internalServerError()
                                 .json(Map.of("error", error.getMessage()))
                                 .build())
                 );
@@ -205,7 +205,7 @@ public class AIInferenceHttpAdapter {
                 })
                 .then(
                         response -> Promise.of(response),
-                        error -> Promise.of(ResponseBuilder.serverError()
+                        error -> Promise.of(ResponseBuilder.internalServerError()
                                 .json(Map.of("error", error.getMessage()))
                                 .build())
                 );
@@ -262,7 +262,7 @@ public class AIInferenceHttpAdapter {
                 })
                 .then(
                         response -> Promise.of(response),
-                        error -> Promise.of(ResponseBuilder.serverError()
+                        error -> Promise.of(ResponseBuilder.internalServerError()
                                 .json(Map.of("error", error.getMessage()))
                                 .build())
                 );

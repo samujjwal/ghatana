@@ -13,6 +13,9 @@ repositories {
 }
 
 dependencies {
+    // Platform Audio-Video library (replaces legacy implementations)
+    implementation(project(":platform:java:audio-video"))
+
     // Audio-Video common (security, tracing, rate limiting interceptors)
     implementation(project(":products:audio-video:libs:common"))
 
@@ -40,9 +43,6 @@ dependencies {
     implementation(libs.log4j.core)
     implementation(libs.log4j.api)
     
-    // ONXX Runtime for ML inference
-    implementation(libs.onnxruntime)
-    
     // JSON processing
     implementation(libs.gson)
     
@@ -58,9 +58,6 @@ dependencies {
     
     // OpenTelemetry for tracing
     implementation(libs.opentelemetry.api)
-    
-    // Native lib loader
-    implementation(libs.native.lib.loader)
     
     // Testing
     testImplementation(libs.junit.jupiter)

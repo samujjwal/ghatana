@@ -17,7 +17,7 @@
  */
 
 import React from 'react';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 import { palette, lightColors, darkColors, componentRadius, fontSize, fontWeight } from '@ghatana/tokens';
 import { useTheme } from '@ghatana/theme';
 import { Badge } from '../atoms/Badge';

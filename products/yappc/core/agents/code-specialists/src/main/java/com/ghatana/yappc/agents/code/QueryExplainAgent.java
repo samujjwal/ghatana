@@ -41,7 +41,8 @@ public class QueryExplainAgent extends YAPPCAgentBase<QueryExplainInput, QueryEx
             "#/definitions/QueryExplainOutput",
             List.of("debug", "query-analysis", "database"),
             Map.of("description", "Debug micro-agent that analyzes SQL query execution plans for optimization", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

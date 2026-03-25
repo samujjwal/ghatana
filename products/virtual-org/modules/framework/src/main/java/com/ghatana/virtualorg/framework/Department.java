@@ -154,12 +154,4 @@ public abstract class Department {
         // default no-op for backward compatibility; product modules may override
     }
 
-    /**
-     * Helper for defining named workflows. Kept as a no-op compatibility method
-     * so product modules that call defineWorkflow compile without depending on
-     * workflow engine during early repair.
-     */
-    protected void defineWorkflow(String name, java.util.List<String> stages) {
-        // no-op compatibility shim
-    }
 }

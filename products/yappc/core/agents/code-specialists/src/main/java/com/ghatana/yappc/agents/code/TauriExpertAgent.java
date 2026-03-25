@@ -41,7 +41,8 @@ public class TauriExpertAgent extends YAPPCAgentBase<TauriExpertInput, TauriExpe
             "#/definitions/TauriExpertOutput",
             List.of("tauri", "desktop", "rust-bridge"),
             Map.of("description", "Stack expert agent for Tauri desktop application patterns", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

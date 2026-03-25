@@ -1,6 +1,7 @@
 package com.ghatana.core.connectors.impl.sink;
 
-import com.ghatana.core.event.cloud.EventRecord;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
@@ -71,10 +72,11 @@ class KafkaEventSinkTest extends EventloopTestBase {
         void sendBeforeStart() {
             KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class);
             KafkaEventSink sink = new KafkaEventSink(adapter);
-            EventRecord record = mock(EventRecord.class);
+            EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class);
+            TenantContext tenant = TenantContext.of("test-tenant");
 
             try {
-                runPromise(() -> sink.send(record));
+                runPromise(() -> sink.send(tenant, entry));
                 assertThat(false).as("expected exception").isTrue();
             } catch (Exception e) {
                 assertThat(e).isInstanceOf(IllegalStateException.class)
@@ -86,14 +88,15 @@ class KafkaEventSinkTest extends EventloopTestBase {
         @DisplayName("send after start delegates to adapter")
         void sendDelegatesToAdapter() {
             KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class);
-            EventRecord record = mock(EventRecord.class);
+            EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class);
+            TenantContext tenant = TenantContext.of("test-tenant");
             when(adapter.send(any())).thenReturn(Promise.complete());
 
             KafkaEventSink sink = new KafkaEventSink(adapter);
             runPromise(sink::start);
-            runPromise(() -> sink.send(record));
+            runPromise(() -> sink.send(tenant, entry));
 
-            verify(adapter).send(record);
+            verify(adapter).send(entry);
         }
 
         @Test
@@ -104,9 +107,10 @@ class KafkaEventSinkTest extends EventloopTestBase {
             runPromise(sink::start);
             runPromise(sink::stop);
 
-            EventRecord record = mock(EventRecord.class);
+            EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class);
+            TenantContext tenant = TenantContext.of("test-tenant");
             try {
-                runPromise(() -> sink.send(record));
+                runPromise(() -> sink.send(tenant, entry));
                 assertThat(false).as("expected exception").isTrue();
             } catch (Exception e) {
                 assertThat(e).isInstanceOf(IllegalStateException.class)

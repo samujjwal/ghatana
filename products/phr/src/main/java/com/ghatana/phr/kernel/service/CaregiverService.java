@@ -126,7 +126,7 @@ public class CaregiverService {
      * @param revokedBy      the identity revoking the relationship
      * @return Promise containing the revoked relationship
      */
-    public Promise<CaregiverRelationship> revokeRelationship(String relationshipId, String revokedBy) {
+    public Promise<CaregiverRelationship> revokeRelationship(String relationshipId) {
         if (!running) {
             return Promise.ofException(new IllegalStateException("Service not running"));
         }
@@ -139,7 +139,8 @@ public class CaregiverService {
                     }
                     CaregiverRelationship existing = opt.get();
                     if (existing.status() == RelationshipStatus.REVOKED) {
-                        return Promise.of(existing);
+                        return Promise.<CaregiverRelationship>ofException(
+                                new IllegalStateException("Relationship already revoked: " + relationshipId));
                     }
                     CaregiverRelationship revoked = new CaregiverRelationship(
                             existing.id(), existing.caregiverId(), existing.patientId(),
@@ -153,7 +154,7 @@ public class CaregiverService {
                     );
                     return dataCloud.writeData(req)
                             .then($ -> audit("REVOKE_RELATIONSHIP", revoked.patientId(),
-                                    "Revoked by " + revokedBy))
+                                    "Relationship revoked"))
                             .map($ -> revoked);
                 });
     }
@@ -175,7 +176,7 @@ public class CaregiverService {
                     return Optional.ofNullable(
                             TypedDataSerializer.fromBytes(result.getData(), CaregiverRelationship.class));
                 })
-                .whenException(e -> Promise.of(Optional.empty()));
+                ;
     }
 
     /**
@@ -236,13 +237,13 @@ public class CaregiverService {
                 Map.of("id", "string", "caregiverId", "string", "patientId", "string",
                         "status", "string", "createdAt", "timestamp"),
                 Map.of("retention", "10years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 AUDIT_DATASET,
                 Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
                 Map.of("retention", "10years")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(relationships, audit).map($ -> null);
     }
@@ -256,7 +257,7 @@ public class CaregiverService {
                         new AuditEntry(auditId, Instant.now(), action, patientId, details),
                         "CaregiverAuditEntry", 1),
                 Map.of("timestamp", Instant.now().toString())
-        )).whenException(e -> {});
+        ));
     }
 
     private String generateId(String prefix) {

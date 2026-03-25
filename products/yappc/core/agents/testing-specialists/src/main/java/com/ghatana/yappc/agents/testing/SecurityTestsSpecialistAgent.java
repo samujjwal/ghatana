@@ -51,7 +51,8 @@ public class SecurityTestsSpecialistAgent
                 "1.0.0",
                 "estimatedDuration",
                 "20m")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

@@ -151,7 +151,7 @@ class PhrKernelModuleTest extends EventloopTestBase {
 
         assertEquals(HealthStatus.Status.HEALTHY, status.getStatus());
         assertTrue(status.getMessage().contains("operational"));
-        assertEquals(4, status.getChecks().size()); // 4 implemented services
+        assertEquals(14, status.getChecks().size()); // 14 implemented services
     }
 
     @Test

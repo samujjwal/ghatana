@@ -25,6 +25,7 @@ package com.ghatana.agent;
  * @doc.type enum
  * @doc.purpose State mutability classification
  * @doc.layer core
+ * @doc.pattern ValueObject
  *
  * @author Ghatana AI Platform
  * @since 2.0.0

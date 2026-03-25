@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.infrastructure.encryption;
 
+import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -8,6 +9,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Objects;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simple encryption service for Data Cloud using AES-GCM.
@@ -114,8 +116,10 @@ public class SimpleEncryptionService {
     public byte[] decrypt(byte[] data) {
         Objects.requireNonNull(data, "Data to decrypt cannot be null");
         
-        if (data.length < GCM_IV_LENGTH) {
-            throw new EncryptionException("Invalid encrypted data: too short");
+        if (data.length < GCM_IV_LENGTH + GCM_TAG_LENGTH / 8) {
+            throw new EncryptionException(
+                "Invalid ciphertext: too short (" + data.length + " bytes), minimum is " +
+                (GCM_IV_LENGTH + GCM_TAG_LENGTH / 8) + " bytes (IV + GCM tag)");
         }
         
         try {
@@ -134,6 +138,11 @@ public class SimpleEncryptionService {
             
             // Decrypt data
             return cipher.doFinal(encrypted);
+        } catch (AEADBadTagException e) {
+            // DC3-M10: AEADBadTagException signals tampered or corrupted ciphertext — log as security event.
+            LoggerFactory.getLogger(SimpleEncryptionService.class)
+                .warn("SECURITY: AEADBadTagException during decryption — possible tampered ciphertext");
+            throw new EncryptionException("Authentication tag verification failed: possible tampered ciphertext", e);
         } catch (Exception e) {
             throw new EncryptionException("Decryption failed: " + e.getMessage(), e);
         }
@@ -154,6 +163,29 @@ public class SimpleEncryptionService {
             throw new RuntimeException("Failed to generate encryption key", e);
         }
     }
+
+    /**
+     * DC3-C1: Creates a service loading the AES-256 key from an environment variable.
+     *
+     * <p>If the env var is absent or blank, an ephemeral key is generated and a
+     * security-level error is logged — suitable for development only.
+     * In production, always set the env var to a persisted Base64-encoded key.
+     *
+     * @param envVarName name of the env var containing a Base64-encoded AES-256 key
+     * @return new {@link SimpleEncryptionService} loaded with the resolved key
+     */
+    public static SimpleEncryptionService fromEnvironment(String envVarName) {
+        String keyBase64 = System.getenv(envVarName);
+        if (keyBase64 == null || keyBase64.isBlank()) {
+            String generated = generateKey();
+            LoggerFactory.getLogger(SimpleEncryptionService.class)
+                .error("SECURITY: Env var '{}' not set. Generated ephemeral key — encrypted data will "
+                       + "not survive restarts. Set {} to a persisted key for production use.",
+                       envVarName, envVarName);
+            return new SimpleEncryptionService(generated);
+        }
+        return new SimpleEncryptionService(keyBase64);
+    }
     
     /**
      * Exception thrown when encryption or decryption fails.
@@ -168,14 +200,4 @@ public class SimpleEncryptionService {
         }
     }
     
-    /**
-     * Main method for generating encryption keys.
-     * 
-     * @param args command line arguments (not used)
-     */
-    public static void main(String[] args) {
-        System.out.println("Generated AES-256 Key:");
-        System.out.println(generateKey());
-        System.out.println("\nStore this key securely in your secrets manager!");
-    }
 }

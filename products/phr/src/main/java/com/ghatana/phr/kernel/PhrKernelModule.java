@@ -1,8 +1,9 @@
 package com.ghatana.phr.kernel;
 
 import com.ghatana.kernel.config.KernelConfigResolver;
-import com.ghatana.kernel.contract.ContractRegistry;
-import com.ghatana.kernel.contract.ContractValidator;
+import com.ghatana.kernel.contracts.ContractRegistry;
+import com.ghatana.kernel.contracts.ModuleContract;
+import com.ghatana.kernel.contracts.SchemaRegistration;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
@@ -315,102 +316,102 @@ public class PhrKernelModule implements KernelModule {
     private void registerModuleContract() {
         if (context.hasDependency(ContractRegistry.class)) {
             ContractRegistry registry = context.getDependency(ContractRegistry.class);
-            registry.registerModuleContract(new ContractValidator.ModuleContract(
+            registry.registerModuleContract(new ModuleContract(
                 MODULE_ID, VERSION, getCapabilities(), getDependencies(), Map.of()
             ));
 
             // ── Core dataset schema contracts (existing) ───────────────────────────
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.patient.records", VERSION, "json",
                 Map.of("fields", List.of("patientId", "name", "dateOfBirth", "gender", "bloodType")),
                 Map.of("owner", MODULE_ID)
             ));
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.consent.grants", VERSION, "json",
                 Map.of("fields", List.of("grantId", "patientId", "recipientId", "resourceType", "status", "expiresAt")),
                 Map.of("owner", MODULE_ID)
             ));
 
             // ── Medication service datasets ─────────────────────────────────────────
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.medications", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "medicationCode", "status", "prescribedAt")),
                 Map.of("owner", MODULE_ID, "retention", "10years")
             ));
 
             // ── Lab result service datasets ─────────────────────────────────────────
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.lab.results", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "loincCode", "status", "resultedAt")),
                 Map.of("owner", MODULE_ID, "retention", "25years")
             ));
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.lab.panels", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "status", "orderedAt")),
                 Map.of("owner", MODULE_ID, "retention", "25years")
             ));
 
             // ── Immunization service datasets ───────────────────────────────────────
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.immunizations", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "cvxCode", "status", "administeredAt")),
                 Map.of("owner", MODULE_ID, "retention", "permanent")
             ));
 
             // ── Clinical note service datasets ──────────────────────────────────────
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.clinical.notes", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "noteType", "status", "createdAt")),
                 Map.of("owner", MODULE_ID, "retention", "25years")
             ));
 
             // ── Imaging service datasets ────────────────────────────────────────────
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.imaging.orders", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "modalityCode", "status", "orderedAt")),
                 Map.of("owner", MODULE_ID, "retention", "25years")
             ));
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.imaging.studies", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "dcmStudyInstanceUid", "status", "studiedAt")),
                 Map.of("owner", MODULE_ID, "retention", "permanent")
             ));
 
             // ── Referral service datasets ───────────────────────────────────────────
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.referrals", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "status", "urgency", "createdAt")),
                 Map.of("owner", MODULE_ID, "retention", "10years")
             ));
 
             // ── Billing service datasets ────────────────────────────────────────────
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.billing.encounters", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "status", "totalAmount", "createdAt")),
                 Map.of("owner", MODULE_ID, "retention", "10years")
             ));
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.billing.claims", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "encounterId", "status", "submittedAt")),
                 Map.of("owner", MODULE_ID, "retention", "10years")
             ));
 
             // ── Telemedicine service datasets ───────────────────────────────────────
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.telemedicine.sessions", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "providerId", "status", "scheduledAt")),
                 Map.of("owner", MODULE_ID, "retention", "10years")
             ));
 
             // ── Caregiver service datasets ──────────────────────────────────────────
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.caregiver.relationships", VERSION, "json",
                 Map.of("fields", List.of("id", "caregiverId", "patientId", "status", "createdAt")),
                 Map.of("owner", MODULE_ID, "retention", "10years")
             ));
 
             // ── Emergency access log datasets ───────────────────────────────────────
-            registry.registerSchemaContract(new ContractValidator.SchemaContract(
+            registry.registerSchemaContract(new SchemaRegistration(
                 "phr.emergency.access.log", VERSION, "json",
                 Map.of("fields", List.of("id", "patientId", "accessorId", "reviewStatus", "accessedAt")),
                 Map.of("owner", MODULE_ID, "retention", "permanent")

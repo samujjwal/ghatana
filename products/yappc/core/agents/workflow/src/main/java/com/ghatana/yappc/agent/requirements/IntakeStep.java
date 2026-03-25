@@ -1,10 +1,9 @@
 package com.ghatana.yappc.agent.requirements;
 
 // ✅ Use EXISTING interfaces from libs/java
-import static com.ghatana.yappc.agent.EventCloudHelper.publish;
 
 import com.ghatana.core.database.DatabaseClient;
-import com.ghatana.core.event.cloud.EventCloud;
+import com.ghatana.yappc.agent.EventPublisher;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.WorkflowStep;
 import com.ghatana.yappc.agent.WorkflowContextAdapter;
@@ -18,7 +17,7 @@ import java.util.*;
  * <p>Ingests raw requirements from external sources for processing.
  *
  * <p>✅ Implements WorkflowStep from libs:workflow-api (EXISTING) ✅ Uses DatabaseClient from
- * libs:database (EXISTING) ✅ Uses EventCloud from libs:event-cloud (EXISTING)
+ * libs:database (EXISTING) ✅ Uses EventPublisher (product-owned facade over EventLogStore)
  *
  * <h3>Implementation Checklist:</h3>
  *
@@ -44,9 +43,9 @@ import java.util.*;
 public final class IntakeStep implements WorkflowStep {
 
   private final DatabaseClient dbClient;
-  private final EventCloud eventClient;
+  private final EventPublisher eventClient;
 
-  public IntakeStep(DatabaseClient dbClient, EventCloud eventClient) {
+  public IntakeStep(DatabaseClient dbClient, EventPublisher eventClient) {
     this.dbClient = Objects.requireNonNull(dbClient, "dbClient must not be null");
     this.eventClient = Objects.requireNonNull(eventClient, "eventClient must not be null");
   }
@@ -89,7 +88,7 @@ public final class IntakeStep implements WorkflowStep {
                       "stepId", stepId,
                       "error", error.getMessage(),
                       "timestamp", Instant.now().toString());
-              publish(eventClient, "requirements.intake.failed", errorEvent);
+              eventClient.publish("requirements.intake.failed", errorEvent);
             });
   }
 
@@ -153,6 +152,6 @@ public final class IntakeStep implements WorkflowStep {
             "timestamp",
             Instant.now().toString());
 
-    return publish(eventClient, "requirements.ingested", event).map($ -> data);
+    return eventClient.publish("requirements.ingested", event).map($ -> data);
   }
 }

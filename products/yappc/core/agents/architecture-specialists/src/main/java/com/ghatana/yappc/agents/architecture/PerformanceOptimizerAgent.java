@@ -41,7 +41,8 @@ public class PerformanceOptimizerAgent extends YAPPCAgentBase<PerformanceOptimiz
             "#/definitions/PerformanceOptimizerOutput",
             List.of("performance", "optimization", "profiling"),
             Map.of("description", "Expert performance optimizer for profiling and optimization recommendations", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

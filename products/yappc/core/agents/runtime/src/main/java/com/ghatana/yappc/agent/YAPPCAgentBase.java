@@ -52,16 +52,21 @@ public abstract class YAPPCAgentBase<I, O> extends BaseAgent<StepRequest<I>, Ste
   private static final Logger log = LoggerFactory.getLogger(YAPPCAgentBase.class);
 
   /**
-   * Package-private for same-package initialisation by {@link YappcAgentSystem}.
-   * Agents constructed via the 4-arg constructor (320+ specialist agents) read this
-   * field once at construction time. Do NOT mutate after the system has bootstrapped.
+   * Package-private for same-package initialization by {@link YappcAgentSystem}.
    *
-   * @deprecated Will be removed in 3.0 once all specialists migrate to the 5-arg
-   *             constructor that accepts {@link AepEventPublisher} directly.
+   * <p>Subclasses should use {@link #defaultEventPublisher()} when explicit constructor-level
+   * publisher injection is not required.
    */
-  @Deprecated(since = "2.4.0", forRemoval = true)
   static volatile AepEventPublisher globalAepEventPublisher =
       (type, tenant, payload) -> Promise.complete(); // no-op default
+
+  public static void setGlobalAepEventPublisher(@NotNull AepEventPublisher publisher) {
+    globalAepEventPublisher = Objects.requireNonNull(publisher, "publisher");
+  }
+
+  protected static AepEventPublisher defaultEventPublisher() {
+    return globalAepEventPublisher;
+  }
 
   private final AepEventPublisher aepEventPublisher;
   private final String stepName;
@@ -86,27 +91,6 @@ public abstract class YAPPCAgentBase<I, O> extends BaseAgent<StepRequest<I>, Ste
     this.stepName = stepName;
     this.stepContract = stepContract;
     this.aepEventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher");
-  }
-
-  /**
-   * Legacy constructor for backward compatibility. Uses global static publisher.
-   *
-   * @param agentId      unique agent identifier
-   * @param stepName     fully qualified step name (e.g., "architecture.intake")
-   * @param stepContract contract defining input/output schemas
-   * @param generator    output generator for this agent
-   * @deprecated Use the constructor that accepts {@link AepEventPublisher} for proper DI.
-   */
-  @Deprecated(since = "2.4.0", forRemoval = true)
-  protected YAPPCAgentBase(
-      @NotNull String agentId,
-      @NotNull String stepName,
-      @NotNull StepContract stepContract,
-      @NotNull OutputGenerator<StepRequest<I>, StepResult<O>> generator) {
-    super(agentId, generator);
-    this.stepName = stepName;
-    this.stepContract = stepContract;
-    this.aepEventPublisher = globalAepEventPublisher;
   }
 
   @Override
@@ -297,8 +281,8 @@ public abstract class YAPPCAgentBase<I, O> extends BaseAgent<StepRequest<I>, Ste
    * Publishes workflow step completion event to AEP (Agentic Event Processor).
    *
    * <p>
-   * Note: AEP handles EventCloud integration. YAPPC should NOT call EventCloud
-   * directly.
+   * Note: Events are published via EventPublisher (backed by Data Cloud EventLogStore).
+   * AEP plugin/runtime provides advanced event processing if available.
    *
    * @param result  step execution result
    * @param context agent execution context
@@ -324,7 +308,7 @@ public abstract class YAPPCAgentBase<I, O> extends BaseAgent<StepRequest<I>, Ste
         "timestamp", Instant.now().toString(),
         "metrics", result.metrics());
 
-    // Publish to AEP (which handles EventCloud integration)
+    // Publish event via AEP integration point
     Promise<Void> promise = publishToAEP("yappc.workflow.step.completed", context.getTenantId(), eventPayload);
     promise.whenComplete((v, e) -> {
       if (e != null) {
@@ -338,8 +322,8 @@ public abstract class YAPPCAgentBase<I, O> extends BaseAgent<StepRequest<I>, Ste
    * Publishes event to AEP (Agentic Event Processor).
    *
    * <p>
-   * This is the correct integration point for YAPPC. AEP handles EventCloud
-   * integration, not YAPPC directly.
+   * Integration point for event publishing. Uses Data Cloud EventLogStore
+   * via EventPublisher. AEP plugin provides advanced processing if present.
    *
    * @param eventType type of event
    * @param tenantId  tenant identifier
@@ -349,29 +333,6 @@ public abstract class YAPPCAgentBase<I, O> extends BaseAgent<StepRequest<I>, Ste
   protected Promise<Void> publishToAEP(String eventType, String tenantId, Map<String, Object> payload) {
     log.info("Publishing event to AEP: type={}, tenant={}", eventType, tenantId);
     return aepEventPublisher.publish(eventType, tenantId, payload);
-  }
-
-  // configureAepEventPublisher() was the public static setter. Production callers
-  // (YappcAgentSystem) now use direct package-private field access. The public
-  // method is kept solely for test classes that reside in subpackages and cannot
-  // access package-private members of this package directly.
-
-  /**
-   * Sets the global publisher used by agents constructed via the deprecated 4-arg
-   * constructor.
-   *
-   * <p><b>Production</b>: Use direct field access from within {@code com.ghatana.yappc.agent}
-   * (e.g., {@link YappcAgentSystem}) instead of this method.
-   *
-   * <p><b>Tests</b>: Call before constructing specialist agents to inject a test publisher.
-   *
-   * @deprecated Will be removed in 3.0 when all specialists migrate to the 5-arg constructor.
-   */
-  @Deprecated(since = "2.4.0", forRemoval = true)
-  public static void configureAepEventPublisher(AepEventPublisher publisher) {
-    if (publisher != null) {
-      globalAepEventPublisher = publisher;
-    }
   }
 
   /**

@@ -3,8 +3,8 @@
  * Central export point for all plugin interfaces and implementations
  */
 
-// Re-export from @ghatana/dcmaar-types (only interfaces, not PluginManager which is implemented here)
-export type { IPlugin, Plugin } from '@ghatana/dcmaar-types';
+// Re-export from @dcmaar/types (only interfaces, not PluginManager which is implemented here)
+export type { IPlugin, Plugin } from '@dcmaar/types';
 
 // Export interfaces
 export type { IDataCollector } from './interfaces/DataCollector';

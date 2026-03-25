@@ -165,7 +165,7 @@ public class PolicyLearningService {
                 .procedure(procedureJson)
                 .confidence(proc.getConfidence())
                 .source(source)
-                .version(proc.getVersion())
+                .version(String.valueOf(proc.getVersion()))
                 .tenantId(tenantId)
                 .createdAt(proc.getCreatedAt() != null ? proc.getCreatedAt() : Instant.now())
                 .updatedAt(Instant.now())

@@ -41,5 +41,5 @@ COMMENT ON COLUMN event_log.event_version    IS 'Semantic version of the event s
 COMMENT ON COLUMN event_log.payload          IS 'Raw event payload bytes. Encoding dictated by content_type.';
 COMMENT ON COLUMN event_log.content_type     IS 'MIME type of payload (default application/json).';
 COMMENT ON COLUMN event_log.headers          IS 'Arbitrary string key/value headers stored as JSONB.';
-COMMENT ON COLUMN event_log.idempotency_key  IS 'Optional client-provided deduplication key. Unique per tenant when set.';
+COMMENT ON COLUMN event_log.idempotency_key  IS 'Optional client-provided deduplication key. Unique per tenant when set. NULL is allowed multiple times (PostgreSQL permits multiple NULLs in a UNIQUE constraint — only non-NULL values are deduplicated).';
 COMMENT ON COLUMN event_log.created_at       IS 'Wall-clock time of ingestion by the server.';

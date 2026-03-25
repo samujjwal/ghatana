@@ -5,7 +5,7 @@ plugins {
 description = "YAPPC Agent Common - Shared Input/Output classes and interfaces for all agent modules"
 
 dependencies {
-    api(project(":products:yappc:core:domain"))
+    api(project(":products:yappc:core:yappc-domain-impl"))
     api(project(":platform:java:agent-core"))
     
     implementation(libs.activej.promise)

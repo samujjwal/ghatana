@@ -41,7 +41,8 @@ public class CloudPilotAgent extends YAPPCAgentBase<CloudPilotInput, CloudPilotO
             "#/definitions/CloudPilotOutput",
             List.of("cloud", "infrastructure", "cost"),
             Map.of("description", "Expert cloud pilot for cloud architecture and resource management", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

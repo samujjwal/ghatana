@@ -47,7 +47,7 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
     agentRegistry = new YAPPCAgentRegistry();
     generator = new DeliveryCoordinatorGenerator(agentRegistry);
     memoryStore = new EventLogMemoryStore();
-    YAPPCAgentBase.configureAepEventPublisher(
+    YAPPCAgentBase.setGlobalAepEventPublisher(
         (eventType, tenantId, payload) -> Promise.complete());
   }
 
@@ -302,7 +302,8 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
           new StepContract(stepName, "#/definitions/Object",
               "#/definitions/Object", List.of("phase-lead"),
               Map.of("description", "Stub phase agent", "version", "1.0.0")),
-          new StubPhaseGenerator());
+          new StubPhaseGenerator(),
+        defaultEventPublisher());
       this.memoryStore = memoryStore;
     }
 

@@ -8,38 +8,45 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
- * Represents an authenticated user in the system.
- * 
- * <p>This class contains user information including identity, authentication status,
- * and security attributes such as roles and permissions.</p>
- * 
- * <p>Example usage:</p>
+ * Security-layer representation of an authenticated user, carrying runtime auth state.
+ *
+ * <p>This class holds session-scoped security information including auth tokens, mutable
+ * role assignments, and attribute bags derived from authentication providers (JWT, OAuth2, OIDC).
+ * It is intentionally separate from the immutable domain aggregate
+ * {@link com.ghatana.platform.domain.auth.User}, which is the canonical record of user
+ * identity and should be preferred for business-logic decisions.
+ *
+ * <p><b>Migration note:</b> For domain operations and authorization decisions prefer
+ * {@link com.ghatana.platform.domain.auth.User}. This class is retained for security
+ * filter/session infrastructure that requires mutable auth-token state. New code should
+ * construct instances via {@link #fromDomainUser(com.ghatana.platform.domain.auth.User)}
+ * rather than the raw constructors.
+ *
+ * <p>Example usage:
  * <pre>{@code
- * // Create a new user
- * User user = User.builder()
- *     .userId("user-123")
- *     .username("john.doe")
- *     .email("john.doe@example.com")
- *     .addRole("USER")
- *     .addPermission("event:read")
- *     .attribute("department", "engineering")
- *     .build();
- * 
- * // Check if user has a role
- * boolean isAdmin = user.hasRole("ADMIN");
- * 
- * // Check if user has a permission
- * boolean canRead = user.hasPermission("event:read");
+ * // Prefer domain user for business logic:
+ * com.ghatana.platform.domain.auth.User domainUser = ...;
+ *
+ * // Obtain a security-layer view for filter/session use:
+ * User secUser = User.fromDomainUser(domainUser);
+ *
+ * // Legacy filter usage:
+ * boolean isAdmin = secUser.hasRole("ADMIN");
  * }</pre>
- 
  *
  * @doc.type class
- * @doc.purpose User
- * @doc.layer core
- * @doc.pattern Component
-*/
+ * @doc.purpose Security-layer authenticated-user carrier for session and filter infrastructure
+ * @doc.layer platform
+ * @doc.pattern Adapter
+ * @see com.ghatana.platform.domain.auth.User
+ * @deprecated Prefer {@link com.ghatana.platform.domain.auth.User} for domain and authorization
+ *             logic. This class will continue to serve security infrastructure (filters, sessions)
+ *             but should not be used as a domain model.
+ */
+@SuppressWarnings("DeprecatedIsStillUsed") // retained for security filter infrastructure
 public class User {
     private final String userId;
     private final String username;
@@ -90,7 +97,39 @@ public class User {
     public void setRoles(Set<String> roles) {
         this.roles = Collections.unmodifiableSet(new HashSet<>(roles));
     }
-    
+
+    // ── Factory Methods ──────────────────────────────────────────────────────
+
+    /**
+     * Creates a security-layer {@code User} from the canonical domain aggregate.
+     *
+     * <p>Roles and permissions are copied from the domain object as their string names.
+     * The resulting instance is {@link #isAuthenticated() authenticated} by construction
+     * and carries no auth token (tokens are issued separately by the JWT provider).
+     *
+     * @param domainUser the domain aggregate to adapt, must not be null
+     * @return a new security-layer User reflecting the domain user's identity and roles
+     */
+    public static User fromDomainUser(com.ghatana.platform.domain.auth.User domainUser) {
+        Objects.requireNonNull(domainUser, "domainUser must not be null");
+        Set<String> roleNames = domainUser.getRoles().stream()
+                .map(com.ghatana.platform.domain.auth.Role::getName)
+                .collect(Collectors.toUnmodifiableSet());
+        Set<String> permissionNames = domainUser.getPermissions().stream()
+                .map(com.ghatana.platform.domain.auth.Permission::getName)
+                .collect(Collectors.toUnmodifiableSet());
+        Map<String, Object> attributes = new HashMap<>(domainUser.getMetadata());
+        return builder()
+                .userId(domainUser.getUserId().value())
+                .username(domainUser.getUsername())
+                .email(domainUser.getEmail())
+                .roles(roleNames)
+                .permissions(permissionNames)
+                .attributes(attributes)
+                .authenticated(domainUser.canAuthenticate())
+                .build();
+    }
+
     /**
      * Gets the unique user identifier.
      * 
@@ -184,34 +223,12 @@ public class User {
     }
     
     /**
-     * This method is provided for compatibility but throws UnsupportedOperationException
-     * since User is immutable. Use toBuilder() to create a new instance with updated token.
-     * 
-     * @param token The new authentication token
-     * @throws UnsupportedOperationException always, since User is immutable
-     */
-    public void setToken(String token) {
-        throw new UnsupportedOperationException("User is immutable. Use User.builder() to create a new instance with updated token.");
-    }
-    
-    /**
      * Gets the refresh token from user attributes.
      * 
      * @return The refresh token, or null if not available
      */
     public String getRefreshToken() {
         return getAttribute("refreshToken");
-    }
-    
-    /**
-     * This method is provided for compatibility but throws UnsupportedOperationException
-     * since User is immutable. Use toBuilder() to create a new instance with updated refresh token.
-     * 
-     * @param refreshToken The new refresh token
-     * @throws UnsupportedOperationException always, since User is immutable
-     */
-    public void setRefreshToken(String refreshToken) {
-        throw new UnsupportedOperationException("User is immutable. Use User.builder() to create a new instance with updated refresh token.");
     }
     
     /**

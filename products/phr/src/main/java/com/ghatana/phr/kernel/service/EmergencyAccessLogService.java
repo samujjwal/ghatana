@@ -138,7 +138,7 @@ public class EmergencyAccessLogService {
      * @return Promise containing the updated event
      */
     public Promise<EmergencyAccessEvent> markReviewed(
-            String eventId, ReviewStatus newStatus, String reviewedBy, String reviewerNotes) {
+            String eventId, String reviewedBy, ReviewStatus newStatus, String reviewerNotes) {
         if (!running) {
             return Promise.ofException(new IllegalStateException("Service not running"));
         }
@@ -192,7 +192,7 @@ public class EmergencyAccessLogService {
                     return Optional.ofNullable(
                             TypedDataSerializer.fromBytes(result.getData(), EmergencyAccessEvent.class));
                 })
-                .whenException(e -> Promise.of(Optional.empty()));
+                ;
     }
 
     /**
@@ -233,7 +233,7 @@ public class EmergencyAccessLogService {
         return dataCloud.queryData(new DataQueryRequest(
                 LOG_DATASET,
                 "reviewStatus = :status",
-                Map.of("status", "PENDING_REVIEW"),
+                Map.of("reviewStatus", "PENDING_REVIEW"),
                 limit, 0
         )).map(QueryResult::getResults)
                 .map(results -> results.stream()
@@ -252,13 +252,13 @@ public class EmergencyAccessLogService {
                 Map.of("id", "string", "patientId", "string", "accessorId", "string",
                         "reviewStatus", "string", "accessedAt", "timestamp"),
                 Map.of("retention", "permanent")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> review = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 REVIEW_DATASET,
                 Map.of("eventId", "string", "reviewedBy", "string", "timestamp", "timestamp"),
                 Map.of("retention", "permanent")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(log, review).map($ -> null);
     }

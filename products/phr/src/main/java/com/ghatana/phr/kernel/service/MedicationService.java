@@ -92,16 +92,16 @@ public class MedicationService {
                 id,
                 prescription.patientId(),
                 prescription.prescriberId(),
+                prescription.encounterId(),
                 prescription.medicationCode(),
                 prescription.medicationName(),
                 prescription.dosage(),
-                prescription.frequency(),
-                prescription.duration(),
-                prescription.instructions(),
+                prescription.indication(),
                 now,
                 prescription.expiresAt() != null ? prescription.expiresAt() : now.plusSeconds(30L * 24 * 3600),
-                PrescriptionStatus.ACTIVE,
-                prescription.refillsRemaining()
+                prescription.refillsRemaining(),
+                prescription.duration(),
+                PrescriptionStatus.ACTIVE
         );
 
         DataWriteRequest request = new DataWriteRequest(
@@ -135,9 +135,9 @@ public class MedicationService {
         return dataCloud.readData(new DataReadRequest(MEDICATION_DATASET, prescriptionId, Map.of()))
                 .map(result -> {
                     if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable(TypedDataSerializer.fromBytes(result.getData(), Prescription.class));
+                    return Optional.ofNullable((Prescription) TypedDataSerializer.fromBytes(result.getData(), Prescription.class));
                 })
-                .whenException(e -> Promise.of(Optional.empty()));
+                ;
     }
 
     /**
@@ -175,21 +175,24 @@ public class MedicationService {
      * @param reason         the discontinuation reason
      * @return Promise completing when discontinued
      */
-    public Promise<Void> discontinue(String prescriptionId, String reason) {
+    public Promise<Prescription> discontinue(String prescriptionId, String reason) {
         if (!running) {
             return Promise.ofException(new IllegalStateException("Service not running"));
         }
 
         return getPrescription(prescriptionId)
                 .then(opt -> {
-                    if (opt.isEmpty()) return Promise.complete();
+                    if (opt.isEmpty()) {
+                        return Promise.<Prescription>ofException(
+                                new IllegalStateException("Prescription not found: " + prescriptionId));
+                    }
                     Prescription existing = opt.get();
                     Prescription discontinued = new Prescription(
                             existing.id(), existing.patientId(), existing.prescriberId(),
-                            existing.medicationCode(), existing.medicationName(),
-                            existing.dosage(), existing.frequency(), existing.duration(),
-                            existing.instructions(), existing.prescribedAt(), existing.expiresAt(),
-                            PrescriptionStatus.DISCONTINUED, existing.refillsRemaining()
+                            existing.encounterId(), existing.medicationCode(), existing.medicationName(),
+                            existing.dosage(), existing.indication(), existing.prescribedAt(),
+                            existing.expiresAt(), existing.refillsRemaining(), existing.duration(),
+                            PrescriptionStatus.DISCONTINUED
                     );
                     DataWriteRequest req = new DataWriteRequest(
                             MEDICATION_DATASET, prescriptionId,
@@ -198,7 +201,8 @@ public class MedicationService {
                     );
                     return dataCloud.writeData(req)
                             .then($ -> audit("DISCONTINUE", existing.patientId(),
-                                    "Discontinued: " + existing.medicationName() + " — " + reason));
+                                    "Discontinued: " + existing.medicationName() + " — " + reason))
+                            .map($ -> discontinued);
                 });
     }
 
@@ -230,11 +234,10 @@ public class MedicationService {
                     }
                     Prescription refilled = new Prescription(
                             existing.id(), existing.patientId(), existing.prescriberId(),
-                            existing.medicationCode(), existing.medicationName(),
-                            existing.dosage(), existing.frequency(), existing.duration(),
-                            existing.instructions(), existing.prescribedAt(),
+                            existing.encounterId(), existing.medicationCode(), existing.medicationName(),
+                            existing.dosage(), existing.indication(), existing.prescribedAt(),
                             existing.expiresAt().plusSeconds(existing.duration().toSeconds()),
-                            existing.status(), existing.refillsRemaining() - 1
+                            existing.refillsRemaining() - 1, existing.duration(), existing.status()
                     );
                     DataWriteRequest req = new DataWriteRequest(
                             MEDICATION_DATASET, prescriptionId,
@@ -261,13 +264,13 @@ public class MedicationService {
                         "prescribedAt", "timestamp"
                 ),
                 Map.of("retention", "10years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 AUDIT_DATASET,
                 Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(meds, audit).map($ -> null);
     }
@@ -280,7 +283,7 @@ public class MedicationService {
                 TypedDataSerializer.toBytes(entry, "MedicationAuditEntry", 1),
                 Map.of("timestamp", Instant.now().toString())
         );
-        return dataCloud.writeData(request).whenException(e -> {});
+        return dataCloud.writeData(request);
     }
 
     private String generateId(String prefix) {
@@ -310,16 +313,16 @@ public class MedicationService {
             String id,
             String patientId,
             String prescriberId,
+            String encounterId,
             String medicationCode,
             String medicationName,
             String dosage,
-            String frequency,
-            java.time.Duration duration,
-            String instructions,
+            String indication,
             Instant prescribedAt,
             Instant expiresAt,
-            PrescriptionStatus status,
-            int refillsRemaining
+            int refillsRemaining,
+            java.time.Duration duration,
+            PrescriptionStatus status
     ) {
         /** Returns {@code true} when the prescription has passed its expiry date. */
         public boolean isExpired() {

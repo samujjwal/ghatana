@@ -25,7 +25,7 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { TextField, MenuItem, Collapse } from '@ghatana/design-system';
-import { useMuiTheme as useTheme, resolveMuiColor } from '@yappc/ui/theme';
+import { useMuiTheme as useTheme, resolveMuiColor } from '@yappc/theme';
 import React, { useState } from 'react';
 
 // consolidate useTheme into the primary MUI import list to avoid duplicate imports

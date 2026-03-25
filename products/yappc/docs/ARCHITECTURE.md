@@ -1,19 +1,25 @@
 # YAPPC Architecture
 
 **Status:** Active  
-**Last Updated:** 2026-01-27  
+**Last Updated:** 2026-03-24  
 **Owner:** Architecture Team
+
+> **Recent structural changes (2026-03-24):**
+> - Phase 2: `services:platform` and `services:lifecycle` moved from `services/` to `core/` — they are reusable libraries, not deployables
+> - Phase 3: `core:yappc-domain` renamed to `core:yappc-domain-impl` — internal implementation only; `libs:java:yappc-domain` is the canonical public contract
+> - Phase 5: `frontend/libs/theme` moved to `frontend/compat/theme` — not first-class
+> - Phase 4 tracker: direct AEP/DataCloud imports in capability modules annotated with `TODO(ADAPTER-SEAM)` for future remediation
 
 ---
 
 ## Overview
 
-YAPPC is a **microservices-based AI platform** built on the Ghatana Platform Standards with:
-- **Domain-Driven Design** for clear bounded contexts
-- **ActiveJ async runtime** for high-performance I/O
+YAPPC is an **AI-powered project scaffolding and code-generation platform** built on the Ghatana Platform Standards with:
+- **Capability-based module taxonomy** — each Gradle module owns exactly one capability
+- **ActiveJ async runtime** for high-performance, non-blocking I/O
 - **Data-Cloud** as canonical persistence layer
-- **Multi-tenancy** with strict isolation
-- **Event-driven** for cross-module communication
+- **Multi-tenancy** with strict tenant isolation at every layer
+- **Event-driven** for cross-module and cross-product communication
 
 ---
 
@@ -22,560 +28,309 @@ YAPPC is a **microservices-based AI platform** built on the Ghatana Platform Sta
 ### High-Level Layers
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      API Layer (api/)                        │
-│              HTTP Endpoints & gRPC Services                  │
-└────────────────────────┬────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│              Application Entry Point (services/)             │
+│         services  [application — the only deployable]        │
+└────────────────────────┬─────────────────────────────────────┘
                          │
                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Domain Layer (domain/)                    │
-│         Business Logic & Domain Services                     │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-        ┌────────────────┼────────────────┐
-        │                │                │
-        ▼                ▼                ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│Infrastructure│ │   AI Layer   │ │  Core Layer  │
-│  (datacloud) │ │    (ai/)     │ │   (core/)    │
-└──────┬───────┘ └──────┬───────┘ └──────┬───────┘
-       │                │                │
-       └────────────────┼────────────────┘
-                        │
-                        ▼
-        ┌───────────────────────────────┐
-        │   Data-Cloud Storage Layer    │
-        │  (Canonical Data Layer)       │
-        └───────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                  Core Libraries (core/)                      │
+│  services-platform  services-lifecycle  (reusable, non-app)  │
+│  yappc-domain-impl  yappc-services  yappc-agents  yappc-api   │
+│  yappc-infrastructure  yappc-shared                          │
+└──────┬───────────────────────────────────┬───────────────────┘
+       │                                   │
+       ▼                                   ▼
+┌─────────────────┐              ┌──────────────────────────┐
+│   AI/Agents     │              │   Scaffold Sub-System    │
+│  core/ai        │              │  scaffold:core (agg.)    │
+│  agents:runtime │              │  ├─ templates            │
+│  agents:workflow│              │  ├─ engine               │
+│  agents:common  │              │  └─ generators           │
+│  code-specialists│             └──────────────────────────┘
+│  delivery-spec. │
+│  arch-specialists│
+│  testing-spec.  │
+└─────────────────┘
+       │
+       ▼
+┌──────────────────────────────────────────────────────────────┐
+│              Platform Libraries (platform:java:*)            │
+│    platform:java:domain  platform:java:core                  │
+│    platform:java:http    platform:java:observability         │
+└──────────────────────────────────────────────────────────────┘
+       │
+       ▼
+┌──────────────────────────────────────────────────────────────┐
+│           Data-Cloud / AEP Integration Layer                 │
+│    infrastructure:datacloud        AEP (agentic-event-proc.) │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Module Structure
 
 ```
 yappc/
-├── api/                          # API Layer
-│   ├── http/                     # REST endpoints (ActiveJ HTTP)
-│   └── grpc/                     # gRPC services
+├── services/                     # DEPLOYABLE ENTRY POINT — only app here
+│   └── build.gradle.kts          # application plugin — the single runnable artifact
 │
-├── domain/                       # Domain Layer
-│   ├── model/                    # Domain entities
-│   ├── service/                  # Business logic
-│   ├── repository/               # Repository interfaces
-│   └── event/                    # Domain events
+├── core/                         # Reusable backend capability modules
+│   ├── services-platform/        # HTTP platform wiring (was: services:platform)
+│   ├── services-lifecycle/       # Lifecycle orchestration library (was: services:lifecycle)
+│   │
+│   ├── yappc-domain-impl/        # Internal domain impl (was: yappc-domain) — NOT public contract
+│   ├── yappc-services/           # Business orchestration services
+│   ├── yappc-infrastructure/     # Repository implementations, DC adapters
+│   ├── yappc-agents/             # High-level agent façade (consumer of agents/*)
+│   ├── yappc-api/                # API contracts + request/response types
+│   ├── yappc-shared/             # Shared internal utilities
+│   │
+│   ├── ai/                       # LLM / AI integration (prompts, completions)
+│   │
+│   ├── agents/                   # AI agent modules
+│   │   ├── common/               # Shared agent utilities & base types
+│   │   ├── runtime/              # Agent execution runtime (ActiveJ)
+│   │   ├── workflow/             # Multi-step agent workflow engine
+│   │   ├── code-specialists/     # Code analysis, language experts, debug
+│   │   ├── delivery-specialists/ # Release, DevOps, compliance, security agents
+│   │   ├── architecture-specialists/ # Architecture review agents
+│   │   └── testing-specialists/  # Testing strategy agents
+│   │
+│   ├── scaffold/                 # Project scaffolding sub-system
+│   │   ├── api/                  # Scaffold public API contracts
+│   │   ├── core/                 # Aggregator (re-exports templates+engine+generators)
+│   │   ├── templates/            # Foundational layer: models, errors, IO, RCA, docs
+│   │   ├── engine/               # Orchestration layer: AI, cache, config, telemetry
+│   │   └── generators/           # Generation layer: language gens, pack/plugin/CI
+│   │
+│   ├── knowledge-graph/          # Knowledge graph engine
+│   ├── spi/                      # Extension SPI (pluggable capabilities)
+│   ├── refactorer/
+│   │   ├── api/                  # Refactoring request/response contracts
+│   │   └── engine/               # Code analysis + transformation engine
+│   └── cli-tools/                # CLI tooling utilities
 │
-├── infrastructure/               # Infrastructure Layer
-│   ├── datacloud/                # Data-Cloud integration
-│   │   ├── mappers/              # Domain ↔ Entity mappings
-│   │   ├── adapters/             # Repository implementations
-│   │   └── config/               # Data-Cloud configuration
-│   ├── security/                 # Authentication/Authorization
-│   ├── observability/            # Metrics, logging, tracing
-│   └── messaging/                # Event bus
+├── infrastructure/
+│   └── datacloud/                # Data-Cloud integration adapter
 │
-├── ai/                           # AI Layer
-│   ├── agents/                   # AI agent implementations
-│   ├── workflows/                # Multi-agent workflows
-│   ├── vector/                   # Vector search
-│   └── llm/                      # LLM integrations
+├── libs/java/
+│   └── yappc-domain/             # CANONICAL PUBLIC domain types (DTOs, enums, events)
+│                                 # This is the one true contract module; use this for deps
+│                                 # NOT core:yappc-domain-impl (internal only)
 │
-├── core/                         # Core Platform Layer
-│   ├── kg/                       # Knowledge Graph
-│   │   ├── ingestion/            # KG data ingestion
-│   │   ├── query/                # KG querying
-│   │   └── core/                 # KG engine
-│   ├── scaffold/                 # Project scaffolding
-│   │   ├── templates/            # Project templates
-│   │   ├── generator/            # Code generation
-│   │   └── api/                  # Scaffold API
-│   └── refactorer/               # Code refactoring
-│       ├── analyzer/             # Code analysis
-│       ├── transformer/          # Code transformation
-│       └── validator/            # Refactoring validation
+├── platform/                     # Ghatana platform libraries (do not modify)
 │
-├── app-creator/                  # Frontend Layer
-│   ├── apps/                     # Next.js applications
-│   │   └── web/                  # Main YAPPC UI
-│   └── libs/                     # Shared React components
+├── frontend/                     # TypeScript/React frontend
+│   ├── apps/                     # Web applications
+│   ├── libs/                     # Canonical libraries: yappc-ui, yappc-canvas, yappc-ai,
+│   │                             #   yappc-state, yappc-core (+ product-specific libs)
+│   └── compat/                   # Deprecated shims: base-ui, theme, utils, etc.
+│                                 #   (DO NOT add new packages here; migrate to libs/yappc-*)
 │
-├── backend/                      # Node.js Backend (User Services)
-│   ├── api/                      # Express/Fastify routes
-│   └── services/                 # User preferences, UI state
-│
-├── libs/                         # Shared Libraries
-│   └── java/yappc-domain/        # Shared domain models
-│       ├── model/                # Common DTOs
-│       └── enums/                # Shared enums
-│
-└── config/                       # Configuration
-    ├── application.yml           # Application config
-    └── datacloud.yml             # Data-Cloud config
+└── tools/                        # Validation & build tooling
+    └── validation-tests/         # Architectural fitness tests
 ```
 
 ---
 
 ## Technology Stack
 
-### Backend
+### Backend (Java)
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
 | **Runtime** | Java 21 | Modern Java features, virtual threads |
 | **Async I/O** | ActiveJ 6.0 | High-performance non-blocking I/O |
 | **Persistence** | Data-Cloud | Canonical data layer, multi-model storage |
-| **API** | ActiveJ HTTP, gRPC | REST and RPC endpoints |
-| **Observability** | Micrometer, OpenTelemetry | Metrics, traces, logs |
-| **AI/ML** | OpenAI, Anthropic, Ollama | LLM integrations |
-| **Vector Store** | Pinecone/Qdrant | Semantic search |
-| **Build** | Gradle 9.2.1 | Multi-module builds |
+| **HTTP** | ActiveJ HTTP (`libs:http-server`) | REST endpoints |
+| **Observability** | Micrometer + OpenTelemetry (`libs:observability`) | Metrics, traces, logs |
+| **AI/ML** | OpenAI, Anthropic, Ollama (`core/ai`) | LLM integrations |
+| **DI** | ActiveJ Inject | Dependency injection |
+| **Build** | Gradle 9.2.1 | Multi-module monorepo build |
 
-### Frontend
+### Frontend (TypeScript/React)
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
 | **Framework** | React 18, Next.js 14 | Modern React with SSR |
 | **Language** | TypeScript 5 | Type-safe development |
 | **Styling** | Tailwind CSS | Utility-first CSS |
-| **Canvas** | ReactFlow | Visual graph editor |
 | **State** | Jotai, TanStack Query | Client state, server state |
-| **Build** | Turbo, Vite | Fast builds |
+| **Build** | Turbo, Vite | Fast monorepo builds |
 
 ### Infrastructure
 
 | Service | Technology | Purpose |
 |---------|------------|---------|
-| **Cache** | Redis/Dragonfly | Session cache, rate limiting |
+| **Cache** | Redis/Dragonfly/Kvrocks | Session, rate-limit, local state |
 | **Database** | PostgreSQL | Relational data |
-| **Analytics** | ClickHouse | Time-series data |
-| **Search** | Elasticsearch | Full-text search |
-| **Message Queue** | RabbitMQ/Kafka | Async messaging |
 | **Container** | Docker | Containerization |
-| **Orchestration** | Kubernetes | Container orchestration |
+| **Orchestration** | Kubernetes | Production deployment |
 
 ---
 
 ## Design Principles
 
-### 1. Domain-Driven Design (DDD)
+### 1. Capability-Based Module Taxonomy
 
-**Bounded Contexts:**
-- Each module represents a bounded context
-- Clear ubiquitous language within each context
-- Anti-corruption layers at boundaries
+Each Gradle module owns exactly one capability. The `checkModuleSize` task enforces a hard limit of **150 Java source files per module**. When a module exceeds this limit it must be split — the scaffold sub-system's `templates/engine/generators` split and the agents `delivery-specialists` split are canonical examples.
 
-**Entities & Value Objects:**
-- Domain entities in `domain/model/`
-- Value objects are immutable
-- Repository pattern for persistence
+### 2. Async-First (ActiveJ Only)
 
-### 2. Async-First Architecture
+- All I/O returns `Promise<T>` — never block the event loop
+- Use `Promise.ofBlocking(executor, ...)` for unavoidable blocking operations
+- **NEVER** mix `CompletableFuture`, Spring Reactor/WebFlux, or other async runtimes
+- All async tests MUST extend `EventloopTestBase` from `libs:activej-test-utils`
 
-**ActiveJ Promise:**
 ```java
 public Promise<Project> createProject(CreateProjectRequest request) {
     return validateRequest(request)
-        .then(validated -> repositor y.save(validated))
+        .then(validated -> repository.save(validated))
         .then(saved -> publishEvent(saved))
-        .then(project -> Promise.of(project));
+        .map(__ -> saved);
 }
 ```
-
-**No Blocking:**
-- All I/O operations return `Promise<T>`
-- Use `Promise.ofBlocking()` for unavoidable blocking
-- EventloopTestBase for all async tests
 
 ### 3. Data-Cloud as Single Source of Truth
 
-**Repository Pattern:**
-```java
-public interface ProjectRepository {
-    Promise<Project> findById(String id);
-    Promise<List<Project>> findByTenant(String tenantId);
-    Promise<Project> save(Project project);
-}
+All persistent state goes through the Data-Cloud integration layer. Repository interfaces live in the domain; implementations live in `core/yappc-infrastructure` using the Data-Cloud adapters in `infrastructure/datacloud`.
+
+### 4. Multi-Tenancy at Every Layer
+
+- Every request carries an implicit `TenantContext`
+- Row-level isolation enforced in Data-Cloud
+- Module-level: all queries scope by `tenantId`
+
+### 5. Strict Dependency Flow
+
+```
+services (app)  →  core/services-platform  +  core/services-lifecycle
+                        │
+                        ▼
+              core/yappc-*  →  core/agents  →  core/scaffold  →  core/ai
+                                                                      ↓
+                           libs/java/yappc-domain  (public contract)
+                                                                      ↓
+                                               platform libraries (do not modify)
 ```
 
-**Implementation:**
-```java
-public class DataCloudProjectRepository implements ProjectRepository {
-    private final EntityStore entityStore;
-    private final ProjectMapper mapper;
-    
-    @Override
-    public Promise<Project> findById(String id) {
-        return entityStore.get("Project", id)
-            .map(entity -> mapper.toDomain(entity));
-    }
-}
-```
+**BOUNDARY RULE**: `core/*` modules must NOT directly import `products:aep:*` or
+`products:data-cloud:*` (except `data-cloud:spi` temporarily until adapter seams are in place).
+These external product deps should go through adapter ports defined in YAPPC.
+Current violations are annotated with `TODO(ADAPTER-SEAM)` in the relevant build files.
 
-### 4. Multi-Tenancy
-
-**Tenant Isolation:**
-- Every request carries tenant context
-- `TenantContext.getCurrentTenantId()` for implicit tenant
-- Row-level security in Data-Cloud
-- Separate vector collections per tenant
-
-**Security:**
-```java
-@TenantIsolated
-public class ProjectService {
-    public Promise<Project> getProject(String projectId) {
-        String tenantId = TenantContext.getCurrentTenantId();
-        return repository.findByIdAndTenant(projectId, tenantId);
-    }
-}
-```
-
-### 5. Event-Driven Communication
-
-**Domain Events:**
-```java
-@DomainEvent
-public record ProjectCreated(
-    String projectId,
-    String tenantId,
-    String name,
-    Instant createdAt
-) {}
-```
-
-**Event Publishing:**
-```java
-public Promise<Void> publishEvent(DomainEvent event) {
-    return eventBus.publish(event.topic(), event);
-}
-```
+Cross-product integration is via Data-Cloud events and AEP (`agentic-event-processor`) only.
 
 ---
 
-## Data Flow Patterns
+## Scaffold Sub-System
 
-### 1. Query Flow (Read)
+The scaffold sub-system generates project scaffolding, manages packs/plugins, and runs language-specific generators. It was split from a 254-file monolith into three focused modules:
 
-```
-User Request
-    ↓
-API Layer (HTTP/gRPC)
-    ↓
-Domain Service
-    ↓
-Repository Interface
-    ↓
-Data-Cloud Adapter
-    ↓
-Data-Cloud Entity Store
-    ↓
-Underlying Storage (Postgres/Redis)
-```
+| Module | Purpose | File Count |
+|--------|---------|-----------|
+| `scaffold:templates` | Foundational types: model, error, IO, RCA, docs, validation | ~65 files |
+| `scaffold:engine` | Orchestration: AI-assist, cache, config, telemetry, deployment | ~46 files |
+| `scaffold:generators` | Language generators + pack/plugin/CI/multi-repo builders | ~143 files |
+| `scaffold:core` | Aggregator — re-exports all three via `api()` deps | 0 source files |
+| `scaffold:api` | Public API contracts for scaffold consumers | — |
 
-### 2. Command Flow (Write)
-
-```
-User Command
-    ↓
-API Layer (validation)
-    ↓
-Domain Service (business logic)
-    ↓
-Domain Entity (state change)
-    ↓
-Repository (persistence)
-    ↓
-Data-Cloud Entity Store
-    ↓
-Underlying Storage
-    ↓
-Domain Event Published
-    ↓
-Event Handlers (async)
-```
-
-### 3. AI Workflow Flow
-
-```
-User Prompt
-    ↓
-AI Agent (Copilot)
-    ↓
-LLM API (OpenAI/Anthropic/Ollama)
-    ↓
-Response Parsing
-    ↓
-Code Generation
-    ↓
-Validation & Testing
-    ↓
-Storage in Data-Cloud
-    ↓
-Event: CodeGenerated
-```
+**Dependency chain**: `templates` ← `engine` ← `generators` ← `core(aggregator)`
 
 ---
 
-## Security Architecture
+## Agents Sub-System
 
-### Authentication
+YAPPC's AI agents are organized by specialization domain:
 
-- **JWT-based** authentication
-- **OAuth 2.0** for third-party integrations
-- **API Keys** for programmatic access
+| Module | Responsibility |
+|--------|---------------|
+| `agents:common` | Shared base types, mixins, utilities |
+| `agents:runtime` | ActiveJ execution runtime for agent turns |
+| `agents:workflow` | Multi-step agent coordination / pipeline |
+| `agents:code-specialists` | Code analysis, language experts, debug agents |
+| `agents:delivery-specialists` | Release, DevOps, compliance, security pipeline agents |
+| `agents:architecture-specialists` | Architecture review + fitness agents |
+| `agents:testing-specialists` | Testing strategy, coverage, mutation agents |
 
-### Authorization
-
-- **Role-Based Access Control (RBAC)** - User, Admin, Owner roles
-- **Resource-Based** - Permission checks at resource level
-- **Tenant-Scoped** - All resources scoped to tenant
-
-### Tenant Isolation
-
-```java
-// Implicit tenant context
-public Promise<List<Project>> listProjects() {
-    String tenantId = TenantContext.getCurrentTenantId();
-    return repository.findByTenant(tenantId);
-}
-
-// Explicit tenant validation
-public Promise<Project> getProject(String projectId) {
-    return repository.findById(projectId)
-        .then(project -> {
-            enforcer.validateTenantAccess(project.getTenantId());
-            return Promise.of(project);
-        });
-}
-```
+`code-specialists` re-exports `delivery-specialists` via `api()` for backward compatibility with consumers that import both.
 
 ---
 
-## Observability
+## Testing Standards
 
-### Metrics
-
-- **Micrometer** for application metrics
-- **JVM metrics** - Memory, GC, threads
-- **Business metrics** - Projects created, AI calls, etc.
-- **Custom metrics** via `@Timed`, `@Counted`
-
-### Distributed Tracing
-
-- **OpenTelemetry** for trace collection
-- **Trace propagation** across services
-- **Span attributes** for context
-
-### Logging
-
-- **Structured logging** with SLF4J + Logback
-- **Correlation IDs** for request tracking
-- **Tenant ID** in all log statements
-- **Log levels** configurable per module
-
----
-
-## Performance Targets
-
-| Metric | Target | Current |
-|--------|--------|---------|
-| API Response Time (p95) | <200ms | ~150ms |
-| API Response Time (p99) | <500ms | ~380ms |
-| Throughput | >1000 req/s | ~850 req/s |
-| Database Query (p95) | <50ms | ~35ms |
-| AI Generation (p95) | <3s | ~2.5s |
-| Memory Usage | <2GB | ~1.5GB |
-| CPU Usage (avg) | <50% | ~35% |
-
----
-
-## Deployment Architecture
-
-### Development
-
-```
-Developer Laptop
-├── Java Backend (localhost:8080)
-├── React Frontend (localhost:3000)
-├── Redis (localhost:6379)
-├── PostgreSQL (localhost:5432)
-└── Ollama (localhost:11434)
-```
-
-### Production (Kubernetes)
-
-```
-Load Balancer (Ingress)
-    ↓
-┌──────────────────────────────────┐
-│  YAPPC Backend (3 replicas)      │
-│  - Java + ActiveJ                │
-│  - Resource: 2 CPU, 4GB RAM      │
-└──────────────────────────────────┘
-    ↓
-┌──────────────────────────────────┐
-│  Data-Cloud Service              │
-│  - Shared platform service       │
-└──────────────────────────────────┘
-    ↓
-┌──────────────────────────────────┐
-│  Backing Services                │
-│  - PostgreSQL (RDS)              │
-│  - Redis (ElastiCache)           │
-│  - ClickHouse                    │
-│  - Vector Store (Pinecone)       │
-└──────────────────────────────────┘
-```
-
----
-
-## API Design
-
-### REST API
-
-**Base URL:** `https://api.yappc.ghatana.com/v1`
-
-**Endpoints:**
-```
-GET    /projects                 # List projects
-POST   /projects                 # Create project
-GET    /projects/{id}            # Get project
-PUT    /projects/{id}            # Update project
-DELETE /projects/{id}            # Delete project
-
-POST   /projects/{id}/generate   # Generate code
-POST   /projects/{id}/validate   # Validate project
-POST   /projects/{id}/deploy     # Deploy project
-```
-
-**Authentication:**
-```
-Authorization: Bearer <jwt_token>
-X-Tenant-ID: <tenant_id>
-```
-
-### gRPC API
-
-**Service Definition:**
-```protobuf
-service ProjectService {
-  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
-  rpc GetProject(GetProjectRequest) returns (Project);
-  rpc CreateProject(CreateProjectRequest) returns (Project);
-  rpc UpdateProject(UpdateProjectRequest) returns (Project);
-  rpc DeleteProject(DeleteProjectRequest) returns (Empty);
-}
-```
-
----
-
-## Testing Strategy
-
-### Unit Tests
-
-- **Coverage target:** 80%+
-- **Async tests:** Use `EventloopTestBase`
-- **Mocking:** Mockito for dependencies
-- **Example:**
+### Unit Tests (Java)
 
 ```java
 class ProjectServiceTest extends EventloopTestBase {
     @Test
     void shouldCreateProject() {
-        // Given
         ProjectService service = new ProjectService(repository);
-        CreateProjectRequest request = new CreateProjectRequest("My Project");
-        
-        // When
-        Project result = runPromise(() -> service.createProject(request));
-        
-        // Then
+        Project result = runPromise(() -> service.createProject(new CreateProjectRequest("My Project")));
         assertThat(result.getName()).isEqualTo("My Project");
     }
 }
 ```
 
-### Integration Tests
+- **MUST** extend `EventloopTestBase` (from `libs:activej-test-utils`) for all async tests
+- **NEVER** call `.getResult()` directly on a `Promise`
+- Use `TestDataBuilders` from the same library for test fixtures
 
-- Test full stack (API → Domain → Data-Cloud)
-- Use `@IntegrationTest` annotation
-- Test with real Data-Cloud instance
+### Frontend Tests
 
-### E2E Tests
-
-- Playwright for UI testing
-- Test complete user workflows
-- Run against staging environment
+- `React Testing Library` + `Jest` for component tests
+- Do NOT mock the Navigator — mock individual screens instead
+- See `frontend/apps/JEST_TESTING_GUIDE.md` for React Native specifics
 
 ---
 
-## Migration Patterns
+## Observability
 
-### ActiveJ Migration
+All modules use the platform observability stack from `libs:observability`:
 
-**Before (blocking):**
-```java
-public Project getProject(String id) {
-    return repository.findById(id);
-}
-```
+- **Metrics**: Micrometer (Prometheus export)
+- **Tracing**: OpenTelemetry (OTLP export)
+- **Logging**: SLF4J + structured JSON; all logs include `tenantId` and `correlationId`
 
-**After (non-blocking):**
-```java
-public Promise<Project> getProject(String id) {
-    return repository.findById(id);
-}
-```
+---
 
-### Data-Cloud Migration
+## Build Commands
 
-**Before (JDBC):**
-```java
-@Entity
-public class Project {
-    @Id private String id;
-    @Column private String name;
-}
-```
+```bash
+# Full YAPPC build
+./gradlew :products:yappc:build
 
-**After (Data-Cloud):**
-```java
-// Domain model (unchanged)
-public class Project {
-    private String id;
-    private String name;
-}
+# Check module size limits (max 150 files per module)
+./gradlew :products:yappc:checkModuleSize
 
-// Mapper
-public class ProjectMapper {
-    public Entity toEntity(Project project) {
-        return Entity.builder()
-            .type("Project")
-            .id(project.getId())
-            .attribute("name", project.getName())
-            .build();
-    }
-}
+# Format
+./gradlew :products:yappc:spotlessApply
+
+# Static analysis
+./gradlew :products:yappc:checkstyleMain :products:yappc:pmdMain
 ```
 
 ---
 
 ## References
 
-### Architecture Decision Records (ADRs)
-
-- [ADR-001: ActiveJ Adoption](docs/architecture/ADR-001-activej-adoption.md)
-- [ADR-002: Data-Cloud Integration](docs/architecture/ADR-002-datacloud-integration.md)
-- [ADR-003: Multi-Tenancy Strategy](docs/architecture/ADR-003-multi-tenancy.md)
-
 ### Related Documentation
 
-- [Developer Guide](DEVELOPER_GUIDE.md)
+- [Developer Onboarding](ONBOARDING.md)
 - [Deployment Guide](guides/DEPLOYMENT_GUIDE.md)
-- [Testing Guide](guides/ACTIVEJ_TEST_MIGRATION_GUIDE.md)
+- [ActiveJ Testing Guide](guides/ACTIVEJ_TEST_MIGRATION_GUIDE.md)
+- [Scaffold Module Guide](SCAFFOLD_GUIDE.md)
+
+### Architecture Decision Records (ADRs)
+
+- [ADR-001: ActiveJ Adoption](adr/ADR-001-activej-adoption.md)
+- [ADR-002: Data-Cloud Integration](adr/ADR-002-datacloud-integration.md)
+- [ADR-003: Capability-Based Module Taxonomy](adr/ADR-003-module-taxonomy.md)
 
 ---
 
 **Status:** Living Document  
 **Owner:** Architecture Team  
 **Review Cycle:** Quarterly  
-**Next Review:** 2026-04-27
+**Next Review:** 2026-06-25

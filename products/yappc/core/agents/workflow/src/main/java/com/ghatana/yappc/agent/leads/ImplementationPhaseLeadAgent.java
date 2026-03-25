@@ -6,7 +6,8 @@ import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.yappc.agent.*;
 import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.YAPPCAgentBase;
-import com.ghatana.yappc.agent.YAPPCAgentRegistry;
+import com.ghatana.yappc.agent.YappcAgentRegistryAdapter;
+import com.ghatana.yappc.agent.AepEventPublisher;
 import io.activej.promise.Promise;
 import java.util.*;
 import org.jetbrains.annotations.NotNull;
@@ -30,15 +31,16 @@ public class ImplementationPhaseLeadAgent
 
   private static final Logger log = LoggerFactory.getLogger(ImplementationPhaseLeadAgent.class);
 
-  private final YAPPCAgentRegistry agentRegistry;
+    private final YappcAgentRegistryAdapter agentRegistry;
   private final MemoryStore memoryStore;
 
   public ImplementationPhaseLeadAgent(
-      @NotNull YAPPCAgentRegistry agentRegistry,
+      @NotNull YappcAgentRegistryAdapter agentRegistry,
       @NotNull MemoryStore memoryStore,
       @NotNull
           OutputGenerator<StepRequest<ImplementationRequest>, StepResult<ImplementationResult>>
-              generator) {
+          generator,
+      @NotNull AepEventPublisher eventPublisher) {
     super(
         "ImplementationPhaseLeadAgent",
         "implementation.coordinate",
@@ -48,7 +50,8 @@ public class ImplementationPhaseLeadAgent
             "#/definitions/ImplementationResult",
             List.of("implementation", "build", "codegen"),
             Map.of("description", "Coordinates implementation phase", "version", "1.0.0")),
-        generator);
+          generator,
+          eventPublisher);
     this.agentRegistry = agentRegistry;
     this.memoryStore = memoryStore;
   }

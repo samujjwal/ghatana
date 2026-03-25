@@ -41,7 +41,8 @@ public class UxDirectorAgent extends YAPPCAgentBase<UxDirectorInput, UxDirectorO
             "#/definitions/UxDirectorOutput",
             List.of("strategic", "ux-design"),
             Map.of("description", "Strategic UX director ensuring coherent user experience", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

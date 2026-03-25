@@ -1,4 +1,0 @@
-# YAPPC Generator Plugin Service Provider Interface
-# Add generator plugin implementations here, one per line
-# Example:
-# com.example.MyCustomGenerator

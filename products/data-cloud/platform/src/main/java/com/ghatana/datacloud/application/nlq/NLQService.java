@@ -37,6 +37,8 @@ import java.util.regex.Pattern;
 public class NLQService {
 
     private static final int MAX_FILTERS = 10;
+    /** Maximum number of rows an NLQ query may return. Guards against unbounded full-table scans. */
+    private static final int MAX_NLQ_LIMIT = 10_000;
     /** Allowlist pattern for SQL identifiers (collection names, field names). */
     private static final Pattern SAFE_IDENTIFIER = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]{0,127}$");
     private static final double MIN_CONFIDENCE_THRESHOLD = 0.5;
@@ -48,9 +50,11 @@ public class NLQService {
     private static final Pattern NUMERIC_COMPARISON = Pattern.compile(
         "(\\w+)\\s*(>|>=|<|<=)\\s*(\\d+(?:\\.\\d+)?)", Pattern.CASE_INSENSITIVE);
     private static final Pattern EQUALS_PATTERN = Pattern.compile(
-        "(\\w+)\\s+(?:is|=|equals)\\s+(\\w+)", Pattern.CASE_INSENSITIVE);
+        // M1: value may be quoted or unquoted multi-word; (\w+) only matched single words
+        "(\\w+)\\s+(?:is|=|equals)\\s+\"?([^\",]+?)\"?\\s*$", Pattern.CASE_INSENSITIVE);
+    // Group 1: field name; group 2: value (optionally quoted, may contain spaces)
     private static final Pattern CONTAINS_PATTERN = Pattern.compile(
-        "(\\w+)\\s+contains\\s+(\\w+)", Pattern.CASE_INSENSITIVE);
+        "(\\w+)\\s+contains\\s+\"?([^\",]+?)\"?\\s*$", Pattern.CASE_INSENSITIVE);
     private static final Pattern SORT_PATTERN = Pattern.compile(
         "sorted?\\s+by\\s+(\\w+)(?:\\s+(asc(?:ending)?|desc(?:ending)?))?", Pattern.CASE_INSENSITIVE);
     private static final Pattern AND_SPLIT = Pattern.compile(
@@ -136,7 +140,7 @@ public class NLQService {
                 sortExpr = String.join(", ", sortParts);
             }
 
-            QuerySpec querySpec = QuerySpec.of(sql.toString(), params, 0, 50, sortExpr);
+            QuerySpec querySpec = QuerySpec.of(sql.toString(), params, 0, MAX_NLQ_LIMIT, sortExpr);
 
             QueryPlan plan = new QueryPlan(
                 UUID.randomUUID().toString(),

@@ -41,7 +41,8 @@ public class DocumentationWriterAgent extends YAPPCAgentBase<DocumentationWriter
             "#/definitions/DocumentationWriterOutput",
             List.of("documentation", "generation"),
             Map.of("description", "Worker agent that generates documentation from code and specifications", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

@@ -41,7 +41,8 @@ public class DbGuardianAgent extends YAPPCAgentBase<DbGuardianInput, DbGuardianO
             "#/definitions/DbGuardianOutput",
             List.of("database", "schema", "migration", "optimization"),
             Map.of("description", "Expert database guardian for schema design, migration and query optimization", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

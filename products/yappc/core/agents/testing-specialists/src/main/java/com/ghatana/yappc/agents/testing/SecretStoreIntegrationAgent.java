@@ -41,7 +41,8 @@ public class SecretStoreIntegrationAgent extends YAPPCAgentBase<SecretStoreInteg
             "#/definitions/SecretStoreIntegrationOutput",
             List.of("integration", "secret-management", "vault"),
             Map.of("description", "Integration bridge agent for secret management systems", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

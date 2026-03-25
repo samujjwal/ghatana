@@ -13,7 +13,7 @@ import axios, { type AxiosInstance } from 'axios';
 /**
  * API base URL.
  *
- * - Dev:  empty string — Vite proxy forwards `/api` to `localhost:8081`
+ * - Dev:  empty string — Vite proxy forwards `/api` → `localhost:8090` (Java backend)
  * - Prod: set `VITE_AEP_API_URL` to the backend origin for cross-origin
  */
 export const API_BASE_URL: string = import.meta.env.VITE_AEP_API_URL ?? '';

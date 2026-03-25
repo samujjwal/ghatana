@@ -41,7 +41,8 @@ public class FullLifecycleOrchestratorAgent extends YAPPCAgentBase<FullLifecycle
             "#/definitions/FullLifecycleOrchestratorOutput",
             List.of("strategic", "orchestration", "lifecycle"),
             Map.of("description", "Orchestrates the complete SDLC lifecycle from intake to production", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

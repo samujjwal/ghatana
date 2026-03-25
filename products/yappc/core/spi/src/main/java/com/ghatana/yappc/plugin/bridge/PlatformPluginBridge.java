@@ -1,6 +1,6 @@
 package com.ghatana.yappc.plugin.bridge;
 
-import com.ghatana.platform.plugin.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.Plugin;
 import com.ghatana.platform.plugin.PluginCapability;
 import com.ghatana.platform.plugin.PluginCompatibility;

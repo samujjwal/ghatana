@@ -218,9 +218,9 @@ public class TelemedicineService {
         return dataCloud.readData(new DataReadRequest(SESSION_DATASET, sessionId, Map.of()))
                 .map(result -> {
                     if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable(TypedDataSerializer.fromBytes(result.getData(), TeleSession.class));
+                    return Optional.ofNullable((TeleSession) TypedDataSerializer.fromBytes(result.getData(), TeleSession.class));
                 })
-                .whenException(e -> Promise.of(Optional.empty()));
+                ;
     }
 
     /**
@@ -273,13 +273,13 @@ public class TelemedicineService {
                 Map.of("id", "string", "patientId", "string", "status", "string",
                         "scheduledAt", "timestamp"),
                 Map.of("retention", "10years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 AUDIT_DATASET,
                 Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
                 Map.of("retention", "10years")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(sessions, audit).map($ -> null);
     }
@@ -293,7 +293,7 @@ public class TelemedicineService {
                         new AuditEntry(auditId, Instant.now(), action, patientId, details),
                         "TelemedicineAuditEntry", 1),
                 Map.of("timestamp", Instant.now().toString())
-        )).whenException(e -> {});
+        ));
     }
 
     private String generateId(String prefix) {

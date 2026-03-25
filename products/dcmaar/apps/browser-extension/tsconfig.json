@@ -26,7 +26,7 @@
       "@ghatana/dcmaar-browser-extension-core": [
         "../../../../libs/typescript/browser-extension-core/src"
       ],
-      "@ghatana/dcmaar-types": ["../../../../libs/typescript/types/src"],
+      "@dcmaar/types": ["../../../../libs/typescript/types/src"],
       "@ghatana/dcmaar-plugin-abstractions": [
         "../../../../libs/typescript/plugin-abstractions/src"
       ],

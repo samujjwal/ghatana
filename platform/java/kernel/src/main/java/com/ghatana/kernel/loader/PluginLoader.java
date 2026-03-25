@@ -1,6 +1,6 @@
 package com.ghatana.kernel.loader;
 
-import com.ghatana.kernel.plugin.ProductPlugin;
+import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.registry.PluginRegistry;
 
 import java.io.IOException;
@@ -63,15 +63,15 @@ public class PluginLoader {
             URLClassLoader classLoader = createPluginClassLoader(pluginJar);
             
             // Load plugin class using ServiceLoader
-            ServiceLoader<ProductPlugin> loader = ServiceLoader.load(ProductPlugin.class, classLoader);
+            ServiceLoader<KernelPlugin> loader = ServiceLoader.load(KernelPlugin.class, classLoader);
             
-            for (ProductPlugin plugin : loader) {
-                System.out.println("Found plugin: " + plugin.getProductId() + " v" + plugin.getProductVersion());
+            for (KernelPlugin plugin : loader) {
+                System.out.println("Found plugin: " + plugin.getModuleId() + " v" + plugin.getVersion());
                 
                 // Validate and register plugin
                 pluginRegistry.registerPlugin(plugin);
                 
-                System.out.println("Successfully registered plugin: " + plugin.getProductId());
+                System.out.println("Successfully registered plugin: " + plugin.getModuleId());
             }
             
         } catch (Exception e) {
@@ -81,38 +81,34 @@ public class PluginLoader {
 
     /**
      * Unload plugin by ID.
-     * 
-     * @param productId the product identifier
+     *
+     * @param pluginId the plugin identifier
      */
-    public void unloadPlugin(String productId) {
+    public void unloadPlugin(String pluginId) {
         try {
-            pluginRegistry.unregisterPlugin(productId);
-            System.out.println("Successfully unloaded plugin: " + productId);
+            pluginRegistry.unregisterPlugin(pluginId);
+            System.out.println("Successfully unloaded plugin: " + pluginId);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to unload plugin: " + productId, e);
+            throw new RuntimeException("Failed to unload plugin: " + pluginId, e);
         }
     }
 
     /**
      * Reload plugin.
-     * 
-     * @param productId the product identifier
+     *
+     * @param pluginId the plugin identifier
      */
-    public void reloadPlugin(String productId) {
-        // Unload first
-        unloadPlugin(productId);
-        
-        // Find and reload the plugin JAR
+    public void reloadPlugin(String pluginId) {
+        unloadPlugin(pluginId);
         try {
             Path pluginPath = Path.of(pluginDirectory);
             Files.walk(pluginPath)
                 .filter(Files::isRegularFile)
                 .filter(path -> path.toString().endsWith(".jar"))
-                .filter(path -> path.getFileName().toString().contains(productId))
+                .filter(path -> path.getFileName().toString().contains(pluginId))
                 .forEach(this::loadPlugin);
-                
         } catch (IOException e) {
-            throw new RuntimeException("Failed to reload plugin: " + productId, e);
+            throw new RuntimeException("Failed to reload plugin: " + pluginId, e);
         }
     }
 

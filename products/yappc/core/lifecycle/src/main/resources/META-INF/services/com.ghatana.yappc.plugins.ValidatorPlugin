@@ -1,4 +1,0 @@
-# YAPPC Validator Plugin Service Provider Interface
-# Add validator plugin implementations here, one per line
-# Example:
-# com.example.MyCustomValidator

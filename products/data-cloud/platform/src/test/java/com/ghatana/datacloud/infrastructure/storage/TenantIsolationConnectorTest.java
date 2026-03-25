@@ -69,9 +69,9 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        doNothing().when(metrics).incrementCounter(anyString(), any(String[].class));
-        doNothing().when(metrics).recordTimer(anyString(), anyLong(), any(String[].class));
-        doNothing().when(auditLogger).logDataModification(any(), any(), any(), any(), anyBoolean());
+        lenient().doNothing().when(metrics).incrementCounter(anyString(), any(String[].class));
+        lenient().doNothing().when(metrics).recordTimer(anyString(), anyLong(), any(String[].class));
+        lenient().doNothing().when(auditLogger).logDataModification(any(), any(), any(), any(), anyBoolean());
         connector = new PostgresJsonbConnector(entityRepository, metrics, auditLogger);
     }
 
@@ -286,18 +286,18 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
     class QueryTenantScoping {
 
         @Test
-        @DisplayName("query() passes caller's tenantId to repository.findAll()")
+        @DisplayName("query() passes caller's tenantId to repository.findByQuery()")
         void query_passesCallerTenantToFindAll() {
-            when(entityRepository.findAll(eq(TENANT_A), anyString(), any(), any(), anyInt(), anyInt()))
+            when(entityRepository.findByQuery(eq(TENANT_A), anyString(), any()))
                     .thenReturn(Promise.of(List.of()));
-            when(entityRepository.countByFilter(eq(TENANT_A), anyString(), any()))
+            when(entityRepository.count(eq(TENANT_A), anyString()))
                     .thenReturn(Promise.of(0L));
 
             QuerySpec spec = QuerySpec.builder().limit(10).offset(0).build();
             runPromise(() -> connector.query(COLLECTION_ID, TENANT_A, spec));
 
             ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-            verify(entityRepository).findAll(captor.capture(), anyString(), any(), any(), anyInt(), anyInt());
+            verify(entityRepository).findByQuery(captor.capture(), anyString(), any());
             assertThat(captor.getValue()).isEqualTo(TENANT_A);
         }
 
@@ -305,9 +305,9 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         @DisplayName("query() with tenant-B context never returns tenant-A data")
         void query_tenantBContext_neverReturnsTenantAEntities() {
             // Repository returns empty for tenant-B (correct scoping)
-            when(entityRepository.findAll(eq(TENANT_B), anyString(), any(), any(), anyInt(), anyInt()))
+            when(entityRepository.findByQuery(eq(TENANT_B), anyString(), any()))
                     .thenReturn(Promise.of(List.of()));
-            when(entityRepository.countByFilter(eq(TENANT_B), anyString(), any()))
+            when(entityRepository.count(eq(TENANT_B), anyString()))
                     .thenReturn(Promise.of(0L));
 
             QuerySpec spec = QuerySpec.builder().limit(10).offset(0).build();
@@ -315,8 +315,8 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
                     () -> connector.query(COLLECTION_ID, TENANT_B, spec));
 
             assertThat(result.entities()).isEmpty();
-            // Must never call findAll with tenant-A's ID
-            verify(entityRepository, never()).findAll(eq(TENANT_A), anyString(), any(), any(), anyInt(), anyInt());
+            // Must never call findByQuery with tenant-A's ID
+            verify(entityRepository, never()).findByQuery(eq(TENANT_A), anyString(), any());
         }
 
         @Test
@@ -333,9 +333,9 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         void query_resultsContainOnlyRequestedTenant() {
             Entity entityA1 = entityFor(TENANT_A);
             Entity entityA2 = entityFor(TENANT_A);
-            when(entityRepository.findAll(eq(TENANT_A), anyString(), any(), any(), anyInt(), anyInt()))
+            when(entityRepository.findByQuery(eq(TENANT_A), anyString(), any()))
                     .thenReturn(Promise.of(List.of(entityA1, entityA2)));
-            when(entityRepository.countByFilter(eq(TENANT_A), anyString(), any()))
+            when(entityRepository.count(eq(TENANT_A), anyString()))
                     .thenReturn(Promise.of(2L));
 
             QuerySpec spec = QuerySpec.builder().limit(10).offset(0).build();

@@ -250,9 +250,9 @@ public class BillingService {
         return dataCloud.readData(new DataReadRequest(ENCOUNTER_DATASET, encounterId, Map.of()))
                 .map(result -> {
                     if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable(TypedDataSerializer.fromBytes(result.getData(), BillingEncounter.class));
+                    return Optional.ofNullable((BillingEncounter) TypedDataSerializer.fromBytes(result.getData(), BillingEncounter.class));
                 })
-                .whenException(e -> Promise.of(Optional.empty()));
+                ;
     }
 
     /**
@@ -269,9 +269,9 @@ public class BillingService {
         return dataCloud.readData(new DataReadRequest(CLAIM_DATASET, claimId, Map.of()))
                 .map(result -> {
                     if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable(TypedDataSerializer.fromBytes(result.getData(), InsuranceClaim.class));
+                    return Optional.ofNullable((InsuranceClaim) TypedDataSerializer.fromBytes(result.getData(), InsuranceClaim.class));
                 })
-                .whenException(e -> Promise.of(Optional.empty()));
+                ;
     }
 
     /**
@@ -307,20 +307,20 @@ public class BillingService {
                 Map.of("id", "string", "patientId", "string", "status", "string",
                         "createdAt", "timestamp"),
                 Map.of("retention", "10years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> claims = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 CLAIM_DATASET,
                 Map.of("id", "string", "patientId", "string", "status", "string",
                         "submittedAt", "timestamp"),
                 Map.of("retention", "10years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 AUDIT_DATASET,
                 Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(encounters, claims, audit).map($ -> null);
     }
@@ -334,7 +334,7 @@ public class BillingService {
                         new AuditEntry(auditId, Instant.now(), action, patientId, details),
                         "BillingAuditEntry", 1),
                 Map.of("timestamp", Instant.now().toString())
-        )).whenException(e -> {});
+        ));
     }
 
     private String generateId(String prefix) {

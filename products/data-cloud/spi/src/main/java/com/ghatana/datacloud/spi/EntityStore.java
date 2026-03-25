@@ -230,12 +230,17 @@ public interface EntityStore {
         int offset,
         int limit
     ) {
+        public static final int DEFAULT_LIMIT = 100;
+
         public QuerySpec {
             Objects.requireNonNull(collection, "collection required");
             filters = filters != null ? List.copyOf(filters) : List.of();
             sorts = sorts != null ? List.copyOf(sorts) : List.of();
             if (offset < 0) offset = 0;
-            if (limit <= 0) limit = 100;
+            if (limit < 0) {
+                throw new IllegalArgumentException("limit must be >= 0");
+            }
+            if (limit == 0) limit = DEFAULT_LIMIT;
         }
 
         public static Builder builder() {
@@ -247,7 +252,7 @@ public interface EntityStore {
             private List<Filter> filters = List.of();
             private List<Sort> sorts = List.of();
             private int offset = 0;
-            private int limit = 100;
+            private int limit = DEFAULT_LIMIT;
 
             public Builder collection(String collection) {
                 this.collection = collection;

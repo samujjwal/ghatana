@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.plugins;
 
 import com.ghatana.platform.plugin.*;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.impl.DefaultPluginContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -90,8 +91,8 @@ class UnifiedPluginSpiTest extends EventloopTestBase {
             DefaultHealthPlugin plugin = new DefaultHealthPlugin("health-default");
             HealthStatus status = runPromise(() -> plugin.healthCheck());
 
-            assertThat(status.healthy()).isTrue();
-            assertThat(status.message()).isEqualTo("OK");
+            assertThat(status.isHealthy()).isTrue();
+            assertThat(status.getMessage()).isEqualTo("OK");
         }
 
         @Test
@@ -270,33 +271,33 @@ class UnifiedPluginSpiTest extends EventloopTestBase {
         @DisplayName("ok() creates healthy status with default message")
         void okDefault() {
             HealthStatus status = HealthStatus.ok();
-            assertThat(status.healthy()).isTrue();
-            assertThat(status.message()).isEqualTo("OK");
-            assertThat(status.details()).isEmpty();
+            assertThat(status.isHealthy()).isTrue();
+            assertThat(status.getMessage()).isEqualTo("OK");
+            assertThat(status.getDetails()).isEmpty();
         }
 
         @Test
         @DisplayName("ok(message) creates healthy status with custom message")
         void okWithMessage() {
             HealthStatus status = HealthStatus.ok("All good");
-            assertThat(status.healthy()).isTrue();
-            assertThat(status.message()).isEqualTo("All good");
+            assertThat(status.isHealthy()).isTrue();
+            assertThat(status.getMessage()).isEqualTo("All good");
         }
 
         @Test
         @DisplayName("ok(message, details) creates healthy status with details")
         void okWithDetails() {
             HealthStatus status = HealthStatus.ok("Healthy", Map.of("latency", 5));
-            assertThat(status.healthy()).isTrue();
-            assertThat(status.details()).containsEntry("latency", 5);
+            assertThat(status.isHealthy()).isTrue();
+            assertThat(status.getDetails()).containsEntry("latency", 5);
         }
 
         @Test
         @DisplayName("error(message) creates unhealthy status")
         void errorWithMessage() {
             HealthStatus status = HealthStatus.error("Connection refused");
-            assertThat(status.healthy()).isFalse();
-            assertThat(status.message()).isEqualTo("Connection refused");
+            assertThat(status.isHealthy()).isFalse();
+            assertThat(status.getMessage()).isEqualTo("Connection refused");
         }
 
         @Test
@@ -304,17 +305,17 @@ class UnifiedPluginSpiTest extends EventloopTestBase {
         void errorWithThrowable() {
             Exception ex = new RuntimeException("boom");
             HealthStatus status = HealthStatus.error("Failed", ex);
-            assertThat(status.healthy()).isFalse();
-            assertThat(status.details()).containsEntry("error", "RuntimeException");
-            assertThat(status.details()).containsEntry("errorMessage", "boom");
+            assertThat(status.isHealthy()).isFalse();
+            assertThat(status.getDetails()).containsEntry("error", "RuntimeException");
+            assertThat(status.getDetails()).containsEntry("errorMessage", "boom");
         }
 
         @Test
         @DisplayName("unhealthy(message) creates unhealthy status")
         void unhealthyWithMessage() {
             HealthStatus status = HealthStatus.unhealthy("Degraded");
-            assertThat(status.healthy()).isFalse();
-            assertThat(status.message()).isEqualTo("Degraded");
+            assertThat(status.isHealthy()).isFalse();
+            assertThat(status.getMessage()).isEqualTo("Degraded");
         }
     }
 
@@ -462,7 +463,7 @@ class UnifiedPluginSpiTest extends EventloopTestBase {
             registry.register(new TestPlugin("healthy-2"));
 
             HealthStatus aggregate = runPromise(() -> registry.aggregateHealth());
-            assertThat(aggregate.healthy()).isTrue();
+            assertThat(aggregate.isHealthy()).isTrue();
         }
     }
 
@@ -639,14 +640,14 @@ class UnifiedPluginSpiTest extends EventloopTestBase {
             assertThat(plugin.getState()).isEqualTo(PluginState.STARTED);
 
             HealthStatus health = runPromise(() -> plugin.healthCheck());
-            assertThat(health.healthy()).isTrue();
+            assertThat(health.isHealthy()).isTrue();
 
             runPromise(() -> plugin.stop());
             assertThat(plugin.getState()).isEqualTo(PluginState.STOPPED);
 
             // After stop, health check should report unhealthy
             HealthStatus stoppedHealth = runPromise(() -> plugin.healthCheck());
-            assertThat(stoppedHealth.healthy()).isFalse();
+            assertThat(stoppedHealth.isHealthy()).isFalse();
         }
 
         @Test
@@ -667,7 +668,7 @@ class UnifiedPluginSpiTest extends EventloopTestBase {
             assertThat(plugin.getState()).isEqualTo(PluginState.STARTED);
 
             HealthStatus health = runPromise(() -> plugin.healthCheck());
-            assertThat(health.healthy()).isTrue();
+            assertThat(health.isHealthy()).isTrue();
 
             runPromise(() -> plugin.shutdown());
             assertThat(plugin.getState()).isEqualTo(PluginState.STOPPED);

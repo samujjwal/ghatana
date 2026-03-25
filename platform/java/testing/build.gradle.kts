@@ -18,51 +18,51 @@ java {
 }
 
 dependencies {
-    // Platform Core
+    // Platform Core — exposed as api so consumers get core types transitively
     api(project(":platform:java:core"))
     api(project(":platform:java:runtime"))
     
     // Nullability annotations
     compileOnly(libs.jetbrains.annotations)
     
-    // JSON Path
-    api(libs.json.path)
+    // JSON Path — internal implementation detail, not exported
+    implementation(libs.json.path)
     
-    // Data Faker
-    api(libs.datafaker)
+    // Data Faker — internal implementation detail, not exported
+    implementation(libs.datafaker)
     
-    // gRPC
-    api(libs.grpc.api)
-    api(libs.grpc.stub)
+    // gRPC — internal implementation detail, not exported
+    implementation(libs.grpc.api)
+    implementation(libs.grpc.stub)
     
-    // JUnit 5
+    // JUnit 5 — exposed as api so products don't need to re-declare
     api(libs.junit.jupiter)
     api(libs.junit.jupiter.api)
     api(libs.junit.jupiter.params)
     
-    // Assertions
+    // Assertions — exposed as api so products don't need to re-declare
     api(libs.assertj.core)
     
-    // Mocking
+    // Mocking — exposed as api so products don't need to re-declare
     api(libs.mockito.core)
     api(libs.mockito.junit.jupiter)
     
-    // Test Containers (for integration tests)
-    api(libs.testcontainers.core)
-    api(libs.testcontainers.junit.jupiter)
-    api(libs.testcontainers.postgresql)
-    api(libs.testcontainers.kafka)
-    api(libs.testcontainers.mongodb)
+    // Test Containers — internal, products that need them declare their own
+    implementation(libs.testcontainers.core)
+    implementation(libs.testcontainers.junit.jupiter)
+    implementation(libs.testcontainers.postgresql)
+    implementation(libs.testcontainers.kafka)
+    implementation(libs.testcontainers.mongodb)
     
-    // PostgreSQL JDBC driver (for DataSource in integration tests)
-    api(libs.postgresql)
+    // PostgreSQL JDBC driver — internal to testing module
+    implementation(libs.postgresql)
     
-    // Awaitility for async testing
+    // Awaitility for async testing — exposed so products can use it
     api(libs.awaitility)
     
-    // Logging for tests - log4j2 with slf4j bridge
-    api(libs.log4j.slf4j.impl)
-    api(libs.log4j.core)
+    // Logging for tests — internal
+    implementation(libs.log4j.slf4j.impl)
+    implementation(libs.log4j.core)
     
     // Runtime
     runtimeOnly(libs.junit.jupiter.engine)

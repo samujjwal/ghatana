@@ -1,15 +1,13 @@
 package com.ghatana.platform.plugin.test;
 
-import com.ghatana.core.event.cloud.*;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.types.identity.Offset;
-import com.ghatana.platform.types.identity.PartitionId;
 import com.ghatana.platform.plugin.adapter.EventCloudPluginAdapter;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-
-import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,33 +17,28 @@ import static org.mockito.Mockito.*;
  * Tests for EventCloudPluginAdapter.
  *
  * @doc.type class
- * @doc.purpose Verify EventCloud adapter behavior
+ * @doc.purpose Verify EventLogStore adapter behavior
  * @doc.layer platform
  * @doc.pattern Test
  */
 public class EventCloudPluginAdapterTest extends PluginTestBase {
 
     @Test
-    public void shouldPublishToEventCloud() {
-        EventCloud eventCloud = mock(EventCloud.class);
-        AppendResult mockResult = new AppendResult(
-            new PartitionId("0"), 
-            Offset.zero(), 
-            Instant.now()
-        );
-        when(eventCloud.append(any())).thenReturn(Promise.of(mockResult));
+    public void shouldPublishToEventLogStore() {
+        EventLogStore eventLogStore = mock(EventLogStore.class);
+        when(eventLogStore.append(any(), any())).thenReturn(Promise.of(Offset.zero()));
 
-        EventCloudPluginAdapter adapter = new EventCloudPluginAdapter(eventCloud);
+        EventCloudPluginAdapter adapter = new EventCloudPluginAdapter(eventLogStore);
         TenantId tenantId = TenantId.random();
-        EventRecord record = mock(EventRecord.class);
+        EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class);
 
         runPromise(() -> registerAndInit(adapter)
                 .then(() -> registry.startAll())
-                .then(() -> adapter.publish("topic", record, tenantId))
+                .then(() -> adapter.publish("topic", entry, tenantId))
                 .whenResult(() -> {
-                    ArgumentCaptor<EventCloud.AppendRequest> captor = ArgumentCaptor.forClass(EventCloud.AppendRequest.class);
-                    verify(eventCloud).append(captor.capture());
-                    assertEquals(record, captor.getValue().event());
+                    ArgumentCaptor<EventLogStore.EventEntry> captor = ArgumentCaptor.forClass(EventLogStore.EventEntry.class);
+                    verify(eventLogStore).append(any(TenantContext.class), captor.capture());
+                    assertEquals(entry, captor.getValue());
                 }));
     }
 }

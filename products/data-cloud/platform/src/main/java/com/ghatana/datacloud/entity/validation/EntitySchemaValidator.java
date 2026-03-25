@@ -7,6 +7,8 @@ package com.ghatana.datacloud.entity.validation;
 import com.ghatana.datacloud.entity.DataType;
 import com.ghatana.datacloud.entity.FieldValidation;
 import com.ghatana.datacloud.entity.MetaField;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +19,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -58,15 +59,17 @@ public final class EntitySchemaValidator {
 
     /**
      * Schema key: "{tenantId}/{collection}" → ordered field list.
-     * Operations are O(1) and lock-free.
+     * DC3-M3: Bounded Caffeine cache prevents OOM growth under tenant churn. Max 50K schemas.
      */
-    private final ConcurrentHashMap<String, List<MetaField>> schemas = new ConcurrentHashMap<>();
+    private static final int MAX_SCHEMA_CACHE_ENTRIES = 50_000;
+    private final Cache<String, List<MetaField>> schemas;
 
     /** When true, fields not present in the schema are reported as violations. */
     private final boolean strictMode;
 
     private EntitySchemaValidator(boolean strictMode) {
         this.strictMode = strictMode;
+        this.schemas = Caffeine.newBuilder().maximumSize(MAX_SCHEMA_CACHE_ENTRIES).build();
     }
 
     /**
@@ -114,7 +117,7 @@ public final class EntitySchemaValidator {
      * @param collection collection name
      */
     public void evictSchema(String tenantId, String collection) {
-        schemas.remove(schemaKey(tenantId, collection));
+        schemas.invalidate(schemaKey(tenantId, collection));
     }
 
     /**
@@ -125,7 +128,7 @@ public final class EntitySchemaValidator {
      * @return {@code true} if schema exists
      */
     public boolean hasSchema(String tenantId, String collection) {
-        return schemas.containsKey(schemaKey(tenantId, collection));
+        return schemas.getIfPresent(schemaKey(tenantId, collection)) != null;
     }
 
     // =========================================================================
@@ -145,7 +148,7 @@ public final class EntitySchemaValidator {
      * @return {@link ValidationResult} — always non-null
      */
     public ValidationResult validate(String tenantId, String collection, Map<String, Object> data) {
-        List<MetaField> fields = schemas.get(schemaKey(tenantId, collection));
+        List<MetaField> fields = schemas.getIfPresent(schemaKey(tenantId, collection));
         if (fields == null) {
             // No schema registered — pass through
             return ValidationResult.unregistered();

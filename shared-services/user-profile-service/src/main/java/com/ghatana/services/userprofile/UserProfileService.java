@@ -1,6 +1,6 @@
 package com.ghatana.services.userprofile;
 
-import com.ghatana.platform.security.jwt.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.activej.http.*;
@@ -94,7 +94,7 @@ public class UserProfileService extends HttpServerLauncher {
             // Dev fallback: 32-char placeholder (never accept real tokens with this)
             secret = "dev-only-secret-do-not-use-in-prod!";
         }
-        return new JwtTokenProvider(secret, 15 * 60 * 1000L);
+        return new com.ghatana.platform.security.jwt.JwtTokenProvider(secret, 15 * 60 * 1000L);
     }
 
     // ─── HTTP Handler ─────────────────────────────────────────────────────────

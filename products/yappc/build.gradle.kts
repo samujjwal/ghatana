@@ -69,8 +69,8 @@ subprojects {
 
     val spotbugsProjects = setOf(
         ":products:yappc:backend:api",
-        ":products:yappc:services:platform",  // replaces the merged domain + infrastructure
-        ":products:yappc:services:lifecycle"   // absorbs services:ai and services:scaffold
+        ":products:yappc:core:services-platform",  // Phase 2: moved from services/ to core/ (reusable library)
+        ":products:yappc:core:services-lifecycle"   // Phase 2: moved from services/ to core/ (reusable library)
     )
 
     if (path in spotbugsProjects) {
@@ -230,4 +230,72 @@ abstract class CheckModuleSizeTask : DefaultTask() {
 }
 tasks.named("check") {
     dependsOn("checkModuleSize")
+}
+
+// ============================================================================
+// Phase 7: Structural Governance Guard
+// ============================================================================
+// Enforces architecture decisions from YAPPC_STRUCTURE_SIMPLIFICATION_PLAN.md:
+//   Phase 2: services/ contains only the deployable (no java-library submodules)
+//   Phase 3: core:yappc-domain-impl is internal-only (libs:java:yappc-domain is public)
+//   Phase 5: frontend/libs/ contains no deprecated compat packages
+abstract class CheckStructuralGovernanceTask : DefaultTask() {
+    @get:InputFile
+    abstract val settingsFile: RegularFileProperty
+
+    @get:Input
+    abstract val projectDirPath: Property<String>
+
+    @TaskAction
+    fun check() {
+        val settingsText = settingsFile.get().asFile.readText()
+        val projectRoot = File(projectDirPath.get())
+        val violations = mutableListOf<String>()
+
+        // RULE 1 (Phase 2): services:platform/lifecycle must NOT be re-introduced under services/
+        listOf(":services:platform", ":services:lifecycle").forEach { banned ->
+            val isReintroduced = settingsText.lines().any { line ->
+                !line.trimStart().startsWith("//") &&
+                (line.contains("include(\"$banned\")") || line.contains("\"products:yappc$banned\""))
+            }
+            if (isReintroduced) {
+                violations.add("Phase 2: '$banned' re-introduced under services/. These are reusable libraries — put them in core/.")
+            }
+        }
+
+        // RULE 2 (Phase 3): core:yappc-domain must NOT be re-introduced (renamed to yappc-domain-impl)
+        val yapcDomainReintroduced = settingsText.lines().any { line ->
+            !line.trimStart().startsWith("//") &&
+            (line.contains("include(\":core:yappc-domain\")") ||
+             line.contains("\"products:yappc:core:yappc-domain\""))
+        }
+        if (yapcDomainReintroduced) {
+            violations.add("Phase 3: ':core:yappc-domain' re-introduced. Use ':core:yappc-domain-impl' (internal) or ':libs:java:yappc-domain' (public contract).")
+        }
+
+        // RULE 3 (Phase 5): theme must NOT appear in frontend/libs/ (only in compat/)
+        if (File(projectRoot, "frontend/libs/theme").exists()) {
+            violations.add("Phase 5: frontend/libs/theme/ exists. Deprecated packages must live in frontend/compat/.")
+        }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Structural governance violations:\n" +
+                violations.joinToString("\n") { "  ✗ $it" } + "\n" +
+                "See docs/MODULE_CATALOG.md and docs/architecture/YAPPC_STRUCTURE_SIMPLIFICATION_PLAN.md"
+            )
+        }
+        logger.lifecycle("✓ YAPPC structural governance: all checks passed")
+    }
+}
+
+tasks.register<CheckStructuralGovernanceTask>("checkStructuralGovernance") {
+    description = "Validates YAPPC module structure aligns with simplification plan"
+    group = "verification"
+    settingsFile.set(layout.projectDirectory.file("settings.gradle.kts"))
+    projectDirPath.set(layout.projectDirectory.asFile.absolutePath)
+}
+
+tasks.named("check") {
+    dependsOn("checkStructuralGovernance")
 }

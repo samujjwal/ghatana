@@ -48,7 +48,7 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
     memoryStore = new EventLogMemoryStore();
     agent = new TestAgent(memoryStore, new TestGenerator());
     // Configure a no-op AEP publisher to avoid network calls
-    YAPPCAgentBase.configureAepEventPublisher(
+    YAPPCAgentBase.setGlobalAepEventPublisher(
         (eventType, tenantId, payload) -> Promise.complete());
   }
 
@@ -258,7 +258,8 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
           new StepContract("test.step", "#/definitions/TestInput",
               "#/definitions/TestOutput", List.of("testing"),
               Map.of("description", "Test agent", "version", "1.0.0")),
-          generator);
+          generator,
+        defaultEventPublisher());
       this.memoryStore = memoryStore;
     }
 

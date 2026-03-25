@@ -253,14 +253,14 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "INSTRUCTION"
                 value   = "COVEREDRATIO"
-                minimum = "0.10".toBigDecimal()   // Lowered: current coverage is ~12% — raise as tests are added
+                minimum = "0.12".toBigDecimal()   // Current report is ~13.0%; keep the gate above the prior 10% floor.
             }
         }
         rule {
             limit {
                 counter = "BRANCH"
                 value   = "COVEREDRATIO"
-                minimum = "0.05".toBigDecimal()   // Lowered: current coverage is ~9% — raise as tests are added
+                minimum = "0.10".toBigDecimal()   // Current report is ~10.3%; keep the gate above the prior 5% floor.
             }
         }
     }
@@ -288,7 +288,7 @@ tasks.named("check") {
 // =========================================================================
 spotbugs {
     toolVersion.set("4.8.6")
-    ignoreFailures.set(true)   // Lowered: 10 findings need triage — re-enable once fixed
+    ignoreFailures.set(false)
     effort.set(com.github.spotbugs.snom.Effort.MAX)
     reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
     excludeFilter.set(rootProject.file("config/spotbugs/spotbugs-exclude.xml"))

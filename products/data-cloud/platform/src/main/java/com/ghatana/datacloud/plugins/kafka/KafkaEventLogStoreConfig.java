@@ -22,9 +22,20 @@ public record KafkaEventLogStoreConfig(
         Map<String, Object> additionalProducerProps,
         Map<String, Object> additionalConsumerProps
 ) {
+    /** DC3-L2: Regex for valid Kafka bootstrap.servers entries (host:port pairs). */
+    private static final java.util.regex.Pattern BOOTSTRAP_SERVERS_PATTERN =
+            java.util.regex.Pattern.compile(
+                    "^([a-zA-Z0-9.-]+:\\d{1,5})(,[a-zA-Z0-9.-]+:\\d{1,5})*$");
+
     public KafkaEventLogStoreConfig {
         if (bootstrapServers == null || bootstrapServers.isBlank()) {
             throw new IllegalArgumentException("bootstrapServers must not be blank");
+        }
+        // DC3-L2: Validate format at config-load time, not at first produce/consume
+        if (!BOOTSTRAP_SERVERS_PATTERN.matcher(bootstrapServers.trim()).matches()) {
+            throw new IllegalArgumentException(
+                "bootstrapServers has invalid format '" + bootstrapServers +
+                "'; expected 'host:port' or 'host1:port1,host2:port2'");
         }
         if (partitions < 1) throw new IllegalArgumentException("partitions must be >= 1");
         if (replicationFactor < 1) throw new IllegalArgumentException("replicationFactor must be >= 1");

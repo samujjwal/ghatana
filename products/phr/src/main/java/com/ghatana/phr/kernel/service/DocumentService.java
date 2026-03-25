@@ -320,7 +320,7 @@ public class DocumentService {
                 "consent", "json"
             ),
             Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> content = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
             CONTENT_DATASET,
@@ -331,7 +331,7 @@ public class DocumentService {
                 "size", "integer"
             ),
             Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(List.of(documents, content));
     }
@@ -341,7 +341,7 @@ public class DocumentService {
 
         return dataCloud.readData(request)
             .map(result -> Optional.ofNullable(deserialize(result.getData())))
-            .whenException(e -> Promise.of(Optional.empty()));
+            ;
     }
 
     private Promise<Optional<DocumentContent>> fetchContent(String contentId) {
@@ -349,7 +349,7 @@ public class DocumentService {
 
         return dataCloud.readData(request)
             .map(result -> Optional.ofNullable(deserializeContent(result.getData())))
-            .whenException(e -> Promise.of(Optional.empty()));
+            ;
     }
 
     private Promise<Void> storeDocument(PatientDocument document) {
@@ -420,7 +420,7 @@ public class DocumentService {
             Map.of("timestamp", Instant.now().toString())
         );
 
-        return dataCloud.writeData(request).whenException(e -> {});
+        return dataCloud.writeData(request);
     }
 
     private String generateFhirDocumentReference(PatientDocument doc) {

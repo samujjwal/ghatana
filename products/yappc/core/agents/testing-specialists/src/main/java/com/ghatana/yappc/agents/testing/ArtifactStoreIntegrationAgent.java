@@ -41,7 +41,8 @@ public class ArtifactStoreIntegrationAgent extends YAPPCAgentBase<ArtifactStoreI
             "#/definitions/ArtifactStoreIntegrationOutput",
             List.of("integration", "artifact-store"),
             Map.of("description", "Integration bridge agent for artifact repository operations", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

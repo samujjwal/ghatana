@@ -5,7 +5,7 @@ import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphNode;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphQuery;
 import com.ghatana.datacloud.plugins.knowledgegraph.storage.GraphStorageAdapter;
 import com.ghatana.datacloud.plugins.knowledgegraph.traversal.GraphTraversalEngine;
-import com.ghatana.platform.plugin.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
@@ -180,7 +180,7 @@ public class KnowledgeGraphPluginImpl implements KnowledgeGraphPlugin {
     public Promise<HealthStatus> healthCheck() {
         try {
             if (state.get() != PluginState.RUNNING) {
-                return Promise.of(new HealthStatus(false, "Plugin is not running", Map.of()));
+                return Promise.of(HealthStatus.unhealthy("Plugin is not running"));
             }
             
             // Check storage adapter health
@@ -190,13 +190,13 @@ public class KnowledgeGraphPluginImpl implements KnowledgeGraphPlugin {
             boolean traversalHealthy = traversalEngine.isHealthy();
             
             if (storageHealthy && traversalHealthy) {
-                return Promise.of(new HealthStatus(true, "All components healthy", Map.of(
+                return Promise.of(HealthStatus.ok("All components healthy", Map.of(
                     "storage", "healthy",
                     "traversal", "healthy",
                     "state", state.get().name()
                 )));
             } else {
-                return Promise.of(new HealthStatus(false, "Plugin running but some components unhealthy", Map.of(
+                return Promise.of(HealthStatus.unhealthy("Plugin running but some components unhealthy", Map.of(
                     "storage", storageHealthy ? "healthy" : "unhealthy",
                     "traversal", traversalHealthy ? "healthy" : "unhealthy",
                     "state", state.get().name()

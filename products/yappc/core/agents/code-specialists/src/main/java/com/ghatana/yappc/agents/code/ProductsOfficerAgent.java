@@ -41,7 +41,8 @@ public class ProductsOfficerAgent extends YAPPCAgentBase<ProductsOfficerInput, P
             "#/definitions/ProductsOfficerOutput",
             List.of("strategic", "product-management"),
             Map.of("description", "Strategic products officer managing portfolio vision and priorities", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

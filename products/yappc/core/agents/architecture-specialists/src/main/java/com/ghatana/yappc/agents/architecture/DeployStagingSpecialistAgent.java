@@ -48,7 +48,8 @@ public class DeployStagingSpecialistAgent
             "#/definitions/DeployStagingOutput",
             List.of("ops", "deployment", "staging"),
             Map.of("description", "Deploys to staging environment", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

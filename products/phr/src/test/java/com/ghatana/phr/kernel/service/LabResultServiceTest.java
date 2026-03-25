@@ -159,7 +159,7 @@ class LabResultServiceTest extends EventloopTestBase {
                 new BigDecimal("1.0"), null, "mg/dL",
                 "0.5–1.3", "lab-central",
                 Instant.now().minusSeconds(600), Instant.now(),
-                ObservationStatus.FINAL, null);
+                ObservationStatus.FINAL, null, null);
     }
 
     private static LabObservation buildObservationAt(String patientId, String loincCode,
@@ -169,6 +169,6 @@ class LabResultServiceTest extends EventloopTestBase {
                 new BigDecimal("1.0"), null, "mg/dL",
                 "0.5–1.3", "lab-central",
                 resultedAt.minusSeconds(600), resultedAt,
-                ObservationStatus.FINAL, null);
+                ObservationStatus.FINAL, null, null);
     }
 }

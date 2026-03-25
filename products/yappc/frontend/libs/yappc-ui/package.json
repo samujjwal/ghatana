@@ -29,6 +29,11 @@
     "./styles": {
       "import": "./dist/styles.css",
       "require": "./dist/styles.css"
+    },
+    "./theme": {
+      "import": "./dist/components/theme/index.mjs",
+      "require": "./dist/components/theme/index.js",
+      "types": "./dist/components/theme/index.d.ts"
     }
   },
   "files": [

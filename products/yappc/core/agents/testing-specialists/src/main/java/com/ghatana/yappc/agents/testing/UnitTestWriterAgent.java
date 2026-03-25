@@ -41,7 +41,8 @@ public class UnitTestWriterAgent extends YAPPCAgentBase<UnitTestWriterInput, Uni
             "#/definitions/UnitTestWriterOutput",
             List.of("testing", "unit-test", "code-generation"),
             Map.of("description", "Worker agent that generates unit tests for source code", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

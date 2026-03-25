@@ -6,13 +6,14 @@ import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.datacloud.entity.storage.CollectionStorageProfile;
 import com.ghatana.datacloud.entity.storage.CollectionStorageProfileRepository;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service for routing queries to appropriate storage backends based on
@@ -93,30 +94,13 @@ public class StorageRouterService {
     private final MetricsCollector metrics;
     private final Duration cacheTtl;
 
-    /**
-     * Cache entry with timestamp for TTL tracking.
-     */
-    private static class CachedRoutingTarget {
-
-        final RoutingTarget target;
-        final long createdAtMillis;
-
-        CachedRoutingTarget(RoutingTarget target) {
-            this.target = target;
-            this.createdAtMillis = System.currentTimeMillis();
-        }
-
-        boolean isExpired(Duration ttl) {
-            long ageMillis = System.currentTimeMillis() - createdAtMillis;
-            return ageMillis > ttl.toMillis();
-        }
-    }
+    /** DC3-H5: Bounded Caffeine LRU cache; prevents heap exhaustion at 10K tenants × 10 active collections. */
+    private static final int MAX_ROUTING_CACHE_ENTRIES = 100_000;
 
     /**
-     * Cache: "tenantId:collectionName" → CachedRoutingTarget Thread-safe for
-     * concurrent access.
+     * Cache: "tenantId:collectionName" → RoutingTarget. Bounded LRU with automatic TTL expiry.
      */
-    private final ConcurrentHashMap<String, CachedRoutingTarget> routingCache;
+    private final Cache<String, RoutingTarget> routingCache;
 
     /**
      * Creates StorageRouterService with default TTL.
@@ -144,7 +128,10 @@ public class StorageRouterService {
         this.repository = Objects.requireNonNull(repository, "repository");
         this.metrics = Objects.requireNonNull(metrics, "metrics");
         this.cacheTtl = Objects.requireNonNull(cacheTtl, "cacheTtl");
-        this.routingCache = new ConcurrentHashMap<>();
+        this.routingCache = Caffeine.newBuilder()
+                .maximumSize(MAX_ROUTING_CACHE_ENTRIES)
+                .expireAfterWrite(cacheTtl)
+                .build();
     }
 
     /**
@@ -193,15 +180,15 @@ public class StorageRouterService {
 
         // Check cache first
         String cacheKey = makeCacheKey(tenantId, collectionName);
-        CachedRoutingTarget cached = routingCache.get(cacheKey);
+        RoutingTarget cached = routingCache.getIfPresent(cacheKey);
 
-        if (cached != null && !cached.isExpired(cacheTtl)) {
+        if (cached != null) {
             logger.debug(
                     "Routing cache hit [tenant={}, collection={}]",
                     tenantId,
                     collectionName);
             metrics.incrementCounter(METRIC_ROUTING_CACHE_HIT, "tenant", tenantId);
-            return Promise.of(cached.target);
+            return Promise.of(cached);
         }
 
         // Cache miss: fetch from repository
@@ -251,7 +238,7 @@ public class StorageRouterService {
                             storageProfile.hasFailoverSupport());
 
                     // Cache the result
-                    routingCache.put(cacheKey, new CachedRoutingTarget(target));
+                    routingCache.put(cacheKey, target);
 
                     logger.debug(
                             "Resolved backend routing [tenant={}, collection={}, primary={}, fallbacks={}]",
@@ -333,7 +320,7 @@ public class StorageRouterService {
         }
 
         String cacheKey = makeCacheKey(tenantId, collectionName);
-        routingCache.remove(cacheKey);
+        routingCache.invalidate(cacheKey);
 
         logger.debug(
                 "Invalidated routing cache [tenant={}, collection={}]",
@@ -354,12 +341,12 @@ public class StorageRouterService {
             return;
         }
 
-        List<String> keysToRemove = routingCache.keySet()
+        List<String> keysToRemove = routingCache.asMap().keySet()
                 .stream()
                 .filter(key -> key.startsWith(tenantId + ":"))
                 .toList();
 
-        keysToRemove.forEach(routingCache::remove);
+        keysToRemove.forEach(routingCache::invalidate);
 
         logger.debug(
                 "Invalidated all routing cache for tenant [tenant={}, count={}]",
@@ -372,7 +359,7 @@ public class StorageRouterService {
      */
     public Map<String, Long> getCacheStats() {
         return Map.of(
-                "cache_size", (long) routingCache.size(),
+                "cache_size", routingCache.estimatedSize(),
                 "cache_ttl_millis", cacheTtl.toMillis());
     }
 
@@ -380,7 +367,7 @@ public class StorageRouterService {
      * Clears all routing cache (test/debug only).
      */
     public void clearCache() {
-        routingCache.clear();
+        routingCache.invalidateAll();
         logger.info("Cleared all routing cache");
     }
 

@@ -1,21 +1,20 @@
-import { useState, useEffect } from 'react';
+import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
 /**
  * Motion Preferences Hook
- * 
- * Detect and respond to user's motion preferences.
- * Respects prefers-reduced-motion media query.
- * 
+ *
+ * Detects the user's OS-level motion preference via the
+ * `(prefers-reduced-motion: reduce)` media query.
+ *
  * @doc.type hook
  * @doc.purpose Accessible animation control
  * @doc.layer core
  * @doc.pattern Accessibility Hook
- * 
+ *
  * @example
  * ```tsx
  * function Component() {
  *   const prefersReducedMotion = useReducedMotion();
- *   
  *   return (
  *     <div className={prefersReducedMotion ? '' : 'animate-fadeIn'}>
  *       Content
@@ -25,84 +24,50 @@ import { useState, useEffect } from 'react';
  * ```
  */
 export function useReducedMotion(): boolean {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    
-    // Set initial value
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    // Listen for changes
-    const handleChange = (event: MediaQueryListEvent) => {
-      setPrefersReducedMotion(event.matches);
-    };
-
-    // Modern browsers
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-    // Legacy browsers
-    else {
-      mediaQuery.addListener(handleChange);
-      return () => mediaQuery.removeListener(handleChange);
-    }
-  }, []);
-
-  return prefersReducedMotion;
+  return usePrefersReducedMotion();
 }
 
 /**
  * Animation Classes Hook
- * 
- * Returns animation class string respecting motion preferences.
- * Automatically removes animations if user prefers reduced motion.
- * 
+ *
+ * Returns an animation class string that respects the user's motion preference.
+ * Returns an empty string when reduced-motion mode is active.
+ *
  * @example
  * ```tsx
  * function Component() {
  *   const animationClass = useAnimationClass('animate-fadeIn duration-300');
- *   // Returns '' if motion is reduced, 'animate-fadeIn duration-300' otherwise
- *   
  *   return <div className={animationClass}>Content</div>;
  * }
  * ```
  */
 export function useAnimationClass(animationClass: string): string {
-  const prefersReducedMotion = useReducedMotion();
-  return prefersReducedMotion ? '' : animationClass;
+  return usePrefersReducedMotion() ? '' : animationClass;
 }
 
 /**
  * Safe Motion Hook
- * 
- * Returns appropriate animation value based on motion preferences.
+ *
+ * Returns the appropriate value based on motion preference.
  * Useful for inline styles and dynamic animations.
- * 
+ *
  * @example
  * ```tsx
  * function Component() {
  *   const duration = useSafeMotion(300, 0); // 300ms or 0ms
- *   const scale = useSafeMotion(1.1, 1.0);  // 1.1 or 1.0
- *   
+ *   const scale = useSafeMotion(1.1, 1.0);
+ *
  *   return (
- *     <motion.div
- *       animate={{ scale }}
- *       transition={{ duration: duration / 1000 }}
- *     >
+ *     <motion.div animate={{ scale }} transition={{ duration: duration / 1000 }}>
  *       Content
  *     </motion.div>
  *   );
  * }
  * ```
  */
-export function useSafeMotion<T>(
-  withMotion: T,
-  withoutMotion: T
-): T {
-  const prefersReducedMotion = useReducedMotion();
-  return prefersReducedMotion ? withoutMotion : withMotion;
+export function useSafeMotion<T>(withMotion: T, withoutMotion: T): T {
+  return usePrefersReducedMotion() ? withoutMotion : withMotion;
 }
 
 export default useReducedMotion;
+

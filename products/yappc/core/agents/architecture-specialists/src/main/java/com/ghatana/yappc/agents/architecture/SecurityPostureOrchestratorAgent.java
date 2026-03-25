@@ -41,7 +41,8 @@ public class SecurityPostureOrchestratorAgent extends YAPPCAgentBase<SecurityPos
             "#/definitions/SecurityPostureOrchestratorOutput",
             List.of("security", "posture", "orchestration"),
             Map.of("description", "Orchestrates security posture assessment across the organization", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

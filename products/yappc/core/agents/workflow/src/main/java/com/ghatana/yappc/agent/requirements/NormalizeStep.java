@@ -1,10 +1,9 @@
 package com.ghatana.yappc.agent.requirements;
 
 // ✅ Use EXISTING interfaces from libs/java
-import static com.ghatana.yappc.agent.EventCloudHelper.publish;
 
 import com.ghatana.core.database.DatabaseClient;
-import com.ghatana.core.event.cloud.EventCloud;
+import com.ghatana.yappc.agent.EventPublisher;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.WorkflowStep;
 import com.ghatana.yappc.agent.ValidationResult;
@@ -19,7 +18,7 @@ import java.util.*;
  * <p>Normalizes and standardizes requirements format and structure.
  *
  * <p>✅ Implements WorkflowStep from libs:workflow-api (EXISTING) ✅ Uses DatabaseClient from
- * libs:database (EXISTING) ✅ Uses EventCloud from libs:event-cloud (EXISTING)
+ * libs:database (EXISTING) ✅ Uses EventPublisher (product-owned facade over EventLogStore)
  *
  * <h3>Implementation Checklist:</h3>
  *
@@ -45,9 +44,9 @@ import java.util.*;
 public final class NormalizeStep implements WorkflowStep {
 
   private final DatabaseClient dbClient;
-  private final EventCloud eventClient;
+  private final EventPublisher eventClient;
 
-  public NormalizeStep(DatabaseClient dbClient, EventCloud eventClient) {
+  public NormalizeStep(DatabaseClient dbClient, EventPublisher eventClient) {
     this.dbClient = Objects.requireNonNull(dbClient, "dbClient must not be null");
     this.eventClient = Objects.requireNonNull(eventClient, "eventClient must not be null");
   }
@@ -142,7 +141,7 @@ public final class NormalizeStep implements WorkflowStep {
             "priority", data.get("priority"),
             "timestamp", Instant.now().toString());
 
-    return publish(eventClient, "requirements.normalized", event).map($ -> data);
+    return eventClient.publish("requirements.normalized", event).map($ -> data);
   }
 
   /** Builds output context with normalized data. */

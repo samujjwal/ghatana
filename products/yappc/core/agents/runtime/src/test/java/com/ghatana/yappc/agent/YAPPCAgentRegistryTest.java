@@ -40,7 +40,7 @@ class YAPPCAgentRegistryTest extends EventloopTestBase {
   void setUp() {
     registry = new YAPPCAgentRegistry();
     memoryStore = new EventLogMemoryStore();
-    YAPPCAgentBase.configureAepEventPublisher(
+    YAPPCAgentBase.setGlobalAepEventPublisher(
         (eventType, tenantId, payload) -> Promise.complete());
   }
 
@@ -275,7 +275,8 @@ class YAPPCAgentRegistryTest extends EventloopTestBase {
           new StepContract(stepName, "#/definitions/StubInput",
               "#/definitions/StubOutput", List.of("stub"),
               Map.of("description", "Stub agent", "version", "1.0.0")),
-          generator);
+          generator,
+        defaultEventPublisher());
       this.memoryStore = memoryStore;
     }
 

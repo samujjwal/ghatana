@@ -1,5 +1,6 @@
 package com.ghatana.platform.cache;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern TestClass
  */
 @DisplayName("WriteThroughDistributedCache Tests")
-class WriteThroughDistributedCacheTest {
+class WriteThroughDistributedCacheTest extends EventloopTestBase {
 
     private InMemoryCacheAdapter<String, String> l1;
     private InMemoryCacheAdapter<String, String> l2;
@@ -38,81 +39,81 @@ class WriteThroughDistributedCacheTest {
 
     @Test
     @DisplayName("get returns empty when both L1 and L2 miss")
-    void getBothMiss() throws Exception {
-        assertThat(cache.get("key").get()).isEmpty();
+    void getBothMiss() {
+        assertThat(runPromise(() -> cache.get("key"))).isEmpty();
     }
 
     @Test
     @DisplayName("put writes to both L1 and L2")
-    void putWritesToBothLayers() throws Exception {
-        cache.put("key", "value").get();
-        assertThat(l1.get("key").get()).contains("value");
-        assertThat(l2.get("key").get()).contains("value");
+    void putWritesToBothLayers() {
+        runPromise(() -> cache.put("key", "value"));
+        assertThat(runPromise(() -> l1.get("key"))).contains("value");
+        assertThat(runPromise(() -> l2.get("key"))).contains("value");
     }
 
     @Test
     @DisplayName("get hits L1 without touching L2")
-    void getHitsL1First() throws Exception {
+    void getHitsL1First() {
         // Populate L1 directly but skip L2
-        l1.put("key", "l1-value").get();
+        runPromise(() -> l1.put("key", "l1-value"));
         // L2 has different value to confirm we did NOT hit L2
-        l2.put("key", "l2-value").get();
+        runPromise(() -> l2.put("key", "l2-value"));
 
-        assertThat(cache.get("key").get()).contains("l1-value");
+        assertThat(runPromise(() -> cache.get("key"))).contains("l1-value");
     }
 
     @Test
     @DisplayName("L1 miss populates L1 from L2")
-    void l1MissPopulatesFromL2() throws Exception {
-        l2.put("key", "l2-value").get();
+    void l1MissPopulatesFromL2() {
+        runPromise(() -> l2.put("key", "l2-value"));
         // L1 is empty
-        assertThat(cache.get("key").get()).contains("l2-value");
+        assertThat(runPromise(() -> cache.get("key"))).contains("l2-value");
         // L1 is now populated
-        assertThat(l1.get("key").get()).contains("l2-value");
+        assertThat(runPromise(() -> l1.get("key"))).contains("l2-value");
     }
 
     @Test
     @DisplayName("invalidate removes from both layers")
-    void invalidateRemovesFromBothLayers() throws Exception {
-        cache.put("key", "value").get();
-        cache.invalidate("key").get();
-        assertThat(l1.get("key").get()).isEmpty();
-        assertThat(l2.get("key").get()).isEmpty();
+    void invalidateRemovesFromBothLayers() {
+        runPromise(() -> cache.put("key", "value"));
+        runPromise(() -> cache.invalidate("key"));
+        assertThat(runPromise(() -> l1.get("key"))).isEmpty();
+        assertThat(runPromise(() -> l2.get("key"))).isEmpty();
     }
 
     @Test
     @DisplayName("invalidateAll clears both layers")
-    void invalidateAllClearsBothLayers() throws Exception {
-        cache.put("key1", "v1").get();
-        cache.put("key2", "v2").get();
-        cache.invalidateAll().get();
-        assertThat(cache.get("key1").get()).isEmpty();
-        assertThat(cache.get("key2").get()).isEmpty();
+    void invalidateAllClearsBothLayers() {
+        runPromise(() -> cache.put("key1", "v1"));
+        runPromise(() -> cache.put("key2", "v2"));
+        runPromise(() -> cache.invalidateAll());
+        assertThat(runPromise(() -> cache.get("key1"))).isEmpty();
+        assertThat(runPromise(() -> cache.get("key2"))).isEmpty();
     }
 
     @Test
     @DisplayName("getOrLoad invokes loader on full miss and writes to both layers")
-    void getOrLoadInvokesLoaderOnFullMiss() throws Exception {
+    void getOrLoadInvokesLoaderOnFullMiss() {
         AtomicInteger loadCount = new AtomicInteger(0);
-        String value = cache.getOrLoad("key", k -> {
+        String value = runPromise(() -> cache.getOrLoad("key", k -> {
             loadCount.incrementAndGet();
             return Promise.of("computed");
-        }).get();
+        }));
         assertThat(value).isEqualTo("computed");
         assertThat(loadCount.get()).isEqualTo(1);
-        assertThat(l1.get("key").get()).contains("computed");
-        assertThat(l2.get("key").get()).contains("computed");
+        assertThat(runPromise(() -> l1.get("key"))).contains("computed");
+        assertThat(runPromise(() -> l2.get("key"))).contains("computed");
     }
 
     @Test
     @DisplayName("getOrLoad returns L1 hit without invoking loader")
-    void getOrLoadReturnsL1HitWithoutLoadCall() throws Exception {
-        l1.put("key", "cached").get();
+    void getOrLoadReturnsL1HitWithoutLoadCall() {
+        runPromise(() -> l1.put("key", "cached"));
         AtomicInteger loadCount = new AtomicInteger(0);
-        String value = cache.getOrLoad("key", k -> {
+        String value = runPromise(() -> cache.getOrLoad("key", k -> {
             loadCount.incrementAndGet();
             return Promise.of("computed");
-        }).get();
+        }));
         assertThat(value).isEqualTo("cached");
         assertThat(loadCount.get()).isEqualTo(0);
     }
@@ -125,9 +126,9 @@ class WriteThroughDistributedCacheTest {
 
     @Test
     @DisplayName("put with explicit TTL stores in both layers")
-    void putWithTtlStoredInBothLayers() throws Exception {
-        cache.put("key", "value", Duration.ofSeconds(30)).get();
-        assertThat(l1.get("key").get()).contains("value");
-        assertThat(l2.get("key").get()).contains("value");
+    void putWithTtlStoredInBothLayers() {
+        runPromise(() -> cache.put("key", "value", Duration.ofSeconds(30)));
+        assertThat(runPromise(() -> l1.get("key"))).contains("value");
+        assertThat(runPromise(() -> l2.get("key"))).contains("value");
     }
 }

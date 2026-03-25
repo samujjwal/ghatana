@@ -45,7 +45,8 @@ public class CanarySpecialistAgent extends YAPPCAgentBase<CanaryInput, CanaryOut
             "#/definitions/CanaryOutput",
             List.of("ops", "canary", "rollout"),
             Map.of("description", "Executes canary deployment", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import com.ghatana.yappc.agents.architecture.*;
+import com.ghatana.yappc.agents.code.*;
 
 /**
  * Tests for IntakeSpecialistAgent — requirements intake with LLM/rule-based.
@@ -36,7 +38,7 @@ class IntakeSpecialistAgentTest extends EventloopTestBase {
     memoryStore = new EventLogMemoryStore();
     agent = new IntakeSpecialistAgent(
         memoryStore, new IntakeSpecialistAgent.IntakeGenerator());
-    YAPPCAgentBase.configureAepEventPublisher(
+    YAPPCAgentBase.setGlobalAepEventPublisher(
         (eventType, tenantId, payload) -> Promise.complete());
   }
 

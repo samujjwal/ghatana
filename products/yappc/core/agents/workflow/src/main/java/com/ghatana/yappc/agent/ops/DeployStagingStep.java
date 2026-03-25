@@ -1,7 +1,7 @@
 package com.ghatana.yappc.agent.ops;
 
 import com.ghatana.core.database.DatabaseClient;
-import com.ghatana.core.event.cloud.EventCloud;
+import com.ghatana.yappc.agent.EventPublisher;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.WorkflowStep;
 import io.activej.promise.Promise;
@@ -39,9 +39,9 @@ public final class DeployStagingStep implements WorkflowStep {
   private static final String EVENT_TOPIC = "ops.workflow";
 
   private final DatabaseClient dbClient;
-  private final EventCloud eventClient;
+  private final EventPublisher eventClient;
 
-  public DeployStagingStep(DatabaseClient dbClient, EventCloud eventClient) {
+  public DeployStagingStep(DatabaseClient dbClient, EventPublisher eventClient) {
     this.dbClient = Objects.requireNonNull(dbClient, "dbClient must not be null");
     this.eventClient = Objects.requireNonNull(eventClient, "eventClient must not be null");
   }

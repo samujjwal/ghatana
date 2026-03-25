@@ -22,7 +22,6 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:observability"))
     api(project(":platform:java:database"))
-    api(project(":platform:java:event-cloud"))
 
     // ActiveJ (for OpenAI async client code)
     api(libs.activej.promise)
@@ -55,6 +54,8 @@ dependencies {
     // Annotations
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
 
     // Testing
     testImplementation(libs.junit.jupiter)

@@ -11,14 +11,13 @@ dependencies {
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:http"))
-    implementation(project(":platform:java:testing"))
     implementation(project(":platform:java:agent-core"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:observability"))
     
     // YAPPC framework modules
-    implementation(project(":products:yappc:core:framework"))
+    implementation(project(":products:yappc:core:yappc-infrastructure"))
     implementation(project(":products:yappc:core:ai"))
     // TODO: Register :products:yappc:core:agents in settings.gradle.kts before enabling
     // implementation(project(":products:yappc:core:agents"))
@@ -44,7 +43,7 @@ dependencies {
 
     // Database
     implementation("com.zaxxer:HikariCP:5.1.0")
-    implementation("org.postgresql:postgresql:42.7.2")
+    implementation(libs.postgresql)
     implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
 
     // AI/ML
@@ -76,7 +75,8 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.30")
 
     // Testing
+    testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
-    testImplementation(project(":products:yappc:core:domain"))
+    testImplementation(project(":products:yappc:core:yappc-domain-impl"))
 }

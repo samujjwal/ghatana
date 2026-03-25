@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,10 +43,10 @@ import java.util.function.Consumer;
  * every SQL predicate includes {@code WHERE tenant_id = ?}.
  *
  * <h2>EventLoop Safety</h2>
- * <p>All JDBC calls are wrapped in {@code Promise.ofBlocking(executor, …)} so
- * the ActiveJ event loop is never blocked. A virtual-thread executor is used
- * by default (Java 21+), ensuring excellent I/O concurrency at minimal
- * memory overhead.
+ * <p>All JDBC calls are dispatched to the {@code executor} via
+ * {@code Promise.ofBlocking(executor, …)} so the ActiveJ event loop is never
+ * blocked. A virtual-thread executor is used by default (Java 21+), ensuring
+ * excellent I/O concurrency at minimal memory overhead.
  *
  * <h2>Tail Subscription</h2>
  * <p>The {@link #tail} method returns a polling subscription that invokes the
@@ -113,6 +114,13 @@ public class WarmTierEventLogStore implements EventLogStore {
             SELECT MIN(offset_value) FROM event_log WHERE tenant_id = ?
             """;
 
+    /**
+     * Reserved header key used to propagate the assigned {@code offset_value}
+     * inside each {@link EventEntry}. Consumers MUST NOT set this header; it is
+     * written exclusively by the store on reads.
+     */
+    public static final String HEADER_OFFSET_KEY = "_x_dc_offset";
+
     private final DataSource dataSource;
     private final Executor executor;
 
@@ -146,15 +154,18 @@ public class WarmTierEventLogStore implements EventLogStore {
 
     @Override
     public Promise<Offset> append(TenantContext tenant, EventEntry entry) {
-        try {
-            return Promise.of(doAppend(tenant.tenantId(), entry));
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        String tenantId = tenant.tenantId();
+        return Promise.ofBlocking(executor, () -> doAppend(tenantId, entry));
     }
 
     @Override
     public Promise<List<Offset>> appendBatch(TenantContext tenant, List<EventEntry> entries) {
+        if (entries.isEmpty()) return Promise.of(List.of());
+        String tenantId = tenant.tenantId();
+        return Promise.ofBlocking(executor, () -> doAppendBatchSync(tenantId, entries));
+    }
+
+    private List<Offset> doAppendBatchSync(String tenantId, List<EventEntry> entries) throws Exception {
         List<Offset> offsets = new ArrayList<>(entries.size());
         // Use a single connection for the whole batch so they land atomically
         try (Connection conn = dataSource.getConnection()) {
@@ -162,18 +173,16 @@ public class WarmTierEventLogStore implements EventLogStore {
             conn.setAutoCommit(false);
             try {
                 for (EventEntry entry : entries) {
-                    offsets.add(doAppendWithConn(conn, tenant.tenantId(), entry));
+                    offsets.add(doAppendWithConn(conn, tenantId, entry));
                 }
                 conn.commit();
-                return Promise.of(offsets);
+                return offsets;
             } catch (Exception e) {
                 conn.rollback();
-                return Promise.ofException(e);
+                throw e;
             } finally {
                 conn.setAutoCommit(autoCommit);
             }
-        } catch (Exception e) {
-            return Promise.ofException(e);
         }
     }
 
@@ -183,47 +192,50 @@ public class WarmTierEventLogStore implements EventLogStore {
 
     @Override
     public Promise<List<EventEntry>> read(TenantContext tenant, Offset from, int limit) {
+        String tenantId = tenant.tenantId();
         long fromValue = parseLong(from);
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(READ_SQL)) {
-            ps.setString(1, tenant.tenantId());
-            ps.setLong(2, fromValue);
-            ps.setInt(3, limit);
-            return Promise.of(mapResultSet(ps.executeQuery()));
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(READ_SQL)) {
+                ps.setString(1, tenantId);
+                ps.setLong(2, fromValue);
+                ps.setInt(3, limit);
+                return mapResultSet(ps.executeQuery());
+            }
+        });
     }
 
     @Override
     public Promise<List<EventEntry>> readByTimeRange(
             TenantContext tenant, Instant startTime, Instant endTime, int limit) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(READ_BY_TIME_SQL)) {
-            ps.setString(1, tenant.tenantId());
-            ps.setTimestamp(2, Timestamp.from(startTime));
-            ps.setTimestamp(3, Timestamp.from(endTime));
-            ps.setInt(4, limit);
-            return Promise.of(mapResultSet(ps.executeQuery()));
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        String tenantId = tenant.tenantId();
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(READ_BY_TIME_SQL)) {
+                ps.setString(1, tenantId);
+                ps.setTimestamp(2, Timestamp.from(startTime));
+                ps.setTimestamp(3, Timestamp.from(endTime));
+                ps.setInt(4, limit);
+                return mapResultSet(ps.executeQuery());
+            }
+        });
     }
 
     @Override
     public Promise<List<EventEntry>> readByType(
             TenantContext tenant, String eventType, Offset from, int limit) {
+        String tenantId = tenant.tenantId();
         long fromValue = parseLong(from);
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(READ_BY_TYPE_SQL)) {
-            ps.setString(1, tenant.tenantId());
-            ps.setString(2, eventType);
-            ps.setLong(3, fromValue);
-            ps.setInt(4, limit);
-            return Promise.of(mapResultSet(ps.executeQuery()));
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(READ_BY_TYPE_SQL)) {
+                ps.setString(1, tenantId);
+                ps.setString(2, eventType);
+                ps.setLong(3, fromValue);
+                ps.setInt(4, limit);
+                return mapResultSet(ps.executeQuery());
+            }
+        });
     }
 
     // =========================================================================
@@ -232,36 +244,38 @@ public class WarmTierEventLogStore implements EventLogStore {
 
     @Override
     public Promise<Offset> getLatestOffset(TenantContext tenant) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(LATEST_OFFSET_SQL)) {
-            ps.setString(1, tenant.tenantId());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    long val = rs.getLong(1);
-                    return Promise.of(rs.wasNull() ? Offset.zero() : Offset.of(val));
+        String tenantId = tenant.tenantId();
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(LATEST_OFFSET_SQL)) {
+                ps.setString(1, tenantId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        long val = rs.getLong(1);
+                        return rs.wasNull() ? Offset.zero() : Offset.of(val);
+                    }
                 }
+                return Offset.zero();
             }
-            return Promise.of(Offset.zero());
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        });
     }
 
     @Override
     public Promise<Offset> getEarliestOffset(TenantContext tenant) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(EARLIEST_OFFSET_SQL)) {
-            ps.setString(1, tenant.tenantId());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    long val = rs.getLong(1);
-                    return Promise.of(rs.wasNull() ? Offset.zero() : Offset.of(val));
+        String tenantId = tenant.tenantId();
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(EARLIEST_OFFSET_SQL)) {
+                ps.setString(1, tenantId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        long val = rs.getLong(1);
+                        return rs.wasNull() ? Offset.zero() : Offset.of(val);
+                    }
                 }
+                return Offset.zero();
             }
-            return Promise.of(Offset.zero());
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        });
     }
 
     // =========================================================================
@@ -318,6 +332,12 @@ public class WarmTierEventLogStore implements EventLogStore {
         return result;
     }
 
+    /**
+     * Maps a ResultSet row to an EventEntry.
+     * Embeds the row's {@code offset_value} in the entry headers under key
+     * {@value HEADER_OFFSET_KEY} so that consumers can reliably advance their
+     * read position even when the IDENTITY sequence has gaps.
+     */
     private static EventEntry rowToEntry(ResultSet rs) throws SQLException, IOException {
         UUID eventId         = (UUID) rs.getObject("event_id");
         String eventType     = rs.getString("event_type");
@@ -327,10 +347,13 @@ public class WarmTierEventLogStore implements EventLogStore {
         String contentType   = rs.getString("content_type");
         String headersJson   = rs.getString("headers");
         String idempotencyKey = rs.getString("idempotency_key");
+        long offsetValue     = rs.getLong("offset_value");
 
         Map<String, String> headers = headersJson != null
-                ? MAPPER.readValue(headersJson, MAP_TYPE)
-                : Map.of();
+                ? new HashMap<>(MAPPER.readValue(headersJson, MAP_TYPE))
+                : new HashMap<>();
+        // Embed the assigned offset so consumers can track position precisely
+        headers.put(HEADER_OFFSET_KEY, String.valueOf(offsetValue));
 
         return new EventEntry(
                 eventId,
@@ -348,7 +371,8 @@ public class WarmTierEventLogStore implements EventLogStore {
         try {
             return Long.parseLong(offset.value());
         } catch (NumberFormatException e) {
-            return 0L;
+            // M2: fail-fast — silently resetting to 0 would replay from the beginning
+            throw new IllegalArgumentException("Invalid offset value (must be numeric): '" + offset.value() + "'", e);
         }
     }
 
@@ -407,9 +431,6 @@ public class WarmTierEventLogStore implements EventLogStore {
         }
 
         private List<EventEntry> poll(DataSource dataSource) throws Exception {
-            // Use direct synchronous JDBC — avoids the race condition where
-            // Promise.ofBlocking(...).getResult() returns null if the task has
-            // not yet completed on the virtual-thread executor.
             List<EventEntry> entries = new ArrayList<>();
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(READ_SQL)) {
@@ -440,7 +461,8 @@ public class WarmTierEventLogStore implements EventLogStore {
             try {
                 return Long.parseLong(offset.value());
             } catch (NumberFormatException e) {
-                return 0L;
+                // M2: fail-fast — silently resetting to 0 would replay from the beginning
+                throw new IllegalArgumentException("Invalid offset value (must be numeric): '" + offset.value() + "'", e);
             }
         }
     }

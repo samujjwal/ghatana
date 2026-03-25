@@ -51,8 +51,16 @@ public class ValidationResult {
         return new ValidationResult(false, errors);
     }
 
-    /**
-     * Alias for {@link #failure(ValidationError...)} for backward compatibility.
+    /**     * Creates a failed validation result with a single error message.
+     *
+     * @param message human-readable error description
+     */
+    @NotNull
+    public static ValidationResult failure(@NotNull String message) {
+        return failure(new ValidationError("VALIDATION_FAILED", message));
+    }
+
+    /**     * Alias for {@link #failure(ValidationError...)} for backward compatibility.
      */
     @NotNull
     public static ValidationResult invalid(@NotNull ValidationError... errors) {

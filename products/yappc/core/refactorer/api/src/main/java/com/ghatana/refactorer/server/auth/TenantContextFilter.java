@@ -64,22 +64,22 @@ public final class TenantContextFilter implements AsyncServlet {
             tenantId.ifPresentOrElse(
                     tid -> {
                         logger.debug("Extracted tenant ID: {}", tid);
-                        TenantContextStorage.setCurrentTenantId(tid);
+                        com.ghatana.platform.governance.security.TenantContext.setCurrentTenantId(tid);
                     },
                     () -> {
                         logger.debug("No tenant ID found in request, using default");
-                        TenantContextStorage.setCurrentTenantId("default-tenant");
+                        com.ghatana.platform.governance.security.TenantContext.setCurrentTenantId("default-tenant");
                     }
             );
 
             // Serve request and ensure cleanup on completion
             return delegate.serve(request)
-                    .whenComplete((response, exception) -> TenantContextStorage.clear());
+                    .whenComplete((response, exception) -> com.ghatana.platform.governance.security.TenantContext.clear());
 
         } catch (Exception e) {
             logger.error("Error extracting tenant context", e);
             // Always cleanup, even on error
-            TenantContextStorage.clear();
+            com.ghatana.platform.governance.security.TenantContext.clear();
             return Promise.ofException(e);
         }
     }

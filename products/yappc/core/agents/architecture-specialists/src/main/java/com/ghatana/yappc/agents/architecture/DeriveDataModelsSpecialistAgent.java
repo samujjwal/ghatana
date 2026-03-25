@@ -46,7 +46,8 @@ public class DeriveDataModelsSpecialistAgent
             "#/definitions/DeriveDataModelsOutput",
             List.of("architecture", "data", "models"),
             Map.of("description", "Derives data models from architecture", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

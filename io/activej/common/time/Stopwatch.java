@@ -21,6 +21,9 @@ import java.util.concurrent.TimeUnit;
 import static io.activej.common.Checks.checkState;
 import static java.util.concurrent.TimeUnit.*;
 
+// GHATANA-PATCH: Vendored copy from ActiveJ 6.0-rc2 for high-resolution event-loop timing.
+// No Ghatana-specific changes identified yet; diff against upstream required.
+// See io/activej/PATCHES.md.
 public final class Stopwatch {
 	private boolean isRunning;
 	private long start;

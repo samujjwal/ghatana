@@ -27,7 +27,7 @@ import java.util.Map;
 public class AgentRegistryHandler {
 
     private static final Logger log = LoggerFactory.getLogger(AgentRegistryHandler.class);
-    private static final String DC_PIPELINES_COLLECTION = "aep_pipelines";
+    private static final String DC_PIPELINES_COLLECTION = "dc_pipelines";
 
     private final DataCloudClient client;
     private final HttpHandlerSupport http;

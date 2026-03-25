@@ -1,7 +1,8 @@
 package com.ghatana.core.connectors.impl;
 
 import com.ghatana.core.connectors.EventSink;
-import com.ghatana.core.event.cloud.EventRecord;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -239,12 +240,12 @@ public final class LoggingEventSink implements EventSink {
     }
 
     @Override
-    public Promise<Void> send(EventRecord record) {
+    public Promise<Void> send(TenantContext tenant, EventLogStore.EventEntry entry) {
         if (!started) {
             return Promise.ofException(new IllegalStateException("sink not started"));
         }
-        logger.info("[LoggingEventSink] event: {}", record);
-        metrics.incrementCounter("event.sink.logged", "type", record.typeRef().name());
+        logger.info("[LoggingEventSink] event: {}", entry);
+        metrics.incrementCounter("event.sink.logged", "type", entry.eventType());
         return Promise.complete();
     }
 }

@@ -45,7 +45,8 @@ public class ScaffoldSpecialistAgent extends YAPPCAgentBase<ScaffoldInput, Scaff
             "#/definitions/ScaffoldOutput",
             List.of("implementation", "codegen", "scaffolding"),
             Map.of("description", "Generates initial codebase structure", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

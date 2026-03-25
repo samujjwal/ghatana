@@ -1,6 +1,6 @@
 package com.ghatana.services.auth;
 
-import com.ghatana.platform.security.jwt.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.model.User;
 import com.ghatana.platform.security.oauth2.OAuth2Config;
 import com.ghatana.platform.security.oauth2.OAuth2Provider;
@@ -95,7 +95,7 @@ public class AuthService extends HttpServerLauncher {
                      "Set PLATFORM_JWT_SECRET (32+ chars) before deploying to production.");
             secret = "dev-platform-jwt-secret-change-me-in-prod!";
         }
-        return new JwtTokenProvider(secret, PLATFORM_TOKEN_TTL_MS);
+        return new com.ghatana.platform.security.jwt.JwtTokenProvider(secret, PLATFORM_TOKEN_TTL_MS);
     }
 
     @Provides

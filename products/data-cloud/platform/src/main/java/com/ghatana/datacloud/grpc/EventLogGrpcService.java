@@ -32,7 +32,8 @@ import java.util.Objects;
  * <ol>
  *   <li>{@code ReadByTypeRequest.tenant_id} / {@code AppendRequest.event.tenant_id} (proto field)</li>
  *   <li>{@code x-tenant-id} gRPC metadata header propagated by {@link TenantGrpcInterceptor}</li>
- *   <li>Fall-back to {@code "default-tenant"} if neither is present</li>
+ *   <li>{@code INVALID_ARGUMENT} status returned if neither source provides a tenant — never falls back
+ *       to a hardcoded string (DC3-M5: prevents silent data mixing under an "unknown" tenant)</li>
  * </ol>
  *
  * <p>ActiveJ {@code Promise} callbacks ({@code .whenResult} / {@code .whenException}) run on
@@ -49,7 +50,6 @@ import java.util.Objects;
 public final class EventLogGrpcService extends EventLogServiceGrpc.EventLogServiceImplBase {
 
     private static final Logger log = LoggerFactory.getLogger(EventLogGrpcService.class);
-    private static final String FALLBACK_TENANT = "default-tenant";
 
     private final EventLogStore eventLogStore;
 
@@ -169,6 +169,11 @@ public final class EventLogGrpcService extends EventLogServiceGrpc.EventLogServi
 
     // ==================== Tenant resolution helpers ====================
 
+    /**
+     * DC3-M5: Resolves tenant from proto field then interceptor context.
+     * Throws {@link io.grpc.StatusRuntimeException} INVALID_ARGUMENT if neither provides a tenant
+     * — never falls back to a hardcoded string which would silently mix data across tenants.
+     */
     private static String resolveAppendTenant(AppendRequest request) {
         // Proto field takes priority
         String fromProto = request.getEvent().getTenantId();
@@ -177,7 +182,13 @@ public final class EventLogGrpcService extends EventLogServiceGrpc.EventLogServi
         }
         // Fall back to gRPC interceptor-propagated context key
         String fromCtx = TenantGrpcInterceptor.TENANT_ID_CTX_KEY.get();
-        return (fromCtx != null && !fromCtx.isBlank()) ? fromCtx : FALLBACK_TENANT;
+        if (fromCtx != null && !fromCtx.isBlank()) {
+            return fromCtx;
+        }
+        // DC3-M5: Reject — no tenant means the request is unauthenticated/misconfigured.
+        throw Status.INVALID_ARGUMENT
+                .withDescription("tenant_id is required: set AppendRequest.event.tenant_id or x-tenant-id header")
+                .asRuntimeException();
     }
 
     private static String resolveReadTenant(ReadByTypeRequest request) {
@@ -186,6 +197,12 @@ public final class EventLogGrpcService extends EventLogServiceGrpc.EventLogServi
             return fromProto;
         }
         String fromCtx = TenantGrpcInterceptor.TENANT_ID_CTX_KEY.get();
-        return (fromCtx != null && !fromCtx.isBlank()) ? fromCtx : FALLBACK_TENANT;
+        if (fromCtx != null && !fromCtx.isBlank()) {
+            return fromCtx;
+        }
+        // DC3-M5: Reject — no tenant means the request is unauthenticated/misconfigured.
+        throw Status.INVALID_ARGUMENT
+                .withDescription("tenant_id is required: set ReadByTypeRequest.tenant_id or x-tenant-id header")
+                .asRuntimeException();
     }
 }

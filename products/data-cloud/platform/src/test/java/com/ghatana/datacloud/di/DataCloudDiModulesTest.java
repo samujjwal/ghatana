@@ -39,6 +39,7 @@ import com.ghatana.datacloud.plugins.redis.RedisHotTierPlugin;
 import com.ghatana.datacloud.plugins.redis.RedisStorageConfig;
 import com.ghatana.datacloud.plugins.s3archive.ColdTierArchivePlugin;
 import com.ghatana.datacloud.plugins.s3archive.S3ArchiveConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import com.ghatana.datacloud.reflex.DefaultReflexEngine;
 import com.ghatana.datacloud.reflex.ReflexEngine;
 import com.ghatana.datacloud.spi.StoragePluginRegistry;
@@ -336,6 +337,21 @@ class DataCloudDiModulesTest {
             assertThat(injector.getInstance(RedisHotTierPlugin.class)).isNotNull();
             assertThat(injector.getInstance(CoolTierStoragePlugin.class)).isNotNull();
             assertThat(injector.getInstance(ColdTierArchivePlugin.class)).isNotNull();
+        }
+
+        @Test
+        @DisplayName("warm-tier DataSource applies bounded idle and validation defaults")
+        void warmTierDataSourceAppliesBoundedIdleAndValidationDefaults() {
+            DataCloudStorageModule module = new DataCloudStorageModule();
+
+            HikariDataSource dataSource = (HikariDataSource) module.warmTierDataSource();
+            try {
+                assertThat(dataSource.getMaximumPoolSize()).isEqualTo(10);
+                assertThat(dataSource.getMinimumIdle()).isEqualTo(2);
+                assertThat(dataSource.getValidationTimeout()).isEqualTo(5_000L);
+            } finally {
+                dataSource.close();
+            }
         }
 
         @Test

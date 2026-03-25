@@ -50,7 +50,8 @@ public class ExecuteTestsSpecialistAgent
                 "1.0.0",
                 "estimatedDuration",
                 "15m")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

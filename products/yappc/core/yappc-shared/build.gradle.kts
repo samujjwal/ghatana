@@ -11,6 +11,9 @@ dependencies {
     implementation(project(":platform:java:plugin"))
     implementation(project(":platform:java:core"))
 
+    // YAPPC SPI — internal only (no public API exports, legacy plugin support)
+    implementation(project(":products:yappc:core:spi"))
+
     // ActiveJ for async
     implementation(libs.activej.promise)
 

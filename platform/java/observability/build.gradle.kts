@@ -39,6 +39,8 @@ dependencies {
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
     
     // AspectJ
     implementation("org.aspectj:aspectjrt:1.9.20")

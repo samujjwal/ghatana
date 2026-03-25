@@ -20,6 +20,7 @@ dependencies {
     implementation(project(":products:aep:aep-analytics"))
     implementation(project(":products:aep:aep-security"))
     implementation(project(":products:aep:aep-connectors"))
+    implementation(project(":products:aep:aep-event-cloud"))  // Data-Cloud bridge plugin
     // aep-agent merged into aep-registry on 2026-03-22
     implementation(project(":products:aep:aep-api"))
     
@@ -70,28 +71,15 @@ dependencies {
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
+    // Disable JWT auth for integration tests; auth logic is tested via AepSecurityTest
+    environment("AEP_AUTH_DISABLED", "true")
 }
 
-// Exclude test files that reference APIs not yet implemented (stubs/richer APIs)
-// and integration tests for incomplete HTTP endpoints
-sourceSets {
-    test {
-        java {
-            exclude("com/ghatana/aep/server/AepEventCloudResolutionTest.java")
-            exclude("com/ghatana/aep/server/compliance/AepComplianceServiceTest.java")
-            exclude("com/ghatana/aep/server/config/AepDynamicConfigServiceTest.java")
-            exclude("com/ghatana/aep/server/http/AepHttpServerAnalyticsDeploymentTest.java")
-            exclude("com/ghatana/aep/server/http/AepHttpServerComplianceTest.java")
-            exclude("com/ghatana/aep/server/http/AepHttpServerLearningTest.java")
-            exclude("com/ghatana/aep/server/http/AepHttpServerAgentTest.java")
-            exclude("com/ghatana/aep/server/http/AepHttpServerHitlTest.java")
-            exclude("com/ghatana/aep/server/http/AepHttpServerPatternTest.java")
-            exclude("com/ghatana/aep/server/store/DataCloudPipelineStoreTest.java")
-            exclude("com/ghatana/aep/security/AepSecurityTest.java")
-            exclude("com/ghatana/aep/server/dr/AepDisasterRecoveryServiceTest.java")
-        }
-    }
-}
+// All previously-excluded tests are now fully implemented and enabled:
+//   AepComplianceServiceTest    — AepComplianceReport.operation()/recordsAffected() added
+//   AepDynamicConfigServiceTest — EnvConfig.KAFKA_BOOTSTRAP_SERVERS/fromMap() added
+//   AepHttpServerComplianceTest — DataCloudClient.delete() confirmed present in SPI
+//   DataCloudPipelineStoreTest  — Pipeline class present in aep-registry
 
 // =============================================================================
 // CODE QUALITY — Spotless, Checkstyle, PMD, SpotBugs

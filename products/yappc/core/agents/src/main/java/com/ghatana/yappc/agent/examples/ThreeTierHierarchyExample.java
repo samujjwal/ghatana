@@ -2,8 +2,8 @@ package com.ghatana.yappc.agent.examples;
 
 import com.ghatana.agent.framework.coordination.*;
 import com.ghatana.agent.framework.memory.*;
+import com.ghatana.agent.registry.InMemoryAgentRegistry;
 import com.ghatana.yappc.agent.*;
-import com.ghatana.yappc.agent.YAPPCAgentRegistry;
 import com.ghatana.yappc.agent.leads.*;
 import com.ghatana.yappc.agent.coordinator.*;
 import com.ghatana.yappc.agents.code.*;
@@ -37,7 +37,9 @@ public class ThreeTierHierarchyExample {
     eventloop.submit(
         () -> {
           // Infrastructure setup - reuse from YAPPCAgentFrameworkExample
-          YAPPCAgentRegistry registry = new YAPPCAgentRegistry();
+          YappcAgentRegistryAdapter registry =
+              new YappcAgentRegistryAdapter(new InMemoryAgentRegistry());
+          AepEventPublisher eventPublisher = (type, tenantId, payload) -> Promise.complete();
           MemoryStore memoryStore = YAPPCAgentFrameworkExample.createInMemoryStore();
           DelegationManager delegationManager =
               YAPPCAgentFrameworkExample.createDelegationManager();
@@ -54,7 +56,10 @@ public class ThreeTierHierarchyExample {
           // Tier 2: Create phase lead agents
           ArchitecturePhaseLeadAgent archPhase =
               new ArchitecturePhaseLeadAgent(
-                  registry, memoryStore, new ArchitecturePhaseGenerator(registry));
+                registry,
+                memoryStore,
+                new ArchitecturePhaseGenerator(registry),
+                eventPublisher);
           registry.register(archPhase);
           log.info("Registered Tier 2 phase lead: ArchitecturePhaseLeadAgent");
 
@@ -65,7 +70,8 @@ public class ThreeTierHierarchyExample {
                   delegationManager,
                   orchestrationStrategy,
                   memoryStore,
-                  new DeliveryCoordinatorGenerator(registry));
+                  new DeliveryCoordinatorGenerator(registry),
+                  eventPublisher);
           registry.register(coordinator);
           log.info("Registered Tier 1 coordinator: PlatformDeliveryCoordinator");
 

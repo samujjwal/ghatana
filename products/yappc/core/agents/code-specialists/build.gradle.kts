@@ -7,9 +7,11 @@ description = "YAPPC Code Specialists - Code analysis, generation, and refactori
 dependencies {
     api(project(":products:yappc:core:agents:runtime"))
     api(project(":products:yappc:core:agents:common"))
+    api(project(":products:yappc:core:agents:delivery-specialists")) // re-export delivery agents
     api(project(":products:yappc:core:ai"))
-    api(project(":products:yappc:core:domain"))
+    api(project(":products:yappc:core:yappc-domain-impl"))
     api(project(":platform:java:agent-core"))
+    implementation(project(":products:aep:aep-agent-runtime"))
     
     implementation(libs.activej.promise)
     implementation(libs.activej.eventloop)

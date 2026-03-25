@@ -41,7 +41,8 @@ public class FeatureFlagIntegrationAgent extends YAPPCAgentBase<FeatureFlagInteg
             "#/definitions/FeatureFlagIntegrationOutput",
             List.of("integration", "feature-flags"),
             Map.of("description", "Integration bridge agent for feature flag management systems", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

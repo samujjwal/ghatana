@@ -51,7 +51,7 @@ import type {
   SimulationTemplateUpdate,
   SimulationTemplateStatus,
 } from "./types";
-import type { ParsedIntent } from "./simulation/types";
+import type { ParsedIntent, SimulationManifest } from "./simulation/types";
 
 export interface ContentService {
   getModuleBySlug(
@@ -103,7 +103,7 @@ export interface AIProxyService {
   }): Promise<ParsedIntent>;
 
   explainSimulation(args: {
-    manifest: any; // SimulationManifest
+    manifest: SimulationManifest;
     query: string;
   }): Promise<string>;
 
@@ -111,7 +111,7 @@ export interface AIProxyService {
     topic: string;
     targetAudience: string;
     learningObjectives?: string[];
-  }): Promise<any>; // Returns partial ModuleDraftInput
+  }): Promise<Partial<ModuleDraftInput>>;
 
   parseContentQuery(query: string): Promise<{
     domain?: string;

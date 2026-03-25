@@ -13,8 +13,8 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:http"))
 
-    // EventRecord and EventCloud abstractions (platform-only, no product dependency)
-    api(project(":platform:java:event-cloud"))
+    // EventEntry and EventLogStore abstractions (data-cloud SPI)
+    api(project(":products:data-cloud:spi"))
 
     // ActiveJ Promise support (type references OK per architecture)
     api(libs.activej.promise)
@@ -37,6 +37,8 @@ dependencies {
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
 
     // Logging
     implementation(libs.slf4j.api)

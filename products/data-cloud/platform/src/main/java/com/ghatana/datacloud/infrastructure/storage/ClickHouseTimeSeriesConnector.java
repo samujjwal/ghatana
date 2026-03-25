@@ -100,25 +100,15 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
 
     /** Warn when a query takes longer than this threshold in milliseconds. */
     private static final long SLOW_QUERY_THRESHOLD_MS = 500L;
+    /** DC3-L5: Default 10 GB I/O safety cap; can be overridden via constructor. */
+    private static final long DEFAULT_MAX_BYTES_TO_READ = 10_000_000_000L;
 
     /**
      * ClickHouse MergeTree query-level optimisation hints appended to every SELECT.
-     * <ul>
-     *   <li>{@code optimize_read_in_order=1}  — respect the ORDER BY clause when reading
-     *       data parts; avoids a full sort if the query ORDER BY matches table ORDER BY.</li>
-     *   <li>{@code use_skip_indexes=1}        — enable data-skipping (bloom/min-max) indices.</li>
-     *   <li>{@code max_bytes_to_read=10000000000} — 10 GB I/O safety cap per query; prevents
-     *       runaway full-table scans from blocking the server.</li>
-     *   <li>{@code read_overflow_mode='throw'} — raise an exception (not silently truncate)
-     *       when max_bytes_to_read is exceeded so callers see the cap.</li>
-     *   <li>{@code cancel_http_readonly_queries_on_client_close=1} — immediately abort
-     *       the server-side query if the client disconnects, freeing server resources.</li>
-     * </ul>
+     * The {@code max_bytes_to_read} value is configurable at construction time via
+     * the {@code maxBytesToRead} constructor parameter (DC3-L5).
      */
-    private static final String QUERY_SETTINGS =
-            " SETTINGS optimize_read_in_order=1, use_skip_indexes=1," +
-            " max_bytes_to_read=10000000000, read_overflow_mode='throw'," +
-            " cancel_http_readonly_queries_on_client_close=1";
+    private final String querySettings;
 
     private static final String DDL = """
             CREATE TABLE IF NOT EXISTS datacloud_timeseries (
@@ -137,9 +127,6 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
     private final ClickHouseNode server;
     private final MetricsCollector metrics;
     private final Executor executor;
-
-    // =========================================================================
-    //  Constructors
     // =========================================================================
 
     /**
@@ -150,7 +137,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
      * @param metrics  metrics collector for observability
      */
     public ClickHouseTimeSeriesConnector(String host, int port, MetricsCollector metrics) {
-        this(host, port, "default", "", metrics, Executors.newVirtualThreadPerTaskExecutor());
+        this(host, port, "default", "", metrics, Executors.newVirtualThreadPerTaskExecutor(), DEFAULT_MAX_BYTES_TO_READ);
     }
 
     /**
@@ -164,7 +151,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
      */
     public ClickHouseTimeSeriesConnector(
             String host, int port, String username, String password, MetricsCollector metrics) {
-        this(host, port, username, password, metrics, Executors.newVirtualThreadPerTaskExecutor());
+        this(host, port, username, password, metrics, Executors.newVirtualThreadPerTaskExecutor(), DEFAULT_MAX_BYTES_TO_READ);
     }
 
     /**
@@ -184,8 +171,33 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             String password,
             MetricsCollector metrics,
             Executor executor) {
+        this(host, port, username, password, metrics, executor, DEFAULT_MAX_BYTES_TO_READ);
+    }
+
+    /**
+     * DC3-L5: Full constructor with configurable I/O cap.
+     *
+     * @param host             ClickHouse hostname
+     * @param port             ClickHouse HTTP port
+     * @param username         ClickHouse username
+     * @param password         ClickHouse password
+     * @param metrics          metrics collector
+     * @param executor         executor for all blocking ClickHouse calls
+     * @param maxBytesToRead   per-query I/O safety cap in bytes (env: DC_CH_MAX_BYTES_TO_READ)
+     */
+    public ClickHouseTimeSeriesConnector(
+            String host,
+            int port,
+            String username,
+            String password,
+            MetricsCollector metrics,
+            Executor executor,
+            long maxBytesToRead) {
         this.metrics = Objects.requireNonNull(metrics, "metrics must not be null");
         this.executor = Objects.requireNonNull(executor, "executor must not be null");
+        this.querySettings = " SETTINGS optimize_read_in_order=1, use_skip_indexes=1,"
+                + " max_bytes_to_read=" + maxBytesToRead + ", read_overflow_mode='throw',"
+                + " cancel_http_readonly_queries_on_client_close=1";
         this.server = ClickHouseNode.builder()
                 .host(host)
                 .port(ClickHouseProtocol.HTTP, port)
@@ -345,7 +357,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             String sql = String.format(
                     "SELECT id, tenant_id, collection_name, data, created_at FROM %s" +
                     " PREWHERE tenant_id = '%s' WHERE id = '%s' LIMIT 1" +
-                    QUERY_SETTINGS,
+                    querySettings,
                     TABLE,
                     escapeIdentifier(tenantId),
                     escapeIdentifier(entityId.toString()));
@@ -391,7 +403,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             int offset = spec.getOffset() > 0 ? spec.getOffset() : 0;
             sql.append(String.format(" ORDER BY (tenant_id, collection_name, created_at) ASC" +
                     " LIMIT %d OFFSET %d", limit, offset));
-            sql.append(QUERY_SETTINGS);
+            sql.append(querySettings);
 
             String finalSql = sql.toString();
             List<Entity> entities = executeSelect(finalSql);
@@ -423,7 +435,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
                     " PREWHERE tenant_id = '%s'" +
                     " ORDER BY (tenant_id, collection_name, created_at) ASC" +
                     " LIMIT %d OFFSET %d" +
-                    QUERY_SETTINGS,
+                    querySettings,
                     TABLE, escapeIdentifier(tenantId), effectiveLimit, effectiveOffset);
 
             long start = System.currentTimeMillis();
@@ -464,7 +476,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
         Objects.requireNonNull(tenantId, "tenantId must not be null");
         try {
             String sql = String.format(
-                    "SELECT count() FROM %s PREWHERE tenant_id = '%s'" + QUERY_SETTINGS,
+                    "SELECT count() FROM %s PREWHERE tenant_id = '%s'" + querySettings,
                     TABLE, escapeIdentifier(tenantId));
             // count() returns a single row with one column; use the raw value
             long count = 0L;
@@ -733,7 +745,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
         try {
             // Count before delete (best-effort — ClickHouse count is O(1) for MergeTree)
             String countSql = String.format(
-                    "SELECT count() FROM %s PREWHERE tenant_id = '%s'" + QUERY_SETTINGS,
+                    "SELECT count() FROM %s PREWHERE tenant_id = '%s'" + querySettings,
                     TABLE, escapeIdentifier(tenantId));
             List<Entity> countResult = executeSelect(countSql);
             long countBefore = countResult.size();

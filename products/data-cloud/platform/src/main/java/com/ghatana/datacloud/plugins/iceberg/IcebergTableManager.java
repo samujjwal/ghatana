@@ -255,6 +255,14 @@ public class IcebergTableManager implements Closeable {
             int limit) {
         
         try {
+            // DC3-M7: Require at least one time-range predicate to prevent full-table scans
+            // across potentially terabytes of Iceberg partitions.
+            if (startTime == null && endTime == null) {
+                throw new IllegalArgumentException(
+                    "scanTable() requires startTime or endTime to prevent full partition scan. " +
+                    "Pass an explicit time range or use scanAtSnapshot() for point-in-time reads.");
+            }
+
             // Build filter expression
             Expression filter = Expressions.equal("tenant_id", tenantId);
 

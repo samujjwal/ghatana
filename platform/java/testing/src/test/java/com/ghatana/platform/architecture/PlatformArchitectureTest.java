@@ -89,6 +89,68 @@ public class PlatformArchitectureTest {
             rule.allowEmptyShould(true).check(allClasses);
         }
 
+        // ── CRIT-001: Core ↔ Domain Circular Dependency Prevention ──────────
+        // See: SHARED_MODULES_AUDIT_REPORT.md FINDING-001 / CRIT-001
+        // The domain module (com.ghatana.platform.domain.**, com.ghatana.platform.schema.**)
+        // must NOT import from core service-layer implementation packages.
+        // Domain is allowed to use core value types (com.ghatana.platform.types.**)
+        // and utilities (com.ghatana.platform.core.util.**) but NOT core service implementations.
+
+        @Test
+        @DisplayName("Domain must not import core service-layer operators (CRIT-001)")
+        void domainMustNotImportCoreOperators() {
+            ArchRule rule = noClasses()
+                .that().resideInAnyPackage(
+                    "com.ghatana.platform.domain..",
+                    "com.ghatana.platform.schema.."
+                )
+                .should().dependOnClassesThat().resideInAnyPackage(
+                    "com.ghatana.core.operator..",
+                    "com.ghatana.core.service..",
+                    "com.ghatana.core.pipeline.."
+                )
+                .as("Domain/Schema modules must not import core service-layer operator or pipeline classes " +
+                    "(CRIT-001: resolves core↔domain circular dependency)");
+
+            rule.allowEmptyShould(true).check(allClasses);
+        }
+
+        @Test
+        @DisplayName("Platform domain module must not import core state implementations (CRIT-001)")
+        void platformDomainMustNotImportCoreStateImpl() {
+            ArchRule rule = noClasses()
+                .that().resideInAnyPackage(
+                    "com.ghatana.platform.domain..",
+                    "com.ghatana.platform.schema.."
+                )
+                .should().dependOnClassesThat().resideInAnyPackage(
+                    "com.ghatana.core.state.."
+                )
+                .as("Platform domain classes must not depend on core state implementations " +
+                    "(CRIT-001: prevents layering violation that causes build instability)");
+
+            rule.allowEmptyShould(true).check(allClasses);
+        }
+
+        @Test
+        @DisplayName("Core module must not import domain pipeline specs (CRIT-001)")
+        void coreMustNotImportDomainPipelineSpecs() {
+            ArchRule rule = noClasses()
+                .that().resideInAnyPackage(
+                    "com.ghatana.platform.core..",
+                    "com.ghatana.platform.types.."
+                )
+                .should().dependOnClassesThat().resideInAnyPackage(
+                    "com.ghatana.platform.domain.pipeline..",
+                    "com.ghatana.platform.domain.auth..",
+                    "com.ghatana.platform.schema.."
+                )
+                .as("Core/types modules must not depend on domain-layer pipeline or schema classes " +
+                    "(CRIT-001: enforces strict downward dependency flow core→domain is wrong direction)");
+
+            rule.allowEmptyShould(true).check(allClasses);
+        }
+
         @Test
         @DisplayName("Libs cannot depend on products")
         void libsCannotDependOnProducts() {
@@ -221,6 +283,61 @@ public class PlatformArchitectureTest {
                 .should().haveRawReturnType("io.activej.promise.Promise")
                 .as("Methods ending with 'Async' should return ActiveJ Promise");
             
+            rule.allowEmptyShould(true).check(allClasses);
+        }
+
+        // ── HIGH-004: Promise pattern enforcement ────────────────────────────
+        // See: SHARED_MODULES_AUDIT_REPORT.md FINDING-005 / HIGH-004
+        // Blocking I/O must use Promise.ofBlocking(executor, ...).
+        // Promise.of() / Promise.ofException() are only for already-computed values.
+
+        @Test
+        @DisplayName("Service/Store classes must not call Thread.sleep (HIGH-004)")
+        void serviceAndStoreClassesMustNotCallThreadSleep() {
+            ArchRule rule = noClasses()
+                .that().haveNameMatching(".*(Service|Store|Repository|Gateway)")
+                .and().areNotInterfaces()
+                .and().resideOutsideOfPackages(
+                    "..testing..",
+                    "..test..",
+                    "..bridge.."
+                )
+                .should().callMethodWhere(
+                    com.tngtech.archunit.base.DescribedPredicate.describe(
+                        "Thread.sleep() which blocks the ActiveJ event loop (use Promise.ofBlocking instead)",
+                        call -> call.getTarget().getOwner().getName().equals("java.lang.Thread")
+                            && call.getTarget().getName().equals("sleep")
+                    )
+                )
+                .because("Calling Thread.sleep() on the event-loop thread stalls all concurrent requests. " +
+                    "Wrap any blocking delay in Promise.ofBlocking(executor, ...). " +
+                    "(HIGH-004 async pattern enforcement)");
+
+            rule.allowEmptyShould(true).check(allClasses);
+        }
+
+        @Test
+        @DisplayName("Non-test classes must not use CompletableFuture.get() which blocks (HIGH-004)")
+        void mustNotCallCompletableFutureGet() {
+            ArchRule rule = noClasses()
+                .that().resideInAnyPackage("com.ghatana..")
+                .and().resideOutsideOfPackages(
+                    "..testing..",
+                    "..test..",
+                    "..bridge..",
+                    "..adapters..",
+                    "..launcher.."
+                )
+                .should().callMethodWhere(
+                    com.tngtech.archunit.base.DescribedPredicate.describe(
+                        "CompletableFuture.get() which blocks the event loop",
+                        call -> call.getTarget().getOwner().getName().equals("java.util.concurrent.CompletableFuture")
+                            && call.getTarget().getName().equals("get")
+                    )
+                )
+                .because("CompletableFuture.get() blocks the calling thread. " +
+                    "Use Promise.ofBlocking() for async work. (HIGH-004)");
+
             rule.allowEmptyShould(true).check(allClasses);
         }
     }

@@ -41,7 +41,8 @@ public class RepoIntegrationAgent extends YAPPCAgentBase<RepoIntegrationInput, R
             "#/definitions/RepoIntegrationOutput",
             List.of("integration", "git", "repository"),
             Map.of("description", "Integration bridge agent for source code repository operations", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

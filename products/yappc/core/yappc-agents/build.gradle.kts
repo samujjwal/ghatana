@@ -8,8 +8,7 @@ description = "YAPPC Consolidated Agents Module"
 dependencies {
     // Platform agent modules
     implementation(project(":platform:java:agent-core"))
-    implementation(project(":platform:java:agent-registry"))
-    implementation(project(":platform:java:agent-runtime"))
+    implementation(project(":products:aep:aep-agent-runtime"))
     
     // AEP registry service
     implementation(project(":products:aep:aep-registry"))
@@ -18,7 +17,7 @@ dependencies {
     implementation(project(":products:yappc:core:agents"))
     
     // YAPPC domain
-    implementation(project(":products:yappc:core:yappc-domain"))
+    implementation(project(":products:yappc:core:yappc-domain-impl"))
     
     // YAPPC API (for domain classes)
     implementation(project(":products:yappc:core:yappc-api"))

@@ -41,7 +41,8 @@ public class RegressionTestWriterAgent extends YAPPCAgentBase<RegressionTestWrit
             "#/definitions/RegressionTestWriterOutput",
             List.of("debug", "regression-testing", "code-generation"),
             Map.of("description", "Debug micro-agent that generates regression tests for fixed bugs", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

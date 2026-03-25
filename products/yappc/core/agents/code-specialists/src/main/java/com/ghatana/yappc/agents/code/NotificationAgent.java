@@ -41,7 +41,8 @@ public class NotificationAgent extends YAPPCAgentBase<NotificationInput, Notific
             "#/definitions/NotificationOutput",
             List.of("integration", "notification", "messaging"),
             Map.of("description", "Integration bridge agent for multi-channel notifications", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

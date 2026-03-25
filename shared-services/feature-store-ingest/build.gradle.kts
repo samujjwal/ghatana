@@ -3,13 +3,12 @@ plugins {
     id("application")
 }
 
-description = "EventCloud tailing service for real-time feature ingestion"
+description = "Event tailing service for real-time feature ingestion"
 
 dependencies {
     // Platform libraries (updated paths)
     implementation(project(":platform:java:ai-integration"))
-    implementation(project(":platform:java:ai-integration"))  // FeatureStoreService (merged from ai-integration:feature-store)
-    implementation(project(":platform:java:event-cloud"))
+    implementation(project(":products:data-cloud:spi"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))

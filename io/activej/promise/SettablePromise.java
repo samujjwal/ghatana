@@ -28,6 +28,8 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <T> result type
  */
+// GHATANA-PATCH: Vendored copy from ActiveJ 6.0-rc2. No patches identified yet;
+// diff against upstream required. See io/activej/PATCHES.md.
 public final class SettablePromise<T> extends AbstractPromise<T> implements SettableCallback<T> {
 	/**
 	 * Accepts the provided values and performs this operation

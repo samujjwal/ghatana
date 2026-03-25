@@ -57,7 +57,7 @@ class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
         agentRegistry, delegationManager, orchestrationStrategy,
         memoryStore, generator);
 
-    YAPPCAgentBase.configureAepEventPublisher(
+    YAPPCAgentBase.setGlobalAepEventPublisher(
         (eventType, tenantId, payload) -> Promise.complete());
   }
 
@@ -190,7 +190,8 @@ class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
           new com.ghatana.yappc.agent.StepContract(stepName, "#/definitions/Object",
               "#/definitions/Object", List.of("phase-lead"),
               Map.of("version", "1.0.0")),
-          new StubGenerator());
+          new StubGenerator(),
+        defaultEventPublisher());
       this.memoryStore = memoryStore;
     }
 

@@ -10,6 +10,7 @@ import com.ghatana.kernel.util.TypedDataSerializer;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +70,7 @@ public class LabResultService {
 
     /** Returns the logical service name. */
     public String getName() {
-        return "lab-result";
+        return "lab-results";
     }
 
     // ==================== Core Operations ====================
@@ -92,18 +93,21 @@ public class LabResultService {
         LabObservation toStore = new LabObservation(
                 id,
                 observation.patientId(),
-                observation.performingLabId(),
-                observation.orderingProviderId(),
+                observation.encounterId(),
+                observation.orderId(),
                 observation.loincCode(),
                 observation.loincDisplay(),
+                observation.testName(),
                 observation.value(),
-                observation.unit(),
                 observation.referenceRangeLow(),
-                observation.referenceRangeHigh(),
-                observation.interpretation(),
-                Instant.now(),
+                observation.unit(),
+                observation.referenceRange(),
+                observation.performingLabId(),
+                observation.orderedAt() != null ? observation.orderedAt() : Instant.now(),
+                observation.resultedAt() != null ? observation.resultedAt() : Instant.now(),
                 observation.status(),
-                observation.notes()
+                observation.notes(),
+                observation.interpretation()
         );
 
         DataWriteRequest request = new DataWriteRequest(
@@ -161,10 +165,12 @@ public class LabResultService {
                 .map(obs -> {
                     String obsId = obs.id() != null ? obs.id() : generateId("obs");
                     LabObservation withId = new LabObservation(
-                            obsId, obs.patientId(), obs.performingLabId(), obs.orderingProviderId(),
-                            obs.loincCode(), obs.loincDisplay(), obs.value(), obs.unit(),
-                            obs.referenceRangeLow(), obs.referenceRangeHigh(), obs.interpretation(),
-                            Instant.now(), obs.status(), obs.notes()
+                            obsId, obs.patientId(), obs.encounterId(), obs.orderId(),
+                            obs.loincCode(), obs.loincDisplay(), obs.testName(), obs.value(),
+                            obs.referenceRangeLow(), obs.unit(), obs.referenceRange(),
+                            obs.performingLabId(),
+                            obs.orderedAt() != null ? obs.orderedAt() : Instant.now(),
+                            Instant.now(), obs.status(), obs.notes(), obs.interpretation()
                     );
                     return dataCloud.writeData(new DataWriteRequest(
                             RESULT_DATASET, obsId,
@@ -195,9 +201,9 @@ public class LabResultService {
         return dataCloud.readData(new DataReadRequest(RESULT_DATASET, observationId, Map.of()))
                 .map(result -> {
                     if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable(TypedDataSerializer.fromBytes(result.getData(), LabObservation.class));
+                    return Optional.ofNullable((LabObservation) TypedDataSerializer.fromBytes(result.getData(), LabObservation.class));
                 })
-                .whenException(e -> Promise.of(Optional.empty()));
+                ;
     }
 
     /**
@@ -247,19 +253,19 @@ public class LabResultService {
                 Map.of("id", "string", "patientId", "string", "loincCode", "string",
                         "resultedAt", "timestamp", "status", "string"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> panels = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 PANEL_DATASET,
                 Map.of("id", "string", "patientId", "string", "panelName", "string"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 AUDIT_DATASET,
                 Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(results, panels, audit).map($ -> null);
     }
@@ -274,7 +280,7 @@ public class LabResultService {
                         "LabAuditEntry", 1),
                 Map.of("timestamp", Instant.now().toString())
         );
-        return dataCloud.writeData(req).whenException(e -> {});
+        return dataCloud.writeData(req);
     }
 
     private String generateId(String prefix) {
@@ -304,22 +310,25 @@ public class LabResultService {
     public record LabObservation(
             String id,
             String patientId,
-            String performingLabId,
-            String orderingProviderId,
+            String encounterId,
+            String orderId,
             String loincCode,
             String loincDisplay,
-            String value,
-            String unit,
+            String testName,
+            BigDecimal value,
             Double referenceRangeLow,
-            Double referenceRangeHigh,
-            String interpretation,
+            String unit,
+            String referenceRange,
+            String performingLabId,
+            Instant orderedAt,
             Instant resultedAt,
             ObservationStatus status,
-            String notes
+            String notes,
+            String interpretation
     ) {
-        /** Returns {@code true} when the interpretation indicates an abnormal value. */
+        /** Returns {@code true} when the interpretation code indicates an out-of-range result. */
         public boolean isAbnormal() {
-            return interpretation != null && !interpretation.equalsIgnoreCase("N");
+            return interpretation != null && !interpretation.isBlank() && !"N".equalsIgnoreCase(interpretation);
         }
     }
 

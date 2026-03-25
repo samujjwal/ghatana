@@ -1,18 +1,24 @@
 package com.ghatana.datacloud.analytics;
 
+import com.ghatana.datacloud.entity.storage.StorageConnector;
+import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Comprehensive tests for {@link AnalyticsQueryEngine} with 100% coverage.
@@ -34,13 +40,21 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.pattern Unit Test, Integration Test
  */
 @DisplayName("Analytics Query Engine Tests")
+@ExtendWith(MockitoExtension.class)
 class AnalyticsQueryEngineTest extends EventloopTestBase {
     
+    @Mock
+    StorageConnector storageConnector;
+
     private AnalyticsQueryEngine engine;
     
     @BeforeEach
     void setup() {
-        engine = new AnalyticsQueryEngine();
+        // L2: inject StorageConnector so engine has access to real storage in execution paths
+        engine = new AnalyticsQueryEngine(storageConnector);
+        // Default stub: return empty QueryResult so .map() calls don't NPE
+        lenient().when(storageConnector.query(anyString(), anyString(), any(QuerySpec.class)))
+                .thenReturn(Promise.of(StorageConnector.QueryResult.empty()));
     }
     
     // ========================================================================
@@ -226,7 +240,6 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
     }
     
     @Test
-    @Disabled("Temporarily disabled due to data source extraction logic issues")
     @DisplayName("Should extract data sources from query")
     void shouldExtractDataSources() {
         // GIVEN: Query with FROM clause
@@ -242,12 +255,11 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
             engine.getPlan(result.getQueryId())
         );
         
-        // THEN: Data sources are extracted
-        assertThat(plan.getDataSources()).contains("primary_source");
+        // THEN: Data sources are extracted (JSQLParser returns actual table names)
+        assertThat(plan.getDataSources()).contains("users");
     }
     
     @Test
-    @Disabled("Temporarily disabled due to data source extraction logic issues")
     @DisplayName("Should extract multiple data sources from JOIN query")
     void shouldExtractMultipleDataSources() {
         // GIVEN: JOIN query
@@ -263,9 +275,9 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
             engine.getPlan(result.getQueryId())
         );
         
-        // THEN: Multiple data sources are extracted
+        // THEN: Multiple data sources are extracted (JSQLParser extracts actual table names)
         assertThat(plan.getDataSources()).hasSize(2);
-        assertThat(plan.getDataSources()).contains("primary_source", "joined_source");
+        assertThat(plan.getDataSources()).contains("users", "orders");
     }
     
     @Test

@@ -45,7 +45,8 @@ public class MonitorSpecialistAgent extends YAPPCAgentBase<MonitorInput, Monitor
             "#/definitions/MonitorOutput",
             List.of("ops", "monitoring", "observability"),
             Map.of("description", "Monitors production deployment", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

@@ -1,8 +1,6 @@
 package com.ghatana.kernel.plugin;
 
 import com.ghatana.kernel.descriptor.KernelCapability;
-import com.ghatana.kernel.registry.CapabilityRegistry;
-import com.ghatana.kernel.registry.ServiceRegistry;
 import com.ghatana.kernel.context.KernelContext;
 
 import java.util.Optional;
@@ -14,77 +12,48 @@ import java.util.Optional;
  * through typed accessor methods ({@link #getCapability}, {@link #registerService}, etc.)
  * without exposing internal kernel implementation details.</p>
  *
- * <p>The sub-registry accessor methods ({@link #getCapabilityRegistry()},
- * {@link #getServiceRegistry()}) are deprecated per Decision D4.
- * Use the typed methods on this interface instead.</p>
- *
  * @doc.type interface
  * @doc.purpose Plugin context for accessing kernel capabilities and services
  * @doc.layer core
  * @doc.pattern Context
  */
 public interface PluginContext {
-    
+
     /**
      * Get the underlying kernel context.
      */
     KernelContext getKernelContext();
-    
-    /**
-     * Get the capability registry for discovering capabilities.
-     *
-     * @deprecated Per Decision D4, sub-registries are internal. Use
-     *             {@link #getCapability(KernelCapability, Class)} instead.
-     */
-    @Deprecated(forRemoval = true)
-    CapabilityRegistry getCapabilityRegistry();
-    
-    /**
-     * Get the service registry for accessing services.
-     *
-     * @deprecated Per Decision D4, sub-registries are internal. Use
-     *             {@link #registerService(String, Object)} and typed methods instead.
-     */
-    @Deprecated(forRemoval = true)
-    ServiceRegistry getServiceRegistry();
-    
+
     /**
      * Get a specific kernel capability instance.
-     * 
+     *
      * @param capability the capability to get
      * @param type the expected type
      * @return the capability instance
      * @throws IllegalArgumentException if capability is not available
      */
     <T> T getCapability(KernelCapability capability, Class<T> type);
-    
+
     /**
      * Get an optional kernel capability instance.
-     * 
+     *
      * @param capability the capability to get
      * @param type the expected type
      * @return optional capability instance
      */
     <T> Optional<T> getOptionalCapability(KernelCapability capability, Class<T> type);
-    
+
     /**
      * Register a service with the kernel.
-     * 
+     *
      * @param serviceId the service identifier
      * @param service the service implementation
      */
     void registerService(String serviceId, Object service);
-    
-    /**
-     * Register an extension with the kernel.
-     * 
-     * @param extension the extension to register
-     */
-    void registerExtension(KernelExtension extension);
-    
+
     /**
      * Register an operator with the kernel.
-     * 
+     *
      * @param operator the operator to register
      */
     void registerOperator(KernelOperator operator);

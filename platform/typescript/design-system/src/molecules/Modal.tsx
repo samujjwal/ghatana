@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 import {
   lightColors,
   darkColors,

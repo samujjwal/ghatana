@@ -23,7 +23,7 @@ import type {
   ProgressCallback,
   ErrorCallback,
   SuccessCallback
-} from '@ghatana/audio-video-product-types';
+} from '@audio-video/types';
 
 /**
  * Configuration for service clients
@@ -387,7 +387,3 @@ export const defaultConfigs: Record<ServiceType, ServiceClientConfig> = {
     enableLogging: true
   }
 };
-
-  ServiceType,
-  STTRequest,
-  STTRequest,

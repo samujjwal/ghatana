@@ -7,10 +7,8 @@ import com.ghatana.datacloud.entity.storage.StorageConnector;
 import com.ghatana.datacloud.entity.storage.StorageProfile;
 import com.ghatana.datacloud.infrastructure.storage.EntityDocumentMapper;
 import io.activej.promise.Promise;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.NoopMetricsCollector;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -47,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -93,43 +92,31 @@ public class OpenSearchConnector implements StorageConnector {
     // Track indices already confirmed to exist so we skip repeated exists() calls
     private final Set<String> confirmedIndices = ConcurrentHashMap.newKeySet();
 
-    private final Counter indexCounter;
-    private final Counter indexErrorCounter;
-    private final Counter readCounter;
-    private final Counter deleteCounter;
-    private final Timer   indexTimer;
-    private final Timer   searchTimer;
+    private final MetricsCollector metricsCollector;
 
     /**
-     * Convenience constructor with a {@link SimpleMeterRegistry} — suitable for
-     * testing and standalone usage.
+     * Convenience constructor without metrics — uses no-op collector.
      */
     public OpenSearchConnector(OpenSearchConfig config) {
-        this(config, new SimpleMeterRegistry());
+        this(config, NoopMetricsCollector.getInstance());
     }
 
     /**
-     * Constructor with MeterRegistry; uses a virtual-thread-per-task executor.
+     * Constructor with MetricsCollector; uses a virtual-thread-per-task executor.
      */
-    public OpenSearchConnector(OpenSearchConfig config, MeterRegistry meterRegistry) {
-        this(config, meterRegistry, Executors.newVirtualThreadPerTaskExecutor());
+    public OpenSearchConnector(OpenSearchConfig config, MetricsCollector metricsCollector) {
+        this(config, metricsCollector, Executors.newVirtualThreadPerTaskExecutor());
     }
 
     /**
      * Full constructor for production use with custom executor.
      */
-    public OpenSearchConnector(OpenSearchConfig config, MeterRegistry meterRegistry, Executor executor) {
+    public OpenSearchConnector(OpenSearchConfig config, MetricsCollector metricsCollector, Executor executor) {
         this.executor = executor;
+        this.metricsCollector = Objects.requireNonNull(metricsCollector, "metricsCollector required");
         this.restClient = buildRestClient(config);
         RestClientTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
         this.client = new OpenSearchClient(transport);
-
-        this.indexCounter      = meterRegistry.counter("opensearch.entity.index.total");
-        this.indexErrorCounter = meterRegistry.counter("opensearch.entity.index.error.total");
-        this.readCounter       = meterRegistry.counter("opensearch.entity.read.total");
-        this.deleteCounter     = meterRegistry.counter("opensearch.entity.delete.total");
-        this.indexTimer        = meterRegistry.timer("opensearch.entity.index.duration");
-        this.searchTimer       = meterRegistry.timer("opensearch.entity.search.duration");
     }
 
     // =========================================================================
@@ -142,7 +129,7 @@ public class OpenSearchConnector implements StorageConnector {
         if (entity.getId() == null) {
             entity.setId(UUID.randomUUID());
         }
-        Timer.Sample sample = Timer.start();
+        long _startMs = System.currentTimeMillis();
         try {
             String index = tenantIndex(entity.getTenantId());
             ensureIndex(index);
@@ -151,22 +138,22 @@ public class OpenSearchConnector implements StorageConnector {
                     .index(index)
                     .id(entity.getId().toString())
                     .document(source)));
-            indexCounter.increment();
+            metricsCollector.incrementCounter("opensearch.entity.index.total");
             log.debug("OpenSearch: indexed entity {} in {}", entity.getId(), index);
             return Promise.of(entity);
         } catch (IOException e) {
-            indexErrorCounter.increment();
+            metricsCollector.incrementCounter("opensearch.entity.index.error.total");
             log.error("OpenSearch: index failed for entity {}", entity.getId(), e);
             return Promise.ofException(new RuntimeException("OpenSearch index failed", e));
         } finally {
-            sample.stop(indexTimer);
+            metricsCollector.recordTimer("opensearch.entity.index.duration", System.currentTimeMillis() - _startMs);
         }
     }
 
     @Override
     public Promise<Optional<Entity>> read(UUID collectionId, String tenantId, UUID entityId) {
         try {
-            readCounter.increment();
+            metricsCollector.incrementCounter("opensearch.entity.read.total");
             String index = tenantIndex(tenantId);
             @SuppressWarnings("unchecked")
             GetResponse<Map> resp = client.get(
@@ -191,7 +178,7 @@ public class OpenSearchConnector implements StorageConnector {
         try {
             String index = tenantIndex(tenantId);
             client.delete(DeleteRequest.of(req -> req.index(index).id(entityId.toString())));
-            deleteCounter.increment();
+            metricsCollector.incrementCounter("opensearch.entity.delete.total");
             return Promise.of(null);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -200,7 +187,7 @@ public class OpenSearchConnector implements StorageConnector {
 
     @Override
     public Promise<QueryResult> query(UUID collectionId, String tenantId, QuerySpec spec) {
-        Timer.Sample sample = Timer.start();
+        long _startMs = System.currentTimeMillis();
         try {
             String index = tenantIndex(tenantId);
             int limit  = spec.getLimit()  > 0 ? spec.getLimit()  : 1_000;
@@ -221,7 +208,8 @@ public class OpenSearchConnector implements StorageConnector {
                 if (hit.source() != null) entities.add(entityFrom(hit.source()));
             }
             long total = resp.hits().total() != null ? resp.hits().total().value() : entities.size();
-            long duration = sample.stop(searchTimer);
+            long duration = System.currentTimeMillis() - _startMs;
+            metricsCollector.recordTimer("opensearch.entity.search.duration", duration);
             return Promise.of(new QueryResult(entities, total, limit, offset, duration));
         } catch (IOException e) {
             log.error("OpenSearch: query failed for tenant {}", tenantId, e);
@@ -291,7 +279,7 @@ public class OpenSearchConnector implements StorageConnector {
             if (resp.errors()) {
                 log.warn("OpenSearch: bulkCreate had partial failures for tenant {}", tenantId);
             }
-            indexCounter.increment(entities.size());
+            metricsCollector.increment("opensearch.entity.index.total", entities.size(), Map.of());
             return Promise.of(entities);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -314,7 +302,7 @@ public class OpenSearchConnector implements StorageConnector {
                 ops.add(BulkOperation.of(op -> op.delete(d -> d.index(index).id(docId))));
             }
             client.bulk(BulkRequest.of(req -> req.operations(ops)));
-            deleteCounter.increment(entityIds.size());
+            metricsCollector.increment("opensearch.entity.delete.total", entityIds.size(), Map.of());
             return Promise.of((long) entityIds.size());
         } catch (Exception e) {
             return Promise.ofException(e);

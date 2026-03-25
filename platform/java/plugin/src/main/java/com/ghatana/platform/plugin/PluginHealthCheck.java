@@ -1,5 +1,6 @@
 package com.ghatana.platform.plugin;
 
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
@@ -74,20 +75,20 @@ public interface PluginHealthCheck {
 
             return io.activej.promise.Promises.toList(java.util.List.of(promises))
                 .map(results -> {
-                    boolean allHealthy = results.stream().allMatch(HealthStatus::healthy);
+                    boolean allHealthy = results.stream().allMatch(HealthStatus::isHealthy);
                     java.util.Map<String, Object> details = new java.util.LinkedHashMap<>();
                     for (int i = 0; i < results.size(); i++) {
                         HealthStatus result = results.get(i);
                         details.put("check-" + i, java.util.Map.of(
-                            "healthy", result.healthy(),
-                            "message", result.message() != null ? result.message() : ""
+                            "healthy", result.isHealthy(),
+                            "message", result.getMessage() != null ? result.getMessage() : ""
                         ));
                     }
                     if (allHealthy) {
                         return HealthStatus.ok(name + ": all checks passed", details);
                     } else {
                         long unhealthyCount = results.stream()
-                            .filter(r -> !r.healthy()).count();
+                            .filter(r -> !r.isHealthy()).count();
                         return HealthStatus.unhealthy(
                             name + ": " + unhealthyCount + "/" + results.size() + " checks failed",
                             details

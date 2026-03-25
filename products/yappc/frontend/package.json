@@ -5,6 +5,7 @@
   "workspaces": [
     "apps/*",
     "libs/*",
+    "compat/*",
     "packages/*"
   ],
   "scripts": {

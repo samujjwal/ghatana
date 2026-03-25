@@ -11,7 +11,7 @@ import {
   Avatar,
   Stack,
 } from '@ghatana/design-system';
-import { alpha, useTheme, resolveMuiColor } from '@yappc/ui/theme';
+import { alpha, useTheme, resolveMuiColor } from '@yappc/theme';
 import React, { memo, useState } from 'react';
 
 import type { NodeProps } from '@xyflow/react';

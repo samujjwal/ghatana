@@ -41,7 +41,8 @@ public class SystemsArchitectAgent extends YAPPCAgentBase<SystemsArchitectInput,
             "#/definitions/SystemsArchitectOutput",
             List.of("strategic", "architecture"),
             Map.of("description", "Strategic systems architect for cross-cutting technical decisions", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

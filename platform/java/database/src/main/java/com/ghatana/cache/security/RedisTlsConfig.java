@@ -147,7 +147,7 @@ import javax.net.ssl.*;
  * Immutable configuration - all fields final. Safe to share across threads.
  *
  * @see AsyncRedisCache
- * @see RedisCacheConfig
+ * @see com.ghatana.platform.database.cache.RedisCacheConfig
  * @see <a href="https://redis.io/docs/management/security/encryption/">Redis TLS Documentation</a>
  * @doc.type class
  * @doc.purpose TLS/SSL configuration for secure Redis connections

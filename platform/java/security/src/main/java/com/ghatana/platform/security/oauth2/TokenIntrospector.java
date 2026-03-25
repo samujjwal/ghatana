@@ -130,14 +130,6 @@ public class TokenIntrospector {
             .build();
     }
     
-    // This method is no longer needed as we're using UserInfo instead of introspection
-    // Keeping it for backward compatibility
-    private User createUserFromIntrospection(Map<String, Object> claims) {
-        return User.builder()
-            .userId((String) claims.get("sub"))
-            .build();
-    }
-    
     private ClientAuthentication createClientAuthentication() {
         return new ClientSecretBasic(
             new ClientID(config.getClientId()),

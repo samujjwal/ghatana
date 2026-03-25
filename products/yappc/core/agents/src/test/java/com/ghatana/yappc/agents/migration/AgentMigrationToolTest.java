@@ -34,7 +34,8 @@ class AgentMigrationToolTest {
         Files.writeString(srcDir.resolve("JavaExpertAgent.java"), """
             public class JavaExpertAgent extends YAPPCAgentBase<JavaExpertInput, JavaExpertOutput> {
                 public JavaExpertAgent(MemoryStore store, OutputGenerator gen) {
-                    super("JavaExpertAgent", "expert.java", contract, gen);
+                    super("JavaExpertAgent", "expert.java", contract, gen,
+        defaultEventPublisher());
                 }
             }
             """);
@@ -90,10 +91,6 @@ class AgentMigrationToolTest {
     }
     
     private String extractAgentId(AgentMigrationTool tool, String className) {
-        // Access via reflection or test the pattern directly
-        return className.replace("Agent", "")
-            .replaceAll("([A-Z])", ".$1")
-            .toLowerCase()
-            .replaceFirst("^\\.", "");
+        return tool.generateAgentId(className);
     }
 }

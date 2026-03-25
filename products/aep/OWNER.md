@@ -4,7 +4,7 @@
 **Slack:** #platform-aep  
 **On-call:** AEP on-call rotation  
 **Architecture lead:** Platform Engineering Lead  
-**Boundary audit score:** 5/10 (2026-03-21) — active remediation in progress  
+**Boundary audit score:** 8/10 (2026-01-19) — World Class Report Phase 1 complete  
 
 ## Responsibility
 
@@ -23,12 +23,16 @@ AEP is the **event-driven agent orchestration runtime** for the Ghatana platform
 | Module | Purpose |
 |--------|---------|
 | `aep-engine` | Core pipeline execution engine |
-| `aep-runtime-core` | Runtime facades and entry points |
+| `aep-event-cloud` | Data-Cloud bridge plugin for event processing |
 | `aep-operator-contracts` | Shared operator and pipeline contracts |
 | `aep-analytics` | Pipeline observability and metrics |
-| `aep-registry` | Operator and pipeline registry |
+| `aep-registry` | Operator, pipeline and agent registry |
 | `orchestrator` | Multi-tenant orchestration |
 | `server` | HTTP server entry point |
+
+> Note: `aep-runtime-core` exists on-disk as a backward-compat stub but is not
+> included in the Gradle build. `aep-agent` was merged into `aep-registry`
+> (2026-03-22). All `platform-*` directories have been removed.
 
 ## Consumers
 
@@ -43,3 +47,10 @@ AEP is the **event-driven agent orchestration runtime** for the Ghatana platform
 
 - [x] Rename `platform-*` modules to domain-reflecting AEP-owned names
 - [x] Remove direct product consumers of deprecated AEP platform-* module paths
+- [x] Delete all empty `platform-*` directories (Phase 1 complete, 2026-01-19)
+- [x] Wire `AgentController` to canonical `EventCloudAgentStore` (Phase 2 complete, 2026-01-19)
+- [x] Fix OpenAPI contract port alignment (8081 → 8090, Phase 3 complete, 2026-01-19)
+- [x] `AepRegistryModule` defaults to `DataCloudPipelineRegistryClientImpl` (Phase 2 complete)
+- [ ] UI operator cockpit (Phase 4)
+- [ ] Learning loop real implementation (Phase 5)
+- [ ] Observability/health checks (Phase 6)

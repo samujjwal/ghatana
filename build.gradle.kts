@@ -135,6 +135,13 @@ idea {
 apply(from = file("gradle/product-isolation.gradle"))
 apply(from = file("gradle/doc-tag-check.gradle"))
 
+// Wire checkDocTags into standard `check` so it runs on every CI build.
+// New files missing @doc tags will FAIL; existing violations are grandfathered
+// in gradle/doc-tag-baseline.txt (reduce the baseline over time).
+tasks.named("check") {
+    dependsOn("checkDocTags")
+}
+
 // =============================================================================
 // Aggregate Tasks
 // =============================================================================

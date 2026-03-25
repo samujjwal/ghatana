@@ -41,7 +41,8 @@ public class ReproductionAgent extends YAPPCAgentBase<ReproductionInput, Reprodu
             "#/definitions/ReproductionOutput",
             List.of("debug", "reproduction"),
             Map.of("description", "Debug micro-agent that generates minimal reproduction steps for bugs", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

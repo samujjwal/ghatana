@@ -10,7 +10,6 @@ import com.ghatana.agent.framework.runtime.BaseAgent;
 import com.ghatana.agent.framework.api.OutputGenerator;
 import com.ghatana.agent.framework.api.GeneratorMetadata;
 import com.ghatana.agent.registry.AgentFrameworkRegistry;
-import com.ghatana.agent.registry.InMemoryAgentFrameworkRegistry;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -498,7 +497,7 @@ class MigrationAdapterTest {
             Agent legacy = createLegacyAgent("reg-legacy", "Registry Test", "desc");
             LegacyAgentAdapter adapter = new LegacyAgentAdapter(legacy);
 
-            AgentFrameworkRegistry registry = new InMemoryAgentFrameworkRegistry();
+            AgentFrameworkRegistry registry = new TestAgentFrameworkRegistry();
             AgentConfig config = AgentConfig.builder().agentId("reg-legacy").build();
 
             registry.register(adapter, config);
@@ -520,7 +519,7 @@ class MigrationAdapterTest {
             BaseAgent<String, String> baseAgent = createBaseAgent("reg-base");
             BaseAgentAdapter<String, String> adapter = new BaseAgentAdapter<>(baseAgent);
 
-            AgentFrameworkRegistry registry = new InMemoryAgentFrameworkRegistry();
+            AgentFrameworkRegistry registry = new TestAgentFrameworkRegistry();
             AgentConfig config = AgentConfig.builder().agentId("reg-base").build();
             registry.register(adapter, config);
 
@@ -548,7 +547,7 @@ class MigrationAdapterTest {
                     createOrchestrationAgent("reg-orch");
             TypedAgent<String, String> adapted = OrchestrationBridge.toTypedAgent(orch);
 
-            AgentFrameworkRegistry registry = new InMemoryAgentFrameworkRegistry();
+            AgentFrameworkRegistry registry = new TestAgentFrameworkRegistry();
             AgentConfig config = AgentConfig.builder().agentId("reg-orch").build();
             registry.register(adapted, config);
 
@@ -571,7 +570,7 @@ class MigrationAdapterTest {
         @Test
         @DisplayName("mixed agent types coexist in registry with findByType")
         void mixedTypesInRegistry() {
-            AgentFrameworkRegistry registry = new InMemoryAgentFrameworkRegistry();
+            AgentFrameworkRegistry registry = new TestAgentFrameworkRegistry();
 
             // Legacy agent
             Agent legacy = createLegacyAgent("mixed-legacy", "Legacy", "");
@@ -700,6 +699,139 @@ class MigrationAdapterTest {
     // ═════════════════════════════════════════════════════════════════════════
     // Stub / helper factories
     // ═════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Lightweight in-test registry used to keep migration tests independent from
+     * concrete runtime implementations now owned by aep-agent-runtime.
+     */
+    static final class TestAgentFrameworkRegistry implements AgentFrameworkRegistry {
+
+        private record Entry(TypedAgent<?, ?> agent, AgentConfig config) {}
+
+        private final Map<String, Entry> agents = new HashMap<>();
+
+        @Override
+        public @NotNull Promise<Void> register(@NotNull TypedAgent<?, ?> agent, @NotNull AgentConfig config) {
+            agents.put(agent.descriptor().getAgentId(), new Entry(agent, config));
+            return Promise.complete();
+        }
+
+        @Override
+        public @NotNull Promise<Void> unregister(@NotNull String agentId) {
+            agents.remove(agentId);
+            return Promise.complete();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public @NotNull <I, O> Promise<TypedAgent<I, O>> resolve(@NotNull String agentId) {
+            Entry entry = agents.get(agentId);
+            if (entry == null) {
+                return Promise.ofException(new NoSuchElementException("Agent not found: " + agentId));
+            }
+            return Promise.of((TypedAgent<I, O>) entry.agent());
+        }
+
+        @Override
+        public @NotNull Promise<List<AgentDescriptor>> findByType(@NotNull AgentType type) {
+            List<AgentDescriptor> out = agents.values().stream()
+                    .map(e -> e.agent().descriptor())
+                    .filter(d -> d.getType() == type)
+                    .toList();
+            return Promise.of(out);
+        }
+
+        @Override
+        public @NotNull Promise<List<AgentDescriptor>> findByCapability(@NotNull String capability) {
+            List<AgentDescriptor> out = agents.values().stream()
+                    .map(e -> e.agent().descriptor())
+                    .filter(d -> d.hasCapability(capability))
+                    .toList();
+            return Promise.of(out);
+        }
+
+        @Override
+        public @NotNull Promise<List<AgentDescriptor>> findByCustomType(@NotNull String customTypeName) {
+            String normalized = customTypeName.trim().toUpperCase(Locale.ROOT);
+            List<AgentDescriptor> out = agents.values().stream()
+                    .map(e -> e.agent().descriptor())
+                    .filter(d -> d.getType() == AgentType.CUSTOM)
+                    .filter(d -> normalized.equals(d.getSubtype() == null ? null : d.getSubtype().toUpperCase(Locale.ROOT)))
+                    .toList();
+            return Promise.of(out);
+        }
+
+        @Override
+        public @NotNull Promise<List<AgentDescriptor>> listAll() {
+            List<AgentDescriptor> out = agents.values().stream().map(e -> e.agent().descriptor()).toList();
+            return Promise.of(out);
+        }
+
+        @Override
+        public @NotNull Promise<Void> initialize(@NotNull String agentId) {
+            Entry entry = agents.get(agentId);
+            if (entry == null) {
+                return Promise.ofException(new NoSuchElementException("Agent not found: " + agentId));
+            }
+            return entry.agent().initialize(entry.config());
+        }
+
+        @Override
+        public @NotNull Promise<Void> shutdown(@NotNull String agentId) {
+            Entry entry = agents.get(agentId);
+            if (entry == null) {
+                return Promise.ofException(new NoSuchElementException("Agent not found: " + agentId));
+            }
+            return entry.agent().shutdown();
+        }
+
+        @Override
+        public @NotNull Promise<HealthStatus> healthCheck(@NotNull String agentId) {
+            Entry entry = agents.get(agentId);
+            if (entry == null) {
+                return Promise.of(HealthStatus.UNKNOWN);
+            }
+            return entry.agent().healthCheck();
+        }
+
+        @Override
+        public @NotNull Promise<Void> initializeAll() {
+            Promise<Void> chain = Promise.complete();
+            for (Entry entry : agents.values()) {
+                chain = chain.then(() -> entry.agent().initialize(entry.config()));
+            }
+            return chain;
+        }
+
+        @Override
+        public @NotNull Promise<Void> shutdownAll() {
+            Promise<Void> chain = Promise.complete();
+            for (Entry entry : agents.values()) {
+                chain = chain.then(() -> entry.agent().shutdown());
+            }
+            return chain;
+        }
+
+        @Override
+        public @NotNull Promise<Void> reload(@NotNull String agentId, @NotNull AgentConfig newConfig) {
+            Entry entry = agents.get(agentId);
+            if (entry == null) {
+                return Promise.ofException(new NoSuchElementException("Agent not found: " + agentId));
+            }
+            agents.put(agentId, new Entry(entry.agent(), newConfig));
+            return entry.agent().reconfigure(newConfig);
+        }
+
+        @Override
+        public int size() {
+            return agents.size();
+        }
+
+        @Override
+        public boolean contains(@NotNull String agentId) {
+            return agents.containsKey(agentId);
+        }
+    }
 
     private Agent createLegacyAgent(String id, String name, String description) {
         return new StubLegacyAgent(id, name, description);

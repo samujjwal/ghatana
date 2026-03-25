@@ -41,7 +41,8 @@ public class CloudSecurityAuditOrchestratorAgent extends YAPPCAgentBase<CloudSec
             "#/definitions/CloudSecurityAuditOrchestratorOutput",
             List.of("cloud-security", "audit"),
             Map.of("description", "Orchestrates cloud security audits across providers and services", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

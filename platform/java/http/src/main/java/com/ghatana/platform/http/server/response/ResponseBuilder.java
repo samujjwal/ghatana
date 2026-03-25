@@ -304,15 +304,6 @@ public class ResponseBuilder {
     }
 
     /**
-     * Backwards-compatible alias for internalServerError(). Some callers use
-     * the older name `serverError()`; provide the alias to avoid widespread
-     * call-site changes.
-     */
-    public static ResponseBuilder serverError() {
-        return internalServerError();
-    }
-
-    /**
      * Creates a 503 Service Unavailable response builder.
      */
     public static ResponseBuilder serviceUnavailable() {

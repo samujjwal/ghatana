@@ -42,7 +42,8 @@ public class QualityGateSpecialistAgent
             List.of("implementation", "quality", "gate"),
             Map.of("description", "Validates quality metrics", "version", "1.0.0")),
         (OutputGenerator<StepRequest<QualityGateInput>, StepResult<QualityGateOutput>>)
-            generators.get("implementation.qualityGate"));
+            generators.get("implementation.qualityGate"),
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

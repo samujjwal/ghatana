@@ -13,6 +13,9 @@ repositories {
 }
 
 dependencies {
+    // Platform Audio-Video library (replaces legacy implementations)
+    implementation(project(":platform:java:audio-video"))
+
     // Audio-Video common (security, tracing, rate limiting interceptors)
     implementation(project(":products:audio-video:libs:common"))
 
@@ -34,9 +37,6 @@ dependencies {
     implementation(libs.log4j.core)
     implementation(libs.log4j.api)
     
-    // TTS Engine (Piper or similar)
-    implementation(libs.javacpp)
-    
     // JSON processing
     implementation(libs.gson)
     
@@ -46,12 +46,6 @@ dependencies {
     // Jackson
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
-    
-    // ONNX Runtime
-    implementation(libs.onnxruntime)
-    
-    // Native lib loader
-    implementation(libs.native.lib.loader)
     
     // Testing
     testImplementation(libs.junit.jupiter)

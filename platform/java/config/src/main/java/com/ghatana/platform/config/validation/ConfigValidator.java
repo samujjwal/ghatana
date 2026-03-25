@@ -5,6 +5,7 @@
 package com.ghatana.platform.config.validation;
 
 import com.ghatana.platform.config.ConfigSource;
+import com.ghatana.platform.validation.ValidationResult;
 
 /**
  * Validates configuration values.

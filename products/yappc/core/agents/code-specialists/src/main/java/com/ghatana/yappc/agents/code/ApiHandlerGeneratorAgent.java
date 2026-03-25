@@ -41,7 +41,8 @@ public class ApiHandlerGeneratorAgent extends YAPPCAgentBase<ApiHandlerGenerator
             "#/definitions/ApiHandlerGeneratorOutput",
             List.of("code-generation", "api", "handler"),
             Map.of("description", "Worker agent that generates API handlers from OpenAPI/GraphQL specs", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

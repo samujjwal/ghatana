@@ -8,7 +8,7 @@ import {
   lightShadows,
   darkShadows,
 } from '@ghatana/tokens';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 import { useTheme } from '@ghatana/theme';
 import { sxToStyle } from '../utils/sx';
 

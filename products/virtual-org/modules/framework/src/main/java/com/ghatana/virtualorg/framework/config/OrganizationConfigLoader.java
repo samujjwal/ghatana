@@ -7,7 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.platform.config.interpolation.VariableResolver;
 import com.ghatana.platform.config.registry.ConfigRegistry;
 import com.ghatana.platform.config.YamlConfigSource;
-import com.ghatana.platform.config.validation.ValidationResult;
+import com.ghatana.platform.validation.ValidationResult;
 import com.ghatana.platform.config.watcher.ConfigReloadWatcher;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;

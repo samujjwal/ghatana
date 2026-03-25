@@ -3,7 +3,6 @@ package com.ghatana.refactorer.server.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
-import com.ghatana.refactorer.server.auth.TenantContextStorage;
 import com.ghatana.refactorer.server.kg.KgService;
 import com.ghatana.refactorer.server.kg.config.KgConfiguration;
 import com.ghatana.refactorer.server.dto.RestModels;
@@ -78,7 +77,7 @@ public final class AnalysisController {
                                 = objectMapper.readValue(
                                         body.getArray(), RestModels.PatternDiscoveryRequest.class);
 
-                                String tenantId = TenantContextStorage.getCurrentTenantId();
+                                String tenantId = com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId();
                                 logger.info(
                                         "Discovering patterns for tenant: {} with minSupport: {}",
                                         tenantId,
@@ -172,7 +171,7 @@ public final class AnalysisController {
                                         body.getArray(),
                                         RestModels.CorrelationAnalysisRequest.class);
 
-                                String tenantId = TenantContextStorage.getCurrentTenantId();
+                                String tenantId = com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId();
                                 logger.info(
                                         "Analyzing correlations for tenant: {} over {} minute window",
                                         tenantId,
@@ -238,7 +237,7 @@ public final class AnalysisController {
         try {
             logger.debug("Received list patterns request");
 
-            String tenantId = TenantContextStorage.getCurrentTenantId();
+            String tenantId = com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId();
 
             // Extract query parameters
             String eventTypeFilter = request.getQueryParameter("eventType");

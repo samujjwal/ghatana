@@ -24,13 +24,13 @@
       "@/*": [
         "./src/*"
       ],
-      "@ghatana/audio-video-product-types": [
+      "@audio-video/types": [
         "../../libs/audio-video-types/src"
       ],
-      "@ghatana/audio-video-product-client": [
+      "@audio-video/client": [
         "../../libs/audio-video-client/src"
       ],
-      "@ghatana/audio-video-product-ui": [
+      "@audio-video/ui": [
         "../../libs/audio-video-ui/src"
       ]
     }

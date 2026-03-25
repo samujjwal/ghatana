@@ -71,20 +71,24 @@ public class DataCloudStorageModule extends AbstractModule {
      *
      * <p>Reads connection parameters from {@link DataCloudEnvConfig}:
      * {@code DATACLOUD_PG_URL}, {@code DATACLOUD_PG_USER},
-     * {@code DATACLOUD_PG_PASSWORD}, and {@code DATACLOUD_PG_POOL_SIZE}.
+    * {@code DATACLOUD_PG_PASSWORD}, {@code DATACLOUD_PG_POOL_SIZE}, and
+    * {@code DATACLOUD_PG_VALIDATION_TIMEOUT_MS}.
      *
      * @return configured HikariDataSource
      */
     @Provides
     DataSource warmTierDataSource() {
         DataCloudEnvConfig env = DataCloudEnvConfig.fromSystem();
+        int poolSize = env.pgPoolSize();
         HikariConfig cfg = new HikariConfig();
         cfg.setJdbcUrl(env.pgUrl());
         cfg.setUsername(env.pgUser());
         cfg.setPassword(env.pgPassword());
-        cfg.setMaximumPoolSize(env.pgPoolSize());
-        cfg.setMinimumIdle(2);
+        cfg.setMaximumPoolSize(poolSize);
+        cfg.setMinimumIdle(Math.min(2, poolSize));
         cfg.setConnectionTimeout(30_000L);
+        cfg.setValidationTimeout(env.pgValidationTimeoutMillis());
+        cfg.setInitializationFailTimeout(-1L);
         cfg.setIdleTimeout(600_000L);
         cfg.setMaxLifetime(1_800_000L);
         cfg.setPoolName("dc-warm-tier");

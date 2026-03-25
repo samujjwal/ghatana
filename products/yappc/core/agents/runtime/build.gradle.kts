@@ -16,22 +16,26 @@ java {
 
 dependencies {
     // Framework core (api — FeatureFlags/FeatureFlag used in YAPPCAgentBase public API)
-    api(project(":products:yappc:core:framework"))
+    api(project(":products:yappc:core:yappc-infrastructure"))
 
     // Domain types and repository ports
-    implementation(project(":products:yappc:backend:persistence"))
+    // backend:persistence removed (2026-03-23) — functionality consolidated into core modules
 
     // Agent framework from platform (api — types are part of YAPPCAgentBase public API)
     api(project(":platform:java:agent-core"))
-    implementation(project(":platform:java:agent-runtime"))  // Migrated from agent-dispatch + agent-memory + agent-learning
-    implementation(project(":platform:java:agent-registry"))
+    // TODO(ADAPTER-SEAM): aep-agent-runtime, data-cloud:spi, and aep-operator-contracts
+    //   bypass the adapter boundary. Future: introduce AgentRuntimePort, DataStorePort,
+    //   and OperatorCatalogPort in core; move AEP/DC impls to infrastructure:aep
+    implementation(project(":products:aep:aep-agent-runtime"))  // Migrated from agent-dispatch + agent-memory + agent-learning
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:ai-integration"))
-    implementation(project(":platform:java:event-cloud"))
+    // TODO(ADAPTER-SEAM): data-cloud:spi should be accessed via DataStorePort once in place
+    implementation(project(":products:data-cloud:spi"))
 
     // AEP contracts (decoupled from concrete runtime implementation)
+    // TODO(ADAPTER-SEAM): aep-operator-contracts should be hidden behind OperatorCatalogPort
     implementation(project(":products:aep:aep-operator-contracts"))
 
     // AEP central runtime — only for tests (YappcAepIntegrationTest used real service pre-migration)

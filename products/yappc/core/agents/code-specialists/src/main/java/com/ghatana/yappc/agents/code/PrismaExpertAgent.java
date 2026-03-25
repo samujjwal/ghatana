@@ -41,7 +41,8 @@ public class PrismaExpertAgent extends YAPPCAgentBase<PrismaExpertInput, PrismaE
             "#/definitions/PrismaExpertOutput",
             List.of("prisma", "orm", "database"),
             Map.of("description", "Stack expert agent for Prisma ORM patterns and database modeling", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

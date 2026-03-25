@@ -8,6 +8,12 @@ target/
 # Dependencies
 node_modules/
 .pnpm-store/
+# pnpm workspace: nested npm lockfiles are not authoritative
+# The root pnpm-lock.yaml is the only JS lockfile authority
+products/**/package-lock.json
+platform/**/package-lock.json
+libs/**/package-lock.json
+shared-services/**/package-lock.json
 
 # IDE
 .idea/
@@ -41,10 +47,16 @@ test-results/
 
 # TypeScript
 *.tsbuildinfo
-# Prevent compiled output in source directories
+# Prevent compiled output in source directories (platform and products)
 platform/typescript/**/src/**/*.js
 platform/typescript/**/src/**/*.d.ts
 platform/typescript/**/src/**/*.js.map
+platform/typescript/**/src/**/*.d.ts.map
+# Products libs/contracts: compiled JS artifacts should only live in dist/
+products/*/libs/**/src/**/*.js
+products/*/libs/**/src/**/*.js.map
+products/*/contracts/**/*.js
+products/*/contracts/**/*.js.map
 
 # Turbo
 .turbo/

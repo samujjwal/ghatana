@@ -25,7 +25,7 @@ dependencies {
     // Platform Core
     api(project(":platform:java:core"))
     api(project(":platform:java:domain"))
-    api(project(":platform:java:event-cloud"))
+    api(project(":products:data-cloud:spi"))
     api(project(":platform:java:ai-integration"))
     api(project(":platform:java:governance"))
 

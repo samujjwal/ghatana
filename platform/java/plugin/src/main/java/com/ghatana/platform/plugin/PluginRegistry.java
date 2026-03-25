@@ -1,5 +1,6 @@
 package com.ghatana.platform.plugin;
 
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
@@ -243,9 +244,9 @@ public class PluginRegistry {
             if (results.isEmpty()) {
                 return HealthStatus.ok("No plugins registered");
             }
-            boolean allHealthy = results.values().stream().allMatch(HealthStatus::healthy);
+            boolean allHealthy = results.values().stream().allMatch(HealthStatus::isHealthy);
             long unhealthyCount = results.values().stream()
-                .filter(s -> !s.healthy()).count();
+                .filter(s -> !s.isHealthy()).count();
             Map<String, Object> details = new LinkedHashMap<>(results);
             if (allHealthy) {
                 return HealthStatus.ok(results.size() + " plugins healthy", details);

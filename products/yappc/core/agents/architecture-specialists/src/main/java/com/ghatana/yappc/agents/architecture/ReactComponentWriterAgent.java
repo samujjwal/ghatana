@@ -41,7 +41,8 @@ public class ReactComponentWriterAgent extends YAPPCAgentBase<ReactComponentWrit
             "#/definitions/ReactComponentWriterOutput",
             List.of("code-generation", "react", "typescript"),
             Map.of("description", "Worker agent that generates React/TypeScript components from specifications", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

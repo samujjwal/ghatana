@@ -213,6 +213,11 @@ export async function cancelRun(runId: string, tenantId = 'default'): Promise<vo
   await client.post(`/api/v1/runs/${runId}/cancel`, null, { params: { tenantId } });
 }
 
+export async function getRunDetail(runId: string, tenantId = 'default'): Promise<PipelineRun> {
+  const { data } = await client.get(`/api/v1/runs/${runId}`, { params: { tenantId } });
+  return data;
+}
+
 // ─── HITL Queue ──────────────────────────────────────────────────────
 
 export async function listPendingReviews(tenantId = 'default'): Promise<ReviewItem[]> {

@@ -1,5 +1,6 @@
 package com.ghatana.platform.plugin;
 
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 

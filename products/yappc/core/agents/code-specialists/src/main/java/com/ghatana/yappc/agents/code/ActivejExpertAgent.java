@@ -41,7 +41,8 @@ public class ActivejExpertAgent extends YAPPCAgentBase<ActivejExpertInput, Activ
             "#/definitions/ActivejExpertOutput",
             List.of("activej", "async", "eventloop"),
             Map.of("description", "Stack expert agent for ActiveJ framework patterns and best practices", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

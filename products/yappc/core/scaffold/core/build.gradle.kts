@@ -6,65 +6,29 @@ java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
+/**
+ * Scaffold Core Aggregator
+ *
+ * This module is intentionally empty of source files. It re-exports the three
+ * focused scaffold sub-modules so consumers need only a single dependency.
+ *
+ * @doc.type class
+ * @doc.purpose Aggregator re-exporting scaffold capability modules
+ * @doc.layer product
+ * @doc.pattern Aggregator
+ */
 dependencies {
-    api(project(":platform:java:domain"))
-    api(project(":platform:java:core"))
-    api(project(":platform:java:testing"))
-    // Absorbed from core:scaffold:adapters
-    implementation(project(":platform:java:http"))
-    implementation(project(":platform:java:observability"))
-    
-    // Core framework API and testing utilities
-    api(project(":products:yappc:core:framework"))
-    
-    // Core should be lightweight; other modules depend on this
-    api(libs.jackson.databind)
-    api(libs.jackson.annotations)
-    api(libs.jackson.datatype.jsr310) // Java 8 time support
-    implementation(libs.jackson.dataformat.yaml)
-    implementation(libs.slf4j.api)
-    implementation(libs.diffutils)
+    // Re-export all scaffold capability sub-modules
+    api(project(":products:yappc:core:scaffold:templates"))
+    api(project(":products:yappc:core:scaffold:engine"))
+    api(project(":products:yappc:core:scaffold:generators"))
 
-    // Absorbed from core:scaffold:packs (merged)
-    implementation(libs.picocli)
-    implementation(libs.jgit)
-    implementation(libs.joda.time)
-    implementation(libs.commons.text)
-
-    // OpenTelemetry for unified telemetry
-    api(libs.opentelemetry.api)
-    implementation(libs.opentelemetry.sdk)
-    implementation(libs.opentelemetry.exporter.otlp)
-    implementation(libs.opentelemetry.sdk.testing)
-
-    // Template Engine (Week 2 Day 6)
-    implementation(libs.handlebars)
-
-    // JSON Schema Validation
-    implementation(libs.networknt.validator)
-
-    // Code Transformation (Week 2 Day 6)
-    implementation(libs.openrewrite.core)
-    implementation(libs.openrewrite.java)
-    implementation(libs.openrewrite.gradle)
-
-    // ActiveJ for dependency injection (Phase 4)
-    api(libs.activej.inject)
-    implementation(libs.activej.common)
-    implementation(libs.activej.boot)
-
-    // Validation (Phase 4)
-    api(libs.jakarta.validation.api)
-    implementation(libs.hibernate.validator)
-
-    // Lombok for code generation
-    compileOnly(libs.lombok)
-    annotationProcessor(libs.lombok)
-
-    // Testing utilities (used in main code for testing framework)
-    implementation(project(":platform:java:runtime"))
-    
+    testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.params)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.assertj.core)
 }
+

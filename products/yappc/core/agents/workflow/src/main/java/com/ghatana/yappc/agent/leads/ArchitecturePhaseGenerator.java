@@ -5,7 +5,7 @@ import com.ghatana.agent.framework.api.GeneratorMetadata;
 import com.ghatana.agent.framework.api.OutputGenerator;
 import com.ghatana.yappc.agent.StepResult;
 import com.ghatana.yappc.agent.StepRequest;
-import com.ghatana.yappc.agent.YAPPCAgentRegistry;
+import com.ghatana.yappc.agent.YappcAgentRegistryAdapter;
 import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.*;
@@ -34,7 +34,7 @@ public class ArchitecturePhaseGenerator
 
   private static final Logger log = LoggerFactory.getLogger(ArchitecturePhaseGenerator.class);
 
-  private final YAPPCAgentRegistry agentRegistry;
+  private final YappcAgentRegistryAdapter agentRegistry;
 
   // Architecture step execution order
   private static final List<String> STEP_ORDER =
@@ -46,7 +46,7 @@ public class ArchitecturePhaseGenerator
           "architecture.validate",
           "architecture.hitlReview");
 
-  public ArchitecturePhaseGenerator(@NotNull YAPPCAgentRegistry agentRegistry) {
+  public ArchitecturePhaseGenerator(@NotNull YappcAgentRegistryAdapter agentRegistry) {
     this.agentRegistry = agentRegistry;
   }
 

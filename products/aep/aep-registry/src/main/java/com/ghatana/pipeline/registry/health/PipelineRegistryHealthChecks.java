@@ -1,7 +1,11 @@
 package com.ghatana.pipeline.registry.health;
 
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ForkJoinPool;
 
 import javax.sql.DataSource;
@@ -9,44 +13,77 @@ import javax.sql.DataSource;
 import com.ghatana.core.database.health.DatabaseHealthCheck;
 import com.ghatana.core.database.health.HealthDetails;
 import com.ghatana.core.database.health.HealthStatus;
+import com.ghatana.pipeline.registry.repository.PipelineRepository;
 import com.ghatana.platform.observability.health.HealthCheck;
 import com.ghatana.platform.observability.health.HealthCheckRegistry;
 
 import io.activej.promise.Promise;
 
 /**
- * Health check implementations for the Pipeline Registry service.
+ * Active health check implementations for the Pipeline Registry service.
  *
- * <p>Purpose: Provides comprehensive health checks for database connectivity,
- * pipeline service functionality, and gRPC service availability. Integrates
- * with the observability HealthCheckRegistry for centralized monitoring.</p>
+ * <p>Every check probes an actual dependency: the database via a validation
+ * query, the pipeline repository via a count probe, and the gRPC transport
+ * via a TCP socket connect. A check that cannot reach its target reports
+ * {@code UNHEALTHY}, ensuring readiness endpoints reflect reality rather than
+ * assumptions.
+ *
+ * <h3>Registration</h3>
+ * <pre>{@code
+ * PipelineRegistryHealthChecks.registerHealthChecks(
+ *     registry, dataSource, pipelineRepository, "localhost", 9090);
+ * }</pre>
  *
  * @doc.type class
- * @doc.purpose Utility class providing health check implementations
+ * @doc.purpose Active dependency-probing health checks for the Pipeline Registry
  * @doc.layer product
  * @doc.pattern HealthCheck
- * @since 2.0.0
+ * @since 2.1.0
  */
 public class PipelineRegistryHealthChecks {
 
     private PipelineRegistryHealthChecks() {
         throw new UnsupportedOperationException("Utility class");
     }
-    
+
     /**
-     * Register all health checks for the Pipeline Registry service.
+     * Registers all health checks using a legacy-compatible signature.
+     *
+     * <p>The pipeline service check is skipped when no repository is provided.
+     * The gRPC check defaults to {@code localhost:9090}.
+     *
+     * @param registry   health check registry
+     * @param dataSource JDBC data source for database probe
      */
     public static void registerHealthChecks(HealthCheckRegistry registry, DataSource dataSource) {
-        // Database health check
-        registry.register(new PipelineRegistryDatabaseHealthCheck(dataSource));
-        
-        // Service-specific health checks
-        registry.register(new PipelineServiceHealthCheck());
-        registry.register(new GrpcServiceHealthCheck());
+        registerHealthChecks(registry, dataSource, null, "localhost", 9090);
     }
 
     /**
-     * Adapter between core database health checks and observability health check contracts.
+     * Registers all health checks with active dependency probes.
+     *
+     * @param registry           health check registry
+     * @param dataSource         JDBC data source for database probe
+     * @param pipelineRepository pipeline repository for service probe (may be {@code null} to skip)
+     * @param grpcHost           hostname where the gRPC server is bound
+     * @param grpcPort           port number where the gRPC server is bound
+     */
+    public static void registerHealthChecks(HealthCheckRegistry registry, DataSource dataSource,
+            PipelineRepository pipelineRepository, String grpcHost, int grpcPort) {
+        registry.register(new PipelineRegistryDatabaseHealthCheck(dataSource));
+        if (pipelineRepository != null) {
+            registry.register(new PipelineServiceHealthCheck(pipelineRepository));
+        }
+        registry.register(new GrpcServiceHealthCheck(grpcHost, grpcPort));
+    }
+
+    // =========================================================================
+    // Database health check — delegates to platform DatabaseHealthCheck
+    // =========================================================================
+
+    /**
+     * Adapts the platform {@link DatabaseHealthCheck} to the observability
+     * {@link HealthCheck} contract.
      */
     public static class PipelineRegistryDatabaseHealthCheck implements HealthCheck {
         private final DatabaseHealthCheck delegate;
@@ -59,7 +96,8 @@ public class PipelineRegistryHealthChecks {
 
         @Override
         public Promise<HealthCheckResult> check() {
-            return delegate.checkAsync().map(PipelineRegistryDatabaseHealthCheck::toHealthCheckResult);
+            return delegate.checkAsync()
+                    .map(PipelineRegistryDatabaseHealthCheck::toHealthCheckResult);
         }
 
         @Override
@@ -79,13 +117,17 @@ public class PipelineRegistryHealthChecks {
 
         private static HealthCheckResult toHealthCheckResult(HealthStatus status) {
             Map<String, Object> details = extractDetails(status.getDetails());
-            Duration duration = status.getResponseTime() != null ? status.getResponseTime() : Duration.ZERO;
-            String message = status.getMessage() != null ? status.getMessage() : "Database health check completed";
+            Duration duration = status.getResponseTime() != null
+                    ? status.getResponseTime() : Duration.ZERO;
+            String message = status.getMessage() != null
+                    ? status.getMessage() : "Database health check completed";
 
             return switch (status.getStatus()) {
-                case HEALTHY -> HealthCheckResult.healthy(message, details, duration);
-                case UNHEALTHY -> HealthCheckResult.unhealthy(message, details, duration, status.getException());
-                case UNKNOWN -> new HealthCheckResult(Status.UNKNOWN, message, details, duration, status.getException());
+                case HEALTHY   -> HealthCheckResult.healthy(message, details, duration);
+                case UNHEALTHY -> HealthCheckResult.unhealthy(message, details, duration,
+                        status.getException());
+                case UNKNOWN   -> new HealthCheckResult(Status.UNKNOWN, message, details,
+                        duration, status.getException());
             };
         }
 
@@ -93,93 +135,115 @@ public class PipelineRegistryHealthChecks {
             return details != null ? details.getDetails() : Map.of();
         }
     }
-    
+
+    // =========================================================================
+    // Pipeline service health check — probes repository with a count query
+    // =========================================================================
+
     /**
-     * Health check for the pipeline service functionality.
+     * Verifies that the pipeline repository can execute queries.
+     *
+     * <p>Issues a {@code countByTenantId} probe against a reserved {@code _health}
+     * tenant. A successful response (any count including zero) indicates the
+     * storage layer is reachable. An exception or timeout indicates failure.
      */
     public static class PipelineServiceHealthCheck implements HealthCheck {
-        
+        private final PipelineRepository repository;
+
+        /**
+         * @param repository pipeline repository to probe; must not be {@code null}
+         */
+        public PipelineServiceHealthCheck(PipelineRepository repository) {
+            this.repository = Objects.requireNonNull(repository, "PipelineRepository");
+        }
+
         @Override
         public Promise<HealthCheckResult> check() {
-            return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
-                try {
-                    // Check if the service can perform basic operations
-                    // This is a placeholder - in real implementation, you'd check:
-                    // - Can access pipeline repository
-                    // - Can perform basic CRUD operations
-                    // - Any other service-specific checks
-                    
-                    Map<String, Object> details = Map.of(
-                        "component", "pipeline-service",
-                        "status", "operational"
-                    );
-                    
-                    return HealthCheckResult.healthy("Pipeline service is operational", details, Duration.ofMillis(10));
-                    
-                } catch (Exception e) {
-                    return HealthCheckResult.unhealthy("Pipeline service check failed", e);
-                }
-            });
+            Instant start = Instant.now();
+            return repository.countByTenantId("_health")
+                    .map(count -> HealthCheckResult.healthy(
+                            "Pipeline registry is responsive",
+                            Map.of("probe", "count_query", "tenantProbe", "_health"),
+                            Duration.between(start, Instant.now())))
+                    .then(Promise::of, e -> Promise.of(
+                            HealthCheckResult.unhealthy(
+                                    "Pipeline registry probe failed: " + e.getMessage(), e)));
         }
-        
+
         @Override
         public String getName() {
             return "pipeline-service";
         }
-        
+
         @Override
         public Duration getTimeout() {
             return Duration.ofSeconds(2);
         }
-        
+
         @Override
         public boolean isCritical() {
-            return true; // Core service functionality is critical
+            return true;
         }
     }
-    
+
+    // =========================================================================
+    // gRPC health check — probes transport via TCP socket connect
+    // =========================================================================
+
     /**
-     * Health check for gRPC service availability.
+     * Verifies that the gRPC server is accepting TCP connections.
+     *
+     * <p>Opens a TCP socket to {@code host:port} with a 1-second timeout.
+     * A successful connect indicates the transport is bound and reachable.
+     * A refused or timed-out connection reports {@code UNHEALTHY}.
      */
     public static class GrpcServiceHealthCheck implements HealthCheck {
-        
+        private static final int SOCKET_TIMEOUT_MS = 1_000;
+
+        private final String host;
+        private final int port;
+
+        /**
+         * @param host gRPC server hostname
+         * @param port gRPC server port
+         */
+        public GrpcServiceHealthCheck(String host, int port) {
+            this.host = Objects.requireNonNull(host, "grpcHost");
+            this.port = port;
+        }
+
         @Override
         public Promise<HealthCheckResult> check() {
             return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> {
-                try {
-                    // Check if gRPC server is running and accepting connections
-                    // This is a placeholder - in real implementation, you'd check:
-                    // - gRPC server status
-                    // - Port availability
-                    // - Service registration status
-                    
-                    Map<String, Object> details = Map.of(
-                        "component", "grpc-server",
-                        "port", 9090, // Example port
-                        "status", "listening"
-                    );
-                    
-                    return HealthCheckResult.healthy("gRPC service is listening", details, Duration.ofMillis(5));
-                    
+                Instant start = Instant.now();
+                try (Socket socket = new Socket()) {
+                    socket.connect(new InetSocketAddress(host, port), SOCKET_TIMEOUT_MS);
+                    return HealthCheckResult.healthy(
+                            "gRPC service accepting connections on " + host + ":" + port,
+                            Map.of("host", host, "port", port),
+                            Duration.between(start, Instant.now()));
                 } catch (Exception e) {
-                    return HealthCheckResult.unhealthy("gRPC service check failed", e);
+                    return HealthCheckResult.unhealthy(
+                            "gRPC service unreachable at " + host + ":" + port
+                                    + " — " + e.getMessage(), e);
                 }
             });
         }
-        
+
         @Override
         public String getName() {
             return "grpc-service";
         }
-        
+
         @Override
         public Duration getTimeout() {
-            return Duration.ofSeconds(1);
+            return Duration.ofSeconds(3);
         }
-        
+
         @Override
         public boolean isCritical() {
-            return true; // gRPC API is critical for service communication
+            return true;
         }
     }
 }
+

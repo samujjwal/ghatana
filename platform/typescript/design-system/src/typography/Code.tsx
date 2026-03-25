@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 import { lightColors, darkColors, spacing, componentRadius } from '@ghatana/tokens';
 import { useTheme } from '@ghatana/theme';
 import { Text, type TextProps } from './Text';

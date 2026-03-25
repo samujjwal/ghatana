@@ -3,13 +3,29 @@
  * 
  * Enforces that platform modules do not depend on products/*
  * This prevents boundary drift and maintains clean architecture.
+ *
+ * Exception: cross-cutting SPI modules that contain ONLY pure interfaces/value-types
+ * intended for platform-layer consumption are explicitly permitted. These modules must:
+ *   - Contain no product implementations
+ *   - Depend only on other platform modules or libs
+ *   - Be reviewed and added to the allowlist when first needed
+ *
+ * Allowed SPI modules:
+ *   :products:data-cloud:spi  — EventLogStore, TenantContext, EntityStore, EventView
+ *                               Depends only on :platform:java:core and activej.promise
+ *                               Audit plan (2026-03-24) directs platform modules to use this directly
  */
-
 def checkPlatformBoundary() {
     def projectPath = project.path
     if (!projectPath.startsWith(":platform:")) {
         return // Only apply to platform modules
     }
+
+    // Cross-cutting SPI modules that contain ONLY pure interfaces/value-types and may
+    // be used by platform modules. See header comment for the governance criteria.
+    def CROSS_CUTTING_SPI_ALLOWLIST = [
+        ":products:data-cloud:spi"   // EventLogStore, TenantContext, EntityStore, EventView
+    ] as Set
     
     println "Checking platform boundary for ${projectPath}"
     
@@ -21,7 +37,12 @@ def checkPlatformBoundary() {
     }
     project.buildFile.eachLine { line ->
         if (line.contains('project(":products:')) {
-            violations << "build.gradle: ${line.trim()}"
+            // Extract the quoted project path from the line
+            def matcher = line =~ /project\("([^"]+)"\)/
+            def isAllowed = matcher.find() && CROSS_CUTTING_SPI_ALLOWLIST.contains(matcher.group(1))
+            if (!isAllowed) {
+                violations << "build.gradle: ${line.trim()}"
+            }
         }
     }
     
@@ -32,7 +53,7 @@ def checkPlatformBoundary() {
                 .withType(org.gradle.api.artifacts.ProjectDependency)
                 .each { dep ->
                     def depPath = dep.path
-                    if (depPath.startsWith(":products:")) {
+                    if (depPath.startsWith(":products:") && !CROSS_CUTTING_SPI_ALLOWLIST.contains(depPath)) {
                         violations << "${config.name}: ${depPath}"
                     }
                 }

@@ -25,3 +25,7 @@ Examples of focused docs to live here:
 - `INTEGRATIONS_AND_DEPENDENCIES.md` – How YAPPC integrates with core libs, Virtual-Org, AEP.
 
 `README.md` (in this docs directory) provides the high-level overview; this folder is the home for deeper YAPPC architecture docs.
+
+## Current reference documents
+
+- `YAPPC_STRUCTURE_SIMPLIFICATION_PLAN.md` - Comprehensive review of the current product structure, boundary problems, and the phased simplification plan.

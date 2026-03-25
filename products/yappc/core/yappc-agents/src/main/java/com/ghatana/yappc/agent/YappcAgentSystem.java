@@ -3,11 +3,12 @@ package com.ghatana.yappc.agent;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.agent.framework.planner.PlannerRegistry;
 import com.ghatana.agent.framework.planner.PlannerAgentFactory;
+import com.ghatana.agent.registry.InMemoryAgentRegistry;
 import com.ghatana.agent.framework.runtime.BaseAgent;
 import com.ghatana.agent.framework.runtime.generators.LLMGenerator;
 import com.ghatana.yappc.agent.tools.YappcToolRegistry;
 import com.ghatana.yappc.agent.YAPPCAgentBase;
-import com.ghatana.yappc.agent.YAPPCAgentRegistry;
+import com.ghatana.yappc.agent.YappcAgentRegistryAdapter;
 import com.ghatana.yappc.agent.generators.LLMGeneratorFactory;
 import com.ghatana.yappc.agent.leads.*;
 import com.ghatana.yappc.agents.code.*;
@@ -51,8 +52,8 @@ import java.util.Map;
  *     .build();
  *
  * system.initialize().whenResult(() -> {
- *     BaseAgent planner = system.getPlannerAgent("products-officer");
- *     YAPPCAgentRegistry sdlc = system.getSdlcRegistry();
+ *     Map<String, Object> planner = system.getAgentDefinition("products-officer");
+ *     YappcAgentRegistryAdapter sdlc = system.getSdlcRegistry();
  * });
  * }</pre>
  *
@@ -74,7 +75,7 @@ public class YappcAgentSystem {
     private final String configBasePath;
 
     // --- SDLC subsystem fields ---
-    private final YAPPCAgentRegistry sdlcRegistry;
+    private final YappcAgentRegistryAdapter sdlcRegistry;
     private final MemoryStore memoryStore;
     private final LLMGenerator.LLMGateway llmGateway;
     private final LLMGenerator.LLMConfig llmConfig;
@@ -97,7 +98,7 @@ public class YappcAgentSystem {
     private YappcAgentSystem(
             @NotNull Eventloop eventloop,
             @NotNull String configBasePath,
-            @NotNull YAPPCAgentRegistry sdlcRegistry,
+            @NotNull YappcAgentRegistryAdapter sdlcRegistry,
             @NotNull MemoryStore memoryStore,
             @Nullable LLMGenerator.LLMGateway llmGateway,
             @NotNull LLMGenerator.LLMConfig llmConfig,
@@ -140,11 +141,9 @@ public class YappcAgentSystem {
         log.info("Initializing unified YAPPC agent system...");
 
         return Promise.ofBlocking(eventloop, () -> {
-            // Step 0: Wire AEP publisher directly (same-package field access).
-            // configureAepEventPublisher() was removed in 2.4.0; YappcAgentSystem and
-            // YAPPCAgentBase share the com.ghatana.yappc.agent package.
+            // Step 0: Wire AEP publisher used by defaultEventPublisher() in base agents.
             if (aepEventPublisher != null) {
-                YAPPCAgentBase.globalAepEventPublisher = aepEventPublisher;
+                YAPPCAgentBase.setGlobalAepEventPublisher(aepEventPublisher);
                 log.info("AEP event publisher wired to SDLC agents: {}",
                         aepEventPublisher.getClass().getSimpleName());
             } else {
@@ -326,16 +325,16 @@ public class YappcAgentSystem {
         log.info("Registering Phase Lead agents...");
 
         sdlcRegistry.register(new ArchitecturePhaseLeadAgent(
-                sdlcRegistry, memoryStore, new ArchitecturePhaseGenerator(sdlcRegistry)));
+            sdlcRegistry, memoryStore, new ArchitecturePhaseGenerator(sdlcRegistry), resolveEventPublisher()));
 
         sdlcRegistry.register(new ImplementationPhaseLeadAgent(
-                sdlcRegistry, memoryStore, new ImplementationPhaseGenerator(sdlcRegistry)));
+            sdlcRegistry, memoryStore, new ImplementationPhaseGenerator(sdlcRegistry), resolveEventPublisher()));
 
         sdlcRegistry.register(new TestingPhaseLeadAgent(
-                sdlcRegistry, memoryStore, new TestingPhaseGenerator(sdlcRegistry)));
+            sdlcRegistry, memoryStore, new TestingPhaseGenerator(sdlcRegistry), resolveEventPublisher()));
 
         sdlcRegistry.register(new OpsPhaseLeadAgent(
-                sdlcRegistry, memoryStore, new OpsPhaseGenerator()));
+            sdlcRegistry, memoryStore, new OpsPhaseGenerator(), resolveEventPublisher()));
 
         log.info("Registered 4 Phase Lead agents");
     }
@@ -526,27 +525,6 @@ public class YappcAgentSystem {
     // ==================== PUBLIC API ====================
 
     /**
-     * Gets a planner agent by ID.
-     *
-     * @param agentId the agent ID (e.g., "products-officer")
-     * @return the BaseAgent instance
-     * @throws IllegalStateException    if not initialized
-     * @throws IllegalArgumentException if agent not found
-     * @deprecated Agent instantiation from YAML definitions is not yet implemented;
-     *             use {@link #getAgentDefinition(String)} to access definition metadata.
-     */
-    @Deprecated(since = "2.4.0")
-    public BaseAgent<?, ?> getPlannerAgent(String agentId) {
-        requireInitialized();
-        if (!plannerAgentInstances.containsKey(agentId)) {
-            throw new IllegalArgumentException(
-                    "Planner agent not instantiated: " + agentId
-                    + ". Use getAgentDefinition() to inspect the definition.");
-        }
-        return plannerAgentInstances.get(agentId);
-    }
-
-    /**
      * Returns the raw YAML definition map for the given agent id (loaded from
      * {@code definitions/*.yaml}).
      *
@@ -594,25 +572,12 @@ public class YappcAgentSystem {
     }
 
     /**
-     * Gets all loaded planner agent IDs.
-     *
-     * @return list of planner agent IDs
-     */
-    /**
-     * @deprecated Use {@link #getLoadedDefinitionIds()} instead.
-     */
-    @Deprecated(since = "2.4.0")
-    public List<String> getLoadedPlannerAgentIds() {
-        return new ArrayList<>(agentDefinitions.keySet());
-    }
-
-    /**
      * Gets the SDLC specialist agent registry.
      *
      * @return the SDLC agent registry
      * @throws IllegalStateException if not initialized
      */
-    public YAPPCAgentRegistry getSdlcRegistry() {
+    public YappcAgentRegistryAdapter getSdlcRegistry() {
         requireInitialized();
         return sdlcRegistry;
     }
@@ -688,6 +653,12 @@ public class YappcAgentSystem {
      */
     public boolean isInitialized() {
         return initialized;
+    }
+
+    private AepEventPublisher resolveEventPublisher() {
+        return aepEventPublisher != null
+                ? aepEventPublisher
+                : (type, tenant, payload) -> Promise.complete();
     }
 
     private void requireInitialized() {
@@ -813,7 +784,7 @@ public class YappcAgentSystem {
 
             return new YappcAgentSystem(
                     eventloop, configBasePath,
-                    new YAPPCAgentRegistry(), memoryStore,
+                    new YappcAgentRegistryAdapter(new InMemoryAgentRegistry()), memoryStore,
                     llmGateway, effectiveConfig, aepEventPublisher);
         }
     }

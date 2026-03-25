@@ -3,6 +3,8 @@ package com.ghatana.datacloud.analytics;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.activej.promise.Promise;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
@@ -21,6 +23,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -38,21 +41,26 @@ import java.util.stream.Collectors;
  *   <li>Result caching</li>
  * </ul>
  * 
- * @doc.type service
+ * @doc.type class
  * @doc.purpose Unified analytics query engine
- * @doc.layer core
+ * @doc.layer product
  * @doc.pattern Query Engine, Facade
  */
 public class AnalyticsQueryEngine implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(AnalyticsQueryEngine.class);
     private static final int DEFAULT_QUERY_LIMIT = 1000;
     private static final int MAX_QUERY_LIMIT = 10_000;
+    /** DC3-M2: Guard against OOM from massive in-memory hash joins. */
+    private static final int MAX_JOIN_SIDE_SIZE = 50_000;
     
     private static final int MAX_CACHE_ENTRIES = 5_000;
+    /** Maximum number of concurrent analytics worker threads (bounded to prevent OOM). */
+    private static final int MAX_ANALYTICS_THREADS = Math.max(4, Runtime.getRuntime().availableProcessors() * 2);
 
     private final Map<String, AnalyticsQuery> queries;
     private final Map<String, QueryPlan> queryPlans;
-    private final Map<String, QueryResult> resultCache;
+    /** Thread-safe LRU cache for recent query results, backed by Caffeine. */
+    private final Cache<String, QueryResult> resultCache;
     private final StorageConnector storageConnector;
     private final ExecutorService blockingExecutor;
     
@@ -69,17 +77,19 @@ public class AnalyticsQueryEngine implements AutoCloseable {
      * @param storageConnector storage connector for data access (nullable for testing)
      */
     public AnalyticsQueryEngine(StorageConnector storageConnector) {
-        this.queries = Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true) {
-            @Override protected boolean removeEldestEntry(Map.Entry<String, AnalyticsQuery> e) { return size() > MAX_CACHE_ENTRIES; }
-        });
-        this.queryPlans = Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true) {
-            @Override protected boolean removeEldestEntry(Map.Entry<String, QueryPlan> e) { return size() > MAX_CACHE_ENTRIES; }
-        });
-        this.resultCache = Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true) {
-            @Override protected boolean removeEldestEntry(Map.Entry<String, QueryResult> e) { return size() > MAX_CACHE_ENTRIES; }
-        });
+        // H6: Use Caffeine-backed ConcurrentMap for queries/plans — no coarse synchronized lock.
+        this.queries = Caffeine.newBuilder().maximumSize(MAX_CACHE_ENTRIES)
+                .<String, AnalyticsQuery>build().asMap();
+        this.queryPlans = Caffeine.newBuilder().maximumSize(MAX_CACHE_ENTRIES)
+                .<String, QueryPlan>build().asMap();
+        // Use Caffeine for the result cache: thread-safe LRU with no synchronized contention
+        this.resultCache = Caffeine.newBuilder()
+                .maximumSize(MAX_CACHE_ENTRIES)
+                .expireAfterWrite(5, TimeUnit.MINUTES)
+                .build();
         this.storageConnector = storageConnector;
-        this.blockingExecutor = Executors.newCachedThreadPool(r -> {
+        // Bounded thread pool prevents OOM under concurrent analytics burst
+        this.blockingExecutor = Executors.newFixedThreadPool(MAX_ANALYTICS_THREADS, r -> {
             Thread t = new Thread(r, "analytics-query-worker");
             t.setDaemon(true);
             return t;
@@ -144,16 +154,20 @@ public class AnalyticsQueryEngine implements AutoCloseable {
      * @return query plan
      */
     private QueryPlan generateQueryPlan(AnalyticsQuery query) {
-        String queryText = query.getQueryText().toUpperCase();
+        // Keep the original case for data-source name extraction so that collection
+        // names (e.g. "products") are not turned into "PRODUCTS" and then mis-routed.
+        String queryTextOriginal = query.getQueryText();
+        // Uppercase copy is only used for keyword-scan heuristics inside determineQueryType
+        String queryTextUpper = queryTextOriginal.toUpperCase();
         
         // Determine query type
-        QueryType queryType = determineQueryType(queryText);
+        QueryType queryType = determineQueryType(queryTextUpper);
         
         // Estimate cost
-        double estimatedCost = estimateQueryCost(queryText);
+        double estimatedCost = estimateQueryCost(queryTextOriginal);
         
-        // Determine data sources
-        List<String> dataSources = extractDataSources(queryText);
+        // Determine data sources — use original case to preserve collection names
+        List<String> dataSources = extractDataSources(queryTextOriginal);
         
         QueryPlan plan = QueryPlan.builder()
             .queryId(query.getId())
@@ -256,6 +270,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
 
         logger.debug("Executing SELECT: collection={}, filter={}, limit={}", collectionName, filterExpr, limit);
 
+        // Use collection-name overload to avoid UUID-to-name roundtrip
         return storageConnector.query(tenantId, collectionName, spec)
                 .map(qr -> qr.entities().stream()
                         .map(this::entityToRow)
@@ -263,7 +278,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
     }
 
     /**
-     * Execute AGGREGATE query using StorageConnector.scan() + in-memory aggregation.
+     * Execute AGGREGATE query using StorageConnector.query() + in-memory aggregation.
      *
      * <p>If the connector supports native aggregation, this method could be
      * extended to delegate. Currently performs scan + in-memory grouping.</p>
@@ -278,25 +293,26 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         String filterExpr = extractWhereClause(query.getQueryText());
         String groupByField = extractGroupByField(query.getQueryText());
 
-        UUID collectionId = UUID.nameUUIDFromBytes(collectionName.getBytes());
-
         logger.debug("Executing AGGREGATE: collection={}, groupBy={}", collectionName, groupByField);
 
-        return storageConnector.scan(collectionId, tenantId, filterExpr, MAX_QUERY_LIMIT, 0)
-                .map(entities -> {
+        // Use collection-name QuerySpec overload to avoid the synthetic UUID → UUID-string roundtrip
+        QuerySpec spec = QuerySpec.builder()
+                .filter(filterExpr)
+                .limit(MAX_QUERY_LIMIT)
+                .build();
+
+        return storageConnector.query(tenantId, collectionName, spec)
+                .map(qr -> {
+                    List<Entity> entities = qr.entities();
                     if (groupByField == null) {
-                        // No GROUP BY → single aggregate row
                         Map<String, Object> row = new LinkedHashMap<>();
                         row.put("count", (long) entities.size());
                         return List.of(row);
                     }
-
-                    // Group by field and count
                     Map<String, List<Entity>> grouped = entities.stream()
                             .filter(e -> e.getData() != null && e.getData().containsKey(groupByField))
                             .collect(Collectors.groupingBy(
                                     e -> String.valueOf(e.getData().get(groupByField))));
-
                     return grouped.entrySet().stream()
                             .map(entry -> {
                                 Map<String, Object> row = new LinkedHashMap<>();
@@ -367,15 +383,27 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         String joinKey = extractJoinKey(query.getQueryText());
         String filterExpr = extractWhereClause(query.getQueryText());
 
-        UUID leftId = UUID.nameUUIDFromBytes(leftCollection.getBytes());
-        UUID rightId = UUID.nameUUIDFromBytes(rightCollection.getBytes());
-
         logger.debug("Executing JOIN: left={}, right={}, key={}", leftCollection, rightCollection, joinKey);
 
-        Promise<List<Entity>> leftPromise = storageConnector.scan(leftId, tenantId, filterExpr, MAX_QUERY_LIMIT, 0);
-        Promise<List<Entity>> rightPromise = storageConnector.scan(rightId, tenantId, null, MAX_QUERY_LIMIT, 0);
+        // Use name-based QuerySpec query to avoid synthetic-UUID -> UUID-string roundtrip
+        QuerySpec leftSpec = QuerySpec.builder().filter(filterExpr).limit(MAX_QUERY_LIMIT).build();
+        QuerySpec rightSpec = QuerySpec.builder().limit(MAX_QUERY_LIMIT).build();
+
+        Promise<List<Entity>> leftPromise  = storageConnector.query(tenantId, leftCollection, leftSpec).map(StorageConnector.QueryResult::entities);
+        Promise<List<Entity>> rightPromise = storageConnector.query(tenantId, rightCollection, rightSpec).map(StorageConnector.QueryResult::entities);
 
         return leftPromise.combine(rightPromise, (leftEntities, rightEntities) -> {
+            // DC3-M2: Guard against OOM from massive in-memory joins
+            if (leftEntities.size() > MAX_JOIN_SIDE_SIZE) {
+                throw new IllegalStateException(
+                    "JOIN aborted: left side " + leftEntities.size() + " rows exceeds MAX_JOIN_SIDE_SIZE=" +
+                    MAX_JOIN_SIDE_SIZE + ". Use push-down via ClickHouse/Trino for large joins.");
+            }
+            if (rightEntities.size() > MAX_JOIN_SIDE_SIZE) {
+                throw new IllegalStateException(
+                    "JOIN aborted: right side " + rightEntities.size() + " rows exceeds MAX_JOIN_SIDE_SIZE=" +
+                    MAX_JOIN_SIDE_SIZE + ". Use push-down via ClickHouse/Trino for large joins.");
+            }
             // Build hash index on right side
             Map<String, List<Map<String, Object>>> rightIndex = new HashMap<>();
             for (Entity re : rightEntities) {
@@ -694,7 +722,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
      * @return promise of query result
      */
     public Promise<QueryResult> getResult(String queryId) {
-        QueryResult result = resultCache.get(queryId);
+        QueryResult result = resultCache.getIfPresent(queryId);
         if (result == null) {
             return Promise.ofException(new IllegalArgumentException("Result not found: " + queryId));
         }

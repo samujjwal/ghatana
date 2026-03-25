@@ -41,7 +41,8 @@ public class TestStrategistAgent extends YAPPCAgentBase<TestStrategistInput, Tes
             "#/definitions/TestStrategistOutput",
             List.of("testing", "quality", "strategy"),
             Map.of("description", "Expert test strategist for test planning and quality assurance strategy", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

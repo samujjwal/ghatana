@@ -45,7 +45,8 @@ public class BuildSpecialistAgent extends YAPPCAgentBase<BuildInput, BuildOutput
             "#/definitions/BuildOutput",
             List.of("implementation", "build", "artifacts"),
             Map.of("description", "Builds and packages implementation", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

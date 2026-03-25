@@ -2,7 +2,7 @@ package com.ghatana.yappc.agent.requirements;
 
 // ✅ Use EXISTING interfaces from libs/java
 import com.ghatana.core.database.DatabaseClient;
-import com.ghatana.core.event.cloud.EventCloud;
+import com.ghatana.yappc.agent.EventPublisher;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.WorkflowStep;
 import com.ghatana.yappc.agent.WorkflowContextAdapter;
@@ -17,7 +17,7 @@ import java.util.*;
  * lifecycle: create, submit, approve/reject/request-changes.
  *
  * <p>✅ Implements WorkflowStep from libs:workflow-api (EXISTING) ✅ Uses DatabaseClient from
- * libs:database (EXISTING) ✅ Uses EventCloud from libs:event-cloud (EXISTING)
+ * libs:database (EXISTING) ✅ Uses EventPublisher (product-owned facade over EventLogStore)
  *
  * <h3>Review States:</h3>
  *
@@ -37,7 +37,7 @@ import java.util.*;
 public final class HITLReviewStep implements WorkflowStep {
 
   private final DatabaseClient dbClient;
-  private final EventCloud eventClient;
+  private final EventPublisher eventClient;
 
   // Review state constants
   public static final String STATE_PENDING_REVIEW = "PENDING_REVIEW";
@@ -53,7 +53,7 @@ public final class HITLReviewStep implements WorkflowStep {
   public static final String ACTION_REJECT = "reject";
   public static final String ACTION_REQUEST_CHANGES = "request_changes";
 
-  public HITLReviewStep(DatabaseClient dbClient, EventCloud eventClient) {
+  public HITLReviewStep(DatabaseClient dbClient, EventPublisher eventClient) {
     this.dbClient = Objects.requireNonNull(dbClient, "dbClient must not be null");
     this.eventClient = Objects.requireNonNull(eventClient, "eventClient must not be null");
   }

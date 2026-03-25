@@ -46,7 +46,8 @@ public class ValidateReleaseSpecialistAgent
             "#/definitions/ValidateReleaseOutput",
             List.of("ops", "validation", "release"),
             Map.of("description", "Validates release readiness", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

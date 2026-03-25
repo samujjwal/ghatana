@@ -263,7 +263,7 @@ public class AppointmentService {
                 "version", "integer"
             ),
             Map.of("retention", "7years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> slots = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
             SLOT_DATASET,
@@ -275,7 +275,7 @@ public class AppointmentService {
                 "status", "string"
             ),
             Map.of("retention", "1year")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(List.of(appointments, slots));
     }
@@ -350,7 +350,7 @@ public class AppointmentService {
 
         return dataCloud.readData(request)
             .map(result -> Optional.ofNullable(deserialize(result.getData())))
-            .whenException(e -> Promise.of(Optional.empty()));
+            ;
     }
 
     private Promise<Void> updateAppointment(Appointment appointment) {
@@ -383,7 +383,7 @@ public class AppointmentService {
             Map.of("timestamp", Instant.now().toString())
         );
 
-        return dataCloud.writeData(request).whenException(e -> {});
+        return dataCloud.writeData(request);
     }
 
     private byte[] serialize(Appointment appointment) {

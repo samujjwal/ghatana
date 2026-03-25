@@ -178,6 +178,11 @@ class DataCloudEnvConfigTest {
         }
 
         @Test
+        void pgValidationTimeoutDefaultsFiveSeconds() {
+            assertThat(config.pgValidationTimeoutMillis()).isEqualTo(5_000);
+        }
+
+        @Test
         void redisHostDefaultsToLocalhost() {
             assertThat(config.redisHost()).isEqualTo("localhost");
         }
@@ -230,6 +235,13 @@ class DataCloudEnvConfigTest {
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(
                 Map.of(DataCloudEnvConfig.DATACLOUD_PG_POOL_SIZE, "20"));
             assertThat(config.pgPoolSize()).isEqualTo(20);
+        }
+
+        @Test
+        void pgValidationTimeoutParsedFromEnv() {
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(
+                Map.of(DataCloudEnvConfig.DATACLOUD_PG_VALIDATION_TIMEOUT_MS, "7500"));
+            assertThat(config.pgValidationTimeoutMillis()).isEqualTo(7_500);
         }
 
         @Test

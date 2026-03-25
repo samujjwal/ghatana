@@ -159,6 +159,47 @@ from them will fail CI lint checks.
 
 ---
 
+## Compat Package Location (2026-03-24)
+
+As part of the YAPPC structure simplification, 11 pre-consolidation packages
+that had no active downstream dependents have been **moved from `libs/` to
+`compat/`**. They remain in the pnpm workspace (`compat/*`) and can still be
+resolved by any code that imports them, but they are visually separated from
+the canonical library surface.
+
+| Moved package | New path |
+| --- | --- |
+| `@yappc/base-ui` | `frontend/compat/base-ui` |
+| `@yappc/development-ui` | `frontend/compat/development-ui` |
+| `@yappc/initialization-ui` | `frontend/compat/initialization-ui` |
+| `@yappc/navigation-ui` | `frontend/compat/navigation-ui` |
+| `@yappc/messaging` | `frontend/compat/messaging` |
+| `@yappc/realtime` | `frontend/compat/realtime` |
+| `@yappc/notifications` | `frontend/compat/notifications` |
+| `@yappc/config-hooks` | `frontend/compat/config-hooks` |
+| `@yappc/crdt` | `frontend/compat/crdt` |
+| `@yappc/types` | `frontend/compat/types` |
+| `@yappc/utils` | `frontend/compat/utils` |
+
+`@yappc/theme` remains in `libs/` because it is still consumed by `@yappc/ui`
+and `@yappc/ai`.
+
+New code must **not** depend on any package in `compat/`. Existing consumers
+should migrate to the canonical replacements:
+
+| Compat package | Canonical replacement |
+| --- | --- |
+| `@yappc/base-ui` | `@yappc/ui` |
+| `@yappc/navigation-ui` | `@yappc/ui/navigation` |
+| `@yappc/development-ui` / `@yappc/initialization-ui` | `@yappc/core` |
+| `@yappc/messaging` / `@yappc/notifications` | `@yappc/ai` (chat features) |
+| `@yappc/realtime` | `@yappc/state` |
+| `@yappc/config-hooks` | `@yappc/core` config utilities |
+| `@yappc/crdt` | `@yappc/collab` |
+| `@yappc/types` / `@yappc/utils` | `@yappc/core` |
+
+---
+
 ## Questions?
 
 Open an issue in the `#yappc-frontend` channel or tag `@platform-team` in

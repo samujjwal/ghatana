@@ -1,14 +1,11 @@
 /**
- * @yappc/messaging
+ * Messaging module — use @yappc/messaging directly.
  *
- * Unified messaging library for YAPPC.
- * Combines real-time chat and notification functionality.
- *
- * @module messaging
+ * The canonical messaging implementation lives in `@yappc/messaging`.
+ * This re-export exists for internal AI package compatibility only.
  */
+export * from '@yappc/messaging';
 
-// Chat
-export { useChatBackend } from './chat/index';
 export type {
   UseChatBackendConfig,
   ChatMessage,

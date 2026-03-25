@@ -20,6 +20,9 @@ import io.activej.common.inspector.BaseInspector;
 import io.activej.common.time.Stopwatch;
 import org.jetbrains.annotations.Nullable;
 
+// GHATANA-PATCH: Vendored copy from ActiveJ 6.0-rc2 for additional event-loop metrics hooks.
+// No Ghatana-specific method additions identified yet; diff against upstream required.
+// See io/activej/PATCHES.md.
 public interface EventloopInspector extends BaseInspector<EventloopInspector> {
 	void onUpdateBusinessLogicTime(boolean taskOrKeyPresent, boolean externalTaskPresent, long businessLogicTime);
 

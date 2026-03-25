@@ -48,6 +48,24 @@ import java.time.Duration;
  * AI_SERVICE_PORT: HTTP server port (default: 8080) - AI_SERVICE_HOST: HTTP
  * server host (default: 0.0.0.0)
  *
+ * <p><b>Migration TODO (SHA-007)</b><br>
+ * This launcher extends {@link io.activej.launcher.Launcher} directly and
+ * manually duplicates {@code Eventloop}, {@code MeterRegistry}, and
+ * {@code MetricsCollector} bindings already present in every other service.
+ *
+ * <p>Migrate to the canonical pattern:
+ * <ol>
+ *   <li>Extend {@code com.ghatana.core.activej.launcher.ServiceLauncher}
+ *       (from {@code platform:java:runtime}) and implement
+ *       {@code createModule()}.</li>
+ *   <li>Use {@code com.ghatana.core.activej.launcher.ServiceCommonModule}
+ *       for the {@code Eventloop} binding.</li>
+ *   <li>Use {@code com.ghatana.platform.observability.ObservabilityModule}
+ *       for {@code MeterRegistry} / {@code MetricsCollector}.</li>
+ *   <li>Use {@code com.ghatana.platform.http.server.servlet.HealthCheckServlet
+ *       .addHealthEndpoints(builder, "ai-inference", VERSION)} for health routes.</li>
+ * </ol>
+ *
  * @doc.type class
  * @doc.purpose AI Inference Service launcher with ActiveJ
  * @doc.layer application

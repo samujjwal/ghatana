@@ -197,7 +197,6 @@ import java.util.Map;
  * ErrorResponse.badRequest(message, path)
  * ErrorResponse.notFound(message, path)
  * ErrorResponse.internalServerError(message, path)
- * ErrorResponse.internalError(message, path)  // Alias
  * }</pre>
  *
  * <p><b>Validation Error Details</b><br>
@@ -366,14 +365,6 @@ public class ErrorResponse {
             .message(message)
             .path(path)
             .build();
-    }
-    
-    /**
-     * Creates a 500 Internal Server Error.
-     * Alias for internalServerError for backward compatibility.
-     */
-    public static ErrorResponse internalError(String message, String path) {
-        return internalServerError(message, path);
     }
     
     /**

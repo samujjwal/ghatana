@@ -51,7 +51,8 @@ public class PerformanceTestsSpecialistAgent
                 "1.0.0",
                 "estimatedDuration",
                 "30m")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

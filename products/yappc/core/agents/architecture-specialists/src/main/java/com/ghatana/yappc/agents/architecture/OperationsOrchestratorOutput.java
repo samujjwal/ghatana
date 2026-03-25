@@ -18,4 +18,9 @@ public record OperationsOrchestratorOutput(
     public static final String STATUS_INCIDENT = "INCIDENT";
     public static final String STATUS_HEALTHY = "HEALTHY";
     public static final String STATUS_DEGRADED = "DEGRADED";
+
+    /** Returns the list of actions executed — alias for {@link #actions()}. */
+    public List<String> actionsExecuted() {
+        return actions;
+    }
 }

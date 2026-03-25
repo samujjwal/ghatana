@@ -41,7 +41,8 @@ public class StackTraceAnalyzerAgent extends YAPPCAgentBase<StackTraceAnalyzerIn
             "#/definitions/StackTraceAnalyzerOutput",
             List.of("debug", "stack-trace"),
             Map.of("description", "Debug micro-agent that parses and analyzes stack traces for root cause identification", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

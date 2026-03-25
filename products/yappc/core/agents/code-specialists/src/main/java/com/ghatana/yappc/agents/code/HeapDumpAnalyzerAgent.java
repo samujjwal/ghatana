@@ -41,7 +41,8 @@ public class HeapDumpAnalyzerAgent extends YAPPCAgentBase<HeapDumpAnalyzerInput,
             "#/definitions/HeapDumpAnalyzerOutput",
             List.of("debug", "heap-analysis", "memory"),
             Map.of("description", "Debug micro-agent that analyzes JVM heap dumps for memory issues", "version", "1.0.0")),
-        generator);
+        generator,
+        defaultEventPublisher());
     this.memoryStore = memoryStore;
   }
 

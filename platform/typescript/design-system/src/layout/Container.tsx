@@ -4,7 +4,7 @@ import {
   semanticSpacing,
   containerMaxWidths,
 } from '@ghatana/tokens';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 
 const spacingValues = spacing as Record<string, number>;
 const semanticSpacingValues = semanticSpacing as Record<string, number>;

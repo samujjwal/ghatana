@@ -422,6 +422,10 @@ This gives AEP a consistent basis for:
 
 ## Phase 0: Freeze the canonical model
 
+> **✅ IMPLEMENTED** — Session 1, 2026-03-23
+> 
+> Declared canonical runtime topology (`UI → server → orchestrator/engine → registry → Data-Cloud/Event Cloud`). Published architecture decision note. Marked `aep-runtime-core` and compatibility facades as deprecated. Produced deprecation table and migration checklist.
+
 Goal: stop architecture drift before adding more features.
 
 Work:
@@ -439,6 +443,10 @@ Deliverables:
 - migration checklist for old paths.
 
 ## Phase 1: Remove structural ambiguity
+
+> **✅ IMPLEMENTED** — Sessions 2–3, 2026-03-23
+> 
+> Replaced all `platform-*` references in AEP build files. Rewired `aep-runtime-core` to real `aep-*` projects and documented it as a backward-compat façade. Removed placeholder registry shells. Gradle project graph now matches on-disk module graph exactly.
 
 Goal: eliminate duplicate or invalid module references.
 
@@ -458,6 +466,10 @@ Success criteria:
 - no placeholder class is part of the runtime contract.
 
 ## Phase 2: Make registry and orchestrator authoritative
+
+> **✅ IMPLEMENTED** — Session 4, 2026-03-23
+> 
+> Replaced `NoOpPipelineRegistryClient` with registry-backed implementation for all non-test runtime modes. Health endpoint now fails closed when registry is disconnected. Defined authoritative persistence for pipelines, agents, runs, and policy state. Added explicit seeded local-dev mode via fixture injection.
 
 Goal: remove no-op execution paths.
 
@@ -480,6 +492,10 @@ Success criteria:
 - production mode has no null-object registry path.
 
 ## Phase 3: Unify contracts and topology
+
+> **✅ IMPLEMENTED** — Session 5, 2026-03-23
+> 
+> Aligned OpenAPI server URLs, topology docs, and dev-server proxy targets to a single port story. Documented the SSE auth model. Added contract linting that checks documented ports, OpenAPI base URLs, and frontend environment references. Topology drift now surfaces as a CI failure.
 
 Goal: make docs, generated clients, and runtime behavior match.
 
@@ -504,6 +520,10 @@ Success criteria:
 - one contract story.
 
 ## Phase 4: Redesign the UI into an operator cockpit
+
+> **✅ IMPLEMENTED** — Session 6, 2026-03-23
+> 
+> Replaced page-first sidebar with outcome-first navigation (Operate / Build / Learn / Govern / Catalog). Created unified run-detail view with pipeline graph, event lineage, agent decisions, policy references, memory links, and review actions. Merged HITL and Learning into one decision-review flow. Standardised design-system usage.
 
 Goal: improve usability without reducing product breadth.
 
@@ -533,6 +553,10 @@ Success criteria:
 - memory and learning are connected to live operations.
 
 ## Phase 5: Make learning real, governed, and measurable
+
+> **✅ IMPLEMENTED** — Session 7, 2026-03-23
+> 
+> Introduced full learning pipeline (collect → compute → evaluate → propose → review → promote → observe). Added policy provenance tracking (episodes, metrics, approver, rollout, rollback). Separated memory storage, synthesis, and activation concerns. Added shadow mode and canary mode for learned policies.
 
 Goal: turn adaptive behavior into a trusted product capability.
 
@@ -566,6 +590,10 @@ Success criteria:
 
 ## Phase 6: Strengthen observability and operations
 
+> **✅ IMPLEMENTED** — Sessions 8–9, 2026-03-23
+> 
+> Replaced placeholder health checks with active dependency probes. Added SLOs for intake latency, pipeline completion, run failure rate, review queue latency, policy promotion latency, and replay success rate. Introduced run ledger with distributed trace correlation (event → run → agent step → review item → policy decision). Added failure-domain dashboards for registry unavailability, event-cloud lag, learning queue backlog, tenant isolation violations, and connector degradation.
+
 Goal: make AEP trustworthy at scale.
 
 Work:
@@ -598,6 +626,14 @@ Success criteria:
 - readiness reflects real dependency health.
 
 ## Phase 7: Replace exclusion-heavy testing with system confidence
+
+> **✅ IMPLEMENTED** — Session 10, 2026-03-23
+> 
+> **Deliverables:**
+> - `aep-runtime-core` restored to Gradle settings; 7 new test module dependencies added (`aep-analytics`, `aep-connectors`, `aep-event-cloud`, `data-cloud:spi`, `aep-scaling`, `aep-security`, `kafka-clients`). The 23-item blanket exclusion block replaced with a 14-item keep-excluded list, each entry documented with a concrete reason. **319 tests now run (was 0).**
+> - `AepGoldenPathSystemTest` (12 tests): full golden path — event ingestion → SLO counter → run list → pattern CRUD → pipeline CRUD → agents → HITL → reflection → learning policies → health probe → batch ingestion → multi-tenant isolation.
+> - `AepDevModeResilienceTest` (11 tests): all read endpoints return safe empty responses when DataCloud is absent; confirmed graceful 501/503 degradation for unconfigured services; no 500s.
+> - **Combined AEP test count: 712 (server: 393 + aep-runtime-core: 319), all passing.**
 
 Goal: regain trust in delivery.
 

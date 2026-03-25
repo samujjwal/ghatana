@@ -68,7 +68,7 @@ public class ClinicalNoteService {
 
     /** Returns the logical service name. */
     public String getName() {
-        return "clinical-note";
+        return "clinical-notes";
     }
 
     // ==================== Core Operations ====================
@@ -97,9 +97,10 @@ public class ClinicalNoteService {
                 note.objective(),
                 note.assessment(),
                 note.plan(),
-                Instant.now(),
-                note.lastUpdatedAt() != null ? note.lastUpdatedAt() : Instant.now(),
-                NoteStatus.DRAFT
+                NoteStatus.DRAFT,
+                null,
+                null,
+                Instant.now()
         );
 
         DataWriteRequest request = new DataWriteRequest(
@@ -145,7 +146,7 @@ public class ClinicalNoteService {
                             existing.id(), existing.patientId(), existing.encounterId(),
                             existing.authorId(), existing.subjective(), existing.objective(),
                             existing.assessment(), existing.plan(),
-                            existing.createdAt(), Instant.now(), NoteStatus.FINAL
+                            NoteStatus.FINAL, signedBy, Instant.now(), existing.createdAt()
                     );
                     DataWriteRequest req = new DataWriteRequest(
                             NOTE_DATASET, noteId,
@@ -173,9 +174,9 @@ public class ClinicalNoteService {
         return dataCloud.readData(new DataReadRequest(NOTE_DATASET, noteId, Map.of()))
                 .map(result -> {
                     if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable(TypedDataSerializer.fromBytes(result.getData(), SoapNote.class));
+                    return Optional.ofNullable((SoapNote) TypedDataSerializer.fromBytes(result.getData(), SoapNote.class));
                 })
-                .whenException(e -> Promise.of(Optional.empty()));
+                ;
     }
 
     /**
@@ -235,13 +236,13 @@ public class ClinicalNoteService {
                 Map.of("id", "string", "patientId", "string", "type", "string",
                         "status", "string", "createdAt", "timestamp"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 AUDIT_DATASET,
                 Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(notes, audit).map($ -> null);
     }
@@ -255,7 +256,7 @@ public class ClinicalNoteService {
                         new AuditEntry(auditId, Instant.now(), action, patientId, details),
                         "ClinicalNoteAuditEntry", 1),
                 Map.of("timestamp", Instant.now().toString())
-        )).whenException(e -> {});
+        ));
     }
 
     private String generateId(String prefix) {
@@ -288,9 +289,10 @@ public class ClinicalNoteService {
             String objective,
             String assessment,
             String plan,
-            Instant createdAt,
-            Instant lastUpdatedAt,
-            NoteStatus status
+            NoteStatus status,
+            String signedBy,
+            Instant signedAt,
+            Instant createdAt
     ) {}
 
     /** Lifecycle status for clinical notes. */

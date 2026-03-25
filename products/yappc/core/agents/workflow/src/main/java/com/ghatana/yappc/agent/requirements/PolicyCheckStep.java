@@ -2,7 +2,7 @@ package com.ghatana.yappc.agent.requirements;
 
 // ✅ Use EXISTING interfaces from libs/java
 import com.ghatana.core.database.DatabaseClient;
-import com.ghatana.core.event.cloud.EventCloud;
+import com.ghatana.yappc.agent.EventPublisher;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.WorkflowStep;
 import com.ghatana.yappc.agent.WorkflowContextAdapter;
@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  * packs for: security, privacy, compliance, quality gates.
  *
  * <p>✅ Implements WorkflowStep from libs:workflow-api (EXISTING) ✅ Uses DatabaseClient from
- * libs:database (EXISTING) ✅ Uses EventCloud from libs:event-cloud (EXISTING)
+ * libs:database (EXISTING) ✅ Uses EventPublisher (product-owned facade over EventLogStore)
  *
  * <h3>Policy Actions:</h3>
  *
@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
 public final class PolicyCheckStep implements WorkflowStep {
 
   private final DatabaseClient dbClient;
-  private final EventCloud eventClient;
+  private final EventPublisher eventClient;
 
   // Policy patterns for content validation
   private static final Pattern PII_PATTERN =
@@ -52,7 +52,7 @@ public final class PolicyCheckStep implements WorkflowStep {
           "(?i)(disable.?audit|bypass.?security|skip.?validation|ignore.?policy)",
           Pattern.CASE_INSENSITIVE);
 
-  public PolicyCheckStep(DatabaseClient dbClient, EventCloud eventClient) {
+  public PolicyCheckStep(DatabaseClient dbClient, EventPublisher eventClient) {
     this.dbClient = Objects.requireNonNull(dbClient, "dbClient must not be null");
     this.eventClient = Objects.requireNonNull(eventClient, "eventClient must not be null");
   }

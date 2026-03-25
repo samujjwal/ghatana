@@ -3,7 +3,7 @@
  */
 package com.ghatana.services.auth;
 
-import com.ghatana.platform.security.jwt.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.model.User;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
@@ -36,6 +36,28 @@ import static io.activej.http.HttpMethod.POST;
  * <li>Tenant context extraction and propagation (via TenantExtractor)</li>
  * <li>Rate limiting per tenant (via RateLimiter)</li>
  * </ul>
+ *
+ * <p><b>Migration TODO (SHA-007)</b><br>
+ * This launcher extends {@link io.activej.launcher.Launcher} directly and
+ * manually provides its own {@code Eventloop}, {@code MeterRegistry}, and
+ * {@code MetricsCollector} bindings, which duplicates the same boilerplate
+ * in every shared service.
+ *
+ * <p>Migrate to the canonical pattern:
+ * <ol>
+ *   <li>Extend {@code com.ghatana.core.activej.launcher.ServiceLauncher}
+ *       (from {@code platform:java:runtime}) instead of
+ *       {@link io.activej.launcher.Launcher}.</li>
+ *   <li>Return bindings from {@code createModule()} using
+ *       {@code com.ghatana.core.activej.launcher.ServiceCommonModule} for the
+ *       {@code Eventloop} and
+ *       {@code com.ghatana.platform.observability.ObservabilityModule} for
+ *       {@code MeterRegistry} / {@code MetricsCollector}.</li>
+ *   <li>Replace the inline {@code /health} and {@code /readiness} route
+ *       snippets with
+ *       {@code com.ghatana.platform.http.server.servlet.HealthCheckServlet
+ *       .addHealthEndpoints(builder, "auth-gateway", VERSION)}.</li>
+ * </ol>
  *
  * @doc.type class
  * @doc.purpose Authentication gateway HTTP service
@@ -74,7 +96,7 @@ public class AuthGatewayLauncher extends Launcher {
         }
         long expiryMs = Long.parseLong(System.getenv().getOrDefault("JWT_EXPIRY_MS", "3600000"));
 
-        return new JwtTokenProvider(secret, expiryMs);
+        return new com.ghatana.platform.security.jwt.JwtTokenProvider(secret, expiryMs);
     }
 
     @Provides
@@ -144,7 +166,7 @@ public class AuthGatewayLauncher extends Launcher {
                 "PLATFORM_JWT_SECRET", "dev-platform-jwt-secret-change-me-in-prod!");
         final long platformTokenTtlMs = Long.parseLong(
                 System.getenv().getOrDefault("PLATFORM_TOKEN_TTL_MS", String.valueOf(15 * 60 * 1000L)));
-        final JwtTokenProvider platformTokenProvider = new JwtTokenProvider(platformSecret, platformTokenTtlMs);
+        final JwtTokenProvider platformTokenProvider = new com.ghatana.platform.security.jwt.JwtTokenProvider(platformSecret, platformTokenTtlMs);
 
         return RoutingServlet.builder(eventloop)
                 // Health check

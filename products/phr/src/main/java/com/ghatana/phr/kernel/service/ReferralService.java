@@ -92,12 +92,12 @@ public class ReferralService {
         Referral toStore = new Referral(
                 id,
                 referral.patientId(),
+                referral.encounterId(),
                 referral.referringProviderId(),
                 referral.receivingProviderId(),
                 referral.specialtyCode(),
-                referral.urgency(),
                 referral.clinicalReason(),
-                referral.notes(),
+                referral.urgency(),
                 ReferralStatus.PENDING,
                 Instant.now(),
                 null,
@@ -146,9 +146,9 @@ public class ReferralService {
                                 new IllegalStateException("Cannot accept referral in status: " + existing.status()));
                     }
                     Referral accepted = new Referral(
-                            existing.id(), existing.patientId(), existing.referringProviderId(),
-                            acceptingProviderId, existing.specialtyCode(), existing.urgency(),
-                            existing.clinicalReason(), existing.notes(),
+                            existing.id(), existing.patientId(), existing.encounterId(),
+                            existing.referringProviderId(), acceptingProviderId, existing.specialtyCode(),
+                            existing.clinicalReason(), existing.urgency(),
                             ReferralStatus.ACCEPTED, existing.createdAt(), Instant.now(), null
                     );
                     DataWriteRequest req = new DataWriteRequest(
@@ -183,9 +183,9 @@ public class ReferralService {
                     }
                     Referral existing = opt.get();
                     Referral closed = new Referral(
-                            existing.id(), existing.patientId(), existing.referringProviderId(),
-                            existing.receivingProviderId(), existing.specialtyCode(), existing.urgency(),
-                            existing.clinicalReason(), closureNotes,
+                            existing.id(), existing.patientId(), existing.encounterId(),
+                            existing.referringProviderId(), existing.receivingProviderId(), existing.specialtyCode(),
+                            existing.clinicalReason(), existing.urgency(),
                             ReferralStatus.COMPLETED, existing.createdAt(), existing.acceptedAt(), Instant.now()
                     );
                     DataWriteRequest req = new DataWriteRequest(
@@ -213,9 +213,9 @@ public class ReferralService {
         return dataCloud.readData(new DataReadRequest(REFERRAL_DATASET, referralId, Map.of()))
                 .map(result -> {
                     if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable(TypedDataSerializer.fromBytes(result.getData(), Referral.class));
+                    return Optional.ofNullable((Referral) TypedDataSerializer.fromBytes(result.getData(), Referral.class));
                 })
-                .whenException(e -> Promise.of(Optional.empty()));
+                ;
     }
 
     /**
@@ -251,13 +251,13 @@ public class ReferralService {
                 Map.of("id", "string", "patientId", "string", "status", "string",
                         "specialtyCode", "string", "createdAt", "timestamp"),
                 Map.of("retention", "10years")
-        )).whenException(e -> {});
+        ));
 
         Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
                 AUDIT_DATASET,
                 Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
                 Map.of("retention", "25years")
-        )).whenException(e -> {});
+        ));
 
         return Promises.all(referrals, audit).map($ -> null);
     }
@@ -271,7 +271,7 @@ public class ReferralService {
                         new AuditEntry(auditId, Instant.now(), action, patientId, details),
                         "ReferralAuditEntry", 1),
                 Map.of("timestamp", Instant.now().toString())
-        )).whenException(e -> {});
+        ));
     }
 
     private String generateId(String prefix) {
@@ -299,12 +299,12 @@ public class ReferralService {
     public record Referral(
             String id,
             String patientId,
+            String encounterId,
             String referringProviderId,
             String receivingProviderId,
             String specialtyCode,
-            ReferralUrgency urgency,
             String clinicalReason,
-            String notes,
+            ReferralUrgency urgency,
             ReferralStatus status,
             Instant createdAt,
             Instant acceptedAt,

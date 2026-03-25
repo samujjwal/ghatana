@@ -18,6 +18,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import com.ghatana.yappc.agents.code.MonitorInput;
+import com.ghatana.yappc.agents.code.MonitorOutput;
 
 /**
  * Tests for MonitorSpecialistAgent — production monitoring specialist.
@@ -38,7 +40,7 @@ class MonitorSpecialistAgentTest extends EventloopTestBase {
     memoryStore = new EventLogMemoryStore();
     agent = new MonitorSpecialistAgent(
         memoryStore, new MonitorSpecialistAgent.MonitorGenerator());
-    YAPPCAgentBase.configureAepEventPublisher(
+    YAPPCAgentBase.setGlobalAepEventPublisher(
         (eventType, tenantId, payload) -> Promise.complete());
   }
 

@@ -29,7 +29,6 @@ dependencies {
     // Platform dependencies
     api(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))
-    implementation(project(":platform:java:event-cloud"))
     implementation(project(":platform:java:observability"))
     
     // ActiveJ (async framework) — api because audit interfaces expose Promise in public API
@@ -45,6 +44,8 @@ dependencies {
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
     
     // Testing
     testImplementation(project(":platform:java:testing"))

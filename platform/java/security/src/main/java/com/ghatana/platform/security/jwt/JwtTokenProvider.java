@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -231,13 +232,35 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
     }
 
     /**
-     * Creates a JWT token for the specified User model.
+     * Creates a JWT token for the specified security-layer User model.
      *
-     * @param user the user model
+     * <p>For new code, prefer {@link #createTokenForDomainUser(com.ghatana.platform.domain.auth.User)}
+     * which operates on the canonical domain aggregate.
+     *
+     * @param user the security-layer user model
      * @return the signed JWT string
+     * @deprecated Use {@link #createTokenForDomainUser(com.ghatana.platform.domain.auth.User)} instead
      */
+    @Deprecated
     public String createToken(User user) {
         return createToken(user.getUsername(), user.getRoles().stream().map(Role::name).collect(Collectors.toList()), null);
+    }
+
+    /**
+     * Creates a JWT token for the canonical domain {@link com.ghatana.platform.domain.auth.User} aggregate.
+     *
+     * <p>Roles are encoded as their string names (e.g. {@code "ADMIN"}, {@code "USER"}).
+     * The subject of the token is the user's {@link com.ghatana.platform.domain.auth.UserId#getValue()}.
+     *
+     * @param domainUser the canonical domain user aggregate, must not be null
+     * @return the signed JWT string
+     */
+    public String createTokenForDomainUser(com.ghatana.platform.domain.auth.User domainUser) {
+        Objects.requireNonNull(domainUser, "domainUser must not be null");
+        List<String> roleNames = domainUser.getRoles().stream()
+                .map(com.ghatana.platform.domain.auth.Role::getName)
+                .collect(Collectors.toList());
+        return createToken(domainUser.getUserId().value(), roleNames, null);
     }
 
     // -----------------------------------------------------------------------

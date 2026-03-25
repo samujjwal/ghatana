@@ -19,7 +19,7 @@
  */
 
 import React, { useMemo, useCallback, useState } from 'react';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 import { palette, lightColors, darkColors, fontSize, fontWeight, componentRadius } from '@ghatana/tokens';
 import { useTheme } from '@ghatana/theme';
 import { AppListItem, type AppMetadata } from '../molecules/AppListItem';

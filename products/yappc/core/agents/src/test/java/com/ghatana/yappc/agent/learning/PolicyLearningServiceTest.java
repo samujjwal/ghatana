@@ -282,9 +282,29 @@ class PolicyLearningServiceTest {
         }
 
         @Override
-        public Promise<Void> delete(String id) {
-            store.remove(id);
-            return Promise.of(null);
+        public Promise<Boolean> deleteById(String id) {
+            return Promise.of(store.remove(id) != null);
+        }
+
+        @Override
+        public Promise<List<LearnedPolicy>> findByTenantId(String tenantId) {
+            List<LearnedPolicy> result = store.values().stream()
+                    .filter(p -> tenantId.equals(p.getTenantId()))
+                    .collect(Collectors.toList());
+            return Promise.of(result);
+        }
+
+        @Override
+        public Promise<List<LearnedPolicy>> findByTenantIdAndAgentType(String tenantId, String agentType) {
+            List<LearnedPolicy> result = store.values().stream()
+                    .filter(p -> tenantId.equals(p.getTenantId()))
+                    .collect(Collectors.toList());
+            return Promise.of(result);
+        }
+
+        @Override
+        public Promise<List<LearnedPolicy>> findByTenantIdAndConfidenceGreaterThan(String tenantId, double minConfidence) {
+            return findAboveConfidence(tenantId, minConfidence);
         }
     }
 }

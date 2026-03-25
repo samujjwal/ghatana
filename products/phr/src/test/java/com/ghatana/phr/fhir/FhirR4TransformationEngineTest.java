@@ -287,16 +287,16 @@ class FhirR4TransformationEngineTest {
                 "rx-fhir-1",
                 "patient-fhir-1",
                 "dr-fhir-1",
-                "1049502",   // RxNorm code for Metformin
+                "encounter-fhir-1",
+                "1049502",   // medicationCode
                 "Metformin 500mg",
                 "500mg",
-                "twice daily",
-                Duration.ofDays(30),
-                "Take with food",
+                "Type 2 Diabetes",
                 Instant.now(),
                 Instant.now().plusSeconds(86400L * 30),
-                PrescriptionStatus.ACTIVE,
-                3
+                3,  // refillsRemaining
+                Duration.ofDays(30),
+                PrescriptionStatus.ACTIVE
         );
     }
 
@@ -304,18 +304,21 @@ class FhirR4TransformationEngineTest {
         return new LabObservation(
                 "obs-fhir-1",
                 "patient-fhir-1",
-                "lab-1",
-                "dr-fhir-1",
+                "encounter-fhir-1",
+                "order-fhir-1",
                 "718-7",         // LOINC code for Hemoglobin
                 "Hemoglobin",
-                "13.5",
-                "g/dL",
+                "Hemoglobin",
+                new java.math.BigDecimal("13.5"),
                 12.0,
-                17.5,
-                interpretation,
+                "g/dL",
+                "12.0-17.5",
+                "lab-1",
+                Instant.now(),
                 Instant.now(),
                 ObservationStatus.FINAL,
-                null
+                null,
+                interpretation
         );
     }
 
@@ -323,19 +326,20 @@ class FhirR4TransformationEngineTest {
         return new ImmunizationRecord(
                 "imm-fhir-1",
                 "patient-fhir-1",
-                "nurse-1",
+                "encounter-fhir-1",
                 "115",           // CVX code for Tdap
                 "Tdap",
-                "LOT-9999",
-                "Sanofi",
+                "nurse-1",
                 Instant.now(),
+                Instant.now(),
+                "LOT-9999",
+                LocalDate.now().plusYears(5),
                 "deltoid",
-                "intramuscular",
-                "0.5mL",
+                "Tdap Series",
                 1,
-                1,
-                ImmunizationStatus.COMPLETED,
-                null
+                false,
+                null,
+                ImmunizationStatus.ADMINISTERED
         );
     }
 }

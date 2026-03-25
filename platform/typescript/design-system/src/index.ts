@@ -112,7 +112,7 @@ export * from './layout/Spacer';
 export * from './hooks';
 
 // Utilities
-export { cn } from '@ghatana/utils';
+export { cn } from '@ghatana/platform-utils';
 export * from './utils/rtl';
 export * from './utils/accessibility';
 export * from './utils/testing';

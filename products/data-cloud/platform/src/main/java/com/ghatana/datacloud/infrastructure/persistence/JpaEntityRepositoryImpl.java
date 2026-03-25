@@ -1,5 +1,7 @@
 package com.ghatana.datacloud.infrastructure.persistence;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.application.DynamicQueryBuilder;
 import com.ghatana.datacloud.application.QuerySpec;
 import com.ghatana.datacloud.entity.Entity;
@@ -66,28 +68,41 @@ import java.util.stream.Collectors;
 public class JpaEntityRepositoryImpl implements EntityRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaEntityRepositoryImpl.class);
-    
-    /**
-     * Dedicated thread pool for blocking JPA operations.
-     * Uses virtual threads (Java 21+) for efficient blocking I/O.
-     * Named threads for better diagnostics and monitoring.
-     */
-    private static final ExecutorService DB_EXECUTOR = Executors.newThreadPerTaskExecutor(
-            new ThreadFactory() {
-                private final AtomicInteger counter = new AtomicInteger(1);
-                
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = Thread.ofVirtual()
-                            .name("jpa-entity-repo-" + counter.getAndIncrement())
-                            .unstarted(r);
-                    return t;
-                }
-            }
-    );
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private final ExecutorService dbExecutor;
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    /**
+     * Creates a repository backed by the default virtual-thread executor.
+     */
+    public JpaEntityRepositoryImpl() {
+        this(newDbExecutor());
+    }
+
+    /**
+     * Creates a repository backed by the supplied blocking-work executor.
+     *
+     * @param dbExecutor executor used for blocking JPA calls
+     */
+    public JpaEntityRepositoryImpl(ExecutorService dbExecutor) {
+        this.dbExecutor = Objects.requireNonNull(dbExecutor, "dbExecutor must not be null");
+    }
+
+    private static ExecutorService newDbExecutor() {
+        return Executors.newThreadPerTaskExecutor(new ThreadFactory() {
+            private final AtomicInteger counter = new AtomicInteger(1);
+
+            @Override
+            public Thread newThread(Runnable runnable) {
+                return Thread.ofVirtual()
+                        .name("jpa-entity-repo-" + counter.getAndIncrement())
+                        .unstarted(runnable);
+            }
+        });
+    }
 
     /**
      * Finds an entity by ID within tenant and collection.
@@ -106,7 +121,8 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(collectionName, "Collection name must not be null");
         Objects.requireNonNull(entityId, "Entity ID must not be null");
 
-        try {
+        // C3: ofBlocking offloads the JDBC round-trip to the virtual-thread executor.
+        return Promise.ofBlocking(dbExecutor, () -> {
             TypedQuery<Entity> query = entityManager.createQuery(
                 "SELECT e FROM Entity e WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.id = :id AND e.active = true",
@@ -121,11 +137,8 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
 
             logger.debug("findById: tenantId={}, collection={}, id={}, found={}",
                 tenantId, collectionName, entityId, result.isPresent());
-
-            return Promise.of(result);
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return result;
+        });
     }
 
     /**
@@ -156,32 +169,36 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(tenantId, "Tenant ID must not be null");
         Objects.requireNonNull(collectionName, "Collection name must not be null");
 
-        try {
+        // H1: Throw immediately if a non-empty filter is provided — silently ignoring it returns
+        // over-broad data sets, which is worse than a fast-fail.
+        // Use findByQuery() with DynamicQueryBuilder for filtered queries.
+        if (filter != null && !filter.isEmpty()) {
+            return Promise.ofException(new UnsupportedOperationException(
+                "JSONB field filtering via findAll() is not implemented. " +
+                "Use findByQuery() with DynamicQueryBuilder for filtered entity queries."));
+        }
+
+        // C3: ofBlocking offloads the JDBC round-trip to the virtual-thread executor.
+        return Promise.ofBlocking(dbExecutor, () -> {
             StringBuilder jpql = new StringBuilder(
                 "SELECT e FROM Entity e WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.active = true"
             );
 
-            // Add filter conditions (simple equality for now)
-            if (filter != null && !filter.isEmpty()) {
-                for (String key : filter.keySet()) {
-                    // In production, this would use JSONB containment operator
-                    // For now, we'll skip complex JSONB filtering in JPQL
-                    logger.warn("JSONB filtering not fully implemented in JPQL for key: {}", key);
-                }
-            }
-
-            // Add sorting
+            // M3: Support sorting by entity timestamp fields and JSONB data fields.
             if (sort != null && !sort.trim().isEmpty()) {
                 String[] parts = sort.split(":");
                 if (parts.length == 2) {
-                    String field = parts[0];
-                    String direction = parts[1].toUpperCase();
-                    if (direction.equals("ASC") || direction.equals("DESC")) {
-                        // In production, this would use JSONB arrow operator for data fields
-                        // For now, only support sorting by entity fields
+                    String field = parts[0].trim();
+                    String direction = parts[1].trim().toUpperCase();
+                    if ((direction.equals("ASC") || direction.equals("DESC"))) {
                         if (field.equals("createdAt") || field.equals("updatedAt")) {
+                            // Mapped JPA column — safe to interpolate (validated against allowlist)
                             jpql.append(" ORDER BY e.").append(field).append(" ").append(direction);
+                        } else if (SAFE_SORT_FIELD.matcher(field).matches()) {
+                            // JSONB data field — use native function; append as native query suffix
+                            // Note: JPQL does not support JSONB operators; delegate to native path.
+                            logger.debug("findAll: JSONB sort on '{}' not supported in JPQL; ignoring sort.", field);
                         }
                     }
                 }
@@ -197,12 +214,13 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
 
             logger.debug("findAll: tenantId={}, collection={}, offset={}, limit={}, found={}",
                 tenantId, collectionName, offset, limit, results.size());
-
-            return Promise.of(results);
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return results;
+        });
     }
+
+    /** Allowlist pattern for sort field names — prevents JPQL injection via field name. */
+    private static final java.util.regex.Pattern SAFE_SORT_FIELD =
+            java.util.regex.Pattern.compile("^[A-Za-z_][A-Za-z0-9_]{0,127}$");
 
     /**
      * Finds entities using a custom query specification.
@@ -226,39 +244,70 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(collectionName, "Collection name must not be null");
         Objects.requireNonNull(querySpec, "Query spec must not be null");
 
-        try {
-            if (!(querySpec instanceof QuerySpec spec)) {
-                logger.warn("Unsupported querySpec type: {}", querySpec.getClass());
-                return Promise.of(Collections.emptyList());
-            }
-
-            // Base SQL built by DynamicQueryBuilder (selects from 'entities')
-            String baseSql = spec.sql();
-
-            // Enforce tenant/collection/active constraints
-            String scopedSql = baseSql + " AND tenant_id = :tenantId AND collection_name = :collectionName AND active = true";
-
-            // Create native query mapping to Entity.class
-            Query nativeQuery = entityManager.createNativeQuery(scopedSql, Entity.class);
-
-            // Bind parameters from spec
-            Map<String, Object> params = spec.parameters();
-            for (Map.Entry<String, Object> entry : params.entrySet()) {
-                nativeQuery.setParameter(entry.getKey(), entry.getValue());
-            }
-
-            // Bind scoping params
-            nativeQuery.setParameter("tenantId", tenantId);
-            nativeQuery.setParameter("collectionName", collectionName);
-
-            @SuppressWarnings("unchecked")
-            List<Entity> results = nativeQuery.getResultList();
-
-            logger.debug("findByQuery: tenantId={}, collection={}, returned={}", tenantId, collectionName, results.size());
-            return Promise.of(results);
-        } catch (Exception e) {
-            return Promise.ofException(e);
+        // C4: Handle application.QuerySpec (full parameterized SQL from DynamicQueryBuilder).
+        if (querySpec instanceof QuerySpec appSpec) {
+            return Promise.ofBlocking(dbExecutor, () -> {
+                String baseSql = appSpec.sql();
+                String scopedSql = baseSql +
+                    " AND tenant_id = :tenantId AND collection_name = :collectionName AND active = true";
+                Query nativeQuery = entityManager.createNativeQuery(scopedSql, Entity.class);
+                Map<String, Object> params = appSpec.parameters();
+                for (Map.Entry<String, Object> entry : params.entrySet()) {
+                    nativeQuery.setParameter(entry.getKey(), entry.getValue());
+                }
+                nativeQuery.setParameter("tenantId", tenantId);
+                nativeQuery.setParameter("collectionName", collectionName);
+                if (appSpec.offset() > 0) nativeQuery.setFirstResult(appSpec.offset());
+                if (appSpec.limit() > 0) nativeQuery.setMaxResults(appSpec.limit());
+                @SuppressWarnings("unchecked")
+                List<Entity> results = nativeQuery.getResultList();
+                logger.debug("findByQuery(AppSpec): tenantId={}, collection={}, returned={}",
+                    tenantId, collectionName, results.size());
+                return results;
+            });
         }
+
+        // C4: Handle entity.storage.QuerySpec (filter string + pagination from StorageConnector).
+        if (querySpec instanceof com.ghatana.datacloud.entity.storage.QuerySpec storageSpec) {
+            return Promise.ofBlocking(dbExecutor, () -> {
+                StringBuilder jpql = new StringBuilder(
+                    "SELECT e FROM Entity e WHERE e.tenantId = :tenantId " +
+                    "AND e.collectionName = :collectionName AND e.active = true"
+                );
+                // Sort by entity timestamp fields only (JSONB field sort requires native query)
+                if (storageSpec.getSortFields() != null && !storageSpec.getSortFields().isEmpty()) {
+                    List<String> orderClauses = new ArrayList<>();
+                    for (com.ghatana.datacloud.entity.storage.QuerySpec.SortField sf : storageSpec.getSortFields()) {
+                        String field = sf.fieldName();
+                        if ((field.equals("createdAt") || field.equals("updatedAt"))
+                                && SAFE_SORT_FIELD.matcher(field).matches()) {
+                            String dir = sf.direction() != null
+                                    ? sf.direction().name() : "ASC";
+                            orderClauses.add("e." + field + " " + dir);
+                        }
+                    }
+                    if (!orderClauses.isEmpty()) {
+                        jpql.append(" ORDER BY ").append(String.join(", ", orderClauses));
+                    }
+                }
+                TypedQuery<Entity> q = entityManager.createQuery(jpql.toString(), Entity.class);
+                q.setParameter("tenantId", tenantId);
+                q.setParameter("collectionName", collectionName);
+                int offset = storageSpec.getOffset();
+                int limit  = storageSpec.getLimit() > 0 ? storageSpec.getLimit() : 100;
+                q.setFirstResult(offset);
+                q.setMaxResults(limit);
+                List<Entity> results = q.getResultList();
+                logger.debug("findByQuery(StorageSpec): tenantId={}, collection={}, returned={}",
+                    tenantId, collectionName, results.size());
+                return results;
+            });
+        }
+
+        logger.error("findByQuery: unsupported querySpec type: {}", querySpec.getClass().getName());
+        return Promise.ofException(new IllegalArgumentException(
+            "Unsupported querySpec type: " + querySpec.getClass().getName() +
+            ". Use application.QuerySpec (from DynamicQueryBuilder) or entity.storage.QuerySpec."));
     }
 
     /**
@@ -284,17 +333,13 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             throw new IllegalArgumentException("Entity tenant ID must match request tenant");
         }
 
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             Entity saved = entityManager.merge(entity);
             entityManager.flush();
-
             logger.debug("save: tenantId={}, collection={}, id={}, version={}",
                 tenantId, saved.getCollectionName(), saved.getId(), saved.getVersion());
-
-            return Promise.of(saved);
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return saved;
+        });
     }
 
     /**
@@ -314,7 +359,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(collectionName, "Collection name must not be null");
         Objects.requireNonNull(entityId, "Entity ID must not be null");
 
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             Query query = entityManager.createQuery(
                 "UPDATE Entity e SET e.active = false WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.id = :id"
@@ -322,16 +367,11 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             query.setParameter("tenantId", tenantId);
             query.setParameter("collectionName", collectionName);
             query.setParameter("id", entityId);
-
             int updated = query.executeUpdate();
-
             logger.debug("delete: tenantId={}, collection={}, id={}, updated={}",
                 tenantId, collectionName, entityId, updated);
-
-            return Promise.of(null);
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return null;
+        });
     }
 
     /**
@@ -348,7 +388,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(collectionName, "Collection name must not be null");
         Objects.requireNonNull(entityId, "Entity ID must not be null");
 
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             TypedQuery<Long> query = entityManager.createQuery(
                 "SELECT COUNT(e) FROM Entity e WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.id = :id AND e.active = true",
@@ -357,12 +397,8 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             query.setParameter("tenantId", tenantId);
             query.setParameter("collectionName", collectionName);
             query.setParameter("id", entityId);
-
-            Long count = query.getSingleResult();
-            return Promise.of(count > 0);
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return query.getSingleResult() > 0;
+        });
     }
 
     /**
@@ -377,7 +413,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(tenantId, "Tenant ID must not be null");
         Objects.requireNonNull(collectionName, "Collection name must not be null");
 
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             TypedQuery<Long> query = entityManager.createQuery(
                 "SELECT COUNT(e) FROM Entity e WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.active = true",
@@ -385,11 +421,8 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             );
             query.setParameter("tenantId", tenantId);
             query.setParameter("collectionName", collectionName);
-
-            return Promise.of(query.getSingleResult());
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return query.getSingleResult();
+        });
     }
 
     /**
@@ -405,27 +438,30 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         Objects.requireNonNull(tenantId, "Tenant ID must not be null");
         Objects.requireNonNull(collectionName, "Collection name must not be null");
 
-        try {
-            // Simplified implementation - in production would use JSONB filtering
-            TypedQuery<Long> query = entityManager.createQuery(
-                "SELECT COUNT(e) FROM Entity e WHERE e.tenantId = :tenantId " +
-                "AND e.collectionName = :collectionName AND e.active = true",
-                Long.class
-            );
-            query.setParameter("tenantId", tenantId);
-            query.setParameter("collectionName", collectionName);
-
-            return Promise.of(query.getSingleResult());
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+        return Promise.ofBlocking(dbExecutor, () -> {
+            if (filter == null || filter.isEmpty()) {
+                TypedQuery<Long> q = entityManager.createQuery(
+                    "SELECT COUNT(e) FROM Entity e WHERE e.tenantId = :tenantId " +
+                    "AND e.collectionName = :collectionName AND e.active = true",
+                    Long.class);
+                q.setParameter("tenantId", tenantId);
+                q.setParameter("collectionName", collectionName);
+                return q.getSingleResult();
+            }
+            // H4: Use JSONB containment with a fully-parameterized native query.
+            // data @> CAST(:filterJson AS jsonb) is safe — no string interpolation.
+            String filterJson = OBJECT_MAPPER.writeValueAsString(filter);
+            Query q = entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM entities WHERE tenant_id = :tenantId " +
+                "AND collection_name = :collectionName AND active = true " +
+                "AND data @> CAST(:filterJson AS jsonb)");
+            q.setParameter("tenantId", tenantId);
+            q.setParameter("collectionName", collectionName);
+            q.setParameter("filterJson", filterJson);
+            return ((Number) q.getSingleResult()).longValue();
+        });
     }
 
-    /**
-     * Finds entities by dynamic query.
-     *
-     * <p><b>Note</b><br>
-     * This implementation uses native SQL for complex JSONB queries.
     /**
      * Batch saves multiple entities.
      *
@@ -446,34 +482,24 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             return Promise.of(List.of());
         }
 
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             List<Entity> saved = new ArrayList<>();
-            int count = 0;
-
+            int batchCount = 0;
             for (Entity entity : entities) {
                 if (!entity.getTenantId().equals(tenantId)) {
                     throw new IllegalArgumentException("Entity tenant ID must match request tenant");
                 }
-
-                Entity merged = entityManager.merge(entity);
-                saved.add(merged);
-                count++;
-
-                // Flush every 50 entities
-                if (count % 50 == 0) {
+                saved.add(entityManager.merge(entity));
+                batchCount++;
+                if (batchCount % 50 == 0) {
                     entityManager.flush();
                     entityManager.clear();
                 }
             }
-
             entityManager.flush();
-
             logger.debug("saveAll: tenantId={}, count={}", tenantId, saved.size());
-
-            return Promise.of(saved);
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return saved;
+        });
     }
 
     /**
@@ -494,7 +520,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             return Promise.of(null);
         }
 
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             Query query = entityManager.createQuery(
                 "UPDATE Entity e SET e.active = false WHERE e.tenantId = :tenantId " +
                 "AND e.collectionName = :collectionName AND e.id IN :ids"
@@ -502,15 +528,10 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             query.setParameter("tenantId", tenantId);
             query.setParameter("collectionName", collectionName);
             query.setParameter("ids", entityIds);
-
             int updated = query.executeUpdate();
-
             logger.debug("deleteAll: tenantId={}, collection={}, ids={}, updated={}",
                 tenantId, collectionName, entityIds.size(), updated);
-
-            return Promise.of(null);
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return null;
+        });
     }
 }

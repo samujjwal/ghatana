@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn } from '@ghatana/utils';
+import { cn } from '@ghatana/platform-utils';
 
 import { Button, type ButtonProps } from './Button';
 import { VisuallyHidden } from './VisuallyHidden';

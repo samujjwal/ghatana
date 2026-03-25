@@ -6,7 +6,8 @@ import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.yappc.agent.*;
 import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.YAPPCAgentBase;
-import com.ghatana.yappc.agent.YAPPCAgentRegistry;
+import com.ghatana.yappc.agent.YappcAgentRegistryAdapter;
+import com.ghatana.yappc.agent.AepEventPublisher;
 import io.activej.promise.Promise;
 import java.util.*;
 import org.jetbrains.annotations.NotNull;
@@ -29,13 +30,14 @@ public class TestingPhaseLeadAgent extends YAPPCAgentBase<TestingRequest, Testin
 
   private static final Logger log = LoggerFactory.getLogger(TestingPhaseLeadAgent.class);
 
-  private final YAPPCAgentRegistry agentRegistry;
+  private final YappcAgentRegistryAdapter agentRegistry;
   private final MemoryStore memoryStore;
 
   public TestingPhaseLeadAgent(
-      @NotNull YAPPCAgentRegistry agentRegistry,
+      @NotNull YappcAgentRegistryAdapter agentRegistry,
       @NotNull MemoryStore memoryStore,
-      @NotNull OutputGenerator<StepRequest<TestingRequest>, StepResult<TestingResult>> generator) {
+      @NotNull OutputGenerator<StepRequest<TestingRequest>, StepResult<TestingResult>> generator,
+      @NotNull AepEventPublisher eventPublisher) {
     super(
         "TestingPhaseLeadAgent",
         "testing.coordinate",
@@ -45,7 +47,8 @@ public class TestingPhaseLeadAgent extends YAPPCAgentBase<TestingRequest, Testin
             "#/definitions/TestingResult",
             List.of("testing", "quality", "validation"),
             Map.of("description", "Coordinates testing phase", "version", "1.0.0")),
-        generator);
+          generator,
+          eventPublisher);
     this.agentRegistry = agentRegistry;
     this.memoryStore = memoryStore;
   }

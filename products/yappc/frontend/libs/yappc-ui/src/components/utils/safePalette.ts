@@ -1,6 +1,7 @@
 export {
-  default,
+  resolveThemeColor as default,
   resolveThemeColor,
   resolveMuiColor,
   getPaletteMain,
-} from '@yappc/ui/theme';
+} from '@yappc/theme';
+

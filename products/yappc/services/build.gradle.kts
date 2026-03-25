@@ -35,7 +35,6 @@ dependencies {
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:observability"))
-    implementation(project(":platform:java:event-cloud"))
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:governance"))
     implementation(project(":platform:java:workflow"))
@@ -43,23 +42,22 @@ dependencies {
     implementation(project(":platform:java:runtime"))
     implementation(project(":platform:java:plugin"))
     implementation(project(":platform:java:agent-core"))
-    implementation(project(":platform:java:testing"))
     
     // YAPPC modules
     // ===== Services bounded-context sub-modules =====
-    implementation(project(":products:yappc:services:platform"))
-    implementation(project(":products:yappc:services:lifecycle"))  // absorbs services:ai and services:scaffold
+    implementation(project(":products:yappc:core:services-platform"))
+    implementation(project(":products:yappc:core:services-lifecycle"))  // was: services:lifecycle (Phase 2: moved to core/)
 
-    implementation(project(":products:yappc:backend:api"))
+    // backend:api removed (2026-03-23) — functionality consolidated into core modules
     implementation(project(":products:yappc:platform"))
     implementation(project(":products:yappc:libs:java:yappc-domain"))
     
     // YAPPC Core modules
     implementation(project(":products:yappc:core:ai"))
     implementation(project(":products:yappc:core:agents"))
-    implementation(project(":products:yappc:core:lifecycle"))
-    implementation(project(":products:yappc:core:spi"))
-    implementation(project(":products:yappc:core:framework"))
+    implementation(project(":products:yappc:core:yappc-services"))
+    implementation(project(":products:yappc:core:yappc-shared"))
+    implementation(project(":products:yappc:core:yappc-infrastructure"))
     implementation(project(":products:yappc:core:scaffold:core"))  // absorbs packs
     implementation(project(":products:yappc:core:scaffold:api"))
     implementation(project(":products:yappc:infrastructure:datacloud"))
@@ -84,7 +82,7 @@ dependencies {
     implementation("io.swagger.parser.v3:swagger-parser:2.1.22")
     
     // PostgreSQL
-    implementation("org.postgresql:postgresql:42.7.1")
+    implementation(libs.postgresql)
     implementation("com.zaxxer:HikariCP:5.1.0")
     
     // GraphQL
@@ -128,7 +126,7 @@ dependencies {
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(project(":platform:java:testing"))
-    testImplementation(project(":products:yappc:core:lifecycle"))
+    testImplementation(project(":products:yappc:core:yappc-services"))
     testImplementation(project(":products:yappc:infrastructure:datacloud"))
     testImplementation("org.testcontainers:junit-jupiter:1.19.3")
     testImplementation("org.testcontainers:postgresql:1.19.3")

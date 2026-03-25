@@ -5,6 +5,7 @@ package com.ghatana.config.runtime.engine;
 
 import com.ghatana.platform.config.ConfigSource;
 import com.ghatana.platform.config.YamlConfigSource;
+import com.ghatana.platform.core.exception.ConfigurationException;
 import io.activej.promise.Promise;
 
 import java.io.IOException;
