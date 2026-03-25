@@ -19,7 +19,7 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "tailwind-merge": "^3.4.0",
-    "jotai": "^2.17.0"
+    "jotai": "^2.19.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.7",

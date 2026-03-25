@@ -25,7 +25,7 @@
     "@flashit/shared": "workspace:*",
     "@tanstack/react-query": "^5.90.20",
     "date-fns": "^4.1.0",
-    "jotai": "^2.17.0",
+    "jotai": "^2.19.0",
     "lucide-react": "^0.563.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
