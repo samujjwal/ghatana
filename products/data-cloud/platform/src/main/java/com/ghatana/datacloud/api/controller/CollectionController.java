@@ -103,8 +103,36 @@ public class CollectionController {
         /**
          * Handle incoming HTTP requests for collection operations.
          *
-         * @param request HTTP request
-         * @return Promise of HTTP response
+         * <p><b>Routing</b><br>
+         * Dispatches requests to appropriate handler based on HTTP method and path:
+         * <ul>
+         *   <li>POST /api/v1/collections → {@link #createCollection(HttpRequest, String)}
+         *   <li>GET /api/v1/collections → {@link #listCollections(HttpRequest, String)}
+         *   <li>GET /api/v1/collections/{collectionId} → {@link #getCollection(String, String)}
+         *   <li>PUT /api/v1/collections/{collectionId} → {@link #updateCollection(HttpRequest, String, String)}
+         *   <li>DELETE /api/v1/collections/{collectionId} → {@link #deleteCollection(String, String)}
+         * </ul>
+         *
+         * <p><b>Authentication & Authorization</b><br>
+         * Validates X-Tenant-Id header for multi-tenant isolation. All operations enforce tenant boundaries.
+         *
+         * <p><b>Metrics</b><br>
+         * Records metrics for request volume, latency, and errors across all operations.
+         *
+         * <p><b>Error Handling</b><br>
+         * Returns appropriate HTTP status codes:
+         * <ul>
+         *   <li>201 Created: Successful creation
+         *   <li>200 OK: Successful GET/PUT
+         *   <li>204 No Content: Successful DELETE
+         *   <li>400 Bad Request: Invalid request format
+         *   <li>401 Unauthorized: Missing tenant context
+         *   <li>404 Not Found: Resource not found
+         *   <li>500 Internal Server Error: Service failure
+         * </ul>
+         *
+         * @param request HTTP request containing method, path, headers, and body
+         * @return Promise of HTTP response with appropriate status and payload
          */
         public Promise<HttpResponse> handle(HttpRequest request) {
                 String tenantId = extractTenantId(request);
@@ -153,9 +181,69 @@ public class CollectionController {
         /**
          * Create a new collection.
          *
-         * @param request  HTTP request containing collection data
-         * @param tenantId tenant ID from header
-         * @return Promise of HTTP response
+         * <p><b>HTTP Method & Path</b><br>
+         * POST /api/v1/collections
+         *
+         * <p><b>Required Headers</b><br>
+         * <ul>
+         *   <li>X-Tenant-ID: Tenant identifier for multi-tenant isolation
+         *   <li>Content-Type: application/json
+         * </ul>
+         *
+         * <p><b>Request Body (JSON)</b><br>
+         * <pre>{@code
+         * {
+         *   "name": "required string - unique within tenant",
+         *   "displayName": "optional human-readable name",
+         *   "description": "optional description",
+         *   "schema": {
+         *     "fields": [
+         *       {
+         *         "name": "field name",
+         *         "type": "STRING|NUMBER|BOOLEAN|DATE|TIMESTAMP|JSON",
+         *         "required": true/false,
+         *         "indexed": true/false
+         *       }
+         *     ]
+         *   },
+         *   "storageProfile": {
+         *     "tier": "HOT|WARM|COLD",
+         *     "ttlDays": 365
+         *   }
+         * }
+         * }</pre>
+         *
+         * <p><b>Response (201 Created)</b><br>
+         * Returns created collection with ID and timestamps:
+         * <pre>{@code
+         * {
+         *   "id": "uuid",
+         *   "tenantId": "string",
+         *   "name": "string",
+         *   "createdAt": "ISO-8601 timestamp",
+         *   "recordCount": 0
+         * }
+         * }</pre>
+         *
+         * <p><b>Error Responses</b><br>
+         * <ul>
+         *   <li>400: Invalid request - missing name or invalid schema
+         *   <li>401: Missing X-Tenant-ID header
+         *   <li>403: User lacks CREATE_COLLECTION permission
+         *   <li>409: Collection name already exists in tenant
+         *   <li>500: Database or service error
+         * </ul>
+         *
+         * <p><b>Metrics Collected</b><br>
+         * <ul>
+         *   <li>controller.collection.create (counter)
+         *   <li>controller.collection.duration (timer)
+         *   <li>controller.collection.create.error (counter on failure)
+         * </ul>
+         *
+         * @param request  HTTP request containing JSON body with collection definition
+         * @param tenantId tenant ID from X-Tenant-ID header
+         * @return Promise<HttpResponse>: 201 on success, error responses for failures
          */
         private Promise<HttpResponse> createCollection(HttpRequest request, String tenantId) {
                 long startTime = System.currentTimeMillis();
@@ -225,9 +313,29 @@ public class CollectionController {
         /**
          * Get collection by ID.
          *
-         * @param collectionId collection ID
-         * @param tenantId     tenant ID
-         * @return Promise of HTTP response
+         * <p><b>HTTP Method & Path</b><br>
+         * GET /api/v1/collections/{collectionId}
+         *
+         * <p><b>Required Headers</b><br>
+         * X-Tenant-ID: Tenant identifier for multi-tenant isolation
+         *
+         * <p><b>Path Parameters</b><br>
+         * collectionId: UUID of collection to retrieve
+         *
+         * <p><b>Response (200 OK)</b><br>
+         * Full collection details including schema and metadata.
+         *
+         * <p><b>Error Responses</b><br>
+         * <ul>
+         *   <li>401: Missing X-Tenant-ID header
+         *   <li>403: Collection belongs to different tenant
+         *   <li>404: Collection not found
+         *   <li>500: Database error
+         * </ul>
+         *
+         * @param collectionId collection UUID from URL path
+         * @param tenantId     tenant ID from X-Tenant-ID header
+         * @return Promise<HttpResponse>: 200 with collection data, or error response
          */
         private Promise<HttpResponse> getCollection(String collectionId, String tenantId) {
                 long startTime = System.currentTimeMillis();

@@ -6,6 +6,7 @@ import com.ghatana.datacloud.application.DynamicQueryBuilder;
 import com.ghatana.datacloud.application.QuerySpec;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.infrastructure.config.JpaThreadPoolConfig;
 import io.activej.promise.Promise;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -15,9 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -57,9 +56,21 @@ import java.util.stream.Collectors;
  * - Indexes on tenant_id, collection_name, created_at
  * - GIN index on data column for JSONB queries
  * - Batch operations for bulk inserts/updates
+ * - Thread pool configuration via JpaThreadPoolConfig (externalizable)
+ *
+ * <p><b>Configuration</b><br>
+ * Thread pool behavior can be configured via environment variables:
+ * <ul>
+ *   <li>{@code JPA_THREAD_POOL_TYPE}: "VIRTUAL" (default) or "PLATFORM"
+ *   <li>{@code JPA_THREAD_POOL_PREFIX}: thread name prefix (default: "jpa-worker")
+ *   <li>{@code JPA_THREAD_POOL_QUEUE_SIZE}: queue size (default: 1000)
+ *   <li>{@code JPA_THREAD_POOL_CORE_SIZE}: core pool size (default: 10)
+ *   <li>{@code JPA_THREAD_POOL_MAX_SIZE}: max pool size (default: 100)
+ * </ul>
  *
  * @see Entity
  * @see EntityRepository
+ * @see JpaThreadPoolConfig
  * @doc.type class
  * @doc.purpose JPA adapter for entity persistence with ActiveJ Promises
  * @doc.layer product
@@ -77,9 +88,19 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
 
     /**
      * Creates a repository backed by the default virtual-thread executor.
+     * Uses default thread pool configuration from JpaThreadPoolConfig.
      */
     public JpaEntityRepositoryImpl() {
-        this(newDbExecutor());
+        this(newDbExecutor(JpaThreadPoolConfig.builder().build()));
+    }
+
+    /**
+     * Creates a repository with configurable thread pool from environment variables.
+     *
+     * @param config thread pool configuration (can be loaded from environment)
+     */
+    public JpaEntityRepositoryImpl(JpaThreadPoolConfig config) {
+        this(newDbExecutor(Objects.requireNonNull(config, "config must not be null")));
     }
 
     /**
@@ -91,17 +112,77 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         this.dbExecutor = Objects.requireNonNull(dbExecutor, "dbExecutor must not be null");
     }
 
-    private static ExecutorService newDbExecutor() {
+    /**
+     * Creates an executor service based on the thread pool configuration.
+     *
+     * @param config thread pool configuration
+     * @return configured executor service
+     */
+    private static ExecutorService newDbExecutor(JpaThreadPoolConfig config) {
+        return switch (config.getType()) {
+            case VIRTUAL -> createVirtualThreadExecutor(config);
+            case PLATFORM -> createPlatformThreadExecutor(config);
+        };
+    }
+
+    /**
+     * Creates a virtual thread executor (Java 21+).
+     * Virtual threads are lightweight and ideal for I/O-bound operations like database access.
+     *
+     * @param config thread pool configuration
+     * @return virtual thread executor
+     */
+    private static ExecutorService createVirtualThreadExecutor(JpaThreadPoolConfig config) {
+        logger.info("Creating virtual thread executor for JPA: prefix={}, queueSize={}",
+                config.getThreadNamePrefix(), config.getQueueSize());
+        
         return Executors.newThreadPerTaskExecutor(new ThreadFactory() {
             private final AtomicInteger counter = new AtomicInteger(1);
+            private final String prefix = config.getThreadNamePrefix();
 
             @Override
             public Thread newThread(Runnable runnable) {
                 return Thread.ofVirtual()
-                        .name("jpa-entity-repo-" + counter.getAndIncrement())
+                        .name(prefix + "-" + counter.getAndIncrement())
                         .unstarted(runnable);
             }
         });
+    }
+
+    /**
+     * Creates a platform thread executor (traditional thread pool).
+     * Uses bounded queue to prevent memory exhaustion under high load.
+     *
+     * @param config thread pool configuration
+     * @return platform thread executor
+     */
+    private static ExecutorService createPlatformThreadExecutor(JpaThreadPoolConfig config) {
+        logger.info("Creating platform thread executor for JPA: prefix={}, coreSize={}, maxSize={}, queueSize={}, keepAlive={}s",
+                config.getThreadNamePrefix(), config.getCorePoolSize(), config.getMaxPoolSize(),
+                config.getQueueSize(), config.getKeepAliveSeconds());
+        
+        ThreadFactory factory = new ThreadFactory() {
+            private final AtomicInteger counter = new AtomicInteger(1);
+            private final String prefix = config.getThreadNamePrefix();
+
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName(prefix + "-" + counter.getAndIncrement());
+                t.setDaemon(false);
+                return t;
+            }
+        };
+
+        return new ThreadPoolExecutor(
+                config.getCorePoolSize(),
+                config.getMaxPoolSize(),
+                config.getKeepAliveSeconds(),
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(config.getQueueSize()),
+                factory,
+                new ThreadPoolExecutor.CallerRunsPolicy()
+        );
     }
 
     /**

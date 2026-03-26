@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    // Platform Audio-Video library (replaces legacy implementations)
+    // Platform audio-video library — SttEngine, TtsEngine, media types
     implementation(project(":platform:java:audio-video"))
 
     // Audio-Video common (security, tracing, rate limiting interceptors)

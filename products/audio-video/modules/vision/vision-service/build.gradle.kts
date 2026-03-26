@@ -13,9 +13,6 @@ repositories {
 }
 
 dependencies {
-    // Platform Audio-Video library (replaces legacy implementations)
-    implementation(project(":platform:java:audio-video"))
-
     // Audio-Video common (health/metrics server, gRPC interceptor chain, security)
     implementation(project(":products:audio-video:libs:common"))
 
@@ -45,6 +42,12 @@ dependencies {
     // Jackson annotations
     implementation(libs.jackson.annotations)
     
+    // OpenCV for image processing (used by YoloV8Adapter)
+    implementation(libs.opencv.java)
+    
+    // Native library loader (loads OpenCV JNI library)
+    implementation(libs.native.lib.loader)
+
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)

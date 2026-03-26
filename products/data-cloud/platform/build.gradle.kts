@@ -253,14 +253,14 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "INSTRUCTION"
                 value   = "COVEREDRATIO"
-                minimum = "0.12".toBigDecimal()   // Current report is ~13.0%; keep the gate above the prior 10% floor.
+                minimum = "0.14".toBigDecimal()   // Phase 1: Current baseline (14%)
             }
         }
         rule {
             limit {
                 counter = "BRANCH"
                 value   = "COVEREDRATIO"
-                minimum = "0.10".toBigDecimal()   // Current report is ~10.3%; keep the gate above the prior 5% floor.
+                minimum = "0.11".toBigDecimal()   // Phase 1: Current baseline (11%)
             }
         }
     }

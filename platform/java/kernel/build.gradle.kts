@@ -25,6 +25,9 @@ java {
 }
 
 dependencies {
+    // Kernel Core Utilities (JsonUtils)
+    api(project(":platform:java:core"))
+
     // ActiveJ (mandatory async framework)
     api(libs.activej.promise)
     implementation(libs.activej.eventloop)

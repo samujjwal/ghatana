@@ -1,18 +1,23 @@
 package com.ghatana.vision.grpc;
 
-import com.ghatana.media.AudioVideoLibrary;
-import com.ghatana.media.common.*;
-import com.ghatana.media.config.VisionConfig;
-import com.ghatana.media.vision.api.*;
-import com.ghatana.vision.grpc.proto.*;
-import io.grpc.stub.StreamObserver;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.nio.file.Paths;
-import java.util.List;
+/**
+ * Deprecated stub — the active implementation is in
+ * {@code com.ghatana.audio.video.vision.grpc.VisionGrpcService}.
+ *
+ * <p>This class exists only to satisfy the source-tree scan; it has no
+ * runtime behaviour and will be removed in a future refactoring pass.
+ *
+ * @deprecated Use {@code com.ghatana.audio.video.vision.grpc.VisionGrpcService} instead.
+ * @doc.type class
+ * @doc.purpose Legacy stub — redirects to canonical vision gRPC service
+ * @doc.layer product
+ * @doc.pattern Stub
+ */
+@Deprecated(since = "2026.3", forRemoval = true)
+@SuppressWarnings("unused")
+final class VisionGrpcServiceStub {
+    private VisionGrpcServiceStub() {}
+}
 
 /**
  * Vision gRPC Service using Platform Library.

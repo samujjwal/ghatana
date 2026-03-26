@@ -1,6 +1,8 @@
 package com.ghatana.datacloud.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 
 /**
  * Request object for paginated list queries.
@@ -8,6 +10,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * <p><b>Purpose</b><br>
  * Encapsulates pagination parameters (cursor position, page size, sorting, filtering)
  * for consistent pagination across all entity list endpoints.
+ *
+ * <p><b>Validation Rules</b><br>
+ * - pageSize: Must be between 1 and 1000 (default: 100)
+ * - sortBy: Optional sort field name
+ * - sortOrder: Optional ASCENDING|DESCENDING
+ * - filter: Optional JSON query filter
+ * - cursor: Optional pagination cursor for position tracking
  *
  * <p><b>Usage in API</b><br>
  * <pre>{@code
@@ -31,6 +40,8 @@ public record PaginationListRequest(
     String cursor,
 
     @JsonProperty("pageSize")
+    @Min(value = 1, message = "Page size must be at least 1")
+    @Max(value = 1000, message = "Page size must not exceed 1000")
     int pageSize,
 
     @JsonProperty("sortBy")

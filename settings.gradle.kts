@@ -54,6 +54,7 @@ include(":platform:java:agent-core")
 include(":platform:java:connectors")
 include(":platform:java:audit")
 include(":platform:java:kernel")
+include(":platform:java:audio-video")   // STT, TTS, Vision engine library (com.ghatana.media.*)
 // kernel-capabilities DELETED (zero consumers, capabilities merged into kernel/observability — Sprint 5, 2026-03-25)
 include(":platform:java:distributed-cache")    // KRQ-05: Generic Redis-backed distributed cache abstraction
 

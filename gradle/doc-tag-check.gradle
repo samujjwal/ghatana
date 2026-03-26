@@ -31,24 +31,33 @@ tasks.register('generateDocTagBaseline') {
     group = 'verification'
     description = 'Regenerate doc-tag-baseline.txt from current violations (use only to accept existing debt)'
 
+    // Capture at configuration time for configuration cache compatibility
+    def capturedBaselineFile = rootProject.file('gradle/doc-tag-baseline.txt')
+    def capturedRequired = ['@doc.type', '@doc.purpose', '@doc.layer', '@doc.pattern']
+    def capturedPattern = ~/(?:public\s+(?:abstract\s+|final\s+|sealed\s+)*)(?:class|interface|record|enum)\s+\w+/
+    def capturedSubprojectDirs = subprojects.collect { proj ->
+        [srcDir: proj.file('src/main/java'), projRootDir: rootDir]
+    }
+    def capturedRootDir = rootDir
+
     doLast {
         def violations = []
-        subprojects.each { proj ->
-            def srcDir = proj.file('src/main/java')
+        capturedSubprojectDirs.each { info ->
+            def srcDir = info.srcDir as File
             if (!srcDir.exists()) return
             srcDir.eachFileRecurse(groovy.io.FileType.FILES) { file ->
                 if (!file.name.endsWith('.java')) return
                 if (file.name == 'package-info.java' || file.name == 'module-info.java') return
                 def content = file.text
                 if (content.contains('@Deprecated(since')) return
-                if (!DOC_TAG_PUBLIC_PATTERN.matcher(content).find()) return
-                def missingTags = DOC_TAG_REQUIRED.findAll { tag -> !content.contains(tag) }
+                if (!capturedPattern.matcher(content).find()) return
+                def missingTags = capturedRequired.findAll { tag -> !content.contains(tag) }
                 if (!missingTags.isEmpty()) {
-                    violations << rootDir.toPath().relativize(file.toPath()).toString()
+                    violations << capturedRootDir.toPath().relativize(file.toPath()).toString()
                 }
             }
         }
-        DOC_TAG_BASELINE_FILE.text = "# Auto-generated doc-tag baseline — ${new Date()}\n" +
+        capturedBaselineFile.text = "# Auto-generated doc-tag baseline — ${new Date()}\n" +
             "# Do NOT add new entries. Only remove entries as violations are fixed.\n" +
             violations.sort().join('\n') + '\n'
         logger.lifecycle("Generated baseline with ${violations.size()} entries → gradle/doc-tag-baseline.txt")
@@ -59,18 +68,23 @@ tasks.register('checkDocTags') {
     group = 'verification'
     description = 'Check that all public Java classes have required @doc tags. New files outside the baseline FAIL the build.'
 
+    // Capture at configuration time for configuration cache compatibility
+    def capturedBaselineFile = rootProject.file('gradle/doc-tag-baseline.txt')
+    def capturedRequired = ['@doc.type', '@doc.purpose', '@doc.layer', '@doc.pattern']
+    def capturedPattern = ~/(?:public\s+(?:abstract\s+|final\s+|sealed\s+)*)(?:class|interface|record|enum)\s+\w+/
+    def capturedSubprojectDirs = subprojects.collect { proj -> proj.file('src/main/java') }
+    def capturedRootDir = rootDir
+
     doLast {
-        def baselineFile = DOC_TAG_BASELINE_FILE
-        def baseline = baselineFile.exists()
-            ? baselineFile.readLines().findAll { it.trim() && !it.startsWith('#') }.collect { it.trim() } as Set
+        def baseline = capturedBaselineFile.exists()
+            ? capturedBaselineFile.readLines().findAll { it.trim() && !it.startsWith('#') }.collect { it.trim() } as Set
             : [] as Set
 
         def newViolations = []
         def baselineViolations = []
         def scanned = 0
 
-        subprojects.each { proj ->
-            def srcDir = proj.file('src/main/java')
+        capturedSubprojectDirs.each { srcDir ->
             if (!srcDir.exists()) return
 
             srcDir.eachFileRecurse(groovy.io.FileType.FILES) { file ->
@@ -81,11 +95,11 @@ tasks.register('checkDocTags') {
                 scanned++
 
                 if (content.contains('@Deprecated(since')) return
-                if (!DOC_TAG_PUBLIC_PATTERN.matcher(content).find()) return
+                if (!capturedPattern.matcher(content).find()) return
 
-                def missingTags = DOC_TAG_REQUIRED.findAll { tag -> !content.contains(tag) }
+                def missingTags = capturedRequired.findAll { tag -> !content.contains(tag) }
                 if (!missingTags.isEmpty()) {
-                    def relativePath = rootDir.toPath().relativize(file.toPath()).toString()
+                    def relativePath = capturedRootDir.toPath().relativize(file.toPath()).toString()
                     def entry = "  ${relativePath}  — missing: ${missingTags.join(', ')}"
                     if (baseline.contains(relativePath)) {
                         baselineViolations << entry
