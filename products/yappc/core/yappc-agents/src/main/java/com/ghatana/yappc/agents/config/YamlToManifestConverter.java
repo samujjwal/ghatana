@@ -27,9 +27,10 @@ import java.util.Map;
  *   <li>YAML validation → AgentSpec validation rules</li>
  * </ul>
  * 
+ * @doc.type class
  * @doc.pattern Converter, Adapter
  * @doc.purpose Convert YAML configs to AEP manifest format
- * @doc.layer config
+ * @doc.layer product
  */
 public class YamlToManifestConverter {
     private static final Logger log = LoggerFactory.getLogger(YamlToManifestConverter.class);

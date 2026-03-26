@@ -5,11 +5,7 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -23,60 +19,27 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
-    "rootDirs": [
-      ".",
-      "./.react-router/types"
-    ],
-    "types": [
-      "vite/client",
-      "@react-router/node",
-      "@react-router/dev"
-    ],
+    "rootDirs": [".", "./.react-router/types"],
+    "types": ["vite/client", "@react-router/node", "@react-router/dev"],
     "paths": {
-      "@yappc/ai": [
-        "../../products/yappc/frontend/libs/ai/src/index.ts"
-      ],
-      "@yappc/ai/*": [
-        "../../products/yappc/frontend/libs/ai/src/*"
-      ],
-      "@yappc/canvas": [
-        "../../products/yappc/frontend/libs/canvas/src/index.ts"
-      ],
-      "@yappc/canvas/*": [
-        "../../products/yappc/frontend/libs/canvas/src/*"
-      ],
-      "@yappc/ui": [
-        "../../products/yappc/frontend/libs/ui/src/index.ts"
-      ],
-      "@yappc/ui/*": [
-        "../../products/yappc/frontend/libs/ui/src/*"
-      ],
-      "@yappc/testing/*": [
-        "../../products/yappc/frontend/libs/testing/src/*"
-      ],
-      "@yappc/core/types": [
-        "../../products/yappc/frontend/libs/types/src"
-      ],
-      "@yappc/core/api": [
-        "../../products/yappc/frontend/libs/api/src"
-      ],
+      "@yappc/ai": ["../../products/yappc/frontend/libs/ai/src/index.ts"],
+      "@yappc/ai/*": ["../../products/yappc/frontend/libs/ai/src/*"],
+      "@yappc/canvas": ["../libs/yappc-canvas/src/index.ts"],
+      "@yappc/canvas/*": ["../libs/yappc-canvas/src/*"],
+      "@yappc/ui": ["../../products/yappc/frontend/libs/ui/src/index.ts"],
+      "@yappc/ui/*": ["../../products/yappc/frontend/libs/ui/src/*"],
+      "@yappc/testing/*": ["../../products/yappc/frontend/libs/testing/src/*"],
+      "@yappc/core/types": ["../../products/yappc/frontend/libs/types/src"],
+      "@yappc/core/api": ["../../products/yappc/frontend/libs/api/src"],
       "@ghatana/canvas": [
-        "../../../../../libs/ghatana-canvas/src/index.ts"
+        "../../../../platform/typescript/canvas/src/index.ts"
       ],
-      "@ghatana/canvas/*": [
-        "../../../../../libs/ghatana-canvas/src/*"
-      ],
-      "@/shared/*": [
-        "../shared/*"
-      ],
-      "@/*": [
-        "src/*"
-      ]
+      "@ghatana/canvas/*": ["../../../../platform/typescript/canvas/src/*"],
+      "@/shared/*": ["../shared/*"],
+      "@/*": ["src/*"]
     }
   },
-  "include": [
-    "src"
-  ],
+  "include": ["src"],
   "references": [
     {
       "path": "../../products/yappc/frontend/libs/types/tsconfig.json"

@@ -11,15 +11,15 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "noEmit": true,
     "paths": {
       "@/*": ["./src/*"],
       "@ghatana/design-system": [
-        "../../../platform/typescript/capabilities/design-system/src/index.ts"
+        "../../../platform/typescript/design-system/src/index.ts"
       ],
       "@ghatana/canvas-core": [
-        "../../../platform/typescript/capabilities/canvas-core/src"
+        "../../../platform/typescript/canvas/src/index.ts"
       ],
       "@ghatana/theme": ["../../../platform/typescript/theme/src"],
       "@ghatana/tokens": ["../../../platform/typescript/tokens/src"],
@@ -28,7 +28,9 @@
       ],
       "@ghatana/platform-utils": [
         "../../../platform/typescript/foundation/platform-utils/src/index.ts"
-      ]
+      ],
+      "clsx": ["./node_modules/clsx/clsx.d.ts"],
+      "tailwind-merge": ["./node_modules/tailwind-merge/dist/types.d.ts"]
     },
     "baseUrl": "."
   },

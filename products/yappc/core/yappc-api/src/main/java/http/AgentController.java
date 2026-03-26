@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ghatana.products.yappc.domain.agent.http;
+package com.ghatana.yappc.api.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

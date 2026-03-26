@@ -10,11 +10,18 @@ import type { Plugin } from 'vite';
 // https://vitejs.dev/config/
 const rrPlugin = reactRouter();
 
-const repositoryRootNodeModules = path.resolve(__dirname, '../../../../node_modules');
+const repositoryRootNodeModules = path.resolve(
+  __dirname,
+  '../../../../node_modules'
+);
 
 const compareVersion = (left: string, right: string): number => {
-  const leftParts = left.split('.').map((part) => Number.parseInt(part, 10) || 0);
-  const rightParts = right.split('.').map((part) => Number.parseInt(part, 10) || 0);
+  const leftParts = left
+    .split('.')
+    .map((part) => Number.parseInt(part, 10) || 0);
+  const rightParts = right
+    .split('.')
+    .map((part) => Number.parseInt(part, 10) || 0);
   const maxLength = Math.max(leftParts.length, rightParts.length);
 
   for (let index = 0; index < maxLength; index += 1) {
@@ -28,7 +35,11 @@ const compareVersion = (left: string, right: string): number => {
 };
 
 const resolveStandaloneDependency = (dependency: string): string | null => {
-  const directNodeModulesPath = path.join(__dirname, 'node_modules', dependency);
+  const directNodeModulesPath = path.join(
+    __dirname,
+    'node_modules',
+    dependency
+  );
   if (fs.existsSync(directNodeModulesPath)) {
     return directNodeModulesPath;
   }
@@ -51,14 +62,24 @@ const resolveStandaloneDependency = (dependency: string): string | null => {
       const dependencyPattern = dependency
         .replace('/', '\\+')
         .replace(/-/g, '\\-');
-      const match = new RegExp(`^${dependencyPattern}@([0-9]+(?:\\.[0-9]+){1,2})`).exec(entry);
+      const match = new RegExp(
+        `^${dependencyPattern}@([0-9]+(?:\\.[0-9]+){1,2})`
+      ).exec(entry);
       return match ? { entry, version: match[1] } : null;
     })
-    .filter((candidate): candidate is { entry: string; version: string } => candidate !== null)
+    .filter(
+      (candidate): candidate is { entry: string; version: string } =>
+        candidate !== null
+    )
     .sort((a, b) => compareVersion(b.version, a.version));
 
   for (const candidate of candidates) {
-    const candidatePath = path.join(pnpmStoreRoot, candidate.entry, 'node_modules', dependency);
+    const candidatePath = path.join(
+      pnpmStoreRoot,
+      candidate.entry,
+      'node_modules',
+      dependency
+    );
     if (fs.existsSync(candidatePath)) {
       return candidatePath;
     }
@@ -92,7 +113,9 @@ const lib0Path = resolveStandaloneDependency('lib0');
 if (lib0Path) {
   standaloneDependencyAliases['lib0'] = lib0Path;
 }
-const tanstackReactQueryPath = resolveStandaloneDependency('@tanstack/react-query');
+const tanstackReactQueryPath = resolveStandaloneDependency(
+  '@tanstack/react-query'
+);
 if (tanstackReactQueryPath) {
   standaloneDependencyAliases['@tanstack/react-query'] = tanstackReactQueryPath;
 }
@@ -183,21 +206,36 @@ export default defineConfig({
       '@/shared': path.resolve(__dirname, '../apps/shared'),
       '@/utils': path.resolve(__dirname, 'src/utils'),
       '@': path.resolve(__dirname, 'src'),
-      
+
       // Library aliases (matching tsconfig.base.json)
       '@yappc/ui': path.resolve(__dirname, '../libs/ui/src'),
       '@yappc/state': path.resolve(__dirname, '../libs/state/src'),
       '@yappc/shortcuts': path.resolve(__dirname, '../libs/shortcuts/src'),
       '@yappc/base-ui': path.resolve(__dirname, '../compat/base-ui/src'),
-      '@yappc/config-hooks': path.resolve(__dirname, '../compat/config-hooks/src'),
-      '@yappc/development-ui': path.resolve(__dirname, '../compat/development-ui/src'),
-      '@yappc/initialization-ui': path.resolve(__dirname, '../compat/initialization-ui/src'),
-      '@yappc/navigation-ui': path.resolve(__dirname, '../compat/navigation-ui/src'),
+      '@yappc/config-hooks': path.resolve(
+        __dirname,
+        '../compat/config-hooks/src'
+      ),
+      '@yappc/development-ui': path.resolve(
+        __dirname,
+        '../compat/development-ui/src'
+      ),
+      '@yappc/initialization-ui': path.resolve(
+        __dirname,
+        '../compat/initialization-ui/src'
+      ),
+      '@yappc/navigation-ui': path.resolve(
+        __dirname,
+        '../compat/navigation-ui/src'
+      ),
       '@yappc/theme': path.resolve(__dirname, '../compat/theme/src'),
       '@ghatana/yappc-storage': path.resolve(__dirname, '../libs/storage/src'),
       '@yappc/ai': path.resolve(__dirname, '../libs/ai/src'),
-      '@ghatana/yappc-ai-requirements-service': path.resolve(__dirname, '../libs/ai-requirements-service/src'),
-      '@yappc/canvas': path.resolve(__dirname, '../libs/canvas/src'),
+      '@ghatana/yappc-ai-requirements-service': path.resolve(
+        __dirname,
+        '../libs/ai-requirements-service/src'
+      ),
+      '@yappc/canvas': path.resolve(__dirname, '../libs/yappc-canvas/src'),
       '@ghatana/yappc-crdt': path.resolve(__dirname, '../libs/crdt/src'),
       '@ghatana/yappc-collab': path.resolve(__dirname, '../libs/collab/src'),
       '@ghatana/yappc-ide': path.resolve(__dirname, '../libs/ide/src'),
@@ -205,46 +243,121 @@ export default defineConfig({
       '@ghatana/yappc-api': path.resolve(__dirname, '../libs/api/src'),
       '@ghatana/yappc-testing': path.resolve(__dirname, '../libs/testing/src'),
       '@ghatana/yappc-mocks': path.resolve(__dirname, '../libs/mocks/src'),
-      '@ghatana/yappc-websocket': path.resolve(__dirname, '../libs/websocket/src'),
+      '@ghatana/yappc-websocket': path.resolve(
+        __dirname,
+        '../libs/websocket/src'
+      ),
       '@ghatana/yappc-auth': path.resolve(__dirname, '../libs/auth/src'),
       '@ghatana/yappc-diagram': path.resolve(__dirname, '../libs/diagram/src'),
-      '@ghatana/yappc-mobile-bridge': path.resolve(__dirname, '../libs/mobile-bridge/src'),
-      '@ghatana/yappc-test-helpers': path.resolve(__dirname, '../libs/test-helpers/src'),
-      '@ghatana/yappc-design-tokens': path.resolve(__dirname, '../libs/design-tokens/src'),
-      '@ghatana/yappc-platform-tools': path.resolve(__dirname, '../libs/platform-tools/src'),
-      '@ghatana/yappc-infrastructure': path.resolve(__dirname, '../libs/infrastructure/src'),
-      '@ghatana/yappc-form-generator': path.resolve(__dirname, '../libs/form-generator/src'),
+      '@ghatana/yappc-mobile-bridge': path.resolve(
+        __dirname,
+        '../libs/mobile-bridge/src'
+      ),
+      '@ghatana/yappc-test-helpers': path.resolve(
+        __dirname,
+        '../libs/test-helpers/src'
+      ),
+      '@ghatana/yappc-design-tokens': path.resolve(
+        __dirname,
+        '../libs/design-tokens/src'
+      ),
+      '@ghatana/yappc-platform-tools': path.resolve(
+        __dirname,
+        '../libs/platform-tools/src'
+      ),
+      '@ghatana/yappc-infrastructure': path.resolve(
+        __dirname,
+        '../libs/infrastructure/src'
+      ),
+      '@ghatana/yappc-form-generator': path.resolve(
+        __dirname,
+        '../libs/form-generator/src'
+      ),
       '@ghatana/yappc-ml': path.resolve(__dirname, '../libs/ml/src'),
       '@ghatana/yappc-ai-ui': path.resolve(__dirname, '../libs/ai-ui/src'),
-      '@ghatana/yappc-code-editor': path.resolve(__dirname, '../libs/code-editor/src'),
+      '@ghatana/yappc-code-editor': path.resolve(
+        __dirname,
+        '../libs/code-editor/src'
+      ),
       '@ghatana/yappc-layout': path.resolve(__dirname, '../libs/layout/src'),
-      '@ghatana/yappc-live-preview-server': path.resolve(__dirname, '../libs/live-preview-server/src'),
-      '@ghatana/yappc-vite-plugin-live-edit': path.resolve(__dirname, '../libs/vite-plugin-live-edit/src'),
-      '@ghatana/yappc-realtime': path.resolve(__dirname, '../../../../platform/typescript/realtime/src/index.ts'),
+      '@ghatana/yappc-live-preview-server': path.resolve(
+        __dirname,
+        '../libs/live-preview-server/src'
+      ),
+      '@ghatana/yappc-vite-plugin-live-edit': path.resolve(
+        __dirname,
+        '../libs/vite-plugin-live-edit/src'
+      ),
+      '@ghatana/yappc-realtime': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/realtime/src/index.ts'
+      ),
 
       // Platform shared packages used by YAPPC and transitive UI deps
-      '@ghatana/design-system': path.resolve(__dirname, '../../../../platform/typescript/capabilities/design-system/src/index.ts'),
-      '@ghatana/theme': path.resolve(__dirname, '../../../../platform/typescript/theme/src/index.ts'),
-      '@ghatana/charts': path.resolve(__dirname, '../../../../platform/typescript/charts/src/index.ts'),
-      '@ghatana/platform-utils': path.resolve(__dirname, '../../../../platform/typescript/foundation/platform-utils/src/index.ts'),
-      '@ghatana/accessibility-audit': path.resolve(__dirname, '../../../../platform/typescript/accessibility-audit/src/index.ts'),
-      
+      '@ghatana/design-system': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/capabilities/design-system/src/index.ts'
+      ),
+      '@ghatana/theme': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/theme/src/index.ts'
+      ),
+      '@ghatana/charts': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/charts/src/index.ts'
+      ),
+      '@ghatana/platform-utils': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/foundation/platform-utils/src/index.ts'
+      ),
+      '@ghatana/accessibility-audit': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/accessibility-audit/src/index.ts'
+      ),
+
       // Legacy compatibility
-      '@ghatana/canvas': path.resolve(__dirname, '../libs/canvas/src'),
+      '@ghatana/canvas': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/canvas/src/index.ts'
+      ),
       '@ghatana/types': path.resolve(__dirname, '../libs/types/src'),
-      
+
       // Capacitor shims for web builds (native-only packages → no-op stubs)
-      '@capacitor/haptics': path.resolve(__dirname, '../libs/mobile/capacitor-shims.ts'),
-      '@capacitor/share': path.resolve(__dirname, '../libs/mobile/capacitor-shims.ts'),
-      '@capacitor/network': path.resolve(__dirname, '../libs/mobile/capacitor-shims.ts'),
-      '@capacitor/local-notifications': path.resolve(__dirname, '../libs/mobile/capacitor-shims.ts'),
-      '@capacitor/camera': path.resolve(__dirname, '../libs/mobile/capacitor-shims.ts'),
-      '@capacitor/filesystem': path.resolve(__dirname, '../libs/mobile/capacitor-shims.ts'),
-      '@capacitor/core': path.resolve(__dirname, '../libs/mobile/capacitor-shims.ts'),
+      '@capacitor/haptics': path.resolve(
+        __dirname,
+        '../libs/mobile/capacitor-shims.ts'
+      ),
+      '@capacitor/share': path.resolve(
+        __dirname,
+        '../libs/mobile/capacitor-shims.ts'
+      ),
+      '@capacitor/network': path.resolve(
+        __dirname,
+        '../libs/mobile/capacitor-shims.ts'
+      ),
+      '@capacitor/local-notifications': path.resolve(
+        __dirname,
+        '../libs/mobile/capacitor-shims.ts'
+      ),
+      '@capacitor/camera': path.resolve(
+        __dirname,
+        '../libs/mobile/capacitor-shims.ts'
+      ),
+      '@capacitor/filesystem': path.resolve(
+        __dirname,
+        '../libs/mobile/capacitor-shims.ts'
+      ),
+      '@capacitor/core': path.resolve(
+        __dirname,
+        '../libs/mobile/capacitor-shims.ts'
+      ),
       openai: path.resolve(__dirname, 'src/shims/openai.ts'),
       '@anthropic-ai/sdk': path.resolve(__dirname, 'src/shims/anthropic.ts'),
       'react-colorful': path.resolve(__dirname, 'src/shims/react-colorful.tsx'),
-      '@ghatana/tokens': path.resolve(__dirname, '../../../../platform/typescript/tokens/src/index.ts'),
+      '@ghatana/tokens': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/tokens/src/index.ts'
+      ),
       // Workspace compatibility: this app uses React Router v7 package naming.
       'react-router-dom': 'react-router',
     },
@@ -279,7 +392,11 @@ export default defineConfig({
           // Vendor chunks
           if (id.includes('node_modules')) {
             // React ecosystem
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+            if (
+              id.includes('react') ||
+              id.includes('react-dom') ||
+              id.includes('react-router')
+            ) {
               return 'vendor-react';
             }
             // UI libraries
@@ -287,17 +404,25 @@ export default defineConfig({
               return 'vendor-ui';
             }
             // Canvas libraries
-            if (id.includes('@xyflow') || id.includes('konva') || id.includes('perfect-freehand')) {
+            if (
+              id.includes('@xyflow') ||
+              id.includes('konva') ||
+              id.includes('perfect-freehand')
+            ) {
               return 'vendor-canvas';
             }
             // Utilities
-            if (id.includes('lodash') || id.includes('date-fns') || id.includes('axios')) {
+            if (
+              id.includes('lodash') ||
+              id.includes('date-fns') ||
+              id.includes('axios')
+            ) {
               return 'vendor-utils';
             }
             // Everything else
             return 'vendor-other';
           }
-          
+
           // App chunks - lazy load heavy features
           if (id.includes('/routes/app/canvas')) {
             return 'app-canvas';

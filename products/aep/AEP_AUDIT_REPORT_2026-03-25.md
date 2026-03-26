@@ -7,6 +7,42 @@
 
 ---
 
+## Remediation Progress Update - March 26, 2026
+
+### Status Snapshot
+
+| Finding                                 | Status                          | Notes                                                                                                                                         |
+| --------------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| AEP-001 UI alias/build drift            | Previously remediated           | Frontend alias and dependency drift were already corrected in the live codebase before this pass.                                             |
+| UI runtime dependency gap               | Resolved in this pass           | The UI shared HTTP client now uses the browser-native `fetch` API, removing the broken `axios` dependency path from the frontend runtime.     |
+| AEP-002 Retry delay execution           | Resolved in this pass           | `RetryOperator` now performs delayed retries off the event loop using ActiveJ-friendly blocking isolation.                                    |
+| AEP-003 Batching async flush indicator  | Resolved in this pass           | `BatchingOperator` now returns per-event promises that resolve on real flush completion and schedules time-based flushes.                     |
+| AEP-004 Security boundary inconsistency | Previously remediated           | `AepAuthFilter` is already wired into the server stack and protects non-public endpoints.                                                     |
+| AEP-005 Event taxonomy inconsistency    | Resolved in this pass           | UI run-stream handling now treats `run.update` as canonical and normalizes server payloads consistently.                                      |
+| AEP-006 Missing identity stitching      | Partially resolved in this pass | Event identity context and basic stitched identity derivation are now implemented; external identity graph stitching remains future work.     |
+| AEP-007 Consent/privacy enforcement     | Partially resolved in this pass | Event-level consent context and deny/expire gating are now enforced in the engine; full GDPR/CCPA workflow orchestration remains future work. |
+| AEP-008 Hardcoded anomaly threshold     | Resolved in this pass           | Threshold is now configurable through `AepConfig`.                                                                                            |
+| AEP-009 Empty pattern matching          | Resolved in this pass           | Threshold, anomaly, sequence, correlation, and custom matching now have concrete implementations.                                             |
+| AEP-010 Silent subscriber failures      | Resolved in this pass           | Subscriber failures are now logged instead of being swallowed silently.                                                                       |
+| AEP-011 Deployment configuration drift  | Previously remediated           | Helm values already match the current image repository and readiness path.                                                                    |
+| AEP-012 OpenAPI contract duplication    | Previously remediated           | Server build already syncs runtime spec from `contracts/openapi.yaml` and verifies drift.                                                     |
+| AEP-013 EnvConfig missing validation    | Resolved in this pass           | Invalid int/long/bool values now emit warnings before defaults are applied.                                                                   |
+| AEP-014 Missing aep-engine tests        | Resolved in this pass           | Focused engine and operator tests were added under `aep-engine/src/test`.                                                                     |
+
+### Remaining Strategic Work
+
+- Full external identity graph stitching service remains out of scope for this remediation pass.
+- Full legal/compliance lifecycle coverage still needs deletion workflows, purpose registry integration, and retention enforcement beyond intake gating.
+- End-to-end UI, deployment, and distributed integration phases still require broader pipeline-level test coverage.
+
+### Validation Snapshot
+
+- Focused Java remediation tests now pass: `AepRemediationTest`, `RetryOperatorTest`, and `BatchingOperatorTest`.
+- Focused UI SSE tests now pass: `useLivePipelineRuns.test.tsx` and `SseClient.test.ts`.
+- AEP UI validation now passes locally under a clean pnpm install: `npx tsc --noEmit` and `npx vite build` both succeed.
+- The focused UI regression suite still passes under the pnpm-managed install; the `SseClient` stderr lines are expected reconnect-path logging, not test failures.
+- Monorepo-wide `pnpm install --filter @aep/ui...` now succeeds after restoring the missing `@yappc/canvas` workspace package and correcting stale YAPPC canvas config paths.
+
 ## Executive Summary
 
 ### Overall Assessment: **REQUIRES REMEDIATION**
@@ -14,6 +50,7 @@
 The AEP (Agentic Event Processing) platform demonstrates strong architectural intent with a unified operator model, comprehensive event processing capabilities, and good backend test coverage. However, significant issues exist that require immediate attention:
 
 **Critical Issues (5):**
+
 - UI build failures due to broken TypeScript alias paths
 - Missing test coverage for UI components (16 failing tests)
 - Security boundary inconsistency between BFF and Java backend
@@ -21,6 +58,7 @@ The AEP (Agentic Event Processing) platform demonstrates strong architectural in
 - Deployment configuration drift between Helm and raw K8s manifests
 
 **High Issues (8):**
+
 - Event taxonomy inconsistencies between SSE and hook naming
 - Missing identity stitching implementation in Aep.java
 - No explicit consent/privacy enforcement logic found
@@ -31,6 +69,7 @@ The AEP (Agentic Event Processing) platform demonstrates strong architectural in
 - Platform monolith size (576 Java files, 106k+ LOC in platform/)
 
 **Positive Findings:**
+
 - Strong core runtime with ActiveJ Promise-based async architecture
 - Comprehensive operator framework (Retry, Batching, Fallback)
 - Good Java backend test coverage (784 tests passing in platform/)
@@ -43,18 +82,18 @@ The AEP (Agentic Event Processing) platform demonstrates strong architectural in
 
 ### Modules Analyzed
 
-| Module | Files | Status | Key Components |
-|--------|-------|--------|----------------|
-| `aep-engine/` | 138 | Reviewed | Aep.java, AepEngine.java, operators, config |
-| `aep-agent-runtime/` | 166 | Reviewed | Agent audit, memory, learning, dispatch |
-| `aep-analytics/` | 88 | Reviewed | Pattern engine, validation, AI anomaly detection |
-| `aep-api/` | 12 | Reviewed | Data exploration models |
-| `aep-connectors/` | 19 | Reviewed | Queue strategies (Kafka, RabbitMQ, S3, SQS) |
-| `aep-registry/` | 86 | Reviewed | Pipeline registry, agent management |
-| `aep-operator-contracts/` | 33 | Reviewed | UnifiedOperator, OperatorConfig, OperatorResult |
-| `aep-runtime-core/` | 48 | Reviewed | Core runtime abstractions |
-| `aep-event-cloud/` | 20 | Reviewed | Event cloud plugin configuration |
-| `docs/` | 19 | Reviewed | AEP_V2_DEEP_AUDIT_2026-03-19.md reviewed |
+| Module                    | Files | Status   | Key Components                                   |
+| ------------------------- | ----- | -------- | ------------------------------------------------ |
+| `aep-engine/`             | 138   | Reviewed | Aep.java, AepEngine.java, operators, config      |
+| `aep-agent-runtime/`      | 166   | Reviewed | Agent audit, memory, learning, dispatch          |
+| `aep-analytics/`          | 88    | Reviewed | Pattern engine, validation, AI anomaly detection |
+| `aep-api/`                | 12    | Reviewed | Data exploration models                          |
+| `aep-connectors/`         | 19    | Reviewed | Queue strategies (Kafka, RabbitMQ, S3, SQS)      |
+| `aep-registry/`           | 86    | Reviewed | Pipeline registry, agent management              |
+| `aep-operator-contracts/` | 33    | Reviewed | UnifiedOperator, OperatorConfig, OperatorResult  |
+| `aep-runtime-core/`       | 48    | Reviewed | Core runtime abstractions                        |
+| `aep-event-cloud/`        | 20    | Reviewed | Event cloud plugin configuration                 |
+| `docs/`                   | 19    | Reviewed | AEP_V2_DEEP_AUDIT_2026-03-19.md reviewed         |
 
 ### Integration Points Reviewed
 
@@ -118,6 +157,7 @@ The AEP (Agentic Event Processing) platform demonstrates strong architectural in
 
 **Problem:**
 TypeScript alias paths point to non-existent directories:
+
 - `@ghatana/design-system` → `platform/typescript/design-system` (doesn't exist)
 - `@ghatana/flow-canvas` → `platform/typescript/canvas/flow-canvas` (doesn't exist)
 
@@ -125,6 +165,7 @@ TypeScript alias paths point to non-existent directories:
 Frontend cannot build, preventing any UI release. The build fails with module resolution errors.
 
 **Evidence:**
+
 ```typescript
 // vite.config.ts
 alias: {
@@ -134,11 +175,13 @@ alias: {
 ```
 
 **AEP/Business Impact:**
+
 - Cannot deploy UI to production
 - Blocks entire product release
 - Developer experience severely degraded
 
 **Exact Fix:**
+
 1. Update paths to existing locations:
    - `@ghatana/design-system` → `platform/typescript/capabilities/design-system`
    - Replace `@ghatana/flow-canvas` with `@xyflow/react`
@@ -146,10 +189,12 @@ alias: {
 3. Update imports in PipelineCanvas.tsx to use @xyflow/react
 
 **Test Gaps:**
+
 - No CI check for UI build before merge
 - Missing automated alias path validation
 
 **Documentation Gaps:**
+
 - TOPOLOGY.md has incorrect path references
 - No documented UI dependency management guide
 
@@ -168,6 +213,7 @@ The `calculateDelay()` method computes exponential backoff with jitter, but the 
 Without delay execution, retries happen immediately, defeating the purpose of backoff and potentially overwhelming downstream services during outages.
 
 **Evidence:**
+
 ```java
 // Lines 155-167: calculateDelay exists but is never called
 private long calculateDelay(int attempt) {
@@ -185,11 +231,13 @@ private Promise<OperatorResult> processWithRetry(Event event, int attempt) {
 ```
 
 **AEP/Business Impact:**
+
 - Circuit breaker pattern ineffective - immediate retries stress failing services
 - Thundering herd problem during recovery
 - Violates resilience engineering best practices
 
 **Exact Fix:**
+
 ```java
 private Promise<OperatorResult> processWithRetry(Event event, int attempt) {
     return delegate.process(event)
@@ -214,10 +262,12 @@ private Promise<OperatorResult> processWithRetry(Event event, int attempt) {
 ```
 
 **Test Gaps:**
+
 - No test verifying delay between retries
 - Missing test for backoff timing calculation
 
 **Documentation Gaps:**
+
 - JavaDoc claims exponential backoff but doesn't mention delay is not implemented
 - Missing note about actual retry timing behavior
 
@@ -236,6 +286,7 @@ private Promise<OperatorResult> processWithRetry(Event event, int attempt) {
 Callers cannot track event delivery confirmation, leading to silent data loss risk when shutdown occurs before flush completes.
 
 **Evidence:**
+
 ```java
 // Lines 92-106
 public Promise<OperatorResult> process(Event event) {
@@ -253,12 +304,15 @@ public Promise<OperatorResult> process(Event event) {
 ```
 
 **AEP/Business Impact:**
+
 - Silent data loss on shutdown if batch not yet flushed
 - No delivery confirmation for event producers
 - Breaks at-least-once delivery guarantees
 
 **Exact Fix:**
+
 1. Return a Promise that completes when event is actually flushed:
+
 ```java
 private final Map<Event, SettablePromise<OperatorResult>> pendingEvents = new ConcurrentHashMap<>();
 
@@ -278,10 +332,12 @@ public Promise<OperatorResult> process(Event event) {
 ```
 
 **Test Gaps:**
+
 - No test for shutdown with unflushed batch
 - Missing verification of event delivery confirmation
 
 **Documentation Gaps:**
+
 - JavaDoc doesn't warn about empty result not indicating delivery
 - Missing note about batch durability guarantees
 
@@ -300,10 +356,11 @@ The TypeScript API gateway (BFF) enforces JWT authentication, but the Java launc
 Any deployment exposing launcher directly bypasses authentication, making all endpoints publicly accessible including compliance, agent, HITL, and admin capabilities.
 
 **Evidence:**
+
 ```typescript
 // api/src/index.ts - Has JWT middleware
-app.addHook('onRequest', async (request, reply) => {
-  if (request.url.startsWith('/api/')) {
+app.addHook("onRequest", async (request, reply) => {
+  if (request.url.startsWith("/api/")) {
     await validateJWT(request);
   }
 });
@@ -316,25 +373,27 @@ app.addHook('onRequest', async (request, reply) => {
 ```
 
 **AEP/Business Impact:**
+
 - Compliance violations (GDPR, CCPA) - unauthorized data access
 - Unauthorized agent execution
 - Data exfiltration risk
 - Production security incident risk
 
 **Exact Fix:**
+
 ```java
 // In AepHttpServer.java or create AepAuthFilter.java
 public class AepAuthFilter implements AsyncServlet {
     private final AsyncServlet next;
     private final String jwtSecret;
-    
+
     @Override
     public Promise<HttpResponse> serve(HttpRequest request) {
         // Public endpoints bypass auth
         if (isPublicEndpoint(request.getPath())) {
             return next.serve(request);
         }
-        
+
         // Validate JWT on /api/v1/* endpoints
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (!validateJwt(authHeader)) {
@@ -346,10 +405,12 @@ public class AepAuthFilter implements AsyncServlet {
 ```
 
 **Test Gaps:**
+
 - No authentication bypass tests
 - Missing endpoint authorization matrix tests
 
 **Documentation Gaps:**
+
 - README doesn't clarify security boundary split
 - Missing deployment security guide
 
@@ -363,6 +424,7 @@ public class AepAuthFilter implements AsyncServlet {
 
 **Problem:**
 SSE event names don't match hook event names, causing live update failures:
+
 - Hooks: `run_started`, `run_completed`, `run_failed`, `stage_failed`
 - SSE: `connected`, `heartbeat`, `run.update`, `hitl.new`, `hitl.update`, `agent.output`
 
@@ -370,6 +432,7 @@ SSE event names don't match hook event names, causing live update failures:
 Frontend won't receive expected events, breaking real-time monitoring, HITL workflows, and live pipeline status updates.
 
 **Evidence:**
+
 ```typescript
 // ui/src/hooks/usePipelineRuns.ts
 const handleEvent = (event: MessageEvent) => {
@@ -383,20 +446,24 @@ const handleEvent = (event: MessageEvent) => {
 ```
 
 **AEP/Business Impact:**
+
 - Broken real-time UI updates
 - Users see stale pipeline status
 - HITL workflows unreliable
 
 **Exact Fix:**
+
 1. Align event taxonomy across all components
 2. Document canonical event types in contracts/openapi.yaml
 3. Add event type constants shared between frontend and backend
 
 **Test Gaps:**
+
 - No end-to-end test for SSE event flow
 - Missing event contract validation tests
 
 **Documentation Gaps:**
+
 - No event taxonomy documentation
 - Missing event contract specification
 
@@ -415,6 +482,7 @@ const handleEvent = (event: MessageEvent) => {
 Without identity stitching, events from the same user across different sessions/devices cannot be correlated, breaking analytics, personalization, and compliance reporting.
 
 **Evidence:**
+
 ```java
 // AepEngine.java lines 143-159
 record Event(
@@ -436,12 +504,15 @@ public Promise<ProcessingResult> process(String tenantId, AepEngine.Event event)
 ```
 
 **AEP/Business Impact:**
+
 - Incomplete customer journey tracking
 - Broken personalization features
 - Compliance reporting inaccuracies
 
 **Exact Fix:**
+
 1. Add identity fields to Event record:
+
 ```java
 record Event(
     String type,
@@ -455,6 +526,7 @@ record Event(
 ```
 
 2. Add identity resolution step in processing:
+
 ```java
 private Event resolveIdentity(Event event) {
     // Extract IDs from headers/payload
@@ -464,10 +536,12 @@ private Event resolveIdentity(Event event) {
 ```
 
 **Test Gaps:**
+
 - No identity stitching tests
 - Missing profile linking verification
 
 **Documentation Gaps:**
+
 - No identity model documentation
 - Missing profile linking specification
 
@@ -486,6 +560,7 @@ No consent checking, privacy flag handling, or GDPR/CCPA enforcement found in ev
 Processing events without consent checking violates GDPR Article 6 (lawful basis), CCPA Section 1798.100 (consumer rights), and risks regulatory fines.
 
 **Evidence:**
+
 - No `consent` field in Event record
 - No privacy flags in headers
 - No data retention policy enforcement
@@ -493,13 +568,16 @@ Processing events without consent checking violates GDPR Article 6 (lawful basis
 - No consent filtering in process() method
 
 **AEP/Business Impact:**
+
 - Regulatory compliance violations
 - Fines up to 4% global revenue (GDPR)
 - Class action lawsuit risk (CCPA)
 - Reputational damage
 
 **Exact Fix:**
+
 1. Add consent fields to Event:
+
 ```java
 record Event(
     String type,
@@ -517,6 +595,7 @@ enum ConsentStatus {
 ```
 
 2. Add consent enforcement in processing:
+
 ```java
 public Promise<ProcessingResult> process(String tenantId, Event event) {
     if (!hasValidConsent(event)) {
@@ -527,10 +606,12 @@ public Promise<ProcessingResult> process(String tenantId, Event event) {
 ```
 
 **Test Gaps:**
+
 - No consent enforcement tests
 - Missing privacy compliance tests
 
 **Documentation Gaps:**
+
 - No privacy policy documentation
 - Missing compliance architecture document
 
@@ -549,6 +630,7 @@ Anomaly detection threshold is hardcoded at 0.9 in `isAnomalous()` method, not c
 Different use cases require different sensitivity levels. Hardcoded threshold prevents customization and may cause missed anomalies (too high) or false positives (too low).
 
 **Evidence:**
+
 ```java
 // Lines 343-346
 private boolean isAnomalous(AepEngine.Event event) {
@@ -558,12 +640,15 @@ private boolean isAnomalous(AepEngine.Event event) {
 ```
 
 **AEP/Business Impact:**
+
 - False negative risk for fraud detection
 - False positive alert fatigue
 - Cannot tune for different environments
 
 **Exact Fix:**
+
 1. Add threshold to AepConfig:
+
 ```java
 public record AepConfig(
     String instanceId,
@@ -577,6 +662,7 @@ public record AepConfig(
 ```
 
 2. Use configured threshold:
+
 ```java
 private boolean isAnomalous(AepEngine.Event event) {
     double threshold = config.anomalyThreshold();  // Default 0.9
@@ -585,10 +671,12 @@ private boolean isAnomalous(AepEngine.Event event) {
 ```
 
 **Test Gaps:**
+
 - No test for threshold configuration
 - Missing anomaly detection edge cases
 
 **Documentation Gaps:**
+
 - No configuration guide for anomaly detection
 - Missing tuning recommendations
 
@@ -607,6 +695,7 @@ private boolean isAnomalous(AepEngine.Event event) {
 Pattern detection is a core AEP capability. Empty implementation means sequence detection, threshold alerts, and correlation analysis don't work.
 
 **Evidence:**
+
 ```java
 // Lines 323-326
 private Optional<AepEngine.Detection> matchPattern(AepEngine.Pattern pattern, AepEngine.Event event) {
@@ -616,12 +705,14 @@ private Optional<AepEngine.Detection> matchPattern(AepEngine.Pattern pattern, Ae
 ```
 
 **AEP/Business Impact:**
+
 - Pattern detection feature non-functional
 - Fraud detection sequences not detected
 - Business rule alerts not working
 
 **Exact Fix:**
 Implement pattern matching based on PatternType:
+
 ```java
 private Optional<Detection> matchPattern(Pattern pattern, Event event) {
     return switch (pattern.type()) {
@@ -637,7 +728,7 @@ private Optional<Detection> matchThreshold(Pattern pattern, Event event) {
     Map<String, Object> config = pattern.config();
     String field = (String) config.get("field");
     double threshold = ((Number) config.get("threshold")).doubleValue();
-    
+
     Object value = event.payload().get(field);
     if (value instanceof Number num && num.doubleValue() > threshold) {
         return Optional.of(new Detection(
@@ -653,10 +744,12 @@ private Optional<Detection> matchThreshold(Pattern pattern, Event event) {
 ```
 
 **Test Gaps:**
+
 - Pattern detection tests would fail if they existed
 - Missing integration tests for pattern types
 
 **Documentation Gaps:**
+
 - No pattern configuration guide
 - Missing pattern type specifications
 
@@ -675,6 +768,7 @@ Subscriber exception handling in `notifySubscribers()` silently catches and igno
 Silent failures hide subscriber problems, making debugging impossible and masking downstream integration failures.
 
 **Evidence:**
+
 ```java
 // Lines 328-341
 private void notifySubscribers(String tenantId, List<Detection> detections) {
@@ -691,11 +785,13 @@ private void notifySubscribers(String tenantId, List<Detection> detections) {
 ```
 
 **AEP/Business Impact:**
+
 - Silent subscriber failures
 - Undetected integration outages
 - Missed alerts and notifications
 
 **Exact Fix:**
+
 ```java
 private void notifySubscribers(String tenantId, List<Detection> detections) {
     for (Detection detection : detections) {
@@ -703,9 +799,9 @@ private void notifySubscribers(String tenantId, List<Detection> detections) {
             try {
                 sub.handler.accept(detection);
             } catch (Exception e) {
-                logger.error("Subscriber failed for pattern {}: {}", 
+                logger.error("Subscriber failed for pattern {}: {}",
                     sub.patternId, e.getMessage(), e);
-                metrics.counter("subscriber.failure", 
+                metrics.counter("subscriber.failure",
                     "patternId", sub.patternId,
                     "tenantId", tenantId).increment();
             }
@@ -715,10 +811,12 @@ private void notifySubscribers(String tenantId, List<Detection> detections) {
 ```
 
 **Test Gaps:**
+
 - No subscriber failure tests
 - Missing exception propagation tests
 
 **Documentation Gaps:**
+
 - No subscriber error handling documentation
 - Missing troubleshooting guide
 
@@ -732,6 +830,7 @@ private void notifySubscribers(String tenantId, List<Detection> detections) {
 
 **Problem:**
 Helm values and raw K8s manifests disagree on:
+
 - Image repository: `ghatana/aep` vs `ghcr.io/ghatana/aep-service-manager`
 - Readiness probe: `/health/ready` vs `/ready`
 
@@ -739,20 +838,23 @@ Helm values and raw K8s manifests disagree on:
 Configuration drift causes deployment failures, rollback issues, and inconsistent behavior between Helm and manual deployments.
 
 **Evidence:**
+
 ```yaml
 # helm/aep/values.yaml (before fix)
 image:
-  repository: ghatana/aep  # WRONG
+  repository: ghatana/aep # WRONG
 readinessProbe:
-  path: /health/ready  # WRONG - server uses /ready
+  path: /health/ready # WRONG - server uses /ready
 ```
 
 **AEP/Business Impact:**
+
 - Deployment failures
 - Helm upgrades fail health checks
 - Manual K8s deployments work but Helm doesn't
 
 **Exact Fix:**
+
 ```yaml
 # helm/aep/values.yaml
 image:
@@ -762,10 +864,12 @@ readinessProbe:
 ```
 
 **Test Gaps:**
+
 - No drift detection tests
 - Missing deployment validation in CI
 
 **Documentation Gaps:**
+
 - No deployment configuration guide
 - Missing Helm vs K8s differences documentation
 
@@ -784,6 +888,7 @@ Two copies of OpenAPI spec exist and have already drifted. Runtime serves stale 
 API consumers see different specs than what contracts/ validates, causing integration failures.
 
 **Evidence:**
+
 ```bash
 # File exists in two locations
 contracts/openapi.yaml
@@ -793,20 +898,24 @@ launcher/src/main/resources/openapi.yaml
 ```
 
 **AEP/Business Impact:**
+
 - API client generation fails
 - Documentation out of sync
 - Contract violations in production
 
 **Exact Fix:**
+
 1. Delete `launcher/src/main/resources/openapi.yaml`
 2. Modify build to copy from contracts/
 3. Add CI check to prevent drift
 
 **Test Gaps:**
+
 - No contract drift detection test
 - Missing spec validation in CI
 
 **Documentation Gaps:**
+
 - No contract-first workflow documentation
 - Missing API versioning guide
 
@@ -825,6 +934,7 @@ Configuration parsing silently returns defaults on errors, masking misconfigurat
 Invalid configuration values (typos, wrong units) are silently accepted, causing runtime failures that are hard to debug.
 
 **Evidence:**
+
 ```java
 // Lines 51-61
 public int getInt(String key, int defaultValue) {
@@ -841,11 +951,13 @@ public int getInt(String key, int defaultValue) {
 ```
 
 **AEP/Business Impact:**
+
 - Misconfigurations silently accepted
 - Production failures from typos
 - Difficult debugging
 
 **Exact Fix:**
+
 ```java
 public int getInt(String key, int defaultValue) {
     String value = config.get(key);
@@ -863,10 +975,12 @@ public int getInt(String key, int defaultValue) {
 ```
 
 **Test Gaps:**
+
 - No invalid config handling tests
 - Missing configuration validation tests
 
 **Documentation Gaps:**
+
 - No configuration validation rules documented
 - Missing troubleshooting for config issues
 
@@ -885,26 +999,29 @@ Test directory exists but contains no test files. No unit or integration tests f
 Core event processing logic is untested. Changes to pattern matching, anomaly detection, or forecasting risk regressions.
 
 **Evidence:**
+
 ```bash
 $ find products/aep/aep-engine/src/test -name "*.java" -type f
 # No results - directory is empty
 ```
 
 **AEP/Business Impact:**
+
 - Regressions in core functionality
 - Bug fixes may introduce new bugs
 - Cannot safely refactor
 
 **Exact Fix:**
 Create comprehensive test suite:
+
 ```java
 @Test
 void shouldProcessEventSuccessfully() {
     AepEngine engine = Aep.forTesting();
     Event event = Event.of("test.event", Map.of("key", "value"));
-    
+
     ProcessingResult result = engine.process("tenant-1", event).getResult();
-    
+
     assertThat(result.success()).isTrue();
     assertThat(result.eventId()).isNotNull();
 }
@@ -921,11 +1038,13 @@ void shouldHandleSubscriberFailure() {
 ```
 
 **Test Gaps:**
+
 - No unit tests exist
 - Missing integration tests
 - No contract tests
 
 **Documentation Gaps:**
+
 - No testing strategy documentation
 - Missing test coverage requirements
 
@@ -938,12 +1057,14 @@ void shouldHandleSubscriberFailure() {
 **Status:** Functional but incomplete
 
 **Strengths:**
+
 - Clean Aep/AepEngine API design
 - Good use of Java records for immutability
 - ActiveJ Promise for async operations
 - Comprehensive operator decorators (Retry, Batching, Fallback)
 
 **Issues:**
+
 - **CRITICAL:** Empty test directory - no unit tests
 - **HIGH:** RetryOperator doesn't execute delays
 - **HIGH:** BatchingOperator returns empty promises
@@ -952,6 +1073,7 @@ void shouldHandleSubscriberFailure() {
 - **MEDIUM:** Silent subscriber exception handling
 
 **Recommendations:**
+
 1. Add comprehensive unit and integration tests
 2. Implement actual pattern matching logic
 3. Fix delay execution in RetryOperator
@@ -964,12 +1086,14 @@ void shouldHandleSubscriberFailure() {
 **Status:** Reviewed (not deeply audited)
 
 **Components:**
+
 - TraceEvent/TraceEventBuilder for audit trails
 - EventSourcedEpisodicStore for memory
 - RetentionConfig for data lifecycle
 - WorkingMemoryConfig for memory management
 
 **Notes:**
+
 - Appears to have reasonable structure
 - Would benefit from deeper audit of memory management
 
@@ -980,11 +1104,13 @@ void shouldHandleSubscriberFailure() {
 **Status:** Reviewed
 
 **Components:**
+
 - Pattern engine with codegen
 - AI anomaly detection
 - Validation framework
 
 **Notes:**
+
 - EventClassCompiler suggests dynamic event handling
 - ValidationAnomalyDetectionConfig present
 - Would benefit from deeper audit of AI integration
@@ -996,11 +1122,13 @@ void shouldHandleSubscriberFailure() {
 **Status:** Reviewed
 
 **Strengths:**
+
 - Clean QueueProducerStrategy interface
 - Support for multiple message brokers (Kafka, RabbitMQ, SQS)
 - HttpIngressConfig for HTTP ingestion
 
 **Issues:**
+
 - No review of actual connector implementations
 - Would benefit from delivery guarantee audit
 
@@ -1011,11 +1139,13 @@ void shouldHandleSubscriberFailure() {
 **Status:** Well-designed
 
 **Strengths:**
+
 - Excellent UnifiedOperator interface documentation
 - Comprehensive OperatorConfig with builder pattern
 - Good separation of concerns
 
 **Components:**
+
 - UnifiedOperator (core abstraction)
 - OperatorConfig (configuration)
 - OperatorResult (outcome)
@@ -1028,11 +1158,13 @@ void shouldHandleSubscriberFailure() {
 **Status:** Not deeply audited
 
 **Components:**
+
 - Pipeline registry
 - Connector configuration
 - Postgres configuration
 
 **Notes:**
+
 - Would benefit from registry consistency audit
 
 ---
@@ -1174,16 +1306,16 @@ Move to AepConfig with environment-specific defaults.
 
 ### Critical Gaps:
 
-| Component | Gap | Priority |
-|-----------|-----|----------|
-| aep-engine | Zero unit tests | P0 |
-| RetryOperator | Delay execution verification | P0 |
-| BatchingOperator | Flush durability test | P0 |
-| Pattern matching | All pattern types | P0 |
-| Identity resolution | No implementation to test | P1 |
-| Consent enforcement | No implementation to test | P1 |
-| UI | 16 failing vitest tests | P0 |
-| E2E | No end-to-end flow tests | P1 |
+| Component           | Gap                          | Priority |
+| ------------------- | ---------------------------- | -------- |
+| aep-engine          | Zero unit tests              | P0       |
+| RetryOperator       | Delay execution verification | P0       |
+| BatchingOperator    | Flush durability test        | P0       |
+| Pattern matching    | All pattern types            | P0       |
+| Identity resolution | No implementation to test    | P1       |
+| Consent enforcement | No implementation to test    | P1       |
+| UI                  | 16 failing vitest tests      | P0       |
+| E2E                 | No end-to-end flow tests     | P1       |
 
 ### Test Infrastructure Needed:
 
@@ -1210,6 +1342,7 @@ Move to AepConfig with environment-specific defaults.
 ### Issue NDI-003: Missing Documentation
 
 **Missing:**
+
 - Event taxonomy specification
 - Identity model documentation
 - Privacy compliance guide
@@ -1220,9 +1353,10 @@ Move to AepConfig with environment-specific defaults.
 ### Issue NDI-004: Inconsistent Naming
 
 **Events:**
+
 - Hooks use: `run_started`, `run_completed`
 - SSE uses: `run.update`, `hitl.new`
-**Fix:** Standardize on snake_case or camelCase consistently
+  **Fix:** Standardize on snake_case or camelCase consistently
 
 ---
 
@@ -1230,44 +1364,44 @@ Move to AepConfig with environment-specific defaults.
 
 ### Immediate (Week 1) - Critical
 
-| Task | Owner | Effort |
-|------|-------|--------|
-| Fix UI build - update alias paths | Frontend | 1 day |
-| Fix UI tests - add EventSource mock | Frontend | 1 day |
-| Add auth filter to launcher | Backend | 2 days |
-| Fix Helm values drift | DevOps | 1 day |
-| Add delay execution to RetryOperator | Backend | 1 day |
+| Task                                 | Owner    | Effort |
+| ------------------------------------ | -------- | ------ |
+| Fix UI build - update alias paths    | Frontend | 1 day  |
+| Fix UI tests - add EventSource mock  | Frontend | 1 day  |
+| Add auth filter to launcher          | Backend  | 2 days |
+| Fix Helm values drift                | DevOps   | 1 day  |
+| Add delay execution to RetryOperator | Backend  | 1 day  |
 
 ### Short-Term (Weeks 2-4) - High
 
-| Task | Owner | Effort |
-|------|-------|--------|
-| Implement pattern matching | Backend | 1 week |
-| Fix BatchingOperator async return | Backend | 3 days |
-| Add comprehensive aep-engine tests | Backend | 2 weeks |
-| Create event taxonomy spec | Architecture | 3 days |
-| Add identity fields to Event | Backend | 1 week |
-| Add consent management | Backend | 2 weeks |
-| Delete duplicate OpenAPI copy | Backend | 1 day |
+| Task                               | Owner        | Effort  |
+| ---------------------------------- | ------------ | ------- |
+| Implement pattern matching         | Backend      | 1 week  |
+| Fix BatchingOperator async return  | Backend      | 3 days  |
+| Add comprehensive aep-engine tests | Backend      | 2 weeks |
+| Create event taxonomy spec         | Architecture | 3 days  |
+| Add identity fields to Event       | Backend      | 1 week  |
+| Add consent management             | Backend      | 2 weeks |
+| Delete duplicate OpenAPI copy      | Backend      | 1 day   |
 
 ### Medium-Term (Months 2-3)
 
-| Task | Owner | Effort |
-|------|-------|--------|
-| Split platform/ monolith | Architecture | 1 month |
-| Implement DLQ operator | Backend | 2 weeks |
-| Add schema validation | Backend | 2 weeks |
-| Create E2E test suite | QA | 1 month |
-| Document troubleshooting guide | Docs | 2 weeks |
+| Task                           | Owner        | Effort  |
+| ------------------------------ | ------------ | ------- |
+| Split platform/ monolith       | Architecture | 1 month |
+| Implement DLQ operator         | Backend      | 2 weeks |
+| Add schema validation          | Backend      | 2 weeks |
+| Create E2E test suite          | QA           | 1 month |
+| Document troubleshooting guide | Docs         | 2 weeks |
 
 ### Long-Term (Months 3-6)
 
-| Task | Owner | Effort |
-|------|-------|--------|
-| Implement identity resolution service | Backend | 2 months |
-| GDPR/CCPA compliance audit | Legal/Eng | 1 month |
-| Performance optimization | Backend | 1 month |
-| Rename api/ → gateway/ | Architecture | 2 weeks |
+| Task                                  | Owner        | Effort   |
+| ------------------------------------- | ------------ | -------- |
+| Implement identity resolution service | Backend      | 2 months |
+| GDPR/CCPA compliance audit            | Legal/Eng    | 1 month  |
+| Performance optimization              | Backend      | 1 month  |
+| Rename api/ → gateway/                | Architecture | 2 weeks  |
 
 ---
 
@@ -1276,6 +1410,7 @@ Move to AepConfig with environment-specific defaults.
 ### AEP Integration Health: **5.0 / 10**
 
 **Strengths:**
+
 - Strong architectural foundation with UnifiedOperator model
 - Good Java backend test coverage (784 tests in platform/)
 - Comprehensive operator framework for resilience
@@ -1283,6 +1418,7 @@ Move to AepConfig with environment-specific defaults.
 - Contract-first approach exists
 
 **Critical Weaknesses:**
+
 - UI build/test failures block release
 - Security boundary inconsistency
 - No identity or consent management
@@ -1290,6 +1426,7 @@ Move to AepConfig with environment-specific defaults.
 - Retry/batching implementations incomplete
 
 **Business Risk:**
+
 - **HIGH:** Security boundary issues could cause compliance violations
 - **HIGH:** Missing consent management creates regulatory risk
 - **MEDIUM:** UI failures block user adoption
@@ -1297,6 +1434,7 @@ Move to AepConfig with environment-specific defaults.
 
 **Recommendation:**
 AEP should not be released to production until:
+
 1. UI build and tests pass
 2. Security boundary is consistent (auth on all endpoints)
 3. Consent management implemented
@@ -1305,6 +1443,7 @@ AEP should not be released to production until:
 6. aep-engine has comprehensive test coverage
 
 **Confidence Level:**
+
 - Backend correctness: Moderate (good tests, but gaps in core)
 - Frontend correctness: Low (build failures, test failures)
 - Security posture: Low (boundary inconsistency)
@@ -1316,12 +1455,14 @@ AEP should not be released to production until:
 ## Assumptions and Limitations
 
 ### Assumptions:
+
 1. Data Cloud platform compilation failures are temporary/upstream issue
 2. LangChain4j dependencies can be resolved or replaced
 3. UI shared packages exist at corrected paths
 4. JWT secret can be configured for launcher auth
 
 ### Limitations:
+
 1. No production telemetry or logs reviewed
 2. No live cluster state examined
 3. No penetration testing performed
@@ -1330,6 +1471,7 @@ AEP should not be released to production until:
 6. Audit based on static code analysis only
 
 ### Not Reviewed:
+
 1. Database schema migrations
 2. Kafka topic configurations
 3. Redis cluster setup

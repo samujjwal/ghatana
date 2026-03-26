@@ -192,7 +192,7 @@ describe('PipelineBuilderPage', () => {
 
   it('Validate button is disabled while validating', async () => {
     vi.mocked(pipelineApi.validatePipeline).mockImplementation(
-      () => new Promise(() => {}), // never resolves
+      () => new Promise(() => { }), // never resolves
     );
 
     renderPage();
@@ -209,9 +209,9 @@ describe('PipelineBuilderPage', () => {
   it('Export shows success toast', async () => {
     const createObjectURL = vi.fn(() => 'blob:test');
     const revokeObjectURL = vi.fn();
-    Object.assign(global.URL, { createObjectURL, revokeObjectURL });
+    Object.assign(globalThis.URL, { createObjectURL, revokeObjectURL });
 
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => { });
 
     renderPage();
     await userEvent.click(screen.getByTestId('btn-export'));

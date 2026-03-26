@@ -3,8 +3,8 @@
  *
  * Verifies:
  *   1. REST load populates runs on mount
- *   2. `run_started` SSE event prepends a new run and trims to limit
- *   3. `run_completed` SSE event merges into an existing run in-place
+ *   2. canonical `run.update` SSE event prepends a new run and trims to limit
+ *   3. canonical `run.update` SSE event merges into an existing run in-place
  *   4. Unknown SSE event types are ignored
  *   5. Subscription is closed on unmount
  *
@@ -29,7 +29,14 @@ import { useLivePipelineRuns, PIPELINE_RUNS_QUERY_KEY } from '@/hooks/usePipelin
 
 // ── API mocks ─────────────────────────────────────────────────────────────────
 
-vi.mock('@/api/aep.api');
+vi.mock('@/api/aep.api', async () => {
+  const actual = await vi.importActual<typeof import('@/api/aep.api')>('@/api/aep.api');
+  return {
+    ...actual,
+    listPipelineRuns: vi.fn(),
+    cancelRun: vi.fn(),
+  };
+});
 vi.mock('@/api/sse');
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -68,15 +75,22 @@ function getCacheRuns(client: QueryClient, tenantId = 'default', limit = 20) {
 describe('useLivePipelineRuns', () => {
   let capturedOnMessage: SseHandler;
   let capturedOnError: SseErrorHandler | undefined;
-  let mockClose: ReturnType<typeof vi.fn>;
+  let mockClose: (() => void) & ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockClose = vi.fn();
+    mockClose = vi.fn() as unknown as (() => void) & ReturnType<typeof vi.fn>;
     vi.mocked(sseModule.subscribeToAepStream).mockImplementation(
       (_tenantId, onMessage, onError) => {
         capturedOnMessage = onMessage;
         capturedOnError = onError;
-        return { close: mockClose, get connected() { return true; } };
+        return {
+          close: () => {
+            mockClose();
+          },
+          get connected() {
+            return true;
+          },
+        };
       },
     );
   });
@@ -96,7 +110,7 @@ describe('useLivePipelineRuns', () => {
     expect(result.current.data).toHaveLength(2);
   });
 
-  it('prepends a new run when run_started SSE event arrives', async () => {
+  it('prepends a new run when run.update SSE event arrives', async () => {
     const initialRun = makeRun('run-001');
     vi.mocked(aepApi.listPipelineRuns).mockResolvedValue([initialRun]);
 
@@ -108,7 +122,7 @@ describe('useLivePipelineRuns', () => {
     await waitFor(() => expect(vi.mocked(sseModule.subscribeToAepStream)).toHaveBeenCalled());
 
     // Trigger SSE event — setQueryData is synchronous so cache updates immediately
-    capturedOnMessage({ type: 'run_started', data: makeRun('run-new') });
+    capturedOnMessage({ type: 'run.update', data: makeRun('run-new') });
 
     const cached = getCacheRuns(client);
     expect(cached).toHaveLength(2);
@@ -116,7 +130,7 @@ describe('useLivePipelineRuns', () => {
     expect(cached![1].id).toBe('run-001');
   });
 
-  it('merges run_completed event into existing run without duplicating it', async () => {
+  it('merges run.update event into existing run without duplicating it', async () => {
     const initial = [makeRun('run-001', 'RUNNING')];
     vi.mocked(aepApi.listPipelineRuns).mockResolvedValue(initial);
 
@@ -127,7 +141,7 @@ describe('useLivePipelineRuns', () => {
     await waitFor(() => expect(vi.mocked(sseModule.subscribeToAepStream)).toHaveBeenCalled());
 
     capturedOnMessage({
-      type: 'run_completed',
+      type: 'run.update',
       data: { ...makeRun('run-001', 'SUCCEEDED'), eventsProcessed: 500 },
     });
 
@@ -165,7 +179,7 @@ describe('useLivePipelineRuns', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     await waitFor(() => expect(vi.mocked(sseModule.subscribeToAepStream)).toHaveBeenCalled());
 
-    capturedOnMessage({ type: 'run_started', data: makeRun('run-new') });
+    capturedOnMessage({ type: 'run.update', data: makeRun('run-new') });
 
     const cached = client.getQueryData<aepApi.PipelineRun[]>([PIPELINE_RUNS_QUERY_KEY, 'default', limit]);
     expect(cached![0].id).toBe('run-new');

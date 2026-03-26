@@ -39,9 +39,10 @@ import java.util.stream.Collectors;
  *     loader.loadAndRegisterAgents(tenantId);
  * }</pre>
  * 
+ * @doc.type class
  * @doc.pattern Loader, Adapter
  * @doc.purpose Load YAML agents into AEP registry
- * @doc.layer config
+ * @doc.layer product
  */
 public class AepIntegratedAgentLoader {
     private static final Logger log = LoggerFactory.getLogger(AepIntegratedAgentLoader.class);

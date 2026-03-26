@@ -37,9 +37,10 @@ import java.util.Set;
  * </ul>
  * 
  * @see OutputGenerator
+ * @doc.type class
  * @doc.pattern Configuration
- * @doc.purpose YAML-driven agent configuration
- * @doc.layer config
+ * @doc.purpose YAML-driven agent configuration model
+ * @doc.layer product
  */
 public class YamlAgentConfig {
     

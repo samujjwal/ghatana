@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.vector.http;
+package com.ghatana.yappc.domain.vector.http;
 
 import com.ghatana.platform.http.server.servlet.RoutingServlet;
 import io.activej.http.HttpMethod;

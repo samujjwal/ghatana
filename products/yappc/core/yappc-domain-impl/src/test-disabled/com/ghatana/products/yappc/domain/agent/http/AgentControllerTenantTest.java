@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.agent.http;
+package com.ghatana.yappc.domain.agent.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.testing.activej.EventloopTestBase;

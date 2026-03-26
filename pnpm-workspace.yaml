@@ -1,7 +1,4 @@
 packages:
-  # Audio-video shared libraries
-  - "products/audio-video/libs/*"
-
   # Platform TypeScript libraries
   - "platform/typescript/*"
   - "platform/typescript/canvas/flow-canvas"
@@ -14,6 +11,7 @@ packages:
 
   # YAPPC frontend (existing)
   - "products/yappc/frontend/libs/*"
+  - "products/yappc/frontend/compat/*"
   - "products/yappc/frontend/apps/*"
   - "products/yappc/frontend/web"
   - "products/yappc/tools/*"
@@ -52,5 +50,3 @@ packages:
   # YAPPC frontend extras (nested packages)
   - "products/yappc/frontend/docs-site"
   - "products/yappc/frontend/packages/*"
-  - "products/yappc/frontend/libs/canvas/yappc-canvas"
-

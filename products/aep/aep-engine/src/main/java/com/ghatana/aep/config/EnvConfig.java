@@ -5,11 +5,15 @@ package com.ghatana.aep.config;
 
 import java.util.Map;
 import java.util.HashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Environment configuration for AEP components.
  */
 public class EnvConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(EnvConfig.class);
 
     // ── Well-known configuration key constants ──────────────────────────────
     public static final String RABBITMQ_PORT = "rabbitmq.port";
@@ -56,6 +60,7 @@ public class EnvConfig {
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
+            logger.warn("Invalid integer config for {}='{}'; using default {}", key, value, defaultValue);
             return defaultValue;
         }
     }
@@ -63,6 +68,10 @@ public class EnvConfig {
     public boolean getBoolean(String key, boolean defaultValue) {
         String value = config.get(key);
         if (value == null) {
+            return defaultValue;
+        }
+        if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) {
+            logger.warn("Invalid boolean config for {}='{}'; using default {}", key, value, defaultValue);
             return defaultValue;
         }
         return Boolean.parseBoolean(value);
@@ -76,6 +85,7 @@ public class EnvConfig {
         try {
             return Long.parseLong(value);
         } catch (NumberFormatException e) {
+            logger.warn("Invalid long config for {}='{}'; using default {}", key, value, defaultValue);
             return defaultValue;
         }
     }

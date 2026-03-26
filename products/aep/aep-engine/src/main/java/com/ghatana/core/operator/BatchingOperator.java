@@ -3,6 +3,7 @@ package com.ghatana.core.operator;
 import com.ghatana.platform.domain.event.Event;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
+import io.activej.promise.SettablePromise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +11,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Operator that batches events for more efficient processing.
@@ -60,12 +65,18 @@ import java.util.Objects;
 public class BatchingOperator extends AbstractOperator {
 
     private static final Logger logger = LoggerFactory.getLogger(BatchingOperator.class);
+    private static final ScheduledExecutorService flushExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread thread = Thread.ofVirtual().name("aep-batching-flush", 0).unstarted(r);
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private final UnifiedOperator delegate;
     private final int batchSize;
     private final long maxWaitMillis;
-    private final List<Event> currentBatch;
+    private final List<PendingEvent> currentBatch;
     private volatile long batchStartTime;
+    private ScheduledFuture<?> scheduledFlush;
 
     /**
      * Create batching operator with builder.
@@ -90,20 +101,25 @@ public class BatchingOperator extends AbstractOperator {
 
     @Override
     public Promise<OperatorResult> process(Event event) {
+        SettablePromise<OperatorResult> resultPromise = new SettablePromise<>();
+        boolean flushNow = false;
+
         synchronized (currentBatch) {
-            currentBatch.add(event);
-
-            // Check if we should flush
-            boolean shouldFlush = shouldFlushBatch();
-
-            if (shouldFlush) {
-                return flushBatch();
-            } else {
-                // Event added to batch, return success
-                // Note: In production, this should trigger async flush
-                return Promise.of(OperatorResult.empty());
+            currentBatch.add(new PendingEvent(event, resultPromise));
+            if (currentBatch.size() == 1) {
+                scheduleFlush();
+            }
+            if (shouldFlushBatch()) {
+                cancelScheduledFlush();
+                flushNow = true;
             }
         }
+
+        if (flushNow) {
+            flushAsync();
+        }
+
+        return resultPromise;
     }
 
     /**
@@ -112,19 +128,10 @@ public class BatchingOperator extends AbstractOperator {
      * @return true if batch should be flushed
      */
     private boolean shouldFlushBatch() {
-        // Size-based flush
         if (currentBatch.size() >= batchSize) {
             logger.debug("Flushing batch: size threshold reached ({} events)", batchSize);
             return true;
         }
-
-        // Time-based flush
-        long elapsedMillis = System.currentTimeMillis() - batchStartTime;
-        if (elapsedMillis >= maxWaitMillis) {
-            logger.debug("Flushing batch: time threshold reached ({}ms)", elapsedMillis);
-            return true;
-        }
-
         return false;
     }
 
@@ -134,19 +141,18 @@ public class BatchingOperator extends AbstractOperator {
      * @return Promise of batch processing result
      */
     private Promise<OperatorResult> flushBatch() {
-        if (currentBatch.isEmpty()) {
+        List<PendingEvent> batchToProcess = drainBatch();
+        if (batchToProcess.isEmpty()) {
             return Promise.of(OperatorResult.empty());
         }
 
-        // Copy current batch
-        List<Event> batchToProcess = new ArrayList<>(currentBatch);
-        currentBatch.clear();
-        batchStartTime = System.currentTimeMillis();
-
         logger.info("Flushing batch of {} events", batchToProcess.size());
-
-        // Process batch through delegate
-        return processBatchEvents(batchToProcess);
+        return processBatchEvents(batchToProcess)
+            .map(results -> {
+                resolveBatch(batchToProcess, results);
+                return aggregateResults(results);
+            })
+            .whenException(ex -> failBatch(batchToProcess, ex));
     }
 
     /**
@@ -155,33 +161,12 @@ public class BatchingOperator extends AbstractOperator {
      * @param events Events to process
      * @return Promise of combined results
      */
-    private Promise<OperatorResult> processBatchEvents(List<Event> events) {
-        // Process all events through delegate
+    private Promise<List<OperatorResult>> processBatchEvents(List<PendingEvent> events) {
         List<Promise<OperatorResult>> promises = new ArrayList<>();
-        for (Event event : events) {
-            promises.add(delegate.process(event));
+        for (PendingEvent pendingEvent : events) {
+            promises.add(delegate.process(pendingEvent.event()));
         }
-
-        // Wait for all to complete and combine results
-        return Promises.toList(promises)
-            .map(results -> {
-                List<Event> allOutputs = new ArrayList<>();
-                boolean allSuccess = true;
-
-                for (OperatorResult result : results) {
-                    if (result.isSuccess()) {
-                        allOutputs.addAll(result.getOutputEvents());
-                    } else {
-                        allSuccess = false;
-                    }
-                }
-
-                if (allSuccess) {
-                    return OperatorResult.of(allOutputs);
-                } else {
-                    return OperatorResult.failed("Some batch operations failed");
-                }
-            });
+        return Promises.toList(promises);
     }
 
     /**
@@ -192,9 +177,7 @@ public class BatchingOperator extends AbstractOperator {
      * @return Promise of flush result
      */
     public Promise<OperatorResult> flush() {
-        synchronized (currentBatch) {
-            return flushBatch();
-        }
+        return flushBatch();
     }
 
     @Override
@@ -267,6 +250,57 @@ public class BatchingOperator extends AbstractOperator {
             return currentBatch.size();
         }
     }
+
+    private void scheduleFlush() {
+        cancelScheduledFlush();
+        scheduledFlush = flushExecutor.schedule(this::flushAsync, maxWaitMillis, TimeUnit.MILLISECONDS);
+    }
+
+    private void cancelScheduledFlush() {
+        if (scheduledFlush != null) {
+            scheduledFlush.cancel(false);
+            scheduledFlush = null;
+        }
+    }
+
+    private List<PendingEvent> drainBatch() {
+        synchronized (currentBatch) {
+            if (currentBatch.isEmpty()) {
+                return List.of();
+            }
+
+            List<PendingEvent> batchToProcess = new ArrayList<>(currentBatch);
+            currentBatch.clear();
+            cancelScheduledFlush();
+            batchStartTime = System.currentTimeMillis();
+            return batchToProcess;
+        }
+    }
+
+    private void flushAsync() {
+        flushBatch().whenException(ex -> logger.error("Error flushing batch asynchronously", ex));
+    }
+
+    private void resolveBatch(List<PendingEvent> batch, List<OperatorResult> results) {
+        for (int i = 0; i < batch.size(); i++) {
+            batch.get(i).promise().trySet(results.get(i));
+        }
+    }
+
+    private void failBatch(List<PendingEvent> batch, Exception ex) {
+        OperatorResult failed = OperatorResult.failed(ex.getMessage());
+        for (PendingEvent pendingEvent : batch) {
+            pendingEvent.promise().trySet(failed);
+        }
+    }
+
+    private OperatorResult aggregateResults(List<OperatorResult> results) {
+        OperatorResult.Builder builder = OperatorResult.builder().success();
+        results.forEach(builder::mergeWith);
+        return builder.build();
+    }
+
+    private record PendingEvent(Event event, SettablePromise<OperatorResult> promise) {}
 
     /**
      * Builder for BatchingOperator.

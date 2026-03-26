@@ -144,18 +144,95 @@ public interface AepEngine extends AutoCloseable {
         String type,
         Map<String, Object> payload,
         Map<String, String> headers,
-        java.time.Instant timestamp
+        java.time.Instant timestamp,
+        IdentityContext identityContext,
+        ConsentContext consentContext
     ) {
         public Event {
             java.util.Objects.requireNonNull(type, "type required");
             payload = payload != null ? Map.copyOf(payload) : Map.of();
             headers = headers != null ? Map.copyOf(headers) : Map.of();
             timestamp = timestamp != null ? timestamp : java.time.Instant.now();
+            identityContext = identityContext != null ? identityContext : IdentityContext.empty();
+            consentContext = consentContext != null ? consentContext : ConsentContext.defaultConsent();
+        }
+
+        public Event(String type, Map<String, Object> payload, Map<String, String> headers,
+                     java.time.Instant timestamp) {
+            this(type, payload, headers, timestamp, IdentityContext.empty(), ConsentContext.defaultConsent());
         }
 
         public static Event of(String type, Map<String, Object> payload) {
             return new Event(type, payload, Map.of(), java.time.Instant.now());
         }
+
+        public Event withIdentityContext(IdentityContext identityContext) {
+            return new Event(type, payload, headers, timestamp, identityContext, consentContext);
+        }
+
+        public Event withConsentContext(ConsentContext consentContext) {
+            return new Event(type, payload, headers, timestamp, identityContext, consentContext);
+        }
+    }
+
+    /**
+     * Identity attributes resolved from the inbound event envelope.
+     */
+    record IdentityContext(
+        Optional<String> userId,
+        Optional<String> anonymousId,
+        Optional<String> sessionId,
+        Optional<String> stitchedId
+    ) {
+        public IdentityContext {
+            userId = userId != null ? userId : Optional.empty();
+            anonymousId = anonymousId != null ? anonymousId : Optional.empty();
+            sessionId = sessionId != null ? sessionId : Optional.empty();
+            stitchedId = stitchedId != null ? stitchedId : Optional.empty();
+        }
+
+        public static IdentityContext empty() {
+            return new IdentityContext(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+        }
+    }
+
+    /**
+     * Event-level consent and retention context.
+     */
+    record ConsentContext(
+        ConsentStatus status,
+        RetentionPolicy retentionPolicy,
+        List<String> allowedPurposes
+    ) {
+        public ConsentContext {
+            status = status != null ? status : ConsentStatus.UNKNOWN;
+            retentionPolicy = retentionPolicy != null ? retentionPolicy : RetentionPolicy.STANDARD;
+            allowedPurposes = allowedPurposes != null ? List.copyOf(allowedPurposes) : List.of();
+        }
+
+        public static ConsentContext defaultConsent() {
+            return new ConsentContext(ConsentStatus.UNKNOWN, RetentionPolicy.STANDARD, List.of());
+        }
+    }
+
+    /**
+     * Supported consent states for event processing.
+     */
+    enum ConsentStatus {
+        GRANTED,
+        DENIED,
+        UNKNOWN,
+        EXPIRED
+    }
+
+    /**
+     * Supported retention policies for event storage and downstream handling.
+     */
+    enum RetentionPolicy {
+        STANDARD,
+        SHORT_LIVED,
+        LONG_LIVED,
+        DELETE_ON_REQUEST
     }
 
     /**
@@ -179,6 +256,15 @@ public interface AepEngine extends AutoCloseable {
 
         public static ProcessingResult success(String eventId, List<Detection> detections) {
             return new ProcessingResult(eventId, true, detections, Map.of());
+        }
+
+        public static ProcessingResult skipped(String eventId, String reason) {
+            return new ProcessingResult(
+                eventId,
+                false,
+                List.of(),
+                Map.of("processed", false, "skipped", true, "reason", reason)
+            );
         }
     }
 

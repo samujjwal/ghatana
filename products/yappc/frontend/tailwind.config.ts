@@ -1,19 +1,28 @@
 import type { Config } from 'tailwindcss';
-import { palette, spacing, borderRadius, fontFamilies, fontWeights, fontSizes, lineHeights, lightShadows } from './libs/ui/src/tokens/index';
+import {
+  palette,
+  spacing,
+  borderRadius,
+  fontFamilies,
+  fontWeights,
+  fontSizes,
+  lineHeights,
+  lightShadows,
+} from './libs/ui/src/tokens/index';
 
 /**
  * Tailwind CSS configuration for the monorepo
- * 
+ *
  * Integrates @ghatana/yappc-ui design tokens with Tailwind CSS utility classes.
  * This configuration is shared across all apps (web, desktop, mobile-cap).
- * 
+ *
  * Design token mapping:
  * - Colors: palette.primary → colors.primary[50-900]
  * - Spacing: spacing[4] → spacing.4 (p-4, mt-4, etc.)
  * - Border radius: borderRadius.md → rounded-md
  * - Typography: fontSizes, fontWeights → text-*, font-*
  * - Shadows: lightShadows → shadow-*
- * 
+ *
  * @see {@link https://base-ui.com/react/overview/quick-start Base UI Quick Start}
  * @see {@link BASE_UI_TAILWIND_MIGRATION_PLAN.md Migration Plan}
  */
@@ -24,7 +33,7 @@ const config: Config = {
     './apps/desktop/src/**/*.{ts,tsx}',
     './apps/mobile-cap/src/**/*.{ts,tsx}',
     './libs/ui/src/**/*.{ts,tsx}',
-    './libs/canvas/src/**/*.{ts,tsx}',
+    './libs/yappc-canvas/src/**/*.{ts,tsx}',
     './libs/diagram/src/**/*.{ts,tsx}',
   ],
 
@@ -41,11 +50,11 @@ const config: Config = {
      * We align sm/md/lg to match MUI for consistency
      */
     screens: {
-      'xs': '0px',
-      'sm': '600px',   // MUI sm (was 640px in Tailwind)
-      'md': '900px',   // MUI md (was 768px in Tailwind)
-      'lg': '1200px',  // MUI lg (was 1024px in Tailwind)
-      'xl': '1536px',  // MUI xl (was 1280px in Tailwind)
+      xs: '0px',
+      sm: '600px', // MUI sm (was 640px in Tailwind)
+      md: '900px', // MUI md (was 768px in Tailwind)
+      lg: '1200px', // MUI lg (was 1024px in Tailwind)
+      xl: '1536px', // MUI xl (was 1280px in Tailwind)
       '2xl': '1920px', // Extended for large displays
     },
     extend: {
@@ -206,11 +215,11 @@ const config: Config = {
         96: `${spacing[96]}px`,
 
         // Semantic spacing aliases
-        xs: `${spacing[1]}px`,   // 4px
-        sm: `${spacing[2]}px`,   // 8px
-        md: `${spacing[4]}px`,   // 16px
-        lg: `${spacing[6]}px`,   // 24px
-        xl: `${spacing[8]}px`,   // 32px
+        xs: `${spacing[1]}px`, // 4px
+        sm: `${spacing[2]}px`, // 8px
+        md: `${spacing[4]}px`, // 16px
+        lg: `${spacing[6]}px`, // 24px
+        xl: `${spacing[8]}px`, // 32px
         '2xl': `${spacing[12]}px`, // 48px
         '3xl': `${spacing[16]}px`, // 64px
       },
@@ -277,7 +286,8 @@ const config: Config = {
         },
       },
       animation: {
-        'progress-indeterminate': 'progress-indeterminate 1.5s ease-in-out infinite',
+        'progress-indeterminate':
+          'progress-indeterminate 1.5s ease-in-out infinite',
         'spin-slow': 'spin-slow 2s linear infinite',
       },
     },

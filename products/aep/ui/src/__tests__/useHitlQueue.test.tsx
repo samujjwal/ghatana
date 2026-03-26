@@ -64,15 +64,22 @@ function getHitlCache(client: QueryClient, tenantId = 'default') {
 describe('useHitlQueue', () => {
   let capturedOnMessage: SseHandler;
   let capturedOnError: SseErrorHandler | undefined;
-  let mockClose: ReturnType<typeof vi.fn>;
+  let mockClose: (() => void) & ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockClose = vi.fn();
+    mockClose = vi.fn() as unknown as (() => void) & ReturnType<typeof vi.fn>;
     vi.mocked(sseModule.subscribeToAepStream).mockImplementation(
       (_tenantId, onMessage, onError) => {
         capturedOnMessage = onMessage;
         capturedOnError = onError;
-        return { close: mockClose, get connected() { return true; } };
+        return {
+          close: () => {
+            mockClose();
+          },
+          get connected() {
+            return true;
+          },
+        };
       },
     );
   });

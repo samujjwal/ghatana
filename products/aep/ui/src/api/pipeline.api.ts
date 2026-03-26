@@ -13,39 +13,88 @@ import type {
   PipelineValidationResult,
   ConnectorSpec,
   PatternType,
-} from '@/types/pipeline.types';
-import { apiClient as client } from '@/lib/http-client';
+} from "@/types/pipeline.types";
+import { apiClient as client } from "@/lib/http-client";
+
+interface PipelinesResponse {
+  pipelines: PipelineSpec[];
+}
+
+interface PatternsResponse {
+  patterns: PatternSummary[];
+}
+
+interface SchemaFormatsResponse {
+  schemaFormats: SchemaFormat[];
+}
+
+interface ConnectorCapabilitiesResponse {
+  connectors: ConnectorCapability[];
+}
+
+interface EncodingsResponse {
+  encodings: string[];
+}
+
+interface TransformsResponse {
+  transforms: { id: string; description: string }[];
+}
+
+interface RunPipelineResponse {
+  eventId?: string;
+  id?: string;
+  success?: boolean;
+}
 
 // ─── Pipeline CRUD ───────────────────────────────────────────────────
 
-export async function listPipelines(tenantId = 'default'): Promise<PipelineSpec[]> {
-  const { data } = await client.get('/api/v1/pipelines', {
+export async function listPipelines(
+  tenantId = "default",
+): Promise<PipelineSpec[]> {
+  const { data } = await client.get<PipelinesResponse>("/api/v1/pipelines", {
     params: { tenantId },
   });
   return data.pipelines;
 }
 
-export async function getPipeline(id: string, tenantId = 'default'): Promise<PipelineSpec> {
-  const { data } = await client.get(`/api/v1/pipelines/${id}`, {
+export async function getPipeline(
+  id: string,
+  tenantId = "default",
+): Promise<PipelineSpec> {
+  const { data } = await client.get<PipelineSpec>(`/api/v1/pipelines/${id}`, {
     params: { tenantId },
   });
   return data;
 }
 
-export async function savePipeline(pipeline: PipelineSpec, tenantId = 'default'): Promise<PipelineSpec> {
+export async function savePipeline(
+  pipeline: PipelineSpec,
+  tenantId = "default",
+): Promise<PipelineSpec> {
   if (pipeline.id) {
-    const { data } = await client.put(`/api/v1/pipelines/${pipeline.id}`, pipeline, {
-      params: { tenantId },
-    });
+    const { data } = await client.put<PipelineSpec>(
+      `/api/v1/pipelines/${pipeline.id}`,
+      pipeline,
+      {
+        params: { tenantId },
+      },
+    );
     return data;
   }
-  const { data } = await client.post('/api/v1/pipelines', pipeline, {
-    params: { tenantId },
-  });
+  const { data } = await client.post<PipelineSpec>(
+    "/api/v1/pipelines",
+    pipeline,
+    {
+      params: { tenantId },
+    },
+  );
   return data;
 }
 
-export async function deletePipeline(id: string, tenantId = 'default'): Promise<void> {
+export async function deletePipeline(
+  id: string,
+  tenantId = "default",
+): Promise<void> {
   await client.delete(`/api/v1/pipelines/${id}`, {
     params: { tenantId },
   });
@@ -55,11 +104,15 @@ export async function deletePipeline(id: string, tenantId = 'default'): Promise<
 
 export async function validatePipeline(
   pipeline: PipelineSpec,
-  tenantId = 'default',
+  tenantId = "default",
 ): Promise<PipelineValidationResult> {
-  const { data } = await client.post('/api/v1/pipelines/validate', pipeline, {
-    params: { tenantId },
-  });
+  const { data } = await client.post<PipelineValidationResult>(
+    "/api/v1/pipelines/validate",
+    pipeline,
+    {
+      params: { tenantId },
+    },
+  );
   return data;
 }
 
@@ -72,8 +125,10 @@ export interface PatternSummary {
   status: string;
 }
 
-export async function listPatterns(tenantId = 'default'): Promise<PatternSummary[]> {
-  const { data } = await client.get('/api/v1/patterns', {
+export async function listPatterns(
+  tenantId = "default",
+): Promise<PatternSummary[]> {
+  const { data } = await client.get<PatternsResponse>("/api/v1/patterns", {
     params: { tenantId },
   });
   return data.patterns;
@@ -90,15 +145,22 @@ export interface CreatePatternPayload {
 
 export async function createPattern(
   payload: CreatePatternPayload,
-  tenantId = 'default',
+  tenantId = "default",
 ): Promise<PatternSummary> {
-  const { data } = await client.post('/api/v1/patterns', payload, {
-    params: { tenantId },
-  });
+  const { data } = await client.post<PatternSummary>(
+    "/api/v1/patterns",
+    payload,
+    {
+      params: { tenantId },
+    },
+  );
   return data;
 }
 
-export async function deletePattern(id: string, tenantId = 'default'): Promise<void> {
+export async function deletePattern(
+  id: string,
+  tenantId = "default",
+): Promise<void> {
   await client.delete(`/api/v1/patterns/${id}`, { params: { tenantId } });
 }
 
@@ -117,22 +179,34 @@ export interface ConnectorCapability {
 }
 
 export async function listSchemaFormats(): Promise<SchemaFormat[]> {
-  const { data } = await client.get('/admin/capabilities/schemas');
+  const { data } = await client.get<SchemaFormatsResponse>(
+    "/admin/capabilities/schemas",
+  );
   return data.schemaFormats;
 }
 
-export async function listConnectorCapabilities(): Promise<ConnectorCapability[]> {
-  const { data } = await client.get('/admin/capabilities/connectors');
+export async function listConnectorCapabilities(): Promise<
+  ConnectorCapability[]
+> {
+  const { data } = await client.get<ConnectorCapabilitiesResponse>(
+    "/admin/capabilities/connectors",
+  );
   return data.connectors;
 }
 
 export async function listEncodings(): Promise<string[]> {
-  const { data } = await client.get('/admin/capabilities/encodings');
+  const { data } = await client.get<EncodingsResponse>(
+    "/admin/capabilities/encodings",
+  );
   return data.encodings;
 }
 
-export async function listTransforms(): Promise<{ id: string; description: string }[]> {
-  const { data } = await client.get('/admin/capabilities/transforms');
+export async function listTransforms(): Promise<
+  { id: string; description: string }[]
+> {
+  const { data } = await client.get<TransformsResponse>(
+    "/admin/capabilities/transforms",
+  );
   return data.transforms;
 }
 
@@ -151,21 +225,21 @@ export interface PipelineRunResult {
  */
 export async function runPipeline(
   pipelineId: string | undefined,
-  tenantId = 'default',
+  tenantId = "default",
 ): Promise<PipelineRunResult> {
-  const { data } = await client.post(
-    '/api/v1/events',
+  const { data } = await client.post<RunPipelineResponse>(
+    "/api/v1/events",
     {
-      type: 'pipeline.test-run',
+      type: "pipeline.test-run",
       tenantId,
-      payload: { pipelineId: pipelineId ?? 'default', source: 'ui-run-now' },
+      payload: { pipelineId: pipelineId ?? "default", source: "ui-run-now" },
     },
     { params: { tenantId } },
   );
   return {
-    eventId: (data as { eventId?: string; id?: string }).eventId ?? (data as { id?: string }).id ?? 'unknown',
+    eventId: data.eventId ?? data.id ?? "unknown",
     pipelineId,
-    status: (data as { success?: boolean }).success ? 'SUCCEEDED' : 'STARTED',
+    status: data.success ? "SUCCEEDED" : "STARTED",
     timestamp: new Date().toISOString(),
   };
 }

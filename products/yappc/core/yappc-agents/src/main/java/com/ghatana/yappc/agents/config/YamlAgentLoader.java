@@ -30,9 +30,10 @@ import java.util.stream.Stream;
  * }</pre>
  * 
  * @see YamlAgentConfig
+ * @doc.type class
  * @doc.pattern Loader
- * @doc.purpose Load YAML agent configurations
- * @doc.layer config
+ * @doc.purpose Load YAML agent configurations from classpath
+ * @doc.layer product
  */
 public class YamlAgentLoader {
     private static final Logger log = LoggerFactory.getLogger(YamlAgentLoader.class);

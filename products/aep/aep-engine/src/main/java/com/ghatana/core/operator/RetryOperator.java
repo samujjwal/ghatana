@@ -9,6 +9,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 
 /**
@@ -58,6 +60,7 @@ public class RetryOperator extends AbstractOperator {
 
     private static final Logger logger = LoggerFactory.getLogger(RetryOperator.class);
     private static final Random random = new Random();
+    private static final ExecutorService delayExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     private final UnifiedOperator delegate;
     private final int maxRetries;
@@ -122,9 +125,7 @@ public class RetryOperator extends AbstractOperator {
                 }
 
                 logger.debug("Error occurred: {}", result.getErrorMessage());
-                // Retry (predicate-based decision for OperatorResult failures is not available),
-                // so we conservatively retry here.
-                return processWithRetry(event, attempt + 1);
+                return retryAfterDelay(event, attempt);
             }, ex -> {
                 // Delegate threw an exception. Unwrap common wrappers (CompletionException/ExecutionException)
                 Throwable cause = ex;
@@ -142,8 +143,17 @@ public class RetryOperator extends AbstractOperator {
                 }
 
                 logger.info("Retrying after exception: {} (attempt {}/{})", cause.toString(), attempt + 1, maxRetries);
-                return processWithRetry(event, attempt + 1);
+                return retryAfterDelay(event, attempt);
             });
+    }
+
+    private Promise<OperatorResult> retryAfterDelay(Event event, int attempt) {
+        long delayMillis = calculateDelay(attempt);
+        logger.debug("Retry scheduled in {}ms for attempt {}", delayMillis, attempt + 2);
+        return Promise.ofBlocking(delayExecutor, () -> {
+            Thread.sleep(delayMillis);
+            return null;
+        }).then(ignored -> processWithRetry(event, attempt + 1));
     }
 
     /**

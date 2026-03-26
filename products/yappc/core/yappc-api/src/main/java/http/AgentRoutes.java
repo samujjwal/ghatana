@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ghatana.products.yappc.domain.agent.http;
+package com.ghatana.yappc.api.http;
 
 import com.ghatana.platform.http.server.servlet.RoutingServlet;
 import io.activej.http.HttpMethod;

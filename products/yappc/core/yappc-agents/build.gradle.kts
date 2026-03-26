@@ -43,6 +43,7 @@ dependencies {
     annotationProcessor(libs.lombok)
     
     // Testing
+    testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)

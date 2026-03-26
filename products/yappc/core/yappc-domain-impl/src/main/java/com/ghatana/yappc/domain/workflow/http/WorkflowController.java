@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.workflow.http;
+package com.ghatana.yappc.domain.workflow.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.server.response.ResponseBuilder;

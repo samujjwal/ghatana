@@ -8,14 +8,19 @@
  * @doc.purpose AEP agent registry, HITL queue, observability, and learning endpoints
  * @doc.layer frontend
  */
-import { apiClient as client } from '@/lib/http-client';
+import { apiClient as client } from "@/lib/http-client";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
-export type AgentStatus = 'ACTIVE' | 'IDLE' | 'ERROR' | 'UNKNOWN';
-export type ReviewItemStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-export type PolicyStatus = 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'DEPRECATED';
-export type EpisodeOutcome = 'SUCCESS' | 'FAILURE' | 'TIMEOUT' | 'CANCELLED';
+export type AgentStatus = "ACTIVE" | "IDLE" | "ERROR" | "UNKNOWN";
+export type ReviewItemStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type PolicyStatus =
+  | "PENDING_REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | "ACTIVE"
+  | "DEPRECATED";
+export type EpisodeOutcome = "SUCCESS" | "FAILURE" | "TIMEOUT" | "CANCELLED";
 
 export interface AgentRegistration {
   id: string;
@@ -33,11 +38,31 @@ export interface PipelineRun {
   id: string;
   pipelineId: string;
   pipelineName: string;
-  status: 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+  status: "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
   startedAt: string;
   finishedAt?: string;
   eventsProcessed: number;
   errorsCount: number;
+}
+
+export type PipelineRunWire = Partial<PipelineRun> & {
+  runId?: string;
+  completedAt?: string;
+  durationMs?: number;
+};
+
+export function normalizePipelineRun(raw: PipelineRunWire): PipelineRun {
+  const id = raw.id ?? raw.runId ?? "";
+  return {
+    id,
+    pipelineId: raw.pipelineId ?? "event",
+    pipelineName: raw.pipelineName ?? raw.pipelineId ?? "event",
+    status: raw.status ?? "RUNNING",
+    startedAt: raw.startedAt ?? new Date(0).toISOString(),
+    finishedAt: raw.finishedAt ?? raw.completedAt,
+    eventsProcessed: raw.eventsProcessed ?? 0,
+    errorsCount: raw.errorsCount ?? 0,
+  };
 }
 
 export interface PipelineMetrics {
@@ -55,7 +80,7 @@ export interface ReviewItem {
   reviewId: string;
   tenantId: string;
   skillId: string;
-  itemType: 'POLICY' | 'PATTERN' | 'AGENT_DECISION';
+  itemType: "POLICY" | "PATTERN" | "AGENT_DECISION";
   status: ReviewItemStatus;
   proposedVersion: Record<string, unknown>;
   confidenceScore?: number;
@@ -90,21 +115,93 @@ export interface LearnedPolicy {
   updatedAt: string;
 }
 
+interface AgentListResponse {
+  agents?: AgentRegistration[];
+}
+
+interface AgentMemoryResponse {
+  agentId: string;
+  tenantId: string;
+  total: number;
+  byType: Record<string, number>;
+  timestamp: string;
+}
+
+interface AgentEpisodesResponse {
+  episodes?: AgentEpisodeRecord[];
+}
+
+interface AgentFactsResponse {
+  facts?: AgentFact[];
+}
+
+interface AgentPoliciesResponse {
+  policies?: AgentPolicyRecord[];
+}
+
+interface PipelineRunsResponse {
+  runs?: PipelineRunWire[];
+}
+
+interface PipelineMetricsResponse {
+  metrics?: PipelineMetrics[];
+}
+
+interface PendingReviewsResponse {
+  items?: ReviewItem[];
+}
+
+interface EpisodesResponse {
+  episodes?: EpisodeRecord[];
+}
+
+interface PoliciesResponse {
+  policies?: LearnedPolicy[];
+}
+
+interface ReflectionResponse {
+  triggered: boolean;
+}
+
+interface WorkflowTemplatesResponse {
+  templates?: WorkflowTemplate[];
+}
+
+interface WorkflowTemplateVersionsResponse {
+  versions?: WorkflowTemplateVersion[];
+}
+
+interface InstantiateTemplateResponse {
+  pipelineId: string;
+}
+
 // ─── Agent Registry ──────────────────────────────────────────────────
 
-export async function listAgents(tenantId = 'default'): Promise<AgentRegistration[]> {
-  const { data } = await client.get('/api/v1/agents', { params: { tenantId } });
+export async function listAgents(
+  tenantId = "default",
+): Promise<AgentRegistration[]> {
+  const { data } = await client.get<AgentListResponse>("/api/v1/agents", {
+    params: { tenantId },
+  });
   return data.agents ?? [];
 }
 
-export async function getAgent(agentId: string, tenantId = 'default'): Promise<AgentRegistration> {
-  const { data } = await client.get(`/api/v1/agents/${agentId}`, { params: { tenantId } });
+export async function getAgent(
+  agentId: string,
+  tenantId = "default",
+): Promise<AgentRegistration> {
+  const { data } = await client.get<AgentRegistration>(
+    `/api/v1/agents/${agentId}`,
+    {
+      params: { tenantId },
+    },
+  );
   return data;
 }
 
 export async function getAgentMemory(
   agentId: string,
-  tenantId = 'default',
+  tenantId = "default",
 ): Promise<{
   agentId: string;
   tenantId: string;
@@ -112,7 +209,12 @@ export async function getAgentMemory(
   byType: Record<string, number>;
   timestamp: string;
 }> {
-  const { data } = await client.get(`/api/v1/agents/${agentId}/memory`, { params: { tenantId } });
+  const { data } = await client.get<AgentMemoryResponse>(
+    `/api/v1/agents/${agentId}/memory`,
+    {
+      params: { tenantId },
+    },
+  );
   return data;
 }
 
@@ -120,7 +222,7 @@ export interface AgentEpisodeRecord {
   id: string;
   agentId: string;
   tenantId: string;
-  type: 'EPISODIC';
+  type: "EPISODIC";
   input?: string;
   output?: string;
   outcome?: string;
@@ -133,7 +235,7 @@ export interface AgentFact {
   id: string;
   agentId: string;
   tenantId: string;
-  type: 'SEMANTIC';
+  type: "SEMANTIC";
   subject?: string;
   predicate?: string;
   object?: string;
@@ -147,7 +249,7 @@ export interface AgentPolicyRecord {
   id: string;
   agentId: string;
   tenantId: string;
-  type: 'PROCEDURAL';
+  type: "PROCEDURAL";
   name?: string;
   description?: string;
   confidence?: number;
@@ -159,69 +261,109 @@ export interface AgentPolicyRecord {
 
 export async function getAgentEpisodes(
   agentId: string,
-  tenantId = 'default',
+  tenantId = "default",
   limit = 50,
 ): Promise<AgentEpisodeRecord[]> {
-  const { data } = await client.get(`/api/v1/agents/${agentId}/memory/episodes`, {
-    params: { tenantId, limit },
-  });
+  const { data } = await client.get<AgentEpisodesResponse>(
+    `/api/v1/agents/${agentId}/memory/episodes`,
+    {
+      params: { tenantId, limit },
+    },
+  );
   return data.episodes ?? [];
 }
 
 export async function getAgentFacts(
   agentId: string,
-  tenantId = 'default',
+  tenantId = "default",
   limit = 100,
 ): Promise<AgentFact[]> {
-  const { data } = await client.get(`/api/v1/agents/${agentId}/memory/facts`, {
-    params: { tenantId, limit },
-  });
+  const { data } = await client.get<AgentFactsResponse>(
+    `/api/v1/agents/${agentId}/memory/facts`,
+    {
+      params: { tenantId, limit },
+    },
+  );
   return data.facts ?? [];
 }
 
 export async function getAgentPolicies(
   agentId: string,
-  tenantId = 'default',
+  tenantId = "default",
   limit = 50,
 ): Promise<AgentPolicyRecord[]> {
-  const { data } = await client.get(`/api/v1/agents/${agentId}/memory/policies`, {
-    params: { tenantId, limit },
-  });
+  const { data } = await client.get<AgentPoliciesResponse>(
+    `/api/v1/agents/${agentId}/memory/policies`,
+    {
+      params: { tenantId, limit },
+    },
+  );
   return data.policies ?? [];
 }
 
-export async function deregisterAgent(agentId: string, tenantId = 'default'): Promise<void> {
+export async function deregisterAgent(
+  agentId: string,
+  tenantId = "default",
+): Promise<void> {
   await client.delete(`/api/v1/agents/${agentId}`, { params: { tenantId } });
 }
 
 // ─── Monitoring ──────────────────────────────────────────────────────
 
 export async function listPipelineRuns(
-  tenantId = 'default',
+  tenantId = "default",
   limit = 20,
 ): Promise<PipelineRun[]> {
-  const { data } = await client.get('/api/v1/runs', { params: { tenantId, limit } });
-  return data.runs ?? [];
+  const { data } = await client.get<PipelineRunsResponse>("/api/v1/runs", {
+    params: { tenantId, limit },
+  });
+  return (data.runs ?? []).map((run: PipelineRunWire) =>
+    normalizePipelineRun(run),
+  );
 }
 
-export async function getPipelineMetrics(tenantId = 'default'): Promise<PipelineMetrics[]> {
-  const { data } = await client.get('/api/v1/metrics/pipelines', { params: { tenantId } });
+export async function getPipelineMetrics(
+  tenantId = "default",
+): Promise<PipelineMetrics[]> {
+  const { data } = await client.get<PipelineMetricsResponse>(
+    "/api/v1/metrics/pipelines",
+    {
+      params: { tenantId },
+    },
+  );
   return data.metrics ?? [];
 }
 
-export async function cancelRun(runId: string, tenantId = 'default'): Promise<void> {
-  await client.post(`/api/v1/runs/${runId}/cancel`, null, { params: { tenantId } });
+export async function cancelRun(
+  runId: string,
+  tenantId = "default",
+): Promise<void> {
+  await client.post(`/api/v1/runs/${runId}/cancel`, null, {
+    params: { tenantId },
+  });
 }
 
-export async function getRunDetail(runId: string, tenantId = 'default'): Promise<PipelineRun> {
-  const { data } = await client.get(`/api/v1/runs/${runId}`, { params: { tenantId } });
-  return data;
+export async function getRunDetail(
+  runId: string,
+  tenantId = "default",
+): Promise<PipelineRun> {
+  const { data } = await client.get<PipelineRunWire>(`/api/v1/runs/${runId}`, {
+    params: { tenantId },
+  });
+  return normalizePipelineRun(data);
 }
 
 // ─── HITL Queue ──────────────────────────────────────────────────────
 
-export async function listPendingReviews(tenantId = 'default'): Promise<ReviewItem[]> {
-  const { data } = await client.get('/api/v1/hitl/pending', { params: { tenantId } });
+export async function listPendingReviews(
+  tenantId = "default",
+): Promise<ReviewItem[]> {
+  const { data } = await client.get<PendingReviewsResponse>(
+    "/api/v1/hitl/pending",
+    {
+      params: { tenantId },
+    },
+  );
   return data.items ?? [];
 }
 
@@ -229,8 +371,8 @@ export async function approveReview(
   reviewId: string,
   options: { note?: string; tenantId?: string } = {},
 ): Promise<ReviewItem> {
-  const { note = '', tenantId = 'default' } = options;
-  const { data } = await client.post(
+  const { note = "", tenantId = "default" } = options;
+  const { data } = await client.post<ReviewItem>(
     `/api/v1/hitl/${reviewId}/approve`,
     { note },
     { params: { tenantId } },
@@ -242,8 +384,8 @@ export async function rejectReview(
   reviewId: string,
   options: { reason?: string; tenantId?: string } = {},
 ): Promise<ReviewItem> {
-  const { reason = '', tenantId = 'default' } = options;
-  const { data } = await client.post(
+  const { reason = "", tenantId = "default" } = options;
+  const { data } = await client.post<ReviewItem>(
     `/api/v1/hitl/${reviewId}/reject`,
     { reason },
     { params: { tenantId } },
@@ -254,34 +396,50 @@ export async function rejectReview(
 // ─── Learning ────────────────────────────────────────────────────────
 
 export async function listEpisodes(
-  tenantId = 'default',
+  tenantId = "default",
   limit = 50,
 ): Promise<EpisodeRecord[]> {
-  const { data } = await client.get('/api/v1/learning/episodes', { params: { tenantId, limit } });
+  const { data } = await client.get<EpisodesResponse>(
+    "/api/v1/learning/episodes",
+    {
+      params: { tenantId, limit },
+    },
+  );
   return data.episodes ?? [];
 }
 
-export async function listPolicies(tenantId = 'default'): Promise<LearnedPolicy[]> {
-  const { data } = await client.get('/api/v1/learning/policies', { params: { tenantId } });
+export async function listPolicies(
+  tenantId = "default",
+): Promise<LearnedPolicy[]> {
+  const { data } = await client.get<PoliciesResponse>(
+    "/api/v1/learning/policies",
+    {
+      params: { tenantId },
+    },
+  );
   return data.policies ?? [];
 }
 
 export async function approvePolicy(
   policyId: string,
-  tenantId = 'default',
+  tenantId = "default",
 ): Promise<LearnedPolicy> {
-  const { data } = await client.post(`/api/v1/learning/policies/${policyId}/approve`, null, {
-    params: { tenantId },
-  });
+  const { data } = await client.post<LearnedPolicy>(
+    `/api/v1/learning/policies/${policyId}/approve`,
+    null,
+    {
+      params: { tenantId },
+    },
+  );
   return data;
 }
 
 export async function rejectPolicy(
   policyId: string,
   reason: string,
-  tenantId = 'default',
+  tenantId = "default",
 ): Promise<LearnedPolicy> {
-  const { data } = await client.post(
+  const { data } = await client.post<LearnedPolicy>(
     `/api/v1/learning/policies/${policyId}/reject`,
     { reason },
     { params: { tenantId } },
@@ -289,8 +447,16 @@ export async function rejectPolicy(
   return data;
 }
 
-export async function triggerReflection(tenantId = 'default'): Promise<{ triggered: boolean }> {
-  const { data } = await client.post('/api/v1/learning/reflect', null, { params: { tenantId } });
+export async function triggerReflection(
+  tenantId = "default",
+): Promise<{ triggered: boolean }> {
+  const { data } = await client.post<ReflectionResponse>(
+    "/api/v1/learning/reflect",
+    null,
+    {
+      params: { tenantId },
+    },
+  );
   return data;
 }
 
@@ -315,36 +481,49 @@ export interface WorkflowTemplateVersion {
   changelog: string;
 }
 
-export async function listWorkflowTemplates(tenantId = 'default'): Promise<WorkflowTemplate[]> {
-  const { data } = await client.get('/api/v1/workflows/templates', { params: { tenantId } });
+export async function listWorkflowTemplates(
+  tenantId = "default",
+): Promise<WorkflowTemplate[]> {
+  const { data } = await client.get<WorkflowTemplatesResponse>(
+    "/api/v1/workflows/templates",
+    {
+      params: { tenantId },
+    },
+  );
   return data.templates ?? [];
 }
 
 export async function getWorkflowTemplate(
   templateId: string,
-  tenantId = 'default',
+  tenantId = "default",
 ): Promise<WorkflowTemplate> {
-  const { data } = await client.get(`/api/v1/workflows/templates/${templateId}`, {
-    params: { tenantId },
-  });
+  const { data } = await client.get<WorkflowTemplate>(
+    `/api/v1/workflows/templates/${templateId}`,
+    {
+      params: { tenantId },
+    },
+  );
   return data;
 }
 
 export async function getWorkflowTemplateVersions(
   templateId: string,
-  tenantId = 'default',
+  tenantId = "default",
 ): Promise<WorkflowTemplateVersion[]> {
-  const { data } = await client.get(`/api/v1/workflows/templates/${templateId}/versions`, {
-    params: { tenantId },
-  });
+  const { data } = await client.get<WorkflowTemplateVersionsResponse>(
+    `/api/v1/workflows/templates/${templateId}/versions`,
+    {
+      params: { tenantId },
+    },
+  );
   return data.versions ?? [];
 }
 
 export async function instantiateTemplate(
   templateId: string,
-  tenantId = 'default',
+  tenantId = "default",
 ): Promise<{ pipelineId: string }> {
-  const { data } = await client.post(
+  const { data } = await client.post<InstantiateTemplateResponse>(
     `/api/v1/workflows/templates/${templateId}/instantiate`,
     null,
     { params: { tenantId } },

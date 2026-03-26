@@ -3,6 +3,8 @@ package com.ghatana.aep;
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.aep.event.InMemoryEventCloud;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +34,8 @@ import java.util.function.Consumer;
  * @since 1.0.0
  */
 public final class Aep {
+
+    private static final Logger logger = LoggerFactory.getLogger(Aep.class);
 
     private Aep() {
         // Utility class - no instantiation
@@ -95,21 +99,23 @@ public final class Aep {
         int maxPipelinesPerTenant,
         boolean enableMetrics,
         boolean enableTracing,
+        double anomalyThreshold,
         Map<String, Object> customConfig
     ) {
         public AepConfig {
             instanceId = instanceId != null ? instanceId : UUID.randomUUID().toString();
             if (workerThreads <= 0) workerThreads = Runtime.getRuntime().availableProcessors();
             if (maxPipelinesPerTenant <= 0) maxPipelinesPerTenant = 100;
+            if (anomalyThreshold <= 0.0 || anomalyThreshold >= 1.0) anomalyThreshold = 0.9;
             customConfig = customConfig != null ? Map.copyOf(customConfig) : Map.of();
         }
 
         public static AepConfig defaults() {
-            return new AepConfig(null, 0, 100, true, false, Map.of());
+            return new AepConfig(null, 0, 100, true, false, 0.9, Map.of());
         }
 
         public static AepConfig forTesting() {
-            return new AepConfig("test-instance", 1, 10, false, false, Map.of());
+            return new AepConfig("test-instance", 1, 10, false, false, 0.9, Map.of());
         }
 
         public static Builder builder() {
@@ -122,6 +128,7 @@ public final class Aep {
             private int maxPipelinesPerTenant = 100;
             private boolean enableMetrics = true;
             private boolean enableTracing = false;
+            private double anomalyThreshold = 0.9;
             private Map<String, Object> customConfig = Map.of();
 
             public Builder instanceId(String instanceId) {
@@ -149,6 +156,11 @@ public final class Aep {
                 return this;
             }
 
+            public Builder anomalyThreshold(double anomalyThreshold) {
+                this.anomalyThreshold = anomalyThreshold;
+                return this;
+            }
+
             public Builder customConfig(Map<String, Object> config) {
                 this.customConfig = config;
                 return this;
@@ -156,7 +168,7 @@ public final class Aep {
 
             public AepConfig build() {
                 return new AepConfig(instanceId, workerThreads, maxPipelinesPerTenant,
-                    enableMetrics, enableTracing, customConfig);
+                    enableMetrics, enableTracing, anomalyThreshold, customConfig);
             }
         }
     }
@@ -171,6 +183,7 @@ public final class Aep {
         private final AepConfig config;
         private final Map<String, Map<String, AepEngine.Pattern>> patternsByTenant = new ConcurrentHashMap<>();
         private final Map<String, List<SubscriptionEntry>> subscriptionsByTenant = new ConcurrentHashMap<>();
+        private final Map<String, Map<String, Map<String, Integer>>> sequenceProgressByTenant = new ConcurrentHashMap<>();
         private volatile boolean closed = false;
 
         DefaultAepEngine(EventCloud eventCloud, AepConfig config) {
@@ -183,20 +196,33 @@ public final class Aep {
             checkNotClosed();
             Objects.requireNonNull(event, "event must not be null");
             String eventId = UUID.randomUUID().toString();
+            AepEngine.Event normalizedEvent = resolveConsent(resolveIdentity(event));
+
+            if (!hasValidConsent(normalizedEvent)) {
+                return Promise.of(AepEngine.ProcessingResult.skipped(
+                    eventId,
+                    "Event rejected by consent policy"
+                ));
+            }
             
             // Process through registered patterns
             List<AepEngine.Detection> detections = new ArrayList<>();
             Map<String, AepEngine.Pattern> patterns = patternsByTenant.getOrDefault(tenantId, Map.of());
             
             for (AepEngine.Pattern pattern : patterns.values()) {
-                Optional<AepEngine.Detection> detection = matchPattern(pattern, event);
+                Optional<AepEngine.Detection> detection = matchPattern(tenantId, pattern, normalizedEvent);
                 detection.ifPresent(detections::add);
             }
             
             // Notify subscribers
             notifySubscribers(tenantId, detections);
-            
-            return Promise.of(AepEngine.ProcessingResult.success(eventId, detections));
+
+            Map<String, Object> metadata = new LinkedHashMap<>();
+            metadata.put("processed", true);
+            metadata.put("consentStatus", normalizedEvent.consentContext().status().name());
+            normalizedEvent.identityContext().stitchedId().ifPresent(stitchedId -> metadata.put("stitchedId", stitchedId));
+
+            return Promise.of(new AepEngine.ProcessingResult(eventId, true, detections, metadata));
         }
 
         @Override
@@ -274,11 +300,12 @@ public final class Aep {
             checkNotClosed();
             List<AepEngine.Anomaly> anomalies = new ArrayList<>();
             for (AepEngine.Event event : events) {
-                if (isAnomalous(event)) {
+                if (isAnomalous(event, config.anomalyThreshold())) {
+                    double score = ((Number) event.payload().getOrDefault("anomaly_score", config.anomalyThreshold())).doubleValue();
                     anomalies.add(new AepEngine.Anomaly(
                         UUID.randomUUID().toString(),
                         "THRESHOLD_EXCEEDED",
-                        0.85,
+                        score,
                         Map.of("event_type", event.type())
                     ));
                 }
@@ -320,9 +347,14 @@ public final class Aep {
             }
         }
 
-        private Optional<AepEngine.Detection> matchPattern(AepEngine.Pattern pattern, AepEngine.Event event) {
-            // Simple pattern matching - production would use advanced detection
-            return Optional.empty();
+        private Optional<AepEngine.Detection> matchPattern(String tenantId, AepEngine.Pattern pattern, AepEngine.Event event) {
+            return switch (pattern.type()) {
+                case THRESHOLD -> matchThreshold(pattern, event);
+                case ANOMALY -> matchAnomaly(pattern, event);
+                case SEQUENCE -> matchSequence(tenantId, pattern, event);
+                case CORRELATION -> matchCorrelation(pattern, event);
+                case CUSTOM -> matchCustom(pattern, event);
+            };
         }
 
         private void notifySubscribers(String tenantId, List<AepEngine.Detection> detections) {
@@ -333,16 +365,268 @@ public final class Aep {
                         try {
                             sub.handler.accept(detection);
                         } catch (Exception e) {
-                            // Log and continue
+                            logger.warn("Subscriber failed for tenant={}, patternId={}: {}",
+                                tenantId, detection.patternId(), e.getMessage(), e);
                         }
                     }
                 }
             }
         }
 
-        private boolean isAnomalous(AepEngine.Event event) {
-            return event.payload().containsKey("anomaly_score") &&
-                ((Number) event.payload().get("anomaly_score")).doubleValue() > 0.9;
+        private AepEngine.Event resolveIdentity(AepEngine.Event event) {
+            String userId = firstNonBlank(
+                event.headers().get("x-user-id"),
+                asString(event.payload().get("userId")),
+                asString(event.payload().get("user_id"))
+            );
+            String anonymousId = firstNonBlank(
+                event.headers().get("x-anonymous-id"),
+                asString(event.payload().get("anonymousId")),
+                asString(event.payload().get("anonymous_id"))
+            );
+            String sessionId = firstNonBlank(
+                event.headers().get("x-session-id"),
+                asString(event.payload().get("sessionId")),
+                asString(event.payload().get("session_id"))
+            );
+            String stitchedId = firstNonBlank(userId, anonymousId, sessionId);
+
+            return event.withIdentityContext(new AepEngine.IdentityContext(
+                Optional.ofNullable(userId),
+                Optional.ofNullable(anonymousId),
+                Optional.ofNullable(sessionId),
+                Optional.ofNullable(stitchedId)
+            ));
+        }
+
+        private AepEngine.Event resolveConsent(AepEngine.Event event) {
+            AepEngine.ConsentStatus status = parseConsentStatus(firstNonBlank(
+                event.headers().get("x-consent-status"),
+                asString(event.payload().get("consentStatus")),
+                asNestedString(event.payload(), "consent", "status")
+            ));
+            AepEngine.RetentionPolicy retentionPolicy = parseRetentionPolicy(firstNonBlank(
+                event.headers().get("x-retention-policy"),
+                asString(event.payload().get("retentionPolicy")),
+                asNestedString(event.payload(), "consent", "retentionPolicy")
+            ));
+            List<String> allowedPurposes = allowedPurposes(event);
+
+            return event.withConsentContext(new AepEngine.ConsentContext(status, retentionPolicy, allowedPurposes));
+        }
+
+        private boolean hasValidConsent(AepEngine.Event event) {
+            AepEngine.ConsentContext consent = event.consentContext();
+            if (consent.status() == AepEngine.ConsentStatus.DENIED ||
+                consent.status() == AepEngine.ConsentStatus.EXPIRED) {
+                return false;
+            }
+            return consent.allowedPurposes().isEmpty() || consent.allowedPurposes().contains("event_processing");
+        }
+
+        private Optional<AepEngine.Detection> matchThreshold(AepEngine.Pattern pattern, AepEngine.Event event) {
+            String field = asString(pattern.config().get("field"));
+            Number threshold = asNumber(pattern.config().get("threshold"));
+            Number value = asNumber(field != null ? event.payload().get(field) : null);
+
+            if (field == null || threshold == null || value == null || value.doubleValue() <= threshold.doubleValue()) {
+                return Optional.empty();
+            }
+
+            return Optional.of(buildDetection(pattern, Map.of(
+                "field", field,
+                "value", value,
+                "threshold", threshold
+            ), 1.0));
+        }
+
+        private Optional<AepEngine.Detection> matchAnomaly(AepEngine.Pattern pattern, AepEngine.Event event) {
+            Number overrideThreshold = asNumber(pattern.config().get("threshold"));
+            double threshold = overrideThreshold != null ? overrideThreshold.doubleValue() : config.anomalyThreshold();
+            if (!isAnomalous(event, threshold)) {
+                return Optional.empty();
+            }
+            return Optional.of(buildDetection(pattern, Map.of(
+                "eventType", event.type(),
+                "threshold", threshold,
+                "score", event.payload().get("anomaly_score")
+            ), 0.95));
+        }
+
+        private Optional<AepEngine.Detection> matchSequence(String tenantId, AepEngine.Pattern pattern, AepEngine.Event event) {
+            List<String> expectedTypes = asStringList(pattern.config().get("expectedTypes"));
+            if (expectedTypes.isEmpty()) {
+                return Optional.empty();
+            }
+
+            String correlationKey = resolveCorrelationKey(pattern, event);
+            Map<String, Map<String, Integer>> tenantState = sequenceProgressByTenant
+                .computeIfAbsent(tenantId, ignored -> new ConcurrentHashMap<>());
+            Map<String, Integer> patternState = tenantState
+                .computeIfAbsent(pattern.id(), ignored -> new ConcurrentHashMap<>());
+
+            int progress = patternState.getOrDefault(correlationKey, 0);
+            String nextExpected = expectedTypes.get(progress);
+            if (nextExpected.equals(event.type())) {
+                progress++;
+            } else if (expectedTypes.get(0).equals(event.type())) {
+                progress = 1;
+            } else {
+                patternState.remove(correlationKey);
+                return Optional.empty();
+            }
+
+            if (progress >= expectedTypes.size()) {
+                patternState.remove(correlationKey);
+                return Optional.of(buildDetection(pattern, Map.of(
+                    "sequence", expectedTypes,
+                    "correlationKey", correlationKey
+                ), 0.9));
+            }
+
+            patternState.put(correlationKey, progress);
+            return Optional.empty();
+        }
+
+        private Optional<AepEngine.Detection> matchCorrelation(AepEngine.Pattern pattern, AepEngine.Event event) {
+            String eventType = asString(pattern.config().get("eventType"));
+            List<String> requiredFields = asStringList(pattern.config().get("requiredFields"));
+            if (eventType != null && !eventType.equals(event.type())) {
+                return Optional.empty();
+            }
+            if (requiredFields.stream().anyMatch(field -> !event.payload().containsKey(field))) {
+                return Optional.empty();
+            }
+            return Optional.of(buildDetection(pattern, Map.of(
+                "requiredFields", requiredFields,
+                "correlationKey", resolveCorrelationKey(pattern, event)
+            ), 0.85));
+        }
+
+        private Optional<AepEngine.Detection> matchCustom(AepEngine.Pattern pattern, AepEngine.Event event) {
+            String expectedType = asString(pattern.config().get("eventType"));
+            if (expectedType != null && !expectedType.equals(event.type())) {
+                return Optional.empty();
+            }
+
+            Object matches = pattern.config().get("payloadMatches");
+            if (matches instanceof Map<?, ?> map) {
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    String key = String.valueOf(entry.getKey());
+                    if (!Objects.equals(event.payload().get(key), entry.getValue())) {
+                        return Optional.empty();
+                    }
+                }
+            }
+
+            return Optional.of(buildDetection(pattern, Map.of("eventType", event.type()), 0.8));
+        }
+
+        private AepEngine.Detection buildDetection(AepEngine.Pattern pattern, Map<String, Object> details,
+                                                   double confidence) {
+            return new AepEngine.Detection(
+                pattern.id(),
+                pattern.name(),
+                confidence,
+                details,
+                java.time.Instant.now()
+            );
+        }
+
+        private boolean isAnomalous(AepEngine.Event event, double threshold) {
+            Number score = asNumber(event.payload().get("anomaly_score"));
+            return score != null && score.doubleValue() > threshold;
+        }
+
+        private List<String> allowedPurposes(AepEngine.Event event) {
+            Object payloadPurposes = event.payload().get("allowedPurposes");
+            if (payloadPurposes instanceof List<?> list) {
+                return list.stream().map(String::valueOf).map(String::trim).filter(s -> !s.isBlank()).toList();
+            }
+            String headerPurposes = event.headers().get("x-allowed-purposes");
+            if (headerPurposes == null || headerPurposes.isBlank()) {
+                return List.of();
+            }
+            return Arrays.stream(headerPurposes.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .toList();
+        }
+
+        private String resolveCorrelationKey(AepEngine.Pattern pattern, AepEngine.Event event) {
+            String correlationField = asString(pattern.config().get("correlationField"));
+            if (correlationField != null) {
+                String fieldValue = asString(event.payload().get(correlationField));
+                if (fieldValue != null && !fieldValue.isBlank()) {
+                    return fieldValue;
+                }
+            }
+            return event.identityContext().stitchedId().orElse("global");
+        }
+
+        private static String asString(Object value) {
+            return value != null ? String.valueOf(value) : null;
+        }
+
+        private static String asNestedString(Map<String, Object> payload, String parentKey, String childKey) {
+            Object parent = payload.get(parentKey);
+            if (parent instanceof Map<?, ?> map) {
+                Object child = map.get(childKey);
+                return child != null ? String.valueOf(child) : null;
+            }
+            return null;
+        }
+
+        private static Number asNumber(Object value) {
+            if (value instanceof Number number) {
+                return number;
+            }
+            if (value instanceof String text) {
+                try {
+                    return Double.parseDouble(text);
+                } catch (NumberFormatException ignored) {
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        private static List<String> asStringList(Object value) {
+            if (value instanceof List<?> list) {
+                return list.stream().map(String::valueOf).toList();
+            }
+            return List.of();
+        }
+
+        private static String firstNonBlank(String... values) {
+            for (String value : values) {
+                if (value != null && !value.isBlank()) {
+                    return value;
+                }
+            }
+            return null;
+        }
+
+        private static AepEngine.ConsentStatus parseConsentStatus(String rawValue) {
+            if (rawValue == null || rawValue.isBlank()) {
+                return AepEngine.ConsentStatus.UNKNOWN;
+            }
+            try {
+                return AepEngine.ConsentStatus.valueOf(rawValue.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ignored) {
+                return AepEngine.ConsentStatus.UNKNOWN;
+            }
+        }
+
+        private static AepEngine.RetentionPolicy parseRetentionPolicy(String rawValue) {
+            if (rawValue == null || rawValue.isBlank()) {
+                return AepEngine.RetentionPolicy.STANDARD;
+            }
+            try {
+                return AepEngine.RetentionPolicy.valueOf(rawValue.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ignored) {
+                return AepEngine.RetentionPolicy.STANDARD;
+            }
         }
 
         private record SubscriptionEntry(String patternId, Consumer<AepEngine.Detection> handler) {}

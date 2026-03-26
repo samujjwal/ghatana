@@ -126,14 +126,34 @@ public class ValidationServiceImpl implements ValidationService {
     }
     
     private Promise<LifecycleValidationResult> runPolicyValidation(ShapeSpec spec, PolicySpec policy) {
-        return Promise.of(
-            LifecycleValidationResult.builder()
-                    .passed(true)
-                    .issues(List.of())
-                    .validatedAt(Instant.now())
-                    .validatorVersion("1.0.0")
-                    .build()
-        );
+        Map<String, Object> context = new java.util.HashMap<>();
+        context.put("specId", spec.id() != null ? spec.id() : "unknown");
+        context.put("tenantId", spec.tenantId() != null ? spec.tenantId() : "unknown");
+        context.put("entityCount", spec.domainModel() != null ? spec.domainModel().entities().size() : 0);
+        context.put("workflowCount", spec.workflows() != null ? spec.workflows().size() : 0);
+        context.put("policyId", policy.id());
+        
+        return policyEngine.evaluate(policy.id(), context)
+                .map(passed -> {
+                    List<ValidationIssue> issues = new ArrayList<>();
+                    if (!passed) {
+                        issues.add(ValidationIssue.builder()
+                                .id("policy-001")
+                                .severity("error")
+                                .category("policy")
+                                .message("Policy '" + policy.name() + "' validation failed")
+                                .location("spec")
+                                .suggestions(List.of("Review requirements for policy: " + policy.id()))
+                                .blocking(true)
+                                .build());
+                    }
+                    return LifecycleValidationResult.builder()
+                            .passed(passed)
+                            .issues(issues)
+                            .validatedAt(Instant.now())
+                            .validatorVersion("1.0.0")
+                            .build();
+                });
     }
     
     private Promise<List<ValidationIssue>> validateSchema(ShapeSpec spec) {

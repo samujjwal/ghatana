@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.workflow.http;
+package com.ghatana.yappc.domain.workflow.http;
 
 import com.ghatana.platform.http.server.servlet.RoutingServlet;
 import io.activej.http.HttpMethod;
