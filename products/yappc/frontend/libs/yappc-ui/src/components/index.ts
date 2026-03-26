@@ -222,13 +222,36 @@ export * as DevSecOps from './components/DevSecOps';
 export { ThemeProvider, ThemeContext, useThemeContext } from '@yappc/theme';
 export { ThemeProvider as defaultThemeProvider } from '@yappc/theme';
 export { theme, lightTheme, darkTheme } from '@yappc/theme';
-export type { ThemeContextType, ThemeMode, ThemeProviderProps } from '@yappc/theme';
+export type {
+  ThemeContextType,
+  ThemeMode,
+  ThemeProviderProps,
+} from '@yappc/theme';
 
 // Command Palette
-export { CommandPalette, useCommandPalette, ShortcutHelper, useKeyboardShortcuts, shortcutRegistry } from '@yappc/ui/shortcuts';
+export {
+  CommandPalette,
+  useCommandPalette,
+  ShortcutHelper,
+  useKeyboardShortcuts,
+  shortcutRegistry,
+} from '@yappc/ui/shortcuts';
 export { CommandPalette as defaultCommandPalette } from '@yappc/ui/shortcuts';
-export type { Command, CommandPaletteProps, ShortcutHelperProps, KeyboardShortcut, ShortcutContext, UseKeyboardShortcutsOptions, UseKeyboardShortcutsReturn } from '@yappc/ui/shortcuts';
-export { Breadcrumb, TabNavigation, StageNavigation, stageNavigationStyles } from '@yappc/ui/navigation-ui';
+export type {
+  Command,
+  CommandPaletteProps,
+  ShortcutHelperProps,
+  KeyboardShortcut,
+  ShortcutContext,
+  UseKeyboardShortcutsOptions,
+  UseKeyboardShortcutsReturn,
+} from '@yappc/ui/shortcuts';
+export {
+  Breadcrumb,
+  TabNavigation,
+  StageNavigation,
+  stageNavigationStyles,
+} from '@yappc/ui/navigation-ui';
 export type {
   BreadcrumbItemType,
   BreadcrumbProps,
@@ -267,15 +290,19 @@ export type {
 } from './patterns/ResponsiveLayout';
 
 // Select Components
-export {
-  SelectTailwind,
-  SelectOption,
-  SelectGroup,
+export { SelectTailwind, SelectOption, SelectGroup } from '@yappc/ui/base-ui';
+export type {
+  SelectProps as SelectTailwindProps,
+  SelectOptionProps,
+  SelectGroupProps,
 } from '@yappc/ui/base-ui';
-export type { SelectProps as SelectTailwindProps, SelectOptionProps, SelectGroupProps } from '@yappc/ui/base-ui';
 export { Popover, PopoverTrigger, PopoverClose } from '@yappc/ui/base-ui';
 export type { PopoverProps, PopoverPlacement } from '@yappc/ui/base-ui';
-export { StoryCard, VelocityChart, BurndownChart } from '@yappc/ui/development-ui';
+export {
+  StoryCard,
+  VelocityChart,
+  BurndownChart,
+} from '@yappc/ui/development-ui';
 export type {
   Story,
   StoryType,
@@ -351,11 +378,7 @@ export {
   useGlobalStateStatistics,
 } from '@yappc/state';
 export { StateManager } from '@yappc/state';
-export type {
-  AtomKey,
-  AtomMetadata,
-  StateManagerConfig,
-} from '@yappc/state';
+export type { AtomKey, AtomMetadata, StateManagerConfig } from '@yappc/state';
 export {
   configQueryKeys,
   usePersonas,
@@ -386,10 +409,7 @@ export {
   useAppTheme,
   LayerPriority,
 } from '@yappc/theme';
-export type {
-  ThemeLayer,
-  MultiLayerThemeContextValue,
-} from '@yappc/theme';
+export type { ThemeLayer, MultiLayerThemeContextValue } from '@yappc/theme';
 
 // YAPPC-specific utilities
 export { PlatformWrapper } from './utils/PlatformWrapper';
@@ -509,3 +529,23 @@ console.warn(
   '[DEPRECATED] @ghatana/yappc-ui is deprecated. Use @yappc/ui instead. ' +
     'See: docs/NAMING_CONVENTIONS.md'
 );
+
+// ============================================================================
+// YAPPC DOMAIN COMPONENTS
+// ============================================================================
+
+// Workspace Components
+export * from './workspace';
+
+// Project Components
+export * from './project';
+
+// Canvas Wrapper Components (lazy-loaded @yappc/canvas integration)
+export { CanvasEditor, CanvasVersionHistory } from './canvas';
+export type { CanvasEditorProps, CanvasVersionHistoryProps } from './canvas';
+
+// AI Copilot Components
+export * from './ai';
+
+// Layout Shell Components (AppShell, Header, Sidebar)
+export * from './layout';

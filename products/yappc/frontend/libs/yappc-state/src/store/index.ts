@@ -41,7 +41,11 @@ export {
   mobileOfflineSettingsAtom,
   mobileSystemThemeAtom,
 } from './mobile/atoms';
-export type { MobileSettings, MobileThemePreference, MobilePlatform } from './mobile/atoms';
+export type {
+  MobileSettings,
+  MobileThemePreference,
+  MobilePlatform,
+} from './mobile/atoms';
 
 // Mobile-specific hooks
 export {
@@ -57,6 +61,15 @@ export {
   useMobileOfflineSettings,
   useSetMobileOfflineSettings,
 } from './mobile/hooks';
+
+// Workspace atoms
+export * from './workspaceAtoms';
+
+// Project atoms
+export * from './projectAtoms';
+
+// AI atoms
+export * from './aiAtoms';
 
 // Cross-tab synchronization
 export {

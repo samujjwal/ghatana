@@ -40,3 +40,9 @@ export * from './templates';
 
 // Validation System (Day 39)
 export * from './validation';
+
+// Canvas wrapper components (YAPPC integration)
+export { CanvasEditor } from './CanvasEditor';
+export type { CanvasEditorProps } from './CanvasEditor';
+export { CanvasVersionHistory } from './CanvasVersionHistory';
+export type { CanvasVersionHistoryProps } from './CanvasVersionHistory';

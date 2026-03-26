@@ -1,0 +1,94 @@
+# Canvas Versioning GraphQL Schema
+#
+# Extends the root schema with version-history queries and mutations for
+# CanvasDocument entities.
+#
+# @doc.type module
+# @doc.purpose GraphQL types and operations for canvas versioning
+# @doc.layer product
+# @doc.pattern GraphQL Schema
+
+# ============================================================================
+# Types
+# ============================================================================
+
+type CanvasVersion {
+  id: ID!
+
+  """
+  Canvas document this version belongs to
+  """
+  canvasId: ID!
+
+  """
+  Monotonically-increasing version number within a canvas
+  """
+  version: Int!
+
+  """
+  Serialised canvas content at the time of this version
+  """
+  content: JSON!
+
+  """
+  How this version was created (MANUAL_SAVE, AUTO_SAVE, RESTORE, MERGE)
+  """
+  changeType: String!
+
+  """
+  User ID who triggered the save
+  """
+  changedBy: String
+
+  """
+  Human-readable change summary
+  """
+  changeSummary: String
+
+  createdAt: DateTime!
+}
+
+# ============================================================================
+# Queries
+# ============================================================================
+
+extend type Query {
+  """
+  List all version snapshots for a canvas document, newest first
+  """
+  canvasVersions(canvasId: ID!): [CanvasVersion!]!
+
+  """
+  Get a specific version of a canvas document
+  """
+  canvasVersion(canvasId: ID!, version: Int!): CanvasVersion
+}
+
+# ============================================================================
+# Mutations
+# ============================================================================
+
+extend type Mutation {
+  """
+  Manually save the current canvas state as a named version snapshot.
+  Returns the newly-created CanvasVersion.
+  """
+  saveCanvasVersion(
+    canvasId: ID!
+    content: JSON!
+    changeSummary: String
+  ): CanvasVersion!
+
+  """
+  Restore a canvas document to a previously saved version.
+  Creates a RESTORE snapshot so history is preserved.
+  Returns the RESTORE snapshot.
+  """
+  restoreCanvasVersion(canvasId: ID!, version: Int!): CanvasVersion!
+
+  """
+  Delete version history older than the most recent N snapshots.
+  Returns the number of deleted snapshots.
+  """
+  pruneCanvasVersionHistory(canvasId: ID!, keepCount: Int!): Int!
+}
