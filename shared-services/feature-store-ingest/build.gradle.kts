@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.activej.promise)
     implementation(libs.activej.datastream)
     implementation(libs.activej.inject)
+    implementation(libs.activej.http)
     
     // Jackson for JSON
     implementation(libs.jackson.databind)

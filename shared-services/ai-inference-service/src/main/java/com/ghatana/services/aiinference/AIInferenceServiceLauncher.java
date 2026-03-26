@@ -9,11 +9,12 @@ import com.ghatana.aiplatform.gateway.LLMGatewayService;
 import com.ghatana.aiplatform.gateway.PromptCache;
 import com.ghatana.aiplatform.gateway.ProviderRouter;
 import com.ghatana.aiplatform.gateway.RateLimiter;
-import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.core.state.HybridStateStore;
 import com.ghatana.core.state.InMemoryStateStore;
 import com.ghatana.core.state.SyncStrategy;
+import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.MetricsCollectorFactory;
+import com.ghatana.platform.security.port.JwtTokenProvider;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpClient;
 import io.activej.http.HttpServer;
@@ -232,11 +233,25 @@ public class AIInferenceServiceLauncher extends Launcher {
     }
 
     /**
+     * Provides JwtTokenProvider for validating caller tokens on secured endpoints.
+     */
+    @Provides
+    JwtTokenProvider jwtTokenProvider() {
+        String secret = System.getenv("PLATFORM_JWT_SECRET");
+        if (secret == null || secret.length() < 32) {
+            logger.warn("PLATFORM_JWT_SECRET is not set or too short — JWT validation is DISABLED in dev mode only");
+            secret = "dev-only-secret-do-not-use-in-prod!";
+        }
+        // Token lifetime is validation-only here; the service accepts tokens it does not create.
+        return new com.ghatana.platform.security.jwt.JwtTokenProvider(secret, 15 * 60 * 1000L);
+    }
+
+    /**
      * Provides HTTP adapter.
      */
     @Provides
-    AIInferenceHttpAdapter httpAdapter(LLMGatewayService gateway, MetricsCollector metrics) {
-        return new AIInferenceHttpAdapter(gateway, metrics);
+    AIInferenceHttpAdapter httpAdapter(LLMGatewayService gateway, MetricsCollector metrics, JwtTokenProvider jwtTokenProvider) {
+        return new AIInferenceHttpAdapter(gateway, metrics, jwtTokenProvider);
     }
 
     /**

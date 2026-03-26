@@ -135,6 +135,12 @@ public class UserProfileService extends HttpServerLauncher {
                         if (validationError != null) {
                             return Promise.of(error(401, validationError));
                         }
+                        // Enforce that the authenticated user's tenant matches the requested tenant.
+                        // This prevents tenant A's JWT being used to read tenant B's profiles.
+                        String callerTenantId = extractTenantIdFromToken(jwtProvider, authHeader);
+                        if (callerTenantId != null && !callerTenantId.equals(tenantId)) {
+                            return Promise.of(error(403, "Token tenant does not match X-Tenant-Id header"));
+                        }
                     }
 
                     return store.findByTenantAndUser(tenantId, userId)
@@ -242,6 +248,26 @@ public class UserProfileService extends HttpServerLauncher {
         try {
             if (!jwt.validateToken(token)) return null;
             return jwt.getUserIdFromToken(token).orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the tenantId claim from a Bearer token, or null if unavailable.
+     * Used to enforce cross-tenant isolation on read endpoints.
+     */
+    private static String extractTenantIdFromToken(JwtTokenProvider jwt, String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
+        String token = authHeader.substring(7).strip();
+        try {
+            if (!jwt.validateToken(token)) return null;
+            return jwt.extractClaims(token)
+                    .map(claims -> {
+                        Object tenantClaim = claims.get("tenantId");
+                        return tenantClaim != null ? tenantClaim.toString() : null;
+                    })
+                    .orElse(null);
         } catch (Exception e) {
             return null;
         }

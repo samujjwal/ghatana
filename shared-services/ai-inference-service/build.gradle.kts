@@ -11,7 +11,7 @@ dependencies {
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:core"))
-    implementation(project(":platform:java:database"))
+    implementation(project(":platform:java:security"))
 
     // ActiveJ
     implementation(libs.activej.http)
@@ -22,10 +22,6 @@ dependencies {
     // Jackson
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
-
-    // Database
-    implementation(libs.postgresql)
-    implementation(libs.hikaricp)
 
     // Logging
     implementation(libs.log4j.core)

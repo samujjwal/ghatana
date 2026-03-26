@@ -9,6 +9,411 @@ import com.ghatana.aiplatform.gateway.LLMGatewayService;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.http.server.servlet.RoutingServlet;
+import com.ghatana.platform.security.port.JwtTokenProvider;
+import io.activej.http.HttpMethod;
+import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
+import io.activej.promise.Promise;
+import io.activej.promise.Promises;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+/**
+ * HTTP REST adapter for AI Inference Service.
+ *
+ * <p>
+ * <b>Purpose</b><br>
+ * Exposes LLM Gateway operations via REST API with JSON request/response
+ * format. Provides endpoints for embeddings, completions, and health checks.
+ * All inference endpoints require a valid platform JWT ({@code Authorization: Bearer &lt;token&gt;})
+ * or an internal service key ({@code X-Internal-Key}).
+ *
+ * <p>
+ * <b>Endpoints</b><br>
+ * - POST /ai/infer/embedding  — Generate single embedding (requires auth)<br>
+ * - POST /ai/infer/embeddings — Generate batch embeddings (requires auth)<br>
+ * - POST /ai/infer/completion — Generate completion (requires auth)<br>
+ * - GET  /health              — Service liveness probe (unauthenticated)<br>
+ * - GET  /ai/admin/status     — Service status (requires auth)
+ *
+ * <p>
+ * <b>Security</b><br>
+ * All endpoints except {@code /health} are protected by JWT validation.
+ * Internal service-to-service calls may use the {@code X-Internal-Key} header.
+ * Prompt text is length-limited to prevent resource abuse.
+ *
+ * <p>
+ * <b>Usage</b><br>
+ * <pre>{@code
+ * AIInferenceHttpAdapter adapter = new AIInferenceHttpAdapter(gateway, metrics, jwtProvider);
+ * RoutingServlet servlet = adapter.buildServlet();
+ * }</pre>
+ *
+ * <p>
+ * <b>Thread Safety</b><br>
+ * Thread-safe - all operations delegate to thread-safe services.
+ *
+ * @doc.type class
+ * @doc.purpose HTTP REST adapter for AI inference
+ * @doc.layer application
+ * @doc.pattern Adapter + Controller
+ */
+public class AIInferenceHttpAdapter {
+
+    private static final Logger logger = LoggerFactory.getLogger(AIInferenceHttpAdapter.class);
+    private static final ObjectMapper objectMapper = JsonUtils.getDefaultMapper();
+
+    /** Maximum allowed prompt/text length to prevent resource abuse. */
+    private static final int MAX_TEXT_LENGTH = 32_768;
+    /** Maximum number of texts in a batch embedding request. */
+    private static final int MAX_BATCH_SIZE = 100;
+
+    private final LLMGatewayService gateway;
+    private final MetricsCollector metrics;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final String internalApiKey;
+
+    /**
+     * Constructs HTTP adapter.
+     *
+     * @param gateway          LLM gateway service
+     * @param metrics          metrics collector
+     * @param jwtTokenProvider JWT token validator
+     */
+    public AIInferenceHttpAdapter(LLMGatewayService gateway, MetricsCollector metrics,
+                                  JwtTokenProvider jwtTokenProvider) {
+        this.gateway = Objects.requireNonNull(gateway, "gateway must not be null");
+        this.metrics = Objects.requireNonNull(metrics, "metrics must not be null");
+        this.jwtTokenProvider = Objects.requireNonNull(jwtTokenProvider, "jwtTokenProvider must not be null");
+        String key = System.getenv("INTERNAL_API_KEY");
+        this.internalApiKey = (key != null) ? key : "";
+    }
+
+    /**
+     * Builds routing servlet with all endpoints.
+     *
+     * @return configured routing servlet
+     */
+    public RoutingServlet buildServlet() {
+        RoutingServlet servlet = new RoutingServlet();
+
+        // Health check — unauthenticated liveness probe
+        servlet.addAsyncRoute(HttpMethod.GET, "/health", this::handleHealth);
+
+        // Inference endpoints — require authentication
+        servlet.addAsyncRoute(HttpMethod.POST, "/ai/infer/embedding", this::handleEmbedding);
+        servlet.addAsyncRoute(HttpMethod.POST, "/ai/infer/embeddings", this::handleBatchEmbeddings);
+        servlet.addAsyncRoute(HttpMethod.POST, "/ai/infer/completion", this::handleCompletion);
+
+        // Admin endpoints — require authentication
+        servlet.addAsyncRoute(HttpMethod.GET, "/ai/admin/status", this::handleAdminStatus);
+
+        return servlet;
+    }
+
+    // ─── Auth helpers ─────────────────────────────────────────────────────────
+
+    /**
+     * Returns an error response if the request is not authenticated; returns null if auth passes.
+     * Accepts a valid platform JWT bearer token OR the configured internal API key.
+     */
+    private HttpResponse checkAuth(HttpRequest request) {
+        // Internal service-to-service key bypass
+        String internalKey = request.getHeader(io.activej.http.HttpHeaders.of("X-Internal-Key"));
+        if (!internalApiKey.isEmpty() && internalApiKey.equals(internalKey)) {
+            return null; // authenticated
+        }
+
+        String authHeader = request.getHeader(io.activej.http.HttpHeaders.AUTHORIZATION);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseBuilder.unauthorized()
+                    .json(Map.of("error", "Missing or malformed Authorization header"))
+                    .build();
+        }
+        String token = authHeader.substring(7).strip();
+        try {
+            if (!jwtTokenProvider.validateToken(token)) {
+                return ResponseBuilder.unauthorized()
+                        .json(Map.of("error", "Invalid or expired token"))
+                        .build();
+            }
+        } catch (Exception e) {
+            logger.warn("JWT validation error", e);
+            return ResponseBuilder.unauthorized()
+                    .json(Map.of("error", "Token validation failed"))
+                    .build();
+        }
+        return null; // authenticated
+    }
+
+    // ─── Endpoint handlers ────────────────────────────────────────────────────
+
+    /**
+     * Handles health check requests.
+     *
+     * GET /health Response: {"status": "healthy", "timestamp": "..."}
+     */
+    private Promise<HttpResponse> handleHealth(HttpRequest request) {
+        Map<String, Object> response = Map.of(
+                "status", "healthy",
+                "service", "ai-inference",
+                "timestamp", java.time.Instant.now().toString()
+        );
+
+        return Promise.of(ResponseBuilder.ok()
+                .json(response)
+                .build());
+    }
+
+    /**
+     * Handles single embedding generation.
+     *
+     * POST /ai/infer/embedding (requires JWT)<br>
+     * Request: {"tenant": "tenant-123", "text": "Hello world"}<br>
+     * Response: {"vector": [...], "dimensions": 1536}
+     */
+    private Promise<HttpResponse> handleEmbedding(HttpRequest request) {
+        HttpResponse authError = checkAuth(request);
+        if (authError != null) {
+            return Promise.of(authError);
+        }
+
+        return parseRequestBody(request, EmbeddingRequest.class)
+                .then(req -> {
+                    if (req.tenant == null || req.tenant.isEmpty()) {
+                        return Promise.of(ResponseBuilder.badRequest()
+                                .json(Map.of("error", "tenant is required"))
+                                .build());
+                    }
+                    if (req.text == null || req.text.isEmpty()) {
+                        return Promise.of(ResponseBuilder.badRequest()
+                                .json(Map.of("error", "text is required"))
+                                .build());
+                    }
+                    if (req.text.length() > MAX_TEXT_LENGTH) {
+                        return Promise.of(ResponseBuilder.badRequest()
+                                .json(Map.of("error", "text exceeds maximum allowed length of " + MAX_TEXT_LENGTH + " characters"))
+                                .build());
+                    }
+
+                    return gateway.generateEmbedding(req.tenant, req.text)
+                            .map(result -> ResponseBuilder.ok()
+                                    .json(Map.of(
+                                            "vector", result.getVector(),
+                                            "dimensions", result.getVector().length,
+                                            "model", result.getModelName() != null ? result.getModelName() : "unknown"
+                                    ))
+                                    .build());
+                })
+                .whenException(error -> {
+                    logger.error("Failed to generate embedding", error);
+                    metrics.incrementCounter("ai.infer.http.errors", "endpoint", "embedding");
+                })
+                .then(
+                        response -> Promise.of(response),
+                        error -> Promise.of(ResponseBuilder.internalServerError()
+                                .json(Map.of("error", "Embedding generation failed"))
+                                .build())
+                );
+    }
+
+    /**
+     * Handles batch embeddings generation.
+     *
+     * POST /ai/infer/embeddings (requires JWT)<br>
+     * Request: {"tenant": "tenant-123", "texts": ["Hello", "World"]}<br>
+     * Response: {"embeddings": [[...], [...]]}
+     */
+    private Promise<HttpResponse> handleBatchEmbeddings(HttpRequest request) {
+        HttpResponse authError = checkAuth(request);
+        if (authError != null) {
+            return Promise.of(authError);
+        }
+
+        return parseRequestBody(request, BatchEmbeddingRequest.class)
+                .then(req -> {
+                    if (req.tenant == null || req.tenant.isEmpty()) {
+                        return Promise.of(ResponseBuilder.badRequest()
+                                .json(Map.of("error", "tenant is required"))
+                                .build());
+                    }
+                    if (req.texts == null || req.texts.isEmpty()) {
+                        return Promise.of(ResponseBuilder.badRequest()
+                                .json(Map.of("error", "texts is required"))
+                                .build());
+                    }
+                    if (req.texts.size() > MAX_BATCH_SIZE) {
+                        return Promise.of(ResponseBuilder.badRequest()
+                                .json(Map.of("error", "batch size exceeds maximum of " + MAX_BATCH_SIZE))
+                                .build());
+                    }
+                    for (String text : req.texts) {
+                        if (text != null && text.length() > MAX_TEXT_LENGTH) {
+                            return Promise.of(ResponseBuilder.badRequest()
+                                    .json(Map.of("error", "one or more texts exceed maximum allowed length"))
+                                    .build());
+                        }
+                    }
+
+                    return gateway.generateEmbeddings(req.tenant, req.texts)
+                            .map(results -> {
+                                List<float[]> vectors = results.stream()
+                                        .map(EmbeddingResult::getVector)
+                                        .toList();
+                                return ResponseBuilder.ok()
+                                        .json(Map.of(
+                                                "embeddings", vectors,
+                                                "count", vectors.size()
+                                        ))
+                                        .build();
+                            });
+                })
+                .whenException(error -> {
+                    logger.error("Failed to generate batch embeddings", error);
+                    metrics.incrementCounter("ai.infer.http.errors", "endpoint", "embeddings");
+                })
+                .then(
+                        response -> Promise.of(response),
+                        error -> Promise.of(ResponseBuilder.internalServerError()
+                                .json(Map.of("error", "Batch embedding generation failed"))
+                                .build())
+                );
+    }
+
+    /**
+     * Handles completion generation.
+     *
+     * POST /ai/infer/completion (requires JWT)<br>
+     * Request: {"tenant": "tenant-123", "prompt": "Translate...", "maxTokens": 100}<br>
+     * Response: {"text": "...", "tokensUsed": 50, "finishReason": "stop"}
+     */
+    private Promise<HttpResponse> handleCompletion(HttpRequest request) {
+        HttpResponse authError = checkAuth(request);
+        if (authError != null) {
+            return Promise.of(authError);
+        }
+
+        return parseRequestBody(request, CompletionRequestDto.class)
+                .then(req -> {
+                    if (req.tenant == null || req.tenant.isEmpty()) {
+                        return Promise.of(ResponseBuilder.badRequest()
+                                .json(Map.of("error", "tenant is required"))
+                                .build());
+                    }
+                    if (req.prompt == null || req.prompt.isEmpty()) {
+                        return Promise.of(ResponseBuilder.badRequest()
+                                .json(Map.of("error", "prompt is required"))
+                                .build());
+                    }
+                    if (req.prompt.length() > MAX_TEXT_LENGTH) {
+                        return Promise.of(ResponseBuilder.badRequest()
+                                .json(Map.of("error", "prompt exceeds maximum allowed length of " + MAX_TEXT_LENGTH + " characters"))
+                                .build());
+                    }
+
+                    CompletionRequest completionRequest = CompletionRequest.builder()
+                            .prompt(req.prompt)
+                            .maxTokens(req.maxTokens != null ? req.maxTokens : 1000)
+                            .build();
+
+                    return gateway.generateCompletion(req.tenant, completionRequest)
+                            .map(result -> ResponseBuilder.ok()
+                                    .json(Map.of(
+                                            "text", result.getText(),
+                                            "tokensUsed", result.getTokensUsed(),
+                                            "promptTokens", result.getPromptTokens(),
+                                            "completionTokens", result.getCompletionTokens(),
+                                            "finishReason", result.getFinishReason() != null ? result.getFinishReason() : "unknown",
+                                            "model", result.getModelUsed() != null ? result.getModelUsed() : "unknown"
+                                    ))
+                                    .build());
+                })
+                .whenException(error -> {
+                    logger.error("Failed to generate completion", error);
+                    metrics.incrementCounter("ai.infer.http.errors", "endpoint", "completion");
+                })
+                .then(
+                        response -> Promise.of(response),
+                        error -> Promise.of(ResponseBuilder.internalServerError()
+                                .json(Map.of("error", "Completion generation failed"))
+                                .build())
+                );
+    }
+
+    /**
+     * Handles admin status requests.
+     *
+     * GET /ai/admin/status (requires JWT)<br>
+     * Response: {"gateway": "active", "service": "ai-inference"}
+     */
+    private Promise<HttpResponse> handleAdminStatus(HttpRequest request) {
+        HttpResponse authError = checkAuth(request);
+        if (authError != null) {
+            return Promise.of(authError);
+        }
+
+        Map<String, Object> response = Map.of(
+                "service", "ai-inference",
+                "gateway", "active",
+                "timestamp", java.time.Instant.now().toString()
+        );
+
+        return Promise.of(ResponseBuilder.ok()
+                .json(response)
+                .build());
+    }
+
+    /**
+     * Parses request body as JSON.
+     */
+    private <T> Promise<T> parseRequestBody(HttpRequest request, Class<T> clazz) {
+        try {
+            String body = request.getBody().asString(StandardCharsets.UTF_8);
+            T parsed = objectMapper.readValue(body, clazz);
+            return Promise.of(parsed);
+        } catch (Exception e) {
+            return Promise.ofException(new IllegalArgumentException("Invalid JSON: " + e.getMessage()));
+        }
+    }
+
+    // ─── Request DTOs ─────────────────────────────────────────────────────────
+
+    private static class EmbeddingRequest {
+
+        public String tenant;
+        public String text;
+    }
+
+    private static class BatchEmbeddingRequest {
+
+        public String tenant;
+        public List<String> texts;
+    }
+
+    private static class CompletionRequestDto {
+
+        public String tenant;
+        public String prompt;
+        public String systemMessage;
+        public Integer maxTokens;
+        public Double temperature;
+    }
+}
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.ai.embedding.EmbeddingResult;
+import com.ghatana.ai.llm.CompletionRequest;
+import com.ghatana.ai.llm.CompletionResult;
+import com.ghatana.aiplatform.gateway.LLMGatewayService;
+import com.ghatana.platform.http.server.response.ResponseBuilder;
+import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.http.server.servlet.RoutingServlet;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
