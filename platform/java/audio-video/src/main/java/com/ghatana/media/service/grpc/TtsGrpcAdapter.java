@@ -1,7 +1,8 @@
 /**
  * @doc.type adapter
  * @doc.purpose gRPC service adapter for TTS Engine
- * @doc.layer service
+ * @doc.layer platform
+ * @doc.pattern Adapter
  */
 package com.ghatana.media.service.grpc;
 

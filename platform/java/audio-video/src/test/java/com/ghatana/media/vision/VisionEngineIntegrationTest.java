@@ -42,8 +42,8 @@ public class VisionEngineIntegrationTest {
             .modelPath(Paths.get("/models/yolov8n.onnx"))
             .modelId("yolov8n")
             .useGpu(false) // Use CPU for tests
-            .confidenceThreshold(0.5f)
-            .maxDetections(100)
+            .defaultConfidenceThreshold(0.5)
+            .defaultMaxDetections(100)
             .build();
         
         library = AudioVideoLibrary.builder()
@@ -51,6 +51,7 @@ public class VisionEngineIntegrationTest {
             .build();
         
         engine = library.getVisionEngine();
+        engine.warmup();
     }
     
     @AfterAll
@@ -171,8 +172,8 @@ public class VisionEngineIntegrationTest {
         EngineMetrics metrics = engine.getMetrics();
         
         assertNotNull(metrics);
-        assertTrue(metrics.totalRequests() > 0, "Should have recorded requests");
-        assertNotNull(metrics.latencyP50());
+        assertTrue(metrics.requestCount() > 0, "Should have recorded requests");
+        assertTrue(metrics.avgLatencyMs() >= 0, "Average latency should be available");
     }
     
     @Test
@@ -200,17 +201,13 @@ public class VisionEngineIntegrationTest {
             engine.detect(null, DetectionOptions.defaults());
         });
         
-        // Zero-size image should throw ValidationError
-        ImageData invalidImage = ImageData.builder()
+        // Zero-size image is rejected by the value object itself
+        assertThrows(IllegalArgumentException.class, () -> ImageData.builder()
             .data(new byte[0])
             .width(0)
             .height(0)
             .format(ImageFormat.RAW)
-            .build();
-        
-        assertThrows(ValidationError.class, () -> {
-            engine.detect(invalidImage, DetectionOptions.defaults());
-        });
+            .build());
     }
     
     @Test
@@ -260,7 +257,7 @@ public class VisionEngineIntegrationTest {
                 int idx = (y * width + x) * 3;
                 data[idx] = (byte) (x * 255 / width);     // R
                 data[idx + 1] = (byte) (y * 255 / height); // G
-                data[idx + 2] = 128;                       // B
+                data[idx + 2] = (byte) 128;                // B
             }
         }
         

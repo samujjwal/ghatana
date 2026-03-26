@@ -158,7 +158,7 @@ class EventCloudPluginTest extends EventloopTestBase {
         HealthStatus health = runPromise(() -> plugin.healthCheck());
 
         // THEN
-        assertThat(health.healthy()).isTrue();
+        assertThat(health.isHealthy()).isTrue();
     }
 
     @Test
@@ -167,7 +167,7 @@ class EventCloudPluginTest extends EventloopTestBase {
         HealthStatus health = runPromise(() -> plugin.healthCheck());
 
         // THEN
-        assertThat(health.healthy()).isFalse();
+        assertThat(health.isHealthy()).isFalse();
     }
 
     @Test
@@ -183,8 +183,8 @@ class EventCloudPluginTest extends EventloopTestBase {
         HealthStatus health = runPromise(() -> plugin.healthCheck());
 
         // THEN
-        assertThat(health.healthy()).isFalse();
-        assertThat(health.message()).contains("Data-Cloud unreachable");
+        assertThat(health.isHealthy()).isFalse();
+        assertThat(health.getMessage()).contains("Data-Cloud unreachable");
     }
 
     @Test

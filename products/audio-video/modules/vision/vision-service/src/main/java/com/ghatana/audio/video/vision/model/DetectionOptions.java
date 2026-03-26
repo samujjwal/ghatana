@@ -8,8 +8,9 @@ import java.util.Set;
  * Configuration options for object detection.
  * 
  * @doc.type model
- * @doc.purpose Detection configuration options
- * @doc.layer vision-core
+ * @doc.purpose Configuration options for object detection
+ * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public class DetectionOptions {
     
@@ -34,7 +35,7 @@ public class DetectionOptions {
     private DetectionOptions(Builder builder) {
         this.confidenceThreshold = builder.confidenceThreshold;
         this.nmsThreshold = builder.nmsThreshold;
-        this.targetClasses = builder.targetClasses;
+        this.targetClasses = builder.targetClasses == null ? null : Set.copyOf(builder.targetClasses);
         this.maxDetections = builder.maxDetections;
         this.includeAttributes = builder.includeAttributes;
         this.trackObjects = builder.trackObjects;
@@ -136,7 +137,7 @@ public class DetectionOptions {
         }
         
         public Builder targetClasses(Set<String> targetClasses) {
-            this.targetClasses = targetClasses;
+            this.targetClasses = targetClasses == null ? null : Set.copyOf(targetClasses);
             return this;
         }
         

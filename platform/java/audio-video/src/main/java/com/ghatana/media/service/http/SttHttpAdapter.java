@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  * HTTP REST adapter for STT Engine.
- * 
+ *
  * <p>Provides REST endpoints for clients that cannot use gRPC directly:
  * <ul>
  *   <li>POST /api/v1/stt/transcribe - Synchronous transcription</li>
@@ -24,8 +24,13 @@ import java.util.Map;
  *   <li>GET /api/v1/stt/models - List available models</li>
  *   <li>POST /api/v1/stt/profiles - Create user profile</li>
  * </ul>
- * 
+ *
  * <p>This is a thin wrapper over the {@link SttEngine} interface.
+ *
+ * @doc.type class
+ * @doc.purpose HTTP REST adapter for STT Engine service endpoints
+ * @doc.layer platform
+ * @doc.pattern Adapter
  */
 public class SttHttpAdapter {
     

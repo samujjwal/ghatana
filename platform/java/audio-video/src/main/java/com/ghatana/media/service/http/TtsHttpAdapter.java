@@ -14,13 +14,18 @@ import java.util.Map;
 
 /**
  * HTTP REST adapter for TTS Engine.
- * 
+ *
  * <p>Provides REST endpoints:
  * <ul>
  *   <li>POST /api/v1/tts/synthesize - Synchronous synthesis</li>
  *   <li>POST /api/v1/tts/synthesize/streaming - Streaming synthesis</li>
  *   <li>GET /api/v1/tts/voices - List available voices</li>
  * </ul>
+ *
+ * @doc.type class
+ * @doc.purpose HTTP REST adapter for TTS Engine service endpoints
+ * @doc.layer platform
+ * @doc.pattern Adapter
  */
 public class TtsHttpAdapter {
     

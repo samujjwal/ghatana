@@ -1,11 +1,13 @@
 package com.ghatana.audio.video.vision.detection;
 
+import com.ghatana.audio.video.vision.model.DetectionOptions;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -23,19 +25,19 @@ class DetectionConfigTest extends EventloopTestBase {
     @Test
     @DisplayName("Should preserve configured thresholds and target classes")
     void shouldPreserveConfiguredThresholdsAndTargetClasses() {
-        DetectionConfig config = runPromise(() -> Promise.of(
-            DetectionConfig.builder()
+        DetectionOptions config = runPromise(() -> Promise.of(
+            DetectionOptions.builder()
                 .confidenceThreshold(0.65f)
                 .nmsThreshold(0.25f)
                 .maxDetections(12)
-                .targetClasses(List.of("person", "dog"))
+                .targetClasses(new java.util.HashSet<>(List.of("person", "dog")))
                 .build()
         ));
 
         assertEquals(0.65f, config.getConfidenceThreshold());
         assertEquals(0.25f, config.getNmsThreshold());
         assertEquals(12, config.getMaxDetections());
-        assertEquals(List.of("person", "dog"), config.getTargetClasses());
+        assertEquals(Set.of("person", "dog"), config.getTargetClasses());
         assertThrows(UnsupportedOperationException.class, () -> config.getTargetClasses().add("car"));
     }
 }

@@ -8,8 +8,9 @@ import java.util.Objects;
  * Represents additional attributes for detected objects.
  * 
  * @doc.type model
- * @doc.purpose Object attributes and metadata
- * @doc.layer vision-core
+ * @doc.purpose Additional attributes and metadata for detected objects
+ * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public class ObjectAttributes {
     

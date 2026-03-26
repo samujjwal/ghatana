@@ -42,19 +42,23 @@
  * }</pre>
  *
  * @since 1.0.0
+ * @doc.layer platform
+ * @doc.pattern Facade
  */
 package com.ghatana.media;
 
-import com.ghatana.media.api.*;
+import com.ghatana.media.common.EngineStatus;
 import com.ghatana.media.config.*;
-import com.ghatana.media.lifecycle.*;
 import com.ghatana.media.stt.api.*;
 import com.ghatana.media.tts.api.*;
 import com.ghatana.media.vision.api.*;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -194,21 +198,16 @@ public final class AudioVideoLibrary implements AutoCloseable {
     public Promise<LibraryStatus> initializeAsync() {
         ensureNotClosed();
         LOG.info("Eagerly initializing all engines...");
-
-        Promise<?> sttInit = isSttEnabled()
-            ? Promise.ofRunnable(() -> getSttEngine().warmup())
-            : Promise.complete();
-
-        Promise<?> ttsInit = isTtsEnabled()
-            ? Promise.ofRunnable(() -> getTtsEngine().warmup())
-            : Promise.complete();
-
-        Promise<?> visionInit = isVisionEnabled()
-            ? Promise.ofRunnable(() -> getVisionEngine().warmup())
-            : Promise.complete();
-
-        return Promise.all(sttInit, ttsInit, ttsInit)
-            .map($ -> getStatus());
+        if (isSttEnabled()) {
+            getSttEngine().warmup();
+        }
+        if (isTtsEnabled()) {
+            getTtsEngine().warmup();
+        }
+        if (isVisionEnabled()) {
+            getVisionEngine().warmup();
+        }
+        return Promise.of(getStatus());
     }
 
     @Override

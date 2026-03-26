@@ -1,7 +1,8 @@
 /**
  * @doc.type factory
  * @doc.purpose Factory for creating STT Engine instances
- * @doc.layer stt
+ * @doc.layer platform
+ * @doc.pattern Factory
  */
 package com.ghatana.media.stt.api;
 
@@ -70,7 +71,7 @@ public final class SttEngineFactory {
         private final AtomicLong totalLatency = new AtomicLong(0);
         private final Semaphore concurrencyLimiter;
         private final ExecutorService executor;
-        private final AtomicReference<EngineStatus.State> state = new AtomicReference<>(EngineStatus.State.INITIALIZING);
+        private final AtomicReference<EngineStatus.State> state = new AtomicReference<>(EngineStatus.State.READY);
 
         StubSttEngine(SttConfig config, AudioVideoLibrary.LibraryState libraryState) {
             this.config = config;
@@ -78,18 +79,7 @@ public final class SttEngineFactory {
             this.concurrencyLimiter = new Semaphore(config.maxConcurrentRequests());
             this.executor = Executors.newVirtualThreadPerTaskExecutor();
 
-            // Simulate initialization
-            executor.submit(() -> {
-                try {
-                    Thread.sleep(100); // Simulate model loading
-                    state.set(EngineStatus.State.READY);
-                    LOG.info("STT Engine initialized successfully");
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    state.set(EngineStatus.State.ERROR);
-                    libraryState.markUnhealthy("STT initialization failed");
-                }
-            });
+            LOG.info("STT Engine initialized successfully");
         }
 
         @Override
@@ -134,7 +124,7 @@ public final class SttEngineFactory {
 
         @Override
         public Promise<TranscriptionResult> transcribeAsync(AudioData audio, TranscriptionOptions options) {
-            return Promise.ofCallable(executor, () -> transcribe(audio, options));
+            return Promise.ofBlocking(executor, () -> transcribe(audio, options));
         }
 
         @Override

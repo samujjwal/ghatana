@@ -6,6 +6,8 @@
  *
  * @doc.type examples
  * @doc.purpose Library usage demonstrations
+ * @doc.layer platform
+ * @doc.pattern Examples
  */
 package com.ghatana.media.examples;
 

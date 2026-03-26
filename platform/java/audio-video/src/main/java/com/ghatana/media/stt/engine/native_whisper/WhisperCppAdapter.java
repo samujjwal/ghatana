@@ -1,7 +1,8 @@
 /**
  * @doc.type adapter
  * @doc.purpose Native Whisper.cpp adapter for STT
- * @doc.layer stt
+ * @doc.layer platform
+ * @doc.pattern Adapter
  *
  * <p>This adapter loads the native whisper.cpp shared library and provides
  * JNI bindings for high-performance local speech recognition.
@@ -182,7 +183,7 @@ public final class WhisperCppAdapter implements SttEngine {
 
     @Override
     public Promise<TranscriptionResult> transcribeAsync(AudioData audio, TranscriptionOptions options) {
-        return Promise.ofCallable(executor, () -> transcribe(audio, options));
+        return Promise.ofBlocking(executor, () -> transcribe(audio, options));
     }
 
     @Override

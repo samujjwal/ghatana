@@ -1,7 +1,8 @@
 /**
  * @doc.type adapter
  * @doc.purpose Native Coqui TTS adapter
- * @doc.layer tts
+ * @doc.layer platform
+ * @doc.pattern Adapter
  *
  * <p>This adapter loads the native Coqui TTS shared library and provides
  * JNI bindings for high-performance local text-to-speech synthesis.
@@ -157,7 +158,7 @@ public final class CoquiTtsAdapter implements TtsEngine {
 
     @Override
     public Promise<AudioData> synthesizeAsync(String text, SynthesisOptions options) {
-        return Promise.ofCallable(executor, () -> synthesize(text, options));
+        return Promise.ofBlocking(executor, () -> synthesize(text, options));
     }
 
     @Override

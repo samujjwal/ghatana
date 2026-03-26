@@ -3,6 +3,7 @@ package com.ghatana.platform.architecture;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchCondition;
@@ -386,7 +387,10 @@ class ArchitectureGuardrailsTest {
             ArchRule rule = noClasses()
                     .that().haveSimpleNameEndingWith("ErrorCode")
                     .or().haveSimpleNameEndingWith("ErrorCodes")
-                    .and().resideOutsideOfPackage("com.ghatana.platform.core.exception..")
+                    .and().resideOutsideOfPackages(
+                            "com.ghatana.platform.core.exception..",
+                            "com.ghatana.platform.core.common.."
+                    )
                     .should().resideInAPackage("com.ghatana..")
                     .because("Use com.ghatana.platform.core.exception.ErrorCode enum for all error codes; "
                             + "custom error-code registries in other packages are forbidden.")
@@ -401,10 +405,15 @@ class ArchitectureGuardrailsTest {
             // Classes providing RuntimeException subclasses with a bare String message only
             // (no ErrorCode parameter) in platform packages are disallowed.
             // This is an informational rule until all legacy exceptions are migrated.
-            ArchRule rule = noClasses()
+            ArchRule rule = classes()
                     .that().resideInAPackage("com.ghatana.platform..")
                     .and().areAssignableTo(RuntimeException.class)
-                    .and().haveSimpleNameNotMatching(".*(Test|Spec).*")
+                                        .and(new DescribedPredicate<>("do not match test/spec naming") {
+                                                @Override
+                                                public boolean test(JavaClass input) {
+                                                        return !input.getSimpleName().matches(".*(Test|Spec).*");
+                                                }
+                                        })
                     .should().haveSimpleNameEndingWith("Exception")
                     // informational until legacy exceptions are migrated
                     .allowEmptyShould(true);

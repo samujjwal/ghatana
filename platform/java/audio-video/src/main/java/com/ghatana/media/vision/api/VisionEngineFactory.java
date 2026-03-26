@@ -1,7 +1,8 @@
 /**
  * @doc.type factory
  * @doc.purpose Factory for creating Vision Engine instances
- * @doc.layer vision
+ * @doc.layer platform
+ * @doc.pattern Factory
  */
 package com.ghatana.media.vision.api;
 
@@ -59,23 +60,14 @@ public final class VisionEngineFactory {
         private final AtomicLong requestCount = new AtomicLong(0);
         private final Semaphore concurrencyLimiter;
         private final ExecutorService executor;
-        private final AtomicReference<EngineStatus.State> state = new AtomicReference<>(EngineStatus.State.INITIALIZING);
+        private final AtomicReference<EngineStatus.State> state = new AtomicReference<>(EngineStatus.State.READY);
 
         StubVisionEngine(VisionConfig config, AudioVideoLibrary.LibraryState libraryState) {
             this.config = config;
             this.concurrencyLimiter = new Semaphore(config.maxConcurrentRequests());
             this.executor = Executors.newVirtualThreadPerTaskExecutor();
 
-            executor.submit(() -> {
-                try {
-                    Thread.sleep(50);
-                    state.set(EngineStatus.State.READY);
-                    LOG.info("Vision Engine initialized");
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    state.set(EngineStatus.State.ERROR);
-                }
-            });
+            LOG.info("Vision Engine initialized");
         }
 
         @Override
@@ -116,7 +108,7 @@ public final class VisionEngineFactory {
 
         @Override
         public Promise<DetectionResult> detectAsync(ImageData image, DetectionOptions options) {
-            return Promise.ofCallable(executor, () -> detect(image, options));
+            return Promise.ofBlocking(executor, () -> detect(image, options));
         }
 
         @Override

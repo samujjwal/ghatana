@@ -89,7 +89,7 @@ public class AudioVideoLibraryTest {
 
     @Test
     void testLibraryStatusHealthyAfterInitialization() {
-        LibraryStatus status = library.getStatus();
+        AudioVideoLibrary.LibraryStatus status = library.getStatus();
         assertTrue(status.healthy());
     }
 
@@ -100,7 +100,7 @@ public class AudioVideoLibraryTest {
         library.getTtsEngine().warmup();
         library.getVisionEngine().warmup();
 
-        LibraryStatus status = library.getStatus();
+        AudioVideoLibrary.LibraryStatus status = library.getStatus();
         assertNotNull(status.sttStatus());
         assertNotNull(status.ttsStatus());
         assertNotNull(status.visionStatus());
@@ -116,10 +116,10 @@ public class AudioVideoLibraryTest {
         // Close library
         library.close();
 
-        // All engines should be closed
-        assertThrows(IllegalStateException.class, () -> stt.getStatus());
-        assertThrows(IllegalStateException.class, () -> tts.getStatus());
-        assertThrows(IllegalStateException.class, () -> vision.getStatus());
+        // All engines should report closed
+        assertEquals(EngineStatus.State.CLOSED, stt.getStatus().state());
+        assertEquals(EngineStatus.State.CLOSED, tts.getStatus().state());
+        assertEquals(EngineStatus.State.CLOSED, vision.getStatus().state());
     }
 
     @Test
@@ -131,7 +131,7 @@ public class AudioVideoLibraryTest {
     @Test
     void testAsyncInitialization() throws Exception {
         var future = library.initializeAsync().toCompletableFuture();
-        LibraryStatus status = future.get();
+        AudioVideoLibrary.LibraryStatus status = future.get();
         assertNotNull(status);
     }
 }
@@ -413,6 +413,16 @@ class VisionEngineTest {
         assertThrows(ValidationError.class, () ->
             engine.detect(null, DetectionOptions.defaults())
         );
+    }
+
+    @Test
+    void testInvalidImageValueObjectRejectsZeroSize() {
+        assertThrows(IllegalArgumentException.class, () -> ImageData.builder()
+            .data(new byte[0])
+            .width(0)
+            .height(0)
+            .format(ImageFormat.RAW)
+            .build());
     }
 
     @Test

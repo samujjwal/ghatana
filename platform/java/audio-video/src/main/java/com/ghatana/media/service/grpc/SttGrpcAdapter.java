@@ -1,7 +1,8 @@
 /**
  * @doc.type adapter
  * @doc.purpose gRPC service adapter for STT Engine
- * @doc.layer service
+ * @doc.layer platform
+ * @doc.pattern Adapter
  *
  * <p>Thin wrapper that adapts the library's SttEngine to gRPC service calls.
  * This allows the audio-video modules to use the shared library while maintaining

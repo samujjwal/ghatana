@@ -14,12 +14,17 @@ import java.util.Map;
 
 /**
  * HTTP REST adapter for Vision Engine.
- * 
+ *
  * <p>Provides REST endpoints:
  * <ul>
  *   <li>POST /api/v1/vision/detect - Object detection</li>
  *   <li>GET /api/v1/vision/models - List available models</li>
  * </ul>
+ *
+ * @doc.type class
+ * @doc.purpose HTTP REST adapter for Vision Engine service endpoints
+ * @doc.layer platform
+ * @doc.pattern Adapter
  */
 public class VisionHttpAdapter {
     

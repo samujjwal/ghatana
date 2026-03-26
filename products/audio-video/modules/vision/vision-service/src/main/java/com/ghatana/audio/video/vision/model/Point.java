@@ -7,8 +7,9 @@ import java.util.Objects;
  * Represents a 2D point in image coordinates.
  * 
  * @doc.type model
- * @doc.purpose 2D point coordinates
- * @doc.layer vision-core
+ * @doc.purpose 2D point coordinates in image space
+ * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public class Point {
     

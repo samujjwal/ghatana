@@ -1,7 +1,8 @@
 /**
  * @doc.type implementation
  * @doc.purpose ONNX Runtime based Piper TTS Engine
- * @doc.layer tts
+ * @doc.layer platform
+ * @doc.pattern Strategy
  */
 package com.ghatana.media.tts.engine.onnx;
 
@@ -119,7 +120,7 @@ public final class PiperOnnxEngine implements TtsEngine {
 
     @Override
     public Promise<AudioData> synthesizeAsync(String text, SynthesisOptions options) {
-        return Promise.ofCallable(executor, () -> synthesize(text, options));
+        return Promise.ofBlocking(executor, () -> synthesize(text, options));
     }
 
     @Override

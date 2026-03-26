@@ -1,7 +1,8 @@
 /**
  * @doc.type implementation
  * @doc.purpose ONNX Runtime based YOLOv8 Vision Engine
- * @doc.layer vision
+ * @doc.layer platform
+ * @doc.pattern Strategy
  */
 package com.ghatana.media.vision.engine.onnx;
 
@@ -17,6 +18,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
 /**
@@ -78,7 +80,7 @@ public final class YoloOnnxEngine implements VisionEngine {
 
             this.session = environment.createSession(config.modelPath().toString(), options);
 
-            LOG.info("YOLOv8 model loaded. Input shape: " + Arrays.toString(session.getInputInfo().values().iterator().next().getShape()));
+            LOG.info("YOLOv8 model loaded. Input info: " + session.getInputInfo().values().iterator().next());
 
             state.set(EngineStatus.State.READY);
 
@@ -133,7 +135,7 @@ public final class YoloOnnxEngine implements VisionEngine {
 
     @Override
     public Promise<DetectionResult> detectAsync(ImageData image, DetectionOptions options) {
-        return Promise.ofCallable(executor, () -> detect(image, options));
+        return Promise.ofBlocking(executor, () -> detect(image, options));
     }
 
     @Override

@@ -1,7 +1,8 @@
 /**
  * @doc.type implementation
  * @doc.purpose ONNX Runtime based Whisper STT Engine
- * @doc.layer stt
+ * @doc.layer platform
+ * @doc.pattern Strategy
  */
 package com.ghatana.media.stt.engine.onnx;
 
@@ -134,7 +135,7 @@ public final class WhisperOnnxEngine implements SttEngine {
 
     @Override
     public Promise<TranscriptionResult> transcribeAsync(AudioData audio, TranscriptionOptions options) {
-        return Promise.ofCallable(executor, () -> transcribe(audio, options));
+        return Promise.ofBlocking(executor, () -> transcribe(audio, options));
     }
 
     @Override

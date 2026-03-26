@@ -15,6 +15,17 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * gRPC service implementation for computer vision object detection.
+ *
+ * <p>Exposes YOLO-based object detection capabilities over gRPC for
+ * both single-frame and streaming video detection use cases.
+ *
+ * @doc.type class
+ * @doc.purpose gRPC service for computer vision object detection
+ * @doc.layer product
+ * @doc.pattern Service
+ */
 public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
     
     private static final Logger LOG = LoggerFactory.getLogger(VisionGrpcService.class);

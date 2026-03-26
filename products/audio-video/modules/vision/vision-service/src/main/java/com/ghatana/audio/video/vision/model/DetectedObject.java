@@ -8,8 +8,9 @@ import java.util.Objects;
  * Represents a detected object in an image or video frame.
  * 
  * @doc.type model
- * @doc.purpose Object detection result
- * @doc.layer vision-core
+ * @doc.purpose Represents a detected object in an image or video frame
+ * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public class DetectedObject {
     

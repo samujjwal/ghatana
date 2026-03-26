@@ -1,7 +1,8 @@
 /**
  * @doc.type factory
  * @doc.purpose Factory for creating TTS Engine instances
- * @doc.layer tts
+ * @doc.layer platform
+ * @doc.pattern Factory
  */
 package com.ghatana.media.tts.api;
 
@@ -59,23 +60,15 @@ public final class TtsEngineFactory {
         private final AtomicLong requestCount = new AtomicLong(0);
         private final Semaphore concurrencyLimiter;
         private final ExecutorService executor;
-        private final AtomicReference<EngineStatus.State> state = new AtomicReference<>(EngineStatus.State.INITIALIZING);
+        private final AtomicReference<EngineStatus.State> state = new AtomicReference<>(EngineStatus.State.READY);
+        private final AtomicReference<String> activeVoiceId;
 
         StubTtsEngine(TtsConfig config, AudioVideoLibrary.LibraryState libraryState) {
             this.config = config;
             this.concurrencyLimiter = new Semaphore(config.maxConcurrentRequests());
             this.executor = Executors.newVirtualThreadPerTaskExecutor();
-
-            executor.submit(() -> {
-                try {
-                    Thread.sleep(50);
-                    state.set(EngineStatus.State.READY);
-                    LOG.info("TTS Engine initialized");
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    state.set(EngineStatus.State.ERROR);
-                }
-            });
+            this.activeVoiceId = new AtomicReference<>(config.defaultVoiceId());
+            LOG.info("TTS Engine initialized");
         }
 
         @Override
@@ -109,7 +102,7 @@ public final class TtsEngineFactory {
 
         @Override
         public Promise<AudioData> synthesizeAsync(String text, SynthesisOptions options) {
-            return Promise.ofCallable(executor, () -> synthesize(text, options));
+            return Promise.ofBlocking(executor, () -> synthesize(text, options));
         }
 
         @Override
@@ -156,11 +149,12 @@ public final class TtsEngineFactory {
 
         @Override
         public VoiceInfo getActiveVoice() {
-            return loadVoice(config.defaultVoiceId());
+            return loadVoice(activeVoiceId.get());
         }
 
         @Override
         public void setActiveVoice(String voiceId) {
+            activeVoiceId.set(voiceId);
             LOG.info("Setting active voice: " + voiceId);
         }
 

@@ -7,8 +7,9 @@ import java.util.Objects;
  * Represents a bounding box for object detection.
  * 
  * @doc.type model
- * @doc.purpose Bounding box coordinates
- * @doc.layer vision-core
+ * @doc.purpose Bounding box coordinates for detected objects
+ * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public class BoundingBox {
     
