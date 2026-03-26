@@ -1,5 +1,6 @@
 package com.ghatana.audio.video.vision.grpc;
 
+import com.ghatana.audio.video.vision.detection.VisionDetector;
 import com.ghatana.audio.video.vision.grpc.proto.*;
 import com.ghatana.audio.video.vision.model.*;
 import com.ghatana.audio.video.vision.yolo.YoloV8Adapter;
@@ -30,11 +31,17 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
     
     private static final Logger LOG = LoggerFactory.getLogger(VisionGrpcService.class);
     
-    private final YoloV8Adapter yoloAdapter;
+    private final VisionDetector detector;
     private final VideoFrameExtractor frameExtractor;
     private final AtomicLong requestCount = new AtomicLong(0);
     private final AtomicLong totalProcessingTime = new AtomicLong(0);
-    
+
+    /** Package-private constructor for unit testing — inject a fake {@link VisionDetector}. */
+    VisionGrpcService(VisionDetector detector, VideoFrameExtractor frameExtractor) {
+        this.detector = detector;
+        this.frameExtractor = frameExtractor;
+    }
+
     public VisionGrpcService() {
         String modelPath = System.getenv("VISION_MODEL_PATH");
         if (modelPath == null || modelPath.isEmpty()) {
@@ -48,21 +55,22 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
             System.getenv().getOrDefault("VISION_NMS_THRESHOLD", "0.4")
         );
         
-        this.yoloAdapter = new YoloV8Adapter(
+        YoloV8Adapter adapter = new YoloV8Adapter(
             Paths.get(modelPath),
             confidenceThreshold,
             nmsThreshold
         );
         this.frameExtractor = new VideoFrameExtractor();
-        
+
         String modelName = System.getenv().getOrDefault("VISION_MODEL_NAME", "yolov8n");
         try {
-            this.yoloAdapter.initialize(modelName);
+            adapter.initialize(modelName);
             LOG.info("Vision service initialized with model: {}", modelName);
         } catch (Exception e) {
             LOG.error("Failed to initialize Vision service", e);
             throw new RuntimeException("Vision service initialization failed", e);
         }
+        this.detector = adapter;
     }
     
     @Override
@@ -79,11 +87,11 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
                 .confidenceThreshold(request.getConfidenceThreshold() > 0 ? request.getConfidenceThreshold() : 0.5)
                 .build();
             
-            List<DetectedObject> detectedObjects = yoloAdapter.detectObjects(
+            List<DetectedObject> detectedObjects = detector.detectObjects(
                 request.getImageData().toByteArray(),
                 options
             );
-            
+
             DetectResponse.Builder responseBuilder = DetectResponse.newBuilder();
             
             for (DetectedObject obj : detectedObjects) {
@@ -133,7 +141,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
                     .confidenceThreshold(0.5)
                     .build();
                 
-                List<DetectedObject> objects = yoloAdapter.detectObjects(
+                List<DetectedObject> objects = detector.detectObjects(
                     request.getImageData().toByteArray(),
                     options
                 );
@@ -202,7 +210,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
 
             for (VideoFrameExtractor.ExtractedFrame frame : frames) {
                 byte[] frameBytes = Files.readAllBytes(frame.getPath());
-                List<DetectedObject> detections = yoloAdapter.detectObjects(frameBytes, detectionOptions);
+                List<DetectedObject> detections = detector.detectObjects(frameBytes, detectionOptions);
 
                 VideoFrameDetections.Builder frameResult = VideoFrameDetections.newBuilder()
                     .setTimestampMs(frame.getTimestampMs())
@@ -267,7 +275,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
                         .confidenceThreshold(0.6)
                         .build();
                     
-                    List<DetectedObject> detectedObjects = yoloAdapter.detectObjects(
+                    List<DetectedObject> detectedObjects = detector.detectObjects(
                         request.getFrameData().toByteArray(),
                         options
                     );
@@ -320,7 +328,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
             double avgTime = count > 0 ? (double) totalTime / count : 0.0;
             
             StatusResponse response = StatusResponse.newBuilder()
-                .setStatus(yoloAdapter.isInitialized() ? "healthy" : "not_initialized")
+                .setStatus(detector.isInitialized() ? "healthy" : "not_initialized")
                 .setModelName("YOLOv8")
                 .setTotalRequests(count)
                 .setAvgProcessingTimeMs(avgTime)
@@ -338,7 +346,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
     @Override
     public void healthCheck(HealthCheckRequest request, StreamObserver<HealthCheckResponse> responseObserver) {
         try {
-            boolean healthy = yoloAdapter.isInitialized();
+            boolean healthy = detector.isInitialized();
             String message = healthy ? "Vision service is healthy" : "Vision service not initialized";
             
             HealthCheckResponse response = HealthCheckResponse.newBuilder()

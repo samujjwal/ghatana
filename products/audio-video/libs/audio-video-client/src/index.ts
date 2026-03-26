@@ -47,6 +47,61 @@ interface ServiceCallOptions<T> {
   serviceLabel: string;
 }
 
+// ─── Circuit Breaker ──────────────────────────────────────────────────────────
+
+type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+
+/**
+ * Per-service circuit breaker.
+ *
+ * States:
+ * - CLOSED  — normal operation; failures increment a counter.
+ * - OPEN    — requests fail-fast; re-evaluated after `resetTimeoutMs`.
+ * - HALF_OPEN — one probe request is allowed through; success → CLOSED,
+ *               failure → OPEN again.
+ */
+class CircuitBreaker {
+  private state: CircuitState = 'CLOSED';
+  private failureCount = 0;
+  private lastFailureTime = 0;
+
+  constructor(
+    private readonly failureThreshold: number = 5,
+    private readonly resetTimeoutMs: number = 30_000,
+  ) {}
+
+  /** Returns true when the call should be allowed through. */
+  allowRequest(): boolean {
+    if (this.state === 'CLOSED') return true;
+    if (this.state === 'OPEN') {
+      if (Date.now() - this.lastFailureTime >= this.resetTimeoutMs) {
+        this.state = 'HALF_OPEN';
+        return true;
+      }
+      return false;
+    }
+    // HALF_OPEN: allow exactly one probe
+    return true;
+  }
+
+  /** Must be called on every successful response. */
+  recordSuccess(): void {
+    this.failureCount = 0;
+    this.state = 'CLOSED';
+  }
+
+  /** Must be called on every failed response. */
+  recordFailure(): void {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+    if (this.state === 'HALF_OPEN' || this.failureCount >= this.failureThreshold) {
+      this.state = 'OPEN';
+    }
+  }
+
+  getState(): CircuitState { return this.state; }
+}
+
 /**
  * Unified audio-video service client.
  *
@@ -58,9 +113,14 @@ interface ServiceCallOptions<T> {
 export class AudioVideoClient {
   private configs: Map<ServiceType, ServiceClientConfig>;
   private eventListeners: Map<string, Function[]> = new Map();
+  private circuitBreakers: Map<ServiceType, CircuitBreaker> = new Map();
 
   constructor(configs: Record<ServiceType, ServiceClientConfig>) {
     this.configs = new Map(Object.entries(configs) as [ServiceType, ServiceClientConfig][]);
+    // Pre-create a circuit breaker for each configured service
+    for (const service of Object.keys(configs) as ServiceType[]) {
+      this.circuitBreakers.set(service, new CircuitBreaker());
+    }
   }
 
   /**
@@ -282,10 +342,18 @@ export class AudioVideoClient {
 
   /**
    * Makes one HTTP call to the service endpoint with timeout, retries, and
-   * optional API-key injection. Throws on non-2xx or parsed error body.
+   * optional API-key injection. Fails fast when the circuit breaker is OPEN.
+   * Throws on non-2xx or parsed error body.
    */
   private async callService<T>(opts: ServiceCallOptions<T>): Promise<T> {
     const { method, path, body, config, serviceLabel } = opts;
+    const serviceType = serviceLabel as ServiceType;
+    const cb = this.circuitBreakers.get(serviceType) ?? new CircuitBreaker();
+
+    if (!cb.allowRequest()) {
+      throw new Error(`[${serviceLabel}] circuit breaker is OPEN — service temporarily unavailable`);
+    }
+
     const url = `${config.endpoint}${path}`;
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`;
@@ -316,7 +384,9 @@ export class AudioVideoClient {
           throw new Error(`HTTP ${response.status} from ${serviceLabel}: ${errorText}`);
         }
 
-        return await response.json() as T;
+        const result = await response.json() as T;
+        cb.recordSuccess();
+        return result;
       } catch (err) {
         clearTimeout(timeoutId);
         lastError = err instanceof Error ? err : new Error(String(err));
@@ -328,6 +398,7 @@ export class AudioVideoClient {
       }
     }
 
+    cb.recordFailure();
     throw lastError;
   }
 

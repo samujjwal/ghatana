@@ -4,7 +4,11 @@ import com.ghatana.ai.embedding.EmbeddingResult;
 import com.ghatana.aiplatform.gateway.LLMGatewayService;
 import com.ghatana.platform.observability.NoopMetricsCollector;
 import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import java.time.Duration;
+
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -15,19 +19,20 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests for AIInferenceHttpAdapter — specifically the JWT authentication guards
- * added to fix FINDING-002 (security vulnerabilities in shared services).
+ * Tests for AIInferenceHttpAdapter — covering JWT authentication guards,
+ * rate limiting, input validation, and input sanitization.
  *
  * @doc.type class
- * @doc.purpose Tests for JWT auth enforcement on AI inference endpoints
+ * @doc.purpose Tests for AIInferenceHttpAdapter security, validation, and rate limiting
  * @doc.layer application
  * @doc.pattern Test
  */
-@DisplayName("AIInferenceHttpAdapter Security Tests")
+@DisplayName("AIInferenceHttpAdapter Tests")
 class AIInferenceHttpAdapterTest extends EventloopTestBase {
 
     private LLMGatewayService mockGateway;
@@ -156,6 +161,113 @@ class AIInferenceHttpAdapterTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.get("http://localhost/ai/admin/status")
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid.token")
                 .build();
+
+        HttpResponse response = runPromise(() -> adapter.buildServlet().serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    // ─── Rate limiting ────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("Requests exceeding rate limit should return 429")
+    void rateLimitExceededShouldReturn429() {
+        // Create adapter with very low rate limit (1 RPM) to trigger it in test
+        NoopMetricsCollector metrics = new NoopMetricsCollector();
+        DefaultRateLimiter stingyLimiter = DefaultRateLimiter.create(
+            RateLimiterConfig.builder()
+                .maxRequestsPerMinute(1)
+                .burstSize(1)
+                .windowDuration(Duration.ofMinutes(1))
+                .build(),
+            metrics,
+            "ai.infer.rate_limit"
+        );
+        AIInferenceHttpAdapter lowLimitAdapter =
+                new AIInferenceHttpAdapter(mockGateway, metrics, mockJwt, stingyLimiter);
+
+        when(mockJwt.validateToken("valid.token")).thenReturn(true);
+        float[] vector = new float[]{0.1f};
+        when(mockGateway.generateEmbedding(eq("t1"), anyString()))
+                .thenReturn(Promise.of(EmbeddingResult.of(vector)));
+
+        // First request should pass
+        HttpRequest first = HttpRequest.post("http://localhost/ai/infer/embedding")
+                .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid.token")
+                .withBody("{\"tenant\":\"t1\",\"text\":\"hello\"}".getBytes())
+                .build();
+        assertThat(runPromise(() -> lowLimitAdapter.buildServlet().serve(first)).getCode()).isEqualTo(200);
+
+        // Second request should be rate-limited
+        HttpRequest second = HttpRequest.post("http://localhost/ai/infer/embedding")
+                .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid.token")
+                .withBody("{\"tenant\":\"t1\",\"text\":\"hello\"}".getBytes())
+                .build();
+        assertThat(runPromise(() -> lowLimitAdapter.buildServlet().serve(second)).getCode()).isEqualTo(429);
+    }
+
+    // ─── Validation: missing fields ───────────────────────────────────────────
+
+    @Test
+    @DisplayName("POST /ai/infer/embedding with missing tenant should return 400")
+    void embeddingMissingTenantShouldReturn400() {
+        when(mockJwt.validateToken("valid.token")).thenReturn(true);
+
+        HttpRequest request = HttpRequest.post("http://localhost/ai/infer/embedding")
+                .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid.token")
+                .withBody("{\"text\":\"hello\"}".getBytes())
+                .build();
+
+        assertThat(runPromise(() -> adapter.buildServlet().serve(request)).getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("POST /ai/infer/embedding with missing text should return 400")
+    void embeddingMissingTextShouldReturn400() {
+        when(mockJwt.validateToken("valid.token")).thenReturn(true);
+
+        HttpRequest request = HttpRequest.post("http://localhost/ai/infer/embedding")
+                .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid.token")
+                .withBody("{\"tenant\":\"t1\"}".getBytes())
+                .build();
+
+        assertThat(runPromise(() -> adapter.buildServlet().serve(request)).getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("POST /ai/infer/completion with missing prompt should return 400")
+    void completionMissingPromptShouldReturn400() {
+        when(mockJwt.validateToken("valid.token")).thenReturn(true);
+
+        HttpRequest request = HttpRequest.post("http://localhost/ai/infer/completion")
+                .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid.token")
+                .withBody("{\"tenant\":\"t1\"}".getBytes())
+                .build();
+
+        assertThat(runPromise(() -> adapter.buildServlet().serve(request)).getCode()).isEqualTo(400);
+    }
+
+    // ─── Validation: batch limits ─────────────────────────────────────────────
+
+    @Test
+    @DisplayName("POST /ai/infer/embeddings with empty texts array should return 400")
+    void batchEmbeddingWithEmptyTextsShouldReturn400() {
+        when(mockJwt.validateToken("valid.token")).thenReturn(true);
+
+        HttpRequest request = HttpRequest.post("http://localhost/ai/infer/embeddings")
+                .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid.token")
+                .withBody("{\"tenant\":\"t1\",\"texts\":[]}".getBytes())
+                .build();
+
+        assertThat(runPromise(() -> adapter.buildServlet().serve(request)).getCode()).isEqualTo(400);
+    }
+
+    // ─── Health check content ─────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("GET /health should return timestamp in response body")
+    void healthEndpointShouldReturnTimestamp() {
+        HttpRequest request = HttpRequest.get("http://localhost/health").build();
 
         HttpResponse response = runPromise(() -> adapter.buildServlet().serve(request));
 

@@ -22,6 +22,9 @@ dependencies {
     // JWT validation
     implementation(libs.nimbus.jose.jwt)
 
+    // Jackson for type-safe JSON serialisation in platform clients
+    implementation(libs.jackson.databind)
+
     // Logging
     implementation(libs.slf4j.api)
 

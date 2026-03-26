@@ -112,7 +112,10 @@ impl PlaybackHandle {
                                     return;
                                 }
 
-                                let mut i = idx_cb.lock().unwrap();
+                                let mut i = match idx_cb.lock() {
+                                    Ok(guard) => guard,
+                                    Err(poisoned) => poisoned.into_inner(),
+                                };
                                 for out in data.iter_mut() {
                                     if *i < samples.len() {
                                         *out = samples[*i];
@@ -144,7 +147,10 @@ impl PlaybackHandle {
                                     return;
                                 }
 
-                                let mut i = idx_cb.lock().unwrap();
+                                let mut i = match idx_cb.lock() {
+                                    Ok(guard) => guard,
+                                    Err(poisoned) => poisoned.into_inner(),
+                                };
                                 for out in data.iter_mut() {
                                     if *i < samples.len() {
                                         let v = (samples[*i] * i16::MAX as f32)
@@ -179,7 +185,10 @@ impl PlaybackHandle {
                                     return;
                                 }
 
-                                let mut i = idx_cb.lock().unwrap();
+                                let mut i = match idx_cb.lock() {
+                                    Ok(guard) => guard,
+                                    Err(poisoned) => poisoned.into_inner(),
+                                };
                                 for out in data.iter_mut() {
                                     if *i < samples.len() {
                                         let v_i16 = (samples[*i] * i16::MAX as f32)

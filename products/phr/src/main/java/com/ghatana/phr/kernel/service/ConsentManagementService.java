@@ -9,6 +9,9 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.util.TypedDataSerializer;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.InMemoryCacheAdapter;
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import com.ghatana.phr.kernel.consent.ConsentService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -23,9 +26,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Consent Management Service with Nepal Directive 2081 compliance.
@@ -60,13 +60,13 @@ public class ConsentManagementService implements ConsentService {
     /** Maximum access-check requests per actor per window. */
     private static final int CHECK_ACCESS_MAX_PER_WINDOW = 200;
     /** Sliding window duration for rate limiting. */
-    private static final long RATE_WINDOW_MILLIS = 60_000L; // 1 minute
+    private static final Duration RATE_LIMIT_WINDOW = Duration.ofMinutes(1);
 
     private final DataCloudKernelAdapter dataCloud;
     /** Distributed cache for consent decisions — multi-node safe (ISSUE-X02). */
     private final DistributedCachePort<String, ConsentCacheEntry> consentCache;
-    private final ConcurrentHashMap<String, RateBucket> createGrantLimiter = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, RateBucket> checkAccessLimiter = new ConcurrentHashMap<>();
+    private final RateLimiter createGrantLimiter;
+    private final RateLimiter checkAccessLimiter;
     private volatile boolean running = false;
 
     /**
@@ -79,6 +79,20 @@ public class ConsentManagementService implements ConsentService {
                                      DistributedCachePort<String, ConsentCacheEntry> consentCache) {
         this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
         this.consentCache = Objects.requireNonNull(consentCache, "consentCache must not be null");
+        this.createGrantLimiter = DefaultRateLimiter.create(
+            RateLimiterConfig.builder()
+                .maxRequestsPerMinute(CREATE_GRANT_MAX_PER_WINDOW)
+                .burstSize(CREATE_GRANT_MAX_PER_WINDOW)
+                .windowDuration(RATE_LIMIT_WINDOW)
+                .build()
+        );
+        this.checkAccessLimiter = DefaultRateLimiter.create(
+            RateLimiterConfig.builder()
+                .maxRequestsPerMinute(CHECK_ACCESS_MAX_PER_WINDOW)
+                .burstSize(CHECK_ACCESS_MAX_PER_WINDOW)
+                .windowDuration(RATE_LIMIT_WINDOW)
+                .build()
+        );
     }
 
     /**
@@ -121,7 +135,7 @@ public class ConsentManagementService implements ConsentService {
         }
 
         String rateLimitKey = grant.getRecipientId();
-        if (!tryAcquire(createGrantLimiter, rateLimitKey, CREATE_GRANT_MAX_PER_WINDOW)) {
+        if (!tryAcquire(createGrantLimiter, rateLimitKey)) {
             return Promise.ofException(new RateLimitExceededException(
                     "Grant creation rate limit exceeded for actor: " + rateLimitKey));
         }
@@ -250,7 +264,7 @@ public class ConsentManagementService implements ConsentService {
         }
 
         String rateLimitKey = request.actor().actorId();
-        if (!tryAcquire(checkAccessLimiter, rateLimitKey, CHECK_ACCESS_MAX_PER_WINDOW)) {
+        if (!tryAcquire(checkAccessLimiter, rateLimitKey)) {
             return Promise.of(new ConsentAccessDecision(
                     false, ReasonCode.SYSTEM_DENY, null, CacheStatus.BYPASS,
                     true, null, List.of("RATE_LIMIT_EXCEEDED")));
@@ -795,32 +809,8 @@ public class ConsentManagementService implements ConsentService {
 
     // ==================== Rate Limiting ====================
 
-    /**
-     * Simple sliding-window rate bucket. Resets the counter when the window expires.
-     */
-    private static class RateBucket {
-        private final AtomicInteger count = new AtomicInteger(0);
-        private final AtomicLong windowStart = new AtomicLong(System.currentTimeMillis());
-
-        boolean tryAcquire(int maxPerWindow, long windowMillis) {
-            long now = System.currentTimeMillis();
-            long start = windowStart.get();
-            if (now - start >= windowMillis) {
-                // Window expired — reset
-                if (windowStart.compareAndSet(start, now)) {
-                    count.set(1);
-                    return true;
-                }
-                // Lost CAS race; fall through and count against new window
-            }
-            return count.incrementAndGet() <= maxPerWindow;
-        }
-    }
-
-    private static boolean tryAcquire(ConcurrentHashMap<String, RateBucket> limiter,
-                                       String key, int maxPerWindow) {
-        RateBucket bucket = limiter.computeIfAbsent(key, k -> new RateBucket());
-        return bucket.tryAcquire(maxPerWindow, RATE_WINDOW_MILLIS);
+    private static boolean tryAcquire(RateLimiter limiter, String key) {
+        return limiter.tryAcquire(key).allowed();
     }
 
     /**

@@ -3,12 +3,18 @@
  */
 package com.ghatana.services.auth;
 
+import com.ghatana.platform.http.server.response.ErrorResponse;
+import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.model.User;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpHeaders;
+import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.HttpServer;
 import io.activej.http.RoutingServlet;
@@ -116,8 +122,16 @@ public class AuthGatewayLauncher extends Launcher {
             cfg.setUsername(System.getenv().getOrDefault("AUTH_DB_USER", ""));
             cfg.setPassword(System.getenv().getOrDefault("AUTH_DB_PASSWORD", ""));
             cfg.setPoolName("auth-credential-pool");
-            cfg.setMinimumIdle(2);
-            cfg.setMaximumPoolSize(10);
+            cfg.setMinimumIdle(Integer.parseInt(
+                System.getenv().getOrDefault("AUTH_DB_POOL_MIN_IDLE", "2")));
+            cfg.setMaximumPoolSize(Integer.parseInt(
+                System.getenv().getOrDefault("AUTH_DB_POOL_MAX_SIZE", "10")));
+            cfg.setConnectionTimeout(Long.parseLong(
+                System.getenv().getOrDefault("AUTH_DB_CONNECT_TIMEOUT_MS", "30000")));
+            cfg.setIdleTimeout(Long.parseLong(
+                System.getenv().getOrDefault("AUTH_DB_IDLE_TIMEOUT_MS", "600000")));
+            cfg.setMaxLifetime(Long.parseLong(
+                System.getenv().getOrDefault("AUTH_DB_MAX_LIFETIME_MS", "1800000")));
             JdbcCredentialStore store = new JdbcCredentialStore(new com.zaxxer.hikari.HikariDataSource(cfg));
             store.ensureSchema();
             LOGGER.info("Using JdbcCredentialStore (AUTH_DB_URL configured)");
@@ -146,8 +160,17 @@ public class AuthGatewayLauncher extends Launcher {
     RateLimiter rateLimiter(MetricsCollector metrics) {
         int requestsPerMinute = Integer.parseInt(
                 System.getenv().getOrDefault("RATE_LIMIT_REQUESTS_PER_MINUTE", "100"));
+        int burstSize = Integer.parseInt(
+            System.getenv().getOrDefault("RATE_LIMIT_BURST_SIZE", String.valueOf(requestsPerMinute)));
 
-        return new RateLimiter(requestsPerMinute, metrics);
+        return DefaultRateLimiter.create(
+            RateLimiterConfig.builder()
+                .maxRequestsPerMinute(requestsPerMinute)
+                .burstSize(burstSize)
+                .build(),
+            metrics,
+            "auth.gateway.rate_limit"
+        );
     }
 
     @Provides
@@ -180,6 +203,10 @@ public class AuthGatewayLauncher extends Launcher {
                 // Login - issue JWT token after credential validation
                 .with(POST, "/auth/login", request -> {
                     metrics.incrementCounter("auth.gateway.login.count");
+                    HttpResponse rateLimitError = rateLimitResponse(request, rateLimiter, metrics, "auth.gateway.login.rate_limited");
+                    if (rateLimitError != null) {
+                        return Promise.of(rateLimitError);
+                    }
                     // Load body asynchronously — never call .getResult() on the eventloop thread
                     return request.loadBody()
                         .then(byteBuf -> {
@@ -261,6 +288,10 @@ public class AuthGatewayLauncher extends Launcher {
                 // Validate - verify JWT token
                 .with(GET, "/auth/validate", request -> {
                     metrics.incrementCounter("auth.gateway.validate.count");
+                    HttpResponse rateLimitError = rateLimitResponse(request, rateLimiter, metrics, "auth.gateway.validate.rate_limited");
+                    if (rateLimitError != null) {
+                        return Promise.of(rateLimitError);
+                    }
 
                     String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -306,6 +337,10 @@ public class AuthGatewayLauncher extends Launcher {
                 // Refresh - refresh JWT token
                 .with(POST, "/auth/refresh", request -> {
                     metrics.incrementCounter("auth.gateway.refresh.count");
+                    HttpResponse rateLimitError = rateLimitResponse(request, rateLimiter, metrics, "auth.gateway.refresh.rate_limited");
+                    if (rateLimitError != null) {
+                        return Promise.of(rateLimitError);
+                    }
                     String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                         return HttpResponse.ofCode(401)
@@ -368,6 +403,10 @@ public class AuthGatewayLauncher extends Launcher {
                 // distinguish it from product-scoped tokens.
                 .with(POST, "/auth/exchange", request -> {
                     metrics.incrementCounter("auth.gateway.exchange.count");
+                    HttpResponse rateLimitError = rateLimitResponse(request, rateLimiter, metrics, "auth.gateway.exchange.rate_limited");
+                    if (rateLimitError != null) {
+                        return Promise.of(rateLimitError);
+                    }
                     String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                         return Promise.of(HttpResponse.ofCode(401)
@@ -462,5 +501,44 @@ public class AuthGatewayLauncher extends Launcher {
         int end = json.indexOf('"', start + 1);
         if (end < 0) return null;
         return json.substring(start + 1, end);
+    }
+
+    private static HttpResponse rateLimitResponse(
+            HttpRequest request,
+            RateLimiter rateLimiter,
+            MetricsCollector metrics,
+            String metricName
+    ) {
+        String rateLimitKey = resolveRateLimitKey(request);
+        RateLimiter.AcquireResult result = rateLimiter.tryAcquire(rateLimitKey);
+        if (result.allowed()) {
+            return null;
+        }
+
+        metrics.incrementCounter(metricName, "key", rateLimitKey);
+        return ResponseBuilder.status(429)
+            .header(HttpHeaders.RETRY_AFTER, String.valueOf(result.retryAfterSeconds()))
+            .json(ErrorResponse.of(429, "RATE_LIMIT_EXCEEDED", "Too many authentication requests. Retry later."))
+                .build();
+    }
+
+    private static String resolveRateLimitKey(HttpRequest request) {
+        String forwardedFor = request.getHeader(HttpHeaders.of("X-Forwarded-For"));
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            int comma = forwardedFor.indexOf(',');
+            return comma >= 0 ? forwardedFor.substring(0, comma).trim() : forwardedFor.trim();
+        }
+
+        String realIp = request.getHeader(HttpHeaders.of("X-Real-IP"));
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+
+        String remoteAddress = request.getHeader(HttpHeaders.of("X-Remote-Addr"));
+        if (remoteAddress != null && !remoteAddress.isBlank()) {
+            return remoteAddress.trim();
+        }
+
+        return "unknown-client";
     }
 }

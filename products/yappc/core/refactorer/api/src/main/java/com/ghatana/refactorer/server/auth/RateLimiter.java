@@ -1,12 +1,10 @@
 package com.ghatana.refactorer.server.auth;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,9 +28,9 @@ import org.apache.logging.log4j.Logger;
 public final class RateLimiter {
     private static final Logger logger = LogManager.getLogger(RateLimiter.class);
 
-    private final Cache<String, TokenBucket> buckets;
     private final long defaultLimit;
     private final Duration defaultWindow;
+    private final DefaultRateLimiter delegate;
 
     /**
      * Creates a new rate limiter with default settings.
@@ -43,11 +41,13 @@ public final class RateLimiter {
     public RateLimiter(long defaultLimit, Duration defaultWindow) {
         this.defaultLimit = defaultLimit;
         this.defaultWindow = Objects.requireNonNull(defaultWindow);
-        this.buckets =
-                Caffeine.newBuilder()
-                        .maximumSize(10_000)
-                        .expireAfterAccess(defaultWindow.multipliedBy(2))
-                        .build();
+        this.delegate = DefaultRateLimiter.create(
+            RateLimiterConfig.builder()
+                .maxRequestsPerMinute(Math.toIntExact(defaultLimit))
+                .burstSize(Math.toIntExact(defaultLimit))
+                .windowDuration(defaultWindow)
+                .build()
+        );
 
         logger.info(
                 "Rate limiter initialized with default limit: {} requests per {}",
@@ -82,8 +82,12 @@ public final class RateLimiter {
             return false;
         }
 
-        TokenBucket bucket = buckets.get(clientId, k -> new TokenBucket(limit, window));
-        boolean allowed = bucket.tryConsume();
+        if (limit != defaultLimit || !window.equals(defaultWindow)) {
+            throw new UnsupportedOperationException(
+                    "Custom per-call limits are not supported by the shared platform-backed adapter");
+        }
+
+        boolean allowed = delegate.tryAcquire(clientId).allowed();
 
         if (!allowed) {
             logger.debug("Rate limit exceeded for client: {}", clientId);
@@ -101,13 +105,11 @@ public final class RateLimiter {
     public RateLimitState getState(String clientId) {
         Objects.requireNonNull(clientId, "Client ID cannot be null");
 
-        TokenBucket bucket = buckets.getIfPresent(clientId);
-        if (bucket == null) {
-            return new RateLimitState(
-                    defaultLimit, defaultLimit, Instant.now().plus(defaultWindow));
-        }
-
-        return bucket.getState();
+        long remaining = delegate.getApproximateRemainingTokens(clientId);
+        return new RateLimitState(
+                defaultLimit,
+                remaining,
+                Instant.now().plus(defaultWindow));
     }
 
     /**
@@ -117,7 +119,7 @@ public final class RateLimiter {
      */
     public void reset(String clientId) {
         Objects.requireNonNull(clientId, "Client ID cannot be null");
-        buckets.invalidate(clientId);
+        delegate.reset(clientId);
         logger.debug("Reset rate limit state for client: {}", clientId);
     }
 
@@ -127,54 +129,7 @@ public final class RateLimiter {
      * @return the number of tracked clients
      */
     public long getTrackedClientCount() {
-        return buckets.estimatedSize();
-    }
-
-    /**
- * Token bucket implementation for rate limiting. */
-    private static final class TokenBucket {
-        private final long capacity;
-        private final Duration refillPeriod;
-        private final AtomicLong tokens;
-        private final AtomicReference<Instant> lastRefill;
-
-        TokenBucket(long capacity, Duration refillPeriod) {
-            this.capacity = capacity;
-            this.refillPeriod = refillPeriod;
-            this.tokens = new AtomicLong(capacity);
-            this.lastRefill = new AtomicReference<>(Instant.now());
-        }
-
-        boolean tryConsume() {
-            refill();
-
-            long currentTokens = tokens.get();
-            if (currentTokens > 0) {
-                return tokens.compareAndSet(currentTokens, currentTokens - 1);
-            }
-
-            return false;
-        }
-
-        private void refill() {
-            Instant now = Instant.now();
-            Instant lastRefillTime = lastRefill.get();
-
-            Duration timeSinceLastRefill = Duration.between(lastRefillTime, now);
-            if (timeSinceLastRefill.compareTo(refillPeriod) >= 0) {
-                // Time to refill
-                if (lastRefill.compareAndSet(lastRefillTime, now)) {
-                    tokens.set(capacity);
-                }
-            }
-        }
-
-        RateLimitState getState() {
-            refill();
-            long currentTokens = tokens.get();
-            Instant nextRefill = lastRefill.get().plus(refillPeriod);
-            return new RateLimitState(capacity, currentTokens, nextRefill);
-        }
+        return delegate.getTrackedKeyCount();
     }
 
     /**

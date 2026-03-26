@@ -1,11 +1,15 @@
 package com.ghatana.audio.video.common.platform;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,6 +45,7 @@ public final class AiInferenceClient {
 
     private final String baseUrl;
     private final HttpClient http;
+    private final ObjectMapper json = new ObjectMapper();
 
     private AiInferenceClient(String baseUrl) {
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
@@ -109,18 +114,16 @@ public final class AiInferenceClient {
     public Optional<String> complete(String prompt, String model, int maxTokens) {
         if (baseUrl.isBlank() || prompt == null || prompt.isBlank()) return Optional.empty();
 
-        String modelField = (model != null && !model.isBlank())
-                ? "\"model\":\"" + escapeJson(model) + "\","
-                : "";
-        String maxTokensField = maxTokens > 0 ? "\"max_tokens\":" + maxTokens + "," : "";
-
-        String body = "{"
-                + modelField
-                + maxTokensField
-                + "\"prompt\":\"" + escapeJson(prompt) + "\""
-                + "}";
-
-        return postJson("/ai/infer/completion", body);
+        try {
+            ObjectNode body = json.createObjectNode();
+            if (model != null && !model.isBlank()) body.put("model", model);
+            if (maxTokens > 0) body.put("max_tokens", maxTokens);
+            body.put("prompt", prompt);
+            return postJson("/ai/infer/completion", json.writeValueAsString(body));
+        } catch (IOException e) {
+            LOG.log(Level.WARNING, "[AiInferenceClient] Failed to serialise completion request", e);
+            return Optional.empty();
+        }
     }
 
     /**
@@ -134,16 +137,15 @@ public final class AiInferenceClient {
     public Optional<String> embedding(String text, String model) {
         if (baseUrl.isBlank() || text == null || text.isBlank()) return Optional.empty();
 
-        String modelField = (model != null && !model.isBlank())
-                ? "\"model\":\"" + escapeJson(model) + "\","
-                : "";
-
-        String body = "{"
-                + modelField
-                + "\"input\":\"" + escapeJson(text) + "\""
-                + "}";
-
-        return postJson("/ai/infer/embedding", body);
+        try {
+            ObjectNode body = json.createObjectNode();
+            if (model != null && !model.isBlank()) body.put("model", model);
+            body.put("input", text);
+            return postJson("/ai/infer/embedding", json.writeValueAsString(body));
+        } catch (IOException e) {
+            LOG.log(Level.WARNING, "[AiInferenceClient] Failed to serialise embedding request", e);
+            return Optional.empty();
+        }
     }
 
     /**
@@ -154,26 +156,18 @@ public final class AiInferenceClient {
      * @return Raw JSON response body containing the vectors, or
      *         {@link Optional#empty()} on error.
      */
-    public Optional<String> embeddings(java.util.List<String> texts, String model) {
+    public Optional<String> embeddings(List<String> texts, String model) {
         if (baseUrl.isBlank() || texts == null || texts.isEmpty()) return Optional.empty();
 
-        String modelField = (model != null && !model.isBlank())
-                ? "\"model\":\"" + escapeJson(model) + "\","
-                : "";
-
-        StringBuilder inputArray = new StringBuilder("[");
-        for (int i = 0; i < texts.size(); i++) {
-            if (i > 0) inputArray.append(',');
-            inputArray.append('"').append(escapeJson(texts.get(i))).append('"');
+        try {
+            ObjectNode body = json.createObjectNode();
+            if (model != null && !model.isBlank()) body.put("model", model);
+            body.set("input", json.valueToTree(texts));
+            return postJson("/ai/infer/embeddings", json.writeValueAsString(body));
+        } catch (IOException e) {
+            LOG.log(Level.WARNING, "[AiInferenceClient] Failed to serialise embeddings request", e);
+            return Optional.empty();
         }
-        inputArray.append(']');
-
-        String body = "{"
-                + modelField
-                + "\"input\":" + inputArray
-                + "}";
-
-        return postJson("/ai/infer/embeddings", body);
     }
 
     /**
@@ -198,18 +192,16 @@ public final class AiInferenceClient {
     public Optional<String> tts(String text, String voice, int sampleRate) {
         if (baseUrl.isBlank() || text == null || text.isBlank()) return Optional.empty();
 
-        String voiceField = (voice != null && !voice.isBlank())
-                ? "\"voice\":\"" + escapeJson(voice) + "\","
-                : "";
-        String sampleRateField = sampleRate > 0 ? "\"sample_rate\":" + sampleRate + "," : "";
-
-        String body = "{"
-                + voiceField
-                + sampleRateField
-                + "\"text\":\"" + escapeJson(text) + "\""
-                + "}";
-
-        return postJson("/ai/infer/tts", body);
+        try {
+            ObjectNode body = json.createObjectNode();
+            if (voice != null && !voice.isBlank()) body.put("voice", voice);
+            if (sampleRate > 0) body.put("sample_rate", sampleRate);
+            body.put("text", text);
+            return postJson("/ai/infer/tts", json.writeValueAsString(body));
+        } catch (IOException e) {
+            LOG.log(Level.WARNING, "[AiInferenceClient] Failed to serialise TTS request", e);
+            return Optional.empty();
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -241,21 +233,5 @@ public final class AiInferenceClient {
             LOG.log(Level.WARNING, "[AiInferenceClient] POST " + path + " failed", e);
             return Optional.empty();
         }
-    }
-
-    /**
-     * Minimal JSON string escaping to prevent injection.
-     * Handles the characters that must be escaped per RFC 8259.
-     */
-    private static String escapeJson(String value) {
-        if (value == null) return "";
-        return value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\b", "\\b")
-                .replace("\f", "\\f")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
     }
 }

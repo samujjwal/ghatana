@@ -89,10 +89,16 @@ public class AuthService extends HttpServerLauncher {
     JwtTokenProvider platformJwtProvider() {
         String secret = System.getenv("PLATFORM_JWT_SECRET");
         if (secret == null || secret.isBlank() || secret.length() < 32) {
-            // During development fall back to an insecure default so the service starts.
-            // Production MUST supply PLATFORM_JWT_SECRET.
-            log.warn("PLATFORM_JWT_SECRET not set — using insecure development default. " +
-                     "Set PLATFORM_JWT_SECRET (32+ chars) before deploying to production.");
+            // Fail fast in production — no insecure fallback allowed.
+            String env = System.getenv().getOrDefault("ENVIRONMENT", "development");
+            if ("production".equalsIgnoreCase(env) || "prod".equalsIgnoreCase(env)) {
+                throw new IllegalStateException(
+                    "PLATFORM_JWT_SECRET must be set to at least 32 characters in production. " +
+                    "Set the PLATFORM_JWT_SECRET environment variable before deploying.");
+            }
+            log.warn("PLATFORM_JWT_SECRET not set or too short (< 32 chars) — " +
+                     "using INSECURE development default. NEVER deploy this to production. " +
+                     "Set PLATFORM_JWT_SECRET (32+ chars) before deploying.");
             secret = "dev-platform-jwt-secret-change-me-in-prod!";
         }
         return new com.ghatana.platform.security.jwt.JwtTokenProvider(secret, PLATFORM_TOKEN_TTL_MS);
@@ -227,11 +233,17 @@ public class AuthService extends HttpServerLauncher {
                                     String.format("ghatana_session=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600",
                                         sessionId))
                                 .build();
-                    } catch (Exception e) {
-                        log.warn("OIDC callback authentication failed: {}", e.getMessage());
+                    } catch (IllegalArgumentException | IllegalStateException e) {
+                        // OAuth2 protocol validation errors (bad state, invalid code, expired token, etc.)
+                        log.warn("OIDC authentication validation failed: {}", e.getMessage());
                         return HttpResponse.ofCode(401)
-                                .withJson(String.format("{\"error\":\"authentication_failed\",\"detail\":\"%s\"}",
-                                    sanitize(e.getMessage())))
+                                .withJson("{\"error\":\"authentication_failed\",\"detail\":\"Authentication failed\"}")
+                                .build();
+                    } catch (Exception e) {
+                        // Unexpected system error — do not leak details to the caller
+                        log.error("Unexpected error during OIDC callback", e);
+                        return HttpResponse.ofCode(500)
+                                .withJson("{\"error\":\"internal_error\",\"detail\":\"Authentication service unavailable\"}")
                                 .build();
                     }
                 });

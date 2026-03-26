@@ -14,3 +14,11 @@ export type {
   SpeechRecognitionOptions,
   SpeechRecognitionCallbacks,
 } from './useSpeechRecognition';
+
+export { useMemoryPressure } from './useMemoryPressure';
+export type {
+  UseMemoryPressureResult,
+  UseMemoryPressureOptions,
+  MemoryPressureLevel,
+  MemoryInfo,
+} from './useMemoryPressure';

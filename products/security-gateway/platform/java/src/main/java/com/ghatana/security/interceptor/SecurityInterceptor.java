@@ -1,12 +1,13 @@
 package com.ghatana.security.interceptor;
 
 import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import com.ghatana.platform.http.server.security.TenantExtractor;
 import com.ghatana.security.audit.SecurityAuditLogger;
 import com.ghatana.platform.security.jwt.JwtTokenProvider;
 import com.ghatana.platform.security.rbac.PolicyService;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
@@ -31,8 +32,7 @@ public class SecurityInterceptor {
     private final JwtTokenProvider jwtTokenProvider;
     private final SecurityAuditLogger auditLogger;
     private final int rateLimit;
-    private final int rateLimitWindowInSeconds;
-    private final Cache<String, RateLimitInfo> rateLimitCache;
+    private final RateLimiter rateLimiter;
 
     /**
      * Creates a new SecurityInterceptor with the specified PolicyService.
@@ -48,11 +48,15 @@ public class SecurityInterceptor {
         this.jwtTokenProvider = jwtTokenProvider;
         this.auditLogger = auditLogger;
         this.rateLimit = rateLimit;
-        this.rateLimitWindowInSeconds = rateLimitWindowInSeconds;
-        this.rateLimitCache = Caffeine.newBuilder()
-                .expireAfterWrite(Duration.ofSeconds(rateLimitWindowInSeconds))
-                .maximumSize(10_000)
-                .build();
+        this.rateLimiter = rateLimit > 0
+            ? DefaultRateLimiter.create(
+                RateLimiterConfig.builder()
+                    .maxRequestsPerMinute(rateLimit)
+                    .burstSize(rateLimit)
+                    .windowDuration(Duration.ofSeconds(rateLimitWindowInSeconds))
+                    .build()
+            )
+            : null;
     }
     
     /**
@@ -73,10 +77,13 @@ public class SecurityInterceptor {
 
         // Rate limiting check (based on client IP from X-Forwarded-For or remote address header)
         String clientIp = getClientIp(request);
-        if (isRateLimited(clientIp)) {
+        RateLimiter.AcquireResult rateLimitResult = acquireRateLimit(clientIp);
+        if (rateLimitResult != null && !rateLimitResult.allowed()) {
             logger.warn("Rate limit exceeded for {} {} from {}", method, path, clientIp);
             auditLogger.logRateLimitExceeded(clientIp, path, method);
-            return Promise.of(HttpResponse.ofCode(429).build());
+            return Promise.of(addRateLimitHeaders(HttpResponse.ofCode(429), rateLimitResult)
+                    .withHeader(HttpHeaders.RETRY_AFTER, String.valueOf(rateLimitResult.retryAfterSeconds()))
+                    .build());
         }
 
         // Extract user identity and roles from JWT token
@@ -85,7 +92,7 @@ public class SecurityInterceptor {
         Set<String> userRoles = Set.of();
         if (isPublicEndpoint(path, method)) {
             // Bypass auth but still add security and rate-limit headers
-            return Promise.of(addRateLimitHeaders(addSecurityHeaders(HttpResponse.ok200()), clientIp).build());
+            return Promise.of(addRateLimitHeaders(addSecurityHeaders(HttpResponse.ok200()), rateLimitResult).build());
         }
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
@@ -126,7 +133,7 @@ public class SecurityInterceptor {
         }
 
         // Success: return 200 OK with security and rate-limit headers
-        return Promise.of(addRateLimitHeaders(addSecurityHeaders(HttpResponse.ok200()), clientIp).build());
+        return Promise.of(addRateLimitHeaders(addSecurityHeaders(HttpResponse.ok200()), rateLimitResult).build());
     }
     
     /**
@@ -234,35 +241,24 @@ public class SecurityInterceptor {
      * @param clientIp the client IP address
      * @return the response with rate limit headers
      */
-    private HttpResponse.Builder addRateLimitHeaders(HttpResponse.Builder builder, String clientIp) {
-        if (rateLimit <= 0) {
+    private HttpResponse.Builder addRateLimitHeaders(
+            HttpResponse.Builder builder,
+            RateLimiter.AcquireResult rateLimitResult
+    ) {
+        if (rateLimit <= 0 || rateLimitResult == null) {
             return builder; // Rate limiting disabled
         }
-        RateLimitInfo info = rateLimitCache.getIfPresent(clientIp);
-        if (info == null) {
-            return builder;
-        }
-        long remaining = Math.max(0, rateLimit - info.getRequestCount());
-        long resetTime = (info.getWindowStart() / 1000) + rateLimitWindowInSeconds;
         return builder
                 .withHeader(HttpHeaders.of("X-RateLimit-Limit"), String.valueOf(rateLimit))
-                .withHeader(HttpHeaders.of("X-RateLimit-Remaining"), String.valueOf(remaining))
-                .withHeader(HttpHeaders.of("X-RateLimit-Reset"), String.valueOf(resetTime));
+                .withHeader(HttpHeaders.of("X-RateLimit-Remaining"), String.valueOf(rateLimitResult.remainingTokens()))
+                .withHeader(HttpHeaders.of("X-RateLimit-Reset"), String.valueOf(rateLimitResult.resetAtEpochSeconds()));
     }
 
-    private boolean isRateLimited(String clientIp) {
-        if (rateLimit <= 0) {
-            return false;
+    private RateLimiter.AcquireResult acquireRateLimit(String clientIp) {
+        if (rateLimiter == null) {
+            return null;
         }
-        RateLimitInfo info = rateLimitCache.get(clientIp, ip -> new RateLimitInfo(0, System.currentTimeMillis()));
-        long now = System.currentTimeMillis();
-        if ((now - info.getWindowStart()) > (rateLimitWindowInSeconds * 1000L)) {
-            // reset window
-            rateLimitCache.put(clientIp, new RateLimitInfo(0, now));
-            info = rateLimitCache.getIfPresent(clientIp);
-        }
-        info.incrementRequestCount();
-        return info.getRequestCount() > rateLimit;
+        return rateLimiter.tryAcquire(clientIp);
     }
 
     private String getClientIp(HttpRequest request) {
@@ -272,31 +268,6 @@ public class SecurityInterceptor {
         }
         String remote = request.getRemoteAddress() != null ? request.getRemoteAddress().toString() : "unknown";
         return remote;
-    }
-    
-    /**
-     * Represents rate limit information for a client.
-     */
-    private static class RateLimitInfo {
-        private int requestCount;
-        private final long windowStart;
-        
-        public RateLimitInfo(int requestCount, long windowStart) {
-            this.requestCount = requestCount;
-            this.windowStart = windowStart;
-        }
-        
-        public int getRequestCount() {
-            return requestCount;
-        }
-        
-        public void incrementRequestCount() {
-            requestCount++;
-        }
-        
-        public long getWindowStart() {
-            return windowStart;
-        }
     }
     
     /**

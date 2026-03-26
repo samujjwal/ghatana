@@ -1,5 +1,6 @@
 package com.ghatana.audio.video.vision.yolo;
 
+import com.ghatana.audio.video.vision.detection.VisionDetector;
 import com.ghatana.audio.video.vision.model.*;
 import org.opencv.core.*;
 import org.opencv.dnn.Dnn;
@@ -27,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @doc.layer vision-core
  * @doc.pattern adapter
  */
-public class YoloV8Adapter {
+public class YoloV8Adapter implements VisionDetector {
     
     private static final Logger LOG = LoggerFactory.getLogger(YoloV8Adapter.class);
     

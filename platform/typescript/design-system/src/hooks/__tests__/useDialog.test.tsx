@@ -1,5 +1,11 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { useDialog } from '../useDialog';
+
+afterEach(() => {
+  vi.clearAllMocks();
+  vi.useRealTimers();
+});
 
 describe('useDialog', () => {
   describe('Basic functionality', () => {
@@ -56,7 +62,7 @@ describe('useDialog', () => {
 
   describe('Async confirm callbacks', () => {
     it('should handle successful confirm callback', async () => {
-      const onConfirm = jest.fn().mockResolvedValue('success');
+      const onConfirm = vi.fn().mockResolvedValue('success');
       const { result } = renderHook(() => useDialog({ onConfirm }));
       
       act(() => {
@@ -74,7 +80,7 @@ describe('useDialog', () => {
 
     it('should handle confirm callback errors', async () => {
       const error = new Error('Confirm failed');
-      const onConfirm = jest.fn().mockRejectedValue(error);
+      const onConfirm = vi.fn().mockRejectedValue(error);
       const { result } = renderHook(() => useDialog({ onConfirm }));
       
       act(() => {
@@ -91,7 +97,7 @@ describe('useDialog', () => {
 
     it('should set loading state during confirm', async () => {
       let resolveConfirm: (value: string) => void;
-      const onConfirm = jest.fn(() => new Promise<string>((resolve) => {
+      const onConfirm = vi.fn(() => new Promise<string>((resolve) => {
         resolveConfirm = resolve;
       }));
       
@@ -100,22 +106,22 @@ describe('useDialog', () => {
       act(() => {
         result.current.open();
       });
-      
-      const confirmPromise = act(async () => {
-        await result.current.confirm();
+
+      let confirmPromise: Promise<void>;
+      act(() => {
+        confirmPromise = result.current.confirm();
       });
-      
-      // Check loading state
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(true);
-      });
+
+      expect(result.current.isLoading).toBe(true);
       
       // Resolve the promise
       act(() => {
         resolveConfirm!('done');
       });
-      
-      await confirmPromise;
+
+      await act(async () => {
+        await confirmPromise;
+      });
       
       expect(result.current.isLoading).toBe(false);
     });
@@ -123,7 +129,7 @@ describe('useDialog', () => {
 
   describe('Cancel callback', () => {
     it('should call onCancel and close dialog', () => {
-      const onCancel = jest.fn();
+      const onCancel = vi.fn();
       const { result } = renderHook(() => useDialog({ onCancel, defaultOpen: true }));
       
       act(() => {
@@ -166,7 +172,7 @@ describe('useDialog', () => {
 
     it('should not close on Escape when loading', async () => {
       let resolveConfirm: () => void;
-      const onConfirm = jest.fn(() => new Promise<void>((resolve) => {
+      const onConfirm = vi.fn(() => new Promise<void>((resolve) => {
         resolveConfirm = resolve;
       }));
       
@@ -178,15 +184,13 @@ describe('useDialog', () => {
       act(() => {
         result.current.open();
       });
-      
-      // Start confirm (will be loading)
+
+      let confirmPromise: Promise<void>;
       act(() => {
-        result.current.confirm();
+        confirmPromise = result.current.confirm();
       });
-      
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(true);
-      });
+
+      expect(result.current.isLoading).toBe(true);
       
       // Try to close with Escape
       act(() => {
@@ -200,13 +204,17 @@ describe('useDialog', () => {
       act(() => {
         resolveConfirm!();
       });
+
+      await act(async () => {
+        await confirmPromise;
+      });
     });
   });
 
   describe('Loading state management', () => {
     it('should prevent close while loading when preventCloseWhileLoading is true', async () => {
       let resolveConfirm: () => void;
-      const onConfirm = jest.fn(() => new Promise<void>((resolve) => {
+      const onConfirm = vi.fn(() => new Promise<void>((resolve) => {
         resolveConfirm = resolve;
       }));
       
@@ -218,15 +226,13 @@ describe('useDialog', () => {
       act(() => {
         result.current.open();
       });
-      
-      // Start loading
+
+      let confirmPromise: Promise<void>;
       act(() => {
-        result.current.confirm();
+        confirmPromise = result.current.confirm();
       });
-      
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(true);
-      });
+
+      expect(result.current.isLoading).toBe(true);
       
       // Try to close
       act(() => {
@@ -238,6 +244,10 @@ describe('useDialog', () => {
       // Cleanup
       act(() => {
         resolveConfirm!();
+      });
+
+      await act(async () => {
+        await confirmPromise;
       });
     });
   });
@@ -275,15 +285,15 @@ describe('useDialog', () => {
       }, { timeout: 500 });
     });
 
-    it('should clear error when opening', () => {
-      const onConfirm = jest.fn().mockRejectedValue(new Error('test'));
+    it('should clear error when opening', async () => {
+      const onConfirm = vi.fn().mockRejectedValue(new Error('test'));
       const { result } = renderHook(() => useDialog({ onConfirm }));
       
       act(() => {
         result.current.open();
       });
       
-      act(async () => {
+      await act(async () => {
         await result.current.confirm();
       });
       
@@ -345,7 +355,7 @@ describe('useDialog', () => {
 
   describe('Memory cleanup', () => {
     it('should not update state after unmount', async () => {
-      const onConfirm = jest.fn().mockResolvedValue('success');
+      const onConfirm = vi.fn().mockResolvedValue('success');
       const { result, unmount } = renderHook(() => useDialog({ onConfirm }));
       
       act(() => {
@@ -381,7 +391,7 @@ describe('useDialog', () => {
     });
 
     it('should handle non-Error exceptions in confirm', async () => {
-      const onConfirm = jest.fn().mockRejectedValue('string error');
+      const onConfirm = vi.fn().mockRejectedValue('string error');
       const { result } = renderHook(() => useDialog({ onConfirm }));
       
       act(() => {

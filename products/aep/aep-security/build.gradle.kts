@@ -13,6 +13,8 @@ plugins {
 dependencies {
     // Minimal dependencies for security module
     // Should be lightweight to allow reuse
+
+    implementation(project(":platform:java:security"))
     
     // ActiveJ for HTTP filters
     implementation(libs.activej.http)

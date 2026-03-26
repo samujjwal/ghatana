@@ -33,6 +33,17 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
     private final AudioVideoLibrary library;
     private final Timer transcribeTimer;
 
+    /**
+     * Package-private constructor for unit testing — supply a pre-configured library.
+     * Avoids native-library / file-system dependencies during tests.
+     */
+    SttGrpcService(AudioVideoLibrary library, MeterRegistry metrics) {
+        this.library = library;
+        this.transcribeTimer = Timer.builder("stt.transcribe")
+            .description("Transcription latency")
+            .register(metrics);
+    }
+
     public SttGrpcService(MeterRegistry metrics) {
         SttConfig config = SttConfig.builder()
             .modelPath(Paths.get(System.getenv().getOrDefault("STT_MODEL_PATH", "/models/whisper-base.onnx")))

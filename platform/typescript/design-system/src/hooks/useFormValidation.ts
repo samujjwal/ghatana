@@ -143,8 +143,8 @@ export function useFormValidation<T extends Record<string, unknown>>(
   // Debounce timers for async validation
   const debounceTimers = useMemo(() => new Map<keyof T, NodeJS.Timeout>(), []);
 
-  const validateField = useCallback(
-    async (field: keyof T): Promise<boolean> => {
+  const runFieldValidation = useCallback(
+    async (field: keyof T, candidateValues: T): Promise<boolean> => {
       const rules = schema[field];
       if (!rules || rules.length === 0) {
         setFieldStates((prev) => ({
@@ -154,10 +154,9 @@ export function useFormValidation<T extends Record<string, unknown>>(
         return true;
       }
 
-      const value = values[field];
+      const value = candidateValues[field];
       const hasAsyncRule = rules.some((r) => r.async);
 
-      // Set validating state if there are async rules
       if (hasAsyncRule) {
         setFieldStates((prev) => ({
           ...prev,
@@ -165,10 +164,9 @@ export function useFormValidation<T extends Record<string, unknown>>(
         }));
       }
 
-      // Run validations in order
       for (const rule of rules) {
         try {
-          const isValid = await rule.validate(value, values as Record<string, unknown>);
+          const isValid = await rule.validate(value, candidateValues as Record<string, unknown>);
           if (!isValid) {
             setFieldStates((prev) => ({
               ...prev,
@@ -195,19 +193,26 @@ export function useFormValidation<T extends Record<string, unknown>>(
         }
       }
 
-      // All validations passed
       setFieldStates((prev) => ({
         ...prev,
         [field]: { ...prev[field], error: null, isValid: true, validating: false },
       }));
       return true;
     },
-    [schema, values]
+    [schema]
+  );
+
+  const validateField = useCallback(
+    async (field: keyof T): Promise<boolean> => {
+      return runFieldValidation(field, values);
+    },
+    [runFieldValidation, values]
   );
 
   const setValue = useCallback(
     <K extends keyof T>(field: K, value: T[K]) => {
-      setValuesState((prev) => ({ ...prev, [field]: value }));
+      const nextValues = { ...values, [field]: value };
+      setValuesState(nextValues);
 
       if (validateOnChange || isSubmitted) {
         // Clear any pending debounce timer
@@ -223,16 +228,16 @@ export function useFormValidation<T extends Record<string, unknown>>(
         if (hasAsyncRule) {
           // Debounce async validation
           const timer = setTimeout(() => {
-            validateField(field);
+            runFieldValidation(field, nextValues);
           }, debounceMs);
           debounceTimers.set(field, timer);
         } else {
           // Immediate validation for sync rules
-          validateField(field);
+          runFieldValidation(field, nextValues);
         }
       }
     },
-    [validateOnChange, isSubmitted, schema, debounceMs, debounceTimers, validateField]
+    [validateOnChange, isSubmitted, schema, debounceMs, debounceTimers, runFieldValidation, values]
   );
 
   const setValues = useCallback(

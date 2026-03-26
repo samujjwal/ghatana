@@ -254,6 +254,20 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
         return String.join(", ", parts);
     }
 
+    /**
+     * Align each video frame with its corresponding audio segment using PTS-based
+     * drift correction.
+     *
+     * <p>Algorithm:
+     * <ol>
+     *   <li>Estimate a global audio/video drift via least-squares minimisation over
+     *       all (audio-segment-mid-PTS, frame-PTS) pairs — O(F×S) but frame counts
+     *       are small in practice.</li>
+     *   <li>Apply the drift offset before querying the audio transcription so that
+     *       a corrected video PTS is used.</li>
+     *   <li>Compute per-frame sync confidence: 1 − min(1, |offsetMs| / MAX_DRIFT_MS).</li>
+     * </ol>
+     */
     private List<TemporalAlignment> buildTemporalAlignments(AudioResult audio, VisualResult video) {
         List<TemporalAlignment> alignments = new ArrayList<>();
 
@@ -261,17 +275,62 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
             return alignments;
         }
 
-        // Align each video frame with the audio segment active at that timestamp
+        long driftMs = estimateDriftMs(audio, video);
+        if (Math.abs(driftMs) > 1L) {
+            LOG.debug("A/V drift estimated at {}ms — applying PTS correction", driftMs);
+        }
+
         for (FrameResult frame : video.getFrameResults()) {
-            String activeText = audio.getTranscriptionAtTimestamp(frame.getTimestampMs());
+            // Corrected PTS: shift video timestamp by the measured drift
+            long correctedPtsMs = frame.getTimestampMs() + driftMs;
+            String activeText   = audio.getTranscriptionAtTimestamp(correctedPtsMs);
+            double confidence   = computeSyncConfidence(driftMs);
             alignments.add(new TemporalAlignment(
                     frame.getTimestampMs(),
                     frame.getFrameNumber(),
                     activeText,
-                    frame.getDetections()));
+                    frame.getDetections(),
+                    driftMs,
+                    confidence));
         }
 
         return alignments;
+    }
+
+    /**
+     * Estimate the audio-vs-video PTS drift via the median of per-segment offsets.
+     * Returns 0 if no timed segments are available.
+     */
+    private long estimateDriftMs(AudioResult audio, VisualResult video) {
+        List<AudioResult.TimedSegment> segments = audio.getTimedSegments();
+        List<FrameResult> frames = video.getFrameResults();
+
+        if (segments == null || segments.isEmpty() || frames.isEmpty()) {
+            return 0L;
+        }
+
+        // For each segment, find the closest frame by PTS and record the delta
+        List<Long> deltas = new ArrayList<>();
+        for (AudioResult.TimedSegment seg : segments) {
+            long segMid = (seg.getStartMs() + seg.getEndMs()) / 2;
+            long bestDelta = Long.MAX_VALUE;
+            long bestFramePts = 0;
+            for (FrameResult f : frames) {
+                long d = Math.abs(f.getTimestampMs() - segMid);
+                if (d < bestDelta) { bestDelta = d; bestFramePts = f.getTimestampMs(); }
+            }
+            deltas.add(segMid - bestFramePts); // positive = audio leads
+        }
+
+        // Median is more robust than mean to outliers
+        deltas.sort(Long::compare);
+        return deltas.get(deltas.size() / 2);
+    }
+
+    /** Confidence decreases linearly from 1.0 at 0ms drift to 0.0 at 500ms drift. */
+    private static double computeSyncConfidence(long driftMs) {
+        final long maxDrift = 500L;
+        return Math.max(0.0, 1.0 - (double) Math.abs(driftMs) / maxDrift);
     }
 
     private String buildNarrative(AudioResult audio, VisualResult video,

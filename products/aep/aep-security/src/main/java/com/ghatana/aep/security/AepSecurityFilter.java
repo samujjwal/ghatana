@@ -4,6 +4,9 @@
  */
 package com.ghatana.aep.security;
 
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
@@ -18,10 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * OWASP-aligned HTTP security filter for the AEP HTTP server.
@@ -55,8 +56,7 @@ public final class AepSecurityFilter implements AsyncServlet {
 
     // ── Rate limiting ───────────────────────────────────────────────────────────
     private static final int RATE_LIMIT_REQUESTS = 200;
-    private static final long RATE_LIMIT_WINDOW_MS = 60_000L;
-    private static final int MAX_TRACKED_IPS = 10_000;
+    private static final Duration RATE_LIMIT_WINDOW = Duration.ofMinutes(1);
 
     // ── Security header values (constants to avoid allocation per request) ──────
     private static final String HSTS_VALUE =
@@ -74,8 +74,8 @@ public final class AepSecurityFilter implements AsyncServlet {
     // ── Downstream ──────────────────────────────────────────────────────────────
     private final AsyncServlet next;
 
-    // ── Rate-limit state (event-loop thread) ────────────────────────────────────
-    private final ConcurrentHashMap<String, long[]> rateLimitMap = new ConcurrentHashMap<>();
+    // ── Shared platform limiter ─────────────────────────────────────────────────
+    private final RateLimiter rateLimiter;
 
     /**
      * Constructs a security filter with the given CORS policy.
@@ -86,6 +86,13 @@ public final class AepSecurityFilter implements AsyncServlet {
     public AepSecurityFilter(AsyncServlet next, String allowedOrigins) {
         this.next = next;
         this.allowedOrigins = allowedOrigins != null ? allowedOrigins : "*";
+        this.rateLimiter = DefaultRateLimiter.create(
+                RateLimiterConfig.builder()
+                        .maxRequestsPerMinute(RATE_LIMIT_REQUESTS)
+                        .burstSize(RATE_LIMIT_REQUESTS)
+                        .windowDuration(RATE_LIMIT_WINDOW)
+                        .build()
+        );
     }
 
     /** Convenience constructor: allows all origins. */
@@ -124,7 +131,7 @@ public final class AepSecurityFilter implements AsyncServlet {
         // synchronously — catch it and fall through to the routing layer.
         Promise<io.activej.bytebuf.ByteBuf> bodyLoad;
         try {
-            bodyLoad = request.loadBody((int) MAX_REQUEST_BODY_BYTES + 1)
+                bodyLoad = request.loadBody(MAX_REQUEST_BODY_BYTES + 1)
                     .map(buf -> {
                         if (buf != null && buf.readRemaining() > MAX_REQUEST_BODY_BYTES) {
                             // Read (MAX+1) bytes → original body exceeds limit
@@ -141,9 +148,10 @@ public final class AepSecurityFilter implements AsyncServlet {
                 buf -> {
                     // ── 3. Rate limiting ─────────────────────────────────────────────
                     String clientIp = clientIp(request);
-                    if (!isRateLimitAllowed(clientIp)) {
+                    RateLimiter.AcquireResult rateLimitResult = rateLimiter.tryAcquire(clientIp);
+                    if (!rateLimitResult.allowed()) {
                         log.warn("Rate limit exceeded for ip={}", clientIp);
-                        return Promise.of(rateLimitResponse());
+                        return Promise.of(rateLimitResponse(rateLimitResult));
                     }
 
                     // ── 4. Delegate to router with security headers applied ──
@@ -238,37 +246,6 @@ public final class AepSecurityFilter implements AsyncServlet {
     }
 
     // =========================================================================
-    // Rate limiting (fixed-window, per-IP)
-    // =========================================================================
-
-    private boolean isRateLimitAllowed(String ip) {
-        long now = System.currentTimeMillis();
-
-        // Evict oldest entries if we're at capacity to prevent unbounded memory growth
-        if (rateLimitMap.size() > MAX_TRACKED_IPS) {
-            rateLimitMap.entrySet().stream()
-                .filter(e -> now - e.getValue()[1] > RATE_LIMIT_WINDOW_MS)
-                .map(Map.Entry::getKey)
-                .limit(MAX_TRACKED_IPS / 10L)
-                .forEach(rateLimitMap::remove);
-        }
-
-        long[] window = rateLimitMap.computeIfAbsent(ip, k -> new long[]{0L, now});
-        // window[0] = request count in current window
-        // window[1] = window start timestamp
-
-        if (now - window[1] >= RATE_LIMIT_WINDOW_MS) {
-            // New window — reset
-            window[0] = 1;
-            window[1] = now;
-            return true;
-        }
-
-        window[0]++;
-        return window[0] <= RATE_LIMIT_REQUESTS;
-    }
-
-    // =========================================================================
     // Client IP resolution
     // =========================================================================
 
@@ -304,16 +281,21 @@ public final class AepSecurityFilter implements AsyncServlet {
             .build();
     }
 
-    private HttpResponse rateLimitResponse() {
+    private HttpResponse rateLimitResponse(RateLimiter.AcquireResult rateLimitResult) {
         return HttpResponse.ofCode(429)
             .withHeader(HttpHeaders.CONTENT_TYPE,
                         HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
-            .withHeader(HttpHeaders.of("Retry-After"), HttpHeaderValue.of("60"))
+            .withHeader(HttpHeaders.of("Retry-After"),
+                        HttpHeaderValue.of(String.valueOf(rateLimitResult.retryAfterSeconds())))
             .withHeader(HttpHeaders.of("X-RateLimit-Limit"),
                         HttpHeaderValue.of(String.valueOf(RATE_LIMIT_REQUESTS)))
+            .withHeader(HttpHeaders.of("X-RateLimit-Remaining"),
+                        HttpHeaderValue.of(String.valueOf(rateLimitResult.remainingTokens())))
+            .withHeader(HttpHeaders.of("X-RateLimit-Reset"),
+                        HttpHeaderValue.of(String.valueOf(rateLimitResult.resetAtEpochSeconds())))
             .withBody(("{\"error\":\"Too Many Requests\"," +
                        "\"code\":429," +
-                       "\"retryAfter\":60," +
+                       "\"retryAfter\":" + rateLimitResult.retryAfterSeconds() + "," +
                        "\"timestamp\":\"" + Instant.now() + "\"}").getBytes(StandardCharsets.UTF_8))
             .build();
     }
