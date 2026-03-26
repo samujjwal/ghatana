@@ -56,7 +56,7 @@ public interface ContractValidator {
     /**
      * Returns the contract families this validator applies to, or empty for all families.
      */
-    default List<ContractFamily> applicableFamilies() {
+    default List<KernelContract.ContractFamily> applicableFamilies() {
         return List.of();
     }
 }

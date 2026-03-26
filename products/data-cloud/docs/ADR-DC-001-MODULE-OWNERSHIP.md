@@ -32,9 +32,9 @@ No circular dependences.  No product ↔ product imports except through `libs/*`
 
 | Gradle Module | Capability Domain | Team Owner | Package Root | Primary Public Contract |
 |---|---|---|---|---|
-| `:products:data-cloud:platform` | Core domain types & service interfaces | Data-Cloud Platform | `com.ghatana.datacloud` | `DataCloudService`, `EntityStore`, `QueryEngine` |
+| `:products:data-cloud:platform-launcher` | Runtime/domain services, transport adapters, DI wiring | Data-Cloud Platform | `com.ghatana.datacloud` | `EmbeddedDataCloudClient`, `EventLogStore`, `DataCloudStorageModule` |
 | `:products:data-cloud:spi` | Storage provider SPI | Data-Cloud Platform | `com.ghatana.datacloud.spi` | `StorageProvider`, `IndexProvider` |
-| `:products:data-cloud:launcher` | HTTP server wiring & handler routing | Data-Cloud Runtime | `com.ghatana.datacloud.launcher` | `DataCloudHttpServer` |
+| `:products:data-cloud:launcher` | Deployable bootstrap and standalone packaging | Data-Cloud Runtime | `com.ghatana.datacloud.launcher` | `DataCloudLauncher` |
 | `:products:data-cloud:agent-registry` | Agent/operator registry | Data-Cloud AI | `com.ghatana.datacloud.agents` | `AgentRegistry`, `AgentDefinition` |
 | `:products:data-cloud:feature-store-ingest` | ML feature ingestion pipeline | Data-Cloud AI | `com.ghatana.datacloud.features` | `FeatureIngestService` |
 | `:products:data-cloud:sdk` | External client SDK | Data-Cloud SDK | `com.ghatana.datacloud.sdk` | `DataCloudClient` |
@@ -59,24 +59,24 @@ No circular dependences.  No product ↔ product imports except through `libs/*`
 ### 2.3 Allowed Dependency Edges
 
 ```
-launcher   ──imports──▶  platform  ──imports──▶  spi
+launcher   ──imports──▶  platform-launcher  ──imports──▶  spi
 launcher   ──imports──▶  libs:http-server
 launcher   ──imports──▶  libs:ai-integration    (via AiAssistHandler, VoiceGatewayHandler)
 launcher   ──imports──▶  platform:java:audit    (via DataLifecycleHandler, VoiceGatewayHandler)
 launcher   ──imports──▶  platform:java:governance
 sdk        ──imports──▶  contracts/openapi
 ui         ──imports──▶  sdk  (via REST)
-agent-registry ──imports──▶ platform
-feature-store-ingest ──imports──▶ platform
+agent-registry ──imports──▶ platform-launcher
+feature-store-ingest ──imports──▶ platform-launcher
 ```
 
 **Forbidden edges:**
 
 | Source Module | Forbidden Import | Reason |
 |---|---|---|
-| `platform` | Any `launcher.*` class | Circular |
+| `platform-launcher` | Any `launcher.*` class | Circular |
 | `sdk` | Any `launcher.*` class | Layering violation |
-| `launcher` | `feature-store-ingest` internal impl | Use `platform` API only |
+| `launcher` | `feature-store-ingest` internal impl | Use `platform-launcher` APIs only |
 | Any product | `products/virtual-org/**` directly | Must go through `libs/*` |
 
 ### 2.4 OpenAPI Contract Governance

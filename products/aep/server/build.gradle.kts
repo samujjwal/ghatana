@@ -26,9 +26,9 @@ dependencies {
     
     // Orchestrator sub-module (pipeline lifecycle, execution queues, DI wiring)
     implementation(project(":products:aep:orchestrator"))
-    // Data Cloud SPI + embedded client for agent-registry queries in standalone mode
+    // Data Cloud SPI plus launcher runtime surface for embedded client creation.
     implementation(project(":products:data-cloud:spi"))
-    implementation(project(":products:data-cloud:platform"))
+    implementation(project(":products:data-cloud:platform-launcher"))
     
     // Core platform dependencies
     implementation(project(":platform:java:observability"))

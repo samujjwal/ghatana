@@ -5,7 +5,7 @@ plugins {
 
 dependencies {
     // Platform module
-    implementation(project(":products:data-cloud:platform"))
+    implementation(project(":products:data-cloud:platform-launcher"))
     
     // Core platform dependencies
     implementation(project(":platform:java:observability"))

@@ -66,7 +66,7 @@ public final class ContractRegistry {
 
         // Run pluggable validators
         for (ContractValidator validator : validators) {
-            List<ContractFamily> applicable = validator.applicableFamilies();
+            List<KernelContract.ContractFamily> applicable = validator.applicableFamilies();
             if (!applicable.isEmpty() && !applicable.contains(contract.getFamily())) {
                 continue;
             }
@@ -93,7 +93,7 @@ public final class ContractRegistry {
     /**
      * Returns all contracts of a given family.
      */
-    public List<KernelContract> getByFamily(ContractFamily family) {
+    public List<KernelContract> getByFamily(KernelContract.ContractFamily family) {
         return contracts.values().stream()
             .filter(c -> c.getFamily() == family)
             .collect(Collectors.toUnmodifiableList());

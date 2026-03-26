@@ -12,7 +12,7 @@ This packet consolidates the engineering evidence required for final Data-Cloud 
 
 | Area | Evidence | Status |
 |---|---|---|
-| Targeted backend validation | `./gradlew :products:data-cloud:launcher:compileJava :products:data-cloud:platform:compileJava` | ✅ Green on 2026-03-24 |
+| Targeted backend validation | `./gradlew :products:data-cloud:launcher:compileJava :products:data-cloud:platform-launcher:compileJava` | ✅ Green on 2026-03-25 |
 | Targeted launcher tests | `./gradlew :products:data-cloud:launcher:test` | ✅ Green on 2026-03-24 |
 | Contract drift gate | `products/data-cloud/scripts/check-openapi-drift.sh` + `sdk-generation` CI job | ✅ In CI |
 | Reuse gate | `products/data-cloud/scripts/check-reuse-scorecard.sh` + `reuse-scorecard` CI job | ✅ In CI |

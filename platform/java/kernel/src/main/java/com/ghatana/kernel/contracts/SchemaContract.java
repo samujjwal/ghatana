@@ -64,7 +64,7 @@ public final class SchemaContract extends KernelContract {
 
     private SchemaContract(Builder builder) {
         super(builder.contractId, builder.name, builder.version,
-              ContractFamily.SCHEMA, builder.metadata);
+              KernelContract.ContractFamily.SCHEMA, builder.metadata);
         this.subjects = builder.subjects != null ? List.copyOf(builder.subjects) : List.of();
         validate();
     }

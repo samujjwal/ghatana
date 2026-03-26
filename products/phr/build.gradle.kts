@@ -45,12 +45,29 @@ dependencies {
 
     // Observability
     implementation(libs.micrometer.core)
+    
+    // JWT for authentication
+    implementation(libs.nimbus.jose.jwt)
+    
+    // Jackson for JSON processing
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jsr310)
+    
+    // Commons utilities
+    implementation(libs.commons.codec)
+    implementation(libs.commons.lang3)
+    implementation(libs.commons.collections4)
+    
+    // Logging
+    implementation(libs.slf4j.api)
+    implementation(libs.log4j.slf4j.impl)
 
     // Testing
     testImplementation(project(":platform:java:kernel"))
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

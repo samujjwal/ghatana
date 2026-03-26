@@ -201,28 +201,8 @@ public class DataCloudLauncher {
             }
         }
 
-        // Wire AI services (model registry + feature store) when DATACLOUD_AI_ENABLED=true (DC-11)
-        // Requires DATACLOUD_DB_URL/USER/PASSWORD to be set.
         AIModelManager aiModelManager = null;
         FeatureStoreService featureStoreService = null;
-        if ("true".equalsIgnoreCase(System.getenv("DATACLOUD_AI_ENABLED"))) {
-            try {
-                DataSource aiDataSource = buildAiDataSource();
-                io.micrometer.prometheus.PrometheusMeterRegistry promRegistry =
-                    new io.micrometer.prometheus.PrometheusMeterRegistry(
-                        io.micrometer.prometheus.PrometheusConfig.DEFAULT);
-                MetricsCollector metrics = MetricsCollectorFactory.create(promRegistry);
-                AiMetricsEmitter aiMetrics = new AiMetricsEmitter(metrics);
-                ModelRegistryService modelRegistry = new ModelRegistryService(aiDataSource, metrics);
-                aiModelManager = new AIModelManager(modelRegistry, aiMetrics);
-                featureStoreService = new FeatureStoreService(aiDataSource, metrics);
-                log.info("AI services initialised (model registry + feature store)");
-            } catch (Exception e) {
-                log.warn("Failed to start AI services, continuing without: {}", e.getMessage(), e);
-                aiModelManager = null;
-                featureStoreService = null;
-            }
-        }
 
         // Wire report service when analytics engine is available (DC-10)
         ReportService reportService = null;
@@ -235,7 +215,42 @@ public class DataCloudLauncher {
             }
         }
 
+        boolean databaseEnabled = "true".equalsIgnoreCase(System.getenv("DATACLOUD_DB_ENABLED"));
+        boolean aiEnabled = "true".equalsIgnoreCase(System.getenv("DATACLOUD_AI_ENABLED"));
+        DataSource databaseDataSource = null;
+        if (databaseEnabled || aiEnabled) {
+            try {
+                databaseDataSource = buildDatabaseDataSource();
+                log.info("Standalone database DataSource initialised");
+            } catch (Exception e) {
+                log.warn("Failed to create standalone database DataSource, continuing without DB-backed features: {}",
+                        e.getMessage(), e);
+                databaseDataSource = null;
+                aiModelManager = null;
+                featureStoreService = null;
+            }
+        }
+
+        if (aiEnabled && databaseDataSource != null) {
+            try {
+                io.micrometer.prometheus.PrometheusMeterRegistry promRegistry =
+                    new io.micrometer.prometheus.PrometheusMeterRegistry(
+                        io.micrometer.prometheus.PrometheusConfig.DEFAULT);
+                MetricsCollector metrics = MetricsCollectorFactory.create(promRegistry);
+                AiMetricsEmitter aiMetrics = new AiMetricsEmitter(metrics);
+                ModelRegistryService modelRegistry = new ModelRegistryService(databaseDataSource, metrics);
+                aiModelManager = new AIModelManager(modelRegistry, aiMetrics);
+                featureStoreService = new FeatureStoreService(databaseDataSource, metrics);
+                log.info("AI services initialised (model registry + feature store)");
+            } catch (Exception e) {
+                log.warn("Failed to start AI services, continuing without: {}", e.getMessage(), e);
+                aiModelManager = null;
+                featureStoreService = null;
+            }
+        }
+
         try {
+            final DataSource databaseDataSourceRef = databaseDataSource;
             DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
                     .withReportService(reportService)
                     .withAiModelManager(aiModelManager)
@@ -243,6 +258,9 @@ public class DataCloudLauncher {
                     .withMetricsCollector(MetricsCollectorFactory.create(
                             new io.micrometer.prometheus.PrometheusMeterRegistry(
                                     io.micrometer.prometheus.PrometheusConfig.DEFAULT)));
+            if (databaseEnabled && databaseDataSource != null) {
+                httpServer.withHealthSubsystem("database", new JdbcDatabaseHealthProbe(databaseDataSource, 5));
+            }
             httpServer.start();
             log.info("HTTP server started on port {}", port);
 
@@ -250,34 +268,36 @@ public class DataCloudLauncher {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("Stopping HTTP server...");
                 httpServer.stop();
+                closeDataSource(databaseDataSourceRef);
             }));
         } catch (Exception e) {
             log.error("Failed to start HTTP server on port {}", port, e);
+            closeDataSource(databaseDataSource);
         }
     }
 
     /**
-     * Creates a HikariCP {@link DataSource} for AI services from environment variables.
+     * Creates a HikariCP {@link DataSource} for standalone database-backed features.
      *
      * <p>Reads {@code DATACLOUD_DB_URL}, {@code DATACLOUD_DB_USER}, and
-     * {@code DATACLOUD_DB_PASSWORD}. Falls back to sensible defaults for the pool
-     * so that lightweight deployments work without explicit tuning.
+     * {@code DATACLOUD_DB_PASSWORD}. Reused for standalone health checks and
+     * optional AI services so all database-backed launcher features share one pool.
      *
      * @return configured {@link HikariDataSource}
      * @throws IllegalStateException if required env vars are missing
      *
      * @doc.type method
-     * @doc.purpose Create AI-service DataSource from environment variables
+     * @doc.purpose Create shared standalone DataSource from environment variables
      * @doc.layer product
      * @doc.pattern Factory
      */
-    private static DataSource buildAiDataSource() {
+    private static DataSource buildDatabaseDataSource() {
         String url = System.getenv("DATACLOUD_DB_URL");
         String user = System.getenv("DATACLOUD_DB_USER");
         String password = System.getenv("DATACLOUD_DB_PASSWORD");
         if (url == null || url.isBlank()) {
             throw new IllegalStateException(
-                    "DATACLOUD_DB_URL is required when DATACLOUD_AI_ENABLED=true");
+                    "DATACLOUD_DB_URL is required when DATACLOUD_DB_ENABLED=true or DATACLOUD_AI_ENABLED=true");
         }
         HikariConfig cfg = new HikariConfig();
         cfg.setJdbcUrl(url);
@@ -286,10 +306,20 @@ public class DataCloudLauncher {
         cfg.setMaximumPoolSize(10);
         cfg.setMinimumIdle(2);
         cfg.setConnectionTimeout(30_000L);
+        cfg.setConnectionTestQuery("SELECT 1");
+        cfg.setValidationTimeout(5_000L);
+        cfg.setLeakDetectionThreshold(60_000L);
+        cfg.setInitializationFailTimeout(-1L);
         cfg.setIdleTimeout(600_000L);
         cfg.setMaxLifetime(1_800_000L);
-        cfg.setPoolName("dc-ai-services");
-        cfg.addDataSourceProperty("ApplicationName", "data-cloud-ai");
+        cfg.setPoolName("dc-standalone-db");
+        cfg.addDataSourceProperty("ApplicationName", "data-cloud-standalone");
         return new HikariDataSource(cfg);
+    }
+
+    private static void closeDataSource(DataSource dataSource) {
+        if (dataSource instanceof HikariDataSource hikariDataSource && !hikariDataSource.isClosed()) {
+            hikariDataSource.close();
+        }
     }
 }

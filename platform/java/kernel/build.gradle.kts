@@ -56,6 +56,10 @@ dependencies {
     testImplementation(libs.mockito.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
+
+    // JMH for benchmarking
+    testImplementation(libs.jmh.core)
+    testAnnotationProcessor(libs.jmh.generator.annprocess)
 }
 
 tasks.test {

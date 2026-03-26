@@ -422,7 +422,7 @@ Outcome: deterministic release gates and production readiness confidence.
 - ✅ Release sign-off packet prepared (`DATA_CLOUD_RELEASE_SIGNOFF.md`) with evidence links, approval matrix, and execution checklist.
 - ✅ Structural simplification review packet prepared (`DATA_CLOUD_STRUCTURAL_SIMPLIFICATION_SIGNOFF.md`) for Architecture Council review.
 - ✅ Staging parity validation runbook prepared (`DATA_CLOUD_STAGING_PARITY_VALIDATION.md`) and aligned with the existing `smoke-e2e` CI job env wiring.
-- ✅ Targeted engineering validation green: `:products:data-cloud:launcher:compileJava`, `:products:data-cloud:platform:compileJava`, and `:products:data-cloud:launcher:test` all passed on 2026-03-24.
+- ✅ Targeted engineering validation green: `:products:data-cloud:launcher:compileJava`, `:products:data-cloud:platform-launcher:compileJava`, and `:products:data-cloud:launcher:test` all passed on 2026-03-25.
 - 🔲 Live staging smoke execution against the deployed environment — awaiting `DC_STAGING_BASE_URL` / smoke credentials and an execution window.
 - 🔲 External approvals by Architecture, Security, AI Governance, Product Steering, and Architecture Council — awaiting human sign-off.
 

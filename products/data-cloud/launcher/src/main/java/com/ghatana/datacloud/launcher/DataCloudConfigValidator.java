@@ -25,6 +25,7 @@ import java.util.Objects;
  *   <li>{@code DATACLOUD_MAX_CONNECTIONS} — must be a positive integer if set</li>
  *   <li>{@code DATACLOUD_INSTANCE_ID} — must not be blank if set</li>
  *   <li>{@code DATACLOUD_DB_URL} — required when {@code DATACLOUD_DB_ENABLED=true}</li>
+ *   <li>{@code DATACLOUD_DB_URL} — also required when {@code DATACLOUD_AI_ENABLED=true}</li>
  *   <li>{@code DATACLOUD_DB_USER} / {@code DATACLOUD_DB_PASSWORD} — required with DB URL</li>
  *   <li>{@code DATACLOUD_KAFKA_BOOTSTRAP} — required when {@code DATACLOUD_KAFKA_ENABLED=true}</li>
  *   <li>{@code DATACLOUD_CLICKHOUSE_HOST} — required when {@code DATACLOUD_CLICKHOUSE_ENABLED=true}</li>
@@ -54,6 +55,7 @@ public final class DataCloudConfigValidator {
     private final String maxConnectionsStr;
     private final String instanceId;
     private final boolean dbEnabled;
+    private final boolean aiEnabled;
     private final String dbUrl;
     private final String dbUser;
     private final String dbPassword;
@@ -70,6 +72,7 @@ public final class DataCloudConfigValidator {
         this.maxConnectionsStr  = builder.maxConnectionsStr;
         this.instanceId         = builder.instanceId;
         this.dbEnabled          = builder.dbEnabled;
+        this.aiEnabled          = builder.aiEnabled;
         this.dbUrl              = builder.dbUrl;
         this.dbUser             = builder.dbUser;
         this.dbPassword         = builder.dbPassword;
@@ -93,6 +96,7 @@ public final class DataCloudConfigValidator {
                 .maxConnectionsStr(System.getenv("DATACLOUD_MAX_CONNECTIONS"))
                 .instanceId(System.getenv("DATACLOUD_INSTANCE_ID"))
                 .dbEnabled("true".equalsIgnoreCase(System.getenv("DATACLOUD_DB_ENABLED")))
+                .aiEnabled("true".equalsIgnoreCase(System.getenv("DATACLOUD_AI_ENABLED")))
                 .dbUrl(System.getenv("DATACLOUD_DB_URL"))
                 .dbUser(System.getenv("DATACLOUD_DB_USER"))
                 .dbPassword(System.getenv("DATACLOUD_DB_PASSWORD"))
@@ -140,7 +144,7 @@ public final class DataCloudConfigValidator {
         }
 
         // Database
-        if (dbEnabled) {
+        if (dbEnabled || aiEnabled) {
             requireNonBlank(dbUrl,      "DATACLOUD_DB_URL",      violations);
             requireNonBlank(dbUser,     "DATACLOUD_DB_USER",     violations);
             requireNonBlank(dbPassword, "DATACLOUD_DB_PASSWORD", violations);
@@ -223,6 +227,7 @@ public final class DataCloudConfigValidator {
         private String maxConnectionsStr;
         private String instanceId;
         private boolean dbEnabled;
+        private boolean aiEnabled;
         private String dbUrl;
         private String dbUser;
         private String dbPassword;
@@ -240,6 +245,7 @@ public final class DataCloudConfigValidator {
         public Builder maxConnectionsStr(String v)  { this.maxConnectionsStr = v; return this; }
         public Builder instanceId(String v)         { this.instanceId = v;        return this; }
         public Builder dbEnabled(boolean v)         { this.dbEnabled = v;         return this; }
+        public Builder aiEnabled(boolean v)         { this.aiEnabled = v;         return this; }
         public Builder dbUrl(String v)              { this.dbUrl = v;             return this; }
         public Builder dbUser(String v)             { this.dbUser = v;            return this; }
         public Builder dbPassword(String v)         { this.dbPassword = v;        return this; }

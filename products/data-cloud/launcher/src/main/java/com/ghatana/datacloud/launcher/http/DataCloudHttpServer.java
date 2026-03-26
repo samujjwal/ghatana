@@ -13,9 +13,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Supplier;
 
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
@@ -232,6 +235,7 @@ public class DataCloudHttpServer {
     private AiAssistHandler aiAssistHandler; // DC-E3: pervasive AI assist endpoints
     private VoiceGatewayHandler voiceHandler; // DC-E4: voice intent gateway
     private DataLifecycleHandler dataLifecycleHandler; // DC-E5: data lifecycle and governance
+    private final Map<String, Supplier<Map<String, Object>>> healthSubsystemSuppliers = new LinkedHashMap<>();
 
     /**
      * Creates a new Data-Cloud HTTP server without optional extensions.
@@ -505,6 +509,17 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Registers a dynamic subsystem health supplier used by {@code GET /health/detail}.
+     *
+     * <p>The supplied snapshot should include at least a {@code status} field with
+     * one of {@code UP}, {@code DEGRADED}, {@code DOWN}, or {@code UNKNOWN}.
+     */
+    public DataCloudHttpServer withHealthSubsystem(String name, Supplier<Map<String, Object>> supplier) {
+        this.healthSubsystemSuppliers.put(name, supplier);
+        return this;
+    }
+
+    /**
      * Starts the HTTP server.
      *
      * @throws Exception if the server fails to start
@@ -534,7 +549,7 @@ public class DataCloudHttpServer {
 
         aiModelHandler = new AiModelHandler(aiModelManager, featureStoreService, httpSupport);
 
-        healthHandler = new HealthHandler(httpSupport);
+        healthHandler = new HealthHandler(httpSupport, healthSubsystemSuppliers);
 
         // DC-E3: AI assist handler — nullable completionService enables graceful degradation
         aiAssistHandler = new AiAssistHandler(completionService, objectMapper, httpSupport, blockingExecutor);

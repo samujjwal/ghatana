@@ -4,7 +4,7 @@
  */
 package com.ghatana.kernel.contracts.schema;
 
-import com.ghatana.kernel.contracts.ContractFamily;
+
 import com.ghatana.kernel.contracts.ContractValidator;
 import com.ghatana.kernel.contracts.KernelContract;
 import com.ghatana.kernel.contracts.SchemaContract;
@@ -52,7 +52,7 @@ public final class SchemaGovernanceValidator implements ContractValidator {
     }
 
     @Override
-    public List<ContractFamily> applicableFamilies() {
-        return List.of(ContractFamily.SCHEMA);
+    public List<KernelContract.ContractFamily> applicableFamilies() {
+        return List.of(KernelContract.ContractFamily.SCHEMA);
     }
 }

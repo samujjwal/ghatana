@@ -5,7 +5,6 @@
 package com.ghatana.kernel.contracts.autonomy;
 
 import com.ghatana.kernel.contracts.AutonomyContract;
-import com.ghatana.kernel.contracts.ContractFamily;
 import com.ghatana.kernel.contracts.ContractValidator;
 import com.ghatana.kernel.contracts.KernelContract;
 
@@ -59,7 +58,7 @@ public final class AutonomyGovernanceValidator implements ContractValidator {
     }
 
     @Override
-    public List<ContractFamily> applicableFamilies() {
-        return List.of(ContractFamily.AUTONOMY);
+    public List<KernelContract.ContractFamily> applicableFamilies() {
+        return List.of(KernelContract.ContractFamily.AUTONOMY);
     }
 }

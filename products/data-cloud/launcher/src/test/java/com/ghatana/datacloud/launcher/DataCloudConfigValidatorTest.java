@@ -58,6 +58,20 @@ class DataCloudConfigValidatorTest {
     }
 
     @Test
+    @DisplayName("AI enabled with all credentials — passes")
+    void aiEnabledWithAllCredentials_passes() {
+        assertThatCode(() ->
+                DataCloudConfigValidator.builder()
+                        .aiEnabled(true)
+                        .dbUrl("jdbc:postgresql://localhost:5432/dc")
+                        .dbUser("dc_user")
+                        .dbPassword("s3cr3t")
+                        .build()
+                        .validate())
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     @DisplayName("Kafka enabled with bootstrap servers — passes")
     void kafkaEnabledWithBootstrap_passes() {
         assertThatCode(() ->
@@ -188,6 +202,20 @@ class DataCloudConfigValidatorTest {
                         .validate())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("DATACLOUD_DB_USER");
+    }
+
+    @Test
+    @DisplayName("AI enabled but no URL — fails")
+    void aiEnabledNoUrl_fails() {
+        assertThatThrownBy(() ->
+                DataCloudConfigValidator.builder()
+                        .aiEnabled(true)
+                        .dbUser("user")
+                        .dbPassword("pass")
+                        .build()
+                        .validate())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("DATACLOUD_DB_URL");
     }
 
     @Test

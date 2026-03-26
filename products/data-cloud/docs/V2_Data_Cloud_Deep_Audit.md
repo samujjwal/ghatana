@@ -25,7 +25,7 @@ The product shows strong intent in observability, deployment shape, and capabili
 
 | Risk | Severity | Why it matters |
 |---|---:|---|
-| Broken backend build | Critical | `:products:data-cloud:platform:compileJava` fails, so the core product cannot be rebuilt reliably. |
+| Broken backend build | Critical | `:products:data-cloud:platform-launcher:compileJava` was the last runtime compile blocker, so the core product could not be rebuilt reliably until the split cleanup landed. |
 | Broken frontend validation | Critical | UI type-check and targeted tests fail; the frontend is not safely changeable. |
 | Contract drift | Critical | UI, launcher, platform controller, OpenAPI docs, and Java client disagree on paths and headers. |
 | Delivery pipeline drift | Critical | `data-cloud-ci.yml` references a removed `core` module, so product-specific CI is stale. |
@@ -41,7 +41,7 @@ The product shows strong intent in observability, deployment shape, and capabili
 In scope:
 
 - `products/data-cloud/spi`
-- `products/data-cloud/platform`
+- `products/data-cloud/platform-launcher`
 - `products/data-cloud/launcher`
 - `products/data-cloud/agent-registry`
 - `products/data-cloud/sdk`
@@ -59,7 +59,7 @@ Audit method:
 - Module and package topology reconstruction
 - Review of build, test, deployment, and ownership assets
 - Local validation runs:
-  - `./gradlew :products:data-cloud:spi:compileJava :products:data-cloud:platform:compileJava :products:data-cloud:launcher:compileJava :products:data-cloud:agent-registry:compileJava --no-daemon`
+  - `./gradlew :products:data-cloud:spi:compileJava :products:data-cloud:platform-launcher:compileJava :products:data-cloud:launcher:compileJava :products:data-cloud:agent-registry:compileJava --no-daemon`
   - `./node_modules/.bin/tsc --noEmit -p tsconfig.json` in `products/data-cloud/ui`
   - `./node_modules/.bin/vitest run src/__tests__/api/schema.service.test.ts src/__tests__/pages/AgentPluginManagerPage.test.tsx` in `products/data-cloud/ui`
 
@@ -641,7 +641,7 @@ Target gates:
 | 44.1 | Restore backend compile in `platform` | ✅ Done | `compileJava` passes for our modules (pre-existing errors in ConfigLoader/QueryRecommender/EmbeddingCacheAdapter remain) |
 | 44.2 | Restore frontend local type-check | ✅ Done | `tsc --noEmit` passes with **0 errors** (was 98+). Fixed: FlowCanvas API alignment across 4 files, EventCloudTopology types imported from `@ghatana/canvas/topology`, NodeChange→OnNodesChange, ValidationPanel stories, mock handler types, MemoryPlaneViewerPage args, brain-unified cast |
 | 44.3 | Fix Vitest shared setup and `vitest-axe` | ✅ Done | Fixed `setup.ts` rules cast, `a11y.ts` toHaveNoViolations assertion |
-| 44.4 | Replace stale CI commands | ✅ N/A | CI yml already uses correct module names (`:products:data-cloud:platform`, etc.) |
+| 44.4 | Replace stale CI commands | ✅ Fixed | CI no longer references the deleted wrapper module; backend static analysis now runs via `:products:data-cloud:platform-launcher:spotbugsMain`, SBOM generation uses the root `cyclonedxBom` task, and SonarQube is explicitly skipped unless the repository is configured with a `sonarqube` task. Follow-up validation after the CycloneDX 3.2.2 migration now confirms `cyclonedxBom` completes successfully and writes the populated aggregate SBOM to `build/sbom/bom.json`. The remaining launcher-owned OWASP task no longer fails during initialization after fixing a parent plugin-classloader collision where `buildSrc` exported Saxon-HE's stale `httpclient5:5.1.3` ahead of OWASP's required `5.5.1`; `:products:data-cloud:platform-launcher:dependencyCheckAnalyze` now proceeds into the normal NVD update/analyze phase. |
 | 44.5 | Align port/env model | ✅ N/A | Already aligned: HTTP=8082, CORS origin=localhost:5173, gRPC=9090 |
 | 44.6 | Canonical HTTP path model | ✅ Fixed | `DistributedHttpDataCloudClient` converted from tenant-in-path (`/api/v1/tenants/{tid}/...`) to header-based (`X-Tenant-ID` header + `/api/v1/entities/:collection`) matching server routes |
 | 44.7 | Fix `EntityResponse.from()` defect | ✅ Fixed | `Boolean` → `boolean` auto-unboxing NPE: changed `entity.getActive()` to `Boolean.TRUE.equals(entity.getActive())` |

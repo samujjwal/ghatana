@@ -84,7 +84,11 @@ include(":products:aep:server")
 // =============================================================================
 
 include(":products:data-cloud:spi")
-include(":products:data-cloud:platform")
+include(":products:data-cloud:platform-entity")
+include(":products:data-cloud:platform-event")
+include(":products:data-cloud:platform-config")
+include(":products:data-cloud:platform-analytics")
+include(":products:data-cloud:platform-launcher")
 include(":products:data-cloud:launcher")
 include(":products:data-cloud:sdk")
 include(":products:data-cloud:agent-registry")

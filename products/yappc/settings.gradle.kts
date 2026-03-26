@@ -213,13 +213,15 @@ if (isStandaloneBuild) {
     }
 
     val dataCloudRoot = File(monorepoRoot, "products/data-cloud")
-    val dataCloudPlatform = File(dataCloudRoot, "platform")
+    val dataCloudPlatformLauncher = File(dataCloudRoot, "platform-launcher")
     val dataCloudSpi = File(dataCloudRoot, "spi")
-    if (dataCloudRoot.exists() && dataCloudPlatform.exists()) {
+    if (dataCloudRoot.exists() && (dataCloudPlatformLauncher.exists() || dataCloudSpi.exists())) {
         include("products:data-cloud")
         project(":products:data-cloud").projectDir = dataCloudRoot
-        include("products:data-cloud:platform")
-        project(":products:data-cloud:platform").projectDir = dataCloudPlatform
+        if (dataCloudPlatformLauncher.exists()) {
+            include("products:data-cloud:platform-launcher")
+            project(":products:data-cloud:platform-launcher").projectDir = dataCloudPlatformLauncher
+        }
         if (dataCloudSpi.exists()) {
             include("products:data-cloud:spi")
             project(":products:data-cloud:spi").projectDir = dataCloudSpi

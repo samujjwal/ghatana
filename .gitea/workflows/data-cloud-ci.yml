@@ -80,14 +80,13 @@ jobs:
           restore-keys: gradle-${{ runner.os }}-
 
       - name: Build (compile only)
-        run: ./gradlew :products:data-cloud:platform:compileJava --no-daemon --parallel
+        run: ./gradlew :products:data-cloud:platform-launcher:compileJava --no-daemon --parallel
 
       - name: Run unit tests
         run: |
-          ./gradlew :products:data-cloud:platform:test \
+          ./gradlew :products:data-cloud:platform-launcher:test \
             --no-daemon \
             --tests "com.ghatana.datacloud.*" \
-            -x :products:data-cloud:platform:test \
             --info
         continue-on-error: false
 
@@ -97,10 +96,10 @@ jobs:
           DOCKER_TLS_CERTDIR: ""
           TESTCONTAINERS_RYUK_DISABLED: "true"
         run: |
-          ./gradlew :products:data-cloud:platform:integrationTest \
+          ./gradlew :products:data-cloud:platform-launcher:integrationTest \
             --no-daemon \
             --info || \
-          ./gradlew :products:data-cloud:platform:test \
+          ./gradlew :products:data-cloud:platform-launcher:test \
             --tests "*IntegrationTest" \
             --tests "*KafkaEventLogStoreTest" \
             --tests "*ClickHouseTimeSeriesConnectorTest" \
@@ -108,10 +107,10 @@ jobs:
             --info
 
       - name: Run checkstyle
-        run: ./gradlew :products:data-cloud:platform:checkstyleMain --no-daemon
+        run: ./gradlew :products:data-cloud:platform-launcher:checkstyleMain --no-daemon
 
       - name: Run PMD
-        run: ./gradlew :products:data-cloud:platform:pmdMain --no-daemon
+        run: ./gradlew :products:data-cloud:platform-launcher:pmdMain --no-daemon
 
       - name: Publish test results
         uses: actions/upload-artifact@v4
@@ -347,7 +346,7 @@ jobs:
       # ── SpotBugs static analysis ─────────────────────────────────────────
       - name: Run SpotBugs (SAST)
         run: |
-          ./gradlew :products:data-cloud:platform:spotbugsMain \
+          ./gradlew :products:data-cloud:platform-launcher:spotbugsMain \
             --no-daemon \
             --continue
         # SpotBugs exit-code ≠ 0 on findings; the Upload step still runs
@@ -358,7 +357,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name:           spotbugs-report-${{ gitea.sha }}
-          path:           products/data-cloud/platform/build/reports/spotbugs/
+          path:           products/data-cloud/platform-launcher/build/reports/spotbugs/
           retention-days: 14
 
       - name: Convert SpotBugs XML → SARIF and upload
@@ -367,7 +366,7 @@ jobs:
         run: |
           pip install spotbugs-sarif-converter --quiet 2>/dev/null || true
           if spotbugs-sarif-converter \
-              products/data-cloud/platform/build/reports/spotbugs/main.xml \
+              products/data-cloud/platform-launcher/build/reports/spotbugs/main.xml \
               -o spotbugs.sarif 2>/dev/null; then
             echo "SARIF generated"
           else
@@ -389,7 +388,7 @@ jobs:
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
-          ./gradlew :products:data-cloud:platform:dependencyCheckAnalyze \
+          ./gradlew :products:data-cloud:platform-launcher:dependencyCheckAnalyze \
             --no-daemon \
             --info
         # Allow pipeline to continue to upload report even if CVEs found;
@@ -401,13 +400,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name:           owasp-report-${{ gitea.sha }}
-          path:           products/data-cloud/platform/build/reports/owasp/
+          path:           products/data-cloud/platform-launcher/build/reports/owasp/
           retention-days: 30
 
       - name: Upload OWASP SARIF to Security tab
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: products/data-cloud/platform/build/reports/owasp/dependency-check-report.sarif
+          sarif_file: products/data-cloud/platform-launcher/build/reports/owasp/dependency-check-report.sarif
           category:   owasp-dependency-check
         continue-on-error: true   # SARIF file may not exist if NVD fetch failed

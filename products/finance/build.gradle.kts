@@ -21,6 +21,17 @@ dependencies {
     implementation(project(":platform:java:agent-core"))
 
     // Kernel modules
+    implementation(project(":platform:java:kernel"))
+
+    // AI-specific dependencies
+    implementation("dev.langchain4j:langchain4j:0.34.0")
+    implementation("com.openai:openai-java:0.12.0")
+
+    // ActiveJ - for async operations and DI
+    implementation(libs.activej.promise)
+    implementation(libs.activej.inject)
+    implementation(libs.activej.servicegraph)
+    implementation(libs.activej.launcher)
 
     // Finance Domains - Core
     implementation(project(":products:finance:domains:oms"))
@@ -65,4 +76,11 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation("io.activej:activej-test:6.0-rc2")
+}
+
+tasks.register<JavaExec>("validateContracts") {
+    group = "verification"
+    description = "Validates Finance contracts for deployment"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.ghatana.finance.contracts.ContractValidationRunner")
 }

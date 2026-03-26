@@ -3,6 +3,6 @@
  * All rights reserved.
  *
  * MOVED: Implementation lives in com.ghatana.aep.launcher.store.DataCloudPipelineStore
- * (products/aep/launcher module) where DataCloudClient is available as implementation(project(":products:data-cloud:platform")).
+ * (products/aep/launcher module) where DataCloudClient is available as implementation(project(":products:data-cloud:platform-launcher")).
  */
 package com.ghatana.aep.integration.store;

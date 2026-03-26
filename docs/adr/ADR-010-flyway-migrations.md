@@ -24,7 +24,7 @@ Use **Flyway** for all database schema management with version-prefixed SQL migr
 | `V005__create_patterns_table.sql` | Event pattern definitions (NFA/temporal/composite) |
 | `V006__create_audit_trail.sql` | Persistent audit events |
 
-**Data-Cloud migrations** (`products/data-cloud/platform/src/main/resources/db/migration/`):
+**Data-Cloud migrations** (`products/data-cloud/platform-launcher/src/main/resources/db/migration/`):
 
 | File | Purpose |
 |------|---------|

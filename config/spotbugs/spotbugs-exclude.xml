@@ -133,6 +133,17 @@
     </Match>
 
     <!-- =====================================================================
+         Injected EventLogStore adapter
+         EventCloudPluginAdapter stores a required EventLogStore SPI dependency.
+         The field is never exposed, no defensive copy is possible for an SPI,
+         and the adapter only delegates append/tail operations.
+    ====================================================================== -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+        <Class name="com.ghatana.platform.plugin.adapter.EventCloudPluginAdapter" />
+    </Match>
+
+    <!-- =====================================================================
          Lombok-generated equals() / hashCode() — ES_COMPARING_PARAMETER_STRING_WITH_EQ
          Lombok @Value and @Builder(toBuilder) generate canonical equals() that
          first uses reference equality (==) as an identity fast-path before

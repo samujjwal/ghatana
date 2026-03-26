@@ -19,10 +19,10 @@ dependencies {
     // YAPPC agents runtime (for AepEventPublisher)
     implementation(project(":products:yappc:core:agents:runtime"))
     
-    // Data-Cloud platform (for DataCloudClient)
-    // TODO(ADAPTER-SEAM): data-cloud:platform coupling in a domain services module.
+    // Data-Cloud SPI (for DataCloudClient)
+    // TODO(ADAPTER-SEAM): data-cloud coupling in a domain services module.
     //   Future: introduce DataCloudPort in core; move impl to infrastructure:datacloud
-    implementation(project(":products:data-cloud:platform"))
+    implementation(project(":products:data-cloud:spi"))
     
     // YAPPC infrastructure
     implementation(project(":products:yappc:core:yappc-infrastructure"))

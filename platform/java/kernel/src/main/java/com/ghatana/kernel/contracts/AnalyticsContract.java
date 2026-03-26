@@ -64,7 +64,7 @@ public final class AnalyticsContract extends KernelContract {
 
     private AnalyticsContract(Builder builder) {
         super(builder.contractId, builder.name, builder.version,
-              ContractFamily.ANALYTICS, builder.metadata);
+              KernelContract.ContractFamily.ANALYTICS, builder.metadata);
         this.metrics = builder.metrics != null ? List.copyOf(builder.metrics) : List.of();
         this.dashboards = builder.dashboards != null ? List.copyOf(builder.dashboards) : List.of();
         validate();

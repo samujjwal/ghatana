@@ -78,7 +78,7 @@ public final class PackagingContract extends KernelContract {
 
     private PackagingContract(Builder builder) {
         super(builder.contractId, builder.name, builder.version,
-              ContractFamily.PACKAGING, builder.metadata);
+              KernelContract.ContractFamily.PACKAGING, builder.metadata);
         this.tier = builder.tier;
         this.lifecycleHooks = builder.lifecycleHooks != null
             ? List.copyOf(builder.lifecycleHooks) : List.of();

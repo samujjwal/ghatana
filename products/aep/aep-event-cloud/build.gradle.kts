@@ -19,7 +19,6 @@ plugins {
 dependencies {
     // ── Data-Cloud (mandatory backing store) ────────────────────────────────
     api(project(":products:data-cloud:spi"))         // EventLogStore, EntityStore, TenantContext
-    implementation(project(":products:data-cloud:platform")) // DataCloudClientFactory for embedded mode
 
     // ── AEP contracts ───────────────────────────────────────────────────────
     api(project(":products:aep:aep-operator-contracts"))  // AEP EventCloud facade, EventCloudConnector SPI

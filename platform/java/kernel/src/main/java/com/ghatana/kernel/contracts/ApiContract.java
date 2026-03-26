@@ -53,7 +53,7 @@ public final class ApiContract extends KernelContract {
 
     private ApiContract(Builder builder) {
         super(builder.contractId, builder.name, builder.version,
-              ContractFamily.API, builder.metadata);
+              KernelContract.ContractFamily.API, builder.metadata);
         this.routes = builder.routes != null ? List.copyOf(builder.routes) : List.of();
         this.deprecations = builder.deprecations != null ? List.copyOf(builder.deprecations) : List.of();
         this.basePath = builder.basePath;

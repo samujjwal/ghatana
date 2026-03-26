@@ -486,12 +486,12 @@ public class KernelPurityValidationTest {
     @Test
     @DisplayName("ContractFamily enum must have exactly 6 families")
     void contractFamilyEnumMustHaveSixFamilies() {
-        com.ghatana.kernel.contracts.ContractFamily[] families =
-            com.ghatana.kernel.contracts.ContractFamily.values();
+        com.ghatana.kernel.contracts.KernelContract.ContractFamily[] families =
+            com.ghatana.kernel.contracts.KernelContract.ContractFamily.values();
         assertEquals(6, families.length,
             "ContractFamily must have exactly 6 families: EXPERIENCE, API, SCHEMA, ANALYTICS, AUTONOMY, PACKAGING");
         Set<String> expectedKeys = Set.of("experience", "api", "schema", "analytics", "autonomy", "packaging");
-        for (com.ghatana.kernel.contracts.ContractFamily family : families) {
+        for (com.ghatana.kernel.contracts.KernelContract.ContractFamily family : families) {
             assertTrue(expectedKeys.contains(family.getKey()),
                 "Unexpected ContractFamily key: " + family.getKey());
         }
@@ -557,8 +557,8 @@ public class KernelPurityValidationTest {
         registry.register(api);
         assertEquals(1, registry.size());
         assertTrue(registry.getById("test.api.v1").isPresent());
-        assertEquals(1, registry.getByFamily(com.ghatana.kernel.contracts.ContractFamily.API).size());
-        assertEquals(0, registry.getByFamily(com.ghatana.kernel.contracts.ContractFamily.SCHEMA).size());
+        assertEquals(1, registry.getByFamily(com.ghatana.kernel.contracts.KernelContract.ContractFamily.API).size());
+        assertEquals(0, registry.getByFamily(com.ghatana.kernel.contracts.KernelContract.ContractFamily.SCHEMA).size());
     }
 
     @Test
@@ -594,7 +594,7 @@ public class KernelPurityValidationTest {
     void contractSystemMustBeProductAgnostic() {
         List<Class<?>> contractClasses = List.of(
             com.ghatana.kernel.contracts.KernelContract.class,
-            com.ghatana.kernel.contracts.ContractFamily.class,
+            com.ghatana.kernel.contracts.KernelContract.ContractFamily.class,
             com.ghatana.kernel.contracts.ContractRegistry.class,
             com.ghatana.kernel.contracts.ContractValidator.class,
             com.ghatana.kernel.contracts.ExperienceContract.class,

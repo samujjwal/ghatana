@@ -10,7 +10,7 @@ dependencies {
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":products:data-cloud:spi"))
     // WarmTierEventLogStore is used for the postgres ingest mode (postgres backend)
-    implementation(project(":products:data-cloud:platform"))
+    implementation(project(":products:data-cloud:platform-launcher"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))

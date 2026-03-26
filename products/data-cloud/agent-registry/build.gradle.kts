@@ -21,7 +21,7 @@ dependencies {
     api(project(":platform:java:agent-core"))
 
     // Data-Cloud (persistence layer)
-    api(project(":products:data-cloud:platform"))
+    api(project(":products:data-cloud:platform-launcher"))
 
     // ActiveJ async primitives
     api(libs.activej.promise)

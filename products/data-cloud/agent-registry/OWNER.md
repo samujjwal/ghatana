@@ -25,7 +25,7 @@ lifecycle events to `agent-registry-events`.
 
 ## Dependencies
 
-- `products:data-cloud:platform` — EntityRecord persistence
+- `products:data-cloud:platform-launcher` — EntityRecord persistence
 - `products:data-cloud:spi` — EventLogStore
 - `libs:agent-framework` — AgentRegistry SPI
 

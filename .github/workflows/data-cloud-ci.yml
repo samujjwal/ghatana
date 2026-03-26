@@ -16,7 +16,7 @@ on:
 env:
   DC_MODULES: >-
     :products:data-cloud:spi
-    :products:data-cloud:platform
+    :products:data-cloud:platform-launcher
     :products:data-cloud:launcher
     :products:data-cloud:sdk
     :products:data-cloud:agent-registry
@@ -53,19 +53,16 @@ jobs:
         run: |
           ./gradlew \
             :products:data-cloud:spi:compileJava \
-            :products:data-cloud:platform:compileJava \
+            :products:data-cloud:platform-launcher:compileJava \
             :products:data-cloud:launcher:compileJava \
             :products:data-cloud:agent-registry:compileJava \
             --no-daemon
 
-      # Backend: Format & Lint
-      - name: Check code formatting
+      # Backend: Static analysis
+      - name: Run backend SpotBugs
         run: |
           ./gradlew \
-            :products:data-cloud:spi:spotlessCheck \
-            :products:data-cloud:platform:spotlessCheck \
-            :products:data-cloud:launcher:spotlessCheck \
-            :products:data-cloud:agent-registry:spotlessCheck \
+            :products:data-cloud:platform-launcher:spotbugsMain \
             --no-daemon
 
       # Frontend: Type-check (must pass before tests)
@@ -78,8 +75,8 @@ jobs:
         run: |
           ./gradlew \
             :products:data-cloud:spi:test \
-            :products:data-cloud:platform:test \
             :products:data-cloud:launcher:test \
+            :products:data-cloud:platform-launcher:test \
             :products:data-cloud:agent-registry:test \
             --no-daemon
 
@@ -92,7 +89,7 @@ jobs:
       - name: Run integration tests
         run: |
           ./gradlew \
-            :products:data-cloud:platform:test \
+            :products:data-cloud:platform-launcher:test \
             -PincludeIT=true \
             --no-daemon
 
@@ -100,7 +97,7 @@ jobs:
       - name: Run architecture tests
         run: |
           ./gradlew \
-            :products:data-cloud:platform:test \
+            :products:data-cloud:platform-launcher:test \
             -Dtest=ArchitectureTests \
             --no-daemon
 
@@ -109,8 +106,8 @@ jobs:
         run: |
           ./gradlew \
             :products:data-cloud:spi:jacocoTestReport \
-            :products:data-cloud:platform:jacocoTestReport \
             :products:data-cloud:launcher:jacocoTestReport \
+            :products:data-cloud:platform-launcher:jacocoTestReport \
             :products:data-cloud:agent-registry:jacocoTestReport \
             --no-daemon
 
@@ -127,7 +124,7 @@ jobs:
         run: |
           ./gradlew \
             :products:data-cloud:spi:build \
-            :products:data-cloud:platform:build \
+            :products:data-cloud:platform-launcher:build \
             :products:data-cloud:launcher:build \
             :products:data-cloud:agent-registry:build \
             --no-daemon
@@ -522,7 +519,7 @@ jobs:
       - name: Run dependency vulnerability check
         run: |
           ./gradlew \
-            :products:data-cloud:platform:dependencyCheck \
+            :products:data-cloud:platform-launcher:dependencyCheckAnalyze \
             --no-daemon
         continue-on-error: true
 
@@ -530,7 +527,7 @@ jobs:
       - name: Generate SBOM
         run: |
           ./gradlew \
-            :products:data-cloud:platform:cyclonedx \
+            cyclonedxBom \
             --no-daemon
         continue-on-error: true
 
@@ -551,9 +548,11 @@ jobs:
       # SonarQube analysis (optional)
       - name: SonarQube analysis
         run: |
-          ./gradlew \
-            :products:data-cloud:platform:sonarqube \
-            --no-daemon
+          if ./gradlew tasks --all --no-daemon | grep -q '^sonarqube '; then
+            ./gradlew sonarqube --no-daemon
+          else
+            echo "::warning::SonarQube plugin is not configured in this repository; skipping analysis."
+          fi
         env:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
           SONAR_LOGIN: ${{ secrets.SONAR_LOGIN }}

@@ -40,7 +40,7 @@ The deployable HTTP + gRPC server for Data-Cloud Standalone. Responsible for:
 
 ## Dependencies
 
-- `products:data-cloud:platform` — domain services
+- `products:data-cloud:platform-launcher` — runtime/domain services
 - `platform:java:{http-server,governance,audit,ai-integration,observability}`
 - `libs:agent-framework`
 

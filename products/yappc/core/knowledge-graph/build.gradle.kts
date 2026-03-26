@@ -11,9 +11,9 @@ java {
 dependencies {
     // Platform plugin dependency
     implementation(project(":platform:java:plugin"))
-    // TODO(ADAPTER-SEAM): data-cloud:platform should be accessed via a DataStorePort.
-    //   Move the actual DataCloud dep to infrastructure:datacloud; inject via interface
-    implementation(project(":products:data-cloud:platform"))
+    // TODO(ADAPTER-SEAM): knowledge-graph access should be hidden behind a DataStorePort.
+    //   Move the actual DataCloud dependency to infrastructure:datacloud; inject via interface.
+    implementation(project(":products:data-cloud:platform-launcher"))
     implementation(project(":products:yappc:core:yappc-services"))
     implementation(project(":products:yappc:core:ai"))
     implementation(project(":platform:java:http"))

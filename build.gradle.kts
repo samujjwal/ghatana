@@ -8,12 +8,13 @@
  */
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.cyclonedx.gradle.CycloneDxTask
+import org.cyclonedx.gradle.CyclonedxAggregateTask
+import org.cyclonedx.gradle.CyclonedxDirectTask
 
 plugins {
     id("java-platform")
     id("idea")
-    id("org.cyclonedx.bom") version "1.10.0"
+    id("org.cyclonedx.bom") version "3.2.2"
 }
 
 group = "com.ghatana"
@@ -196,13 +197,20 @@ tasks.register("buildAll") {
 // SBOM Generation (CycloneDX)
 // =============================================================================
 
-tasks.withType<CycloneDxTask>().configureEach {
-    includeConfigs.set(listOf("runtimeClasspath", "compileClasspath"))
-    skipConfigs.set(listOf("testRuntimeClasspath", "testCompileClasspath"))
-    schemaVersion.set("1.5")
-    destination.set(project.file("build/sbom"))
-    outputName.set("bom")
-    outputFormat.set("json")
-    includeLicenseText.set(false)
-    includeMetadataResolution.set(true)
+allprojects {
+    tasks.withType<CyclonedxDirectTask>().configureEach {
+        includeConfigs = listOf("runtimeClasspath", "compileClasspath")
+        skipConfigs = listOf("testRuntimeClasspath", "testCompileClasspath")
+        includeLicenseText = false
+        includeMetadataResolution = true
+        jsonOutput.set(file("build/sbom/direct-bom.json"))
+        xmlOutput.unsetConvention()
+    }
+}
+
+tasks.withType<CyclonedxAggregateTask>().configureEach {
+    includeLicenseText = false
+    includeBuildSystem = true
+    jsonOutput.set(project.file("build/sbom/bom.json"))
+    xmlOutput.unsetConvention()
 }

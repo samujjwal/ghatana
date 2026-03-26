@@ -26,9 +26,9 @@ export * from './accessibility';
 /**
  * Migration notes for products:
  *
- * DCMAAR products should update imports:
- *   - @ghatana/dcmaar-shared-ui-core/utils → @ghatana/utils
+ * Legacy products should update imports to use canonical package names:
+ *   - Old shared UI utils → @ghatana/foundation
+ *   - Platform-specific utils → @ghatana/foundation
  *
- * YAPPC products should update imports:
- *   - @ghatana/yappc-ui/utils → @ghatana/utils
+ * Canonical package name: @ghatana/foundation
  */

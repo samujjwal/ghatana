@@ -5,8 +5,11 @@ import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * HTTP handler for health, readiness, liveness, info, metrics, and SLO detail endpoints.
@@ -32,6 +35,7 @@ import java.util.Map;
 public class HealthHandler {
 
     private final HttpHandlerSupport httpSupport;
+    private final Map<String, Supplier<Map<String, Object>>> subsystemSuppliers;
 
     /** SLO targets (informational — not dynamically enforced here, used for dashboard tooling). */
     private static final double SLO_AVAILABILITY_TARGET   = 0.999;   // 99.9 %
@@ -39,7 +43,14 @@ public class HealthHandler {
     private static final long   SLO_ERROR_RATE_THRESHOLD  = 1;       // 1 % error rate ceiling
 
     public HealthHandler(HttpHandlerSupport httpSupport) {
+        this(httpSupport, Map.of());
+    }
+
+    public HealthHandler(HttpHandlerSupport httpSupport,
+                         Map<String, Supplier<Map<String, Object>>> subsystemSuppliers) {
         this.httpSupport = httpSupport;
+        Objects.requireNonNull(subsystemSuppliers, "subsystemSuppliers must not be null");
+        this.subsystemSuppliers = Map.copyOf(subsystemSuppliers);
     }
 
     public Promise<HttpResponse> handleHealth(HttpRequest request) {
@@ -69,37 +80,38 @@ public class HealthHandler {
      * @return Promise of a 200 JSON response with the SLO health payload
      */
     public Promise<HttpResponse> handleHealthDetail(HttpRequest request) {
-        Runtime rt = Runtime.getRuntime();
-        long totalMemMb  = rt.totalMemory() / (1024 * 1024);
-        long freeMemMb   = rt.freeMemory()  / (1024 * 1024);
-        long usedMemMb   = totalMemMb - freeMemMb;
-        long maxMemMb    = rt.maxMemory()   / (1024 * 1024);
-        int  processors  = rt.availableProcessors();
+        Map<String, Object> subsystems = buildSubsystemSnapshot();
 
-        // ── JVM subsystem ────────────────────────────────────────────────────
-        double memUsagePct = totalMemMb > 0 ? (double) usedMemMb / maxMemMb : 0.0;
-        String jvmStatus   = memUsagePct < 0.85 ? "UP" : "DEGRADED";
-
-        // ── Thread pool subsystem ────────────────────────────────────────────
-        int activeThreads = Thread.activeCount();
-        String threadStatus = activeThreads < 500 ? "UP" : "DEGRADED";
-
-        // ── Derive overall status ─────────────────────────────────────────────
-        boolean degraded = "DEGRADED".equals(jvmStatus) || "DEGRADED".equals(threadStatus);
-        String overallStatus = degraded ? "DEGRADED" : "UP";
-
-        // ── SLO declarations ─────────────────────────────────────────────────
         Map<String, Object> sloTargets = Map.of(
             "availability_pct",       SLO_AVAILABILITY_TARGET * 100,
             "p99_latency_target_ms",  SLO_P99_LATENCY_TARGET_MS,
             "error_rate_ceiling_pct", SLO_ERROR_RATE_THRESHOLD
         );
 
-        // ── Per-subsystem ────────────────────────────────────────────────────
+        // ── Assemble response ─────────────────────────────────────────────────
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("status",      deriveOverallStatus(subsystems));
+        body.put("timestamp",   Instant.now().toString());
+        body.put("service",     "datacloud");
+        body.put("slo_targets", sloTargets);
+        body.put("subsystems",  subsystems);
+
+        return Promise.of(httpSupport.jsonResponse(body));
+    }
+
+    private Map<String, Object> buildSubsystemSnapshot() {
+        Runtime runtime = Runtime.getRuntime();
+        long totalMemMb = runtime.totalMemory() / (1024 * 1024);
+        long freeMemMb = runtime.freeMemory() / (1024 * 1024);
+        long usedMemMb = totalMemMb - freeMemMb;
+        long maxMemMb = runtime.maxMemory() / (1024 * 1024);
+        int processors = runtime.availableProcessors();
+        double memUsagePct = maxMemMb > 0 ? (double) usedMemMb / maxMemMb : 0.0;
+
         Map<String, Object> subsystems = new LinkedHashMap<>();
 
         Map<String, Object> jvmSubsystem = new LinkedHashMap<>();
-        jvmSubsystem.put("status", jvmStatus);
+        jvmSubsystem.put("status", memUsagePct < 0.85 ? "UP" : "DEGRADED");
         jvmSubsystem.put("used_memory_mb", usedMemMb);
         jvmSubsystem.put("total_memory_mb", totalMemMb);
         jvmSubsystem.put("max_memory_mb", maxMemMb);
@@ -108,27 +120,67 @@ public class HealthHandler {
         subsystems.put("jvm", jvmSubsystem);
 
         Map<String, Object> threadSubsystem = new LinkedHashMap<>();
-        threadSubsystem.put("status", threadStatus);
-        threadSubsystem.put("active_threads", activeThreads);
+        threadSubsystem.put("status", Thread.activeCount() < 500 ? "UP" : "DEGRADED");
+        threadSubsystem.put("active_threads", Thread.activeCount());
         subsystems.put("threads", threadSubsystem);
 
-        // AI, DB, Voice stubs — indicate observability hook points (active probes
-        // should be injected via HealthProbeRegistry when available)
-        subsystems.put("ai_inference",    Map.of("status", "UNKNOWN", "note", "active-probe-not-configured"));
-        subsystems.put("database",        Map.of("status", "UNKNOWN", "note", "active-probe-not-configured"));
-        subsystems.put("voice_gateway",   Map.of("status", "UNKNOWN", "note", "active-probe-not-configured"));
-        subsystems.put("audit_service",   Map.of("status", "UNKNOWN", "note", "active-probe-not-configured"));
-        subsystems.put("policy_engine",   Map.of("status", "UNKNOWN", "note", "active-probe-not-configured"));
+        subsystems.put("ai_inference", unknownSubsystem());
+        subsystems.put("database", unknownSubsystem());
+        subsystems.put("voice_gateway", unknownSubsystem());
+        subsystems.put("audit_service", unknownSubsystem());
+        subsystems.put("policy_engine", unknownSubsystem());
 
-        // ── Assemble response ─────────────────────────────────────────────────
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("status",      overallStatus);
-        body.put("timestamp",   Instant.now().toString());
-        body.put("service",     "datacloud");
-        body.put("slo_targets", sloTargets);
-        body.put("subsystems",  subsystems);
+        for (Map.Entry<String, Supplier<Map<String, Object>>> entry : subsystemSuppliers.entrySet()) {
+            subsystems.put(entry.getKey(), safeSubsystemSnapshot(entry.getKey(), entry.getValue()));
+        }
 
-        return Promise.of(httpSupport.jsonResponse(body));
+        return subsystems;
+    }
+
+    private Map<String, Object> safeSubsystemSnapshot(String name,
+                                                      Supplier<Map<String, Object>> supplier) {
+        try {
+            Map<String, Object> snapshot = supplier.get();
+            if (snapshot == null || snapshot.isEmpty()) {
+                return Map.of("status", "UNKNOWN", "note", "empty-health-snapshot");
+            }
+            return Collections.unmodifiableMap(new LinkedHashMap<>(snapshot));
+        } catch (RuntimeException exception) {
+            return Map.of(
+                "status", "DOWN",
+                "error", exception.getClass().getSimpleName(),
+                "message", exception.getMessage() == null ? (name + " probe failed") : exception.getMessage()
+            );
+        }
+    }
+
+    private Map<String, Object> unknownSubsystem() {
+        return Map.of("status", "UNKNOWN", "note", "active-probe-not-configured");
+    }
+
+    private String deriveOverallStatus(Map<String, Object> subsystems) {
+        boolean down = false;
+        boolean degraded = false;
+
+        for (Object value : subsystems.values()) {
+            if (!(value instanceof Map<?, ?> subsystem)) {
+                continue;
+            }
+            Object status = subsystem.get("status");
+            if ("DOWN".equals(status)) {
+                down = true;
+            } else if ("DEGRADED".equals(status)) {
+                degraded = true;
+            }
+        }
+
+        if (down) {
+            return "DOWN";
+        }
+        if (degraded) {
+            return "DEGRADED";
+        }
+        return "UP";
     }
 
     public Promise<HttpResponse> handleReady(HttpRequest request) {

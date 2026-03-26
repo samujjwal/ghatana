@@ -15,9 +15,12 @@ java {
 
 dependencies {
     // Minimal dependencies - only what SPI types need
+    api(project(":products:data-cloud:platform-entity"))
+    api(project(":platform:java:plugin"))
     api(project(":platform:java:core"))       // Offset type
     api(libs.activej.promise)                  // Promise<T> in EventLogStore
     
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+    compileOnly(libs.spotbugs.annotations)
 }

@@ -32,24 +32,23 @@ APPROVED=()
 # LEGACY entries marked [REMEDIATION REQUIRED] — track for elimination.
 # =============================================================================
 APPROVED_CROSS_DEPS=(
-  # yappc uses data-cloud for event streaming [REMEDIATION REQUIRED: move to shared SPI]
-  "yappc:products:data-cloud:platform"
+  # yappc uses data-cloud runtime/services where SPI is not yet sufficient
+  "yappc:products:data-cloud:platform-launcher"
   "yappc:products:data-cloud:sdk"
   # yappc uses AEP for agent processing [REMEDIATION REQUIRED: extract shared interface]
   "yappc:products:aep:platform-bundle"
   "yappc:products:aep:orchestrator"
   # aep uses data-cloud SPI (SPI is the intended integration point, approved)
   "aep:products:data-cloud:spi"
-  "aep:products:data-cloud:platform"
+  "aep:products:data-cloud:platform-launcher"
   # virtual-org uses aep for orchestration [REMEDIATION REQUIRED: extract shared contracts]
   "virtual-org:products:aep:platform-bundle"
   "virtual-org:products:aep:contracts"
   # software-org uses aep and virtual-org [REMEDIATION REQUIRED]
   "software-org:products:aep:platform-bundle"
   "software-org:products:virtual-org:modules:framework"
-  # app-platform uses aep and data-cloud [REMEDIATION REQUIRED: decouple via platform layer]
+  # app-platform uses aep and data-cloud SPI [REMEDIATION REQUIRED: decouple via platform layer]
   "app-platform:products:aep:platform-bundle"
-  "app-platform:products:data-cloud:platform"
   "app-platform:products:data-cloud:spi"
   # app-platform integration testing uses finance domains (test-only, accepted)
   "app-platform:products:finance:domains:oms"
