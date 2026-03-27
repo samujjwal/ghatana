@@ -1,5 +1,7 @@
 package com.ghatana.virtualorg.framework.tools;
 
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import com.ghatana.virtualorg.framework.hitl.AuditTrail;
 import io.activej.promise.Promise;
 
@@ -7,9 +9,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Secure executor wrapper for agent tools with rate limiting and audit logging.
@@ -52,13 +51,13 @@ public class SecureToolExecutor {
 
     private final ToolRegistry toolRegistry;
     private final AuditTrail auditTrail;
-    private final RateLimiter rateLimiter;
+    private final SharedRateLimiterAdapter rateLimiter;
     private final Duration defaultTimeout;
 
     private SecureToolExecutor(Builder builder) {
         this.toolRegistry = builder.toolRegistry;
         this.auditTrail = builder.auditTrail;
-        this.rateLimiter = new RateLimiter(
+        this.rateLimiter = new SharedRateLimiterAdapter(
                 builder.defaultRateLimit,
                 builder.rateLimitWindow
         );
@@ -267,78 +266,42 @@ public class SecureToolExecutor {
     /**
      * Simple sliding window rate limiter.
      */
-    private static class RateLimiter {
+    private static final class SharedRateLimiterAdapter {
 
         private final int limit;
         private final Duration window;
-        private final Map<String, WindowCounter> counters;
+        private final DefaultRateLimiter delegate;
 
-        RateLimiter(int limit, Duration window) {
+        SharedRateLimiterAdapter(int limit, Duration window) {
             this.limit = limit;
             this.window = window;
-            this.counters = new ConcurrentHashMap<>();
+            this.delegate = DefaultRateLimiter.create(
+                    RateLimiterConfig.builder()
+                            .maxRequestsPerMinute(limit)
+                            .burstSize(limit)
+                            .windowDuration(window)
+                            .build()
+            );
         }
 
         boolean tryAcquire(String toolName, String agentId) {
-            String key = toolName + ":" + agentId;
-            WindowCounter counter = counters.computeIfAbsent(key, k -> new WindowCounter());
-            return counter.tryAcquire(limit, window);
+            return delegate.tryAcquire(rateLimitKey(toolName, agentId)).allowed();
         }
 
         RateLimitInfo getInfo(String toolName, String agentId) {
-            String key = toolName + ":" + agentId;
-            WindowCounter counter = counters.get(key);
-            if (counter == null) {
-                return new RateLimitInfo(limit, limit, Instant.now().plus(window));
-            }
-            return counter.getInfo(limit, window);
+            return new RateLimitInfo(
+                    delegate.getApproximateRemainingTokens(rateLimitKey(toolName, agentId)),
+                    limit,
+                    Instant.now().plus(window)
+            );
         }
 
         void reset(String toolName, String agentId) {
-            String key = toolName + ":" + agentId;
-            counters.remove(key);
+            delegate.reset(rateLimitKey(toolName, agentId));
         }
 
-        private static class WindowCounter {
-
-            private final AtomicInteger count = new AtomicInteger(0);
-            private final AtomicLong windowStart = new AtomicLong(System.currentTimeMillis());
-
-            boolean tryAcquire(int limit, Duration window) {
-                long now = System.currentTimeMillis();
-                long windowStartTime = windowStart.get();
-                long windowMs = window.toMillis();
-
-                // Check if window has expired
-                if (now - windowStartTime >= windowMs) {
-                    // Reset window
-                    if (windowStart.compareAndSet(windowStartTime, now)) {
-                        count.set(1);
-                        return true;
-                    }
-                    // Another thread reset, try again
-                    return tryAcquire(limit, window);
-                }
-
-                // Increment and check
-                int current = count.incrementAndGet();
-                return current <= limit;
-            }
-
-            RateLimitInfo getInfo(int limit, Duration window) {
-                long now = System.currentTimeMillis();
-                long windowStartTime = windowStart.get();
-                long windowMs = window.toMillis();
-
-                if (now - windowStartTime >= windowMs) {
-                    return new RateLimitInfo(limit, limit, Instant.now().plus(window));
-                }
-
-                int used = count.get();
-                int remaining = Math.max(0, limit - used);
-                Instant resetTime = Instant.ofEpochMilli(windowStartTime + windowMs);
-                return new RateLimitInfo(remaining, limit, resetTime);
-            }
+        private String rateLimitKey(String toolName, String agentId) {
+            return toolName + ":" + agentId;
         }
     }
 }

@@ -16,6 +16,12 @@ import java.util.stream.Collectors;
  * of registered plugins. It replaces the singleton-based data-cloud PluginRegistry
  * and the event-cloud PluginRegistry interface.
  * <p>
+ * Scope note: this registry belongs to the standalone platform plugin framework.
+ * It is intentionally separate from the kernel registry system, where
+ * {@code KernelRegistry} is the public root contract and kernel-side sub-registries
+ * stay internal. Products using the platform plugin framework should depend on this
+ * registry; kernel consumers should go through kernel APIs instead.
+ * <p>
  * Features:
  * <ul>
  *   <li>Thread-safe plugin registration/deregistration</li>
@@ -26,8 +32,9 @@ import java.util.stream.Collectors;
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Plugin management
+ * @doc.purpose Platform plugin-framework registry distinct from kernel registry APIs
  * @doc.layer core
+ * @doc.pattern Registry
  */
 public class PluginRegistry {
 

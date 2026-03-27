@@ -45,5 +45,32 @@ public enum HealthStatus {
     STOPPING,
 
     /** Agent status is unknown (e.g., health check timed out). */
-    UNKNOWN
+    UNKNOWN;
+
+    /**
+     * Maps this agent lifecycle state onto the canonical platform health contract.
+     */
+    public com.ghatana.platform.health.HealthStatus toPlatformHealthStatus() {
+        return switch (this) {
+            case HEALTHY -> com.ghatana.platform.health.HealthStatus.healthy("Agent is healthy");
+            case DEGRADED -> com.ghatana.platform.health.HealthStatus.degraded("Agent is degraded");
+            case UNHEALTHY -> com.ghatana.platform.health.HealthStatus.unhealthy("Agent is unhealthy");
+            case STARTING -> com.ghatana.platform.health.HealthStatus.degraded("Agent is starting");
+            case STOPPING -> com.ghatana.platform.health.HealthStatus.degraded("Agent is stopping");
+            case UNKNOWN -> com.ghatana.platform.health.HealthStatus.unknown("Agent status is unknown");
+        };
+    }
+
+    /**
+     * Maps the canonical platform health contract onto the closest agent lifecycle state.
+     */
+    public static HealthStatus fromPlatformHealthStatus(com.ghatana.platform.health.HealthStatus status) {
+        java.util.Objects.requireNonNull(status, "status cannot be null");
+        return switch (status.getStatus()) {
+            case HEALTHY -> HEALTHY;
+            case DEGRADED -> DEGRADED;
+            case UNHEALTHY -> UNHEALTHY;
+            case UNKNOWN -> UNKNOWN;
+        };
+    }
 }

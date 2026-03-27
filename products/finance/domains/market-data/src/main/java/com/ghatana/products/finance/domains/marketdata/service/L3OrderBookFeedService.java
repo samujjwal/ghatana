@@ -2,12 +2,16 @@ package com.ghatana.products.finance.domains.marketdata.service;
 
 
 import com.ghatana.platform.core.event.EventBusPort;
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import com.ghatana.products.finance.domains.marketdata.domain.MarketTick;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -24,9 +28,11 @@ import java.util.concurrent.Executor;
 public class L3OrderBookFeedService {
 
     private static final Logger log = LoggerFactory.getLogger(L3OrderBookFeedService.class);
+    private static final int DEFAULT_MAX_PER_SEC = 100;
+    private static final String PUBLISH_RATE_KEY = "l3-publish";
 
-    /** Per-subscriber token bucket: subscriber → remaining tokens. */
-    private final ConcurrentHashMap<String, RateBucket> rateBuckets = new ConcurrentHashMap<>();
+    /** Per-subscriber shared rate limiter instance. */
+    private final ConcurrentHashMap<String, RateLimiter> subscriberLimiters = new ConcurrentHashMap<>();
 
     private final Executor executor;
     private final EventBusPort eventBusPort;
@@ -44,8 +50,11 @@ public class L3OrderBookFeedService {
      */
     public Promise<Boolean> publishL3Event(L3OrderEvent event, String subscriberId) {
         return Promise.ofBlocking(executor, () -> {
-            var bucket = rateBuckets.computeIfAbsent(subscriberId, RateBucket::new);
-            if (!bucket.tryConsume()) {
+            RateLimiter limiter = subscriberLimiters.computeIfAbsent(
+                    subscriberId,
+                    ignored -> createLimiter(DEFAULT_MAX_PER_SEC)
+            );
+            if (!limiter.tryAcquire(PUBLISH_RATE_KEY).allowed()) {
                 log.debug("L3 rate limit exceeded for subscriber={}", subscriberId);
                 return false;
             }
@@ -56,46 +65,21 @@ public class L3OrderBookFeedService {
 
     /** Register a subscriber with a given message-per-second rate limit. */
     public void registerSubscriber(String subscriberId, int maxMessagesPerSecond) {
-        rateBuckets.put(subscriberId, new RateBucket(subscriberId, maxMessagesPerSecond));
+        subscriberLimiters.put(subscriberId, createLimiter(maxMessagesPerSecond));
     }
 
     public void deregisterSubscriber(String subscriberId) {
-        rateBuckets.remove(subscriberId);
+        subscriberLimiters.remove(subscriberId);
     }
 
-    // ─── Simple Token Bucket ─────────────────────────────────────────────────
-
-    private static final class RateBucket {
-        private static final int DEFAULT_MAX_PER_SEC = 100;
-        private final int maxTokens;
-        private long tokens;
-        private long lastRefillMs;
-
-        RateBucket(String subscriberId) {
-            this(subscriberId, DEFAULT_MAX_PER_SEC);
-        }
-
-        RateBucket(String subscriberId, int maxTokens) {
-            this.maxTokens = maxTokens;
-            this.tokens = maxTokens;
-            this.lastRefillMs = System.currentTimeMillis();
-        }
-
-        synchronized boolean tryConsume() {
-            refillIfNeeded();
-            if (tokens <= 0) return false;
-            tokens--;
-            return true;
-        }
-
-        private void refillIfNeeded() {
-            long now = System.currentTimeMillis();
-            long elapsed = now - lastRefillMs;
-            if (elapsed >= 1000) {
-                tokens = maxTokens;
-                lastRefillMs = now;
-            }
-        }
+    private RateLimiter createLimiter(int maxMessagesPerSecond) {
+        return DefaultRateLimiter.create(
+                RateLimiterConfig.builder()
+                        .maxRequestsPerMinute(maxMessagesPerSecond)
+                        .burstSize(maxMessagesPerSecond)
+                        .windowDuration(Duration.ofSeconds(1))
+                        .build()
+        );
     }
 
     // ─── Supporting Types ─────────────────────────────────────────────────────

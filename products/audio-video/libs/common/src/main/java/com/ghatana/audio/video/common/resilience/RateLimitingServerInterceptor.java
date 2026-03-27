@@ -1,5 +1,8 @@
 package com.ghatana.audio.video.common.resilience;
 
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
@@ -8,9 +11,9 @@ import io.grpc.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Token-bucket rate limiter implemented as a gRPC server interceptor.
@@ -25,23 +28,35 @@ import java.util.concurrent.atomic.AtomicLong;
  *   <li>{@code AV_RATE_LIMIT_BURST} — maximum burst size (default 100)</li>
  *   <li>{@code AV_RATE_LIMIT_MAX_CONCURRENT} — maximum concurrent calls (default 20)</li>
  * </ul>
+ *
+ * @doc.type class
+ * @doc.purpose gRPC server interceptor with concurrency guard and shared token-bucket throttling
+ * @doc.layer product
+ * @doc.pattern Interceptor
  */
 public class RateLimitingServerInterceptor implements ServerInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(RateLimitingServerInterceptor.class);
+    private static final int RATE_PRECISION_SECONDS = 1_000;
 
     private final double tokensPerSecond;
     private final long maxBurst;
     private final Semaphore concurrencySemaphore;
-
-    /** Per-method token bucket state: [availableTokens, lastRefillNanos] */
-    private final ConcurrentHashMap<String, long[]> buckets = new ConcurrentHashMap<>();
+    private final RateLimiter rateLimiter;
 
     public RateLimitingServerInterceptor() {
-        this.tokensPerSecond = parseEnvDouble("AV_RATE_LIMIT_TPS", 50.0);
-        this.maxBurst        = parseEnvLong("AV_RATE_LIMIT_BURST", 100L);
-        int maxConcurrent    = (int) parseEnvLong("AV_RATE_LIMIT_MAX_CONCURRENT", 20L);
+        this(
+                parseEnvDouble("AV_RATE_LIMIT_TPS", 50.0),
+                parseEnvLong("AV_RATE_LIMIT_BURST", 100L),
+                Math.toIntExact(parseEnvLong("AV_RATE_LIMIT_MAX_CONCURRENT", 20L))
+        );
+    }
+
+    RateLimitingServerInterceptor(double tokensPerSecond, long maxBurst, int maxConcurrent) {
+        this.tokensPerSecond = tokensPerSecond;
+        this.maxBurst = maxBurst;
         this.concurrencySemaphore = new Semaphore(maxConcurrent, true);
+        this.rateLimiter = DefaultRateLimiter.create(createLimiterConfig(tokensPerSecond, maxBurst));
 
         LOG.info("Rate limiter initialised: tps={} burst={} maxConcurrent={}",
                 tokensPerSecond, maxBurst, maxConcurrent);
@@ -64,7 +79,7 @@ public class RateLimitingServerInterceptor implements ServerInterceptor {
         }
 
         // 2. Token bucket check
-        if (!tryConsume(method)) {
+        if (!rateLimiter.tryAcquire(method).allowed()) {
             concurrencySemaphore.release();
             LOG.warn("Rate limit exceeded for {}", method);
             call.close(Status.RESOURCE_EXHAUSTED
@@ -86,29 +101,17 @@ public class RateLimitingServerInterceptor implements ServerInterceptor {
     }
 
     // -------------------------------------------------------------------------
-    // Token bucket
-    // -------------------------------------------------------------------------
-
-    private synchronized boolean tryConsume(String method) {
-        long nowNs = System.nanoTime();
-        long[] state = buckets.computeIfAbsent(method, k -> new long[]{maxBurst, nowNs});
-
-        // Refill tokens based on elapsed time
-        long elapsedNs = nowNs - state[1];
-        long newTokens  = (long) (elapsedNs * tokensPerSecond / 1_000_000_000.0);
-        state[0] = Math.min(maxBurst, state[0] + newTokens);
-        if (newTokens > 0) state[1] = nowNs;
-
-        if (state[0] >= 1) {
-            state[0]--;
-            return true;
-        }
-        return false;
-    }
-
-    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private static RateLimiterConfig createLimiterConfig(double tokensPerSecond, long maxBurst) {
+        int scaledWindowRequests = Math.max(1, (int) Math.round(tokensPerSecond * RATE_PRECISION_SECONDS));
+        return RateLimiterConfig.builder()
+                .maxRequestsPerMinute(scaledWindowRequests)
+                .burstSize(Math.toIntExact(maxBurst))
+                .windowDuration(Duration.ofSeconds(RATE_PRECISION_SECONDS))
+                .build();
+    }
 
     private static double parseEnvDouble(String name, double def) {
         String val = System.getenv(name);

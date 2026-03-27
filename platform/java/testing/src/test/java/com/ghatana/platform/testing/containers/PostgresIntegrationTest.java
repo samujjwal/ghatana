@@ -1,5 +1,7 @@
 package com.ghatana.platform.testing.containers;
 
+import com.ghatana.platform.testing.internal.containers.PostgresTestContainer;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;

@@ -2,6 +2,8 @@ package com.ghatana.core.database.health;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Immutable value object representing database connection health status with diagnostic details.
@@ -242,6 +244,54 @@ public final class HealthStatus {
     public Throwable getException() {
         return exception;
     }
+
+    /**
+     * Maps this database-specific health result onto the canonical platform health contract.
+     */
+    public com.ghatana.platform.health.HealthStatus toPlatformHealthStatus() {
+        Map<String, Object> canonicalDetails = new LinkedHashMap<>();
+        canonicalDetails.put("responseTimeMs", responseTime.toMillis());
+        if (details != null) {
+            canonicalDetails.putAll(details.getDetails());
+        }
+        if (exception != null) {
+            canonicalDetails.put("exceptionType", exception.getClass().getName());
+            if (exception.getMessage() != null) {
+                canonicalDetails.put("exceptionMessage", exception.getMessage());
+            }
+        }
+
+        return com.ghatana.platform.health.HealthStatus.builder()
+            .withStatus(toPlatformStatus(status))
+            .withMessage(message)
+            .withTimestamp(timestamp)
+            .withDetails(canonicalDetails)
+            .withException(exception)
+            .build();
+    }
+
+    /**
+     * Rebuilds the database-specific health result from the canonical platform health contract.
+     */
+    public static HealthStatus fromPlatformHealthStatus(com.ghatana.platform.health.HealthStatus status) {
+        java.util.Objects.requireNonNull(status, "status cannot be null");
+
+        Map<String, Object> detailCopy = new LinkedHashMap<>(status.getDetails());
+        Object responseTimeMs = detailCopy.remove("responseTimeMs");
+        Duration responseTime = responseTimeMs instanceof Number number
+            ? Duration.ofMillis(number.longValue())
+            : Duration.ZERO;
+        HealthDetails databaseDetails = detailCopy.isEmpty()
+            ? null
+            : HealthDetails.builder().details(detailCopy).build();
+
+        return new HealthStatus(
+            fromPlatformStatus(status.getStatus()),
+            status.getMessage(),
+            responseTime,
+            databaseDetails,
+            status.getException());
+    }
     
     /**
      * Checks if the status is healthy.
@@ -265,5 +315,21 @@ public final class HealthStatus {
     public String toString() {
         return String.format("HealthStatus{status=%s, message='%s', responseTime=%dms, timestamp=%s}",
                 status, message, responseTime.toMillis(), timestamp);
+    }
+
+    private static com.ghatana.platform.health.HealthStatus.Status toPlatformStatus(HealthState status) {
+        return switch (status) {
+            case HEALTHY -> com.ghatana.platform.health.HealthStatus.Status.HEALTHY;
+            case UNHEALTHY -> com.ghatana.platform.health.HealthStatus.Status.UNHEALTHY;
+            case UNKNOWN -> com.ghatana.platform.health.HealthStatus.Status.UNKNOWN;
+        };
+    }
+
+    private static HealthState fromPlatformStatus(com.ghatana.platform.health.HealthStatus.Status status) {
+        return switch (status) {
+            case HEALTHY -> HealthState.HEALTHY;
+            case UNHEALTHY -> HealthState.UNHEALTHY;
+            case DEGRADED, UNKNOWN -> HealthState.UNKNOWN;
+        };
     }
 }

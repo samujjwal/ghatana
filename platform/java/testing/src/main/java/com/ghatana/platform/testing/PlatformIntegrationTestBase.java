@@ -1,9 +1,9 @@
 package com.ghatana.platform.testing;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.platform.testing.containers.PostgresTestContainer;
-import com.ghatana.platform.testing.containers.RedisTestContainer;
-import com.ghatana.platform.testing.containers.TestContainerManager;
+import com.ghatana.platform.testing.internal.containers.PostgresTestContainer;
+import com.ghatana.platform.testing.internal.containers.RedisTestContainer;
+import com.ghatana.platform.testing.internal.containers.TestContainerManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -26,8 +26,8 @@ import java.util.Objects;
  * <p><b>Included Infrastructure</b>
  * <ul>
  *   <li>ActiveJ Eventloop — inherited from {@link EventloopTestBase}</li>
- *   <li>PostgreSQL — via {@link PostgresTestContainer} (opt-in)</li>
- *   <li>Redis — via {@link RedisTestContainer} (opt-in)</li>
+ *   <li>PostgreSQL — via internal Postgres container support (opt-in)</li>
+ *   <li>Redis — via internal Redis container support (opt-in)</li>
  *   <li>Shared Docker network for container-to-container communication</li>
  * </ul>
  *
@@ -72,7 +72,6 @@ import java.util.Objects;
  * @doc.layer core
  * @doc.pattern Base Class, Test Support
  * @see EventloopTestBase
- * @see TestContainerManager
  */
 @Tag("integration")
 public abstract class PlatformIntegrationTestBase extends EventloopTestBase {

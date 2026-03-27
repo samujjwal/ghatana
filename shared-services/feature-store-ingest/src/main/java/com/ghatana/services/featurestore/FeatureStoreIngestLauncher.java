@@ -66,6 +66,7 @@ import java.util.Map;
 public class FeatureStoreIngestLauncher {
 
     private static final Logger logger = LoggerFactory.getLogger(FeatureStoreIngestLauncher.class);
+    static final String VERSION = "1.0.0";
 
     public static void main(String[] args) {
         // Initialize metrics
@@ -89,9 +90,7 @@ public class FeatureStoreIngestLauncher {
         int healthPort = Integer.parseInt(System.getenv().getOrDefault("FEATURE_STORE_HEALTH_PORT", "8087"));
         HttpServer healthServer = HttpServer.builder(eventloop, request -> {
             if (HttpMethod.GET.equals(request.getMethod()) && "/health".equals(request.getPath())) {
-                String body = String.format(
-                    "{\"status\":\"UP\",\"service\":\"feature-store-ingest\",\"timestamp\":\"%s\",\"version\":\"1.0.0\"}",
-                    Instant.now().toString());
+                String body = healthPayloadJson(Instant.now());
                 return Promise.of(HttpResponse.ok200()
                         .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
                         .withBody(body.getBytes())
@@ -253,6 +252,14 @@ public class FeatureStoreIngestLauncher {
         processEventStream(sampleEvent, metrics);
 
         logger.info("Mock ingestion complete. Connect EventLogStore subscriber for production use.");
+    }
+
+    static String healthPayloadJson(Instant timestamp) {
+        return String.format(
+                "{\"status\":\"UP\",\"service\":\"feature-store-ingest\",\"timestamp\":\"%s\",\"version\":\"%s\"}",
+                timestamp,
+                VERSION
+        );
     }
 }
 

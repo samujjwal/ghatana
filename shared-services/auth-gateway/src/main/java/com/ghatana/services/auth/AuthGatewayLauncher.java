@@ -6,6 +6,7 @@ package com.ghatana.services.auth;
 import com.ghatana.platform.http.server.response.ErrorResponse;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProviders;
 import com.ghatana.platform.security.model.User;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
@@ -102,7 +103,7 @@ public class AuthGatewayLauncher extends Launcher {
         }
         long expiryMs = Long.parseLong(System.getenv().getOrDefault("JWT_EXPIRY_MS", "3600000"));
 
-        return new com.ghatana.platform.security.jwt.JwtTokenProvider(secret, expiryMs);
+        return JwtTokenProviders.fromSharedSecret(secret, expiryMs);
     }
 
     @Provides
@@ -189,7 +190,7 @@ public class AuthGatewayLauncher extends Launcher {
                 "PLATFORM_JWT_SECRET", "dev-platform-jwt-secret-change-me-in-prod!");
         final long platformTokenTtlMs = Long.parseLong(
                 System.getenv().getOrDefault("PLATFORM_TOKEN_TTL_MS", String.valueOf(15 * 60 * 1000L)));
-        final JwtTokenProvider platformTokenProvider = new com.ghatana.platform.security.jwt.JwtTokenProvider(platformSecret, platformTokenTtlMs);
+        final JwtTokenProvider platformTokenProvider = JwtTokenProviders.fromSharedSecret(platformSecret, platformTokenTtlMs);
 
         return RoutingServlet.builder(eventloop)
                 // Health check

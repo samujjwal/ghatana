@@ -40,7 +40,7 @@ dependencies {
     implementation(project(":products:finance:domains:surveillance"))
 
     // ActiveJ Promise
-    implementation("io.activej:activej-promise")
+    implementation(libs.activej.promise)
 
     // Jackson for JSON
     implementation("com.fasterxml.jackson.core:jackson-databind")
@@ -57,5 +57,5 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
-    testImplementation("io.activej:activej-test:6.0-rc2")
+    testImplementation(libs.activej.test)
 }

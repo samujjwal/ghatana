@@ -1,9 +1,12 @@
 import * as React from 'react';
 
 export function useMergeRefs<T>(...refs: Array<React.Ref<T> | undefined>): React.RefCallback<T> {
+    const refsRef = React.useRef(refs);
+    refsRef.current = refs;
+
     return React.useCallback(
         (value: T) => {
-            for (const ref of refs) {
+            for (const ref of refsRef.current) {
                 if (!ref) continue;
                 if (typeof ref === 'function') {
                     ref(value);
@@ -16,6 +19,6 @@ export function useMergeRefs<T>(...refs: Array<React.Ref<T> | undefined>): React
                 }
             }
         },
-        [refs],
+        [],
     );
 }

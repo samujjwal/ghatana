@@ -17,7 +17,6 @@
 
 package com.ghatana.platform.testing.data;
 
-import net.datafaker.Faker;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -60,8 +59,8 @@ import java.util.stream.IntStream;
  *     public Agent buildRandom() {
  *         return Agent.builder()
  *             .id(AgentId.random())
- *             .name(faker.name().fullName())
- *             .status(faker.options().option(AgentStatus.class))
+ *             .name(fakeFullName())
+ *             .status(randomEnumValue(AgentStatus.class))
  *             .build();
  *     }
  *
@@ -85,25 +84,20 @@ import java.util.stream.IntStream;
 */
 public abstract class RandomizedTestDataBuilder<T> implements TestDataBuilder<T> {
 
-    /** Faker instance for generating random data. */
-    protected final Faker faker;
-
     /** Random instance for generating random numbers. */
     protected final Random random;
 
     /** Creates a new randomized builder with default Faker and Random instances. */
     protected RandomizedTestDataBuilder() {
-        this(new Faker(), new Random());
+        this(new Random());
     }
 
     /**
-     * Creates a new randomized builder with specified Faker and Random instances.
+     * Creates a new randomized builder with a specific random instance.
      *
-     * @param faker the Faker instance to use for data generation
      * @param random the Random instance to use for randomization
      */
-    protected RandomizedTestDataBuilder(Faker faker, Random random) {
-        this.faker = faker;
+    protected RandomizedTestDataBuilder(Random random) {
         this.random = random;
     }
 
@@ -165,5 +159,56 @@ public abstract class RandomizedTestDataBuilder<T> implements TestDataBuilder<T>
      */
     protected boolean randomBoolean() {
         return random.nextBoolean();
+    }
+
+    /**
+     * Returns a random enum constant from the provided enum class.
+     *
+     * @param enumClass enum type to sample from
+     * @param <E> enum type
+     * @return a random enum constant
+     */
+    protected <E extends Enum<E>> E randomEnumValue(Class<E> enumClass) {
+        E[] constants = enumClass.getEnumConstants();
+        if (constants == null || constants.length == 0) {
+            throw new IllegalArgumentException("Enum class has no constants: " + enumClass.getName());
+        }
+        return constants[random.nextInt(constants.length)];
+    }
+
+    /**
+     * Returns a synthetic full name without exposing DataFaker in the public API.
+     *
+     * @return a generated full name
+     */
+    protected String fakeFullName() {
+        return TestDataBuilders.randomName();
+    }
+
+    /**
+     * Returns a synthetic email address without exposing DataFaker in the public API.
+     *
+     * @return a generated email address
+     */
+    protected String fakeEmailAddress() {
+        return TestDataBuilders.randomEmail();
+    }
+
+    /**
+     * Returns a synthetic word without exposing DataFaker in the public API.
+     *
+     * @return a generated word
+     */
+    protected String fakeWord() {
+        return TestDataBuilders.randomWord();
+    }
+
+    /**
+     * Returns a synthetic sentence without exposing DataFaker in the public API.
+     *
+     * @return a generated sentence
+     */
+    protected String fakeSentence() {
+        return TestDataBuilders.randomSentence();
     }
 }

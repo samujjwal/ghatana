@@ -18,6 +18,7 @@ dependencies {
     api(libs.grpc.stub)
     api(libs.grpc.protobuf)
     api(libs.protobuf.java)
+    implementation(project(":platform:java:security"))
 
     // JWT validation
     implementation(libs.nimbus.jose.jwt)

@@ -70,6 +70,9 @@ class AIInferenceHttpAdapterTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> adapter.buildServlet().serve(request));
 
         assertThat(response.getCode()).isEqualTo(401);
+        assertThat(response.getBody().getString(java.nio.charset.StandardCharsets.UTF_8))
+            .contains("\"code\":\"UNAUTHORIZED\"")
+            .contains("\"message\":\"Missing or malformed Authorization header\"");
     }
 
     @Test
@@ -203,8 +206,29 @@ class AIInferenceHttpAdapterTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid.token")
                 .withBody("{\"tenant\":\"t1\",\"text\":\"hello\"}".getBytes())
                 .build();
-        assertThat(runPromise(() -> lowLimitAdapter.buildServlet().serve(second)).getCode()).isEqualTo(429);
+        HttpResponse rateLimited = runPromise(() -> lowLimitAdapter.buildServlet().serve(second));
+        assertThat(rateLimited.getCode()).isEqualTo(429);
+        assertThat(rateLimited.getBody().getString(java.nio.charset.StandardCharsets.UTF_8))
+            .contains("\"code\":\"RATE_LIMIT_EXCEEDED\"");
     }
+
+        @Test
+        @DisplayName("POST /ai/infer/embedding with invalid JSON should return structured 400")
+        void embeddingInvalidJsonShouldReturnStructured400() {
+        when(mockJwt.validateToken("valid.token")).thenReturn(true);
+
+        HttpRequest request = HttpRequest.post("http://localhost/ai/infer/embedding")
+            .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid.token")
+            .withBody("{not-json".getBytes())
+            .build();
+
+        HttpResponse response = runPromise(() -> adapter.buildServlet().serve(request));
+
+        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getBody().getString(java.nio.charset.StandardCharsets.UTF_8))
+            .contains("\"code\":\"INVALID_REQUEST\"")
+            .contains("\"message\":\"Invalid JSON request body\"");
+        }
 
     // ─── Validation: missing fields ───────────────────────────────────────────
 

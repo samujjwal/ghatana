@@ -171,22 +171,16 @@ public class AIInferenceHttpAdapter {
 
         String authHeader = request.getHeader(io.activej.http.HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseBuilder.unauthorized()
-                    .json(Map.of("error", "Missing or malformed Authorization header"))
-                    .build();
+            return errorResponse(401, "UNAUTHORIZED", "Missing or malformed Authorization header");
         }
         String token = authHeader.substring(7).strip();
         try {
             if (!jwtTokenProvider.validateToken(token)) {
-                return ResponseBuilder.unauthorized()
-                        .json(Map.of("error", "Invalid or expired token"))
-                        .build();
+                return errorResponse(401, "UNAUTHORIZED", "Invalid or expired token");
             }
         } catch (Exception e) {
             logger.warn("JWT validation error", e);
-            return ResponseBuilder.unauthorized()
-                    .json(Map.of("error", "Token validation failed"))
-                    .build();
+            return errorResponse(401, "TOKEN_VALIDATION_FAILED", "Token validation failed");
         }
         return null; // authenticated
     }
@@ -226,9 +220,7 @@ public class AIInferenceHttpAdapter {
         return parseRequestBody(request, EmbeddingRequest.class)
                 .then(req -> {
                     if (req.tenant == null || req.tenant.isEmpty()) {
-                        return Promise.of(ResponseBuilder.badRequest()
-                                .json(Map.of("error", "tenant is required"))
-                                .build());
+                        return Promise.of(errorResponse(400, "MISSING_TENANT", "tenant is required"));
                     }
                     RateLimiter.AcquireResult acquireResult = rateLimiter.tryAcquire(req.tenant);
                     if (!acquireResult.allowed()) {
@@ -237,14 +229,10 @@ public class AIInferenceHttpAdapter {
                                 .build());
                     }
                     if (req.text == null || req.text.isEmpty()) {
-                        return Promise.of(ResponseBuilder.badRequest()
-                                .json(Map.of("error", "text is required"))
-                                .build());
+                        return Promise.of(errorResponse(400, "MISSING_TEXT", "text is required"));
                     }
                     if (req.text.length() > MAX_TEXT_LENGTH) {
-                        return Promise.of(ResponseBuilder.badRequest()
-                                .json(Map.of("error", "text exceeds maximum allowed length of " + MAX_TEXT_LENGTH + " characters"))
-                                .build());
+                        return Promise.of(errorResponse(400, "TEXT_TOO_LONG", "text exceeds maximum allowed length of " + MAX_TEXT_LENGTH + " characters"));
                     }
 
                     String sanitizedText = sanitizeText(req.text);
@@ -273,9 +261,7 @@ public class AIInferenceHttpAdapter {
                 })
                 .then(
                         response -> Promise.of(response),
-                        error -> Promise.of(ResponseBuilder.internalServerError()
-                                .json(Map.of("error", "Embedding generation failed"))
-                                .build())
+                    error -> Promise.of(mapRequestError(error, "EMBEDDING_GENERATION_FAILED", "Embedding generation failed"))
                 );
     }
 
@@ -295,9 +281,7 @@ public class AIInferenceHttpAdapter {
         return parseRequestBody(request, BatchEmbeddingRequest.class)
                 .then(req -> {
                     if (req.tenant == null || req.tenant.isEmpty()) {
-                        return Promise.of(ResponseBuilder.badRequest()
-                                .json(Map.of("error", "tenant is required"))
-                                .build());
+                        return Promise.of(errorResponse(400, "MISSING_TENANT", "tenant is required"));
                     }
                     RateLimiter.AcquireResult acquireResult = rateLimiter.tryAcquire(req.tenant);
                     if (!acquireResult.allowed()) {
@@ -306,20 +290,14 @@ public class AIInferenceHttpAdapter {
                                 .build());
                     }
                     if (req.texts == null || req.texts.isEmpty()) {
-                        return Promise.of(ResponseBuilder.badRequest()
-                                .json(Map.of("error", "texts is required"))
-                                .build());
+                        return Promise.of(errorResponse(400, "MISSING_TEXTS", "texts is required"));
                     }
                     if (req.texts.size() > MAX_BATCH_SIZE) {
-                        return Promise.of(ResponseBuilder.badRequest()
-                                .json(Map.of("error", "batch size exceeds maximum of " + MAX_BATCH_SIZE))
-                                .build());
+                        return Promise.of(errorResponse(400, "BATCH_TOO_LARGE", "batch size exceeds maximum of " + MAX_BATCH_SIZE));
                     }
                     for (String text : req.texts) {
                         if (text != null && text.length() > MAX_TEXT_LENGTH) {
-                            return Promise.of(ResponseBuilder.badRequest()
-                                    .json(Map.of("error", "one or more texts exceed maximum allowed length"))
-                                    .build());
+                            return Promise.of(errorResponse(400, "TEXT_TOO_LONG", "one or more texts exceed maximum allowed length"));
                         }
                     }
 
@@ -353,9 +331,7 @@ public class AIInferenceHttpAdapter {
                 })
                 .then(
                         response -> Promise.of(response),
-                        error -> Promise.of(ResponseBuilder.internalServerError()
-                                .json(Map.of("error", "Batch embedding generation failed"))
-                                .build())
+                    error -> Promise.of(mapRequestError(error, "BATCH_EMBEDDING_GENERATION_FAILED", "Batch embedding generation failed"))
                 );
     }
 
@@ -375,9 +351,7 @@ public class AIInferenceHttpAdapter {
         return parseRequestBody(request, CompletionRequestDto.class)
                 .then(req -> {
                     if (req.tenant == null || req.tenant.isEmpty()) {
-                        return Promise.of(ResponseBuilder.badRequest()
-                                .json(Map.of("error", "tenant is required"))
-                                .build());
+                        return Promise.of(errorResponse(400, "MISSING_TENANT", "tenant is required"));
                     }
                     RateLimiter.AcquireResult acquireResult = rateLimiter.tryAcquire(req.tenant);
                     if (!acquireResult.allowed()) {
@@ -386,14 +360,10 @@ public class AIInferenceHttpAdapter {
                                 .build());
                     }
                     if (req.prompt == null || req.prompt.isEmpty()) {
-                        return Promise.of(ResponseBuilder.badRequest()
-                                .json(Map.of("error", "prompt is required"))
-                                .build());
+                        return Promise.of(errorResponse(400, "MISSING_PROMPT", "prompt is required"));
                     }
                     if (req.prompt.length() > MAX_TEXT_LENGTH) {
-                        return Promise.of(ResponseBuilder.badRequest()
-                                .json(Map.of("error", "prompt exceeds maximum allowed length of " + MAX_TEXT_LENGTH + " characters"))
-                                .build());
+                        return Promise.of(errorResponse(400, "PROMPT_TOO_LONG", "prompt exceeds maximum allowed length of " + MAX_TEXT_LENGTH + " characters"));
                     }
 
                     String sanitizedPrompt = sanitizeText(req.prompt);
@@ -431,9 +401,7 @@ public class AIInferenceHttpAdapter {
                 })
                 .then(
                         response -> Promise.of(response),
-                        error -> Promise.of(ResponseBuilder.internalServerError()
-                                .json(Map.of("error", "Completion generation failed"))
-                                .build())
+                    error -> Promise.of(mapRequestError(error, "COMPLETION_GENERATION_FAILED", "Completion generation failed"))
                 );
     }
 
@@ -482,8 +450,21 @@ public class AIInferenceHttpAdapter {
             T parsed = objectMapper.readValue(body, clazz);
             return Promise.of(parsed);
         } catch (Exception e) {
-            return Promise.ofException(new IllegalArgumentException("Invalid JSON: " + e.getMessage()));
+            return Promise.ofException(new IllegalArgumentException("Invalid JSON request body"));
         }
+    }
+
+    private static HttpResponse mapRequestError(Throwable error, String internalCode, String internalMessage) {
+        if (error instanceof IllegalArgumentException) {
+            return errorResponse(400, "INVALID_REQUEST", error.getMessage());
+        }
+        return errorResponse(500, internalCode, internalMessage);
+    }
+
+    private static HttpResponse errorResponse(int status, String code, String message) {
+        return ResponseBuilder.status(status)
+                .json(ErrorResponse.of(status, code, message))
+                .build();
     }
 
     // ─── Request DTOs ─────────────────────────────────────────────────────────

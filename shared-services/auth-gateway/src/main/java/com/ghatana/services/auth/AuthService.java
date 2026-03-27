@@ -1,6 +1,10 @@
 package com.ghatana.services.auth;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.platform.http.server.response.ErrorResponse;
 import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProviders;
 import com.ghatana.platform.security.model.User;
 import com.ghatana.platform.security.oauth2.OAuth2Config;
 import com.ghatana.platform.security.oauth2.OAuth2Provider;
@@ -47,6 +51,7 @@ import static io.activej.http.HttpMethod.*;
 public class AuthService extends HttpServerLauncher {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+    private static final ObjectMapper objectMapper = JsonUtils.getDefaultMapper();
 
     /** JWT TTL for the platform-issued cross-product token (15 minutes). */
     private static final long PLATFORM_TOKEN_TTL_MS = 15 * 60 * 1000L;
@@ -101,7 +106,7 @@ public class AuthService extends HttpServerLauncher {
                      "Set PLATFORM_JWT_SECRET (32+ chars) before deploying.");
             secret = "dev-platform-jwt-secret-change-me-in-prod!";
         }
-        return new com.ghatana.platform.security.jwt.JwtTokenProvider(secret, PLATFORM_TOKEN_TTL_MS);
+        return JwtTokenProviders.fromSharedSecret(secret, PLATFORM_TOKEN_TTL_MS);
     }
 
     @Provides
@@ -163,22 +168,20 @@ public class AuthService extends HttpServerLauncher {
                     String desc = request.getQueryParameter("error_description");
                     log.warn("OIDC callback error: {} — {}", error, desc);
                     return HttpResponse.ofCode(400)
-                            .withJson(String.format(
-                                "{\"error\":\"%s\",\"error_description\":\"%s\"}",
-                                sanitize(error), sanitize(desc == null ? "" : desc)))
+                            .withJson(errorJson(400, "OIDC_CALLBACK_ERROR", sanitize(error), sanitize(desc == null ? "" : desc)))
                             .build()
                             .toPromise();
                 }
 
                 if (code == null || code.isEmpty()) {
                     return HttpResponse.ofCode(400)
-                            .withJson("{\"error\":\"missing_code\"}")
+                            .withJson(errorJson(400, "MISSING_CODE", "Missing authorization code"))
                             .build()
                             .toPromise();
                 }
                 if (state == null || state.isEmpty()) {
                     return HttpResponse.ofCode(400)
-                            .withJson("{\"error\":\"missing_state\"}")
+                            .withJson(errorJson(400, "MISSING_STATE", "Missing OAuth state"))
                             .build()
                             .toPromise();
                 }
@@ -237,13 +240,13 @@ public class AuthService extends HttpServerLauncher {
                         // OAuth2 protocol validation errors (bad state, invalid code, expired token, etc.)
                         log.warn("OIDC authentication validation failed: {}", e.getMessage());
                         return HttpResponse.ofCode(401)
-                                .withJson("{\"error\":\"authentication_failed\",\"detail\":\"Authentication failed\"}")
+                                .withJson(errorJson(401, "AUTHENTICATION_FAILED", "Authentication failed"))
                                 .build();
                     } catch (Exception e) {
                         // Unexpected system error — do not leak details to the caller
                         log.error("Unexpected error during OIDC callback", e);
                         return HttpResponse.ofCode(500)
-                                .withJson("{\"error\":\"internal_error\",\"detail\":\"Authentication service unavailable\"}")
+                                .withJson(errorJson(500, "INTERNAL_ERROR", "Authentication service unavailable"))
                                 .build();
                     }
                 });
@@ -262,7 +265,7 @@ public class AuthService extends HttpServerLauncher {
                     }
                     if (token == null || token.isEmpty()) {
                         return Promise.of(HttpResponse.ofCode(400)
-                                .withJson("{\"active\":false,\"error\":\"No token provided\"}")
+                                .withJson(errorJson(400, "MISSING_TOKEN", "No token provided"))
                                 .build());
                     }
                     return tokenIntrospector.introspect(token)
@@ -297,14 +300,14 @@ public class AuthService extends HttpServerLauncher {
 
                 if (sessionId == null) {
                     return Promise.of(HttpResponse.ofCode(401)
-                            .withJson("{\"error\":\"No session\"}")
+                            .withJson(errorJson(401, "NO_SESSION", "No session"))
                             .build());
                 }
 
                 var sessionOpt = sessionManager.getSession(sessionId);
                 if (sessionOpt.isEmpty()) {
                     return Promise.of(HttpResponse.ofCode(401)
-                            .withJson("{\"error\":\"Session expired or not found\"}")
+                            .withJson(errorJson(401, "SESSION_NOT_FOUND", "Session expired or not found"))
                             .build());
                 }
 
@@ -401,6 +404,35 @@ public class AuthService extends HttpServerLauncher {
                 .replace("\"", "\\\"")
                 .replace("\n", " ")
                 .replace("\r", "");
+    }
+
+    static ErrorResponse standardError(int status, String code, String message) {
+        return ErrorResponse.of(status, code, message);
+    }
+
+    static ErrorResponse standardError(int status, String code, String message, String details) {
+        return ErrorResponse.builder()
+                .status(status)
+                .code(code)
+                .message(message)
+                .details(details)
+                .build();
+    }
+
+    static String errorJson(int status, String code, String message) {
+        return writeJson(standardError(status, code, message));
+    }
+
+    static String errorJson(int status, String code, String message, String details) {
+        return writeJson(standardError(status, code, message, details));
+    }
+
+    private static String writeJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Failed to serialize error response", exception);
+        }
     }
 
     /** Simple JSON field extractor (avoids adding a JSON library dependency). */

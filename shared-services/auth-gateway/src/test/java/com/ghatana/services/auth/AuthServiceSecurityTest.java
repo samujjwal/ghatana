@@ -1,5 +1,6 @@
 package com.ghatana.services.auth;
 
+import com.ghatana.platform.http.server.response.ErrorResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +44,27 @@ class AuthServiceSecurityTest {
     @DisplayName("sanitize should escape backslashes")
     void sanitizeShouldEscapeBackslashes() {
         assertThat(sanitizeForTest("path\\to\\file")).isEqualTo("path\\\\to\\\\file");
+    }
+
+    @Test
+    @DisplayName("standardError should use the platform error response structure")
+    void standardErrorShouldUsePlatformStructure() {
+        ErrorResponse error = AuthService.standardError(401, "AUTHENTICATION_FAILED", "Authentication failed", "OIDC callback rejected");
+
+        assertThat(error.getStatus()).isEqualTo(401);
+        assertThat(error.getCode()).isEqualTo("AUTHENTICATION_FAILED");
+        assertThat(error.getMessage()).isEqualTo("Authentication failed");
+        assertThat(error.getDetails()).isEqualTo("OIDC callback rejected");
+    }
+
+    @Test
+    @DisplayName("errorJson should serialize standard platform error fields")
+    void errorJsonShouldSerializeStandardFields() {
+        String json = AuthService.errorJson(400, "MISSING_CODE", "Missing authorization code");
+
+        assertThat(json).contains("\"status\":400");
+        assertThat(json).contains("\"code\":\"MISSING_CODE\"");
+        assertThat(json).contains("\"message\":\"Missing authorization code\"");
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────

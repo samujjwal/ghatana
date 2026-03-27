@@ -67,6 +67,45 @@ public final class HealthStatus {
     public boolean isUnhealthy() { return status == Status.UNHEALTHY; }
     public boolean isDegraded() { return status == Status.DEGRADED; }
 
+    /**
+     * Maps this kernel-local status onto the canonical platform health contract.
+     */
+    public com.ghatana.platform.health.HealthStatus toPlatformHealthStatus() {
+        com.ghatana.platform.health.HealthStatus.Builder builder =
+            com.ghatana.platform.health.HealthStatus.builder()
+                .withStatus(toPlatformStatus(status))
+                .withMessage(message)
+                .withTimestamp(timestamp);
+
+        checks.forEach((name, check) -> builder.withCheck(
+            name,
+            toPlatformStatus(check.getStatus()),
+            check.getMessage(),
+            check.getResponseTimeMs()));
+
+        return builder.build();
+    }
+
+    /**
+     * Rebuilds the kernel-local status from the canonical platform health contract.
+     */
+    public static HealthStatus fromPlatformHealthStatus(com.ghatana.platform.health.HealthStatus status) {
+        Objects.requireNonNull(status, "status cannot be null");
+
+        Builder builder = builder()
+            .withStatus(fromPlatformStatus(status.getStatus()))
+            .withMessage(status.getMessage())
+            .withTimestamp(status.getTimestamp());
+
+        status.getChecks().forEach((name, check) -> builder.withCheck(
+            name,
+            fromPlatformStatus(check.getStatus()),
+            check.getMessage(),
+            check.getResponseTimeMs()));
+
+        return builder.build();
+    }
+
     public HealthCheck getCheck(String name) { return checks.get(name); }
 
     @Override
@@ -120,5 +159,23 @@ public final class HealthStatus {
         public HealthStatus build() {
             return new HealthStatus(status, message, timestamp, checks);
         }
+    }
+
+    private static com.ghatana.platform.health.HealthStatus.Status toPlatformStatus(Status status) {
+        return switch (status) {
+            case HEALTHY -> com.ghatana.platform.health.HealthStatus.Status.HEALTHY;
+            case DEGRADED -> com.ghatana.platform.health.HealthStatus.Status.DEGRADED;
+            case UNHEALTHY -> com.ghatana.platform.health.HealthStatus.Status.UNHEALTHY;
+            case UNKNOWN -> com.ghatana.platform.health.HealthStatus.Status.UNKNOWN;
+        };
+    }
+
+    private static Status fromPlatformStatus(com.ghatana.platform.health.HealthStatus.Status status) {
+        return switch (status) {
+            case HEALTHY -> Status.HEALTHY;
+            case DEGRADED -> Status.DEGRADED;
+            case UNHEALTHY -> Status.UNHEALTHY;
+            case UNKNOWN -> Status.UNKNOWN;
+        };
     }
 }

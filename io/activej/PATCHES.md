@@ -11,13 +11,14 @@ were derived from.
 
 ## Compliance Status
 
-> **⚠️ ACTION REQUIRED — Inline annotations missing**
+> **⚠️ ACTION REQUIRED — Inline annotations are now file-level only**
 >
 > Per the [vendoring policy](../README.md) and `package-info.java`, every
 > deviation from upstream MUST be annotated with `// GHATANA-PATCH: <reason>`
-> in the source file. **None** of the four vendored files currently contain these
-> annotations. Until inline markers are added, this manifest is the only
-> traceability record — do not delete it.
+> in the source file. All four vendored files now carry file-level
+> `GHATANA-PATCH` ownership markers, but the exact source deltas versus
+> upstream still need to be diffed and annotated at each change site if real
+> modifications exist.
 
 ---
 
@@ -35,10 +36,10 @@ were derived from.
 observability — e.g. span correlation and metrics recording on promise
 completion.
 
-**Current state:** No `GHATANA-PATCH:` markers present. The file compiles clean
-against `activej-6.0-rc2`. Until the inline diff is identified and marked, treat
-this file as an **unverified vendor copy** — do not modify without diffing
-against upstream first.
+**Current state:** File-level `GHATANA-PATCH:` ownership marker present. The file
+still needs a full upstream diff to confirm whether it is a pure copy or contains
+unannotated source changes. Until that diff is complete, treat this file as an
+**unverified vendor copy** — do not modify without diffing against upstream first.
 
 **Action required:** Diff this file against the upstream `6.0-rc2`
 `AbstractPromise.java`, identify all deviations, and add
@@ -58,8 +59,9 @@ against upstream first.
 instrumentation changes without breaking the internal `set()`/`setException()`
 contract.
 
-**Current state:** No `GHATANA-PATCH:` markers present. Treat as unverified
-vendor copy.
+**Current state:** File-level `GHATANA-PATCH:` ownership marker present. Treat as
+unverified vendor copy until a full upstream diff confirms whether line-level
+patch markers are needed.
 
 **Action required:** Same diff procedure as `AbstractPromise.java`.
 
@@ -76,8 +78,9 @@ vendor copy.
 **Documented intent:** Exposes additional timing resolution or hooks needed by
 `EbpfEventloopStallTracer` and `QueueMetrics`.
 
-**Current state:** No `GHATANA-PATCH:` markers present. Treat as unverified
-vendor copy.
+**Current state:** File-level `GHATANA-PATCH:` ownership marker present. Treat as
+unverified vendor copy until a full upstream diff confirms whether line-level
+patch markers are needed.
 
 **Action required:** Diff against upstream and annotate.
 
@@ -95,8 +98,9 @@ vendor copy.
 interface so `platform/java/observability` can attach metrics probes to
 event-loop lifecycle events.
 
-**Current state:** No `GHATANA-PATCH:` markers present. Treat as unverified
-vendor copy.
+**Current state:** File-level `GHATANA-PATCH:` ownership marker present. Treat as
+unverified vendor copy until a full upstream diff confirms whether line-level
+patch markers are needed.
 
 **Action required:** Diff against upstream and annotate.
 

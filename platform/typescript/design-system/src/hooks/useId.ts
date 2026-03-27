@@ -8,11 +8,15 @@ let globalId = 0;
  */
 export function useId(prefix = 'gh-id'): string {
   const reactId = (typeof React.useId === 'function') ? React.useId() : undefined;
+  const prefixedReactId = React.useMemo(
+    () => (reactId ? `${prefix}-${reactId}` : undefined),
+    [prefix, reactId]
+  );
 
   const [fallbackId] = React.useState(() => {
     globalId += 1;
     return `${prefix}-${globalId}`;
   });
 
-  return reactId ?? fallbackId;
+  return prefixedReactId ?? fallbackId;
 }

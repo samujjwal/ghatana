@@ -7,6 +7,7 @@ dependencies {
     api(project(":platform:java:domain"))
     api(project(":platform:java:core"))
     api(project(":platform:java:ai-integration"))
+    implementation(project(":platform:java:security"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:http"))

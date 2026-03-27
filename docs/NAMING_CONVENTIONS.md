@@ -19,6 +19,29 @@ This document defines the naming conventions and organizational standards for th
 
 ## Package Naming Standards
 
+### Platform Java Package Policy
+
+**Canonical public namespace:** `com.ghatana.platform.*`
+
+#### Rules
+- New consumer-facing platform Java APIs must live under `com.ghatana.platform.*`.
+- `com.ghatana.core.*` packages are transitional or legacy unless a migration document explicitly marks them canonical.
+- Consumers must depend on contract packages such as `..port..`, `..api..`, and `..spi..` instead of concrete implementation packages.
+- Concrete implementation packages such as `com.ghatana.platform.security.jwt` are composition-boundary details and must not be referenced directly from shared services or product code when a platform port exists.
+
+#### Example
+
+```java
+// Preferred: depend on the platform port and factory seam
+import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProviders;
+
+JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(secret, expiryMs);
+
+// Avoid: binding callers to the concrete implementation package
+// import com.ghatana.platform.security.jwt.JwtTokenProvider;
+```
+
 ### 1. Platform Libraries
 
 **Scope:** `@ghatana/*`  

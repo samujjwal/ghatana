@@ -55,9 +55,6 @@ dependencies {
     // Distributed cache (KRQ-05)
     implementation(project(":platform:java:distributed-cache"))
 
-    // ActiveJ Promise
-    implementation("io.activej:activej-promise")
-
     // Jackson for JSON
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
@@ -75,7 +72,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
-    testImplementation("io.activej:activej-test:6.0-rc2")
+    testImplementation(libs.activej.test)
 }
 
 tasks.register<JavaExec>("validateContracts") {

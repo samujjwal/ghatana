@@ -41,8 +41,12 @@ export function useDarkMode(config: DarkModeConfig = {}) {
     const storageKey = config.storageKey ?? 'ghatana-dark-mode';
     localStorage.removeItem(storageKey);
     const systemDark = getSystemDarkModePreference();
-    setDarkMode(systemDark);
-  }, [config.storageKey, setDarkMode]);
+    setIsDarkState(systemDark);
+
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', systemDark ? 'dark' : 'light');
+    }
+  }, [config.storageKey]);
 
   return {
     isDark,

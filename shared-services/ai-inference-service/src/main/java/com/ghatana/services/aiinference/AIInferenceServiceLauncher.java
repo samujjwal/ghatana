@@ -15,6 +15,7 @@ import com.ghatana.core.state.SyncStrategy;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProviders;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpClient;
 import io.activej.http.HttpServer;
@@ -243,7 +244,7 @@ public class AIInferenceServiceLauncher extends Launcher {
             secret = "dev-only-secret-do-not-use-in-prod!";
         }
         // Token lifetime is validation-only here; the service accepts tokens it does not create.
-        return new com.ghatana.platform.security.jwt.JwtTokenProvider(secret, 15 * 60 * 1000L);
+        return JwtTokenProviders.fromSharedSecret(secret, 15 * 60 * 1000L);
     }
 
     /**

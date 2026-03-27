@@ -218,6 +218,7 @@ public final class HealthStatus {
         private Instant timestamp = Instant.now();
         private final Map<String, HealthCheck> checks = new HashMap<>();
         private final Map<String, Object> details = new HashMap<>();
+        private Throwable exception;
 
         public Builder withStatus(Status status) {
             this.status = Objects.requireNonNull(status);
@@ -244,8 +245,26 @@ public final class HealthStatus {
             return this;
         }
 
+        /**
+         * Adds all detail entries to this health status.
+         */
+        public Builder withDetails(Map<String, Object> details) {
+            if (details != null) {
+                this.details.putAll(details);
+            }
+            return this;
+        }
+
+        /**
+         * Associates the exception that caused this health state.
+         */
+        public Builder withException(Throwable exception) {
+            this.exception = exception;
+            return this;
+        }
+
         public HealthStatus build() {
-            return new HealthStatus(status, message, timestamp, checks, details, null);
+            return new HealthStatus(status, message, timestamp, checks, details, exception);
         }
     }
 }

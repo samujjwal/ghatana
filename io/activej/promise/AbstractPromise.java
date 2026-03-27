@@ -43,6 +43,8 @@ import static io.activej.reactor.Reactor.getCurrentReactor;
  * whether this is a pure copy or if patches exist without annotation.
  * See {@code io/activej/PATCHES.md} for the full patch manifest and upgrade procedure.
  */
+// GHATANA-PATCH: Vendored copy from ActiveJ 6.0-rc2 for promise instrumentation review.
+// No concrete source delta has been identified yet; diff against upstream is still required.
 @SuppressWarnings({"unchecked", "WeakerAccess", "unused"})
 public abstract class AbstractPromise<T> implements Promise<T> {
 	static {

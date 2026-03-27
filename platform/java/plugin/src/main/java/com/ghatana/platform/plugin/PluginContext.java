@@ -11,10 +11,13 @@ import java.util.Optional;
  * Context provided to a plugin during initialization.
  * <p>
  * Provides access to configuration, other plugins, and platform services.
+ * This context is paired with the platform plugin framework in this module and
+ * does not expose kernel registries or kernel-only lifecycle contracts.
  *
  * @doc.type interface
- * @doc.purpose Plugin sandbox and service locator
+ * @doc.purpose Platform plugin sandbox and service locator
  * @doc.layer core
+ * @doc.pattern Context
  */
 public interface PluginContext {
 
