@@ -113,7 +113,7 @@ public final class AepAuthFilter implements AsyncServlet {
             return next.serve(request);
         } catch (JwtValidationException e) {
             log.warn("JWT validation failed for path {}: {}", path, e.getMessage());
-            return Promise.of(unauthorizedResponse("Invalid token: " + e.getMessage()));
+            return Promise.of(unauthorizedResponse("Authentication failed"));
         }
     }
 

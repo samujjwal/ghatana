@@ -57,6 +57,12 @@ include(":platform:java:kernel")
 include(":platform:java:audio-video")   // STT, TTS, Vision engine library (com.ghatana.media.*)
 // kernel-capabilities DELETED (zero consumers, capabilities merged into kernel/observability — Sprint 5, 2026-03-25)
 include(":platform:java:distributed-cache")    // KRQ-05: Generic Redis-backed distributed cache abstraction
+include(":platform:java:identity")             // Phase 1 — Identity brokering, delegation tokens, credential management
+include(":platform:java:data-governance")       // Phase 2 — Consent, PII classification, purpose-limitation, data minimization
+include(":platform:java:tool-runtime")          // Phase 3 — Tool sandboxing, execution monitoring, approval gates
+include(":platform:java:policy-as-code")        // Phase 4 — OPA integration, policy-as-code engine, risk scoring
+include(":platform:java:security-analytics")    // Phase 5 — Egress monitoring, prompt-injection detection
+include(":platform:java:incident-response")     // Phase 6 — Kill-switch, taxonomy, graceful degradation
 
 // =============================================================================
 // Product: AEP — Autonomous Event Processing
@@ -78,6 +84,8 @@ include(":products:aep:aep-api")
 include(":products:aep:aep-scaling")
 include(":products:aep:orchestrator")
 include(":products:aep:server")
+include(":products:aep:aep-identity")           // Phase 8 — AEP-specific identity resolution and external identity bridging
+include(":products:aep:aep-compliance")         // Phase 8 — AEP compliance: retention, consent propagation, deletion workflows
 
 // =============================================================================
 // Product: Data-Cloud — Multi-tenant Metadata Management

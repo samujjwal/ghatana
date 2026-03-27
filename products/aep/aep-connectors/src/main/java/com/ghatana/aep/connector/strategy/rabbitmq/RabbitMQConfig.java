@@ -4,62 +4,67 @@
  */
 package com.ghatana.aep.connector.strategy.rabbitmq;
 
+import com.ghatana.aep.connector.config.ConnectorConfig;
+
+import java.util.Objects;
+
 /**
- * Configuration for RabbitMQ connectors.
+ * Immutable configuration for RabbitMQ connectors.
+ *
+ * <p>Extends {@link ConnectorConfig} for shared TLS, retry and timeout settings.
+ *
+ * @doc.type class
+ * @doc.purpose Immutable RabbitMQ connector configuration
+ * @doc.layer infrastructure
+ * @doc.pattern ValueObject
  */
-public class RabbitMQConfig {
-    private String host;
-    private int port = 5672;
-    private String username;
-    private String password;
-    private String virtualHost = "/";
-    private String queueName;
-    
-    public String getHost() {
-        return host;
+public final class RabbitMQConfig extends ConnectorConfig {
+
+    private final String host;
+    private final int port;
+    private final String username;
+    private final String password;
+    private final String virtualHost;
+    private final String queueName;
+
+    private RabbitMQConfig(RabbitMQBuilder b) {
+        super(b);
+        this.host        = Objects.requireNonNull(b.host, "host");
+        this.port        = b.port;
+        this.username    = Objects.requireNonNull(b.username, "username");
+        this.password    = Objects.requireNonNull(b.password, "password");
+        this.virtualHost = b.virtualHost;
+        this.queueName   = Objects.requireNonNull(b.queueName, "queueName");
     }
-    
-    public void setHost(String host) {
-        this.host = host;
-    }
-    
-    public int getPort() {
-        return port;
-    }
-    
-    public void setPort(int port) {
-        this.port = port;
-    }
-    
-    public String getUsername() {
-        return username;
-    }
-    
-    public void setUsername(String username) {
-        this.username = username;
-    }
-    
-    public String getPassword() {
-        return password;
-    }
-    
-    public void setPassword(String password) {
-        this.password = password;
-    }
-    
-    public String getVirtualHost() {
-        return virtualHost;
-    }
-    
-    public void setVirtualHost(String virtualHost) {
-        this.virtualHost = virtualHost;
-    }
-    
-    public String getQueueName() {
-        return queueName;
-    }
-    
-    public void setQueueName(String queueName) {
-        this.queueName = queueName;
+
+    public static RabbitMQBuilder builder() { return new RabbitMQBuilder(); }
+
+    public String rabbitHost()   { return host; }
+    public int rabbitPort()      { return port; }
+    public String username()     { return username; }
+    public String password()     { return password; }
+    public String virtualHost()  { return virtualHost; }
+    public String queueName()    { return queueName; }
+
+    // ── Builder ──────────────────────────────────────────────────────────────
+
+    public static final class RabbitMQBuilder extends Builder<RabbitMQBuilder> {
+        private String host;
+        private int port = 5672;
+        private String username;
+        private String password;
+        private String virtualHost = "/";
+        private String queueName;
+
+        @Override protected RabbitMQBuilder self() { return this; }
+
+        public RabbitMQBuilder host(String h)           { host = h; return this; }
+        public RabbitMQBuilder port(int p)              { port = p; return this; }
+        public RabbitMQBuilder username(String u)       { username = u; return this; }
+        public RabbitMQBuilder password(String p)       { password = p; return this; }
+        public RabbitMQBuilder virtualHost(String vh)   { virtualHost = vh; return this; }
+        public RabbitMQBuilder queueName(String q)      { queueName = q; return this; }
+
+        @Override public RabbitMQConfig build() { return new RabbitMQConfig(this); }
     }
 }

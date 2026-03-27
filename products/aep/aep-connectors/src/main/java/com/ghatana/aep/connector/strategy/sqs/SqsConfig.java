@@ -4,62 +4,67 @@
  */
 package com.ghatana.aep.connector.strategy.sqs;
 
+import com.ghatana.aep.connector.config.ConnectorConfig;
+
+import java.util.Objects;
+
 /**
- * Configuration for SQS connectors.
+ * Immutable configuration for AWS SQS connectors.
+ *
+ * <p>Extends {@link ConnectorConfig} for shared TLS, retry and timeout settings.
+ *
+ * @doc.type class
+ * @doc.purpose Immutable SQS connector configuration
+ * @doc.layer infrastructure
+ * @doc.pattern ValueObject
  */
-public class SqsConfig {
-    private String queueUrl;
-    private String region;
-    private String accessKey;
-    private String secretKey;
-    private int maxMessages = 10;
-    private int waitTimeSeconds = 20;
-    
-    public String getQueueUrl() {
-        return queueUrl;
+public final class SqsConfig extends ConnectorConfig {
+
+    private final String queueUrl;
+    private final String region;
+    private final String accessKey;
+    private final String secretKey;
+    private final int maxMessages;
+    private final int waitTimeSeconds;
+
+    private SqsConfig(SqsBuilder b) {
+        super(b);
+        this.queueUrl       = Objects.requireNonNull(b.queueUrl, "queueUrl");
+        this.region         = Objects.requireNonNull(b.region, "region");
+        this.accessKey      = b.accessKey;
+        this.secretKey      = b.secretKey;
+        this.maxMessages    = b.maxMessages;
+        this.waitTimeSeconds = b.waitTimeSeconds;
     }
-    
-    public void setQueueUrl(String queueUrl) {
-        this.queueUrl = queueUrl;
-    }
-    
-    public String getRegion() {
-        return region;
-    }
-    
-    public void setRegion(String region) {
-        this.region = region;
-    }
-    
-    public String getAccessKey() {
-        return accessKey;
-    }
-    
-    public void setAccessKey(String accessKey) {
-        this.accessKey = accessKey;
-    }
-    
-    public String getSecretKey() {
-        return secretKey;
-    }
-    
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
-    }
-    
-    public int getMaxMessages() {
-        return maxMessages;
-    }
-    
-    public void setMaxMessages(int maxMessages) {
-        this.maxMessages = maxMessages;
-    }
-    
-    public int getWaitTimeSeconds() {
-        return waitTimeSeconds;
-    }
-    
-    public void setWaitTimeSeconds(int waitTimeSeconds) {
-        this.waitTimeSeconds = waitTimeSeconds;
+
+    public static SqsBuilder builder() { return new SqsBuilder(); }
+
+    public String queueUrl()       { return queueUrl; }
+    public String region()         { return region; }
+    public String accessKey()      { return accessKey; }
+    public String secretKey()      { return secretKey; }
+    public int maxMessages()       { return maxMessages; }
+    public int waitTimeSeconds()   { return waitTimeSeconds; }
+
+    // ── Builder ──────────────────────────────────────────────────────────────
+
+    public static final class SqsBuilder extends Builder<SqsBuilder> {
+        private String queueUrl;
+        private String region;
+        private String accessKey;
+        private String secretKey;
+        private int maxMessages = 10;
+        private int waitTimeSeconds = 20;
+
+        @Override protected SqsBuilder self() { return this; }
+
+        public SqsBuilder queueUrl(String u)       { queueUrl = u; return this; }
+        public SqsBuilder region(String r)         { region = r; return this; }
+        public SqsBuilder accessKey(String k)      { accessKey = k; return this; }
+        public SqsBuilder secretKey(String k)      { secretKey = k; return this; }
+        public SqsBuilder maxMessages(int n)       { maxMessages = n; return this; }
+        public SqsBuilder waitTimeSeconds(int s)   { waitTimeSeconds = s; return this; }
+
+        @Override public SqsConfig build() { return new SqsConfig(this); }
     }
 }

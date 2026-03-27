@@ -69,6 +69,7 @@ public final class AepConfigValidator {
         validateMaxPipelinesPerTenant(config.maxPipelinesPerTenant(), violations);
         validateWorkerThreads(config.workerThreads(), violations);
         validateInstanceId(config.instanceId(), violations);
+        validateCustomConfig(config.customConfig(), violations);
 
         if (!violations.isEmpty()) {
             throw new IllegalArgumentException("AepConfig validation failed: " + String.join("; ", violations));
@@ -103,6 +104,33 @@ public final class AepConfigValidator {
         // null is acceptable (compact constructor generates a UUID); blank string is not
         if (instanceId != null && instanceId.isBlank()) {
             violations.add("instanceId must not be blank when explicitly provided");
+        }
+    }
+
+    /**
+     * Validates the {@code customConfig} map: keys must be non-blank strings, and
+     * values must not be {@code null} (use an empty map to indicate "no custom config").
+     *
+     * @param customConfig the map to validate (may be empty but must not contain
+     *                     null keys or null values)
+     * @param violations   the list to append violations to
+     */
+    private static void validateCustomConfig(java.util.Map<String, Object> customConfig,
+                                             List<String> violations) {
+        if (customConfig == null) {
+            // compact constructor ensures this is never null by the time we get here,
+            // but guard defensively in case the validator is called outside that path
+            violations.add("customConfig must not be null (use Map.of() for no custom config)");
+            return;
+        }
+        for (java.util.Map.Entry<String, Object> entry : customConfig.entrySet()) {
+            if (entry.getKey() == null || entry.getKey().isBlank()) {
+                violations.add("customConfig must not contain null or blank keys");
+            }
+            if (entry.getValue() == null) {
+                violations.add("customConfig key '" + entry.getKey() + "' must not map to null; "
+                    + "remove the key or supply a non-null value");
+            }
         }
     }
 }

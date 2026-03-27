@@ -1,11 +1,69 @@
 # Comprehensive Implementation Plan: Agent Architecture Governance & AEP Remediation
 
 **Date:** March 26, 2026  
+**Last Updated:** March 26, 2026  
 **Based On:**
+
 - `AGENT_ARCHITECTURE_GOVERNANCE_ANALYSIS.md` - Governance gap analysis (70% aligned, 30+ gaps identified)
 - `AEP_COMPREHENSIVE_AUDIT_REPORT_2026-03-26.md` - AEP audit findings (10 unresolved issues)
 
 **Document Purpose:** Consolidated implementation roadmap addressing all governance requirements, AEP remediation items, and architectural improvements with detailed phases, testing requirements, and code reuse strategy.
+
+---
+
+## 📊 Implementation Progress Tracker
+
+> Updated: 2026-03-26 — All priority phases complete.
+
+### AEP Remediation Items (Phase 8)
+
+| ID      | Description                                                                                           | Status      |
+| ------- | ----------------------------------------------------------------------------------------------------- | ----------- |
+| AEP-004 | `PatternStateStore` + `InMemoryPatternStateStore` + `EventCloudPatternStateStore` + tests             | ✅ Complete |
+| AEP-006 | `ConnectorConfig` base class + `TlsConfig` + `RetryConfig` + all connector configs refactored + tests | ✅ Complete |
+| AEP-007 | `AepAuthFilter` — sanitise error responses (generic message, log detail only)                         | ✅ Complete |
+| AEP-008 | `CircuitBreakerOperator` extending `AbstractOperator` + tests                                         | ✅ Complete |
+| AEP-009 | `AepConfigValidator.validateCustomConfig()` — null/blank key + null value checks                      | ✅ Complete |
+| AEP-010 | `EnvConfig.getRequired(String key)` — throws `IllegalStateException` if absent/blank                  | ✅ Complete |
+
+### Platform Modules
+
+| Phase   | Module                             | Status      | Key Classes                                                                                                                                                                                                                                              |
+| ------- | ---------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 1 | `platform/java/identity`           | ✅ Complete | `IdentityService`, `AgentIdentity`, `CredentialToken`, `DelegationToken`, `DefaultIdentityService`, `DefaultDelegationTokenService`, SPI resolvers + tests                                                                                               |
+| Phase 2 | `platform/java/data-governance`    | ✅ Complete | `ConsentManager`, `InMemoryConsentManager`, `PurposeLimitationEnforcer`, `DefaultPurposeLimitationEnforcer`, `DataMinimizationEngine`, `DefaultDataMinimizationEngine`, `SensitiveDataClassifier`, `DataAccessBroker`, `DefaultDataAccessBroker` + tests |
+| Phase 3 | `platform/java/tool-runtime`       | ✅ Complete | `ToolSandbox`, `NoopToolSandbox`, `ToolExecutionMonitor`, `InMemoryToolExecutionMonitor`, `ToolExecutionStats`, `ApprovalGateway`, `ApprovalWorkflow`, `InMemoryApprovalWorkflow` + tests                                                                |
+| Phase 4 | `platform/java/policy-as-code`     | ✅ Complete | `PolicyAsCodeEngine`, `PolicyEvalResult`, `InMemoryPolicyEngine`, `OpaClient` + tests                                                                                                                                                                    |
+| Phase 5 | `platform/java/security-analytics` | ✅ Complete | `EgressMonitor`, `DefaultEgressMonitor`, `EgressLimitExceededException`, `PromptInjectionDetector`, `RegexPromptInjectionDetector` + tests                                                                                                               |
+| Phase 6 | `platform/java/incident-response`  | ✅ Complete | `IncidentType`, `Incident`, `KillSwitchService`, `InMemoryKillSwitchService`, `DegradationMode`, `GracefulDegradationManager`, `InMemoryGracefulDegradationManager` + tests                                                                              |
+
+### AEP Product Modules
+
+| Phase   | Module                        | Status      | Key Classes                                                                                                            |
+| ------- | ----------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Phase 8 | `products/aep/aep-identity`   | ✅ Complete | `IdentityResolutionService`, `AepLocalIdentityResolver` + tests                                                        |
+| Phase 8 | `products/aep/aep-compliance` | ✅ Complete | `ComplianceService`, `RetentionPolicyEnforcer`, `InMemoryRetentionPolicyEnforcer`, `RetentionExpiredException` + tests |
+
+### Module Registration (`settings.gradle.kts`)
+
+| Module                              | Registered |
+| ----------------------------------- | ---------- |
+| `:platform:java:identity`           | ✅         |
+| `:platform:java:data-governance`    | ✅         |
+| `:platform:java:tool-runtime`       | ✅         |
+| `:platform:java:policy-as-code`     | ✅         |
+| `:platform:java:security-analytics` | ✅         |
+| `:platform:java:incident-response`  | ✅         |
+| `:products:aep:aep-identity`        | ✅         |
+| `:products:aep:aep-compliance`      | ✅         |
+
+### Pending (Phase 7, 9, 10 — lower priority)
+
+| Phase    | Description                                                                      | Priority |
+| -------- | -------------------------------------------------------------------------------- | -------- |
+| Phase 7  | Agent lifecycle assurance (versioning, rollback, canary)                         | P3       |
+| Phase 9  | Consolidation: wire all platform modules into AEP engine                         | P3       |
+| Phase 10 | Advanced features: federated identity, differential privacy, formal verification | P3       |
 
 ---
 
@@ -26,15 +84,15 @@
 
 ### Overall Assessment
 
-| Area | Current | Target | Priority |
-|------|---------|--------|----------|
-| Governance Alignment | 70% | 95% | Critical |
-| AEP Production Readiness | 8.0/10 | 9.5/10 | High |
-| Policy-as-Code Coverage | 20% | 90% | High |
-| Identity Verification | 30% | 100% | Critical |
-| Tool Sandboxing | 0% | 100% | Critical |
-| Audit Completeness | 50% | 95% | High |
-| Test Coverage | 70% | 85% | Medium |
+| Area                     | Current | Target | Priority |
+| ------------------------ | ------- | ------ | -------- |
+| Governance Alignment     | 70%     | 95%    | Critical |
+| AEP Production Readiness | 8.0/10  | 9.5/10 | High     |
+| Policy-as-Code Coverage  | 20%     | 90%    | High     |
+| Identity Verification    | 30%     | 100%   | Critical |
+| Tool Sandboxing          | 0%      | 100%   | Critical |
+| Audit Completeness       | 50%     | 95%    | High     |
+| Test Coverage            | 70%     | 85%    | Medium   |
 
 ### Implementation Timeline
 
@@ -58,6 +116,7 @@
 ### 2.1 Existing Architecture Strengths
 
 #### Agent Framework (`platform/java/agent-core`)
+
 - ✅ **Six-Type Agent Taxonomy** (ADR-001) - Complete type safety
 - ✅ **Agent Registry** - Multiple registry implementations
 - ✅ **Memory System** - 4-memory-type interface (episodic, semantic, procedural, preference)
@@ -65,12 +124,14 @@
 - ✅ **Agent Trace Ledger** - Tamper-evident append-only audit
 
 #### Governance Foundation
+
 - ✅ **PolicyEngine** - Basic interface and implementation
 - ✅ **AgentDatasheet** - Compliance artifact structure
 - ✅ **PolicyDecisionRecord** - Audit record structure
 - ✅ **MemoryMutationPolicy** - Governance for memory mutations
 
 #### AEP Platform (`products/aep`)
+
 - ✅ **UnifiedOperator Model** - Clean operator chain architecture
 - ✅ **Comprehensive Operators** - Retry, Batching, DLQ, Fallback
 - ✅ **Security Boundary** - AepAuthFilter with JWT validation
@@ -80,18 +141,18 @@
 
 ### 2.2 Existing Components to Reuse
 
-| Component | Location | Reuse For |
-|-------------|----------|-----------|
-| `EventloopTestBase` | `platform/java/testing` | All async tests |
-| `PolicyEngine` | `platform/java/governance` | Policy-as-code foundation |
-| `CircuitBreaker` | `platform/java/core` | AEP CircuitBreakerOperator |
-| `AgentTraceLedger` | `products/aep/aep-agent-runtime` | Audit consolidation |
-| `MemoryStore` | `platform/java/agent-core` | Data governance integration |
-| `AbstractOperator` | `products/aep/aep-engine` | All new operators |
-| `UnifiedOperator` | `products/aep/aep-operator-contracts` | Operator standardization |
-| `EnvConfig` | `products/aep/aep-engine` | Configuration management |
-| `AepAuthFilter` | `products/aep/aep-security` | Security patterns |
-| `ConnectorConfig` patterns | `products/aep/aep-connectors` | Base configuration class |
+| Component                  | Location                              | Reuse For                   |
+| -------------------------- | ------------------------------------- | --------------------------- |
+| `EventloopTestBase`        | `platform/java/testing`               | All async tests             |
+| `PolicyEngine`             | `platform/java/governance`            | Policy-as-code foundation   |
+| `CircuitBreaker`           | `platform/java/core`                  | AEP CircuitBreakerOperator  |
+| `AgentTraceLedger`         | `products/aep/aep-agent-runtime`      | Audit consolidation         |
+| `MemoryStore`              | `platform/java/agent-core`            | Data governance integration |
+| `AbstractOperator`         | `products/aep/aep-engine`             | All new operators           |
+| `UnifiedOperator`          | `products/aep/aep-operator-contracts` | Operator standardization    |
+| `EnvConfig`                | `products/aep/aep-engine`             | Configuration management    |
+| `AepAuthFilter`            | `products/aep/aep-security`           | Security patterns           |
+| `ConnectorConfig` patterns | `products/aep/aep-connectors`         | Base configuration class    |
 
 ---
 
@@ -99,63 +160,63 @@
 
 ### 3.1 Critical Governance Gaps (P0)
 
-| ID | Requirement | Source | Impact | Status |
-|----|-------------|--------|--------|--------|
-| **G-5** | Segregation of Duties | Architecture | No SoD enforcement | 🔴 Missing |
-| **I-2** | Verifiable Agent Identity | Architecture | No cryptographic identity | 🔴 Missing |
-| **I-5** | Ephemeral Credentials | Architecture | No short-lived tokens | 🔴 Missing |
-| **S-6** | Secrets Handling | Architecture | No secrets broker | 🔴 Missing |
-| **S-2** | Tool Sandboxing | Architecture | No constrained execution | 🔴 Missing |
-| **S-3** | Prompt Injection Defense | Architecture | No defenses | 🔴 Missing |
-| **S-4** | Egress Control | Architecture | No DLP | 🔴 Missing |
-| **P-2** | Purpose Binding | Architecture | No enforcement | 🔴 Missing |
-| **P-5** | Consent Hooks | Architecture | No legal basis tracking | 🔴 Missing |
-| **AEP-004** | Pattern State Durability | AEP | In-memory only | 🟡 Medium |
+| ID          | Requirement               | Source       | Impact                    | Status     |
+| ----------- | ------------------------- | ------------ | ------------------------- | ---------- |
+| **G-5**     | Segregation of Duties     | Architecture | No SoD enforcement        | 🔴 Missing |
+| **I-2**     | Verifiable Agent Identity | Architecture | No cryptographic identity | 🔴 Missing |
+| **I-5**     | Ephemeral Credentials     | Architecture | No short-lived tokens     | 🔴 Missing |
+| **S-6**     | Secrets Handling          | Architecture | No secrets broker         | 🔴 Missing |
+| **S-2**     | Tool Sandboxing           | Architecture | No constrained execution  | 🔴 Missing |
+| **S-3**     | Prompt Injection Defense  | Architecture | No defenses               | 🔴 Missing |
+| **S-4**     | Egress Control            | Architecture | No DLP                    | 🔴 Missing |
+| **P-2**     | Purpose Binding           | Architecture | No enforcement            | 🔴 Missing |
+| **P-5**     | Consent Hooks             | Architecture | No legal basis tracking   | 🔴 Missing |
+| **AEP-004** | Pattern State Durability  | AEP          | In-memory only            | 🟡 Medium  |
 
 ### 3.2 High Priority Gaps (P1)
 
-| ID | Requirement | Source | Impact | Status |
-|----|-------------|--------|--------|--------|
-| **G-4** | Policy-as-Code | Architecture | String-based policies | 🟡 Partial |
-| **I-3** | Delegation Integrity | Architecture | No chain tracking | 🟡 Partial |
-| **I-4** | Context-Aware Authz | Architecture | Missing risk scoring | 🟡 Partial |
-| **P-3** | Data Minimization | Architecture | No field/row filtering | 🟡 Partial |
-| **P-7** | Sensitive Data Handling | Architecture | Incomplete policies | 🟡 Partial |
-| **T-3** | Human-in-the-Loop | Architecture | Missing mandatory gates | 🟡 Partial |
-| **M-3** | Bounded Planning | Architecture | Missing bounds checking | 🟡 Partial |
-| **AEP-001** | External Identity Graph | AEP | Basic fallback only | 🟡 Medium |
-| **AEP-002** | GDPR/CCPA Workflow | AEP | Basic consent only | 🟡 Medium |
+| ID          | Requirement             | Source       | Impact                  | Status     |
+| ----------- | ----------------------- | ------------ | ----------------------- | ---------- |
+| **G-4**     | Policy-as-Code          | Architecture | String-based policies   | 🟡 Partial |
+| **I-3**     | Delegation Integrity    | Architecture | No chain tracking       | 🟡 Partial |
+| **I-4**     | Context-Aware Authz     | Architecture | Missing risk scoring    | 🟡 Partial |
+| **P-3**     | Data Minimization       | Architecture | No field/row filtering  | 🟡 Partial |
+| **P-7**     | Sensitive Data Handling | Architecture | Incomplete policies     | 🟡 Partial |
+| **T-3**     | Human-in-the-Loop       | Architecture | Missing mandatory gates | 🟡 Partial |
+| **M-3**     | Bounded Planning        | Architecture | Missing bounds checking | 🟡 Partial |
+| **AEP-001** | External Identity Graph | AEP          | Basic fallback only     | 🟡 Medium  |
+| **AEP-002** | GDPR/CCPA Workflow      | AEP          | Basic consent only      | 🟡 Medium  |
 
 ### 3.3 Medium Priority Gaps (P2)
 
-| ID | Requirement | Source | Impact | Status |
-|----|-------------|--------|--------|--------|
-| **G-1** | Organizational Accountability | Architecture | Incomplete owner roles | 🟡 Partial |
-| **G-3** | Risk Classification | Architecture | Not integrated into spec | 🟡 Partial |
-| **G-6** | Mandatory Evidence | Architecture | Missing control firing evidence | 🟡 Partial |
-| **L-3** | Log Protection | Architecture | Incomplete tamper-evidence | 🔴 Missing |
-| **L-4** | User Transparency | Architecture | No disclosure UI | 🔴 Missing |
-| **T-1** | Rich Tool Contracts | Architecture | Missing side effects metadata | 🟡 Partial |
-| **V-2** | Scenario Testing | Architecture | No adversarial tests | 🔴 Missing |
-| **V-4** | Safe Failure Defaults | Architecture | Missing degradation modes | 🟡 Partial |
-| **O-2/O-3** | Incident Framework | Architecture | No taxonomy/playbooks | 🔴 Missing |
-| **AEP-003** | UI Test Coverage | AEP | Missing SSE/error tests | 🟡 Medium |
-| **AEP-006** | Connector Consolidation | AEP | Duplicated builders | 🟢 Low |
+| ID          | Requirement                   | Source       | Impact                          | Status     |
+| ----------- | ----------------------------- | ------------ | ------------------------------- | ---------- |
+| **G-1**     | Organizational Accountability | Architecture | Incomplete owner roles          | 🟡 Partial |
+| **G-3**     | Risk Classification           | Architecture | Not integrated into spec        | 🟡 Partial |
+| **G-6**     | Mandatory Evidence            | Architecture | Missing control firing evidence | 🟡 Partial |
+| **L-3**     | Log Protection                | Architecture | Incomplete tamper-evidence      | 🔴 Missing |
+| **L-4**     | User Transparency             | Architecture | No disclosure UI                | 🔴 Missing |
+| **T-1**     | Rich Tool Contracts           | Architecture | Missing side effects metadata   | 🟡 Partial |
+| **V-2**     | Scenario Testing              | Architecture | No adversarial tests            | 🔴 Missing |
+| **V-4**     | Safe Failure Defaults         | Architecture | Missing degradation modes       | 🟡 Partial |
+| **O-2/O-3** | Incident Framework            | Architecture | No taxonomy/playbooks           | 🔴 Missing |
+| **AEP-003** | UI Test Coverage              | AEP          | Missing SSE/error tests         | 🟡 Medium  |
+| **AEP-006** | Connector Consolidation       | AEP          | Duplicated builders             | 🟢 Low     |
 
 ### 3.4 Lower Priority Items (P3)
 
-| ID | Requirement | Source | Impact | Status |
-|----|-------------|--------|--------|--------|
-| **M-1** | Model Catalog | Architecture | Missing approval workflow | 🟡 Partial |
-| **C-1** | Secure SDLC | Architecture | Missing threat modeling | 🟡 Partial |
-| **C-3** | Change Approval | Architecture | Missing formal workflow | 🟡 Partial |
-| **C-4** | Recertification | Architecture | Missing automation | 🟡 Partial |
-| **AEP-005** | Forecasting Algorithm | AEP | Naive implementation | 🟢 Low |
-| **AEP-007** | Error Message Exposure | AEP | Info disclosure risk | 🟢 Low |
-| **AEP-008** | Circuit Breaker Operator | AEP | Missing operator | 🟢 Low |
-| **AEP-009** | Config Validation | AEP | Incomplete validation | 🟢 Low |
-| **AEP-010** | Required Config Enforcement | AEP | No required check | 🟢 Low |
-| **SM-001** | Platform Monolith | AEP | 576 files in platform/ | 🟡 Medium |
+| ID          | Requirement                 | Source       | Impact                    | Status     |
+| ----------- | --------------------------- | ------------ | ------------------------- | ---------- |
+| **M-1**     | Model Catalog               | Architecture | Missing approval workflow | 🟡 Partial |
+| **C-1**     | Secure SDLC                 | Architecture | Missing threat modeling   | 🟡 Partial |
+| **C-3**     | Change Approval             | Architecture | Missing formal workflow   | 🟡 Partial |
+| **C-4**     | Recertification             | Architecture | Missing automation        | 🟡 Partial |
+| **AEP-005** | Forecasting Algorithm       | AEP          | Naive implementation      | 🟢 Low     |
+| **AEP-007** | Error Message Exposure      | AEP          | Info disclosure risk      | 🟢 Low     |
+| **AEP-008** | Circuit Breaker Operator    | AEP          | Missing operator          | 🟢 Low     |
+| **AEP-009** | Config Validation           | AEP          | Incomplete validation     | 🟢 Low     |
+| **AEP-010** | Required Config Enforcement | AEP          | No required check         | 🟢 Low     |
+| **SM-001**  | Platform Monolith           | AEP          | 576 files in platform/    | 🟡 Medium  |
 
 ---
 
@@ -164,6 +225,7 @@
 ### 4.1 Foundation Libraries to Extend
 
 #### `platform/java/testing` - Test Infrastructure
+
 ```java
 // All new services must extend for testing:
 - EventloopTestBase       // Async test foundation
@@ -172,6 +234,7 @@
 ```
 
 #### `platform/java/core` - Core Patterns
+
 ```java
 // Reuse for resilience:
 - CircuitBreaker          // For AEP-008 CircuitBreakerOperator
@@ -180,6 +243,7 @@
 ```
 
 #### `platform/java/governance` - Policy Foundation
+
 ```java
 // Extend for policy-as-code:
 - PolicyEngine           // Interface to implement
@@ -188,6 +252,7 @@
 ```
 
 #### `platform/java/security` - Security Infrastructure
+
 ```java
 // Reuse for identity/credentials:
 - JwtAuthenticationProvider  // JWT patterns
@@ -196,6 +261,7 @@
 ```
 
 #### `products/aep/aep-engine` - Operator Patterns
+
 ```java
 // All new operators extend:
 - AbstractOperator         // Base operator class
@@ -346,7 +412,7 @@ public abstract class ConnectorConfig {
     protected final RetryConfig retryConfig;
     protected final Duration connectionTimeout;
     protected final Duration readTimeout;
-    
+
     protected ConnectorConfig(Builder<?> builder) {
         this.host = builder.host;
         this.port = builder.port;
@@ -355,13 +421,13 @@ public abstract class ConnectorConfig {
         this.connectionTimeout = builder.connectionTimeout;
         this.readTimeout = builder.readTimeout;
     }
-    
+
     // Common getters
     public String host() { return host; }
     public int port() { return port; }
     public TlsConfig tlsConfig() { return tlsConfig; }
     public RetryConfig retryConfig() { return retryConfig; }
-    
+
     /**
      * Generic builder base class.
      */
@@ -372,29 +438,29 @@ public abstract class ConnectorConfig {
         private RetryConfig retryConfig;
         private Duration connectionTimeout = Duration.ofSeconds(30);
         private Duration readTimeout = Duration.ofSeconds(30);
-        
+
         protected abstract T self();
-        
+
         public T host(String host) {
             this.host = host;
             return self();
         }
-        
+
         public T port(int port) {
             this.port = port;
             return self();
         }
-        
+
         public T tlsConfig(TlsConfig tlsConfig) {
             this.tlsConfig = tlsConfig;
             return self();
         }
-        
+
         public T retryConfig(RetryConfig retryConfig) {
             this.retryConfig = retryConfig;
             return self();
         }
-        
+
         public abstract ConnectorConfig build();
     }
 }
@@ -408,7 +474,7 @@ public final class TlsConfig {
     private final String keystorePassword;
     private final String truststorePath;
     private final String[] enabledProtocols;
-    
+
     // Builder and getters...
 }
 
@@ -420,7 +486,7 @@ public final class RetryConfig {
     private final Duration initialDelay;
     private final double backoffMultiplier;
     private final Duration maxDelay;
-    
+
     // Builder and getters...
 }
 ```
@@ -434,6 +500,7 @@ public final class RetryConfig {
 #### Week 1-2: Identity Service Foundation
 
 **Tasks:**
+
 1. **Create `platform/java/identity` module**
    - Implement `IdentityService` with SPIFFE/SPIRE integration
    - Create `IdentityResolver` interface
@@ -452,11 +519,13 @@ public final class RetryConfig {
    - `SpiffeIntegrationTest` - 5 test cases
 
 **Reuse:**
+
 - `JwtAuthenticationProvider` from `security/` for JWT patterns
 - `AesGcmEncryptionProvider` for token encryption
 - `EventloopTestBase` for async testing
 
 **Files:**
+
 - `platform/java/identity/src/main/java/com/ghatana/identity/IdentityService.java`
 - `platform/java/identity/src/main/java/com/ghatana/identity/CredentialBroker.java`
 - `platform/java/identity/src/main/java/com/ghatana/identity/spi/IdentityResolver.java`
@@ -465,6 +534,7 @@ public final class RetryConfig {
 #### Week 3-4: Delegation & Secrets Management
 
 **Tasks:**
+
 1. **Implement `DelegationTokenService`**
    - Cryptographic delegation tokens
    - Chain tracking with integrity
@@ -482,6 +552,7 @@ public final class RetryConfig {
    - `SecretsManagerTest` - 8 test cases
 
 **Integration:**
+
 - Integrate with `AgentContext.deriveChild()` for delegation
 - Update `DefaultWorkflowAgentService` to use new identity
 
@@ -492,6 +563,7 @@ public final class RetryConfig {
 #### Week 3-4: Data Access Broker
 
 **Tasks:**
+
 1. **Create `platform/java/data-governance` module**
    - Implement `DataAccessBroker`
    - Purpose limitation enforcement
@@ -508,12 +580,14 @@ public final class RetryConfig {
    - `PurposeLimitationEnforcerTest` - 10 test cases
 
 **Reuse:**
+
 - `MemoryStore` from `agent-core` for memory integration
 - `PolicyEngine` for policy decisions
 
 #### Week 5-6: Consent & Data Minimization
 
 **Tasks:**
+
 1. **Implement `ConsentManager`**
    - Legal basis tracking
    - Consent status recording
@@ -544,6 +618,7 @@ public final class RetryConfig {
 #### Week 5-6: Tool Sandboxing
 
 **Tasks:**
+
 1. **Create `platform/java/tool-runtime` module**
    - Implement `ToolSandbox` interface
    - gVisor integration for container sandboxing
@@ -564,6 +639,7 @@ public final class RetryConfig {
 #### Week 7-8: HITL Gates & Approval Workflow
 
 **Tasks:**
+
 1. **Implement `ApprovalGateway`**
    - Mandatory approval gates for:
      - Financial commitments
@@ -595,6 +671,7 @@ public final class RetryConfig {
 #### Week 7-8: Policy-as-Code Engine
 
 **Tasks:**
+
 1. **Create `platform/java/policy-as-code` module**
    - Implement `PolicyAsCodeEngine`
    - OPA/Rego integration
@@ -623,6 +700,7 @@ public final class RetryConfig {
 #### Week 9-10: Risk Scoring & Context-Aware Authz
 
 **Tasks:**
+
 1. **Implement `RiskScoringEngine`**
    - Device posture scoring
    - Workload risk scoring
@@ -644,6 +722,7 @@ public final class RetryConfig {
 #### Week 9-10: Audit Consolidation
 
 **Tasks:**
+
 1. **Enhance `AgentTraceLedger`**
    - Add control firing evidence
    - Structured event types
@@ -670,12 +749,14 @@ public final class RetryConfig {
    - `StructuredEventLoggerTest` - 12 test cases
 
 **Reuse:**
+
 - `HashChainedTraceAppender` from `aep-agent-runtime`
 - `AuditService` interface from `platform/java/audit`
 
 #### Week 11-12: User Transparency
 
 **Tasks:**
+
 1. **Create `TransparencyDisclosure` API**
    - AI agent disclosure endpoints
    - Capabilities documentation
@@ -698,6 +779,7 @@ public final class RetryConfig {
 #### Week 11-12: Incident Framework
 
 **Tasks:**
+
 1. **Create `platform/java/incident-response` module**
    - Define `IncidentTaxonomy`
    - Create incident classes:
@@ -725,6 +807,7 @@ public final class RetryConfig {
 #### Week 13-14: Testing & Learning
 
 **Tasks:**
+
 1. **Create `AdversarialTestFramework`**
    - Multi-step workflow tests
    - Adversarial input tests
@@ -754,6 +837,7 @@ public final class RetryConfig {
 #### Week 13-14: Secure SDLC
 
 **Tasks:**
+
 1. **Create `AgentThreatModeling` framework**
    - Threat modeling templates
    - Secure design checklists
@@ -770,6 +854,7 @@ public final class RetryConfig {
 #### Week 15-16: Recertification
 
 **Tasks:**
+
 1. **Implement `RecertificationPipeline`**
    - Automated recertification workflow
    - Policy conformance checking
@@ -790,6 +875,7 @@ public final class RetryConfig {
 #### Week 17-18: AEP Identity & Compliance
 
 **Tasks:**
+
 1. **Create `products/aep/aep-identity` module**
    - `IdentityResolutionService` interface
    - `InMemoryIdentityResolver` (current behavior)
@@ -812,6 +898,7 @@ public final class RetryConfig {
 #### Week 19-20: AEP Pattern State & Connectors
 
 **Tasks:**
+
 1. **Create `PatternStateStore` interface**
    - `InMemoryPatternStateStore` (default)
    - `EventCloudPatternStateStore` (durable)
@@ -837,6 +924,7 @@ public final class RetryConfig {
 #### Week 21-22: Configuration & Error Handling
 
 **Tasks:**
+
 1. **Enhance `AepConfigValidator`**
    - Add `workerThreads` bounds checking
    - Add `instanceId` validation
@@ -856,6 +944,7 @@ public final class RetryConfig {
 #### Week 23-24: Forecasting & Platform Modularization
 
 **Tasks:**
+
 1. **Create `ForecastingEngine` interface**
    - `NaiveForecastingEngine` (current)
    - `StatisticalForecastingEngine` (ARIMA/Prophet)
@@ -876,6 +965,7 @@ public final class RetryConfig {
 #### Week 25-28: Advanced Governance
 
 **Tasks:**
+
 1. **Model Catalog Enhancement**
    - Full model metadata
    - Provider tracking
@@ -899,6 +989,7 @@ public final class RetryConfig {
 #### Week 29-32: Enterprise Features
 
 **Tasks:**
+
 1. **Administrative Governance Console**
    - Policy management UI
    - Agent registry UI
@@ -921,25 +1012,26 @@ public final class RetryConfig {
 
 ### 6.1 Test Coverage Targets
 
-| Component Type | Target Coverage | Minimum Coverage |
-|----------------|-----------------|------------------|
-| New Services | 90% | 80% |
-| Extended Services | 85% | 75% |
-| UI Components | 80% | 70% |
-| Integration Tests | 70% | 60% |
+| Component Type    | Target Coverage | Minimum Coverage |
+| ----------------- | --------------- | ---------------- |
+| New Services      | 90%             | 80%              |
+| Extended Services | 85%             | 75%              |
+| UI Components     | 80%             | 70%              |
+| Integration Tests | 70%             | 60%              |
 
 ### 6.2 Test Infrastructure
 
 All tests must use:
+
 ```java
 // Base class for all async tests
 public class MyServiceTest extends EventloopTestBase {
-    
+
     @Override
     protected Duration eventloopTimeout() {
         return Duration.ofSeconds(30); // Longer for integration tests
     }
-    
+
     @Test
     void testAsyncOperation() {
         runPromise(() -> {
@@ -999,7 +1091,7 @@ public class IdentityServiceTest extends EventloopTestBase {
         runPromise(() -> {
             // Setup revoked credential
             mockResolver.revoke("user-123");
-            
+
             IdentityContext ctx = new IdentityContext("user-123", null, null);
             return identityService.resolve(ctx)
                 .then(identity -> {
@@ -1019,7 +1111,7 @@ public class IdentityServiceTest extends EventloopTestBase {
         runPromise(() -> {
             IdentityContext webCtx = new IdentityContext("user-123", "anon-web", "session-web");
             IdentityContext mobileCtx = new IdentityContext(null, "anon-mobile", "session-mobile");
-            
+
             // Link anonymous mobile to authenticated web
             return identityService.linkIdentities(webCtx, mobileCtx)
                 .then(linkedIdentity -> {
@@ -1049,7 +1141,7 @@ public class IdentityServiceTest extends EventloopTestBase {
 public class ComplianceServiceIntegrationTest extends PlatformIntegrationTestBase {
 
     @Container
-    private static final PostgreSQLContainer<?> postgres = 
+    private static final PostgreSQLContainer<?> postgres =
         new PostgreSQLContainer<>("postgres:15");
 
     private ComplianceService complianceService;
@@ -1071,13 +1163,13 @@ public class ComplianceServiceIntegrationTest extends PlatformIntegrationTestBas
                 .then(v -> {
                     // Fast-forward time (mock)
                     clock.advance(Duration.ofDays(2));
-                    
+
                     // Run retention enforcement
                     return complianceService.enforceRetention("tenant-1");
                 })
                 .then(deletedCount -> {
                     assertTrue(deletedCount > 0);
-                    
+
                     // Verify event no longer exists
                     return eventCloud.findById(event.id());
                 })
@@ -1094,19 +1186,19 @@ public class ComplianceServiceIntegrationTest extends PlatformIntegrationTestBas
         runPromise(() -> {
             // Create user data across multiple stores
             String userId = "user-to-delete";
-            
+
             return storeUserData(userId)
                 .then(v -> complianceService.submitDeletionRequest(userId, "GDPR Article 17"))
                 .then(requestId -> {
                     // Verify deletion workflow started
                     assertNotNull(requestId);
-                    
+
                     // Wait for completion
                     return waitForDeletionComplete(requestId, Duration.ofSeconds(30));
                 })
                 .then(status -> {
                     assertEquals(DeletionStatus.COMPLETED, status);
-                    
+
                     // Verify data deleted
                     return verifyUserDataDeleted(userId);
                 })
@@ -1118,45 +1210,45 @@ public class ComplianceServiceIntegrationTest extends PlatformIntegrationTestBas
 
 ### 6.4 Testcontainers Requirements
 
-| Service | Container | Purpose |
-|---------|-----------|---------|
-| PostgreSQL | `postgres:15` | EventCloud storage |
-| Redis | `redis:7-alpine` | Distributed cache |
-| Kafka | `confluentinc/cp-kafka:latest` | Connector tests |
-| RabbitMQ | `rabbitmq:3-management` | Connector tests |
-| OPA | `openpolicyagent/opa:latest` | Policy-as-code tests |
-| Vault | `hashicorp/vault:latest` | Secrets management tests |
+| Service    | Container                      | Purpose                  |
+| ---------- | ------------------------------ | ------------------------ |
+| PostgreSQL | `postgres:15`                  | EventCloud storage       |
+| Redis      | `redis:7-alpine`               | Distributed cache        |
+| Kafka      | `confluentinc/cp-kafka:latest` | Connector tests          |
+| RabbitMQ   | `rabbitmq:3-management`        | Connector tests          |
+| OPA        | `openpolicyagent/opa:latest`   | Policy-as-code tests     |
+| Vault      | `hashicorp/vault:latest`       | Secrets management tests |
 
 ### 6.5 UI Testing Requirements
 
 ```typescript
 // products/aep/ui/src/__tests__/hooks/usePipelineRuns.test.ts
 
-describe('usePipelineRuns', () => {
-  it('should handle SSE reconnection', async () => {
-    const { result } = renderHook(() => usePipelineRuns('tenant-1'));
+describe("usePipelineRuns", () => {
+  it("should handle SSE reconnection", async () => {
+    const { result } = renderHook(() => usePipelineRuns("tenant-1"));
 
     // Simulate connection drop
     mockEventSource.close();
-    
+
     // Wait for reconnection
     await waitFor(() => {
-      expect(result.current.connectionStatus).toBe('reconnecting');
+      expect(result.current.connectionStatus).toBe("reconnecting");
     });
 
     // Simulate reconnection
     mockEventSource.connect();
-    
+
     await waitFor(() => {
-      expect(result.current.connectionStatus).toBe('connected');
+      expect(result.current.connectionStatus).toBe("connected");
     });
   });
 
-  it('should handle error boundaries', async () => {
-    const { result } = renderHook(() => usePipelineRuns('tenant-1'));
+  it("should handle error boundaries", async () => {
+    const { result } = renderHook(() => usePipelineRuns("tenant-1"));
 
     // Simulate error
-    mockEventSource.emitError(new Error('Connection failed'));
+    mockEventSource.emitError(new Error("Connection failed"));
 
     await waitFor(() => {
       expect(result.current.error).toBeDefined();
@@ -1164,19 +1256,19 @@ describe('usePipelineRuns', () => {
     });
   });
 
-  it('should handle tenant switching', async () => {
+  it("should handle tenant switching", async () => {
     const { result, rerender } = renderHook(
       ({ tenantId }) => usePipelineRuns(tenantId),
-      { initialProps: { tenantId: 'tenant-1' } }
+      { initialProps: { tenantId: "tenant-1" } },
     );
 
-    expect(result.current.tenantId).toBe('tenant-1');
+    expect(result.current.tenantId).toBe("tenant-1");
 
     // Switch tenant
-    rerender({ tenantId: 'tenant-2' });
+    rerender({ tenantId: "tenant-2" });
 
-    expect(result.current.tenantId).toBe('tenant-2');
-    expect(mockEventSource.url).toContain('tenant-2');
+    expect(result.current.tenantId).toBe("tenant-2");
+    expect(mockEventSource.url).toContain("tenant-2");
   });
 });
 ```
@@ -1187,30 +1279,30 @@ describe('usePipelineRuns', () => {
 
 ### 7.1 6-Month Goals (Months 1-6)
 
-| Goal | Target | Measurement |
-|------|--------|-------------|
-| Critical Security | 100% P0 complete | All P0 requirements implemented |
-| Privacy Foundation | 100% P1 complete | GDPR/CCPA compliance automated |
-| AEP Hardiness | 95% issues resolved | AEP audit findings closed |
-| Test Coverage | 80% overall | Platform + AEP combined |
+| Goal               | Target              | Measurement                     |
+| ------------------ | ------------------- | ------------------------------- |
+| Critical Security  | 100% P0 complete    | All P0 requirements implemented |
+| Privacy Foundation | 100% P1 complete    | GDPR/CCPA compliance automated  |
+| AEP Hardiness      | 95% issues resolved | AEP audit findings closed       |
+| Test Coverage      | 80% overall         | Platform + AEP combined         |
 
 ### 7.2 12-Month Goals (Months 7-12)
 
-| Goal | Target | Measurement |
-|------|--------|-------------|
-| Policy-as-Code | 90% coverage | OPA/Rego integration complete |
-| Tool Sandboxing | 100% tools | All tools in sandboxed environment |
-| Incident Response | Full framework | Taxonomy, playbooks, automation |
-| Production Ready | 99.9% uptime | Monitoring, alerting, SLOs met |
+| Goal              | Target         | Measurement                        |
+| ----------------- | -------------- | ---------------------------------- |
+| Policy-as-Code    | 90% coverage   | OPA/Rego integration complete      |
+| Tool Sandboxing   | 100% tools     | All tools in sandboxed environment |
+| Incident Response | Full framework | Taxonomy, playbooks, automation    |
+| Production Ready  | 99.9% uptime   | Monitoring, alerting, SLOs met     |
 
 ### 7.3 24-Month Vision (Months 13-24)
 
-| Goal | Target | Measurement |
-|------|--------|-------------|
-| Enterprise Governance | Full compliance | NIST AI RMF, ISO/IEC 42001 |
-| Cross-Agent Orchestration | Multi-agent governance | Shared memory, communication policies |
-| AI Safety Leadership | Industry best practices | Published research, open-source tools |
-| Global Scale | Multi-region | Tenant isolation across regions |
+| Goal                      | Target                  | Measurement                           |
+| ------------------------- | ----------------------- | ------------------------------------- |
+| Enterprise Governance     | Full compliance         | NIST AI RMF, ISO/IEC 42001            |
+| Cross-Agent Orchestration | Multi-agent governance  | Shared memory, communication policies |
+| AI Safety Leadership      | Industry best practices | Published research, open-source tools |
+| Global Scale              | Multi-region            | Tenant isolation across regions       |
 
 ---
 
@@ -1218,38 +1310,38 @@ describe('usePipelineRuns', () => {
 
 ### 8.1 Technical Metrics
 
-| Metric | Current | 3-Month | 6-Month | 12-Month |
-|--------|---------|---------|---------|----------|
-| Requirements Coverage | 70% | 85% | 95% | 98% |
-| Policy-as-Code Coverage | 20% | 60% | 90% | 95% |
-| Identity Verification | 30% | 80% | 100% | 100% |
-| Data Minimization | 40% | 70% | 90% | 95% |
-| Tool Sandboxing | 0% | 50% | 100% | 100% |
-| Audit Completeness | 50% | 75% | 90% | 95% |
-| Test Coverage | 70% | 75% | 80% | 85% |
-| Incident Response Time | N/A | <10 min | <5 min | <3 min |
-| Recertification Automation | 0% | 50% | 100% | 100% |
+| Metric                     | Current | 3-Month | 6-Month | 12-Month |
+| -------------------------- | ------- | ------- | ------- | -------- |
+| Requirements Coverage      | 70%     | 85%     | 95%     | 98%      |
+| Policy-as-Code Coverage    | 20%     | 60%     | 90%     | 95%      |
+| Identity Verification      | 30%     | 80%     | 100%    | 100%     |
+| Data Minimization          | 40%     | 70%     | 90%     | 95%      |
+| Tool Sandboxing            | 0%      | 50%     | 100%    | 100%     |
+| Audit Completeness         | 50%     | 75%     | 90%     | 95%      |
+| Test Coverage              | 70%     | 75%     | 80%     | 85%      |
+| Incident Response Time     | N/A     | <10 min | <5 min  | <3 min   |
+| Recertification Automation | 0%      | 50%     | 100%    | 100%     |
 
 ### 8.2 Compliance Metrics
 
-| Framework | Current | Target | Timeline |
-|-----------|---------|--------|----------|
-| NIST AI RMF | 60% | 95% | 12 months |
-| ISO/IEC 42001 | 55% | 90% | 12 months |
-| NIST Zero Trust | 50% | 90% | 12 months |
-| OWASP Agentic | 40% | 95% | 12 months |
-| GDPR Article 17 | Partial | Full | 6 months |
-| CCPA Section 1798.105 | Partial | Full | 6 months |
+| Framework             | Current | Target | Timeline  |
+| --------------------- | ------- | ------ | --------- |
+| NIST AI RMF           | 60%     | 95%    | 12 months |
+| ISO/IEC 42001         | 55%     | 90%    | 12 months |
+| NIST Zero Trust       | 50%     | 90%    | 12 months |
+| OWASP Agentic         | 40%     | 95%    | 12 months |
+| GDPR Article 17       | Partial | Full   | 6 months  |
+| CCPA Section 1798.105 | Partial | Full   | 6 months  |
 
 ### 8.3 Quality Metrics
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Code Review Coverage | 100% | All PRs reviewed |
-| Test Pass Rate | >99% | CI/CD gate |
-| Security Scan Pass | 0 critical | SAST/DAST scans |
-| Documentation Coverage | 100% public APIs | Javadoc + @doc.* |
-| Performance Regression | <5% | Benchmark comparison |
+| Metric                 | Target           | Measurement          |
+| ---------------------- | ---------------- | -------------------- |
+| Code Review Coverage   | 100%             | All PRs reviewed     |
+| Test Pass Rate         | >99%             | CI/CD gate           |
+| Security Scan Pass     | 0 critical       | SAST/DAST scans      |
+| Documentation Coverage | 100% public APIs | Javadoc + @doc.\*    |
+| Performance Regression | <5%              | Benchmark comparison |
 
 ---
 
@@ -1257,16 +1349,16 @@ describe('usePipelineRuns', () => {
 
 ### Appendix A: Dependency Matrix
 
-| New Module | Depends On | Used By |
-|------------|------------|---------|
-| `identity` | `security`, `core` | `agent-core`, `aep-identity` |
-| `data-governance` | `agent-core`, `governance` | `aep-compliance` |
-| `tool-runtime` | `core`, `kernel` | `agent-core` |
-| `security-analytics` | `core`, `observability` | `aep-engine` |
-| `incident-response` | `core`, `audit` | All modules |
-| `policy-as-code` | `governance`, `core` | All modules |
-| `aep-identity` | `identity`, `aep-engine` | `aep-engine` |
-| `aep-compliance` | `data-governance`, `aep-engine` | `aep-engine` |
+| New Module           | Depends On                      | Used By                      |
+| -------------------- | ------------------------------- | ---------------------------- |
+| `identity`           | `security`, `core`              | `agent-core`, `aep-identity` |
+| `data-governance`    | `agent-core`, `governance`      | `aep-compliance`             |
+| `tool-runtime`       | `core`, `kernel`                | `agent-core`                 |
+| `security-analytics` | `core`, `observability`         | `aep-engine`                 |
+| `incident-response`  | `core`, `audit`                 | All modules                  |
+| `policy-as-code`     | `governance`, `core`            | All modules                  |
+| `aep-identity`       | `identity`, `aep-engine`        | `aep-engine`                 |
+| `aep-compliance`     | `data-governance`, `aep-engine` | `aep-engine`                 |
 
 ### Appendix B: Configuration Schema
 
@@ -1275,13 +1367,13 @@ describe('usePipelineRuns', () => {
 
 ghatana:
   identity:
-    provider: spiffe  # or in-memory, jwt
+    provider: spiffe # or in-memory, jwt
     spiffe:
       socketPath: /spiffe-socket/agent.sock
       trustDomain: ghatana.io
     credential:
-      ttl: 3600  # seconds
-      provider: vault  # or aws-secrets-manager
+      ttl: 3600 # seconds
+      provider: vault # or aws-secrets-manager
       vault:
         address: https://vault.ghatana.io
         role: agent-credentials
@@ -1294,14 +1386,14 @@ ghatana:
       enabled: true
       strategies: [field-filtering, row-filtering, tokenization]
     consent:
-      provider: internal  # or external-crm
+      provider: internal # or external-crm
       retention-policy:
         enabled: true
-        check-interval: 86400  # seconds
+        check-interval: 86400 # seconds
 
   tool-runtime:
     sandbox:
-      provider: gvisor  # or firecracker, none
+      provider: gvisor # or firecracker, none
       gvisor:
         runtime: runsc
         network: none
@@ -1312,7 +1404,7 @@ ghatana:
       max-wall-time: 60s
 
   policy-as-code:
-    engine: opa  # or rego-direct
+    engine: opa # or rego-direct
     opa:
       endpoint: http://opa.ghatana.io:8181
       bundle: ghatana-policies
@@ -1327,6 +1419,7 @@ ghatana:
 ### Appendix C: Migration Checklist
 
 #### Phase 1 Migration (Weeks 1-4)
+
 - [ ] `platform/java/identity` module created
 - [ ] `IdentityService` implemented
 - [ ] `CredentialBroker` implemented
@@ -1336,6 +1429,7 @@ ghatana:
 - [ ] Documentation updated
 
 #### Phase 2 Migration (Weeks 3-6)
+
 - [ ] `platform/java/data-governance` module created
 - [ ] `DataAccessBroker` implemented
 - [ ] `ConsentManager` implemented
@@ -1344,6 +1438,7 @@ ghatana:
 - [ ] `Aep.java` updated to use new services
 
 #### Phase 3 Migration (Weeks 5-8)
+
 - [ ] `platform/java/tool-runtime` module created
 - [ ] `ToolSandbox` implemented
 - [ ] `ApprovalGateway` implemented
@@ -1351,6 +1446,7 @@ ghatana:
 - [ ] Sandbox infrastructure configured
 
 #### Phase 8 AEP Migration (Weeks 17-20)
+
 - [ ] `aep-identity` module created
 - [ ] `aep-compliance` module created
 - [ ] `IdentityResolutionService` integrated

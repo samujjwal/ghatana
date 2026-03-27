@@ -97,6 +97,28 @@ public class EnvConfig {
     public boolean contains(String key) {
         return config.containsKey(key);
     }
+
+    /**
+     * Returns the configuration value for {@code key}, throwing
+     * {@link IllegalStateException} if the key is absent or blank.
+     *
+     * <p>Use this method for mandatory configuration that must be present at startup.
+     * Callers should invoke this during initialization so that missing config is
+     * detected immediately rather than at first use.
+     *
+     * @param key configuration key (must not be {@code null})
+     * @return the non-blank configuration value
+     * @throws IllegalStateException if the key is absent or maps to a blank string
+     */
+    public String getRequired(String key) {
+        String value = config.get(key);
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException(
+                "Required configuration key '" + key + "' is not set. "
+                    + "Set the corresponding environment variable or provide it at construction time.");
+        }
+        return value;
+    }
     
     public Map<String, String> getAll() {
         return new HashMap<>(config);

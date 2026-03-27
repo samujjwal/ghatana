@@ -4,59 +4,61 @@
  */
 package com.ghatana.aep.connector.strategy.http;
 
-import com.ghatana.aep.connector.strategy.QueueMessage;
-import com.ghatana.aep.connector.strategy.QueueConsumerStrategy;
-import io.activej.promise.Promise;
+import com.ghatana.aep.connector.config.ConnectorConfig;
 
-import java.util.function.Consumer;
+import java.time.Duration;
+import java.util.Objects;
 
 /**
- * Configuration for HTTP ingress connectors.
+ * Immutable configuration for HTTP ingress/polling connectors.
+ *
+ * <p>Extends {@link ConnectorConfig} for shared TLS, retry and timeout settings.
+ * Note: {@link #readTimeout()} from the base class governs HTTP request timeout.
+ *
+ * @doc.type class
+ * @doc.purpose Immutable HTTP ingress connector configuration
+ * @doc.layer infrastructure
+ * @doc.pattern ValueObject
  */
-public class HttpIngressConfig {
-    private String endpoint;
-    private int port;
-    private String path;
-    private String method = "POST";
-    private int timeoutMs = 30000;
-    
-    public String getEndpoint() {
-        return endpoint;
+public final class HttpIngressConfig extends ConnectorConfig {
+
+    private final String endpoint;
+    private final int httpPort;
+    private final String path;
+    private final String method;
+
+    private HttpIngressConfig(HttpIngressBuilder b) {
+        super(b);
+        this.endpoint = Objects.requireNonNull(b.endpoint, "endpoint");
+        this.httpPort = b.httpPort;
+        this.path     = Objects.requireNonNull(b.path, "path");
+        this.method   = b.method;
     }
-    
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-    
-    public int getPort() {
-        return port;
-    }
-    
-    public void setPort(int port) {
-        this.port = port;
-    }
-    
-    public String getPath() {
-        return path;
-    }
-    
-    public void setPath(String path) {
-        this.path = path;
-    }
-    
-    public String getMethod() {
-        return method;
-    }
-    
-    public void setMethod(String method) {
-        this.method = method;
-    }
-    
-    public int getTimeoutMs() {
-        return timeoutMs;
-    }
-    
-    public void setTimeoutMs(int timeoutMs) {
-        this.timeoutMs = timeoutMs;
+
+    public static HttpIngressBuilder builder() { return new HttpIngressBuilder(); }
+
+    public String endpoint() { return endpoint; }
+    public int httpPort()    { return httpPort; }
+    public String path()     { return path; }
+    public String method()   { return method; }
+
+    // ── Builder ──────────────────────────────────────────────────────────────
+
+    public static final class HttpIngressBuilder extends Builder<HttpIngressBuilder> {
+        private String endpoint;
+        private int httpPort = 8080;
+        private String path = "/";
+        private String method = "POST";
+
+        @Override protected HttpIngressBuilder self() { return this; }
+
+        public HttpIngressBuilder endpoint(String e)  { endpoint = e; return this; }
+        public HttpIngressBuilder httpPort(int p)     { httpPort = p; return this; }
+        public HttpIngressBuilder path(String p)      { path = p; return this; }
+        public HttpIngressBuilder method(String m)    { method = m; return this; }
+        /** Convenience alias — sets {@link ConnectorConfig.Builder#readTimeout(Duration)}. */
+        public HttpIngressBuilder timeoutMs(int ms)   { return readTimeout(Duration.ofMillis(ms)); }
+
+        @Override public HttpIngressConfig build() { return new HttpIngressConfig(this); }
     }
 }
