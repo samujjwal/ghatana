@@ -1648,6 +1648,51 @@ exports.Prisma.AutoRevisionMetricsScalarFieldEnum = {
   failedJobs24h: 'failedJobs24h'
 };
 
+exports.Prisma.BadgeScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  description: 'description',
+  icon: 'icon',
+  category: 'category',
+  criteria: 'criteria',
+  isActive: 'isActive',
+  points: 'points',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.BadgeEarnedScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  badgeId: 'badgeId',
+  earnedAt: 'earnedAt'
+};
+
+exports.Prisma.UserPointsScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  totalPoints: 'totalPoints',
+  level: 'level',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.DeviceTokenScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  token: 'token',
+  platform: 'platform',
+  endpoint: 'endpoint',
+  p256dhKey: 'p256dhKey',
+  authKey: 'authKey',
+  isActive: 'isActive',
+  lastSeen: 'lastSeen',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.KernelPluginScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -1672,6 +1717,238 @@ exports.Prisma.AutomationRuleScalarFieldEnum = {
   trigger: 'trigger',
   action: 'action',
   enabled: 'enabled',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ContentAssetScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  slug: 'slug',
+  title: 'title',
+  assetType: 'assetType',
+  domain: 'domain',
+  conceptId: 'conceptId',
+  status: 'status',
+  currentVersion: 'currentVersion',
+  qualityScore: 'qualityScore',
+  reviewState: 'reviewState',
+  semanticIndexStatus: 'semanticIndexStatus',
+  recommendationStatus: 'recommendationStatus',
+  searchableText: 'searchableText',
+  tags: 'tags',
+  targetGrades: 'targetGrades',
+  difficultyLevel: 'difficultyLevel',
+  authorId: 'authorId',
+  lastEditedBy: 'lastEditedBy',
+  publishedAt: 'publishedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  promptHash: 'promptHash',
+  riskLevel: 'riskLevel',
+  confidenceScore: 'confidenceScore',
+  legacyModuleId: 'legacyModuleId',
+  legacyExperienceId: 'legacyExperienceId'
+};
+
+exports.Prisma.ContentAssetRevisionScalarFieldEnum = {
+  id: 'id',
+  assetId: 'assetId',
+  version: 'version',
+  changeNote: 'changeNote',
+  changeDiff: 'changeDiff',
+  snapshot: 'snapshot',
+  qualityScore: 'qualityScore',
+  validationId: 'validationId',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.ContentBlockScalarFieldEnum = {
+  id: 'id',
+  assetId: 'assetId',
+  blockRef: 'blockRef',
+  blockType: 'blockType',
+  orderIndex: 'orderIndex',
+  title: 'title',
+  payload: 'payload',
+  claimRefs: 'claimRefs',
+  evidenceRefs: 'evidenceRefs',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ArtifactManifestScalarFieldEnum = {
+  id: 'id',
+  assetId: 'assetId',
+  manifestType: 'manifestType',
+  version: 'version',
+  claimRef: 'claimRef',
+  manifest: 'manifest',
+  schema: 'schema',
+  isValid: 'isValid',
+  validationErrors: 'validationErrors',
+  generatedBy: 'generatedBy',
+  generationId: 'generationId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.SemanticChunkScalarFieldEnum = {
+  id: 'id',
+  assetId: 'assetId',
+  chunkRef: 'chunkRef',
+  source: 'source',
+  sourceRef: 'sourceRef',
+  sequenceIdx: 'sequenceIdx',
+  text: 'text',
+  tokenCount: 'tokenCount',
+  contentHash: 'contentHash',
+  embeddingStatus: 'embeddingStatus',
+  domain: 'domain',
+  claimRefs: 'claimRefs',
+  tags: 'tags',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.EmbeddingVectorScalarFieldEnum = {
+  id: 'id',
+  chunkId: 'chunkId',
+  vector: 'vector',
+  dimensions: 'dimensions',
+  model: 'model',
+  generatedAt: 'generatedAt',
+  generationMs: 'generationMs',
+  jobId: 'jobId'
+};
+
+exports.Prisma.RecommendationEdgeScalarFieldEnum = {
+  id: 'id',
+  sourceAssetId: 'sourceAssetId',
+  targetAssetId: 'targetAssetId',
+  edgeType: 'edgeType',
+  source: 'source',
+  weight: 'weight',
+  confidence: 'confidence',
+  reason: 'reason',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.GenerationRequestScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  title: 'title',
+  description: 'description',
+  domain: 'domain',
+  conceptId: 'conceptId',
+  targetGrades: 'targetGrades',
+  requestedBy: 'requestedBy',
+  status: 'status',
+  plannedAssets: 'plannedAssets',
+  artifactNeeds: 'artifactNeeds',
+  riskLevel: 'riskLevel',
+  riskFactors: 'riskFactors',
+  reviewPath: 'reviewPath',
+  estimatedCost: 'estimatedCost',
+  totalJobs: 'totalJobs',
+  completedJobs: 'completedJobs',
+  failedJobs: 'failedJobs',
+  plannedAt: 'plannedAt',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.GenerationJobScalarFieldEnum = {
+  id: 'id',
+  requestId: 'requestId',
+  jobType: 'jobType',
+  targetRef: 'targetRef',
+  inputPrompt: 'inputPrompt',
+  parameters: 'parameters',
+  status: 'status',
+  progress: 'progress',
+  outputAssetId: 'outputAssetId',
+  outputData: 'outputData',
+  diagnostics: 'diagnostics',
+  errorMessage: 'errorMessage',
+  retryCount: 'retryCount',
+  maxRetries: 'maxRetries',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.EvaluationRecordScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  assetId: 'assetId',
+  generationJobId: 'generationJobId',
+  generationRequestId: 'generationRequestId',
+  coherenceScore: 'coherenceScore',
+  completenessScore: 'completenessScore',
+  safetyScore: 'safetyScore',
+  accessibilityScore: 'accessibilityScore',
+  manifestValidityScore: 'manifestValidityScore',
+  overallScore: 'overallScore',
+  status: 'status',
+  recommendation: 'recommendation',
+  issues: 'issues',
+  diagnostics: 'diagnostics',
+  errorMessage: 'errorMessage',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.GenerationReviewDecisionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  requestId: 'requestId',
+  status: 'status',
+  reviewedBy: 'reviewedBy',
+  decisionNote: 'decisionNote',
+  regenerateJobIds: 'regenerateJobIds',
+  reviewedAt: 'reviewedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ExplorerEventScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  sessionId: 'sessionId',
+  eventType: 'eventType',
+  query: 'query',
+  assetId: 'assetId',
+  assetType: 'assetType',
+  position: 'position',
+  score: 'score',
+  feedbackLabel: 'feedbackLabel',
+  feedbackScore: 'feedbackScore',
+  metadata: 'metadata',
+  occurredAt: 'occurredAt'
+};
+
+exports.Prisma.RegenerationCandidateScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  assetId: 'assetId',
+  assetType: 'assetType',
+  trigger: 'trigger',
+  severity: 'severity',
+  reason: 'reason',
+  evidence: 'evidence',
+  priority: 'priority',
+  status: 'status',
+  generationRequestId: 'generationRequestId',
+  resolvedBy: 'resolvedBy',
+  resolvedAt: 'resolvedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -2044,7 +2321,8 @@ exports.ExperienceStatus = exports.$Enums.ExperienceStatus = {
 exports.RiskLevel = exports.$Enums.RiskLevel = {
   LOW: 'LOW',
   MEDIUM: 'MEDIUM',
-  HIGH: 'HIGH'
+  HIGH: 'HIGH',
+  CRITICAL: 'CRITICAL'
 };
 
 exports.ContentStudioBloomLevel = exports.$Enums.ContentStudioBloomLevel = {
@@ -2083,7 +2361,13 @@ exports.ExperienceEventType = exports.$Enums.ExperienceEventType = {
   VALIDATED: 'VALIDATED',
   PUBLISHED: 'PUBLISHED',
   UNPUBLISHED: 'UNPUBLISHED',
+  ARCHIVED: 'ARCHIVED',
   CONTENT_CHANGED: 'CONTENT_CHANGED',
+  CLAIMS_GENERATED: 'CLAIMS_GENERATED',
+  GRADE_ADAPTED: 'GRADE_ADAPTED',
+  REFINED: 'REFINED',
+  REVIEW_SUBMITTED: 'REVIEW_SUBMITTED',
+  REVIEW_DECISION: 'REVIEW_DECISION',
   SIMULATION_LINKED: 'SIMULATION_LINKED',
   SIMULATION_UNLINKED: 'SIMULATION_UNLINKED',
   ANALYTICS_VIEWED: 'ANALYTICS_VIEWED',
@@ -2109,6 +2393,161 @@ exports.ReviewDecisionType = exports.$Enums.ReviewDecisionType = {
   REJECT: 'REJECT',
   REQUEST_CHANGES: 'REQUEST_CHANGES',
   ESCALATE: 'ESCALATE'
+};
+
+exports.ContentAssetType = exports.$Enums.ContentAssetType = {
+  EXPLAINER: 'EXPLAINER',
+  MODULE: 'MODULE',
+  EXAMPLE_SET: 'EXAMPLE_SET',
+  SIMULATION: 'SIMULATION',
+  ANIMATION: 'ANIMATION',
+  ASSESSMENT: 'ASSESSMENT',
+  PATHWAY: 'PATHWAY',
+  REFERENCE_PACK: 'REFERENCE_PACK'
+};
+
+exports.ContentAssetStatus = exports.$Enums.ContentAssetStatus = {
+  DRAFT: 'DRAFT',
+  VALIDATING: 'VALIDATING',
+  REVIEW: 'REVIEW',
+  APPROVED: 'APPROVED',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED'
+};
+
+exports.ContentBlockType = exports.$Enums.ContentBlockType = {
+  TEXT_EXPLAINER: 'TEXT_EXPLAINER',
+  WORKED_EXAMPLE: 'WORKED_EXAMPLE',
+  DATA_TABLE: 'DATA_TABLE',
+  VISUAL_SEQUENCE: 'VISUAL_SEQUENCE',
+  SIMULATION_ENTRY: 'SIMULATION_ENTRY',
+  ANIMATION_ENTRY: 'ANIMATION_ENTRY',
+  QUESTION_SET: 'QUESTION_SET',
+  TASK: 'TASK',
+  REFLECTION: 'REFLECTION',
+  HINT: 'HINT',
+  TUTOR_PROMPT: 'TUTOR_PROMPT',
+  EVIDENCE_CAPTURE: 'EVIDENCE_CAPTURE'
+};
+
+exports.ArtifactManifestType = exports.$Enums.ArtifactManifestType = {
+  WORKED_EXAMPLE: 'WORKED_EXAMPLE',
+  SIMULATION: 'SIMULATION',
+  ANIMATION: 'ANIMATION',
+  ASSESSMENT: 'ASSESSMENT'
+};
+
+exports.ChunkSource = exports.$Enums.ChunkSource = {
+  BLOCK: 'BLOCK',
+  CLAIM: 'CLAIM',
+  MANIFEST: 'MANIFEST',
+  METADATA: 'METADATA'
+};
+
+exports.EmbeddingStatus = exports.$Enums.EmbeddingStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  READY: 'READY',
+  FAILED: 'FAILED',
+  STALE: 'STALE'
+};
+
+exports.RecommendationEdgeType = exports.$Enums.RecommendationEdgeType = {
+  PREREQUISITE: 'PREREQUISITE',
+  FOLLOW_UP: 'FOLLOW_UP',
+  RELATED: 'RELATED',
+  ALTERNATIVE: 'ALTERNATIVE',
+  DEEPER_DIVE: 'DEEPER_DIVE'
+};
+
+exports.RecommendationSource = exports.$Enums.RecommendationSource = {
+  RULE_BASED: 'RULE_BASED',
+  SEMANTIC: 'SEMANTIC',
+  OUTCOME_AWARE: 'OUTCOME_AWARE',
+  MANUAL: 'MANUAL'
+};
+
+exports.GenerationRequestStatus = exports.$Enums.GenerationRequestStatus = {
+  DRAFT: 'DRAFT',
+  PLANNING: 'PLANNING',
+  PLANNED: 'PLANNED',
+  EXECUTING: 'EXECUTING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED'
+};
+
+exports.ReviewPath = exports.$Enums.ReviewPath = {
+  AUTO_PUBLISH: 'AUTO_PUBLISH',
+  HUMAN_REVIEW: 'HUMAN_REVIEW',
+  EXPERT_REVIEW: 'EXPERT_REVIEW'
+};
+
+exports.GenerationJobType = exports.$Enums.GenerationJobType = {
+  CLAIM: 'CLAIM',
+  EXPLAINER: 'EXPLAINER',
+  WORKED_EXAMPLE: 'WORKED_EXAMPLE',
+  SIMULATION: 'SIMULATION',
+  ANIMATION: 'ANIMATION',
+  ASSESSMENT: 'ASSESSMENT',
+  EVALUATION: 'EVALUATION'
+};
+
+exports.GenerationJobStatus = exports.$Enums.GenerationJobStatus = {
+  PENDING: 'PENDING',
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED'
+};
+
+exports.EvaluationStatus = exports.$Enums.EvaluationStatus = {
+  PENDING: 'PENDING',
+  RUNNING: 'RUNNING',
+  PASSED: 'PASSED',
+  FAILED: 'FAILED',
+  SKIPPED: 'SKIPPED'
+};
+
+exports.PublishRecommendation = exports.$Enums.PublishRecommendation = {
+  AUTO_PUBLISH: 'AUTO_PUBLISH',
+  MANUAL_REVIEW: 'MANUAL_REVIEW',
+  BLOCK: 'BLOCK'
+};
+
+exports.GenerationReviewDecisionStatus = exports.$Enums.GenerationReviewDecisionStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  REGENERATION_REQUESTED: 'REGENERATION_REQUESTED'
+};
+
+exports.ExplorerEventType = exports.$Enums.ExplorerEventType = {
+  IMPRESSION: 'IMPRESSION',
+  CLICK: 'CLICK',
+  QUERY_REFORMULATION: 'QUERY_REFORMULATION',
+  ASSET_START: 'ASSET_START',
+  ASSET_COMPLETE: 'ASSET_COMPLETE',
+  NEXT_STEP_SELECT: 'NEXT_STEP_SELECT',
+  RANKING_FEEDBACK: 'RANKING_FEEDBACK'
+};
+
+exports.RegenerationTrigger = exports.$Enums.RegenerationTrigger = {
+  POOR_DISCOVERY_PERFORMANCE: 'POOR_DISCOVERY_PERFORMANCE',
+  POOR_LEARNING_OUTCOMES: 'POOR_LEARNING_OUTCOMES',
+  MISCONCEPTION_PATTERN: 'MISCONCEPTION_PATTERN',
+  STALE_CURRICULUM: 'STALE_CURRICULUM',
+  SAFETY_CONCERN: 'SAFETY_CONCERN',
+  LOW_EVALUATION_SCORE: 'LOW_EVALUATION_SCORE',
+  MANUAL_FLAGGED: 'MANUAL_FLAGGED'
+};
+
+exports.RegenerationCandidateStatus = exports.$Enums.RegenerationCandidateStatus = {
+  OPEN: 'OPEN',
+  QUEUED: 'QUEUED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  RESOLVED: 'RESOLVED',
+  DISMISSED: 'DISMISSED'
 };
 
 exports.Prisma.ModelName = {
@@ -2218,8 +2657,25 @@ exports.Prisma.ModelName = {
   RegenerationInsight: 'RegenerationInsight',
   AutoRevisionConfig: 'AutoRevisionConfig',
   AutoRevisionMetrics: 'AutoRevisionMetrics',
+  Badge: 'Badge',
+  BadgeEarned: 'BadgeEarned',
+  UserPoints: 'UserPoints',
+  DeviceToken: 'DeviceToken',
   KernelPlugin: 'KernelPlugin',
-  AutomationRule: 'AutomationRule'
+  AutomationRule: 'AutomationRule',
+  ContentAsset: 'ContentAsset',
+  ContentAssetRevision: 'ContentAssetRevision',
+  ContentBlock: 'ContentBlock',
+  ArtifactManifest: 'ArtifactManifest',
+  SemanticChunk: 'SemanticChunk',
+  EmbeddingVector: 'EmbeddingVector',
+  RecommendationEdge: 'RecommendationEdge',
+  GenerationRequest: 'GenerationRequest',
+  GenerationJob: 'GenerationJob',
+  EvaluationRecord: 'EvaluationRecord',
+  GenerationReviewDecision: 'GenerationReviewDecision',
+  ExplorerEvent: 'ExplorerEvent',
+  RegenerationCandidate: 'RegenerationCandidate'
 };
 
 /**
