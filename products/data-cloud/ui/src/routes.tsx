@@ -15,6 +15,10 @@
 import React from 'react';
 import type { RouteObject } from 'react-router';
 import { DefaultLayout } from './layouts/DefaultLayout';
+import { LoadingState } from './components/common/LoadingState';
+
+/** Warn in dev when a lazy chunk takes longer than this to load. */
+const SLOW_LOAD_WARN_MS = 3_000;
 
 // =============================================================================
 // LAZY LOADED PAGES (Optimized with preloading)
@@ -92,41 +96,23 @@ const EditCollectionPage = React.lazy(() =>
 
 function PageLoader(): React.ReactElement {
   React.useEffect(() => {
+    if (!import.meta.env.DEV) return;
     const startTime = Date.now();
-    if (import.meta.env.DEV) {
-      console.log('[PageLoader] Suspense fallback triggered');
-    }
-
     const timer = setTimeout(() => {
-      const loadTime = Date.now() - startTime;
-      if (import.meta.env.DEV) {
-        console.warn(
-          `[PageLoader] Still loading after ${loadTime}ms - check for:`,
-          '\n  - Large component bundles',
-          '\n  - Circular dependencies',
-          '\n  - Heavy synchronous imports',
-          '\n  - Network issues (if loading chunks over network)'
-        );
-      }
-    }, 3000); // Reduced to 3s for faster feedback
-
+      const elapsed = Date.now() - startTime;
+      console.warn(
+        `[PageLoader] Chunk still loading after ${elapsed}ms. Check for large bundles, circular deps, or network issues.`
+      );
+    }, SLOW_LOAD_WARN_MS);
     return () => clearTimeout(timer);
   }, []);
 
-  return (
-    <div className="flex items-center justify-center w-full h-64">
-      <div className="text-center">
-        <div className="inline-block">
-          <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-        </div>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Loading...</p>
-      </div>
-    </div>
-  );
+  return <LoadingState message="Loading..." className="w-full h-64" />;
 }
 
 /**
- * Error Boundary for lazy loaded components
+ * Error Boundary scoped to lazy-loaded page chunks.
+ * Provides an inline recovery UI (not full-screen) when a page chunk fails.
  */
 class LazyLoadErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -138,64 +124,36 @@ class LazyLoadErrorBoundary extends React.Component<
   }
 
   static getDerivedStateFromError(error: Error) {
-    // Use try-catch to prevent error boundary from failing
-    try {
-      console.error('[LazyLoadErrorBoundary] Caught error:', error);
-      console.error('[LazyLoadErrorBoundary] Error name:', error?.name);
-      console.error('[LazyLoadErrorBoundary] Error message:', error?.message);
-      console.error('[LazyLoadErrorBoundary] Error stack:', error?.stack);
-    } catch (e) {
-      console.error('[LazyLoadErrorBoundary] Failed to log error:', e);
+    if (import.meta.env.DEV) {
+      console.error('[LazyLoadErrorBoundary]', error);
     }
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    try {
-      console.error('[LazyLoadErrorBoundary] Component stack:', errorInfo?.componentStack);
-    } catch (e) {
-      console.error('[LazyLoadErrorBoundary] Failed to log component stack:', e);
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    if (import.meta.env.DEV) {
+      console.error('[LazyLoadErrorBoundary] Component stack:', info.componentStack);
     }
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '100%',
-          minHeight: '16rem',
-          padding: '1.5rem'
-        }}>
-          <div style={{ textAlign: 'center', maxWidth: '28rem' }}>
-            <h2 style={{
-              fontSize: '1.25rem',
-              fontWeight: '600',
-              color: '#dc2626',
-              marginBottom: '0.5rem'
-            }}>
+        <div
+          role="alert"
+          className="flex items-center justify-center w-full min-h-64 p-6"
+        >
+          <div className="text-center max-w-md">
+            <h2 className="text-lg font-semibold text-red-600 mb-2">
               Failed to load page
             </h2>
-            <p style={{
-              color: '#6b7280',
-              marginBottom: '1rem',
-              fontSize: '0.875rem'
-            }}>
-              {this.state.error?.message || 'Unknown error occurred while loading the component'}
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {this.state.error?.message ?? 'Unknown error occurred while loading the component'}
             </p>
             <button
+              type="button"
               onClick={() => window.location.reload()}
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#2563eb',
-                color: 'white',
-                borderRadius: '0.5rem',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.875rem'
-              }}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               Reload Page
             </button>

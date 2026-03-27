@@ -15,66 +15,89 @@ import { Provider } from 'jotai';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@ghatana/theme';
 import { ToastProvider } from './components/common/Toast';
+import { AppErrorBoundary } from './components/common/AppErrorBoundary';
+import { LoadingState } from './components/common/LoadingState';
 import { routes } from './routes';
 import './styles/globals.css';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Query Client Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * TanStack Query client configuration
+ * Cache duration constants — named so they are self-documenting at usage sites.
+ * Per-query overrides should be set in the individual `useQuery` calls.
  */
+const CACHE_TIMES = {
+  /** Default: data that changes infrequently (collections, schemas, plugins). */
+  DEFAULT_STALE_MS: 5 * 60 * 1000,   // 5 minutes
+  /** Short-lived: frequently-mutated data (alerts, jobs, workflow status). */
+  SHORT_STALE_MS: 30 * 1000,          // 30 seconds
+  /** Static: essentially immutable reference data (enums, definitions). */
+  STATIC_STALE_MS: 30 * 60 * 1000,   // 30 minutes
+} as const;
+
+export { CACHE_TIMES };
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: CACHE_TIMES.DEFAULT_STALE_MS,
       retry: 1,
       refetchOnWindowFocus: false,
+      // Garbage-collect unused queries after 10 minutes.
+      gcTime: 10 * 60 * 1000,
+    },
+    mutations: {
+      retry: 0,
     },
   },
 });
 
-/**
- * Create the router instance
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// Router
+// ─────────────────────────────────────────────────────────────────────────────
+
 const router = createBrowserRouter(routes);
 
-/**
- * Loading screen component for initial app load
- */
-function LoadingScreen(): React.ReactElement {
-  return (
-    <div className="flex items-center justify-center w-full h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="text-center">
-        <div className="inline-block">
-          <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-        </div>
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Loading Data Cloud...</p>
-      </div>
-    </div>
-  );
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// App
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * App component
  *
  * Provides the application shell with all necessary providers:
- * - QueryClientProvider for TanStack Query
- * - Jotai Provider for state management
- * - ThemeProvider for dark/light mode
- * - RouterProvider for React Router v7
+ * - AppErrorBoundary   — global crash guard
+ * - QueryClientProvider — TanStack Query
+ * - Jotai Provider     — atom-based state management
+ * - ThemeProvider      — dark/light mode
+ * - RouterProvider     — React Router v7
  *
  * @returns JSX element
  */
 export function App(): React.ReactElement {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Provider>
-        <ThemeProvider>
-          <React.Suspense fallback={<LoadingScreen />}>
-            <RouterProvider router={router} />
-          </React.Suspense>
-          <ToastProvider />
-        </ThemeProvider>
-      </Provider>
-    </QueryClientProvider>
+    <AppErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <Provider>
+          <ThemeProvider>
+            <React.Suspense
+              fallback={
+                <LoadingState
+                  message="Loading Data Cloud..."
+                  className="w-full h-screen"
+                  size="lg"
+                />
+              }
+            >
+              <RouterProvider router={router} />
+            </React.Suspense>
+            <ToastProvider />
+          </ThemeProvider>
+        </Provider>
+      </QueryClientProvider>
+    </AppErrorBoundary>
   );
 }
 

@@ -1,6 +1,16 @@
 package com.ghatana.datacloud.infrastructure.config;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics;
+
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Configuration for JPA/Hibernate thread pool.
@@ -216,6 +226,82 @@ public final class JpaThreadPoolConfig {
                 .corePoolSize(corePoolSize)
                 .maxPoolSize(maxPoolSize)
                 .keepAliveSeconds(keepAliveSeconds);
+    }
+
+    /**
+     * Creates an {@link ExecutorService} according to this configuration.
+     *
+     * <p>When {@link ThreadPoolType#VIRTUAL} is selected, a virtual-thread-per-task executor
+     * bounded by a {@link LinkedBlockingQueue} is returned.  For {@link ThreadPoolType#PLATFORM}
+     * a standard {@link ThreadPoolExecutor} with the configured core/max/keep-alive values is
+     * returned instead.
+     *
+     * @return a new, unconfigured (not yet instrumented) executor service
+     */
+    public ExecutorService createExecutorService() {
+        ThreadFactory threadFactory = buildThreadFactory();
+        if (type == ThreadPoolType.VIRTUAL) {
+            return new ThreadPoolExecutor(
+                    1, Integer.MAX_VALUE, 0L, TimeUnit.MILLISECONDS,
+                    new LinkedBlockingQueue<>(queueSize),
+                    Thread.ofVirtual().name(threadNamePrefix + "-", 0).factory(),
+                    buildRejectedExecutionHandler(threadNamePrefix));
+        }
+        return new ThreadPoolExecutor(
+                corePoolSize, maxPoolSize,
+                keepAliveSeconds, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(queueSize),
+                threadFactory,
+                buildRejectedExecutionHandler(threadNamePrefix));
+    }
+
+    /**
+     * Creates an {@link ExecutorService} according to this configuration and registers it with the
+     * supplied Micrometer {@link MeterRegistry}.
+     *
+     * <p>The following metrics are published under {@code metricsPrefix}:
+     * <ul>
+     *   <li>{@code executor.pool.size} – current active thread count</li>
+     *   <li>{@code executor.queue.remaining} – remaining queue capacity</li>
+     *   <li>{@code executor.completed} – total completed tasks (counter)</li>
+     * </ul>
+     *
+     * @param registry      Micrometer registry; must not be {@code null}
+     * @param metricsPrefix metric name prefix, e.g. {@code "jpa.thread.pool"}
+     * @return instrumented executor service
+     * @doc.gaa.lifecycle act
+     */
+    public ExecutorService createInstrumentedExecutorService(MeterRegistry registry, String metricsPrefix) {
+        Objects.requireNonNull(registry, "MeterRegistry must not be null");
+        Objects.requireNonNull(metricsPrefix, "metricsPrefix must not be null");
+
+        ExecutorService executor = createExecutorService();
+
+        // Wrap with Micrometer's built-in ExecutorServiceMetrics to expose
+        // executor.pool.size, executor.queue.remaining, executor.completed, etc.
+        return ExecutorServiceMetrics.monitor(registry, executor, metricsPrefix);
+    }
+
+    // -------------------------------------------------------------------------
+    // Internal helpers
+    // -------------------------------------------------------------------------
+
+    private ThreadFactory buildThreadFactory() {
+        AtomicLong counter = new AtomicLong(0);
+        return r -> {
+            Thread t = new Thread(r, threadNamePrefix + "-" + counter.getAndIncrement());
+            t.setDaemon(true);
+            return t;
+        };
+    }
+
+    private static RejectedExecutionHandler buildRejectedExecutionHandler(String prefix) {
+        return (r, executor) -> {
+            throw new java.util.concurrent.RejectedExecutionException(
+                    "Thread pool '" + prefix + "' rejected task – queue is full (size="
+                            + executor.getQueue().size() + ", remaining="
+                            + executor.getQueue().remainingCapacity() + ")");
+        };
     }
 
     @Override

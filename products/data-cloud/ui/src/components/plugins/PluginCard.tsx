@@ -119,6 +119,10 @@ export function PluginCard({
         className
       )}
       onClick={handleCardClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } }}
+      role={isInstalled && onViewDetails ? 'button' : undefined}
+      tabIndex={isInstalled && onViewDetails ? 0 : undefined}
+      aria-label={isInstalled && onViewDetails ? `View details for ${metadata.name}` : undefined}
     >
       {/* Quick Actions Overlay - Shows on Hover */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
@@ -133,9 +137,9 @@ export function PluginCard({
                 'p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors',
                 'border border-gray-200 dark:border-gray-600'
               )}
-              title="Configure"
+              aria-label={`Configure ${metadata.name}`}
             >
-              <Settings className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+              <Settings className="h-4 w-4 text-gray-700 dark:text-gray-300" aria-hidden="true" />
             </button>
             {isActive ? (
               <button
@@ -148,9 +152,9 @@ export function PluginCard({
                   'border border-gray-200 dark:border-gray-600'
                 )}
                 disabled={isProcessing}
-                title="Disable"
+                aria-label={`Disable ${metadata.name}`}
               >
-                <Power className="h-4 w-4 text-green-600" />
+                <Power className="h-4 w-4 text-green-600" aria-hidden="true" />
               </button>
             ) : (
               <button
@@ -163,9 +167,9 @@ export function PluginCard({
                   'border border-gray-200 dark:border-gray-600'
                 )}
                 disabled={isProcessing}
-                title="Enable"
+                aria-label={`Enable ${metadata.name}`}
               >
-                <Power className="h-4 w-4 text-gray-400" />
+                <Power className="h-4 w-4 text-gray-400" aria-hidden="true" />
               </button>
             )}
           </>
@@ -394,8 +398,9 @@ export function PluginCard({
                     'hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors',
                     'flex items-center gap-1'
                   )}
+                  aria-label={`View details for ${metadata.name}`}
                 >
-                  <TrendingUp className="h-3 w-3" />
+                  <TrendingUp className="h-3 w-3" aria-hidden="true" />
                   Details
                 </button>
 
@@ -428,9 +433,9 @@ export function PluginCard({
                     'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors'
                   )}
                   disabled={isProcessing}
-                  title="Uninstall"
+                  aria-label={`Uninstall ${metadata.name}`}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
               </>
             ) : mode === 'marketplace' && marketplacePlugin ? (

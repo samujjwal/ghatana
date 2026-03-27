@@ -230,7 +230,14 @@ public interface EntityStore {
         int offset,
         int limit
     ) {
+        /** Default page size when no limit is specified. */
         public static final int DEFAULT_LIMIT = 100;
+
+        /**
+         * Hard ceiling on limit to protect against runaway queries.
+         * Callers requesting more than this will receive an {@link IllegalArgumentException}.
+         */
+        public static final int MAX_LIMIT = 10_000;
 
         public QuerySpec {
             Objects.requireNonNull(collection, "collection required");
@@ -241,6 +248,10 @@ public interface EntityStore {
                 throw new IllegalArgumentException("limit must be >= 0");
             }
             if (limit == 0) limit = DEFAULT_LIMIT;
+            if (limit > MAX_LIMIT) {
+                throw new IllegalArgumentException(
+                    "limit " + limit + " exceeds maximum allowed value " + MAX_LIMIT);
+            }
         }
 
         public static Builder builder() {

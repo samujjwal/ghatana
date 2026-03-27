@@ -10,6 +10,8 @@
  * @doc.pattern Repository Pattern
  */
 
+import { TokenStorage } from '../auth/tokenStorage';
+
 /**
  * API Response wrapper
  */
@@ -81,7 +83,11 @@ export class ApiClient {
             ...this.defaultHeaders,
             ...extraHeaders,
         });
-        const token = localStorage.getItem('auth_token');
+        // Use TokenStorage instead of direct localStorage access.
+        // TokenStorage uses memory-first storage with sessionStorage fallback,
+        // reducing XSS token-theft risk. See lib/auth/tokenStorage.ts for the
+        // migration path to httpOnly cookies (recommended for production).
+        const token = TokenStorage.get();
         if (token) {
             headers.set('Authorization', `Bearer ${token}`);
         }

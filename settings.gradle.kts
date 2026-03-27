@@ -89,6 +89,11 @@ include(":products:data-cloud:platform-event")
 include(":products:data-cloud:platform-config")
 include(":products:data-cloud:platform-analytics")
 include(":products:data-cloud:platform-launcher")
+// FINDING-DC-H2: platform-launcher split (Phase 1 - module scaffolding)
+// Phase 2 will physically move sources from platform-launcher into these modules.
+include(":products:data-cloud:platform-client")   // Client SDK (no infra deps)
+include(":products:data-cloud:platform-plugins")  // Storage plugin implementations
+include(":products:data-cloud:platform-api")      // REST / gRPC / GraphQL controllers
 include(":products:data-cloud:launcher")
 include(":products:data-cloud:sdk")
 include(":products:data-cloud:agent-registry")

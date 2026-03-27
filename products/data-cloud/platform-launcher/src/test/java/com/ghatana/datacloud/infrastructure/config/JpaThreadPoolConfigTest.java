@@ -1,11 +1,17 @@
 package com.ghatana.datacloud.infrastructure.config;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("JpaThreadPoolConfig")
 class JpaThreadPoolConfigTest {
@@ -106,5 +112,102 @@ class JpaThreadPoolConfigTest {
     void keepAliveMustBeNonNegative() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> JpaThreadPoolConfig.builder().keepAliveSeconds(-1));
+    }
+
+    // ------------------------------------------------------------------
+    // createExecutorService / createInstrumentedExecutorService
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("createExecutorService returns non-null executor for VIRTUAL type")
+    void createExecutorServiceVirtual() {
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder()
+            .type(JpaThreadPoolConfig.ThreadPoolType.VIRTUAL)
+            .queueSize(16)
+            .build();
+
+        ExecutorService exec = config.createExecutorService();
+        assertThat(exec).isNotNull();
+        exec.shutdown();
+    }
+
+    @Test
+    @DisplayName("createExecutorService returns non-null executor for PLATFORM type")
+    void createExecutorServicePlatform() {
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder()
+            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM)
+            .corePoolSize(2)
+            .maxPoolSize(4)
+            .queueSize(8)
+            .build();
+
+        ExecutorService exec = config.createExecutorService();
+        assertThat(exec).isNotNull();
+        exec.shutdown();
+    }
+
+    @Test
+    @DisplayName("createInstrumentedExecutorService registers metrics with registry")
+    void createInstrumentedExecutorServiceRegistersMetrics() {
+        MeterRegistry registry = new SimpleMeterRegistry();
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder()
+            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM)
+            .corePoolSize(1)
+            .maxPoolSize(2)
+            .queueSize(4)
+            .build();
+
+        ExecutorService exec = config.createInstrumentedExecutorService(registry, "test.jpa.pool");
+        assertThat(exec).isNotNull();
+
+        // Micrometer ExecutorServiceMetrics registers at least executor.pool.size
+        assertThat(registry.getMeters())
+            .anyMatch(m -> m.getId().getName().startsWith("test.jpa.pool"));
+
+        exec.shutdown();
+    }
+
+    @Test
+    @DisplayName("createInstrumentedExecutorService rejects null registry")
+    void createInstrumentedExecutorServiceNullRegistry() {
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder().build();
+
+        assertThatNullPointerException()
+            .isThrownBy(() -> config.createInstrumentedExecutorService(null, "any.prefix"));
+    }
+
+    @Test
+    @DisplayName("createInstrumentedExecutorService rejects null metricsPrefix")
+    void createInstrumentedExecutorServiceNullPrefix() {
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder().build();
+        MeterRegistry registry = new SimpleMeterRegistry();
+
+        assertThatNullPointerException()
+            .isThrownBy(() -> config.createInstrumentedExecutorService(registry, null));
+    }
+
+    @Test
+    @DisplayName("executor throws RejectedExecutionException when queue is full")
+    void executorRejectsWhenQueueFull() throws Exception {
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder()
+            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM)
+            .corePoolSize(1)
+            .maxPoolSize(1)
+            .queueSize(1)
+            .build();
+
+        ExecutorService exec = config.createExecutorService();
+        // Fill the pool + queue
+        exec.submit(() -> {
+            try { Thread.sleep(200); } catch (InterruptedException ignored) {}
+        });
+        exec.submit(() -> {});  // fills queue
+
+        // Next submission must be rejected
+        assertThatThrownBy(() -> exec.submit(() -> {}))
+            .isInstanceOf(RejectedExecutionException.class)
+            .hasMessageContaining("queue is full");
+
+        exec.shutdownNow();
     }
 }

@@ -1,5 +1,10 @@
 package com.ghatana.datacloud.api.dto;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
 import java.util.Objects;
 
 /**
@@ -17,10 +22,21 @@ import java.util.Objects;
 */
 public class EntityQueryRequest {
 
+    @Size(max = 4096, message = "filters expression must not exceed 4096 characters")
     private String filters;
+
+    @Min(value = 1, message = "limit must be at least 1")
+    @Max(value = 10_000, message = "limit must not exceed 10,000")
     private Integer limit;
+
+    @Min(value = 0, message = "offset must be non-negative")
     private Integer offset;
+
+    @Size(max = 128, message = "sortField must not exceed 128 characters")
     private String sortField;
+
+    @Pattern(regexp = "ASC|DESC", flags = Pattern.Flag.CASE_INSENSITIVE,
+             message = "sortDirection must be ASC or DESC")
     private String sortDirection;
 
     public EntityQueryRequest() {

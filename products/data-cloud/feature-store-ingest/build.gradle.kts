@@ -1,6 +1,7 @@
 plugins {
     id("java")
     id("application")
+    id("jacoco")
 }
 
 description = "EventCloud tailing service for real-time feature ingestion (migrated from shared-services per ADR-013)"
@@ -46,4 +47,63 @@ application {
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+    classDirectories.setFrom(
+        sourceSets.main.get().output.asFileTree.matching {
+            exclude(
+                "**/proto/**",
+                "**/*Proto.class",
+                "**/generated/**"
+            )
+        }
+    )
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    violationRules {
+        rule {
+            limit {
+                counter = "INSTRUCTION"
+                value = "COVEREDRATIO"
+                // Starting point – increase incrementally as tests are added
+                minimum = "0.050".toBigDecimal()
+            }
+        }
+        rule {
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.040".toBigDecimal()
+            }
+        }
+    }
+    classDirectories.setFrom(
+        sourceSets.main.get().output.asFileTree.matching {
+            exclude(
+                "**/proto/**",
+                "**/*Proto.class",
+                "**/generated/**",
+                // Exclude launcher bootstrapping (DI glue code)
+                "**/*Launcher.class"
+            )
+        }
+    )
+}
+
+tasks.named("check") {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }

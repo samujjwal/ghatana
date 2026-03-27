@@ -36,8 +36,13 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   className = '',
   size = 'md',
 }) => (
-  <div className={cn('flex items-center justify-center p-8', className)}>
-    <Spinner size={size} />
+  <div
+    role="status"
+    aria-label={message}
+    aria-live="polite"
+    className={cn('flex items-center justify-center p-8', className)}
+  >
+    <Spinner size={size} aria-hidden="true" />
     {message && <span className={cn('ml-3', textStyles.muted)}>{message}</span>}
   </div>
 );

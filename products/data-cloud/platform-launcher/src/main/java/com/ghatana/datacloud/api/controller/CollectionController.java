@@ -10,6 +10,7 @@ import com.ghatana.datacloud.api.dto.DtoMapper;
 import com.ghatana.datacloud.api.dto.PaginationListResponse;
 import com.ghatana.datacloud.api.dto.UpdateCollectionRequest;
 import com.ghatana.datacloud.application.CollectionService;
+import com.ghatana.datacloud.application.PaginationHelper;
 import com.ghatana.datacloud.entity.MetaCollection;
 import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
@@ -557,12 +558,15 @@ public class CollectionController {
                 int page = getQueryParam(request, "page", 0);
                 int size = getQueryParam(request, "size", 10);
 
-                if (page < 0 || size < 1 || size > 100) {
+                PaginationHelper.PaginationParams pagination;
+                try {
+                        pagination = PaginationHelper.validate(page, size);
+                } catch (IllegalArgumentException e) {
                         metrics.incrementCounter("controller.collection.list.error",
                                         "error_type", "VALIDATION_ERROR",
                                         "tenant", tenantId);
                         return Promise.of(ResponseBuilder.badRequest()
-                                        .json(Collections.singletonMap("error", "Invalid pagination parameters"))
+                                        .json(Collections.singletonMap("error", e.getMessage()))
                                         .build());
                 }
 
@@ -576,15 +580,20 @@ public class CollectionController {
                                                         "tenant", tenantId,
                                                         "count", String.valueOf(collections.size()));
 
+                                        int totalCount = collections.size();
+                                        int offset = pagination.offset();
+                                        int limit = pagination.limit();
                                         List<CollectionResponse> responses = collections.stream()
+                                                        .skip(offset)
+                                                        .limit(limit)
                                                         .map(dtoMapper::toCollectionResponse)
                                                         .collect(Collectors.toList());
 
                                         PaginationListResponse<CollectionResponse> response = PaginationListResponse
                                                         .<CollectionResponse>builder()
                                                         .items(responses)
-                                                        .totalCount(collections.size())
-                                                        .hasMore(false)
+                                                        .totalCount(totalCount)
+                                                        .hasMore(PaginationHelper.hasNextPage(page, limit, totalCount))
                                                         .build();
 
                                         HttpResponse httpResponse = ResponseBuilder.ok()

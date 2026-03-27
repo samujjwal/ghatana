@@ -10,6 +10,56 @@
  * @doc.pattern Observer Pattern
  */
 
+// ─────────────────────────────────────────────────────────────────────────────
+// URL validation helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Build a safe WebSocket URL from arbitrary input.
+ *
+ * Rules enforced (FINDING-DC-UI-M2):
+ * - Protocol must be `ws:` or `wss:`. Anything else throws.
+ * - `wss:` is required in production (`import.meta.env.PROD`).
+ * - Rejects `javascript:`, `data:`, and other dangerous schemes.
+ *
+ * @throws {Error} when the URL is invalid or uses an insecure scheme in production.
+ */
+export function validateWebSocketUrl(rawUrl: string): string {
+    let parsed: URL;
+    try {
+        parsed = new URL(rawUrl);
+    } catch {
+        throw new Error(`Invalid WebSocket URL: "${rawUrl}" could not be parsed.`);
+    }
+
+    const { protocol } = parsed;
+    if (protocol !== 'ws:' && protocol !== 'wss:') {
+        throw new Error(
+            `WebSocket URL must use ws: or wss: protocol. Got "${protocol}" in "${rawUrl}".`
+        );
+    }
+
+    if (import.meta.env.PROD && protocol === 'ws:') {
+        throw new Error(
+            `Insecure WebSocket (ws:) is not allowed in production. Use wss: instead.`
+        );
+    }
+
+    return parsed.toString();
+}
+
+/**
+ * Derive the default WebSocket URL from the current browser origin.
+ * Uses wss: when the page is served over HTTPS and ws: otherwise.
+ */
+export function deriveDefaultWebSocketUrl(path = '/ws'): string {
+    if (typeof window === 'undefined') {
+        return `ws://localhost:8080${path}`;
+    }
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    return `${protocol}://${window.location.host}${path}`;
+}
+
 /**
  * WebSocket event types
  */
@@ -72,7 +122,7 @@ export class WebSocketClient {
 
     constructor(config: WebSocketClientConfig) {
         this.config = {
-            url: config.url,
+            url: validateWebSocketUrl(config.url),
             reconnect: config.reconnect ?? true,
             reconnectInterval: config.reconnectInterval ?? 3000,
             maxReconnectAttempts: config.maxReconnectAttempts ?? 10,
@@ -261,19 +311,18 @@ export class WebSocketClient {
 }
 
 const defaultWsUrl = (() => {
-    if (typeof window === 'undefined') {
-        return 'ws://localhost:8080/ws';
+    const envUrl = import.meta.env.VITE_WS_URL as string | undefined;
+    if (envUrl) {
+        return validateWebSocketUrl(envUrl);
     }
-
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    return `${protocol}://${window.location.host}/ws`;
+    return deriveDefaultWebSocketUrl('/ws');
 })();
 
 /**
  * Default WebSocket client instance
  */
 export const wsClient = new WebSocketClient({
-    url: import.meta.env.VITE_WS_URL ?? defaultWsUrl,
+    url: defaultWsUrl,
 });
 
 export default wsClient;

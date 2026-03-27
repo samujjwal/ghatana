@@ -148,16 +148,17 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "INSTRUCTION"
                 value = "COVEREDRATIO"
-                // TODO: Increase coverage to 0.145; currently at 0.114. Add integration tests.
-                minimum = "0.110".toBigDecimal()
+                // Roadmap: 0.15 (current) → 0.30 (Q2) → 0.50 (Q3) → 0.70 (Q4)
+                // Increase by ~5% each sprint. Track with FINDING-DC-H1.
+                minimum = "0.150".toBigDecimal()
             }
         }
         rule {
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                // TODO: Increase coverage to 0.112; currently at 0.085. Add branch coverage tests.
-                minimum = "0.080".toBigDecimal()
+                // Roadmap: 0.10 (current) → 0.20 (Q2) → 0.35 (Q3) → 0.50 (Q4)
+                minimum = "0.100".toBigDecimal()
             }
         }
     }
@@ -167,7 +168,10 @@ tasks.jacocoTestCoverageVerification {
                 "**/proto/**",
                 "**/*Proto.class",
                 "**/generated/**",
-                "**/spi/provider/**"
+                "**/spi/provider/**",
+                // Exclude launcher bootstrapping (DI glue code, not testable in unit tests)
+                "**/di/**",
+                "**/launcher/**"
             )
         }
     )
