@@ -22,6 +22,15 @@ import {
   UseMutationOptions,
 } from '@tanstack/react-query';
 import {
+  auditQueryKeys,
+  versionQueryKeys,
+  authQueryKeys,
+  requirementQueryKeys,
+  aiQueryKeys,
+  architectureQueryKeys,
+  workspaceQueryKeys,
+} from '../lib/query-keys';
+import {
   createDashboardClients,
   DashboardClients,
   DashboardApiConfig,
@@ -86,86 +95,33 @@ export function useDashboardClients(
 }
 
 // ============================================================================
-// Query Keys
+// Query Keys — delegated to centralized lib/query-keys.ts
 // ============================================================================
 
+// Re-export individual key factories as canonical names
+export {
+  auditQueryKeys,
+  versionQueryKeys,
+  authQueryKeys,
+  requirementQueryKeys,
+  aiQueryKeys,
+  architectureQueryKeys,
+  workspaceQueryKeys,
+} from '../lib/query-keys';
+
+/**
+ * @deprecated Use the named *QueryKeys exports directly (e.g. auditQueryKeys,
+ * workspaceQueryKeys). This shim exists for backward compatibility and will be
+ * removed in v3.0.
+ */
 export const dashboardQueryKeys = {
-  // Audit
-  audit: {
-    all: ['audit'] as const,
-    events: (params?: QueryAuditEventsRequest) =>
-      ['audit', 'events', params] as const,
-    event: (id: string) => ['audit', 'event', id] as const,
-    summary: (params?: Record<string, unknown>) =>
-      ['audit', 'summary', params] as const,
-    resourceEvents: (resourceId: string, resourceType: string) =>
-      ['audit', 'resource', resourceType, resourceId] as const,
-  },
-
-  // Version
-  version: {
-    all: ['version'] as const,
-    history: (resourceId: string, resourceType: string) =>
-      ['version', 'history', resourceType, resourceId] as const,
-    version: (id: string) => ['version', 'detail', id] as const,
-    compare: (v1: string, v2: string) =>
-      ['version', 'compare', v1, v2] as const,
-  },
-
-  // Authorization
-  auth: {
-    all: ['auth'] as const,
-    userPermissions: (userId: string) => ['auth', 'user', userId] as const,
-    myPermissions: () => ['auth', 'me'] as const,
-    personas: () => ['auth', 'personas'] as const,
-    personaPermissions: (persona: string) =>
-      ['auth', 'persona', persona] as const,
-  },
-
-  // Requirements
-  requirements: {
-    all: ['requirements'] as const,
-    list: (params?: Record<string, unknown>) =>
-      ['requirements', 'list', params] as const,
-    detail: (id: string) => ['requirements', 'detail', id] as const,
-    funnel: (projectId: string) =>
-      ['requirements', 'funnel', projectId] as const,
-    quality: (id: string) => ['requirements', 'quality', id] as const,
-  },
-
-  // AI Suggestions
-  ai: {
-    all: ['ai'] as const,
-    inbox: () => ['ai', 'inbox'] as const,
-    suggestion: (id: string) => ['ai', 'suggestion', id] as const,
-    pending: (resourceId?: string) => ['ai', 'pending', resourceId] as const,
-  },
-
-  // Architecture
-  architecture: {
-    all: ['architecture'] as const,
-    impact: (resourceId: string) =>
-      ['architecture', 'impact', resourceId] as const,
-    dependencies: (resourceId: string) =>
-      ['architecture', 'dependencies', resourceId] as const,
-    techDebt: (projectId?: string) =>
-      ['architecture', 'tech-debt', projectId] as const,
-    patterns: (projectId?: string) =>
-      ['architecture', 'patterns', projectId] as const,
-  },
-
-  // Workspace
-  workspace: {
-    all: ['workspace'] as const,
-    list: () => ['workspace', 'list'] as const,
-    detail: (id: string) => ['workspace', 'detail', id] as const,
-    members: (workspaceId: string) =>
-      ['workspace', 'members', workspaceId] as const,
-    settings: (workspaceId: string) =>
-      ['workspace', 'settings', workspaceId] as const,
-    teams: (workspaceId: string) =>
-      ['workspace', 'teams', workspaceId] as const,
-  },
+  audit: auditQueryKeys,
+  version: versionQueryKeys,
+  auth: authQueryKeys,
+  requirements: requirementQueryKeys,
+  ai: aiQueryKeys,
+  architecture: architectureQueryKeys,
+  workspace: workspaceQueryKeys,
 };
 
 // ============================================================================

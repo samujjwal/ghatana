@@ -1,5 +1,6 @@
 package com.ghatana.aep;
 
+import com.ghatana.aep.config.AepConfigValidator;
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.aep.event.InMemoryEventCloud;
 import io.activej.promise.Promise;
@@ -51,10 +52,11 @@ public final class Aep {
      */
     public static AepEngine create(AepConfig config) {
         Objects.requireNonNull(config, "config required");
-        
+        AepConfigValidator.validate(config);
+
         // Discover EventCloud via ServiceLoader or use configured one
         EventCloud eventCloud = discoverEventCloud(config);
-        
+
         return new DefaultAepEngine(eventCloud, config);
     }
 
@@ -181,6 +183,7 @@ public final class Aep {
     private static class DefaultAepEngine implements AepEngine {
         private final EventCloud eventCloud;
         private final AepConfig config;
+        private final EventSchemaValidator schemaValidator = new EventSchemaValidator();
         private final Map<String, Map<String, AepEngine.Pattern>> patternsByTenant = new ConcurrentHashMap<>();
         private final Map<String, List<SubscriptionEntry>> subscriptionsByTenant = new ConcurrentHashMap<>();
         private final Map<String, Map<String, Map<String, Integer>>> sequenceProgressByTenant = new ConcurrentHashMap<>();
@@ -196,6 +199,14 @@ public final class Aep {
             checkNotClosed();
             Objects.requireNonNull(event, "event must not be null");
             String eventId = UUID.randomUUID().toString();
+
+            EventSchemaValidator.ValidationResult schemaResult = schemaValidator.validate(event);
+            if (!schemaResult.isValid()) {
+                logger.warn("Event schema validation failed for tenant={}, eventId={}: {}",
+                    tenantId, eventId, schemaResult.summary());
+                return Promise.of(AepEngine.ProcessingResult.failed(eventId, "Schema validation failed: " + schemaResult.summary()));
+            }
+
             AepEngine.Event normalizedEvent = resolveConsent(resolveIdentity(event));
 
             if (!hasValidConsent(normalizedEvent)) {

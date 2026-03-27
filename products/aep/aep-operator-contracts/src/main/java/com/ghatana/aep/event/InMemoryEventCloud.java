@@ -1,5 +1,6 @@
 package com.ghatana.aep.event;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -15,26 +16,57 @@ import java.util.concurrent.atomic.AtomicLong;
  *   <li>Development environments</li>
  * </ul>
  *
+ * <p>Supports automatic TTL-based eviction: when a {@code defaultTtl} is configured
+ * (via {@link #InMemoryEventCloud(Duration)}), events older than the TTL are purged on
+ * every {@link #append} call. Use {@link #purgeExpired()} to trigger eviction manually.
+ *
  * <p>For production use, configure a durable EventCloud implementation
  * such as PostgresEventCloudAdapter or KafkaEventCloudAdapter.
  *
  * @doc.type class
- * @doc.purpose In-memory EventCloud for testing and development
+ * @doc.purpose In-memory EventCloud for testing and development with optional TTL eviction
  * @doc.layer product
  * @doc.pattern Adapter
  * @since 1.0.0
  */
 public class InMemoryEventCloud implements EventCloud {
 
+    /** Sentinel value meaning "no TTL enforcement". */
+    private static final Duration NO_TTL = null;
+
+    private final Duration defaultTtl;
     private final Map<String, List<StoredEvent>> eventsByTenant = new ConcurrentHashMap<>();
     private final List<SubscriptionEntry> subscriptions = new CopyOnWriteArrayList<>();
     private final AtomicLong eventCounter = new AtomicLong(0);
+
+    /** Create an instance with no TTL enforcement. */
+    public InMemoryEventCloud() {
+        this.defaultTtl = NO_TTL;
+    }
+
+    /**
+     * Create an instance with automatic TTL eviction.
+     *
+     * <p>Events older than {@code defaultTtl} are purged on every {@link #append} call.
+     * Pass {@code null} or {@link Duration#ZERO} to disable TTL enforcement.
+     *
+     * @param defaultTtl TTL for all events (null / ZERO = no enforcement)
+     */
+    public InMemoryEventCloud(Duration defaultTtl) {
+        this.defaultTtl = (defaultTtl != null && !defaultTtl.isZero() && !defaultTtl.isNegative())
+            ? defaultTtl : NO_TTL;
+    }
 
     @Override
     public String append(String tenantId, String eventType, byte[] payload) {
         Objects.requireNonNull(tenantId, "tenantId required");
         Objects.requireNonNull(eventType, "eventType required");
         Objects.requireNonNull(payload, "payload required");
+
+        // Enforce TTL before adding new events to keep memory bounded.
+        if (defaultTtl != null) {
+            purgeExpired();
+        }
 
         String eventId = tenantId + "-" + eventCounter.incrementAndGet();
         StoredEvent event = new StoredEvent(eventId, eventType, payload, System.currentTimeMillis());
@@ -95,6 +127,37 @@ public class InMemoryEventCloud implements EventCloud {
         eventsByTenant.clear();
         subscriptions.clear();
         eventCounter.set(0);
+    }
+
+    /**
+     * Purge all events that have exceeded the configured TTL.
+     *
+     * <p>This is called automatically on every {@link #append} when a TTL is configured,
+     * but can also be called manually at any time.
+     *
+     * @return number of events removed
+     */
+    public int purgeExpired() {
+        if (defaultTtl == null) {
+            return 0;
+        }
+        long cutoffMs = System.currentTimeMillis() - defaultTtl.toMillis();
+        int removed = 0;
+        for (List<StoredEvent> events : eventsByTenant.values()) {
+            int before = events.size();
+            events.removeIf(e -> e.timestamp() < cutoffMs);
+            removed += before - events.size();
+        }
+        return removed;
+    }
+
+    /**
+     * Total number of events across all tenants.
+     *
+     * @return event count
+     */
+    public int size() {
+        return eventsByTenant.values().stream().mapToInt(List::size).sum();
     }
 
     /**

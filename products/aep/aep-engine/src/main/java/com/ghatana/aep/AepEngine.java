@@ -139,6 +139,15 @@ public interface AepEngine extends AutoCloseable {
 
     /**
      * Event to process.
+     *
+     * <p>The {@code version} field identifies the schema version of this event envelope.
+     * Defaults to {@code "1.0"} when not supplied. Use it to implement version-aware
+     * deserialization and schema migration in downstream consumers.
+     *
+     * <p>Example:
+     * <pre>{@code
+     * Event e = Event.of("order.placed", payload).withVersion("2.0");
+     * }</pre>
      */
     record Event(
         String type,
@@ -146,8 +155,12 @@ public interface AepEngine extends AutoCloseable {
         Map<String, String> headers,
         java.time.Instant timestamp,
         IdentityContext identityContext,
-        ConsentContext consentContext
+        ConsentContext consentContext,
+        String version
     ) {
+        /** Current default event schema version. */
+        public static final String DEFAULT_VERSION = "1.0";
+
         public Event {
             java.util.Objects.requireNonNull(type, "type required");
             payload = payload != null ? Map.copyOf(payload) : Map.of();
@@ -155,11 +168,24 @@ public interface AepEngine extends AutoCloseable {
             timestamp = timestamp != null ? timestamp : java.time.Instant.now();
             identityContext = identityContext != null ? identityContext : IdentityContext.empty();
             consentContext = consentContext != null ? consentContext : ConsentContext.defaultConsent();
+            version = (version != null && !version.isBlank()) ? version : DEFAULT_VERSION;
         }
 
+        /** Convenience constructor — uses default version {@value DEFAULT_VERSION}. */
         public Event(String type, Map<String, Object> payload, Map<String, String> headers,
                      java.time.Instant timestamp) {
-            this(type, payload, headers, timestamp, IdentityContext.empty(), ConsentContext.defaultConsent());
+            this(type, payload, headers, timestamp, IdentityContext.empty(), ConsentContext.defaultConsent(),
+                 DEFAULT_VERSION);
+        }
+
+        /**
+         * Convenience constructor with identity and consent but no explicit version.
+         * Version defaults to {@value DEFAULT_VERSION}.
+         */
+        public Event(String type, Map<String, Object> payload, Map<String, String> headers,
+                     java.time.Instant timestamp, IdentityContext identityContext,
+                     ConsentContext consentContext) {
+            this(type, payload, headers, timestamp, identityContext, consentContext, DEFAULT_VERSION);
         }
 
         public static Event of(String type, Map<String, Object> payload) {
@@ -167,11 +193,21 @@ public interface AepEngine extends AutoCloseable {
         }
 
         public Event withIdentityContext(IdentityContext identityContext) {
-            return new Event(type, payload, headers, timestamp, identityContext, consentContext);
+            return new Event(type, payload, headers, timestamp, identityContext, consentContext, version);
         }
 
         public Event withConsentContext(ConsentContext consentContext) {
-            return new Event(type, payload, headers, timestamp, identityContext, consentContext);
+            return new Event(type, payload, headers, timestamp, identityContext, consentContext, version);
+        }
+
+        /**
+         * Return a copy of this event with the given schema version.
+         *
+         * @param version schema version string (must not be blank)
+         * @return new event with the specified version
+         */
+        public Event withVersion(String version) {
+            return new Event(type, payload, headers, timestamp, identityContext, consentContext, version);
         }
     }
 
@@ -264,6 +300,15 @@ public interface AepEngine extends AutoCloseable {
                 false,
                 List.of(),
                 Map.of("processed", false, "skipped", true, "reason", reason)
+            );
+        }
+
+        public static ProcessingResult failed(String eventId, String reason) {
+            return new ProcessingResult(
+                eventId,
+                false,
+                List.of(),
+                Map.of("processed", false, "failed", true, "reason", reason)
             );
         }
     }

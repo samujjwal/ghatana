@@ -7,6 +7,8 @@ import com.ghatana.yappc.agent.EventPublisher;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.WorkflowStep;
 import com.ghatana.yappc.agent.WorkflowContextAdapter;
+import com.ghatana.yappc.agent.util.WorkflowStepValidator;
+import com.ghatana.yappc.agent.util.WorkflowErrorHandler;
 import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.*;
@@ -81,30 +83,11 @@ public final class IntakeStep implements WorkflowStep {
                       .build());
             })
         .whenException(
-            error -> {
-              // Handle errors gracefully
-              Map<String, Object> errorEvent =
-                  Map.of(
-                      "stepId", stepId,
-                      "error", error.getMessage(),
-                      "timestamp", Instant.now().toString());
-              eventClient.publish("requirements.intake.failed", errorEvent);
-            });
+            error -> WorkflowErrorHandler.publishStepError(stepId, error, context, eventClient));
   }
 
   private Promise<WorkflowContext> validateInput(WorkflowContext context) {
-    Map<String, Object> data = WorkflowContextAdapter.wrap(context).getData();
-
-    // Validate required fields
-    if (data == null || data.isEmpty()) {
-      return Promise.ofException(new IllegalArgumentException("Input data is required"));
-    }
-
-    if (!data.containsKey("source")) {
-      return Promise.ofException(new IllegalArgumentException("Field 'source' is required"));
-    }
-
-    return Promise.of(context);
+    return WorkflowStepValidator.validateRequiredFields(context, "source");
   }
 
   private Promise<Map<String, Object>> extractRequirements(WorkflowContext context) {

@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { workspaceQueryKeys, projectQueryKeys } from '../lib/query-keys';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import {
   currentWorkspaceIdAtom,
@@ -436,27 +437,20 @@ async function fetchAvailableForInclusion(
 }
 
 // ============================================================================
-// Query Keys
+// Query Keys — delegated to centralized lib/query-keys.ts
 // ============================================================================
 
-export const workspaceKeys = {
-  all: ['workspaces'] as const,
-  lists: () => [...workspaceKeys.all, 'list'] as const,
-  list: (filters: Record<string, unknown>) =>
-    [...workspaceKeys.lists(), filters] as const,
-  details: () => [...workspaceKeys.all, 'detail'] as const,
-  detail: (id: string) => [...workspaceKeys.details(), id] as const,
-};
+export { workspaceQueryKeys, projectQueryKeys } from '../lib/query-keys';
 
-export const projectKeys = {
-  all: ['projects'] as const,
-  lists: () => [...projectKeys.all, 'list'] as const,
-  list: (workspaceId: string) => [...projectKeys.lists(), workspaceId] as const,
-  details: () => [...projectKeys.all, 'detail'] as const,
-  detail: (id: string) => [...projectKeys.details(), id] as const,
-  available: (workspaceId: string) =>
-    [...projectKeys.all, 'available', workspaceId] as const,
-};
+/**
+ * @deprecated Use workspaceQueryKeys from lib/query-keys.ts. Will be removed in v3.0.
+ */
+export const workspaceKeys = workspaceQueryKeys;
+
+/**
+ * @deprecated Use projectQueryKeys from lib/query-keys.ts. Will be removed in v3.0.
+ */
+export const projectKeys = projectQueryKeys;
 
 // ============================================================================
 // Hooks

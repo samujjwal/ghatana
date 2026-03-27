@@ -6,6 +6,8 @@ import com.ghatana.yappc.agent.EventPublisher;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.WorkflowStep;
 import com.ghatana.yappc.agent.WorkflowContextAdapter;
+import com.ghatana.yappc.agent.util.WorkflowStepValidator;
+import com.ghatana.yappc.agent.util.WorkflowErrorHandler;
 import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.*;
@@ -65,18 +67,7 @@ public final class ValidateStep implements WorkflowStep {
   }
 
   private Promise<WorkflowContext> validateInput(WorkflowContext context) {
-    Map<String, Object> data = context.getData();
-
-    if (data == null || data.isEmpty()) {
-      return Promise.ofException(
-          new IllegalArgumentException("Input data required for validation"));
-    }
-
-    if (!data.containsKey("requirementId")) {
-      return Promise.ofException(new IllegalArgumentException("Field 'requirementId' required"));
-    }
-
-    return Promise.of(context);
+    return WorkflowStepValidator.validateRequiredFields(context, "requirementId");
   }
 
   /**
@@ -149,19 +140,7 @@ public final class ValidateStep implements WorkflowStep {
   }
 
   private Promise<WorkflowContext> handleError(Throwable error, WorkflowContext context) {
-    Map<String, Object> errorEvent =
-        Map.of(
-            "eventType", "requirements.validation.error",
-            "requirementId", context.getData().getOrDefault("requirementId", "unknown"),
-            "error", error.getMessage(),
-            "timestamp", Instant.now().toString());
-
-    return eventClient
-        .publish("requirements.errors", errorEvent)
-        .then(
-            $ ->
-                Promise.ofException(
-                    error instanceof Exception ? (Exception) error : new RuntimeException(error)));
+    return WorkflowErrorHandler.handleStepError(getStepId(), error, context, eventClient);
   }
 
   // --- Validation Helper Methods ---

@@ -6,6 +6,8 @@ import com.ghatana.yappc.agent.EventPublisher;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.WorkflowStep;
 import com.ghatana.yappc.agent.WorkflowContextAdapter;
+import com.ghatana.yappc.agent.util.WorkflowStepValidator;
+import com.ghatana.yappc.agent.util.WorkflowErrorHandler;
 import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.*;
@@ -73,18 +75,7 @@ public final class PolicyCheckStep implements WorkflowStep {
   }
 
   private Promise<WorkflowContext> validateInput(WorkflowContext context) {
-    Map<String, Object> data = context.getData();
-
-    if (data == null || data.isEmpty()) {
-      return Promise.ofException(
-          new IllegalArgumentException("Input data required for policy check"));
-    }
-
-    if (!data.containsKey("requirementId")) {
-      return Promise.ofException(new IllegalArgumentException("Field 'requirementId' required"));
-    }
-
-    return Promise.of(context);
+    return WorkflowStepValidator.validateRequiredFields(context, "requirementId");
   }
 
   /**
@@ -212,14 +203,7 @@ public final class PolicyCheckStep implements WorkflowStep {
   }
 
   private void handleError(Throwable error, WorkflowContext context) {
-    Map<String, Object> errorEvent =
-        Map.of(
-            "eventType", "requirements.policy.error",
-            "requirementId", context.getData().getOrDefault("requirementId", "unknown"),
-            "error", error.getMessage(),
-            "timestamp", Instant.now().toString());
-
-    eventClient.publish("requirements.errors", errorEvent);
+    WorkflowErrorHandler.publishStepError(getStepId(), error, context, eventClient);
   }
 
   // --- Policy Check Helper Methods ---

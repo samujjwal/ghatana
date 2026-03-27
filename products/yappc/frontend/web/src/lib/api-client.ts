@@ -1,19 +1,26 @@
 /**
  * Centralized API Client Factory for YAPPC
- * 
+ *
  * Provides configured HTTP and GraphQL clients with:
  * - Automatic authentication headers
  * - Tenant context injection
  * - Error handling and retry logic
  * - Request/response interceptors
- * 
+ *
  * @doc.type module
  * @doc.purpose API client configuration
  * @doc.layer infrastructure
  * @doc.pattern Factory
+ * @deprecated HttpApiClient in this module is deprecated. Use BaseDashboardApiClient
+ * subclasses from `src/clients/dashboard/` instead.
  */
 
-import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/client';
+import {
+  ApolloClient,
+  InMemoryCache,
+  createHttpLink,
+  from,
+} from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
@@ -22,7 +29,8 @@ import { RetryLink } from '@apollo/client/link/retry';
 // CONFIGURATION
 // ============================================================================
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const GRAPHQL_ENDPOINT = `${API_BASE_URL}/graphql`;
 const REST_API_ENDPOINT = `${API_BASE_URL}/api/v1`;
 
@@ -42,7 +50,7 @@ function getAuthToken(): string | null {
 
   // Fallback to cookie-based auth (set by auth-gateway)
   const cookies = document.cookie.split(';');
-  const authCookie = cookies.find(c => c.trim().startsWith('auth_token='));
+  const authCookie = cookies.find((c) => c.trim().startsWith('auth_token='));
   if (authCookie) {
     return authCookie.split('=')[1];
   }
@@ -82,6 +90,10 @@ export interface ApiError {
 
 /**
  * HTTP API Client with automatic auth and tenant headers.
+ *
+ * @deprecated Use {@link BaseDashboardApiClient} subclasses (e.g. WorkspaceApiClient,
+ * RequirementsApiClient) instead. This fetch-based client will be removed in v3.0.
+ * See `src/clients/dashboard/` for the consolidated axios-based client hierarchy.
  */
 export class HttpApiClient {
   private baseUrl: string;
@@ -102,7 +114,9 @@ export class HttpApiClient {
   /**
    * Builds request headers with auth and tenant context.
    */
-  private buildHeaders(customHeaders?: Record<string, string>): Record<string, string> {
+  private buildHeaders(
+    customHeaders?: Record<string, string>
+  ): Record<string, string> {
     const headers = { ...this.defaultHeaders, ...customHeaders };
 
     // Add auth token if available
@@ -142,7 +156,7 @@ export class HttpApiClient {
       if (!response.ok) {
         // Retry on 5xx errors
         if (response.status >= 500 && attempt < this.retries) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
           return this.fetchWithRetry(url, options, attempt + 1);
         }
 
@@ -178,7 +192,10 @@ export class HttpApiClient {
   /**
    * GET request
    */
-  async get<T>(path: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
+  async get<T>(
+    path: string,
+    headers?: Record<string, string>
+  ): Promise<ApiResponse<T>> {
     return this.fetchWithRetry<T>(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.buildHeaders(headers),
@@ -233,7 +250,10 @@ export class HttpApiClient {
   /**
    * DELETE request
    */
-  async delete<T>(path: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
+  async delete<T>(
+    path: string,
+    headers?: Record<string, string>
+  ): Promise<ApiResponse<T>> {
     return this.fetchWithRetry<T>(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.buildHeaders(headers),
@@ -271,7 +291,7 @@ export function createGraphQLClient() {
   // Error link - handles GraphQL and network errors
   const errorLink = onError((errorResponse: unknown) => {
     const { graphQLErrors, networkError, operation } = errorResponse;
-    
+
     if (graphQLErrors) {
       graphQLErrors.forEach((error: unknown) => {
         const { message, locations, path, extensions } = error;

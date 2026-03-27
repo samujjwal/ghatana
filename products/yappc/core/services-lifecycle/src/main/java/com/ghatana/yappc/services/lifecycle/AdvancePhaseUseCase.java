@@ -5,6 +5,7 @@
 package com.ghatana.yappc.services.lifecycle;
 
 import com.ghatana.governance.PolicyEngine;
+import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -26,10 +27,12 @@ import java.util.Optional;
  *       artifact store for the project.</li>
  *   <li>Evaluate the {@code phase_advance_policy} against the policy engine.</li>
  *   <li>If all gates pass, return {@link TransitionResult#success(String)}.</li>
- *   <li>Otherwise, return an appropriate {@link TransitionResult#blocked(String, String)}.</li>
+ *   <li>Otherwise, return an appropriate {@link TransitionResult#blocked(String, String)}
+ *       <em>and</em> publish the failed transition to the DLQ for audit/retry.</li>
  * </ol>
  *
  * <p>Artifact checks are fully async via ActiveJ Promise chaining.
+ * DLQ publication is fire-and-forget — failures do not block the response.
  *
  * @doc.type class
  * @doc.purpose Core lifecycle phase transition use case with policy and artifact gate enforcement
