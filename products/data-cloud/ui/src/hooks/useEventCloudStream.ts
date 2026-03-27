@@ -25,6 +25,8 @@ import type {
     TopologyNodeStatus,
 } from '@ghatana/canvas/topology';
 
+import { getWebSocketUrl } from '../lib/websocket/getWebSocketUrl';
+
 // ============================================
 // TYPES
 // ============================================
@@ -164,6 +166,12 @@ export function useEventCloudStream(options: UseEventCloudStreamOptions): UseEve
     const [lastUpdate, setLastUpdate] = useState<number | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
 
+    // Normalize base URL
+    const normalizedServerUrl = useMemo(() => {
+        const url = getWebSocketUrl({ baseUrl: serverUrl, endpoint: '' });
+        return url.replace(/\/$/, ''); // Remove trailing slash
+    }, [serverUrl]);
+
     // Use ActiveJ stream hook
     const {
         state: connectionState,
@@ -174,7 +182,7 @@ export function useEventCloudStream(options: UseEventCloudStreamOptions): UseEve
         send,
         isConnected,
     } = useActiveJStream<TopologyUpdateEvent | MetricsUpdateEvent>(
-        serverUrl,
+        normalizedServerUrl,
         tenantId,
         '/eventcloud/stream',
         {
@@ -341,8 +349,13 @@ export function useStreamMetrics(
     const [status, setStatus] = useState<TopologyNodeStatus>('inactive');
     const [isLoading, setIsLoading] = useState(true);
 
+    const normalizedServerUrl = useMemo(() => {
+        const url = getWebSocketUrl({ baseUrl: options.serverUrl, endpoint: '' });
+        return url.replace(/\/$/, ''); // Remove trailing slash
+    }, [options.serverUrl]);
+
     const { subscribe, isConnected, error } = useActiveJStream<MetricsUpdateEvent>(
-        options.serverUrl,
+        normalizedServerUrl,
         options.tenantId,
         '/eventcloud/metrics',
         {

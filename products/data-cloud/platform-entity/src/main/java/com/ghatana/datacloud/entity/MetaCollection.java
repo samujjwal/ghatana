@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.entity;
 
+import com.ghatana.datacloud.entity.DataCloudColumnNames;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -84,7 +85,7 @@ public class MetaCollection {
     private UUID id;
 
     @NotNull(message = "Tenant ID is required")
-    @Column(name = "tenant_id", nullable = false, length = 255)
+    @Column(name = DataCloudColumnNames.TENANT_ID, nullable = false, length = 255)
     private String tenantId;
 
     @NotBlank(message = "Collection name is required")
@@ -120,7 +121,7 @@ public class MetaCollection {
      * Optional schema for validating collection-level constraints.
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "validation_schema", columnDefinition = "jsonb")
+    @Column(name = DataCloudColumnNames.VALIDATION_SCHEMA, columnDefinition = "jsonb")
     private Map<String, Object> validationSchema;
 
     /**
@@ -140,7 +141,7 @@ public class MetaCollection {
      * - "cold" → Object storage for archive/bulk
      * - "analytics" → Data warehouse for aggregations
      */
-    @Column(name = "storage_profile", length = 255)
+    @Column(name = DataCloudColumnNames.STORAGE_PROFILE, length = 255)
     private String storageProfile;
 
     /**
@@ -173,7 +174,7 @@ public class MetaCollection {
      * null or empty (uses storage profile defaults)
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "physical_mapping", columnDefinition = "jsonb")
+    @Column(name = DataCloudColumnNames.PHYSICAL_MAPPING, columnDefinition = "jsonb")
     private Map<String, Object> physicalMapping;
 
     /**
@@ -193,7 +194,7 @@ public class MetaCollection {
      * <p><b>Default</b><br>
      * "1.0.0" for new collections
      */
-    @Column(name = "schema_version", nullable = false, length = 50)
+    @Column(name = DataCloudColumnNames.SCHEMA_VERSION, nullable = false, length = 50)
     private String schemaVersion = "1.0.0";
 
     @Column(nullable = false)
@@ -202,16 +203,16 @@ public class MetaCollection {
     @Column(nullable = false)
     private Boolean active = true;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = DataCloudColumnNames.CREATED_AT, nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = DataCloudColumnNames.UPDATED_AT, nullable = false)
     private Instant updatedAt;
 
-    @Column(name = "created_by", length = 255)
+    @Column(name = DataCloudColumnNames.CREATED_BY, length = 255)
     private String createdBy;
 
-    @Column(name = "updated_by", length = 255)
+    @Column(name = DataCloudColumnNames.UPDATED_BY, length = 255)
     private String updatedBy;
 
     @OneToMany(mappedBy = "collection", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

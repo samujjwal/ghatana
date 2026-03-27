@@ -72,10 +72,10 @@ class ApprovalWorkflowTest extends EventloopTestBase {
         @DisplayName("cannot approve an already-approved request")
         void cannotApproveApproved() {
             ApprovalRequest req = runPromise(() -> workflow.submit("t1", "a", "ACT", null));
-            runBlocking(() -> workflow.approve(req.requestId(), null));
+            runPromise(() -> workflow.approve(req.requestId(), null));
 
             assertThatThrownBy(() ->
-                runBlocking(() -> workflow.approve(req.requestId(), null))
+                runPromise(() -> workflow.approve(req.requestId(), null))
             ).isInstanceOf(IllegalStateException.class);
         }
     }
@@ -100,7 +100,7 @@ class ApprovalWorkflowTest extends EventloopTestBase {
         @DisplayName("get on unknown ID throws IllegalArgumentException")
         void getUnknownThrows() {
             assertThatThrownBy(() ->
-                runBlocking(() -> workflow.get("no-such-id"))
+                runPromise(() -> workflow.get("no-such-id"))
             ).isInstanceOf(IllegalArgumentException.class);
         }
     }

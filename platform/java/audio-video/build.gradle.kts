@@ -42,6 +42,9 @@ dependencies {
     api(libs.activej.promise)
     api(libs.activej.http)
 
+    // Platform core — BaseException hierarchy, CircuitBreaker, resilience utilities
+    implementation(project(":platform:java:core"))
+
     // ONNX Runtime for embedded model inference
     api(libs.onnxruntime)
 

@@ -24,7 +24,8 @@ import {
   Database,
   Key,
   Globe,
-  Shield
+  Shield,
+  Loader2
 } from 'lucide-react';
 import { cn, buttonStyles, textStyles, inputStyles } from '../../lib/theme';
 import { pluginService, type Plugin, type PluginConfiguration } from '../../api/plugin.service';
@@ -505,7 +506,7 @@ export function PluginConfigModal({ plugin, isOpen, onClose }: PluginConfigModal
               >
                 {updateMutation.isPending ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     Saving...
                   </>
                 ) : (

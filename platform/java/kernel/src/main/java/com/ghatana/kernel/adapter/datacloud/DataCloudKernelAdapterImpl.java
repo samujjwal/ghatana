@@ -2,7 +2,7 @@ package com.ghatana.kernel.adapter.datacloud;
 
 import com.ghatana.kernel.audit.CrossScopeAuditService;
 import com.ghatana.kernel.communication.KernelInterScopeBus;
-import com.ghatana.kernel.util.JsonUtils;
+import com.ghatana.platform.core.util.JsonUtils;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -237,10 +237,17 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
         String auditDataset = "audit." + record.getSourceScope().getScopeId()
                 + "." + record.getTargetScope().getScopeId();
 
+        byte[] payload;
+        try {
+            payload = JsonUtils.toJson(record).getBytes(StandardCharsets.UTF_8);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            return Promise.ofException(e);
+        }
+
         DataWriteRequest request = new DataWriteRequest(
             auditDataset,
             record.getAuditId(),
-            JsonUtils.toJson(record).getBytes(StandardCharsets.UTF_8),
+            payload,
             Map.of(
                 "retentionYears", String.valueOf(record.getRetentionYears()),
                 "storageTier", record.getStorageTier() != null ? record.getStorageTier() : "default",
@@ -263,10 +270,17 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
         String sharedDataset = "shared." + record.getSourceScope().getScopeId()
                 + "." + record.getTargetScope().getScopeId();
 
+        byte[] payload;
+        try {
+            payload = JsonUtils.toJson(record).getBytes(StandardCharsets.UTF_8);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            return Promise.ofException(e);
+        }
+
         DataWriteRequest request = new DataWriteRequest(
             sharedDataset,
             record.getDataId(),
-            JsonUtils.toJson(record).getBytes(StandardCharsets.UTF_8),
+            payload,
             Map.of(
                 "classification", record.getClassification().toString(),
                 "createdAt", record.getCreatedAt().toString()

@@ -16,6 +16,7 @@ import React from 'react';
 import type { RouteObject } from 'react-router';
 import { DefaultLayout } from './layouts/DefaultLayout';
 import { LoadingState } from './components/common/LoadingState';
+import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
 
 /** Warn in dev when a lazy chunk takes longer than this to load. */
 const SLOW_LOAD_WARN_MS = 3_000;
@@ -186,6 +187,7 @@ export const routes: RouteObject[] = [
   {
     path: '/',
     element: <DefaultLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       // =========================================
       // PRIMARY ROUTES (New Simplified IA)

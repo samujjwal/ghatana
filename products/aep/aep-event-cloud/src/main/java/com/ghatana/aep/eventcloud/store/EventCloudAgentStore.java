@@ -171,7 +171,7 @@ public final class EventCloudAgentStore {
         TenantContext tenant = TenantContext.of(tenantId);
         QuerySpec query = QuerySpec.builder()
             .collection(COLLECTION)
-            .limit(Integer.MAX_VALUE)
+            .limit(10000)
             .build();
         return entityStore.count(tenant, query);
     }

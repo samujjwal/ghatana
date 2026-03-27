@@ -1,5 +1,6 @@
 package com.ghatana.datacloud;
 
+import com.ghatana.datacloud.entity.DataCloudColumnNames;
 import com.ghatana.datacloud.entity.EntityInterface;
 import jakarta.persistence.*;
 import lombok.*;
@@ -95,7 +96,7 @@ public class EntityRecord extends DataRecord implements EntityInterface {
      * mismatch.
      */
     @Version
-    @Column(name = "version")
+    @Column(name = DataCloudColumnNames.VERSION)
     @Builder.Default
     private Integer version = 1;
 
@@ -104,20 +105,20 @@ public class EntityRecord extends DataRecord implements EntityInterface {
      * <p>
      * When false, record is considered deleted but retained for audit.
      */
-    @Column(name = "active")
+    @Column(name = DataCloudColumnNames.ACTIVE)
     @Builder.Default
     private Boolean active = true;
 
     /**
      * Timestamp of last update.
      */
-    @Column(name = "updated_at")
+    @Column(name = DataCloudColumnNames.UPDATED_AT)
     private Instant updatedAt;
 
     /**
      * User or system that last updated this record.
      */
-    @Column(name = "updated_by", length = 255)
+    @Column(name = DataCloudColumnNames.UPDATED_BY, length = 255)
     private String updatedBy;
 
     @Override

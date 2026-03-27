@@ -27,6 +27,7 @@ dependencies {
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.assertj.core)
 }
 
 tasks.test {

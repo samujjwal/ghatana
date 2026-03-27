@@ -106,44 +106,152 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
     @Override
     public StreamObserver<AudioChunk> streamTranscribe(StreamObserver<Transcription> responseObserver) {
         String sessionId = cid();
+        
+        // Backpressure configuration
+        final int MAX_BUFFER_CHUNKS = 100; // ~10 seconds of audio at 100ms chunks
+        final int HIGH_WATER_MARK = 80;  // Pause processing when buffer reaches this
+        final int LOW_WATER_MARK = 20;   // Resume processing when buffer drops to this
+        
         SttEngine engine = library.getSttEngine();
         com.ghatana.media.stt.api.StreamingSession session = engine.createStreamingSession();
+        
+        // Backpressure state
+        final java.util.concurrent.atomic.AtomicBoolean isPaused = new java.util.concurrent.atomic.AtomicBoolean(false);
+        final java.util.concurrent.BlockingQueue<com.ghatana.media.common.AudioChunk> buffer = 
+            new java.util.concurrent.LinkedBlockingQueue<>(MAX_BUFFER_CHUNKS);
+        final java.util.concurrent.atomic.AtomicInteger chunkCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        final java.util.concurrent.atomic.AtomicBoolean isCompleted = new java.util.concurrent.atomic.AtomicBoolean(false);
+        
+        // Start buffer processor thread
+        java.util.concurrent.ExecutorService processor = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "stt-stream-processor-" + sessionId);
+            t.setDaemon(true);
+            return t;
+        });
+        
+        processor.submit(() -> {
+            while (!isCompleted.get() || !buffer.isEmpty()) {
+                try {
+                    com.ghatana.media.common.AudioChunk chunk = buffer.poll(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    if (chunk != null) {
+                        session.feedAudio(chunk);
+                        
+                        // Check if we should resume (low water mark)
+                        int currentSize = buffer.size();
+                        if (isPaused.get() && currentSize <= LOW_WATER_MARK) {
+                            isPaused.set(false);
+                            LOG.debug("[{}] Resuming - buffer size: {}", sessionId, currentSize);
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    LOG.error("[{}] Error processing chunk: {}", sessionId, e.getMessage());
+                }
+            }
+        });
+        
+        session.onTranscription(transcript -> {
+            if (!isCompleted.get()) {
+                responseObserver.onNext(Transcription.newBuilder()
+                    .setText(transcript.text())
+                    .setIsFinal(transcript.isFinal())
+                    .setConfidence((float) transcript.confidence())
+                    .build());
+            }
+        });
 
-        session.onTranscription(transcript -> responseObserver.onNext(Transcription.newBuilder()
-            .setText(transcript.text())
-            .setIsFinal(transcript.isFinal())
-            .setConfidence((float) transcript.confidence())
-            .build()));
-
-        session.onError(error -> responseObserver.onError(io.grpc.Status.INTERNAL
-            .withDescription(error.getMessage())
-            .asRuntimeException()));
+        session.onError(error -> {
+            if (!isCompleted.get()) {
+                responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription(error.getMessage())
+                    .asRuntimeException());
+            }
+        });
 
         return new StreamObserver<>() {
-            private int chunkCount = 0;
-
             @Override
             public void onNext(AudioChunk chunk) {
-                session.feedAudio(new com.ghatana.media.common.AudioChunk(
-                    chunk.getAudioData().toByteArray(), chunkCount++, false, chunk.getTimestampMs()));
+                if (isCompleted.get()) return;
+                
+                int currentCount = chunkCount.incrementAndGet();
+                
+                // Check backpressure - reject if buffer full
+                if (buffer.size() >= MAX_BUFFER_CHUNKS) {
+                    LOG.warn("[{}] Buffer full ({} chunks), dropping chunk {}", 
+                        sessionId, buffer.size(), currentCount);
+                    // Signal backpressure to client via error
+                    responseObserver.onError(io.grpc.Status.RESOURCE_EXHAUSTED
+                        .withDescription("Server buffer full - reduce sending rate")
+                        .asRuntimeException());
+                    isCompleted.set(true);
+                    return;
+                }
+                
+                // Add to buffer
+                boolean added = buffer.offer(new com.ghatana.media.common.AudioChunk(
+                    chunk.getAudioData().toByteArray(), currentCount, false, chunk.getTimestampMs()));
+                
+                if (!added) {
+                    LOG.warn("[{}] Failed to add chunk {} to buffer", sessionId, currentCount);
+                }
+                
+                // Check high water mark
+                if (!isPaused.get() && buffer.size() >= HIGH_WATER_MARK) {
+                    isPaused.set(true);
+                    LOG.debug("[{}] Pausing - buffer size: {}", sessionId, buffer.size());
+                }
+                
+                // Log periodically
+                if (currentCount % 100 == 0) {
+                    LOG.info("[{}] Received {} chunks, buffer size: {}", 
+                        sessionId, currentCount, buffer.size());
+                }
             }
 
             @Override
             public void onError(Throwable t) {
-                try {
-                    session.close();
-                } catch (Exception ignored) {
-                }
+                LOG.error("[{}] Client stream error: {}", sessionId, t.getMessage());
+                isCompleted.set(true);
+                cleanup();
             }
 
             @Override
             public void onCompleted() {
+                LOG.info("[{}] Client stream completed: {} chunks total", sessionId, chunkCount.get());
+                isCompleted.set(true);
+                cleanup();
+                
+                // Wait for buffer to drain
+                try {
+                    while (!buffer.isEmpty()) {
+                        Thread.sleep(50);
+                    }
+                    Thread.sleep(200); // Allow final processing
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                
+                session.endStream();
+                responseObserver.onCompleted();
+            }
+            
+            private void cleanup() {
+                processor.shutdown();
+                try {
+                    if (!processor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                        processor.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    processor.shutdownNow();
+                }
+                
                 try {
                     session.close();
                 } catch (Exception ignored) {
                 }
-                LOG.info("[{}] Client stream completed: {} chunks", sessionId, chunkCount);
-                responseObserver.onCompleted();
             }
         };
     }

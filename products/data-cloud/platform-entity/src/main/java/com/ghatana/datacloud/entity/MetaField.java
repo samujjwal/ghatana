@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.entity;
 
+import com.ghatana.datacloud.entity.DataCloudColumnNames;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -65,11 +66,11 @@ public class MetaField {
     private UUID id;
 
     @NotNull(message = "Collection ID is required")
-    @Column(name = "collection_id", nullable = false)
+    @Column(name = DataCloudColumnNames.COLLECTION_ID, nullable = false)
     private UUID collectionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collection_id", insertable = false, updatable = false)
+    @JoinColumn(name = DataCloudColumnNames.COLLECTION_ID, insertable = false, updatable = false)
     private MetaCollection collection;
 
     @NotBlank(message = "Field name is required")
@@ -121,10 +122,10 @@ public class MetaField {
     @Column(nullable = false)
     private Boolean active = true;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = DataCloudColumnNames.CREATED_AT, nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = DataCloudColumnNames.UPDATED_AT, nullable = false)
     private Instant updatedAt;
 
     @PrePersist

@@ -34,22 +34,86 @@ public final class TtsEngineFactory {
 
     /**
      * Create a new TTS Engine with the given configuration.
+     * Prefers real ONNX engine, falls back to stub only when necessary.
      */
     public static TtsEngine create(TtsConfig config, AudioVideoLibrary.LibraryState libraryState) {
         LOG.info("Creating TTS Engine with voice: " + config.defaultVoiceId());
 
-        // Check if ONNX model path is available
-        if (config.voiceModelPath() != null && config.voiceModelPath().toFile().exists()) {
+        // Try multiple model path resolution strategies
+        java.nio.file.Path modelPath = resolveVoiceModelPath(config);
+        
+        if (modelPath != null) {
             try {
-                return new com.ghatana.media.tts.engine.onnx.PiperOnnxEngine(config, libraryState);
+                // Create config with resolved path
+                TtsConfig resolvedConfig = TtsConfig.builder()
+                    .voiceModelPath(modelPath)
+                    .defaultVoiceId(config.defaultVoiceId())
+                    .useGpu(config.useGpu())
+                    .maxConcurrentRequests(config.maxConcurrentRequests())
+                    .sampleRate(config.sampleRate())
+                    .build();
+                    
+                TtsEngine engine = new com.ghatana.media.tts.engine.onnx.PiperOnnxEngine(resolvedConfig, libraryState);
+                LOG.info("Successfully loaded ONNX TTS engine from: " + modelPath);
+                return engine;
             } catch (Exception e) {
-                LOG.warning("Failed to load ONNX TTS engine, falling back to stub: " + e.getMessage());
+                LOG.warning("Failed to load ONNX TTS engine from " + modelPath + ": " + e.getMessage());
             }
         }
 
-        // Fallback to stub implementation
-        LOG.info("Using stub TTS engine (no model found at " + config.voiceModelPath() + ")");
+        // Fallback to stub implementation with warning
+        LOG.warning("Using stub TTS engine - no valid ONNX voice model found. " +
+            "Set TTS_MODEL_PATH environment variable to a valid Piper ONNX model.");
         return new StubTtsEngine(config, libraryState);
+    }
+    
+    /**
+     * Resolve voice model path using multiple strategies.
+     */
+    private static java.nio.file.Path resolveVoiceModelPath(TtsConfig config) {
+        // Strategy 1: Check explicit config path
+        if (config.voiceModelPath() != null && config.voiceModelPath().toFile().exists()) {
+            return config.voiceModelPath();
+        }
+        
+        // Strategy 2: Environment variable
+        String envPath = System.getenv("TTS_MODEL_PATH");
+        if (envPath != null && !envPath.isEmpty()) {
+            java.nio.file.Path path = java.nio.file.Paths.get(envPath);
+            if (path.toFile().exists()) {
+                return path;
+            }
+        }
+        
+        // Strategy 3: Common model directories
+        String voiceId = config.defaultVoiceId();
+        String[] commonPaths = {
+            "/models/piper-" + voiceId + ".onnx",
+            "/models/piper-en_US-lessac-medium.onnx",
+            "/usr/local/share/piper/voices/" + voiceId + ".onnx",
+            "models/piper-" + voiceId + ".onnx",
+        };
+        
+        for (String pathStr : commonPaths) {
+            java.nio.file.Path path = java.nio.file.Paths.get(pathStr);
+            if (path.toFile().exists()) {
+                LOG.info("Found TTS model at common path: " + path);
+                return path;
+            }
+        }
+        
+        // Strategy 4: User home download directory
+        String userHome = System.getProperty("user.home");
+        if (userHome != null) {
+            java.nio.file.Path userPath = java.nio.file.Paths.get(userHome, ".cache", "ghatana", "voices", 
+                voiceId + ".onnx");
+            if (userPath.toFile().exists()) {
+                LOG.info("Found TTS model in user cache: " + userPath);
+                return userPath;
+            }
+        }
+        
+        return null;
     }
 
     /**

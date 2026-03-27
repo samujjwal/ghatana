@@ -3,140 +3,98 @@ package com.ghatana.platform.core.exception;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Base exception class for all platform-level exceptions.
- * 
- * Provides structured error handling with:
- * - Error codes (not just messages)
- * - Contextual metadata for debugging
- * - HTTP status code mapping
+ *
+ * <p>Extends {@link BaseException} to participate in the single platform exception
+ * hierarchy. Adds HTTP status mapping and category accessors derived from the
+ * {@link ErrorCode}, plus a fluent {@code withMetadata} API that is a façade
+ * over {@link BaseException#addMetadata(String, Object)}.
  *
  * @doc.type class
- * @doc.purpose Base exception for all platform-level errors with error codes
+ * @doc.purpose Base exception for all platform-level errors with HTTP status and category
  * @doc.layer platform
- * @doc.pattern ValueObject
+ * @doc.pattern Exception
  */
-public class PlatformException extends RuntimeException {
-
-    private final ErrorCode errorCode;
-    private final Map<String, Object> metadata;
+public class PlatformException extends BaseException {
 
     /**
      * Create an exception with an error code.
      */
     public PlatformException(@NotNull ErrorCode errorCode) {
-        super(errorCode.getDefaultMessage());
-        this.errorCode = errorCode;
-        this.metadata = new HashMap<>();
+        super(errorCode);
     }
 
     /**
      * Create an exception with an error code and custom message.
      */
     public PlatformException(@NotNull ErrorCode errorCode, @NotNull String message) {
-        super(message);
-        this.errorCode = errorCode;
-        this.metadata = new HashMap<>();
+        super(errorCode, message);
     }
 
     /**
      * Create an exception with an error code, message, and cause.
      */
     public PlatformException(@NotNull ErrorCode errorCode, @NotNull String message, @Nullable Throwable cause) {
-        super(message, cause);
-        this.errorCode = errorCode;
-        this.metadata = new HashMap<>();
+        super(errorCode, message, cause);
     }
 
     /**
      * Create an exception with an error code and cause.
      */
     public PlatformException(@NotNull ErrorCode errorCode, @Nullable Throwable cause) {
-        super(errorCode.getDefaultMessage(), cause);
-        this.errorCode = errorCode;
-        this.metadata = new HashMap<>();
+        super(errorCode, cause);
     }
 
     /**
-     * Get the error code.
-     */
-    @NotNull
-    public ErrorCode getErrorCode() {
-        return errorCode;
-    }
-
-    /**
-     * Get the error code string.
-     */
-    @NotNull
-    public String getErrorCodeString() {
-        return errorCode.getCode();
-    }
-
-    /**
-     * Get the HTTP status code.
+     * Get the HTTP status code derived from the error code.
      */
     public int getHttpStatus() {
-        return errorCode.getHttpStatus();
+        return getErrorCode().getHttpStatus();
     }
 
     /**
-     * Get the error category.
+     * Get the error category derived from the error code.
      */
     @NotNull
     public String getCategory() {
-        return errorCode.getCategory();
+        return getErrorCode().getCategory();
     }
 
     /**
-     * Get all metadata.
+     * Returns an immutable snapshot of all metadata entries.
+     * Overrides to preserve the defensive-copy contract of the original API.
      */
+    @Override
     @NotNull
     public Map<String, Object> getMetadata() {
-        return Map.copyOf(metadata);
+        return Map.copyOf(super.getMetadata());
     }
 
     /**
-     * Get a metadata value by key.
-     */
-    @Nullable
-    @SuppressWarnings("unchecked")
-    public <T> T getMetadata(@NotNull String key) {
-        return (T) metadata.get(key);
-    }
-
-    /**
-     * Add metadata to the exception.
+     * Fluent metadata setter — delegates to {@link BaseException#addMetadata(String, Object)}.
+     *
+     * @param key   the metadata key
+     * @param value the metadata value (nullable)
+     * @return this exception for chaining
      */
     @NotNull
     public PlatformException withMetadata(@NotNull String key, @Nullable Object value) {
-        metadata.put(key, value);
+        addMetadata(key, value);
         return this;
     }
 
     /**
-     * Add multiple metadata entries.
+     * Fluent metadata setter for bulk entries.
+     *
+     * @param entries the metadata entries to add
+     * @return this exception for chaining
      */
     @NotNull
     public PlatformException withMetadata(@NotNull Map<String, Object> entries) {
-        metadata.putAll(entries);
+        addMetadata(entries);
         return this;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getClass().getSimpleName())
-          .append(" [").append(errorCode.getCode()).append("]: ")
-          .append(getMessage());
-        
-        if (!metadata.isEmpty()) {
-            sb.append(" | Metadata: ").append(metadata);
-        }
-        
-        return sb.toString();
     }
 }

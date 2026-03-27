@@ -12,6 +12,7 @@
 import { useCallback, useEffect } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { CACHE_TIMES } from '../App';
 import {
   ambientStateAtom,
   qualityMetricsAtom,
@@ -288,7 +289,7 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
       }
     },
     refetchInterval: 60000, // 1 minute
-    staleTime: 30000,
+    staleTime: CACHE_TIMES.SHORT_STALE_MS,
   });
 
   // Fetch cost metrics
@@ -304,7 +305,7 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
       }
     },
     refetchInterval: 300000, // 5 minutes
-    staleTime: 120000,
+    staleTime: CACHE_TIMES.DEFAULT_STALE_MS,
   });
 
   // Fetch learning signals
@@ -320,7 +321,7 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
       }
     },
     refetchInterval: 120000, // 2 minutes
-    staleTime: 60000,
+    staleTime: CACHE_TIMES.MEDIUM_STALE_MS,
   });
 
   // Fetch execution status
@@ -338,7 +339,7 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
       }
     },
     refetchInterval: 10000, // 10 seconds for executions
-    staleTime: 5000,
+    staleTime: CACHE_TIMES.LIVE_STALE_MS,
   });
 
   // Fetch system health
@@ -356,7 +357,7 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
       }
     },
     refetchInterval: 30000, // 30 seconds for health
-    staleTime: 15000,
+    staleTime: CACHE_TIMES.SHORT_STALE_MS / 2 /* 15 s */,
   });
 
   // Aggregate all metrics when data changes

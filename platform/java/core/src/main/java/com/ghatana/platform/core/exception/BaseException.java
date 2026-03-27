@@ -334,6 +334,19 @@ public class BaseException extends RuntimeException {
     }
 
     /**
+     * Returns whether this exception represents a retryable condition.
+     *
+     * <p>Errors with HTTP status 429 (rate limit) or 5xx (server errors) are
+     * considered retryable; 4xx client errors (except 429) are not.</p>
+     *
+     * @return {@code true} if the operation may succeed on retry
+     */
+    public boolean isRetryable() {
+        int status = errorCode.getHttpStatus();
+        return status == 429 || status >= 500;
+    }
+
+    /**
      * Gets a string representation of the exception.
      *
      * @return The string representation

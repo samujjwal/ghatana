@@ -57,12 +57,23 @@
 | `:products:aep:aep-identity`        | ✅         |
 | `:products:aep:aep-compliance`      | ✅         |
 
-### Pending (Phase 7, 9, 10 — lower priority)
+### Completed Additional Work (Phase 7 & 9 - 2026-01-19)
+
+| Phase    | Description                                                                              | Status |
+| -------- | ---------------------------------------------------------------------------------------- | ------ |
+| Phase 7  | `ChangeApprovalWorkflow` + `RecertificationPipeline` implemented in `tool-runtime`       | ✅     |
+| Phase 9  | `LifecycleController` created (13 endpoints); wired into `AepHttpServer` + `AepCoreModule` | ✅   |
+| Phase 9  | `AepHttpServerLifecycleTest` — 26 integration tests, 443/443 server tests passing       | ✅     |
+| Phase 9  | `AepConfigValidatorTest` — 15 unit tests covering all validator rules                   | ✅     |
+| Phase 9  | `EnvConfig` typed connector accessors: Kafka/Redis/RabbitMQ/S3 + `require()` + `isDevelopment()` + `getInt()` ISE fix | ✅ |
+| Phase 9  | `AepConfigurationValidator` + `ValidationResult` (38 tests — all passing in aep-runtime-core) | ✅ |
+| Phase 9  | `StatisticalForecastingEngine` (Holt double-exponential smoothing, 10 new tests, 95/95 aep-engine) | ✅ |
+| Phase 9  | `EnvConfigTest` (24 tests) + `AepConfigurationValidatorTest` (38 tests) unexcluded and green | ✅ |
+
+### Pending (Phase 10 — lower priority)
 
 | Phase    | Description                                                                      | Priority |
 | -------- | -------------------------------------------------------------------------------- | -------- |
-| Phase 7  | Agent lifecycle assurance (versioning, rollback, canary)                         | P3       |
-| Phase 9  | Consolidation: wire all platform modules into AEP engine                         | P3       |
 | Phase 10 | Advanced features: federated identity, differential privacy, formal verification | P3       |
 
 ---

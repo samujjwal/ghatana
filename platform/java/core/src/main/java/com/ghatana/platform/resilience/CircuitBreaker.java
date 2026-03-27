@@ -84,6 +84,84 @@ public final class CircuitBreaker {
     }
 
     /**
+     * Execute a synchronous operation through the circuit breaker.
+     *
+     * <p>For use in non-eventloop contexts (blocking worker threads) where callers need
+     * synchronous results. Unlike {@link #execute(Eventloop, Supplier)} this method does
+     * not create Promises and is safe to call from any thread.
+     *
+     * @param operation the synchronous callable to protect
+     * @param fallback  fallback supplier executed when the circuit is OPEN (nullable)
+     * @param <T>       result type
+     * @return the operation result, or the fallback value if circuit is OPEN
+     * @throws CircuitBreakerOpenException if circuit is OPEN and no fallback provided
+     */
+    public <T> T executeSync(java.util.concurrent.Callable<T> operation, Supplier<T> fallback) {
+        totalCalls.incrementAndGet();
+        State current = state.get();
+
+        if (current == State.OPEN) {
+            if (shouldTransitionToHalfOpen()) {
+                if (state.compareAndSet(State.OPEN, State.HALF_OPEN)) {
+                    log.info("[{}] circuit breaker: OPEN → HALF_OPEN (sync probe allowed)", name);
+                    successCount.set(0);
+                    return executeSyncProbe(operation, fallback);
+                }
+            }
+            totalRejections.incrementAndGet();
+            if (fallback != null) return fallback.get();
+            throw new CircuitBreakerOpenException(name, effectiveResetTimeout());
+        }
+
+        if (current == State.HALF_OPEN) {
+            return executeSyncProbe(operation, fallback);
+        }
+
+        // CLOSED — normal execution
+        try {
+            T result = operation.call();
+            onSuccess();
+            return result;
+        } catch (CircuitBreakerOpenException cbe) {
+            throw cbe;
+        } catch (RuntimeException re) {
+            onFailure();
+            throw re;
+        } catch (Exception e) {
+            onFailure();
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Execute a synchronous operation without a fallback.
+     * Throws {@link CircuitBreakerOpenException} if the circuit is OPEN.
+     */
+    public <T> T executeSync(java.util.concurrent.Callable<T> operation) {
+        return executeSync(operation, null);
+    }
+
+    private <T> T executeSyncProbe(java.util.concurrent.Callable<T> operation, Supplier<T> fallback) {
+        try {
+            T result = operation.call();
+            onProbeSuccess();
+            return result;
+        } catch (CircuitBreakerOpenException cbe) {
+            throw cbe;
+        } catch (RuntimeException re) {
+            onProbeFailure();
+            if (fallback != null) return fallback.get();
+            throw re;
+        } catch (Exception e) {
+            onProbeFailure();
+            if (fallback != null) return fallback.get();
+            throw new RuntimeException(e);
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+
+    /**
      * Execute an operation through the circuit breaker with an optional fallback.
      *
      * <p>When the circuit is OPEN and a fallback is provided, the fallback value is

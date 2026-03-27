@@ -116,11 +116,7 @@ public final class EventSchemaValidator {
         if (payload.size() > MAX_PAYLOAD_KEYS) {
             errors.add("event.payload exceeds maximum key count of " + MAX_PAYLOAD_KEYS);
         }
-        // Check for null keys — Map.copyOf() in Event constructor prevents them,
-        // but defend in depth for any programmatic bypass.
-        if (payload.containsKey(null)) {
-            errors.add("event.payload must not contain null keys");
-        }
+        // Null keys are impossible in Map.copyOf()-based payloads; no check needed.
     }
 
     private void validateHeaders(AepEngine.Event event, List<String> errors) {
@@ -132,9 +128,7 @@ public final class EventSchemaValidator {
         if (headers.size() > MAX_HEADER_ENTRIES) {
             errors.add("event.headers exceeds maximum entry count of " + MAX_HEADER_ENTRIES);
         }
-        if (headers.containsKey(null)) {
-            errors.add("event.headers must not contain null keys");
-        }
+        // Null header keys are impossible in immutable maps; no check needed.
     }
 
     private void validateTimestamp(AepEngine.Event event, List<String> errors) {

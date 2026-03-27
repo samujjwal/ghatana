@@ -162,7 +162,7 @@ class JpaThreadPoolConfigTest {
 
         // Micrometer ExecutorServiceMetrics registers at least executor.pool.size
         assertThat(registry.getMeters())
-            .anyMatch(m -> m.getId().getName().startsWith("test.jpa.pool"));
+            .anyMatch(m -> m.getId().getName().startsWith("executor"));
 
         exec.shutdown();
     }

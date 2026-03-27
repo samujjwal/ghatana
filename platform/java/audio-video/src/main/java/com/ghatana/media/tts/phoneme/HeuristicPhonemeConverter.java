@@ -162,7 +162,7 @@ public class HeuristicPhonemeConverter implements TextToPhonemeConverter {
 
     private String normalise(String text) {
         // Expand digits to words
-        text = text.replaceAll("\\b(\\d+)\\b", m -> numberToWords(Integer.parseInt(m)));
+        text = java.util.regex.Pattern.compile("\\b(\\d+)\\b").matcher(text).replaceAll(m -> numberToWords(Integer.parseInt(m.group())));
         // Remove non-alpha (keep spaces)
         text = text.replaceAll("[^a-zA-Z\\s]", " ");
         // Collapse whitespace and lower-case

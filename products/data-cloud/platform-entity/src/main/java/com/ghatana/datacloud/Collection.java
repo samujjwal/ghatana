@@ -1,5 +1,6 @@
 package com.ghatana.datacloud;
 
+import com.ghatana.datacloud.entity.DataCloudColumnNames;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -103,26 +104,26 @@ public class Collection {
      * Tenant this collection belongs to.
      */
     @NotBlank
-    @Column(name = "tenant_id", nullable = false, length = 255)
+    @Column(name = DataCloudColumnNames.TENANT_ID, nullable = false, length = 255)
     private String tenantId;
 
     /**
      * Unique name within tenant (used in API and storage).
      */
     @NotBlank
-    @Column(name = "name", nullable = false, length = 255)
+    @Column(name = DataCloudColumnNames.NAME, nullable = false, length = 255)
     private String name;
 
     /**
      * Human-readable label.
      */
-    @Column(name = "label", length = 255)
+    @Column(name = DataCloudColumnNames.LABEL, length = 255)
     private String label;
 
     /**
      * Description of the collection's purpose.
      */
-    @Column(name = "description", length = 2000)
+    @Column(name = DataCloudColumnNames.DESCRIPTION, length = 2000)
     private String description;
 
     // ==================== Record Type & Behavior ====================
@@ -133,7 +134,7 @@ public class Collection {
      */
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "record_type", nullable = false, length = 50)
+    @Column(name = DataCloudColumnNames.RECORD_TYPE, nullable = false, length = 50)
     @Builder.Default
     private RecordType recordType = RecordType.ENTITY;
 
@@ -142,7 +143,7 @@ public class Collection {
      * Field definitions for this collection.
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "fields", columnDefinition = "jsonb")
+    @Column(name = DataCloudColumnNames.FIELDS, columnDefinition = "jsonb")
     @Builder.Default
     private List<FieldDefinition> fields = new ArrayList<>();
 
@@ -150,14 +151,14 @@ public class Collection {
      * JSON Schema for validation (optional, for strict validation).
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "validation_schema", columnDefinition = "jsonb")
+    @Column(name = DataCloudColumnNames.VALIDATION_SCHEMA, columnDefinition = "jsonb")
     private Map<String, Object> validationSchema;
 
     // ==================== Storage Configuration ====================
     /**
      * Storage profile name (references StorageProfile configuration).
      */
-    @Column(name = "storage_profile", length = 255)
+    @Column(name = DataCloudColumnNames.STORAGE_PROFILE, length = 255)
     @Builder.Default
     private String storageProfile = "default";
 
@@ -165,7 +166,7 @@ public class Collection {
      * Custom storage configuration overrides.
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "storage_config", columnDefinition = "jsonb")
+    @Column(name = DataCloudColumnNames.STORAGE_CONFIG, columnDefinition = "jsonb")
     private Map<String, Object> storageConfig;
 
     // ==================== Event-Specific Configuration ====================
@@ -173,7 +174,7 @@ public class Collection {
      * Event-specific configuration (only for EVENT record type).
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "event_config", columnDefinition = "jsonb")
+    @Column(name = DataCloudColumnNames.EVENT_CONFIG, columnDefinition = "jsonb")
     private EventConfig eventConfig;
 
     // ==================== Retention Policy ====================
@@ -181,7 +182,7 @@ public class Collection {
      * Retention policy (primarily for EVENT and TIMESERIES types).
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "retention_policy", columnDefinition = "jsonb")
+    @Column(name = DataCloudColumnNames.RETENTION_POLICY, columnDefinition = "jsonb")
     private RetentionPolicy retentionPolicy;
 
     // ==================== Permissions ====================
@@ -191,7 +192,7 @@ public class Collection {
      * Map of role → list of actions (read, write, delete, admin)
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "permissions", columnDefinition = "jsonb")
+    @Column(name = DataCloudColumnNames.PERMISSIONS, columnDefinition = "jsonb")
     @Builder.Default
     private Map<String, List<String>> permissions = new HashMap<>();
 
@@ -199,7 +200,7 @@ public class Collection {
     /**
      * Schema version (semantic versioning).
      */
-    @Column(name = "schema_version", length = 50)
+    @Column(name = DataCloudColumnNames.SCHEMA_VERSION, length = 50)
     @Builder.Default
     private String schemaVersion = "1.0.0";
 
@@ -207,7 +208,7 @@ public class Collection {
      * Record version for optimistic locking.
      */
     @Version
-    @Column(name = "version")
+    @Column(name = DataCloudColumnNames.VERSION)
     @Builder.Default
     private Integer version = 1;
 
@@ -215,21 +216,21 @@ public class Collection {
     /**
      * Whether this collection is active.
      */
-    @Column(name = "active")
+    @Column(name = DataCloudColumnNames.ACTIVE)
     @Builder.Default
     private Boolean active = true;
 
     // ==================== Audit ====================
-    @Column(name = "created_at")
+    @Column(name = DataCloudColumnNames.CREATED_AT)
     private Instant createdAt;
 
-    @Column(name = "created_by", length = 255)
+    @Column(name = DataCloudColumnNames.CREATED_BY, length = 255)
     private String createdBy;
 
-    @Column(name = "updated_at")
+    @Column(name = DataCloudColumnNames.UPDATED_AT)
     private Instant updatedAt;
 
-    @Column(name = "updated_by", length = 255)
+    @Column(name = DataCloudColumnNames.UPDATED_BY, length = 255)
     private String updatedBy;
 
     // ==================== Lifecycle Callbacks ====================

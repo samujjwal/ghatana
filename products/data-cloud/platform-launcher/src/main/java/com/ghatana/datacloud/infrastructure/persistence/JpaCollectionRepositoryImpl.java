@@ -2,6 +2,7 @@ package com.ghatana.datacloud.infrastructure.persistence;
 
 import com.ghatana.datacloud.entity.CollectionRepository;
 import com.ghatana.datacloud.entity.MetaCollection;
+import com.ghatana.datacloud.infrastructure.config.JpaThreadPoolConfig;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import jakarta.persistence.EntityManager;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 
 /**
  * JPA implementation of CollectionRepository using ActiveJ Promises.
@@ -66,17 +68,33 @@ public class JpaCollectionRepositoryImpl implements com.ghatana.datacloud.entity
 
     private final EntityManager entityManager;
     private final Eventloop eventloop;
+    private final ExecutorService dbExecutor;
 
     /**
-     * Creates a new JPA collection repository.
+     * Creates a new JPA collection repository using the default virtual-thread executor.
      *
      * @param entityManager the JPA entity manager (must be thread-local or request-scoped)
      * @param eventloop the ActiveJ eventloop for async operations
      * @throws NullPointerException if entityManager or eventloop is null
      */
     public JpaCollectionRepositoryImpl(EntityManager entityManager, Eventloop eventloop) {
+        this(entityManager, eventloop, JpaThreadPoolConfig.fromEnvironment().createExecutorService());
+    }
+
+    /**
+     * Creates a new JPA collection repository with a custom executor.
+     *
+     * <p>Use this constructor in tests or when a shared managed executor is available.
+     *
+     * @param entityManager the JPA entity manager
+     * @param eventloop     the ActiveJ eventloop
+     * @param dbExecutor    executor used for blocking JPA calls (must not run on eventloop thread)
+     * @throws NullPointerException if any argument is null
+     */
+    public JpaCollectionRepositoryImpl(EntityManager entityManager, Eventloop eventloop, ExecutorService dbExecutor) {
         this.entityManager = Objects.requireNonNull(entityManager, "EntityManager must not be null");
         this.eventloop = Objects.requireNonNull(eventloop, "Eventloop must not be null");
+        this.dbExecutor = Objects.requireNonNull(dbExecutor, "dbExecutor must not be null");
     }
 
     @Override
@@ -84,46 +102,40 @@ public class JpaCollectionRepositoryImpl implements com.ghatana.datacloud.entity
         validateTenantId(tenantId);
         Objects.requireNonNull(name, "Collection name must not be null");
 
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             TypedQuery<MetaCollection> query = entityManager.createQuery(
                 "SELECT c FROM MetaCollection c WHERE c.tenantId = :tenantId AND c.name = :name AND c.active = true",
                 MetaCollection.class
             );
             query.setParameter("tenantId", tenantId);
             query.setParameter("name", name);
-            return Promise.of(query.getResultStream().findFirst());
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return query.getResultStream().findFirst();
+        });
     }
 
     @Override
     public Promise<List<MetaCollection>> findAll(String tenantId) {
         validateTenantId(tenantId);
 
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             TypedQuery<MetaCollection> query = entityManager.createQuery(
                 "SELECT c FROM MetaCollection c WHERE c.tenantId = :tenantId ORDER BY c.name",
                 MetaCollection.class
             );
             query.setParameter("tenantId", tenantId);
-            return Promise.of(query.getResultList());
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return query.getResultList();
+        });
     }
 
     @Override
     public Promise<List<String>> findAllTenantIds() {
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             TypedQuery<String> query = entityManager.createQuery(
                 "SELECT DISTINCT c.tenantId FROM MetaCollection c",
                 String.class
             );
-            return Promise.of(query.getResultList());
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return query.getResultList();
+        });
     }
 
     @Override
@@ -135,23 +147,25 @@ public class JpaCollectionRepositoryImpl implements com.ghatana.datacloud.entity
             throw new IllegalArgumentException("Collection must not be null");
         }
         validateTenantId(tenantId);
-        
+
         // Ensure collection tenant ID matches the parameter
         collection.setTenantId(tenantId);
 
-        entityManager.getTransaction().begin();
-        try {
-            MetaCollection saved = entityManager.merge(collection);
-            entityManager.getTransaction().commit();
-            logger.debug("Collection saved: tenantId={}, name={}, id={}", 
-                saved.getTenantId(), saved.getName(), saved.getId());
-            return Promise.of(saved);
-        } catch (Exception e) {
-            entityManager.getTransaction().rollback();
-            logger.error("Failed to save collection: tenantId={}, name={}", 
-                collection.getTenantId(), collection.getName(), e);
-            return Promise.ofException(e);
-        }
+        return Promise.ofBlocking(dbExecutor, () -> {
+            entityManager.getTransaction().begin();
+            try {
+                MetaCollection saved = entityManager.merge(collection);
+                entityManager.getTransaction().commit();
+                logger.debug("Collection saved: tenantId={}, name={}, id={}",
+                        saved.getTenantId(), saved.getName(), saved.getId());
+                return saved;
+            } catch (Exception e) {
+                entityManager.getTransaction().rollback();
+                logger.error("Failed to save collection: tenantId={}, name={}",
+                        collection.getTenantId(), collection.getName(), e);
+                throw e;
+            }
+        });
     }
 
     @Override
@@ -159,30 +173,32 @@ public class JpaCollectionRepositoryImpl implements com.ghatana.datacloud.entity
         validateTenantId(tenantId);
         Objects.requireNonNull(id, "Collection ID must not be null");
 
-        entityManager.getTransaction().begin();
-        try {
-            MetaCollection collection = entityManager.find(MetaCollection.class, id);
-            if (collection != null && collection.getTenantId().equals(tenantId)) {
-                collection.setActive(false);
-                entityManager.merge(collection);
-                entityManager.getTransaction().commit();
-                logger.debug("Collection soft-deleted: tenantId={}, id={}", tenantId, id);
-                return Promise.of(true);
-            } else if (collection == null) {
-                logger.warn("Collection not found for deletion: tenantId={}, id={}", tenantId, id);
-                entityManager.getTransaction().commit();
-                return Promise.of(false);
-            } else {
-                logger.warn("Collection tenant mismatch: tenantId={}, id={}, collectionTenantId={}", 
-                    tenantId, id, collection.getTenantId());
-                entityManager.getTransaction().commit();
-                return Promise.of(false);
+        return Promise.ofBlocking(dbExecutor, () -> {
+            entityManager.getTransaction().begin();
+            try {
+                MetaCollection collection = entityManager.find(MetaCollection.class, id);
+                if (collection != null && collection.getTenantId().equals(tenantId)) {
+                    collection.setActive(false);
+                    entityManager.merge(collection);
+                    entityManager.getTransaction().commit();
+                    logger.debug("Collection soft-deleted: tenantId={}, id={}", tenantId, id);
+                    return true;
+                } else if (collection == null) {
+                    logger.warn("Collection not found for deletion: tenantId={}, id={}", tenantId, id);
+                    entityManager.getTransaction().commit();
+                    return false;
+                } else {
+                    logger.warn("Collection tenant mismatch: tenantId={}, id={}, collectionTenantId={}",
+                            tenantId, id, collection.getTenantId());
+                    entityManager.getTransaction().commit();
+                    return false;
+                }
+            } catch (Exception e) {
+                entityManager.getTransaction().rollback();
+                logger.error("Failed to delete collection: tenantId={}, id={}", tenantId, id, e);
+                throw e;
             }
-        } catch (Exception e) {
-            entityManager.getTransaction().rollback();
-            logger.error("Failed to delete collection: tenantId={}, id={}", tenantId, id, e);
-            return Promise.ofException(e);
-        }
+        });
     }
 
     @Override
@@ -190,17 +206,15 @@ public class JpaCollectionRepositoryImpl implements com.ghatana.datacloud.entity
         validateTenantId(tenantId);
         Objects.requireNonNull(name, "Collection name must not be null");
 
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             TypedQuery<Long> query = entityManager.createQuery(
                 "SELECT COUNT(c) FROM MetaCollection c WHERE c.tenantId = :tenantId AND c.name = :name AND c.active = true",
                 Long.class
             );
             query.setParameter("tenantId", tenantId);
             query.setParameter("name", name);
-            return Promise.of(query.getSingleResult() > 0);
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return query.getSingleResult() > 0;
+        });
     }
 
     @Override
@@ -208,31 +222,27 @@ public class JpaCollectionRepositoryImpl implements com.ghatana.datacloud.entity
         validateTenantId(tenantId);
         Objects.requireNonNull(id, "Collection ID must not be null");
 
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             MetaCollection collection = entityManager.find(MetaCollection.class, id);
             if (collection != null && collection.getTenantId().equals(tenantId) && collection.getActive()) {
-                return Promise.of(Optional.of(collection));
+                return Optional.of(collection);
             }
-            return Promise.of(Optional.empty());
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return Optional.empty();
+        });
     }
 
     @Override
     public Promise<Long> count(String tenantId) {
         validateTenantId(tenantId);
 
-        try {
+        return Promise.ofBlocking(dbExecutor, () -> {
             TypedQuery<Long> query = entityManager.createQuery(
                 "SELECT COUNT(c) FROM MetaCollection c WHERE c.tenantId = :tenantId AND c.active = true",
                 Long.class
             );
             query.setParameter("tenantId", tenantId);
-            return Promise.of(query.getSingleResult());
-        } catch (Exception e) {
-            return Promise.ofException(e);
-        }
+            return query.getSingleResult();
+        });
     }
 
     /**

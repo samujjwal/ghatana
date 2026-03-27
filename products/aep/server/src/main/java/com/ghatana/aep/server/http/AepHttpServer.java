@@ -12,10 +12,19 @@ import com.ghatana.aep.server.http.controllers.AnalyticsController;
 import com.ghatana.aep.server.http.controllers.CapabilitiesController;
 import com.ghatana.aep.server.http.controllers.ComplianceController;
 import com.ghatana.aep.server.http.controllers.DeploymentController;
+import com.ghatana.aep.server.http.controllers.GovernanceController;
+import com.ghatana.aep.server.http.controllers.LifecycleController;
+import com.ghatana.platform.toolruntime.change.InMemoryChangeApprovalWorkflow;
+import com.ghatana.platform.toolruntime.recertification.InMemoryRecertificationPipeline;
 import com.ghatana.aep.server.http.controllers.HealthController;
 import com.ghatana.aep.server.http.controllers.HitlController;
 import com.ghatana.aep.learning.EpisodeLearningPipeline;
 import com.ghatana.aep.server.http.controllers.LearningController;
+import com.ghatana.platform.incident.InMemoryGracefulDegradationManager;
+import com.ghatana.platform.incident.InMemoryKillSwitchService;
+import com.ghatana.platform.pac.InMemoryPolicyEngine;
+import com.ghatana.platform.security.analytics.DefaultEgressMonitor;
+import com.ghatana.platform.security.analytics.RegexPromptInjectionDetector;
 import com.ghatana.aep.server.http.controllers.PatternController;
 import com.ghatana.aep.server.http.controllers.PipelineController;
 import com.ghatana.aep.server.http.controllers.SseController;
@@ -95,6 +104,11 @@ public class AepHttpServer {
     private final ComplianceController complianceController;
     private final SseController sseController;
     private final CapabilitiesController capabilitiesController;
+
+    /** Governance endpoints controller. */
+    private final GovernanceController governanceController;
+    /** Lifecycle (change approval + recertification) endpoints controller. */
+    private final LifecycleController lifecycleController;
 
     /** Compliance services — non-null when agentDataCloud is configured. */
     @Nullable
@@ -211,6 +225,10 @@ public class AepHttpServer {
             () -> this.humanReviewQueue != null ? "ok" : "disabled");
         this.healthController.addDependencyCheck("run-ledger",
             () -> this.agentDataCloud != null ? "ok" : "disabled");
+        this.healthController.addDependencyCheck("governance",
+            () -> "ok");
+        this.healthController.addDependencyCheck("lifecycle",
+            () -> "ok");
         this.pipelineController = new PipelineController(this.pipelineRepository, this.objectMapper);
         this.agentController = new AgentController(this.engine, this.agentDataCloud);
         this.patternController = new PatternController(this.engine);
@@ -228,6 +246,16 @@ public class AepHttpServer {
         this.learningController = new LearningController(this.agentDataCloud,
             this.humanReviewQueue, learningPipeline);
         this.complianceController = new ComplianceController(this.complianceService, this.soc2Framework);
+        this.governanceController = new GovernanceController(
+            new InMemoryKillSwitchService(),
+            new InMemoryGracefulDegradationManager(),
+            new InMemoryPolicyEngine(),
+            new DefaultEgressMonitor(),
+            new RegexPromptInjectionDetector(),
+            this::jsonResponse);
+        this.lifecycleController = new LifecycleController(
+            new InMemoryChangeApprovalWorkflow(),
+            new InMemoryRecertificationPipeline());
     }
 
     /**
@@ -319,6 +347,33 @@ public class AepHttpServer {
             .with(HttpMethod.POST, "/api/v1/compliance/gdpr/portability", complianceController::handleGdprPortability)
             .with(HttpMethod.POST, "/api/v1/compliance/ccpa/opt-out", complianceController::handleCcpaOptOut)
             .with(HttpMethod.GET,  "/api/v1/compliance/soc2/report", complianceController::handleSoc2Report)
+
+            // Governance endpoints (delegated to GovernanceController)
+            .with(HttpMethod.GET,  "/governance/kill-switch", governanceController::handleKillSwitchStatus)
+            .with(HttpMethod.POST, "/governance/kill-switch/activate", governanceController::handleActivateKillSwitch)
+            .with(HttpMethod.POST, "/governance/kill-switch/deactivate", governanceController::handleDeactivateKillSwitch)
+            .with(HttpMethod.GET,  "/governance/degradation", governanceController::handleDegradationStatus)
+            .with(HttpMethod.POST, "/governance/degradation", governanceController::handleSetDegradation)
+            .with(HttpMethod.POST, "/governance/policy/evaluate", governanceController::handlePolicyEvaluate)
+            .with(HttpMethod.GET,  "/governance/security/egress", governanceController::handleEgressStats)
+            .with(HttpMethod.POST, "/governance/security/scan", governanceController::handleInjectionScan)
+
+            // Lifecycle endpoints — change approval (delegated to LifecycleController)
+            .with(HttpMethod.POST, "/lifecycle/changes", lifecycleController::handleSubmitChange)
+            .with(HttpMethod.GET,  "/lifecycle/changes", lifecycleController::handleListPendingChanges)
+            .with(HttpMethod.GET,  "/lifecycle/changes/:changeId", lifecycleController::handleGetChange)
+            .with(HttpMethod.POST, "/lifecycle/changes/:changeId/approve", lifecycleController::handleApproveChange)
+            .with(HttpMethod.POST, "/lifecycle/changes/:changeId/reject", lifecycleController::handleRejectChange)
+            .with(HttpMethod.POST, "/lifecycle/changes/:changeId/withdraw", lifecycleController::handleWithdrawChange)
+
+            // Lifecycle endpoints — recertification (delegated to LifecycleController)
+            .with(HttpMethod.POST, "/lifecycle/recertification/campaigns", lifecycleController::handleCreateCampaign)
+            .with(HttpMethod.GET,  "/lifecycle/recertification/campaigns", lifecycleController::handleListCampaigns)
+            .with(HttpMethod.GET,  "/lifecycle/recertification/campaigns/:campaignId", lifecycleController::handleGetCampaign)
+            .with(HttpMethod.GET,  "/lifecycle/recertification/campaigns/:campaignId/items", lifecycleController::handleGetCampaignItems)
+            .with(HttpMethod.POST, "/lifecycle/recertification/campaigns/:campaignId/items/:itemId/certify", lifecycleController::handleCertifyItem)
+            .with(HttpMethod.POST, "/lifecycle/recertification/campaigns/:campaignId/items/:itemId/revoke", lifecycleController::handleRevokeItem)
+            .with(HttpMethod.GET,  "/lifecycle/recertification/campaigns/:campaignId/report", lifecycleController::handleGenerateReport)
 
             .build();
 

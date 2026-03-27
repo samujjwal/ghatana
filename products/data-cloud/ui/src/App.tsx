@@ -31,8 +31,12 @@ import './styles/globals.css';
 const CACHE_TIMES = {
   /** Default: data that changes infrequently (collections, schemas, plugins). */
   DEFAULT_STALE_MS: 5 * 60 * 1000,   // 5 minutes
+  /** Medium: data that changes every few minutes (cost analysis, learning signals). */
+  MEDIUM_STALE_MS: 2 * 60 * 1000,    // 2 minutes
   /** Short-lived: frequently-mutated data (alerts, jobs, workflow status). */
   SHORT_STALE_MS: 30 * 1000,          // 30 seconds
+  /** Live: near-real-time data (execution status, health metrics). */
+  LIVE_STALE_MS: 5 * 1000,            // 5 seconds
   /** Static: essentially immutable reference data (enums, definitions). */
   STATIC_STALE_MS: 30 * 60 * 1000,   // 30 minutes
 } as const;

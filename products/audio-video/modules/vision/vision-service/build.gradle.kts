@@ -24,6 +24,9 @@ dependencies {
     // Multi-tenancy
     implementation(project(":platform:java:governance"))
     
+    // Platform Audio-Video
+    implementation(project(":platform:java:audio-video"))
+    
     // Protobuf
     implementation(libs.protobuf.java)
     

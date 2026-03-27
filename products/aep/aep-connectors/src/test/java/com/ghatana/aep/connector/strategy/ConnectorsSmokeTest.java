@@ -66,11 +66,10 @@ class ConnectorsSmokeTest {
         void builder() {
             TlsConfig config = TlsConfig.builder()
                 .enabled(true)
-                .trustStorePath("/certs/truststore.jks")
-                .trustStorePassword("secret")
+                .truststorePath("/certs/truststore.jks")
                 .build();
             assertThat(config.enabled()).isTrue();
-            assertThat(config.trustStorePath()).isEqualTo("/certs/truststore.jks");
+            assertThat(config.truststorePath()).isEqualTo("/certs/truststore.jks");
         }
     }
 

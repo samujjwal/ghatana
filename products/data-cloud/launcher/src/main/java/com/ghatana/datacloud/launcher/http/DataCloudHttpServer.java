@@ -39,6 +39,9 @@ import com.ghatana.platform.governance.security.RateLimitFilter;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.launcher.http.handlers.EntityCrudHandler;
+import com.ghatana.datacloud.launcher.http.handlers.EntityExportHandler;
+import com.ghatana.datacloud.launcher.http.handlers.EntityAnomalyHandler;
+import com.ghatana.datacloud.launcher.http.handlers.EntityValidationHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EventHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AgentRegistryHandler;
 import com.ghatana.datacloud.launcher.http.handlers.MemoryPlaneHandler;
@@ -223,6 +226,9 @@ public class DataCloudHttpServer {
     // ==================== Extracted Handler Delegates ====================
     private HttpHandlerSupport httpSupport;
     private EntityCrudHandler entityHandler;
+    private EntityExportHandler exportHandler;
+    private EntityAnomalyHandler anomalyHandler;
+    private EntityValidationHandler validationHandler;
     private EventHandler eventHandler;
     private AgentRegistryHandler agentHandler;
     private MemoryPlaneHandler memoryHandler;
@@ -535,8 +541,11 @@ public class DataCloudHttpServer {
 
         entityHandler = new EntityCrudHandler(client, httpSupport, sseHandler.broadcastFunction());
         if (schemaValidator != null) entityHandler.withSchemaValidator(schemaValidator);
-        if (exportService != null) entityHandler.withExportService(exportService);
-        if (anomalyDetector != null) entityHandler.withAnomalyDetector(anomalyDetector);
+        if (openSearchConnector != null) entityHandler.withOpenSearchConnector(openSearchConnector);
+
+        exportHandler     = new EntityExportHandler(exportService, httpSupport);
+        anomalyHandler    = new EntityAnomalyHandler(anomalyDetector, httpSupport);
+        validationHandler = new EntityValidationHandler(schemaValidator, httpSupport);
 
         eventHandler = new EventHandler(client, httpSupport);
         agentHandler = new AgentRegistryHandler(client, httpSupport);
@@ -593,9 +602,11 @@ public class DataCloudHttpServer {
             // Bulk entity endpoints — upsert/delete multiple entities in a single request
             .with(HttpMethod.POST, "/api/v1/entities/:collection/batch", entityHandler::handleBatchSaveEntities)
             .with(HttpMethod.DELETE, "/api/v1/entities/:collection/batch", entityHandler::handleBatchDeleteEntities)
-            // Bulk export and anomaly detection endpoints
-            .with(HttpMethod.GET, "/api/v1/entities/:collection/export", entityHandler::handleExportEntities)
-            .with(HttpMethod.POST, "/api/v1/entities/:collection/anomalies", entityHandler::handleDetectAnomalies)
+            // Bulk export and anomaly detection endpoints — delegated to dedicated handlers (DC-004)
+            .with(HttpMethod.GET, "/api/v1/entities/:collection/export", exportHandler::handleExportEntities)
+            .with(HttpMethod.POST, "/api/v1/entities/:collection/anomalies", anomalyHandler::handleDetectAnomalies)
+            .with(HttpMethod.POST, "/api/v1/entities/:collection/validate", validationHandler::handleValidateEntity)
+            .with(HttpMethod.POST, "/api/v1/entities/:collection/validate/batch", validationHandler::handleBatchValidateEntities)
             
             // Event endpoints — delegated to EventHandler
             .with(HttpMethod.POST, "/api/v1/events", eventHandler::handleAppendEvent)

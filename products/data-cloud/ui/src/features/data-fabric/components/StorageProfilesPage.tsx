@@ -13,6 +13,7 @@ import React, { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { LoadingState } from '../../../components/common/LoadingState';
 import {
   allStorageProfilesAtom,
   loadStorageProfilesAtom,
@@ -120,9 +121,7 @@ export const StorageProfilesPage: React.FC<StorageProfilesPageProps> = ({
 
       {/* Content */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <LoadingState message="Loading storage profiles..." className="py-12" />
       ) : (
         <StorageProfilesList
           onEdit={onEditClick}

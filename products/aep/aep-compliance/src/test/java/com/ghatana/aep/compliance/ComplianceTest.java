@@ -68,7 +68,7 @@ class ComplianceTest extends EventloopTestBase {
         void scheduledForDeletionThrows() {
             runBlocking(() -> retentionEnforcer.scheduleDeletion("t1", "data1"));
             assertThatThrownBy(() ->
-                runBlocking(() -> retentionEnforcer.checkRetention("t1", "data1"))
+                runPromise(() -> retentionEnforcer.checkRetention("t1", "data1"))
             ).isInstanceOf(RetentionExpiredException.class)
              .satisfies(ex -> {
                  RetentionExpiredException e = (RetentionExpiredException) ex;
@@ -84,7 +84,7 @@ class ComplianceTest extends EventloopTestBase {
             runBlocking(() -> retentionEnforcer.registerRetention(
                 "t1", "old-data", Duration.ofMillis(-1)));
             assertThatThrownBy(() ->
-                runBlocking(() -> retentionEnforcer.checkRetention("t1", "old-data"))
+                runPromise(() -> retentionEnforcer.checkRetention("t1", "old-data"))
             ).isInstanceOf(RetentionExpiredException.class);
         }
     }
@@ -110,7 +110,7 @@ class ComplianceTest extends EventloopTestBase {
         void failsWithoutConsent() {
             runBlocking(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
             assertThatThrownBy(() ->
-                runBlocking(() -> complianceService.checkCompliance("t1", "user1", "email-data", "analytics"))
+                runPromise(() -> complianceService.checkCompliance("t1", "user1", "email-data", "analytics"))
             ).isInstanceOf(ConsentRequiredException.class);
         }
 
@@ -122,7 +122,7 @@ class ComplianceTest extends EventloopTestBase {
             runBlocking(() -> retentionEnforcer.scheduleDeletion("t1", "email-data"));
 
             assertThatThrownBy(() ->
-                runBlocking(() -> complianceService.checkCompliance("t1", "user1", "email-data", "analytics"))
+                runPromise(() -> complianceService.checkCompliance("t1", "user1", "email-data", "analytics"))
             ).isInstanceOf(RetentionExpiredException.class);
         }
     }

@@ -13,6 +13,7 @@ import React, { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { LoadingState } from '../../../components/common/LoadingState';
 import {
   allDataConnectorsAtom,
   loadDataConnectorsAtom,
@@ -123,9 +124,7 @@ export const DataConnectorsPage: React.FC<DataConnectorsPageProps> = ({
 
       {/* Content */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <LoadingState message="Loading connectors..." className="py-12" />
       ) : (
         <DataConnectorsList
           onEdit={onEditClick}

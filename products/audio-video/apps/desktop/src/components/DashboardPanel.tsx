@@ -1,16 +1,58 @@
 /**
  * @doc.type component
- * @doc.purpose Dashboard panel showing overview of all services
+ * @doc.purpose Dashboard panel showing overview of all services with memory pressure monitoring
  * @doc.layer application
  * @doc.pattern dashboard component
  */
 
 import React from 'react';
 import { Card } from '@audio-video/ui';
+import { useMemoryPressure, MemoryPressureLevel, MemoryInfo } from '@audio-video/ui/hooks';
 
 const DashboardPanel: React.FC = () => {
+  const { memoryInfo, isSupported } = useMemoryPressure({
+    onPressureChange: (level: MemoryPressureLevel, info: MemoryInfo) => {
+      console.log(`Memory pressure changed to ${level}: ${(info.utilisation * 100).toFixed(1)}%`);
+    },
+    onCritical: (info: MemoryInfo) => {
+      console.warn('Critical memory pressure - consider clearing caches');
+    },
+  });
+
+  const getMemoryColor = (level: MemoryPressureLevel): string => {
+    switch (level) {
+      case 'normal': return 'text-green-600';
+      case 'moderate': return 'text-yellow-600';
+      case 'critical': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return 'N/A';
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(0)} MB`;
+  };
+
   return (
     <div className="space-y-6">
+      {isSupported && memoryInfo.level !== 'normal' && (
+        <div className={`p-4 rounded-lg border ${
+          memoryInfo.level === 'critical' 
+            ? 'bg-red-50 border-red-200' 
+            : 'bg-yellow-50 border-yellow-200'
+        }`}>
+          <div className="flex items-center gap-2">
+            <span className={`font-medium ${getMemoryColor(memoryInfo.level)}`}>
+              {memoryInfo.level === 'critical' ? '⚠️ Critical Memory Usage' : '⚡ Moderate Memory Pressure'}
+            </span>
+            <span className="text-sm text-gray-600">
+              ({(memoryInfo.utilisation * 100).toFixed(1)}% - {formatBytes(memoryInfo.usedJSHeapSize)} used)
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card title="Speech to Text" subtitle="Real-time transcription">
           <div className="space-y-4">

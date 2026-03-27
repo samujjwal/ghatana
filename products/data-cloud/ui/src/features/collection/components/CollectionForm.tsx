@@ -2,6 +2,23 @@ import React from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { Button, TextField, TextArea, Switch } from '@ghatana/design-system';
 import { Plus, Trash2 } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const collectionSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(50, 'Name must be less than 50 characters'),
+  description: z.string().max(200, 'Description must be less than 200 characters').optional().default(''),
+  isActive: z.boolean().default(true),
+  schema: z.object({
+    name: z.string().min(2, 'Schema name is required'),
+    fields: z.array(z.object({
+      name: z.string().regex(/^[a-z][a-zA-Z0-9]*$/, 'Must start with a lowercase letter and contain only alphanumeric characters'),
+      type: z.string().min(1, 'Type is required'),
+      required: z.boolean().default(false),
+      description: z.string().optional().default('')
+    })).min(1, 'At least one field is required')
+  })
+});
 
 // Local label keeps this form lightweight while the design-system field layer stays optional.
 const Label = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
@@ -47,6 +64,7 @@ export interface CollectionFormData {
 
 export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }: CollectionFormProps) {
   const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<CollectionFormData>({
+    resolver: zodResolver(collectionSchema),
     defaultValues: initialData ? {
       name: initialData.name,
       description: initialData.description,

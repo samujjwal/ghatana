@@ -39,11 +39,11 @@ class DataAccessBrokerTest extends EventloopTestBase {
         @Test
         @DisplayName("grants access when both consent and purpose binding are satisfied")
         void grantsAccess() {
-            runBlocking(() -> consent.recordConsent("t1", "user1", "analytics"));
-            runBlocking(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
+            runPromise(() -> consent.recordConsent("t1", "user1", "analytics"));
+            runPromise(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
 
             assertThatCode(() ->
-                runBlocking(() -> broker.checkAccess("t1", "user1", "email-data", "analytics"))
+                runPromise(() -> broker.checkAccess("t1", "user1", "email-data", "analytics"))
             ).doesNotThrowAnyException();
         }
     }
@@ -55,42 +55,42 @@ class DataAccessBrokerTest extends EventloopTestBase {
         @Test
         @DisplayName("denies when consent is missing (fails before checking purpose)")
         void deniesWithoutConsent() {
-            runBlocking(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
+            runPromise(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
 
             assertThatThrownBy(() ->
-                runBlocking(() -> broker.checkAccess("t1", "user1", "email-data", "analytics"))
+                runPromise(() -> broker.checkAccess("t1", "user1", "email-data", "analytics"))
             ).isInstanceOf(ConsentRequiredException.class);
         }
 
         @Test
         @DisplayName("denies when purpose binding is missing even with consent")
         void deniesWithoutPurposeBinding() {
-            runBlocking(() -> consent.recordConsent("t1", "user1", "analytics"));
+            runPromise(() -> consent.recordConsent("t1", "user1", "analytics"));
 
             assertThatThrownBy(() ->
-                runBlocking(() -> broker.checkAccess("t1", "user1", "email-data", "analytics"))
+                runPromise(() -> broker.checkAccess("t1", "user1", "email-data", "analytics"))
             ).isInstanceOf(PurposeViolationException.class);
         }
 
         @Test
         @DisplayName("denies when purpose is not in binding")
         void deniesForDisallowedPurpose() {
-            runBlocking(() -> consent.recordConsent("t1", "user1", "marketing"));
-            runBlocking(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
+            runPromise(() -> consent.recordConsent("t1", "user1", "marketing"));
+            runPromise(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
 
             assertThatThrownBy(() ->
-                runBlocking(() -> broker.checkAccess("t1", "user1", "email-data", "marketing"))
+                runPromise(() -> broker.checkAccess("t1", "user1", "email-data", "marketing"))
             ).isInstanceOf(PurposeViolationException.class);
         }
 
         @Test
         @DisplayName("tenant isolation: consent from tenantA does not satisfy tenantB check")
         void tenantIsolation() {
-            runBlocking(() -> consent.recordConsent("tenantA", "user1", "analytics"));
-            runBlocking(() -> purposeEnforcer.bindPurpose("tenantA", "email-data", Set.of("analytics")));
+            runPromise(() -> consent.recordConsent("tenantA", "user1", "analytics"));
+            runPromise(() -> purposeEnforcer.bindPurpose("tenantA", "email-data", Set.of("analytics")));
 
             assertThatThrownBy(() ->
-                runBlocking(() -> broker.checkAccess("tenantB", "user1", "email-data", "analytics"))
+                runPromise(() -> broker.checkAccess("tenantB", "user1", "email-data", "analytics"))
             ).isInstanceOf(ConsentRequiredException.class);
         }
     }

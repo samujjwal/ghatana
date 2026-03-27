@@ -67,12 +67,6 @@ sourceSets.test {
         "com/ghatana/aep/config/ConfigurationPipelineIntegrationTest.java",
         "com/ghatana/aep/config/PipelineMaterializerTest.java",
 
-        // ── production class AepConfigurationValidator not yet implemented ───
-        "com/ghatana/aep/config/AepConfigurationValidatorTest.java",
-
-        // ── EnvConfig.redisPort() and other config accessors not yet in API ──
-        "com/ghatana/aep/config/EnvConfigTest.java",
-
         // ── DefaultAdvancedTimeSeriesForecaster and other analytics Default* ──
         // classes not yet implemented in aep-analytics module
         "com/ghatana/aep/analytics/AnalyticsEngineDefaultsTest.java",

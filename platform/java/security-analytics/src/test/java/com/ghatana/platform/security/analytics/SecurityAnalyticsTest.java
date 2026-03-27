@@ -42,7 +42,7 @@ class SecurityAnalyticsTest extends EventloopTestBase {
         @DisplayName("throws EgressLimitExceededException when limit breached")
         void throwsWhenLimitBreached() {
             assertThatThrownBy(() ->
-                runBlocking(() -> monitor.record("t1", "agent1", "search", 2048))
+                runPromise(() -> monitor.record("t1", "agent1", "search", 2048))
             ).isInstanceOf(EgressLimitExceededException.class)
              .satisfies(ex -> {
                  EgressLimitExceededException e = (EgressLimitExceededException) ex;

@@ -1,5 +1,6 @@
 package com.ghatana.aiplatform.registry;
 
+import com.ghatana.platform.core.exception.RegistryException;
 import com.ghatana.platform.observability.MetricsCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

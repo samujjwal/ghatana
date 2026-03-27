@@ -21,6 +21,12 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -75,6 +81,9 @@ class AdvancePhaseUseCaseTest {
         // Default: DLQ publisher succeeds
         when(dlqPublisher.publish(anyString(), anyString(), anyString(), anyString(), any(Map.class), anyString(), anyString()))
                 .thenReturn(Promise.complete());
+        when(artifactRepository.list(anyString())).thenReturn(io.activej.promise.Promise.of(java.util.List.of()));
+        when(artifactRepository.list(anyString())).thenReturn(io.activej.promise.Promise.of(java.util.List.of()));
+        when(artifactRepository.list(anyString())).thenReturn(io.activej.promise.Promise.of(java.util.List.of()));
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -105,15 +114,7 @@ class AdvancePhaseUseCaseTest {
             assertThat(result).isEqualTo("BLOCKED");
 
             // AND DLQ should be called with INVALID_TRANSITION
-            verify(dlqPublisher).publish(
-                    "tenant-456",
-                    "lifecycle-management-v1",
-                    "advance-phase",
-                    "PHASE_ADVANCE_BLOCKED",
-                    any(Map.class),
-                    "INVALID_TRANSITION",
-                    "proj-123"
-            );
+            verify(dlqPublisher).publish(eq("tenant-456"), eq("lifecycle-management-v1"), eq("advance-phase"), eq("PHASE_ADVANCE_BLOCKED"), any(Map.class), eq("INVALID_TRANSITION"), eq("proj-123"));
         }
     }
 
@@ -156,15 +157,7 @@ class AdvancePhaseUseCaseTest {
             assertThat(result).isEqualTo("BLOCKED");
 
             // AND DLQ should be called with MISSING_ARTIFACT
-            verify(dlqPublisher).publish(
-                    "tenant-456",
-                    "lifecycle-management-v1",
-                    "advance-phase",
-                    "PHASE_ADVANCE_BLOCKED",
-                    any(Map.class),
-                    "MISSING_ARTIFACT",
-                    "proj-123"
-            );
+            verify(dlqPublisher).publish(eq("tenant-456"), eq("lifecycle-management-v1"), eq("advance-phase"), eq("PHASE_ADVANCE_BLOCKED"), any(Map.class), eq("MISSING_ARTIFACT"), eq("proj-123"));
         }
     }
 
@@ -185,7 +178,7 @@ class AdvancePhaseUseCaseTest {
                     .thenReturn(Optional.of(spec));
 
             // AND: Policy engine denies the transition
-            when(policyEngine.evaluate("phase_advance_policy", any(Map.class)))
+            when(policyEngine.evaluate(eq("phase_advance_policy"), any(Map.class)))
                     .thenReturn(Promise.of(false));
 
             TransitionRequest request = new TransitionRequest(
@@ -203,15 +196,7 @@ class AdvancePhaseUseCaseTest {
             assertThat(result).isEqualTo("BLOCKED");
 
             // AND DLQ should be called with POLICY_GATE
-            verify(dlqPublisher).publish(
-                    "tenant-456",
-                    "lifecycle-management-v1",
-                    "advance-phase",
-                    "PHASE_ADVANCE_BLOCKED",
-                    any(Map.class),
-                    "POLICY_GATE",
-                    "proj-123"
-            );
+            verify(dlqPublisher).publish(eq("tenant-456"), eq("lifecycle-management-v1"), eq("advance-phase"), eq("PHASE_ADVANCE_BLOCKED"), any(Map.class), eq("POLICY_GATE"), eq("proj-123"));
         }
     }
 
@@ -236,7 +221,7 @@ class AdvancePhaseUseCaseTest {
                     .thenReturn(Promise.of(List.of("v1")));
 
             // AND: Policy engine approves
-            when(policyEngine.evaluate("phase_advance_policy", any(Map.class)))
+            when(policyEngine.evaluate(eq("phase_advance_policy"), any(Map.class)))
                     .thenReturn(Promise.of(true));
 
             TransitionRequest request = new TransitionRequest(

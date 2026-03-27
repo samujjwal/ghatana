@@ -14,7 +14,7 @@ package com.ghatana.platform.core.exception;
  * @doc.layer core
  * @doc.pattern Value Object, Enumeration
  */
-public enum ErrorCode implements com.ghatana.platform.core.common.ErrorCode {
+public enum ErrorCode {
     // General errors (4xx/5xx)
     UNKNOWN_ERROR("GEN-001", "An unknown error occurred", 500),
     VALIDATION_ERROR("GEN-002", "Validation error", 422),

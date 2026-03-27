@@ -26,6 +26,10 @@ public record AudioData(
         if (bitsPerSample <= 0) throw new IllegalArgumentException("bitsPerSample must be positive");
     }
 
+    public AudioData(byte[] data, int sampleRate, int channels, int bitsPerSample) {
+        this(data, sampleRate, channels, bitsPerSample, Duration.ofSeconds(1), AudioFormat.PCM);
+    }
+
     /** Get the number of samples per channel. */
     public int getSampleCount() {
         return data.length / (channels * (bitsPerSample / 8));

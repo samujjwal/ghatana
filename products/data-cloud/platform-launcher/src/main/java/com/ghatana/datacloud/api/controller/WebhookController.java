@@ -153,7 +153,9 @@ public class WebhookController {
             @ApiResponse(responseCode = "201", description = "Webhook created"),
             @ApiResponse(responseCode = "400", description = "Invalid webhook payload")
         })
-    private Promise<HttpResponse> createWebhook(HttpRequest request, String tenantId) {
+    public Promise<HttpResponse> createWebhook(
+            @io.swagger.v3.oas.annotations.Parameter(description = "HTTP request") HttpRequest request,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Tenant ID") String tenantId) {
         try {
             String body = request.getBody().asString(StandardCharsets.UTF_8);
 
@@ -236,7 +238,8 @@ public class WebhookController {
         @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Webhooks returned")
         })
-    private Promise<HttpResponse> listWebhooks(String tenantId) {
+    public Promise<HttpResponse> listWebhooks(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Tenant ID") String tenantId) {
         return webhookService.listWebhooks(tenantId)
                 .then(webhooks -> {
                     try {
@@ -275,7 +278,9 @@ public class WebhookController {
             @ApiResponse(responseCode = "400", description = "Invalid webhook ID"),
             @ApiResponse(responseCode = "404", description = "Webhook not found")
         })
-    private Promise<HttpResponse> getWebhook(String id, String tenantId) {
+    public Promise<HttpResponse> getWebhook(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Webhook ID") String id,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Tenant ID") String tenantId) {
         try {
             UUID webhookId = UUID.fromString(id);
             return webhookService.getWebhook(webhookId, tenantId)
@@ -319,7 +324,10 @@ public class WebhookController {
             @ApiResponse(responseCode = "400", description = "Invalid request payload"),
             @ApiResponse(responseCode = "404", description = "Webhook not found")
         })
-    private Promise<HttpResponse> updateWebhook(HttpRequest request, String id, String tenantId) {
+    public Promise<HttpResponse> updateWebhook(
+            @io.swagger.v3.oas.annotations.Parameter(description = "HTTP request") HttpRequest request,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Webhook ID") String id,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Tenant ID") String tenantId) {
         try {
             UUID webhookId = UUID.fromString(id);
             return Promise.of(request.getBody().asString(StandardCharsets.UTF_8))
@@ -393,7 +401,9 @@ public class WebhookController {
             @ApiResponse(responseCode = "200", description = "Webhook deleted"),
             @ApiResponse(responseCode = "400", description = "Invalid webhook ID")
         })
-    private Promise<HttpResponse> deleteWebhook(String id, String tenantId) {
+    public Promise<HttpResponse> deleteWebhook(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Webhook ID") String id,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Tenant ID") String tenantId) {
         try {
             UUID webhookId = UUID.fromString(id);
             return webhookService.deleteWebhook(webhookId, tenantId)

@@ -36,26 +36,89 @@ public final class SttEngineFactory {
 
     /**
      * Create a new STT Engine with the given configuration.
-     *
-     * @param config engine configuration
-     * @param libraryState shared library state
-     * @return configured STT engine
+     * Prefers real ONNX engine, falls back to stub only when necessary.
      */
     public static SttEngine create(SttConfig config, AudioVideoLibrary.LibraryState libraryState) {
         LOG.info("Creating STT Engine with model: " + config.modelId());
 
-        // Check if ONNX model path is available
-        if (config.modelPath() != null && config.modelPath().toFile().exists()) {
+        // Try multiple model path resolution strategies
+        java.nio.file.Path modelPath = resolveModelPath(config);
+        
+        if (modelPath != null) {
             try {
-                return new com.ghatana.media.stt.engine.onnx.WhisperOnnxEngine(config, libraryState);
+                // Create config with resolved path
+                SttConfig resolvedConfig = SttConfig.builder()
+                    .modelPath(modelPath)
+                    .modelId(config.modelId())
+                    .useGpu(config.useGpu())
+                    .maxConcurrentRequests(config.maxConcurrentRequests())
+                    .maxAudioLengthSeconds(config.maxAudioLengthSeconds())
+                    .build();
+                    
+                SttEngine engine = new com.ghatana.media.stt.engine.onnx.WhisperOnnxEngine(resolvedConfig, libraryState);
+                LOG.info("Successfully loaded ONNX STT engine from: " + modelPath);
+                return engine;
             } catch (Exception e) {
-                LOG.warning("Failed to load ONNX engine, falling back to stub: " + e.getMessage());
+                LOG.warning("Failed to load ONNX engine from " + modelPath + ": " + e.getMessage());
             }
         }
 
-        // Fallback to stub implementation
-        LOG.info("Using stub STT engine (no model found at " + config.modelPath() + ")");
+        // Fallback to stub implementation with warning
+        LOG.warning("Using stub STT engine - no valid ONNX model found. " +
+            "Set STT_MODEL_PATH environment variable to a valid Whisper ONNX model.");
         return new StubSttEngine(config, libraryState);
+    }
+    
+    /**
+     * Resolve model path using multiple strategies:
+     * 1. Explicit config path if it exists
+     * 2. Environment variable STT_MODEL_PATH
+     * 3. Common model directories
+     * 4. Download path in user home
+     */
+    private static java.nio.file.Path resolveModelPath(SttConfig config) {
+        // Strategy 1: Check explicit config path
+        if (config.modelPath() != null && config.modelPath().toFile().exists()) {
+            return config.modelPath();
+        }
+        
+        // Strategy 2: Environment variable
+        String envPath = System.getenv("STT_MODEL_PATH");
+        if (envPath != null && !envPath.isEmpty()) {
+            java.nio.file.Path path = java.nio.file.Paths.get(envPath);
+            if (path.toFile().exists()) {
+                return path;
+            }
+        }
+        
+        // Strategy 3: Common model directories
+        String[] commonPaths = {
+            "/models/whisper-" + config.modelId() + ".onnx",
+            "/models/whisper-base.onnx",
+            "/usr/local/share/whisper/models/" + config.modelId() + ".onnx",
+            "models/whisper-" + config.modelId() + ".onnx", // Relative to working dir
+        };
+        
+        for (String pathStr : commonPaths) {
+            java.nio.file.Path path = java.nio.file.Paths.get(pathStr);
+            if (path.toFile().exists()) {
+                LOG.info("Found model at common path: " + path);
+                return path;
+            }
+        }
+        
+        // Strategy 4: User home download directory
+        String userHome = System.getProperty("user.home");
+        if (userHome != null) {
+            java.nio.file.Path userPath = java.nio.file.Paths.get(userHome, ".cache", "ghatana", "models", 
+                "whisper-" + config.modelId() + ".onnx");
+            if (userPath.toFile().exists()) {
+                LOG.info("Found model in user cache: " + userPath);
+                return userPath;
+            }
+        }
+        
+        return null;
     }
 
     /**

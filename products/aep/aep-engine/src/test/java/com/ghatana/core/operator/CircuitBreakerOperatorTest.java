@@ -43,9 +43,7 @@ class CircuitBreakerOperatorTest extends EventloopTestBase {
 
     private Event mockEvent() {
         Event event = mock(Event.class);
-        var meta = mock(com.ghatana.platform.domain.event.EventMetadata.class);
-        when(meta.getId()).thenReturn("evt-1");
-        when(event.getMetadata()).thenReturn(meta);
+        when(event.getId()).thenReturn(mock(com.ghatana.platform.domain.event.EventId.class));
         return event;
     }
 

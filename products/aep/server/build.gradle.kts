@@ -30,11 +30,23 @@ dependencies {
     implementation(project(":products:data-cloud:spi"))
     implementation(project(":products:data-cloud:platform-launcher"))
     
+    // AEP product modules — identity and compliance (Phase 8)
+    implementation(project(":products:aep:aep-identity"))
+    implementation(project(":products:aep:aep-compliance"))
+
     // Core platform dependencies
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:governance"))
+
+    // Phase 9 — new governance platform modules wired into AEP server
+    implementation(project(":platform:java:identity"))
+    implementation(project(":platform:java:data-governance"))
+    implementation(project(":platform:java:tool-runtime"))
+    implementation(project(":platform:java:policy-as-code"))
+    implementation(project(":platform:java:security-analytics"))
+    implementation(project(":platform:java:incident-response"))
     
     // gRPC transport (for AepGrpcServer)
     implementation(libs.grpc.netty.shaded)

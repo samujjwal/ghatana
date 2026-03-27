@@ -94,6 +94,6 @@ class ValidateStepTest extends EventloopTestBase {
     // WHEN/THEN
     assertThatThrownBy(() -> runPromise(() -> step.execute(context)))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Input data required");
+        .hasMessageContaining("Input data is required");
   }
 }

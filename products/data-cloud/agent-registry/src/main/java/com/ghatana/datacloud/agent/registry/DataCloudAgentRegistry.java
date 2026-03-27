@@ -25,6 +25,9 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -64,29 +67,38 @@ import java.util.stream.Collectors;
  * the AEP runtime APIs. See {@code docs/AGENT_REGISTRY_MIGRATION_GUIDE.md}.
  *
  * @doc.type class
- * @doc.purpose Data-Cloud-backed agent registry with in-memory write-through cache
+ * @doc.purpose Data-Cloud-backed agent registry with in-memory write-through cache and TTL eviction
  * @doc.layer registry
  * @doc.pattern Repository, Cache-Aside
  *
  * @author Ghatana AI Platform
  * @since 2.0.0
  */
-public final class DataCloudAgentRegistry implements AgentRegistry {
+public final class DataCloudAgentRegistry implements AgentRegistry, AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(DataCloudAgentRegistry.class);
 
     // ── Data-Cloud collection names ────────────────────────────────────────────
     static final String REGISTRY_COLLECTION = "agent-registry";
 
+    /** Default in-memory cache TTL: 24 hours. Entries not accessed within this window are evicted. */
+    public static final long DEFAULT_CACHE_TTL_MS = TimeUnit.HOURS.toMillis(24);
+    /** Background eviction interval: 5 minutes. */
+    private static final long EVICTION_INTERVAL_MS = TimeUnit.MINUTES.toMillis(5);
+
     // ── In-memory write-through cache ─────────────────────────────────────────
     private final ConcurrentHashMap<String, TypedAgent<?, ?>> agents = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, UUID> entityIds = new ConcurrentHashMap<>();   // agentId → Data-Cloud UUID
     private final ConcurrentHashMap<String, AgentConfig> configs = new ConcurrentHashMap<>();
+    /** Tracks the last-access time (millis) for each cached entry to support TTL eviction. */
+    private final ConcurrentHashMap<String, Long> lastAccessMs = new ConcurrentHashMap<>();
 
     // ── Infrastructure ────────────────────────────────────────────────────────
     private final DataCloudClient dataCloud;
     private final String registryTenantId;
     private final RegistryEventPublisher eventPublisher;
+    private final long cacheTtlMs;
+    private final ScheduledExecutorService evictionScheduler;
 
     /**
      * Constructs a registry backed by the given Data-Cloud client.
@@ -97,9 +109,38 @@ public final class DataCloudAgentRegistry implements AgentRegistry {
      */
     public DataCloudAgentRegistry(@NotNull DataCloudClient dataCloud,
                                    @NotNull String registryTenantId) {
+        this(dataCloud, registryTenantId, DEFAULT_CACHE_TTL_MS);
+    }
+
+    /**
+     * Constructs a registry with a custom in-memory cache TTL.
+     *
+     * @param dataCloud        Data-Cloud client for entity persistence
+     * @param registryTenantId tenant ID used for all registry data
+     * @param cacheTtlMs       TTL in milliseconds for in-memory cache entries; use 0 to disable eviction
+     */
+    public DataCloudAgentRegistry(@NotNull DataCloudClient dataCloud,
+                                   @NotNull String registryTenantId,
+                                   long cacheTtlMs) {
         this.dataCloud = Objects.requireNonNull(dataCloud, "dataCloud");
         this.registryTenantId = Objects.requireNonNull(registryTenantId, "registryTenantId");
         this.eventPublisher = new RegistryEventPublisher(dataCloud, registryTenantId);
+        this.cacheTtlMs = cacheTtlMs;
+        if (cacheTtlMs > 0) {
+            this.evictionScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "agent-registry-eviction");
+                t.setDaemon(true);
+                return t;
+            });
+            this.evictionScheduler.scheduleAtFixedRate(
+                this::evictExpiredEntries,
+                EVICTION_INTERVAL_MS,
+                EVICTION_INTERVAL_MS,
+                TimeUnit.MILLISECONDS
+            );
+        } else {
+            this.evictionScheduler = null;
+        }
     }
 
     // ── AgentRegistry ─────────────────────────────────────────────────────────
@@ -128,9 +169,11 @@ public final class DataCloudAgentRegistry implements AgentRegistry {
         return dataCloud.createEntity(registryTenantId, REGISTRY_COLLECTION, data)
                 .then(entity -> {
                     // Populate cache after successful persist
+                    long now = System.currentTimeMillis();
                     entityIds.put(agentId, entity.getId());
                     agents.put(agentId, agent);
                     configs.put(agentId, config);
+                    lastAccessMs.put(agentId, now);
                     log.info("Registered agent [{}] v{} in DataCloudAgentRegistry (entity={})",
                             agentId, descriptor.getVersion(), entity.getId());
 
@@ -156,6 +199,7 @@ public final class DataCloudAgentRegistry implements AgentRegistry {
         UUID entityId = entityIds.remove(agentId);
         agents.remove(agentId);
         configs.remove(agentId);
+        lastAccessMs.remove(agentId);
 
         if (entityId == null) {
             log.debug("deregister [{}] — not found in registry, nothing to do", agentId);
@@ -190,6 +234,9 @@ public final class DataCloudAgentRegistry implements AgentRegistry {
     public <I, O> Promise<Optional<TypedAgent<I, O>>> resolve(@NotNull String agentId) {
         Objects.requireNonNull(agentId, "agentId");
         TypedAgent<I, O> agent = (TypedAgent<I, O>) agents.get(agentId);
+        if (agent != null) {
+            lastAccessMs.put(agentId, System.currentTimeMillis()); // refresh TTL on access
+        }
         return Promise.of(Optional.ofNullable(agent));
     }
 
@@ -242,6 +289,50 @@ public final class DataCloudAgentRegistry implements AgentRegistry {
                     stats.put("registryTenantId", registryTenantId);
                     return Collections.unmodifiableMap(stats);
                 });
+    }
+
+    // ── Cache TTL eviction ─────────────────────────────────────────────────────
+
+    /**
+     * Evicts in-memory cache entries whose last-access time exceeds {@link #cacheTtlMs}.
+     * Called periodically by the background eviction scheduler.
+     */
+    private void evictExpiredEntries() {
+        long cutoff = System.currentTimeMillis() - cacheTtlMs;
+        int evicted = 0;
+        for (Map.Entry<String, Long> entry : lastAccessMs.entrySet()) {
+            if (entry.getValue() < cutoff) {
+                String agentId = entry.getKey();
+                agents.remove(agentId);
+                configs.remove(agentId);
+                // Keep entityIds — needed for deregister() to avoid a DataCloud round-trip
+                lastAccessMs.remove(agentId);
+                evicted++;
+                log.debug("Evicted agent [{}] from in-memory cache (TTL expired)", agentId);
+            }
+        }
+        if (evicted > 0) {
+            log.info("Cache eviction cycle completed: {} entry(-ies) evicted", evicted);
+        }
+    }
+
+    /**
+     * Shuts down the background eviction scheduler.
+     * Should be called when the registry is no longer needed to prevent resource leaks.
+     */
+    @Override
+    public void close() {
+        if (evictionScheduler != null) {
+            evictionScheduler.shutdown();
+            try {
+                if (!evictionScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    evictionScheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                evictionScheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     // ── Serialisation helper ───────────────────────────────────────────────────

@@ -3,10 +3,6 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
-import com.ghatana.datacloud.analytics.export.EntityExportService;
-import com.ghatana.datacloud.analytics.anomaly.StatisticalAnomalyDetector;
-import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.AnomalyContext;
-import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.DetectionType;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
@@ -49,8 +45,6 @@ public class EntityCrudHandler {
     private final BiConsumer<String, Map<String, Object>> wsBroadcaster;
 
     private EntitySchemaValidator schemaValidator;
-    private EntityExportService exportService;
-    private StatisticalAnomalyDetector anomalyDetector;
     private OpenSearchConnector openSearchConnector;
 
     /**
@@ -70,16 +64,6 @@ public class EntityCrudHandler {
 
     public EntityCrudHandler withSchemaValidator(EntitySchemaValidator validator) {
         this.schemaValidator = validator;
-        return this;
-    }
-
-    public EntityCrudHandler withExportService(EntityExportService service) {
-        this.exportService = service;
-        return this;
-    }
-
-    public EntityCrudHandler withAnomalyDetector(StatisticalAnomalyDetector detector) {
-        this.anomalyDetector = detector;
         return this;
     }
 
@@ -394,135 +378,6 @@ public class EntityCrudHandler {
             log.error("Error parsing batch delete request", e);
             return Promise.of(http.errorResponse(400, "Invalid batch request body: " + e.getMessage()));
         }
-        });
-    }
-
-    // ==================== Export ====================
-
-    public Promise<HttpResponse> handleExportEntities(HttpRequest request) {
-        if (exportService == null) {
-            return Promise.of(http.errorResponse(501, "Export service not configured on this server"));
-        }
-
-        String collection = request.getPathParameter("collection");
-        String tenantId   = http.resolveTenantId(request);
-
-        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
-        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
-        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
-        if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
-
-        String format = request.getQueryParameter("format");
-        if (format == null) format = "csv";
-
-        int limit = 10_000;
-        String limitStr = request.getQueryParameter("limit");
-        if (limitStr != null) {
-            try {
-                limit = Integer.parseInt(limitStr);
-            } catch (NumberFormatException e) {
-                return Promise.of(http.errorResponse(400, "Invalid 'limit' query parameter: " + limitStr));
-            }
-        }
-
-        final String finalTenant     = tenantId;
-        final String finalCollection = collection;
-        final int    finalLimit      = limit;
-
-        if ("ndjson".equalsIgnoreCase(format)) {
-            return exportService.exportNdjson(finalTenant, finalCollection, Map.of(), finalLimit)
-                    .map(data -> HttpResponse.ok200()
-                            .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("application/x-ndjson; charset=utf-8"))
-                            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(http.corsAllowOrigin()))
-                            .withBody(data.getBytes(StandardCharsets.UTF_8))
-                            .build())
-                    .then(Promise::of, e -> {
-                        log.error("NDJSON export failed tenant={} collection={}", finalTenant, finalCollection, e);
-                        return Promise.of(http.errorResponse(500, "Export failed: " + e.getMessage()));
-                    });
-        } else {
-            return exportService.exportCsv(finalTenant, finalCollection, Map.of(), finalLimit)
-                    .map(data -> HttpResponse.ok200()
-                            .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/csv; charset=utf-8"))
-                            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(http.corsAllowOrigin()))
-                            .withBody(data.getBytes(StandardCharsets.UTF_8))
-                            .build())
-                    .then(Promise::of, e -> {
-                        log.error("CSV export failed tenant={} collection={}", finalTenant, finalCollection, e);
-                        return Promise.of(http.errorResponse(500, "Export failed: " + e.getMessage()));
-                    });
-        }
-    }
-
-    // ==================== Anomaly Detection ====================
-
-    @SuppressWarnings("unchecked")
-    public Promise<HttpResponse> handleDetectAnomalies(HttpRequest request) {
-        if (anomalyDetector == null) {
-            return Promise.of(http.errorResponse(501, "Anomaly detection not configured on this server"));
-        }
-
-        String collection = request.getPathParameter("collection");
-        String tenantId   = http.resolveTenantId(request);
-
-        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
-        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
-        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
-        if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
-
-        final String finalTenant     = tenantId;
-        final String finalCollection = collection;
-
-        final Map<String, Object> responseEnvelope = Map.of(
-                "collection", finalCollection,
-                "tenant", finalTenant,
-                "timestamp", Instant.now().toString());
-
-        return request.loadBody().then(buf -> {
-            try {
-                String rawBody = buf.getString(StandardCharsets.UTF_8);
-
-                // Mutable holders so lambda-captured variables remain effectively final.
-                double[] threshold   = {StatisticalAnomalyDetector.DEFAULT_Z_THRESHOLD};
-                DetectionType[] type = {DetectionType.DATA_QUALITY};
-
-                if (rawBody != null && !rawBody.isBlank()) {
-                    Map<String, Object> bodyMap = http.objectMapper().readValue(rawBody, Map.class);
-                    if (bodyMap.containsKey("threshold")) {
-                        Object t = bodyMap.get("threshold");
-                        threshold[0] = t instanceof Number n ? n.doubleValue() : Double.parseDouble(t.toString());
-                    }
-                    if (bodyMap.containsKey("detectionType")) {
-                        try {
-                            type[0] = DetectionType.valueOf(bodyMap.get("detectionType").toString());
-                        } catch (IllegalArgumentException e) {
-                            return Promise.of(http.errorResponse(400, "Unknown detectionType: " + bodyMap.get("detectionType")));
-                        }
-                    }
-                }
-
-                AnomalyContext ctx = AnomalyContext.builder()
-                        .tenantId(finalTenant)
-                        .collectionName(finalCollection)
-                        .detectionType(type[0])
-                        .threshold(threshold[0])
-                        .build();
-
-                return anomalyDetector.detect(ctx)
-                        .map(anomalies -> {
-                            Map<String, Object> body2 = new LinkedHashMap<>(responseEnvelope);
-                            body2.put("count", anomalies.size());
-                            body2.put("anomalies", anomalies);
-                            return http.jsonResponse(body2);
-                        })
-                        .then(Promise::of, e -> {
-                            log.error("Anomaly detection failed tenant={} collection={}", finalTenant, finalCollection, e);
-                            return Promise.of(http.errorResponse(500, "Anomaly detection failed: " + e.getMessage()));
-                        });
-            } catch (Exception e) {
-                log.error("Error processing anomaly detection request", e);
-                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
-            }
         });
     }
 

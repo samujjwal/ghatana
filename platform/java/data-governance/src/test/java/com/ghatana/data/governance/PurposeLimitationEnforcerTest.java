@@ -35,7 +35,7 @@ class PurposeLimitationEnforcerTest extends EventloopTestBase {
         @Test
         @DisplayName("binding stores allowed purposes")
         void storesPurposes() {
-            runBlocking(() -> enforcer.bindPurpose("t1", "user-emails", Set.of("analytics")));
+            runPromise(() -> enforcer.bindPurpose("t1", "user-emails", Set.of("analytics")));
             Set<String> allowed = runPromise(() -> enforcer.getAllowedPurposes("t1", "user-emails"));
             assertThat(allowed).containsExactly("analytics");
         }
@@ -43,8 +43,8 @@ class PurposeLimitationEnforcerTest extends EventloopTestBase {
         @Test
         @DisplayName("rebinding overwrites previous purposes")
         void rebindingOverwrites() {
-            runBlocking(() -> enforcer.bindPurpose("t1", "user-emails", Set.of("analytics")));
-            runBlocking(() -> enforcer.bindPurpose("t1", "user-emails", Set.of("marketing", "support")));
+            runPromise(() -> enforcer.bindPurpose("t1", "user-emails", Set.of("analytics")));
+            runPromise(() -> enforcer.bindPurpose("t1", "user-emails", Set.of("marketing", "support")));
             Set<String> allowed = runPromise(() -> enforcer.getAllowedPurposes("t1", "user-emails"));
             assertThat(allowed).containsExactlyInAnyOrder("marketing", "support");
         }
@@ -53,7 +53,7 @@ class PurposeLimitationEnforcerTest extends EventloopTestBase {
         @DisplayName("binding with empty set fails")
         void emptySetFails() {
             assertThatThrownBy(() ->
-                runBlocking(() -> enforcer.bindPurpose("t1", "data", Set.of()))
+                runPromise(() -> enforcer.bindPurpose("t1", "data", Set.of()))
             ).isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -61,7 +61,7 @@ class PurposeLimitationEnforcerTest extends EventloopTestBase {
         @DisplayName("binding with null fails")
         void nullSetFails() {
             assertThatThrownBy(() ->
-                runBlocking(() -> enforcer.bindPurpose("t1", "data", null))
+                runPromise(() -> enforcer.bindPurpose("t1", "data", null))
             ).isInstanceOf(IllegalArgumentException.class);
         }
     }
@@ -73,16 +73,16 @@ class PurposeLimitationEnforcerTest extends EventloopTestBase {
         @Test
         @DisplayName("allows when purpose is in binding")
         void allowsPermittedPurpose() {
-            runBlocking(() -> enforcer.bindPurpose("t1", "emails", Set.of("analytics")));
-            runBlocking(() -> enforcer.enforceForPurpose("t1", "emails", "analytics"));
+            runPromise(() -> enforcer.bindPurpose("t1", "emails", Set.of("analytics")));
+            runPromise(() -> enforcer.enforceForPurpose("t1", "emails", "analytics"));
         }
 
         @Test
         @DisplayName("throws PurposeViolationException for disallowed purpose")
         void rejectsDisallowedPurpose() {
-            runBlocking(() -> enforcer.bindPurpose("t1", "emails", Set.of("analytics")));
+            runPromise(() -> enforcer.bindPurpose("t1", "emails", Set.of("analytics")));
             assertThatThrownBy(() ->
-                runBlocking(() -> enforcer.enforceForPurpose("t1", "emails", "marketing"))
+                runPromise(() -> enforcer.enforceForPurpose("t1", "emails", "marketing"))
             ).isInstanceOf(PurposeViolationException.class)
              .satisfies(ex -> {
                  PurposeViolationException e = (PurposeViolationException) ex;
@@ -95,16 +95,16 @@ class PurposeLimitationEnforcerTest extends EventloopTestBase {
         @DisplayName("throws PurposeViolationException when no binding exists")
         void rejectsUnboundData() {
             assertThatThrownBy(() ->
-                runBlocking(() -> enforcer.enforceForPurpose("t1", "unknown-data", "analytics"))
+                runPromise(() -> enforcer.enforceForPurpose("t1", "unknown-data", "analytics"))
             ).isInstanceOf(PurposeViolationException.class);
         }
 
         @Test
         @DisplayName("tenants are isolated")
         void tenantsAreIsolated() {
-            runBlocking(() -> enforcer.bindPurpose("tenantA", "data", Set.of("analytics")));
+            runPromise(() -> enforcer.bindPurpose("tenantA", "data", Set.of("analytics")));
             assertThatThrownBy(() ->
-                runBlocking(() -> enforcer.enforceForPurpose("tenantB", "data", "analytics"))
+                runPromise(() -> enforcer.enforceForPurpose("tenantB", "data", "analytics"))
             ).isInstanceOf(PurposeViolationException.class);
         }
     }

@@ -275,7 +275,12 @@ class AepGoldenPathSystemTest {
         postEvent("tenant-alpha", "checkout", Map.of("cart", "abc"));
         postEvent("tenant-beta", "checkout", Map.of("cart", "xyz"));
 
-        long afterA = sloTotalRuns();
+        // Retry briefly — event processing is async and may lag under load
+        long afterA = beforeA;
+        for (int attempt = 0; attempt < 10 && afterA < beforeA + 2; attempt++) {
+            Thread.sleep(100);
+            afterA = sloTotalRuns();
+        }
         assertThat(afterA).isGreaterThanOrEqualTo(beforeA + 2);
     }
 

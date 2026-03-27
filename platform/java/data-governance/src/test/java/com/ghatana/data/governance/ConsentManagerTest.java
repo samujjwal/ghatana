@@ -33,7 +33,7 @@ class ConsentManagerTest extends EventloopTestBase {
         @Test
         @DisplayName("records consent for a new subject+purpose pair")
         void recordsNewConsent() {
-            runBlocking(() -> consentManager.recordConsent("t1", "user1", "analytics"));
+            runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics"));
             boolean result = runPromise(() -> consentManager.hasConsent("t1", "user1", "analytics"));
             assertThat(result).isTrue();
         }
@@ -41,16 +41,16 @@ class ConsentManagerTest extends EventloopTestBase {
         @Test
         @DisplayName("recording consent is idempotent")
         void recordConsentIdempotent() {
-            runBlocking(() -> consentManager.recordConsent("t1", "user1", "analytics"));
-            runBlocking(() -> consentManager.recordConsent("t1", "user1", "analytics"));
+            runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics"));
+            runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics"));
             assertThat(consentManager.totalConsentedPairs()).isEqualTo(1);
         }
 
         @Test
         @DisplayName("multiple purposes per subject are tracked independently")
         void multiplePurposesPerSubject() {
-            runBlocking(() -> consentManager.recordConsent("t1", "user1", "analytics"));
-            runBlocking(() -> consentManager.recordConsent("t1", "user1", "marketing"));
+            runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics"));
+            runPromise(() -> consentManager.recordConsent("t1", "user1", "marketing"));
 
             boolean analytics = runPromise(() -> consentManager.hasConsent("t1", "user1", "analytics"));
             boolean marketing = runPromise(() -> consentManager.hasConsent("t1", "user1", "marketing"));
@@ -62,7 +62,7 @@ class ConsentManagerTest extends EventloopTestBase {
         @Test
         @DisplayName("different tenants are isolated")
         void tenantsAreIsolated() {
-            runBlocking(() -> consentManager.recordConsent("tenantA", "user1", "analytics"));
+            runPromise(() -> consentManager.recordConsent("tenantA", "user1", "analytics"));
             boolean inA = runPromise(() -> consentManager.hasConsent("tenantA", "user1", "analytics"));
             boolean inB = runPromise(() -> consentManager.hasConsent("tenantB", "user1", "analytics"));
 
@@ -78,8 +78,8 @@ class ConsentManagerTest extends EventloopTestBase {
         @Test
         @DisplayName("withdrawing an existing consent removes it")
         void withdrawRemovesConsent() {
-            runBlocking(() -> consentManager.recordConsent("t1", "user1", "analytics"));
-            runBlocking(() -> consentManager.withdrawConsent("t1", "user1", "analytics"));
+            runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics"));
+            runPromise(() -> consentManager.withdrawConsent("t1", "user1", "analytics"));
 
             boolean hasConsent = runPromise(() -> consentManager.hasConsent("t1", "user1", "analytics"));
             assertThat(hasConsent).isFalse();
@@ -88,16 +88,16 @@ class ConsentManagerTest extends EventloopTestBase {
         @Test
         @DisplayName("withdrawing a non-existing consent is a no-op")
         void withdrawNonExistingIsNoop() {
-            runBlocking(() -> consentManager.withdrawConsent("t1", "user1", "analytics"));
+            runPromise(() -> consentManager.withdrawConsent("t1", "user1", "analytics"));
             assertThat(consentManager.totalConsentedPairs()).isEqualTo(0);
         }
 
         @Test
         @DisplayName("withdrawing one purpose leaves other purposes intact")
         void withdrawOneDoesNotAffectOthers() {
-            runBlocking(() -> consentManager.recordConsent("t1", "user1", "analytics"));
-            runBlocking(() -> consentManager.recordConsent("t1", "user1", "marketing"));
-            runBlocking(() -> consentManager.withdrawConsent("t1", "user1", "analytics"));
+            runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics"));
+            runPromise(() -> consentManager.recordConsent("t1", "user1", "marketing"));
+            runPromise(() -> consentManager.withdrawConsent("t1", "user1", "analytics"));
 
             boolean analytics = runPromise(() -> consentManager.hasConsent("t1", "user1", "analytics"));
             boolean marketing = runPromise(() -> consentManager.hasConsent("t1", "user1", "marketing"));
@@ -114,15 +114,15 @@ class ConsentManagerTest extends EventloopTestBase {
         @Test
         @DisplayName("passes when consent exists")
         void passesWithConsent() {
-            runBlocking(() -> consentManager.recordConsent("t1", "user1", "analytics"));
-            runBlocking(() -> consentManager.enforceConsent("t1", "user1", "analytics"));
+            runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics"));
+            runPromise(() -> consentManager.enforceConsent("t1", "user1", "analytics"));
         }
 
         @Test
         @DisplayName("throws ConsentRequiredException when consent is absent")
         void throwsWhenNoConsent() {
             assertThatThrownBy(() ->
-                runBlocking(() -> consentManager.enforceConsent("t1", "user1", "analytics"))
+                runPromise(() -> consentManager.enforceConsent("t1", "user1", "analytics"))
             ).isInstanceOf(ConsentRequiredException.class)
              .satisfies(ex -> {
                  ConsentRequiredException e = (ConsentRequiredException) ex;

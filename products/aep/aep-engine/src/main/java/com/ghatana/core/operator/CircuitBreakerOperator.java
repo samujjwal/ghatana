@@ -103,8 +103,8 @@ public final class CircuitBreakerOperator extends AbstractOperator {
             result -> Promise.of(result),
             ex -> {
                 String msg = ex.getMessage();
-                if (msg != null && msg.contains("circuit is OPEN")) {
-                    log.debug("Circuit open; fast-failing event {}", event.getMetadata().getId());
+                if (msg != null && (msg.contains("circuit is OPEN") || msg.contains("is OPEN"))) {
+                    log.debug("Circuit open; fast-failing event {}", event.getId());
                     return Promise.of(OperatorResult.failed("circuit-open: downstream unavailable"));
                 }
                 log.warn("Delegate operator threw unexpected exception: {}", msg);

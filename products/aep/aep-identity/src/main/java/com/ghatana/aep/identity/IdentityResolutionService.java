@@ -13,6 +13,7 @@ import io.activej.promise.Promise;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * AEP-specific facade over the platform {@link IdentityService}.
@@ -53,7 +54,27 @@ public final class IdentityResolutionService {
      * @return a new, fully-initialised service
      */
     public static IdentityResolutionService withResolvers(List<IdentityResolver> resolvers) {
-        return new IdentityResolutionService(new DefaultIdentityService(resolvers));
+        if (resolvers == null || resolvers.isEmpty()) {
+            throw new IllegalArgumentException("At least one IdentityResolver is required");
+        }
+        if (resolvers.size() == 1) {
+            return new IdentityResolutionService(new DefaultIdentityService(resolvers.get(0)));
+        }
+        // Composite: try each resolver in order, return the first non-empty result.
+        IdentityResolver composite = (tenantId, agentId) ->
+            chainResolvers(resolvers, 0, tenantId, agentId);
+        return new IdentityResolutionService(new DefaultIdentityService(composite));
+    }
+
+    private static Promise<Optional<AgentIdentity>> chainResolvers(
+            List<IdentityResolver> resolvers, int index, String tenantId, String agentId) {
+        if (index >= resolvers.size()) {
+            return Promise.of(Optional.empty());
+        }
+        return resolvers.get(index).resolve(tenantId, agentId)
+            .then(found -> found.isPresent()
+                ? Promise.of(found)
+                : chainResolvers(resolvers, index + 1, tenantId, agentId));
     }
 
     /**

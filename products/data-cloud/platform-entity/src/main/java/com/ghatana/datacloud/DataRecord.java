@@ -1,5 +1,6 @@
 package com.ghatana.datacloud;
 
+import com.ghatana.datacloud.entity.DataCloudColumnNames;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -94,7 +95,7 @@ public abstract class DataRecord implements DataRecordInterface {
      * <p>
      * All queries are implicitly scoped to tenant.
      */
-    @Column(name = "tenant_id", nullable = false, updatable = false, length = 255)
+    @Column(name = DataCloudColumnNames.TENANT_ID, nullable = false, updatable = false, length = 255)
     protected String tenantId;
 
     /**
@@ -111,7 +112,7 @@ public abstract class DataRecord implements DataRecordInterface {
      * Determines which operations are valid for this record.
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "record_type", nullable = false, updatable = false, length = 50)
+    @Column(name = DataCloudColumnNames.RECORD_TYPE, nullable = false, updatable = false, length = 50)
     protected RecordType recordType;
 
     /**
@@ -130,20 +131,20 @@ public abstract class DataRecord implements DataRecordInterface {
      * Used for additional attributes that vary by record type.
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "metadata", columnDefinition = "jsonb")
+    @Column(name = DataCloudColumnNames.METADATA, columnDefinition = "jsonb")
     @Builder.Default
     protected Map<String, Object> metadata = new HashMap<>();
 
     /**
      * Timestamp when this record was created.
      */
-    @Column(name = "created_at", updatable = false)
+    @Column(name = DataCloudColumnNames.CREATED_AT, updatable = false)
     protected Instant createdAt;
 
     /**
      * User or system that created this record.
      */
-    @Column(name = "created_by", updatable = false, length = 255)
+    @Column(name = DataCloudColumnNames.CREATED_BY, updatable = false, length = 255)
     protected String createdBy;
 
     // ==================== Abstract Methods ====================

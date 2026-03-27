@@ -197,6 +197,37 @@ public class SimpleEntity implements EntityInterface {
     public void setActive(Boolean active) {
         this.active = active;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SimpleEntity that)) return false;
+
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
+        if (collectionName != null ? !collectionName.equals(that.collectionName) : that.collectionName != null)
+            return false;
+        if (data != null ? !data.equals(that.data) : that.data != null) return false;
+        if (metadata != null ? !metadata.equals(that.metadata) : that.metadata != null) return false;
+        if (createdAt != null ? !createdAt.equals(that.createdAt) : that.createdAt != null) return false;
+        if (updatedAt != null ? !updatedAt.equals(that.updatedAt) : that.updatedAt != null) return false;
+        if (version != null ? !version.equals(that.version) : that.version != null) return false;
+        return active != null ? active.equals(that.active) : that.active == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (tenantId != null ? tenantId.hashCode() : 0);
+        result = 31 * result + (collectionName != null ? collectionName.hashCode() : 0);
+        result = 31 * result + (data != null ? data.hashCode() : 0);
+        result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
+        result = 31 * result + (createdAt != null ? createdAt.hashCode() : 0);
+        result = 31 * result + (updatedAt != null ? updatedAt.hashCode() : 0);
+        result = 31 * result + (version != null ? version.hashCode() : 0);
+        result = 31 * result + (active != null ? active.hashCode() : 0);
+        return result;
+    }
     
     @Override
     public String toString() {
