@@ -319,15 +319,17 @@ public class LifecycleServiceModule extends AbstractModule {
 
     /**
      * Provides AdvancePhaseUseCase — core use case for lifecycle phase transitions.
-     * Validates transition rules, checks required artifacts, and evaluates policy gates.
+     * Validates transition rules, checks required artifacts, evaluates policy gates,
+     * and publishes blocked results to the DLQ.
      */
     @Provides
     AdvancePhaseUseCase advancePhaseUseCase(
             TransitionConfigLoader transitionConfigLoader,
             com.ghatana.governance.PolicyEngine policyEngine,
-            YappcArtifactRepository artifactRepository) {
+            YappcArtifactRepository artifactRepository,
+            DlqPublisher dlqPublisher) {
         logger.info("Creating AdvancePhaseUseCase");
-        return new AdvancePhaseUseCase(transitionConfigLoader, policyEngine, artifactRepository);
+        return new AdvancePhaseUseCase(transitionConfigLoader, policyEngine, artifactRepository, dlqPublisher);
     }
 
     // ========== Stage Config (3.3) ==========

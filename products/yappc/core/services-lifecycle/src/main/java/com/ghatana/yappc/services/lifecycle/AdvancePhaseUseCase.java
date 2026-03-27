@@ -44,9 +44,13 @@ public class AdvancePhaseUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(AdvancePhaseUseCase.class);
 
+    private static final String PIPELINE_ID = "lifecycle-management-v1";
+    private static final String NODE_ID     = "advance-phase";
+
     private final TransitionConfigLoader transitionConfig;
     private final PolicyEngine policyEngine;
     private final YappcArtifactRepository artifactRepository;
+    private final DlqPublisher dlqPublisher;
 
     /**
      * Constructs the use case with its required dependencies.
@@ -54,14 +58,17 @@ public class AdvancePhaseUseCase {
      * @param transitionConfig   loaded transition rules from {@code transitions.yaml}
      * @param policyEngine       policy gate evaluator
      * @param artifactRepository artifact presence checker
+     * @param dlqPublisher       DLQ sink for blocked / invalid transitions
      */
     public AdvancePhaseUseCase(
             TransitionConfigLoader transitionConfig,
             PolicyEngine policyEngine,
-            YappcArtifactRepository artifactRepository) {
-        this.transitionConfig    = transitionConfig;
-        this.policyEngine        = policyEngine;
-        this.artifactRepository  = artifactRepository;
+            YappcArtifactRepository artifactRepository,
+            DlqPublisher dlqPublisher) {
+        this.transitionConfig   = transitionConfig;
+        this.policyEngine       = policyEngine;
+        this.artifactRepository = artifactRepository;
+        this.dlqPublisher       = dlqPublisher;
     }
 
     /**
@@ -84,10 +91,12 @@ public class AdvancePhaseUseCase {
         if (maybeSpec.isEmpty()) {
             log.warn("AdvancePhaseUseCase: invalid transition {} → {} for project={}",
                 request.fromPhase(), request.toPhase(), request.projectId());
-            return Promise.of(TransitionResult.blocked(
+            TransitionResult result = TransitionResult.blocked(
                 "INVALID_TRANSITION",
                 "No transition rule found from '" + request.fromPhase() +
-                "' to '" + request.toPhase() + "'"));
+                "' to '" + request.toPhase() + "'");
+            publishToDlq(request, result);
+            return Promise.of(result);
         }
 
         TransitionSpec spec = maybeSpec.get();
@@ -98,7 +107,9 @@ public class AdvancePhaseUseCase {
                 if (!missingArtifacts.isEmpty()) {
                     log.warn("AdvancePhaseUseCase: missing artifacts {} for project={}",
                         missingArtifacts, request.projectId());
-                    return Promise.of(TransitionResult.missingArtifacts(missingArtifacts));
+                    TransitionResult result = TransitionResult.missingArtifacts(missingArtifacts);
+                    publishToDlq(request, result);
+                    return Promise.of(result);
                 }
 
                 // ── Step 3: Evaluate policy gate ─────────────────────────────
@@ -114,10 +125,12 @@ public class AdvancePhaseUseCase {
                     .then(allowed -> {
                         if (!allowed) {
                             log.info("AdvancePhaseUseCase: policy BLOCKED for project={}", request.projectId());
-                            return Promise.of(TransitionResult.blocked(
+                            TransitionResult result = TransitionResult.blocked(
                                 "POLICY_GATE",
                                 "phase_advance_policy denied the transition from '" +
-                                request.fromPhase() + "' to '" + request.toPhase() + "'"));
+                                request.fromPhase() + "' to '" + request.toPhase() + "'");
+                            publishToDlq(request, result);
+                            return Promise.of(result);
                         }
 
                         // ── Step 4: Transition approved ───────────────────────
@@ -168,5 +181,31 @@ public class AdvancePhaseUseCase {
         }
 
         return resultPromise;
+    }
+
+    /**
+     * Fire-and-forget DLQ publication for blocked transitions.
+     * Errors in publication are logged and swallowed — never propagated to the caller.
+     */
+    private void publishToDlq(TransitionRequest request, TransitionResult result) {
+        Map<String, Object> payload = Map.of(
+            "projectId",  request.projectId(),
+            "fromPhase",  request.fromPhase(),
+            "toPhase",    request.toPhase(),
+            "blockCode",  result.blockCode() != null ? result.blockCode() : "UNKNOWN",
+            "blockReason", result.blockReason() != null ? result.blockReason() : "",
+            "missingArtifacts", result.missingArtifacts()
+        );
+        dlqPublisher.publish(
+                request.tenantId(),
+                PIPELINE_ID,
+                NODE_ID,
+                "PHASE_ADVANCE_BLOCKED",
+                payload,
+                result.blockCode(),
+                request.projectId())
+            .whenException(e ->
+                log.warn("AdvancePhaseUseCase: DLQ publish failed for project={}: {}",
+                    request.projectId(), e.getMessage()));
     }
 }
