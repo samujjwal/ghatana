@@ -1,6 +1,7 @@
 package com.ghatana.security.keys;
 
 import io.activej.promise.Promise;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,7 +146,7 @@ public class DefaultKeyManager implements KeyManager {
     /**
      * Exception thrown when a requested key is not found.
      */
-    public static class KeyNotFoundException extends RuntimeException {
+    public static class KeyNotFoundException extends ResourceNotFoundException {
         public KeyNotFoundException(String message) {
             super(message);
         }

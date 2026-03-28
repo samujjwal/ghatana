@@ -59,6 +59,11 @@ import java.util.*;
  * @see VirtualOrgAgent
  * @see UnifiedOperator
  * @see AbstractOperator
+ *
+ * @doc.type class
+ * @doc.purpose Bridges VirtualOrgAgent to UnifiedOperator so LLM-powered agents participate in stream pipelines
+ * @doc.layer product
+ * @doc.pattern Adapter
  */
 public class AgentStreamOperatorAdapter extends AbstractOperator {
 

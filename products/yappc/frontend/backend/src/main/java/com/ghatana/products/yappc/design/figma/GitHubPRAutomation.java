@@ -3,6 +3,7 @@ package com.ghatana.products.yappc.design.figma;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -356,7 +357,7 @@ public class GitHubPRAutomation {
      * @doc.layer product
      * @doc.pattern Exception
      */
-    public static class GitHubApiException extends RuntimeException {
+    public static class GitHubApiException extends ServiceException {
         public GitHubApiException(String message) {
             super(message);
         }

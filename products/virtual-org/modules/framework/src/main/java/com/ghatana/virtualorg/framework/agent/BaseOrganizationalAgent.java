@@ -6,6 +6,7 @@ import com.ghatana.platform.domain.agent.registry.AgentExecutionContext;
 import com.ghatana.platform.domain.agent.registry.AgentMetrics;
 import com.ghatana.platform.domain.agent.registry.HealthStatus;
 import com.ghatana.platform.domain.event.Event;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.virtualorg.framework.hierarchy.Authority;
 import com.ghatana.virtualorg.framework.hierarchy.EscalationPath;
 import com.ghatana.virtualorg.framework.hierarchy.Role;
@@ -355,7 +356,7 @@ public abstract class BaseOrganizationalAgent implements OrganizationalAgent {
     /**
      * Exception thrown when agent execution fails.
      */
-    public static class AgentExecutionException extends RuntimeException {
+    public static class AgentExecutionException extends ServiceException {
 
         public AgentExecutionException(String message, Throwable cause) {
             super(message, cause);

@@ -1,5 +1,7 @@
 package com.ghatana.phr.kernel.consent;
 
+import com.ghatana.platform.core.exception.GovernancePolicyException;
+
 /**
  * Typed exception thrown by {@link ConsentService#assertAccess} when an access
  * decision results in a deny outcome.
@@ -13,7 +15,7 @@ package com.ghatana.phr.kernel.consent;
  * @doc.layer product
  * @doc.pattern ValueObject
  */
-public final class ConsentAccessDeniedException extends RuntimeException {
+public final class ConsentAccessDeniedException extends GovernancePolicyException {
 
     private final String requestId;
     private final String tenantId;

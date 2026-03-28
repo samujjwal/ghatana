@@ -1,5 +1,8 @@
 package com.ghatana.datacloud.api.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 /**
  * Request to generate entity suggestion from natural language description.
  *
@@ -26,13 +29,18 @@ package com.ghatana.datacloud.api.dto;
  * @since 1.0.0
  */
 public record EntitySuggestionRequest(
+    @NotBlank(message = "collectionName is required")
+    @Size(min = 1, max = 255, message = "collectionName must be between 1 and 255 characters")
     String collectionName,
+
+    @NotBlank(message = "description is required")
+    @Size(min = 1, max = 4096, message = "description must be between 1 and 4096 characters")
     String description
 ) {
 
     /**
-     * Validates request parameters.
-     * 
+     * Validates request parameters at construction time (fail-fast, non-servlet context).
+     *
      * @throws IllegalArgumentException if collectionName is blank or description is blank
      */
     public EntitySuggestionRequest {

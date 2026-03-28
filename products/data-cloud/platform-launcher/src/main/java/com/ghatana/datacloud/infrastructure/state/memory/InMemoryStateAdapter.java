@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  * @doc.pattern Adapter
  */
 public class InMemoryStateAdapter implements StateAdapter<String, String> {
-    private static final Logger logger = LoggerFactory.getLogger(InMemoryStateAdapter.class);
+    private static final Logger log = LoggerFactory.getLogger(InMemoryStateAdapter.class);
 
     /**
      * Entry with expiration timestamp.
@@ -93,10 +93,10 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
 
         try {
             store.put(key, new Entry(value, ttlMillis));
-            logger.debug("Put key {} in memory (ttl={}ms)", key, ttlMillis);
+            log.debug("Put key {} in memory (ttl={}ms)", key, ttlMillis);
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Failed to put key {} in memory", key, e);
+            log.error("Failed to put key {} in memory", key, e);
             return Promise.ofException(e);
         }
     }
@@ -120,10 +120,10 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
             for (Map.Entry<String, String> entry : entries.entrySet()) {
                 store.put(entry.getKey(), new Entry(entry.getValue(), ttlMillis));
             }
-            logger.debug("Batch put {} entries in memory", entries.size());
+            log.debug("Batch put {} entries in memory", entries.size());
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Failed to batch put entries in memory", e);
+            log.error("Failed to batch put entries in memory", e);
             return Promise.ofException(e);
         }
     }
@@ -147,15 +147,15 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
             if (entry != null) {
                 if (entry.isExpired()) {
                     store.remove(key);
-                    logger.debug("Key {} expired, removed from memory", key);
+                    log.debug("Key {} expired, removed from memory", key);
                     return Promise.of(Optional.empty());
                 }
-                logger.debug("Got key {} from memory", key);
+                log.debug("Got key {} from memory", key);
                 return Promise.of(Optional.of(entry.value));
             }
             return Promise.of(Optional.empty());
         } catch (Exception e) {
-            logger.error("Failed to get key {} from memory", key, e);
+            log.error("Failed to get key {} from memory", key, e);
             return Promise.ofException(e);
         }
     }
@@ -182,10 +182,10 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
                     result.put(key, entry.value);
                 }
             }
-            logger.debug("Batch got {} of {} keys from memory", result.size(), keys.size());
+            log.debug("Batch got {} of {} keys from memory", result.size(), keys.size());
             return Promise.of(result);
         } catch (Exception e) {
-            logger.error("Failed to batch get keys from memory", e);
+            log.error("Failed to batch get keys from memory", e);
             return Promise.ofException(e);
         }
     }
@@ -206,10 +206,10 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
 
         try {
             store.remove(key);
-            logger.debug("Deleted key {} from memory", key);
+            log.debug("Deleted key {} from memory", key);
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Failed to delete key {} from memory", key, e);
+            log.error("Failed to delete key {} from memory", key, e);
             return Promise.ofException(e);
         }
     }
@@ -232,10 +232,10 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
             for (String key : keys) {
                 store.remove(key);
             }
-            logger.debug("Batch deleted {} keys from memory", keys.size());
+            log.debug("Batch deleted {} keys from memory", keys.size());
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Failed to batch delete keys from memory", e);
+            log.error("Failed to batch delete keys from memory", e);
             return Promise.ofException(e);
         }
     }
@@ -251,15 +251,15 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
      */
     @Override
     public Promise<Void> clear() {
-        logger.warn("DESTRUCTIVE OPERATION: clear() called on InMemoryStateAdapter — "
+        log.warn("DESTRUCTIVE OPERATION: clear() called on InMemoryStateAdapter — "
                 + "removing ALL entries ({} keys) across all tenants.", store.size());
 
         try {
             store.clear();
-            logger.warn("DESTRUCTIVE OPERATION COMPLETED: In-memory store cleared");
+            log.warn("DESTRUCTIVE OPERATION COMPLETED: In-memory store cleared");
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Failed to clear in-memory store", e);
+            log.error("Failed to clear in-memory store", e);
             return Promise.ofException(e);
         }
     }
@@ -285,7 +285,7 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
             }
             return Promise.of(false);
         } catch (Exception e) {
-            logger.error("Failed to check existence of key {}", key, e);
+            log.error("Failed to check existence of key {}", key, e);
             return Promise.ofException(e);
         }
     }
@@ -315,7 +315,7 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
 
             return Promise.of(stats);
         } catch (Exception e) {
-            logger.error("Failed to get in-memory statistics", e);
+            log.error("Failed to get in-memory statistics", e);
             return Promise.ofException(e);
         }
     }
@@ -334,7 +334,7 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
                 .sum();
             return Promise.of(size);
         } catch (Exception e) {
-            logger.error("Failed to get in-memory size", e);
+            log.error("Failed to get in-memory size", e);
             return Promise.ofException(e);
         }
     }
@@ -349,7 +349,7 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
         try {
             return Promise.of((long) store.size());
         } catch (Exception e) {
-            logger.error("Failed to get in-memory entry count", e);
+            log.error("Failed to get in-memory entry count", e);
             return Promise.ofException(e);
         }
     }
@@ -368,10 +368,10 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
         try {
             store.clear();
             closed = true;
-            logger.debug("Closed in-memory adapter");
+            log.debug("Closed in-memory adapter");
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Failed to close in-memory adapter", e);
+            log.error("Failed to close in-memory adapter", e);
             return Promise.ofException(e);
         }
     }

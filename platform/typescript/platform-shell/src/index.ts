@@ -44,6 +44,9 @@ export {
   type NotificationSeverity,
 } from './atoms/notificationAtom';
 
+/* ── Hooks ───────────────────────────────────────────────────────────────────── */
+export { useAuth, type UseAuthReturn } from './hooks/useAuth';
+
 /* ── Components ─────────────────────────────────────────────────────────────── */
 export { PlatformShell, type PlatformShellProps } from './components/PlatformShell';
 export { NavBar, type NavBarProps } from './components/NavBar';

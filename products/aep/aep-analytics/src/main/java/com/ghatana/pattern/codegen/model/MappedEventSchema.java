@@ -9,6 +9,11 @@ import java.util.Objects;
 
 /**
  * Aggregates schema metadata required for code generation.
+ *
+ * @doc.type class
+ * @doc.purpose Immutable schema metadata aggregate for event type code generation
+ * @doc.layer product
+ * @doc.pattern Value Object
  */
 public final class MappedEventSchema {
     private final GeneratedTypeKey key;

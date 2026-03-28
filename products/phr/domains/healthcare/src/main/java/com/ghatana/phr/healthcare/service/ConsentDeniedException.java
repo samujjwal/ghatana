@@ -1,5 +1,7 @@
 package com.ghatana.phr.healthcare.service;
 
+import com.ghatana.platform.core.exception.GovernancePolicyException;
+
 /**
  * Thrown when consent enforcement denies an access request.
  *
@@ -9,7 +11,7 @@ package com.ghatana.phr.healthcare.service;
  * @doc.pattern Exception
  * @since 1.0.0
  */
-public class ConsentDeniedException extends RuntimeException {
+public class ConsentDeniedException extends GovernancePolicyException {
 
     private final String requestId;
     private final String reasonCode;

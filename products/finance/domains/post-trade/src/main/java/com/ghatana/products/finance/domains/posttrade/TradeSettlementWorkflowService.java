@@ -1,5 +1,6 @@
 package com.ghatana.products.finance.domains.posttrade;
 
+import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -270,7 +271,7 @@ public class TradeSettlementWorkflowService {
     /**
      * Thrown when settlement cannot proceed due to a step failure.
      */
-    public static class SettlementException extends RuntimeException {
+    public static class SettlementException extends ServiceException {
         /**
          * Creates a new settlement exception.
          *

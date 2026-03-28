@@ -30,6 +30,7 @@ import java.util.stream.Stream;
  * }</pre>
  * 
  * @see YamlAgentConfig
+ * @doc.type class
  * @doc.pattern Loader
  * @doc.purpose Load YAML agent configurations
  * @doc.layer config

@@ -4,6 +4,8 @@ package com.ghatana.products.finance.domains.oms.service;
 import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.products.finance.domains.oms.domain.*;
 import com.ghatana.products.finance.domains.oms.port.OrderStore;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -137,13 +139,13 @@ public class OrderLifecycleService {
 
     // ─── Exceptions ───────────────────────────────────────────────────────────
 
-    public static class OrderNotFoundException extends RuntimeException {
+    public static class OrderNotFoundException extends ResourceNotFoundException {
         public OrderNotFoundException(String orderId) {
             super("Order not found: " + orderId);
         }
     }
 
-    public static class InvalidOrderTransitionException extends RuntimeException {
+    public static class InvalidOrderTransitionException extends ServiceException {
         public InvalidOrderTransitionException(OrderStatus from, OrderStatus to) {
             super("Invalid order transition: " + from + " → " + to);
         }

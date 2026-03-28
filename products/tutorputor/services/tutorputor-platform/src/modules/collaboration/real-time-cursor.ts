@@ -7,6 +7,9 @@
 
 import { EventEmitter } from "events";
 import type { WebSocket } from "ws";
+import { createStandaloneLogger } from '@tutorputor/core/logger';
+
+const logger = createStandaloneLogger({ component: 'RealTimeCursorService' });
 
 export interface CursorPosition {
   x: number;
@@ -190,7 +193,11 @@ export class RealTimeCollaboration extends EventEmitter {
     });
 
     ws.on("error", (error: Error) => {
-      console.error(`WebSocket error for user ${userId}:`, error);
+      logger.error({
+        message: 'WebSocket error for user',
+        userId,
+        error: error.message,
+      });
       this.webSockets.delete(userId);
     });
   }
@@ -345,6 +352,10 @@ export class RealTimeCollaboration extends EventEmitter {
       "#3498DB",
     ];
 
+    if (!userId) {
+      return colors[0];
+    }
+
     let hash = 0;
     for (let i = 0; i < userId.length; i++) {
       hash = userId.charCodeAt(i) + ((hash << 5) - hash);
@@ -395,7 +406,11 @@ export class RealTimeCollaboration extends EventEmitter {
       try {
         ws.close();
       } catch (error) {
-        console.error(`Error closing WebSocket for user ${userId}:`, error);
+        logger.error({
+          message: 'Error closing WebSocket',
+          userId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 

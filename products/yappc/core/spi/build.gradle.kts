@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.ghatana.products.yappc"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 description = "YAPPC SPI - Unified Plugin SPI & Client API (merged: yappc-plugin-spi + yappc-client-api)"
 

@@ -6,6 +6,11 @@ import java.util.regex.Pattern;
 
 /**
  * Default implementation that normalizes names into lowerCamelCase identifiers.
+ *
+ * @doc.type class
+ * @doc.purpose Normalizes schema field names into valid lowerCamelCase Java identifiers
+ * @doc.layer product
+ * @doc.pattern Strategy
  */
 public final class SanitizedFieldNamingStrategy implements FieldNamingStrategy {
     private static final Pattern NON_ALPHANUM = Pattern.compile("[^A-Za-z0-9]");

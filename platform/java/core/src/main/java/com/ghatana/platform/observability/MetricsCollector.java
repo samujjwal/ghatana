@@ -39,6 +39,25 @@ import java.util.concurrent.TimeUnit;
  * MeterRegistry registry = metrics.getMeterRegistry();
  * }</pre>
  *
+ * <p>
+ * <b>Metric Naming Conventions (OBS-001):</b></p>
+ * <p>All metric names across the platform must follow these conventions to ensure
+ * consistent observability and alerting:</p>
+ * <ul>
+ * <li><b>Format:</b> {@code <product>.<domain>.<operation>.<outcome>} using lowercase
+ *     dot-separated segments (e.g., {@code auth.gateway.login.success}).</li>
+ * <li><b>Counters:</b> End with a noun or past-tense verb describing what was counted
+ *     (e.g., {@code requests.total}, {@code errors.count}, {@code events.processed}).</li>
+ * <li><b>Timers/durations:</b> End with {@code .duration} or {@code .latency}
+ *     (e.g., {@code http.request.duration}, {@code db.query.latency}).</li>
+ * <li><b>Gauges:</b> End with a noun describing the current state
+ *     (e.g., {@code connection.pool.active}, {@code queue.depth}).</li>
+ * <li><b>Tags:</b> Use snake_case keys and lowercase values. Common standard tags:
+ *     {@code tenant}, {@code status}, {@code method}, {@code endpoint}, {@code error_type}.</li>
+ * <li><b>Avoid:</b> Generic names like {@code count}, {@code total} without domain prefix.
+ *     Avoid camelCase or PascalCase in metric names.</li>
+ * </ul>
+ *
  * @doc.type interface
  * @doc.purpose Core abstraction for collecting metrics with Micrometer backend
  * @doc.layer core

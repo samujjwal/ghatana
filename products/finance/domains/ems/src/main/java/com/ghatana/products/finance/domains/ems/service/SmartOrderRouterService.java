@@ -2,6 +2,7 @@ package com.ghatana.products.finance.domains.ems.service;
 
 
 import com.ghatana.platform.core.event.EventBusPort;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.products.finance.domains.ems.domain.*;
 import com.ghatana.products.finance.domains.ems.port.ExchangeAdapterPort;
 import io.micrometer.core.instrument.Counter;
@@ -286,7 +287,7 @@ public class SmartOrderRouterService {
         Optional<RoutedOrder> findByRoutingId(String routingId);
     }
 
-    public static class RoutingException extends RuntimeException {
+    public static class RoutingException extends ServiceException {
         public RoutingException(String message, Throwable cause) { super(message, cause); }
     }
 

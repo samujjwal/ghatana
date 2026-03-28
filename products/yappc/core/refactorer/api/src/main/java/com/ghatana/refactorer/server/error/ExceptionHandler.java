@@ -152,7 +152,7 @@ public final class ExceptionHandler {
     /**
      * Validation exception for request validation failures.
      */
-    public static class ValidationException extends RuntimeException {
+    public static class ValidationException extends com.ghatana.platform.core.exception.ValidationException {
         public ValidationException(String message) {
             super(message);
         }
@@ -165,7 +165,7 @@ public final class ExceptionHandler {
     /**
      * Authentication exception for missing/invalid credentials.
      */
-    public static class AuthenticationException extends RuntimeException {
+    public static class AuthenticationException extends com.ghatana.platform.core.exception.UnauthorizedException {
         public AuthenticationException(String message) {
             super(message);
         }
@@ -178,7 +178,7 @@ public final class ExceptionHandler {
     /**
      * Authorization exception for insufficient permissions.
      */
-    public static class AuthorizationException extends RuntimeException {
+    public static class AuthorizationException extends com.ghatana.platform.core.exception.UnauthorizedException {
         public AuthorizationException(String message) {
             super(message);
         }
@@ -191,7 +191,7 @@ public final class ExceptionHandler {
     /**
      * Resource not found exception.
      */
-    public static class ResourceNotFoundException extends RuntimeException {
+    public static class ResourceNotFoundException extends com.ghatana.platform.core.exception.ResourceNotFoundException {
         private final String resourceId;
 
         public ResourceNotFoundException(String message, String resourceId) {
@@ -207,7 +207,7 @@ public final class ExceptionHandler {
     /**
      * Service exception for domain-specific errors.
      */
-    public static class ServiceException extends RuntimeException {
+    public static class ServiceException extends com.ghatana.platform.core.exception.ServiceException {
         private final ErrorCode errorCode;
 
         public ServiceException(ErrorCode errorCode, String message) {

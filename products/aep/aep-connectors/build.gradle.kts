@@ -25,9 +25,16 @@ dependencies {
     compileOnly("com.rabbitmq:amqp-client:5.18.0")
     
     // Testing
+    testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testImplementation(libs.assertj.core)
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.kafka)
+    testImplementation("org.apache.kafka:kafka-clients:3.6.0")
+    testImplementation("software.amazon.awssdk:sqs:2.21.0")
+    testImplementation("com.rabbitmq:amqp-client:5.18.0")
 }
 
 tasks.test {

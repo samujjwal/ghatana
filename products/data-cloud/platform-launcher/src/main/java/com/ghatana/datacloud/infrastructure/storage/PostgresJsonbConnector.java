@@ -8,6 +8,7 @@ import com.ghatana.datacloud.entity.storage.StorageBackendType;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
 import com.ghatana.datacloud.entity.storage.StorageProfile;
 import com.ghatana.datacloud.infrastructure.audit.DataCloudAuditLogger;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,7 +111,7 @@ import java.util.stream.Collectors;
  */
 public class PostgresJsonbConnector implements StorageConnector {
 
-    private static final Logger logger = LoggerFactory.getLogger(PostgresJsonbConnector.class);
+    private static final Logger log = LoggerFactory.getLogger(PostgresJsonbConnector.class);
 
     private final EntityRepository entityRepository;
     private final MetricsCollector metricsCollector;
@@ -165,7 +166,7 @@ public class PostgresJsonbConnector implements StorageConnector {
                             "tenant", entity.getTenantId(), "collection", entity.getCollectionName());
                     metricsCollector.recordTimer("connector.postgres.duration", duration,
                             "operation", "create", "tenant", entity.getTenantId());
-                    logger.debug("Created entity: tenant={}, collection={}, id={}, duration={}ms",
+                    log.debug("Created entity: tenant={}, collection={}, id={}, duration={}ms",
                             entity.getTenantId(), entity.getCollectionName(), entity.getId(), duration);
                     auditLogger.logDataModification(entity.getTenantId(), "CREATE",
                             entity.getCollectionName(), entity.getId().toString(), true);
@@ -174,7 +175,7 @@ public class PostgresJsonbConnector implements StorageConnector {
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "create", "errorType", e.getClass().getSimpleName());
-                    logger.error("Create failed: {}", e.getMessage(), e);
+                    log.error("Create failed: {}", e.getMessage(), e);
                     auditLogger.logDataModification(entity.getTenantId(), "CREATE",
                             entity.getCollectionName(),
                             entity.getId() != null ? entity.getId().toString() : "unknown", false);
@@ -205,14 +206,14 @@ public class PostgresJsonbConnector implements StorageConnector {
                             "tenant", tenantId, "found", String.valueOf(result.isPresent()));
                     metricsCollector.recordTimer("connector.postgres.duration", duration,
                             "operation", "read", "tenant", tenantId);
-                    logger.debug("Read entity: tenant={}, id={}, found={}, duration={}ms",
+                    log.debug("Read entity: tenant={}, id={}, found={}, duration={}ms",
                             tenantId, entityId, result.isPresent(), duration);
                     return result;
                 })
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "read", "errorType", e.getClass().getSimpleName());
-                    logger.error("Read failed: tenant={}, id={}, error={}", tenantId, entityId, e.getMessage(), e);
+                    log.error("Read failed: tenant={}, id={}, error={}", tenantId, entityId, e.getMessage(), e);
                     return new StorageException("Failed to read entity from PostgreSQL", e);
                 });
     }
@@ -238,14 +239,14 @@ public class PostgresJsonbConnector implements StorageConnector {
                             "tenant", entity.getTenantId(), "collection", entity.getCollectionName());
                     metricsCollector.recordTimer("connector.postgres.duration", duration,
                             "operation", "update", "tenant", entity.getTenantId());
-                    logger.debug("Updated entity: tenant={}, id={}, duration={}ms",
+                    log.debug("Updated entity: tenant={}, id={}, duration={}ms",
                             entity.getTenantId(), entity.getId(), duration);
                     return updated;
                 })
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "update", "errorType", e.getClass().getSimpleName());
-                    logger.error("Update failed: id={}, error={}", entity.getId(), e.getMessage(), e);
+                    log.error("Update failed: id={}, error={}", entity.getId(), e.getMessage(), e);
                     return new StorageException("Failed to update entity in PostgreSQL", e);
                 });
     }
@@ -273,14 +274,14 @@ public class PostgresJsonbConnector implements StorageConnector {
                             "tenant", tenantId, "collection", collectionName);
                     metricsCollector.recordTimer("connector.postgres.duration", duration,
                             "operation", "delete", "tenant", tenantId);
-                    logger.debug("Deleted entity: tenant={}, id={}, duration={}ms", tenantId, entityId, duration);
+                    log.debug("Deleted entity: tenant={}, id={}, duration={}ms", tenantId, entityId, duration);
                     auditLogger.logDataModification(tenantId, "DELETE", collectionName, entityId.toString(), true);
                     return v;
                 })
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "delete", "errorType", e.getClass().getSimpleName());
-                    logger.error("Delete failed: id={}, error={}", entityId, e.getMessage(), e);
+                    log.error("Delete failed: id={}, error={}", entityId, e.getMessage(), e);
                     return new StorageException("Failed to delete entity from PostgreSQL", e);
                 });
     }
@@ -317,14 +318,14 @@ public class PostgresJsonbConnector implements StorageConnector {
                                     "resultCount", String.valueOf(entities.size()));
                             metricsCollector.recordTimer("connector.postgres.duration", duration,
                                     "operation", "query", "tenant", tenantId);
-                            logger.debug("Query executed: tenant={}, collection={}, results={}, totalCount={}, duration={}ms",
+                            log.debug("Query executed: tenant={}, collection={}, results={}, totalCount={}, duration={}ms",
                                     tenantId, collectionName, entities.size(), totalCount, duration);
                             return result;
                         }))
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "query", "errorType", e.getClass().getSimpleName());
-                    logger.error("Query failed: {}", e.getMessage(), e);
+                    log.error("Query failed: {}", e.getMessage(), e);
                     return new StorageException("Failed to query entities from PostgreSQL", e);
                 });
     }
@@ -391,7 +392,7 @@ public class PostgresJsonbConnector implements StorageConnector {
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "scan", "errorType", e.getClass().getSimpleName());
-                    logger.error("Scan failed: {}", e.getMessage(), e);
+                    log.error("Scan failed: {}", e.getMessage(), e);
                     return new StorageException("Failed to scan entities from PostgreSQL", e);
                 });
     }
@@ -428,7 +429,7 @@ public class PostgresJsonbConnector implements StorageConnector {
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "scan", "errorType", e.getClass().getSimpleName());
-                    logger.error("Scan failed: {}", e.getMessage(), e);
+                    log.error("Scan failed: {}", e.getMessage(), e);
                     return new StorageException("Failed to scan entities from PostgreSQL", e);
                 });
     }
@@ -458,7 +459,7 @@ public class PostgresJsonbConnector implements StorageConnector {
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "count", "errorType", e.getClass().getSimpleName());
-                    logger.error("Count failed: {}", e.getMessage(), e);
+                    log.error("Count failed: {}", e.getMessage(), e);
                     return new StorageException("Failed to count entities in PostgreSQL", e);
                 });
     }
@@ -497,13 +498,13 @@ public class PostgresJsonbConnector implements StorageConnector {
                             "count", String.valueOf(saved.size()));
                     metricsCollector.recordTimer("connector.postgres.duration", duration,
                             "operation", "bulk_create", "tenant", tenantId);
-                    logger.debug("Bulk created: tenant={}, count={}, duration={}ms", tenantId, saved.size(), duration);
+                    log.debug("Bulk created: tenant={}, count={}, duration={}ms", tenantId, saved.size(), duration);
                     return saved;
                 })
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "bulk_create", "errorType", e.getClass().getSimpleName());
-                    logger.error("Bulk create failed: {}", e.getMessage(), e);
+                    log.error("Bulk create failed: {}", e.getMessage(), e);
                     return new StorageException("Failed to bulk create entities in PostgreSQL", e);
                 });
     }
@@ -536,13 +537,13 @@ public class PostgresJsonbConnector implements StorageConnector {
                     metricsCollector.recordTimer("connector.postgres.duration",
                             System.currentTimeMillis() - startTime,
                             "operation", "bulk_update", "tenant", tenantId);
-                    logger.debug("Bulk updated: tenant={}, count={}", tenantId, updated.size());
+                    log.debug("Bulk updated: tenant={}, count={}", tenantId, updated.size());
                     return updated;
                 })
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "bulk_update", "errorType", e.getClass().getSimpleName());
-                    logger.error("Bulk update failed: {}", e.getMessage(), e);
+                    log.error("Bulk update failed: {}", e.getMessage(), e);
                     return new StorageException("Failed to bulk update entities in PostgreSQL", e);
                 });
     }
@@ -572,13 +573,13 @@ public class PostgresJsonbConnector implements StorageConnector {
                     metricsCollector.recordTimer("connector.postgres.duration",
                             System.currentTimeMillis() - startTime,
                             "operation", "bulk_delete", "tenant", tenantId);
-                    logger.debug("Bulk deleted: tenant={}, count={}", tenantId, entityIds.size());
+                    log.debug("Bulk deleted: tenant={}, count={}", tenantId, entityIds.size());
                     return (long) entityIds.size();
                 })
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "bulk_delete", "errorType", e.getClass().getSimpleName());
-                    logger.error("Bulk delete failed: {}", e.getMessage(), e);
+                    log.error("Bulk delete failed: {}", e.getMessage(), e);
                     return new StorageException("Failed to bulk delete entities in PostgreSQL", e);
                 });
     }
@@ -623,13 +624,13 @@ public class PostgresJsonbConnector implements StorageConnector {
                     metricsCollector.recordTimer("connector.postgres.duration",
                             System.currentTimeMillis() - startTime,
                             "operation", "truncate", "tenant", tenantId);
-                    logger.debug("Truncated: tenant={}, count={}", tenantId, count);
+                    log.debug("Truncated: tenant={}, count={}", tenantId, count);
                     return count;
                 })
                 .mapException(e -> {
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "truncate", "errorType", e.getClass().getSimpleName());
-                    logger.error("Truncate failed: {}", e.getMessage(), e);
+                    log.error("Truncate failed: {}", e.getMessage(), e);
                     return new StorageException("Failed to truncate collection in PostgreSQL", e);
                 });
     }
@@ -675,12 +676,12 @@ public class PostgresJsonbConnector implements StorageConnector {
                     metricsCollector.recordTimer("connector.postgres.duration", duration,
                             "operation", "health_check");
                     if (duration > 5000) {
-                        logger.warn("Health check completed but took {}ms (>5s threshold)", duration);
+                        log.warn("Health check completed but took {}ms (>5s threshold)", duration);
                     }
                     return (Void) null;
                 })
                 .mapException(e -> {
-                    logger.error("Health check failed: {}", e.getMessage(), e);
+                    log.error("Health check failed: {}", e.getMessage(), e);
                     metricsCollector.incrementCounter("connector.postgres.error",
                             "operation", "health_check", "errorType", e.getClass().getSimpleName());
                     return new StorageException("PostgreSQL health check failed: " + e.getMessage(), e);
@@ -705,7 +706,7 @@ public class PostgresJsonbConnector implements StorageConnector {
     /**
      * Custom exception for storage errors.
      */
-    public static class StorageException extends RuntimeException {
+    public static class StorageException extends ServiceException {
         public StorageException(String message, Throwable cause) {
             super(message, cause);
         }

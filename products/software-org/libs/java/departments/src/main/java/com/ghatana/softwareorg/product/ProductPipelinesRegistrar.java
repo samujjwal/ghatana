@@ -8,6 +8,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 
+/**
+ * Product Pipelines Registrar — manages feature planning, roadmap, and release pipelines.
+ *
+ * @doc.type class
+ * @doc.purpose Product management pipeline registration and management
+ * @doc.layer product
+ * @doc.pattern Registrar
+ */
 @Slf4j
 @RequiredArgsConstructor
 @Getter

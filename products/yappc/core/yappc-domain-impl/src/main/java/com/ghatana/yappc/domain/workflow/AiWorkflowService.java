@@ -5,6 +5,8 @@ import com.ghatana.products.yappc.domain.agent.AIAgent;
 import com.ghatana.products.yappc.domain.agent.AIAgentContext;
 import com.ghatana.products.yappc.domain.agent.AgentName;
 import com.ghatana.products.yappc.domain.agent.WorkflowRouterAgent;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
@@ -800,7 +802,7 @@ public class AiWorkflowService {
     /**
      * Exception thrown when workflow is not found
      */
-    public static class WorkflowNotFoundException extends RuntimeException {
+    public static class WorkflowNotFoundException extends ResourceNotFoundException {
         private final String workflowId;
 
         public WorkflowNotFoundException(String workflowId) {
@@ -816,7 +818,7 @@ public class AiWorkflowService {
     /**
      * Exception thrown for invalid workflow state transitions
      */
-    public static class InvalidWorkflowStateException extends RuntimeException {
+    public static class InvalidWorkflowStateException extends ServiceException {
         private final String workflowId;
         private final AiWorkflowInstance.WorkflowStatus currentStatus;
 
@@ -842,7 +844,7 @@ public class AiWorkflowService {
     /**
      * Exception thrown for workflow execution errors
      */
-    public static class WorkflowExecutionException extends RuntimeException {
+    public static class WorkflowExecutionException extends ServiceException {
         private final String workflowId;
 
         public WorkflowExecutionException(String workflowId, String message) {

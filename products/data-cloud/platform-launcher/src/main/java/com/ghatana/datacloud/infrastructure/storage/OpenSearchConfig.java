@@ -47,6 +47,26 @@ public record OpenSearchConfig(
         return new Builder();
     }
 
+    /**
+     * Returns a safe string representation that masks the password credential.
+     * Override is necessary because the auto-generated record toString() would
+     * expose the password in logs (FINDING-DC-L5).
+     */
+    @Override
+    public String toString() {
+        return "OpenSearchConfig{" +
+               "host='" + host + '\'' +
+               ", port=" + port +
+               ", scheme='" + scheme + '\'' +
+               ", username='" + username + '\'' +
+               ", password='[REDACTED]'" +
+               ", connectTimeoutMs=" + connectTimeoutMs +
+               ", responseTimeoutMs=" + responseTimeoutMs +
+               ", maxConnections=" + maxConnections +
+               ", verifyTls=" + verifyTls +
+               '}';
+    }
+
     public static final class Builder {
         private String host;
         private int port = 9200;

@@ -46,6 +46,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * Core agent info is immutable (from AgentInfo).
  *
  * Pattern: Adapter
+ *
+ * @doc.type class
+ * @doc.purpose Product-specific adapter extending core AgentInfo with Guardian threat detection capabilities
+ * @doc.layer product
+ * @doc.pattern Adapter, Extension
  */
 public class GuardianAgentAdapter {
     private static final Logger logger = LoggerFactory.getLogger(GuardianAgentAdapter.class);

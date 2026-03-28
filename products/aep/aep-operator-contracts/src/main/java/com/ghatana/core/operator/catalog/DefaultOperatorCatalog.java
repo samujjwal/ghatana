@@ -43,7 +43,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.purpose In-memory thread-safe operator catalog
  * @doc.layer core
  * @doc.pattern Registry
+ *
+ * @deprecated Use {@link UnifiedOperatorCatalog} instead. It provides the same
+ *             behaviour plus optional ServiceLoader-based discovery.
  */
+@Deprecated(since = "1.1.0", forRemoval = true)
 public class DefaultOperatorCatalog implements OperatorCatalog {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultOperatorCatalog.class);

@@ -8,6 +8,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 
+/**
+ * HR Pipelines Registrar — manages recruiting, performance management, and onboarding pipelines.
+ *
+ * @doc.type class
+ * @doc.purpose HR pipeline registration and management
+ * @doc.layer product
+ * @doc.pattern Registrar
+ */
 @Slf4j
 @RequiredArgsConstructor
 @Getter

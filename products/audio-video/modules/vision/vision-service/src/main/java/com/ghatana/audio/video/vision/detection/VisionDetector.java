@@ -2,6 +2,7 @@ package com.ghatana.audio.video.vision.detection;
 
 import com.ghatana.audio.video.vision.model.DetectedObject;
 import com.ghatana.audio.video.vision.model.DetectionOptions;
+import com.ghatana.platform.core.exception.ServiceException;
 
 import java.util.List;
 
@@ -36,7 +37,7 @@ public interface VisionDetector {
     /**
      * Checked exception thrown by detector implementations.
      */
-    class DetectionException extends RuntimeException {
+    class DetectionException extends ServiceException {
         public DetectionException(String message, Throwable cause) {
             super(message, cause);
         }

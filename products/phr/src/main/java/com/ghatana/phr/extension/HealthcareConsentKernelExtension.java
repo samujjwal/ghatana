@@ -3,7 +3,7 @@ package com.ghatana.phr.extension;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
-import com.ghatana.kernel.extension.KernelExtension;
+import com.ghatana.kernel.extension.AbstractKernelExtension;
 import com.ghatana.kernel.module.KernelModule;
 import io.activej.promise.Promise;
 
@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Healthcare consent management extension with Nepal Directive 2081 compliance.
@@ -29,14 +28,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-public class HealthcareConsentKernelExtension implements KernelExtension {
+public class HealthcareConsentKernelExtension extends AbstractKernelExtension {
 
     private static final String EXTENSION_ID = "healthcare-consent-nepal-2081";
     private static final String VERSION = "1.0.0";
 
-    private volatile KernelContext context;
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
-    private final AtomicBoolean started = new AtomicBoolean(false);
     private final ConcurrentHashMap<String, ConsentRecord> consentRegistry = new ConcurrentHashMap<>();
 
     @Override
@@ -86,22 +82,8 @@ public class HealthcareConsentKernelExtension implements KernelExtension {
     }
 
     @Override
-    public void onModuleInitialized(KernelContext context) {
-        if (!initialized.compareAndSet(false, true)) {
-            return;
-        }
-        this.context = context;
+    protected void onInitialize(KernelContext context) {
         registerEventHandlers();
-    }
-
-    @Override
-    public void onModuleStarted(KernelContext context) {
-        started.set(true);
-    }
-
-    @Override
-    public void onModuleStopped(KernelContext context) {
-        started.set(false);
     }
 
     @Override
@@ -128,12 +110,14 @@ public class HealthcareConsentKernelExtension implements KernelExtension {
      */
     public Promise<ConsentRecord> grantConsent(String patientId, ConsentPurpose purpose,
                                                 ConsentScope scope, ConsentDuration duration) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
-        String consentId = generateConsentId(patientId, purpose);
         Instant grantedAt = Instant.now();
+        String consentId = generateConsentId(patientId, purpose, grantedAt);
         Instant expiresAt = calculateExpiration(grantedAt, duration);
 
         ConsentRecord record = new ConsentRecord(
@@ -164,8 +148,10 @@ public class HealthcareConsentKernelExtension implements KernelExtension {
      * @return Promise completing when consent is withdrawn
      */
     public Promise<Void> withdrawConsent(String consentId, String reason) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
         ConsentRecord existing = consentRegistry.get(consentId);
@@ -205,17 +191,13 @@ public class HealthcareConsentKernelExtension implements KernelExtension {
      * @return Promise containing verification result
      */
     public Promise<ConsentVerification> verifyConsent(String patientId, ConsentPurpose purpose, String dataType) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
-        // Find the most recently granted consent for this patient and purpose.
-        // Note: generateConsentId includes a timestamp and therefore cannot be
-        // used here to look up a consent that was created at a different time.
-        ConsentRecord record = consentRegistry.values().stream()
-                .filter(r -> r.getPatientId().equals(patientId) && r.getPurpose() == purpose)
-                .max(java.util.Comparator.comparing(ConsentRecord::getGrantedAt))
-                .orElse(null);
+        ConsentRecord record = findLatestConsent(patientId, purpose).orElse(null);
 
         if (record == null) {
             return Promise.of(new ConsentVerification(false, "No consent found", null));
@@ -243,8 +225,10 @@ public class HealthcareConsentKernelExtension implements KernelExtension {
      * @return Promise containing consent history
      */
     public Promise<Set<ConsentRecord>> getConsentHistory(String patientId) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
         Set<ConsentRecord> records = ConcurrentHashMap.newKeySet();
@@ -263,8 +247,16 @@ public class HealthcareConsentKernelExtension implements KernelExtension {
         // Register event handlers for consent-related events
     }
 
-    private String generateConsentId(String patientId, ConsentPurpose purpose) {
-        return patientId + ":" + purpose.name() + ":" + Instant.now().toEpochMilli();
+    private Optional<ConsentRecord> findLatestConsent(String patientId, ConsentPurpose purpose) {
+        return consentRegistry.values().stream()
+            .filter(r -> r.getPatientId().equals(patientId) && r.getPurpose() == purpose)
+            .max(java.util.Comparator.comparing(ConsentRecord::getGrantedAt));
+    }
+
+    private String generateConsentId(String patientId, ConsentPurpose purpose, Instant grantedAt) {
+        String canonical = patientId + ":" + purpose.name() + ":" + grantedAt.toString();
+        String digest = Integer.toHexString(canonical.hashCode());
+        return patientId + ":" + purpose.name() + ":" + digest;
     }
 
     private Instant calculateExpiration(Instant grantedAt, ConsentDuration duration) {

@@ -1,9 +1,16 @@
 package com.ghatana.audio.video.multimodal.engine;
 
+import com.ghatana.platform.core.exception.ServiceException;
+
 /**
  * Unchecked exception for multimodal analysis failures.
+ *
+ * @doc.type exception
+ * @doc.purpose Multimodal analysis engine failure
+ * @doc.layer product
+ * @doc.pattern Exception
  */
-public class MultimodalException extends RuntimeException {
+public class MultimodalException extends ServiceException {
 
     public MultimodalException(String message) {
         super(message);

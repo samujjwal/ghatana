@@ -1,6 +1,7 @@
 package com.ghatana.products.yappc.service;
 
 import com.ghatana.products.yappc.domain.task.*;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -466,7 +467,7 @@ public class TaskServiceImpl implements TaskService {
     /**
      * Exception thrown when a task is not found.
      */
-    public static class TaskNotFoundException extends RuntimeException {
+    public static class TaskNotFoundException extends ResourceNotFoundException {
         public TaskNotFoundException(String message) {
             super(message);
         }

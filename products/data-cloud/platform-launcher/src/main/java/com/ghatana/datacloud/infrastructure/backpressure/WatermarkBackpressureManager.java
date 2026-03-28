@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @doc.pattern Flow Control, Adaptive Rate Limiting
  */
 public class WatermarkBackpressureManager implements BackpressurePort {
-    private static final Logger logger = LoggerFactory.getLogger(WatermarkBackpressureManager.class);
+    private static final Logger log = LoggerFactory.getLogger(WatermarkBackpressureManager.class);
     
     private final BackpressureConfig config;
     private final BlockingQueue<Object> ingestQueue;
@@ -79,7 +79,7 @@ public class WatermarkBackpressureManager implements BackpressurePort {
         this.lastAdjustmentTime = System.currentTimeMillis();
         this.currentRateLimit = config.getInitialRateLimit();
         
-        logger.info("BackpressureManager initialized: maxQueue={}, highWater={}, lowWater={}",
+        log.info("BackpressureManager initialized: maxQueue={}, highWater={}, lowWater={}",
             config.getMaxQueueSize(), config.getHighWatermark(), config.getLowWatermark());
     }
     
@@ -100,13 +100,13 @@ public class WatermarkBackpressureManager implements BackpressurePort {
         if (queueUtilization >= config.getHighWatermark()) {
             // Queue is full, reject new requests
             totalRejected.incrementAndGet();
-            logger.warn("Queue full: utilization={}, rejecting requests", queueUtilization);
+            log.warn("Queue full: utilization={}, rejecting requests", queueUtilization);
             return FlowControl.reject("Queue at high watermark");
         } else if (queueUtilization >= config.getMediumWatermark()) {
             // Queue is getting full, throttle
             long backoffMs = calculateBackoff(queueUtilization);
             totalThrottled.incrementAndGet();
-            logger.debug("Queue high: utilization={}, throttling for {}ms", 
+            log.debug("Queue high: utilization={}, throttling for {}ms", 
                 queueUtilization, backoffMs);
             return FlowControl.throttle(backoffMs);
         } else {
@@ -222,14 +222,14 @@ public class WatermarkBackpressureManager implements BackpressurePort {
                 config.getMinRateLimit(),
                 (int) (currentRateLimit * 0.8)
             );
-            logger.debug("Rate limit reduced to {}", currentRateLimit);
+            log.debug("Rate limit reduced to {}", currentRateLimit);
         } else if (utilization <= config.getLowWatermark()) {
             // Increase rate limit
             currentRateLimit = Math.min(
                 config.getMaxRateLimit(),
                 (int) (currentRateLimit * 1.2)
             );
-            logger.debug("Rate limit increased to {}", currentRateLimit);
+            log.debug("Rate limit increased to {}", currentRateLimit);
         }
     }
     

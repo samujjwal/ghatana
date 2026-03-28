@@ -3,6 +3,7 @@ package com.ghatana.datacloud.event.spi;
 import com.ghatana.datacloud.event.common.Offset;
 import com.ghatana.datacloud.event.common.PartitionId;
 import com.ghatana.datacloud.event.model.Event;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.platform.plugin.Plugin;
 import io.activej.promise.Promise;
 
@@ -257,7 +258,7 @@ public interface StoragePlugin extends Plugin {
     /**
      * Exception for duplicate event detection.
      */
-    class DuplicateEventException extends RuntimeException {
+    class DuplicateEventException extends ServiceException {
         private final String idempotencyKey;
         private final String existingEventId;
 

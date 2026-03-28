@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -104,6 +105,25 @@ class RetryingConnectorDecoratorTest {
 
             assertThat(result).isTrue();
             assertThat(callCount.get()).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("default sendBatch() uses retrying send() for each message")
+        void shouldApplyRetryingSendToBatchMessages() {
+            AtomicInteger callCount = new AtomicInteger();
+            QueueProducerStrategy delegate = new StubProducer() {
+                @Override public boolean send(QueueMessage msg) {
+                    return callCount.incrementAndGet() % 2 == 0;
+                }
+            };
+
+            RetryingConnectorDecorator decorator = new RetryingConnectorDecorator(
+                delegate, fastRetry(2));
+
+            boolean result = decorator.sendBatch(List.of(MSG, MSG));
+
+            assertThat(result).isTrue();
+            assertThat(callCount.get()).isEqualTo(4);
         }
     }
 

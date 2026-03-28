@@ -13,6 +13,11 @@ import java.util.*;
  * DevOps Pipelines Registrar - Manages 3 core DevOps pipelines. 1. Deployment:
  * Artifacts → Staging → Production 2. Incident Detection: Alerts → Triage →
  * Escalation 3. Infrastructure Monitoring: Metrics → Health checks → Reports
+ *
+ * @doc.type class
+ * @doc.purpose DevOps pipeline registration and management for deployment, incident, and monitoring workflows
+ * @doc.layer product
+ * @doc.pattern Registrar
  */
 @Slf4j
 @RequiredArgsConstructor

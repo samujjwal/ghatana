@@ -1,14 +1,16 @@
 package com.ghatana.datacloud.event.spi.secrets;
+
+import com.ghatana.platform.core.exception.ConfigurationException;
+
 /**
- * Secret resolution exception.
+ * Thrown when a secret reference cannot be resolved during event processing.
  *
  * @doc.type class
- * @doc.purpose Secret resolution exception
+ * @doc.purpose Exception for secret resolution failures
  * @doc.layer core
  * @doc.pattern Exception
  */
-
-public class SecretResolutionException extends RuntimeException {
+public class SecretResolutionException extends ConfigurationException {
     public SecretResolutionException(String message) {
         super(message);
     }

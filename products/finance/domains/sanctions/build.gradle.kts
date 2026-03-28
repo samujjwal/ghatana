@@ -5,6 +5,7 @@
  * including watchlist screening, PEP screening, and adverse media monitoring.
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

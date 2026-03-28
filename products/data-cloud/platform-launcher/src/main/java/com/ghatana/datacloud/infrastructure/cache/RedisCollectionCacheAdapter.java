@@ -67,7 +67,7 @@ import java.util.Optional;
  */
 public class RedisCollectionCacheAdapter {
 
-    private static final Logger logger = LoggerFactory.getLogger(RedisCollectionCacheAdapter.class);
+    private static final Logger log = LoggerFactory.getLogger(RedisCollectionCacheAdapter.class);
     private static final String CACHE_PREFIX = "collection:";
     private static final int DEFAULT_TTL_SECONDS = 3600; // 1 hour
 
@@ -114,15 +114,15 @@ public class RedisCollectionCacheAdapter {
             if (json != null) {
                 metrics.incrementCounter("cache.hit", "type", "collection");
                 MetaCollection collection = objectMapper.readValue(json, MetaCollection.class);
-                logger.debug("Cache hit for collection: {}", key);
+                log.debug("Cache hit for collection: {}", key);
                 return Promise.of(java.util.Optional.of(collection));
             } else {
                 metrics.incrementCounter("cache.miss", "type", "collection");
-                logger.debug("Cache miss for collection: {}", key);
+                log.debug("Cache miss for collection: {}", key);
                 return Promise.of(java.util.Optional.empty());
             }
         } catch (Exception e) {
-            logger.error("Error reading from cache: {}", buildKey(tenantId, collectionName), e);
+            log.error("Error reading from cache: {}", buildKey(tenantId, collectionName), e);
             metrics.incrementCounter("cache.error", "type", "collection", "operation", "get");
             return Promise.of(java.util.Optional.empty());
         }
@@ -146,10 +146,10 @@ public class RedisCollectionCacheAdapter {
             String json = objectMapper.writeValueAsString(collection);
             commands.setex(key, ttlSeconds, json);
             metrics.incrementCounter("cache.set", "type", "collection");
-            logger.debug("Cached collection: {} (TTL: {} seconds)", key, ttlSeconds);
+            log.debug("Cached collection: {} (TTL: {} seconds)", key, ttlSeconds);
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Error writing to cache: {}", buildKey(collection.getTenantId(), collection.getName()), e);
+            log.error("Error writing to cache: {}", buildKey(collection.getTenantId(), collection.getName()), e);
             metrics.incrementCounter("cache.error", "type", "collection", "operation", "set");
             return Promise.of(null);
         }
@@ -172,11 +172,11 @@ public class RedisCollectionCacheAdapter {
             long deleted = commands.del(key);
             if (deleted > 0) {
                 metrics.incrementCounter("cache.delete", "type", "collection");
-                logger.debug("Deleted from cache: {}", key);
+                log.debug("Deleted from cache: {}", key);
             }
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Error deleting from cache: {}", buildKey(tenantId, collectionName), e);
+            log.error("Error deleting from cache: {}", buildKey(tenantId, collectionName), e);
             metrics.incrementCounter("cache.error", "type", "collection", "operation", "delete");
             return Promise.of(null);
         }
@@ -214,11 +214,11 @@ public class RedisCollectionCacheAdapter {
 
             if (deleted > 0) {
                 metrics.incrementCounter("cache.invalidate_all", "type", "collection");
-                logger.info("Invalidated {} collections for tenant: {}", deleted, tenantId);
+                log.info("Invalidated {} collections for tenant: {}", deleted, tenantId);
             }
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Error invalidating cache for tenant: {}", tenantId, e);
+            log.error("Error invalidating cache for tenant: {}", tenantId, e);
             metrics.incrementCounter("cache.error", "type", "collection", "operation", "invalidate_all");
             return Promise.of(null);
         }

@@ -6,6 +6,7 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadReque
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.service.KernelLifecycleAware;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -39,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class OrderManagementService {
+public class OrderManagementService implements KernelLifecycleAware {
 
     private static final String ORDER_DATASET = "finance.orders";
     private static final String AUDIT_DATASET = "finance.order.audit";

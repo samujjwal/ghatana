@@ -109,6 +109,30 @@ public record ValidationResult(List<Violation> violations) {
         return new ValidationResult(merged);
     }
 
+    /**
+     * Bridge factory to ease migration from the deprecated
+     * {@code com.ghatana.platform.validation.ValidationError} hierarchy.
+     *
+     * <p>Maps each {@code ValidationError.getCode() + ": " + getPath()}
+     * to a {@link Violation} field, and {@code getMessage()} to the violation
+     * message. Callers should migrate to {@link #invalid(String, String)} or
+     * {@link #of(List)} directly once the old {@code ValidationError} type
+     * is removed.
+     *
+     * @param errors legacy validation errors (may be null / empty)
+     * @return valid result if errors is empty, otherwise invalid
+     */
+    public static ValidationResult fromLegacyErrors(
+            java.util.List<com.ghatana.platform.validation.ValidationError> errors) {
+        if (errors == null || errors.isEmpty()) return VALID;
+        java.util.List<Violation> violations = new java.util.ArrayList<>(errors.size());
+        for (com.ghatana.platform.validation.ValidationError e : errors) {
+            String field = e.getPath() != null ? e.getPath() : e.getCode();
+            violations.add(new Violation(field, e.getMessage()));
+        }
+        return new ValidationResult(violations);
+    }
+
     // ── Violation ─────────────────────────────────────────────────────────────
 
     /**

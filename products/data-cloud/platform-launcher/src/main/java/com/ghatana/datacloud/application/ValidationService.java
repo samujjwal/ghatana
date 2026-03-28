@@ -62,7 +62,7 @@ import java.util.regex.Pattern;
  */
 public class ValidationService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ValidationService.class);
+    private static final Logger log = LoggerFactory.getLogger(ValidationService.class);
 
     private static final Pattern EMAIL_PATTERN = 
         Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
@@ -119,7 +119,7 @@ public class ValidationService {
             }
         }
 
-        logger.debug("Validation complete: errors={}", errors.size());
+        log.debug("Validation complete: errors={}", errors.size());
         return Promise.of(new ValidationResult(errors.isEmpty(), errors));
     }
 
@@ -205,7 +205,7 @@ public class ValidationService {
                     break;
             }
         } catch (Exception e) {
-            logger.warn("Error validating type for field: {}", field.getName(), e);
+            log.warn("Error validating type for field: {}", field.getName(), e);
             errors.add(new ValidationError(field.getName(), "VALIDATION_ERROR", e.getMessage()));
         }
 

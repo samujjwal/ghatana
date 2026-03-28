@@ -9,6 +9,7 @@ import com.ghatana.platform.config.registry.ConfigRegistry;
 import com.ghatana.platform.config.YamlConfigSource;
 import com.ghatana.platform.validation.ValidationResult;
 import com.ghatana.platform.config.watcher.ConfigReloadWatcher;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -632,7 +633,7 @@ record ConfigValidationResult(boolean valid, List<ConfigValidationError> errors)
 /**
  * Configuration exception.
  */
-class ConfigurationException extends RuntimeException {
+class ConfigurationException extends ServiceException {
 
     public ConfigurationException(String message) {
         super(message);

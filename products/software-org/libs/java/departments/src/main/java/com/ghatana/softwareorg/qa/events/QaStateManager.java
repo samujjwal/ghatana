@@ -6,6 +6,11 @@ import java.util.Map;
 /**
  * Manages QA department state (test suites, coverage, bugs, performance
  * metrics). Thread-safe storage with tenant isolation.
+ *
+ * @doc.type class
+ * @doc.purpose Thread-safe state repository for QA department events
+ * @doc.layer product
+ * @doc.pattern StateManager
  */
 public class QaStateManager {
 

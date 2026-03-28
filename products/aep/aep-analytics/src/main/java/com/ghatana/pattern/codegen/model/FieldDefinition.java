@@ -5,6 +5,11 @@ import java.util.Objects;
 
 /**
  * Immutable descriptor for a generated field.
+ *
+ * @doc.type class
+ * @doc.purpose Immutable descriptor capturing all metadata for a single code-generated event field
+ * @doc.layer product
+ * @doc.pattern Value Object
  */
 public final class FieldDefinition {
     private final String originalName;

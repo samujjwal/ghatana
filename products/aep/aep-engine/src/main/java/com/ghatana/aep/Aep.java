@@ -1,6 +1,7 @@
 package com.ghatana.aep;
 
 import com.ghatana.aep.config.AepConfigValidator;
+import com.ghatana.aep.consent.ConsentServiceFactory;
 import com.ghatana.aep.consent.ConsentService;
 import com.ghatana.aep.consent.DefaultConsentService;
 import com.ghatana.aep.delivery.EventDeliveryService;
@@ -61,10 +62,11 @@ public final class Aep {
         AepConfigValidator.validate(config);
 
         EventCloud eventCloud = discoverEventCloud(config);
+        ConsentService consentService = ConsentServiceFactory.create(config);
 
         return new DefaultAepEngine(eventCloud, config,
             new NaiveForecastingEngine(),
-            new DefaultConsentService(),
+            consentService,
             EventDeliveryService.noOp());
     }
 
@@ -81,10 +83,11 @@ public final class Aep {
         AepConfigValidator.validate(config);
 
         EventCloud eventCloud = discoverEventCloud(config);
+        ConsentService consentService = ConsentServiceFactory.create(config);
 
         return new DefaultAepEngine(eventCloud, config,
             new NaiveForecastingEngine(),
-            new DefaultConsentService(),
+            consentService,
             deliveryService);
     }
 
@@ -139,6 +142,7 @@ public final class Aep {
     ) {
         public static final String IDEMPOTENCY_TTL_SECONDS_KEY = "idempotencyTtlSeconds";
         public static final String IDEMPOTENCY_MAX_KEYS_PER_TENANT_KEY = "idempotencyMaxKeysPerTenant";
+        public static final String CONSENT_PROVIDER_KEY = "consentProvider";
         private static final long DEFAULT_IDEMPOTENCY_TTL_SECONDS = 86_400L;
         private static final int DEFAULT_IDEMPOTENCY_MAX_KEYS_PER_TENANT = 10_000;
 
@@ -215,6 +219,15 @@ public final class Aep {
                 return this;
             }
 
+            public Builder consentProvider(String providerName) {
+                if (providerName == null || providerName.isBlank()) {
+                    this.customConfig.remove(CONSENT_PROVIDER_KEY);
+                } else {
+                    this.customConfig.put(CONSENT_PROVIDER_KEY, providerName);
+                }
+                return this;
+            }
+
             public AepConfig build() {
                 return new AepConfig(instanceId, workerThreads, maxPipelinesPerTenant,
                     enableMetrics, enableTracing, anomalyThreshold, customConfig);
@@ -235,6 +248,14 @@ public final class Aep {
                 return number.intValue();
             }
             return DEFAULT_IDEMPOTENCY_MAX_KEYS_PER_TENANT;
+        }
+
+        public Optional<String> consentProviderName() {
+            Object raw = customConfig.get(CONSENT_PROVIDER_KEY);
+            if (raw instanceof String value && !value.isBlank()) {
+                return Optional.of(value);
+            }
+            return Optional.empty();
         }
     }
 
@@ -357,6 +378,10 @@ public final class Aep {
                                 .ifPresent(stitchedId -> metadata.put("stitchedId", stitchedId));
                             if (deliveryResult.hasFailures()) {
                                 metadata.put("deliveryFailures", deliveryResult.failed());
+                                metadata.put("deliveryFailureCategories", deliveryResult.failureDetails().entrySet().stream()
+                                    .collect(java.util.stream.Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        entry -> entry.getValue().category().name())));
                             }
                             return new AepEngine.ProcessingResult(eventId, true, detections, metadata);
                         });
@@ -388,11 +413,12 @@ public final class Aep {
             logger.debug("Executing pipeline step type={} in pipeline={} for tenant={}",
                 step.type(), pipelineId, tenantId);
             switch (step.type().toLowerCase(Locale.ROOT)) {
-                case "register_pattern" -> {
+                case PipelineStepTypes.REGISTER_PATTERN -> {
                     String name = asString(step.config().get("name"));
                     String typeStr = asString(step.config().get("patternType"));
                     if (name == null || typeStr == null) {
-                        logger.warn("register_pattern step missing name or patternType config");
+                        logger.warn("{} step missing name or patternType config",
+                            PipelineStepTypes.REGISTER_PATTERN);
                         return;
                     }
                     AepEngine.PatternType patternType =
@@ -401,7 +427,7 @@ public final class Aep {
                         name, asString(step.config().get("description")), patternType, step.config()
                     ));
                 }
-                case "log" -> logger.info("[Pipeline {}][{}] {}",
+                case PipelineStepTypes.LOG -> logger.info("[Pipeline {}][{}] {}",
                     pipelineId, step.type(), step.config().get("message"))
                 ;
                 default -> logger.debug("Unknown pipeline step type={} — no handler registered, skipping",
@@ -675,6 +701,11 @@ public final class Aep {
             }
 
             String correlationKey = resolveCorrelationKey(pattern, event);
+            if (correlationKey == null || correlationKey.isBlank()) {
+                logger.debug("Sequence event ignored for pattern={} because no correlation key was resolved",
+                    pattern.id());
+                return Optional.empty();
+            }
             Map<String, Map<String, SequenceProgress>> tenantState =
                 sequenceProgressByTenant.computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>());
             Map<String, SequenceProgress> patternState =
@@ -724,9 +755,13 @@ public final class Aep {
             if (requiredFields.stream().anyMatch(field -> !event.payload().containsKey(field))) {
                 return Optional.empty();
             }
+            String correlationKey = resolveCorrelationKey(pattern, event);
+            if (correlationKey == null || correlationKey.isBlank()) {
+                return Optional.empty();
+            }
             return Optional.of(buildDetection(pattern, Map.of(
                 "requiredFields", requiredFields,
-                "correlationKey", resolveCorrelationKey(pattern, event)
+                "correlationKey", correlationKey
             ), 0.85));
         }
 
@@ -792,7 +827,7 @@ public final class Aep {
                     return fieldValue;
                 }
             }
-            return event.identityContext().stitchedId().orElse("global");
+            return event.identityContext().stitchedId().orElse(null);
         }
 
         // ── Type conversion utilities (AEP-015: centralised to avoid duplication) ──

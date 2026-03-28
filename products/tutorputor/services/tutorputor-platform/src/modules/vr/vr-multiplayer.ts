@@ -9,6 +9,9 @@
 import { PrismaClient } from '@prisma/client';
 import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
+import { createStandaloneLogger } from '@tutorputor/core/logger';
+
+const logger = createStandaloneLogger({ component: 'VRMultiplayerService' });
 import type {
   VRMultiplayerService,
   TenantId,
@@ -355,7 +358,12 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
         try {
           callback(JSON.parse(message));
         } catch (e) {
-          console.error('Failed to parse message', e);
+          logger.error({
+            message: 'Failed to parse VR multiplayer message',
+            error: e instanceof Error ? e.message : String(e),
+            sessionId,
+            channel,
+          });
         }
       }
     };

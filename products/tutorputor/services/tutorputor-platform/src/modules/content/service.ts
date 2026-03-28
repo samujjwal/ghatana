@@ -17,11 +17,14 @@ import type {
     UserId,
 } from '@tutorputor/contracts';
 import { ModalityValidator, PublishingError } from '../../utils/modality-validator';
+import { createStandaloneLogger } from '@tutorputor/core/logger';
 
-// Using looser typing for Prisma includes/payloads.
-// This module should be tightened to generated Prisma payload types.
-type ModuleSummaryPayload = any;
-type ModuleDetailPayload = any;
+const logger = createStandaloneLogger({ component: 'ContentService' });
+
+// Using flexible typing for Prisma includes/payloads
+// These should be tightened to Prisma.Payload types with proper includes when schema is fully aligned
+type ModuleSummaryPayload = Record<string, unknown> | null;
+type ModuleDetailPayload = Record<string, unknown> | null;
 
 export class ContentServiceImpl implements ContentService {
     private readonly modalityValidator: ModalityValidator;
@@ -80,16 +83,16 @@ export class ContentServiceImpl implements ContentService {
     }): Promise<{ items: ModuleSummary[]; nextCursor: string | null }> {
         const limit = args.limit ?? 20;
         const take = Math.min(limit, 50);
-        const where: any = { tenantId: args.tenantId };
+        const where: Record<string, unknown> = { tenantId: args.tenantId };
 
         if (args.status) {
-            where.status = { equals: args.status as any };
+            where.status = { equals: args.status };
         } else {
             where.status = 'PUBLISHED';
         }
 
         if (args.domain) {
-            where.domain = { equals: args.domain as any };
+            where.domain = { equals: args.domain };
         }
 
         if (args.query && this.aiProxy) {
@@ -97,9 +100,9 @@ export class ContentServiceImpl implements ContentService {
             try {
                 const filters = await this.aiProxy.parseContentQuery(args.query);
 
-                if (filters.domain) where.domain = { equals: filters.domain as any };
+                if (filters.domain) where.domain = { equals: filters.domain };
                 if (filters.difficulty)
-                    where.difficulty = { equals: filters.difficulty as any };
+                    where.difficulty = { equals: filters.difficulty };
 
                 if (filters.textSearch) {
                     where.OR = [
@@ -132,8 +135,8 @@ export class ContentServiceImpl implements ContentService {
 
         const hasMore = modules.length > take;
         const trimmed = modules.slice(0, take);
-        const items = trimmed.map((module: any) =>
-            this.mapModuleSummary(module as ModuleSummaryPayload)
+        const items = trimmed.map((module: Record<string, unknown>) =>
+            this.mapModuleSummary(module)
         );
 
         return {
@@ -179,7 +182,10 @@ export class ContentServiceImpl implements ContentService {
         });
 
         // Log successful validation and publish
-        console.log(`[ContentService] Published experience ${experienceId} after modality validation`);
+        logger.info({
+          message: 'Published experience after modality validation',
+          experienceId,
+        });
     }
 
     /**
@@ -263,56 +269,60 @@ export class ContentServiceImpl implements ContentService {
         return include;
     }
 
-    private mapModuleSummary(module: ModuleSummaryPayload): ModuleSummary {
-        const enrollment = module.enrollments?.[0];
+    private mapModuleSummary(module: Record<string, unknown>): ModuleSummary {
+        const enrollment = (module.enrollments as unknown as Array<Record<string, unknown>>)?.[0];
+        const tags = (module.tags as Array<Record<string, unknown>> | undefined) ?? [];
         return {
             id: module.id as ModuleId,
-            slug: module.slug,
-            title: module.title,
+            slug: module.slug as string,
+            title: module.title as string,
             domain: module.domain as ModuleSummary['domain'],
             difficulty: module.difficulty as ModuleSummary['difficulty'],
-            estimatedTimeMinutes: module.estimatedTimeMinutes,
-            tags: module.tags.map((tag: any) => tag.label),
+            estimatedTimeMinutes: module.estimatedTimeMinutes as number,
+            tags: tags.map((tag) => tag.label as string),
             status: 'PUBLISHED',
-            progressPercent: enrollment?.progressPercent ?? undefined,
+            progressPercent: (enrollment?.progressPercent as number) ?? undefined,
         };
     }
 
-    private mapModuleDetail(module: ModuleDetailPayload): ModuleDetail {
+    private mapModuleDetail(module: Record<string, unknown>): ModuleDetail {
+        const contentBlocks = (module.contentBlocks as Array<Record<string, unknown>> | undefined) ?? [];
+        const learningObjectives = (module.learningObjectives as Array<Record<string, unknown>> | undefined) ?? [];
+        const prerequisites = (module.prerequisites as Array<Record<string, unknown>> | undefined) ?? [];
         return {
-            ...this.mapModuleSummary(module as ModuleSummaryPayload),
-            description: module.description,
-            learningObjectives: module.learningObjectives.map((objective: any) => ({
+            ...this.mapModuleSummary(module),
+            description: module.description as string,
+            learningObjectives: learningObjectives.map((objective) => ({
                 id: `${module.id}-${objective.id}`,
-                label: objective.label,
-                taxonomyLevel: objective.taxonomyLevel as any,
+                label: objective.label as string,
+                taxonomyLevel: objective.taxonomyLevel as ModuleDetail['learningObjectives'][number]['taxonomyLevel'],
             })),
-            contentBlocks: module.contentBlocks
+            contentBlocks: contentBlocks
                 .slice()
-                .sort((a: any, b: any) => a.orderIndex - b.orderIndex)
-                .map((block: any) => ({
-                    id: block.id,
-                    orderIndex: block.orderIndex,
-                    blockType: block.blockType as any,
+                .sort((a, b) => (a.orderIndex as number) - (b.orderIndex as number))
+                .map((block) => ({
+                    id: block.id as string,
+                    orderIndex: block.orderIndex as number,
+                    blockType: block.blockType as ModuleDetail['contentBlocks'][number]['blockType'],
                     payload: block.payload as unknown,
                 })),
-            prerequisites: module.prerequisites.map(
-                (prereq: any) => prereq.prerequisiteModuleId as ModuleId
+            prerequisites: prerequisites.map(
+                (prereq) => prereq.prerequisiteModuleId as ModuleId
             ),
-            version: module.version,
+            version: module.version as number,
         };
     }
 
-    private mapEnrollment(record: any): Enrollment {
+    private mapEnrollment(record: Record<string, unknown>): Enrollment {
         return {
             id: record.id as Enrollment['id'],
             moduleId: record.moduleId as ModuleId,
             userId: record.userId as UserId,
-            status: record.status,
-            progressPercent: record.progressPercent,
-            startedAt: record.startedAt?.toISOString(),
-            completedAt: record.completedAt?.toISOString(),
-            timeSpentSeconds: record.timeSpentSeconds,
+            status: record.status as Enrollment['status'],
+            progressPercent: record.progressPercent as number,
+            startedAt: record.startedAt ? (record.startedAt as Date).toISOString() : undefined,
+            completedAt: record.completedAt ? (record.completedAt as Date).toISOString() : undefined,
+            timeSpentSeconds: record.timeSpentSeconds as number,
         };
     }
 }

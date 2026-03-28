@@ -1,5 +1,6 @@
 package com.ghatana.core.database;
 
+import com.ghatana.platform.core.client.AsyncClient;
 import io.activej.promise.Promise;
 
 import java.util.List;
@@ -8,9 +9,9 @@ import java.util.Map;
 /**
  * Promise-based database client for asynchronous document operations.
  * <p>
- * This interface provides a high-level abstraction for database operations
- * using ActiveJ Promises for non-blocking execution. It is designed to work
- * with document-style data using Map representations for flexibility.
+ * This interface extends {@link AsyncClient} and provides a high-level abstraction
+ * for database operations using ActiveJ Promises for non-blocking execution. It is
+ * designed to work with document-style data using Map representations for flexibility.
  * </p>
  *
  * <h3>Design Principles:</h3>
@@ -19,18 +20,22 @@ import java.util.Map;
  *   <li><b>Document-oriented</b>: Works with Map&lt;String, Object&gt; for flexibility</li>
  *   <li><b>Collection-based</b>: Operations organized by logical collections</li>
  *   <li><b>Tenant-aware</b>: Supports multi-tenancy (filters should include tenantId)</li>
+ *   <li><b>Lifecycle-managed</b>: Inherits start/stop/close from AsyncClient</li>
  * </ul>
  *
  * <h3>Usage Example:</h3>
  * <pre>{@code
  * DatabaseClient client = ...;
  * 
- * // Query documents
- * Promise<List<Map<String, Object>>> results = client.query(
- *     "users",
- *     Map.of("tenantId", "tenant-123", "status", "ACTIVE"),
- *     10
- * );
+ * // Start client
+ * client.start().then($ -> {
+ *     // Query documents
+ *     return client.query(
+ *         "users",
+ *         Map.of("tenantId", "tenant-123", "status", "ACTIVE"),
+ *         10
+ *     );
+ * }).whenComplete(() -> client.close());
  * 
  * // Insert document
  * Map<String, Object> doc = Map.of(
@@ -50,7 +55,7 @@ import java.util.Map;
  *
  * <h3>Implementation Notes:</h3>
  * <ul>
- *   <li>Implementations should handle connection pooling</li>
+ *   <li>Implementations should handle connection pooling via ConnectionManager</li>
  *   <li>Error handling should use Promise.ofException()</li>
  *   <li>Operations should be atomic where possible</li>
  *   <li>Filtering should support common operators (equality, range, etc.)</li>
@@ -62,10 +67,11 @@ import java.util.Map;
  * @doc.pattern Repository
  * 
  * @see io.activej.promise.Promise
- * @see Repository
+ * @see com.ghatana.platform.core.client.AsyncClient
+ * @see com.ghatana.platform.core.client.ConnectionManager
  * @since 1.0.0
  */
-public interface DatabaseClient {
+public interface DatabaseClient extends AsyncClient {
 
     /**
      * Query documents from a collection matching the given filter.

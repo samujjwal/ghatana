@@ -3,6 +3,7 @@ package com.ghatana.products.finance.domains.oms.service;
 import com.ghatana.products.finance.domains.oms.domain.OrderType;
 import com.ghatana.products.finance.domains.oms.service.OrderCaptureService.OrderCaptureRequest;
 import com.ghatana.products.finance.domains.referencedata.domain.Instrument;
+import com.ghatana.platform.core.exception.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +67,7 @@ public class OrderValidationService {
                 request.instrumentId(), request.quantity(), request.price());
     }
 
-    public static class OrderValidationException extends RuntimeException {
+    public static class OrderValidationException extends ValidationException {
         public OrderValidationException(String message) {
             super(message);
         }

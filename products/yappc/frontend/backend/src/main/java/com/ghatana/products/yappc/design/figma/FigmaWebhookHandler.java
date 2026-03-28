@@ -2,6 +2,7 @@ package com.ghatana.products.yappc.design.figma;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -310,7 +311,7 @@ public class FigmaWebhookHandler {
      * @doc.layer product
      * @doc.pattern Exception
      */
-    public static class WebhookException extends RuntimeException {
+    public static class WebhookException extends ServiceException {
         public WebhookException(String message) {
             super(message);
         }

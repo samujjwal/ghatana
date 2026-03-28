@@ -104,7 +104,7 @@ import java.util.*;
  * @doc.pattern Client, Facade, Mini-Distributed
  */
 public class EmbeddedDataCloudClient implements DataCloudClient {
-    private static final Logger logger = LoggerFactory.getLogger(EmbeddedDataCloudClient.class);
+    private static final Logger log = LoggerFactory.getLogger(EmbeddedDataCloudClient.class);
 
     // Configuration
     private final EmbeddedClientConfig config;
@@ -146,11 +146,11 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
             String storageName = dataStoragePlugin instanceof com.ghatana.platform.plugin.Plugin plugin
                     ? plugin.metadata().name()
                     : dataStoragePlugin.getClass().getSimpleName();
-            logger.info("EmbeddedDataCloudClient initialized with DataStoragePlugin: {}", storageName);
+            log.info("EmbeddedDataCloudClient initialized with DataStoragePlugin: {}", storageName);
         } else {
-            logger.info("EmbeddedDataCloudClient initialized with in-memory entity storage");
+            log.info("EmbeddedDataCloudClient initialized with in-memory entity storage");
         }
-        logger.info("Event storage plugin: {} ({})", 
+        log.info("Event storage plugin: {} ({})", 
             storagePlugin.getPluginId(), storagePlugin.getVersion());
     }
 
@@ -196,11 +196,11 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 .computeIfAbsent(collectionName, k -> new java.util.concurrent.ConcurrentHashMap<>())
                 .put(entityId, entity);
             
-            logger.debug("Created entity {} in {}/{}", entityId, tenantId, collectionName);
+            log.debug("Created entity {} in {}/{}", entityId, tenantId, collectionName);
             return Promise.of(entity);
             
         } catch (Exception e) {
-            logger.error("Error creating entity", e);
+            log.error("Error creating entity", e);
             return Promise.ofException(e);
         }
     }
@@ -217,11 +217,11 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 .map(collections -> collections.get(collectionName))
                 .map(entities -> entities.get(entityId));
             
-            logger.debug("Get entity {} from {}/{}: {}", entityId, tenantId, collectionName, result.isPresent() ? "found" : "not found");
+            log.debug("Get entity {} from {}/{}: {}", entityId, tenantId, collectionName, result.isPresent() ? "found" : "not found");
             return Promise.of(result);
             
         } catch (Exception e) {
-            logger.error("Error getting entity", e);
+            log.error("Error getting entity", e);
             return Promise.ofException(e);
         }
     }
@@ -266,11 +266,11 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
             
             entityStore.get(tenantId).get(collectionName).put(entityId, updated);
             
-            logger.debug("Updated entity {} in {}/{}", entityId, tenantId, collectionName);
+            log.debug("Updated entity {} in {}/{}", entityId, tenantId, collectionName);
             return Promise.of(updated);
             
         } catch (Exception e) {
-            logger.error("Error updating entity", e);
+            log.error("Error updating entity", e);
             return Promise.ofException(e);
         }
     }
@@ -298,11 +298,11 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 return Promise.ofException(new IllegalArgumentException("Entity not found: " + entityId));
             }
             
-            logger.debug("Deleted entity {} from {}/{}", entityId, tenantId, collectionName);
+            log.debug("Deleted entity {} from {}/{}", entityId, tenantId, collectionName);
             return Promise.complete();
             
         } catch (Exception e) {
-            logger.error("Error deleting entity", e);
+            log.error("Error deleting entity", e);
             return Promise.ofException(e);
         }
     }
@@ -325,11 +325,11 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
             int limit = query.getLimit() > 0 ? query.getLimit() : results.size();
             results = results.stream().limit(limit).collect(java.util.stream.Collectors.toList());
             
-            logger.debug("Query returned {} entities from {}/{}", results.size(), tenantId, collectionName);
+            log.debug("Query returned {} entities from {}/{}", results.size(), tenantId, collectionName);
             return Promise.of(results);
             
         } catch (Exception e) {
-            logger.error("Error querying entities", e);
+            log.error("Error querying entities", e);
             return Promise.ofException(e);
         }
     }
@@ -360,7 +360,7 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
             SearchResults results = new SimpleSearchResults(pagedResults, totalCount, false);
             return Promise.of(results);
         } catch (Exception e) {
-            logger.error("Error during search", e);
+            log.error("Error during search", e);
             return Promise.ofException(e);
         }
     }
@@ -391,10 +391,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
             // Append event
             stream.add(event);
             
-            logger.debug("Appended event to {}/{} at offset {}", tenantId, streamName, offset);
+            log.debug("Appended event to {}/{} at offset {}", tenantId, streamName, offset);
             return Promise.of(offset);
         } catch (Exception e) {
-            logger.error("Error appending event", e);
+            log.error("Error appending event", e);
             return Promise.ofException(e);
         }
     }
@@ -415,10 +415,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
             int toIndex = Math.min(fromIndex + limit, events.size());
             
             List<DataRecord> result = events.subList(fromIndex, toIndex);
-            logger.debug("Read {} events from {}/{} starting at offset {}", result.size(), tenantId, streamName, fromOffset);
+            log.debug("Read {} events from {}/{} starting at offset {}", result.size(), tenantId, streamName, fromOffset);
             return Promise.of(result);
         } catch (Exception e) {
-            logger.error("Error reading events", e);
+            log.error("Error reading events", e);
             return Promise.ofException(e);
         }
     }
@@ -443,10 +443,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 })
                 .collect(java.util.stream.Collectors.toList());
             
-            logger.debug("Read {} events from {}/{} in time range [{}, {}]", filtered.size(), tenantId, streamName, startTime, endTime);
+            log.debug("Read {} events from {}/{} in time range [{}, {}]", filtered.size(), tenantId, streamName, startTime, endTime);
             return Promise.of(filtered);
         } catch (Exception e) {
-            logger.error("Error reading events by time range", e);
+            log.error("Error reading events by time range", e);
             return Promise.ofException(e);
         }
     }
@@ -569,7 +569,7 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
             return actualValue.toString().equals(expectedValue);
         } catch (Exception e) {
             // On error, include the entity (fail open)
-            logger.warn("Filter evaluation error: {}", e.getMessage());
+            log.warn("Filter evaluation error: {}", e.getMessage());
             return true;
         }
     }
@@ -642,10 +642,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 created.add(newEntity);
             }
             
-            logger.debug("Bulk created {} entities in {}/{}", created.size(), tenantId, collectionName);
+            log.debug("Bulk created {} entities in {}/{}", created.size(), tenantId, collectionName);
             return Promise.of(created);
         } catch (Exception e) {
-            logger.error("Error bulk creating entities", e);
+            log.error("Error bulk creating entities", e);
             return Promise.ofException(e);
         }
     }
@@ -669,10 +669,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 }
             }
             
-            logger.debug("Bulk deleted {} entities from {}/{}", deletedCount, tenantId, collectionName);
+            log.debug("Bulk deleted {} entities from {}/{}", deletedCount, tenantId, collectionName);
             return Promise.of(deletedCount);
         } catch (Exception e) {
-            logger.error("Error bulk deleting entities", e);
+            log.error("Error bulk deleting entities", e);
             return Promise.ofException(e);
         }
     }
@@ -700,10 +700,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 .collect(java.util.stream.Collectors.toList());
             
             SearchResults results = new SimpleSearchResults(matches, matches.size(), matches.size() < collection.size());
-            logger.debug("Full text search found {} matches in {}/{}", matches.size(), tenantId, collectionName);
+            log.debug("Full text search found {} matches in {}/{}", matches.size(), tenantId, collectionName);
             return Promise.of(results);
         } catch (Exception e) {
-            logger.error("Error in full text search", e);
+            log.error("Error in full text search", e);
             return Promise.ofException(e);
         }
     }
@@ -728,10 +728,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                     java.util.stream.Collectors.counting()
                 ));
             
-            logger.debug("Generated {} facets for field {} in {}/{}", facets.size(), fieldName, tenantId, collectionName);
+            log.debug("Generated {} facets for field {} in {}/{}", facets.size(), fieldName, tenantId, collectionName);
             return Promise.of(facets);
         } catch (Exception e) {
-            logger.error("Error generating facets", e);
+            log.error("Error generating facets", e);
             return Promise.ofException(e);
         }
     }
@@ -766,10 +766,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 System.currentTimeMillis()
             );
             
-            logger.debug("Generated quality metrics for {}/{}: completeness={}", tenantId, collectionName, completeness);
+            log.debug("Generated quality metrics for {}/{}: completeness={}", tenantId, collectionName, completeness);
             return Promise.of(metrics);
         } catch (Exception e) {
-            logger.error("Error generating quality metrics", e);
+            log.error("Error generating quality metrics", e);
             return Promise.ofException(e);
         }
     }
@@ -805,10 +805,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 Instant.now()
             );
             
-            logger.debug("Generated cost analysis for {}: total=${}", tenantId, totalCostUSD);
+            log.debug("Generated cost analysis for {}: total=${}", tenantId, totalCostUSD);
             return Promise.of(analysis);
         } catch (Exception e) {
-            logger.error("Error generating cost analysis", e);
+            log.error("Error generating cost analysis", e);
             return Promise.ofException(e);
         }
     }
@@ -835,10 +835,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 collectionName
             );
             
-            logger.debug("Generated lineage graph for {}/{} with {} nodes", tenantId, collectionName, nodes.size());
+            log.debug("Generated lineage graph for {}/{} with {} nodes", tenantId, collectionName, nodes.size());
             return Promise.of(graph);
         } catch (Exception e) {
-            logger.error("Error generating lineage", e);
+            log.error("Error generating lineage", e);
             return Promise.ofException(e);
         }
     }
@@ -873,10 +873,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 Instant.now()
             );
             
-            logger.debug("Processed record {} with AI", record.getId());
+            log.debug("Processed record {} with AI", record.getId());
             return Promise.of(result);
         } catch (Exception e) {
-            logger.error("Error in AI processing", e);
+            log.error("Error in AI processing", e);
             return Promise.ofException(e);
         }
     }
@@ -897,10 +897,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 Instant.now()
             );
             
-            logger.debug("Retrieved AI model info for {}", modelName);
+            log.debug("Retrieved AI model info for {}", modelName);
             return Promise.of(info);
         } catch (Exception e) {
-            logger.error("Error retrieving AI model info", e);
+            log.error("Error retrieving AI model info", e);
             return Promise.ofException(e);
         }
     }
@@ -921,10 +921,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 features.put(featureName, 0.0);
             }
             
-            logger.debug("Extracted {} features for entity {}", features.size(), entityId);
+            log.debug("Extracted {} features for entity {}", features.size(), entityId);
             return Promise.of(features);
         } catch (Exception e) {
-            logger.error("Error extracting features", e);
+            log.error("Error extracting features", e);
             return Promise.ofException(e);
         }
     }
@@ -989,7 +989,7 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                 operationMetrics
             ));
         } catch (Exception e) {
-            logger.error("Error collecting metrics", e);
+            log.error("Error collecting metrics", e);
             return Promise.ofException(e);
         }
     }
@@ -1006,14 +1006,14 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
         if (storagePlugin != null) {
             try {
                 // Storage plugins implement lifecycle, call destroy
-                logger.info("Shutting down storage plugin: {}", storagePlugin.getPluginId());
+                log.info("Shutting down storage plugin: {}", storagePlugin.getPluginId());
                 // Note: StoragePlugin.destroy() should be called here
             } catch (Exception e) {
-                logger.warn("Error shutting down storage plugin", e);
+                log.warn("Error shutting down storage plugin", e);
             }
         }
         
-        logger.info("EmbeddedDataCloudClient closed");
+        log.info("EmbeddedDataCloudClient closed");
     }
     
     // ==================== Validation ====================
@@ -1189,7 +1189,7 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
             try {
                 com.ghatana.platform.plugin.PluginContext context = createPluginContext(config);
                 // Note: Plugin initialization would happen here
-                logger.info("Initialized storage plugin: {}", storagePlugin.getPluginId());
+                log.info("Initialized storage plugin: {}", storagePlugin.getPluginId());
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to initialize storage plugin", e);
             }
@@ -1232,7 +1232,7 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
         
         private StoragePlugin<?> createPostgresPlugin(Map<String, Object> config) {
             try {
-                logger.info("Creating PostgreSQL storage plugin with config: {}", config);
+                log.info("Creating PostgreSQL storage plugin with config: {}", config);
                 
                 // Use reflection to load PostgresStoragePlugin and PostgresStorageConfig
                 Class<?> configClass = Class.forName("com.ghatana.datacloud.plugins.postgres.PostgresStorageConfig");
@@ -1267,18 +1267,18 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                     .getDeclaredConstructor(configClass)
                     .newInstance(pluginConfig);
                 
-                logger.info("Successfully created PostgreSQL storage plugin");
+                log.info("Successfully created PostgreSQL storage plugin");
                 return plugin;
                 
             } catch (Exception e) {
-                logger.error("Failed to create PostgreSQL storage plugin", e);
+                log.error("Failed to create PostgreSQL storage plugin", e);
                 throw new IllegalStateException("Failed to create PostgreSQL storage plugin: " + e.getMessage(), e);
             }
         }
         
         private StoragePlugin<?> createRedisPlugin(Map<String, Object> config) {
             try {
-                logger.info("Creating Redis storage plugin with config: {}", config);
+                log.info("Creating Redis storage plugin with config: {}", config);
                 
                 // Use reflection to load RedisHotTierPlugin and RedisStorageConfig
                 Class<?> configClass = Class.forName("com.ghatana.datacloud.plugins.redis.RedisStorageConfig");
@@ -1323,11 +1323,11 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
                     .getDeclaredConstructor(configClass)
                     .newInstance(pluginConfig);
                 
-                logger.info("Successfully created Redis storage plugin");
+                log.info("Successfully created Redis storage plugin");
                 return plugin;
                 
             } catch (Exception e) {
-                logger.error("Failed to create Redis storage plugin", e);
+                log.error("Failed to create Redis storage plugin", e);
                 throw new IllegalStateException("Failed to create Redis storage plugin: " + e.getMessage(), e);
             }
         }

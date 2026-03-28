@@ -19,6 +19,7 @@ ADRs document significant architectural decisions made during the AEP + Event-Cl
 | [ADR-010](ADR-010-flyway-migrations.md) | Flyway for Database Schema Management | Accepted | 4 |
 | [ADR-011](ADR-011-yappc-modular-refactoring.md) | Yappc Modular Refactoring | Accepted | 5 |
 | [ADR-012](ADR-012-keep-aep-gateway.md) | Keep AEP Gateway as First-Class Service | Accepted | 3 |
+| [ADR-017](ADR-017-aep-runtime-hardening.md) | AEP Runtime Hardening and Extension Seams | Accepted | 6 |
 
 ## ADR Format
 

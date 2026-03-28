@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.orchestrator.executor.AgentEventEmitter;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.platform.core.util.JsonUtils;
 import io.activej.promise.Promise;
 import java.time.Instant;
@@ -257,7 +258,7 @@ public class DefaultEventLogClient implements AgentEventEmitter.EventLogClient {
      * Exception thrown when event publishing fails.
      * Wraps serialization errors and EventCloud communication failures.
      */
-    public static class EventPublishException extends RuntimeException {
+    public static class EventPublishException extends ServiceException {
         public EventPublishException(String message, Throwable cause) {
             super(message, cause);
         }

@@ -68,7 +68,7 @@ import java.util.function.Supplier;
  * @doc.pattern Metrics, Facade
  */
 public class DataCloudMetrics {
-    private static final Logger logger = LoggerFactory.getLogger(DataCloudMetrics.class);
+    private static final Logger log = LoggerFactory.getLogger(DataCloudMetrics.class);
     
     // Metric prefixes
     private static final String PREFIX = "datacloud";

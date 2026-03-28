@@ -8,6 +8,18 @@ export type {
   SpeechSynthesisOptions,
 } from './useSpeechSynthesis';
 
+export {
+  getAudioVideoPlatformMetrics,
+  normalizeAudioVideoRuntimeConfig,
+} from './audioVideoPlatform';
+export type {
+  AudioVideoPlatformError,
+  AudioVideoProvider,
+  AudioVideoRuntimeConfig,
+  AudioVideoRuntimeMetricsSnapshot,
+  AudioVideoSpeechHookConfig,
+} from './audioVideoPlatform';
+
 export { useSpeechRecognition } from './useSpeechRecognition';
 export type {
   UseSpeechRecognitionResult,

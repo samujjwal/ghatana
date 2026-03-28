@@ -49,6 +49,14 @@ public final class EventSchemaValidator {
      * Version format: major.minor (e.g. "1.0", "2.3"). Allows optional patch: "1.0.0".
      * Anything matching this pattern is accepted; other formats produce a warning but
      * are still accepted (lenient validation).
+     *
+     * <p>Validation limits enforced by this validator:
+     * <ul>
+     *   <li>{@code event.type} length <= 256</li>
+     *   <li>Top-level payload keys <= 500</li>
+     *   <li>Header entries <= 100</li>
+     *   <li>{@code event.version} length <= 64</li>
+     * </ul>
      */
     private static final java.util.regex.Pattern VERSION_PATTERN =
         java.util.regex.Pattern.compile("^\\d+\\.\\d+(\\.\\d+)?$");
@@ -61,10 +69,12 @@ public final class EventSchemaValidator {
      */
     public ValidationResult validate(AepEngine.Event event) {
         if (event == null) {
-            return ValidationResult.of(List.of("event must not be null"));
+            return ValidationResult.of(List.of(
+                new ValidationError(ErrorCode.MALFORMED, "event", "event must not be null")
+            ));
         }
 
-        List<String> errors = new ArrayList<>();
+        List<ValidationError> errors = new ArrayList<>();
         validateType(event, errors);
         validateVersion(event, errors);
         validatePayload(event, errors);
@@ -77,27 +87,30 @@ public final class EventSchemaValidator {
         return ValidationResult.of(errors);
     }
 
-    private void validateType(AepEngine.Event event, List<String> errors) {
+    private void validateType(AepEngine.Event event, List<ValidationError> errors) {
         String type = event.type();
         if (type == null || type.isBlank()) {
-            errors.add("event.type must not be blank");
+            addError(errors, ErrorCode.MISSING_FIELD, "event.type", "event.type must not be blank");
             return;
         }
         if (type.length() > MAX_EVENT_TYPE_LENGTH) {
-            errors.add("event.type exceeds maximum length of " + MAX_EVENT_TYPE_LENGTH);
+            addError(errors, ErrorCode.SIZE_EXCEEDED, "event.type",
+                "event.type exceeds maximum length of " + MAX_EVENT_TYPE_LENGTH);
         }
     }
 
-    private void validateVersion(AepEngine.Event event, List<String> errors) {
+    private void validateVersion(AepEngine.Event event, List<ValidationError> errors) {
         String version = event.version();
         if (version == null || version.isBlank()) {
             // The Event record compact constructor already defaults to "1.0",
             // so a blank/null version here indicates a programmatic bypass.
-            errors.add("event.version must not be blank");
+            addError(errors, ErrorCode.MISSING_FIELD, "event.version",
+                "event.version must not be blank");
             return;
         }
         if (version.length() > MAX_VERSION_LENGTH) {
-            errors.add("event.version exceeds maximum length of " + MAX_VERSION_LENGTH);
+            addError(errors, ErrorCode.SIZE_EXCEEDED, "event.version",
+                "event.version exceeds maximum length of " + MAX_VERSION_LENGTH);
             return;
         }
         if (!VERSION_PATTERN.matcher(version).matches()) {
@@ -107,57 +120,89 @@ public final class EventSchemaValidator {
         }
     }
 
-    private void validatePayload(AepEngine.Event event, List<String> errors) {
+    private void validatePayload(AepEngine.Event event, List<ValidationError> errors) {
         Map<String, Object> payload = event.payload();
         if (payload == null) {
-            errors.add("event.payload must not be null");
+            addError(errors, ErrorCode.MISSING_FIELD, "event.payload", "event.payload must not be null");
             return;
         }
         if (payload.size() > MAX_PAYLOAD_KEYS) {
-            errors.add("event.payload exceeds maximum key count of " + MAX_PAYLOAD_KEYS);
+            addError(errors, ErrorCode.SIZE_EXCEEDED, "event.payload",
+                "event.payload exceeds maximum key count of " + MAX_PAYLOAD_KEYS);
         }
         // Null keys are impossible in Map.copyOf()-based payloads; no check needed.
     }
 
-    private void validateHeaders(AepEngine.Event event, List<String> errors) {
+    private void validateHeaders(AepEngine.Event event, List<ValidationError> errors) {
         Map<String, String> headers = event.headers();
         if (headers == null) {
-            errors.add("event.headers must not be null");
+            addError(errors, ErrorCode.MISSING_FIELD, "event.headers", "event.headers must not be null");
             return;
         }
         if (headers.size() > MAX_HEADER_ENTRIES) {
-            errors.add("event.headers exceeds maximum entry count of " + MAX_HEADER_ENTRIES);
+            addError(errors, ErrorCode.SIZE_EXCEEDED, "event.headers",
+                "event.headers exceeds maximum entry count of " + MAX_HEADER_ENTRIES);
         }
         // Null header keys are impossible in immutable maps; no check needed.
     }
 
-    private void validateTimestamp(AepEngine.Event event, List<String> errors) {
+    private void validateTimestamp(AepEngine.Event event, List<ValidationError> errors) {
         if (event.timestamp() == null) {
-            errors.add("event.timestamp must not be null");
+            addError(errors, ErrorCode.MISSING_FIELD, "event.timestamp", "event.timestamp must not be null");
         }
+    }
+
+    private void addError(
+        List<ValidationError> errors,
+        ErrorCode code,
+        String field,
+        String message
+    ) {
+        errors.add(new ValidationError(code, field, message));
     }
 
     // ==================== Result Type ====================
 
+    public enum ErrorCode {
+        MISSING_FIELD,
+        INVALID_TYPE,
+        SIZE_EXCEEDED,
+        MALFORMED
+    }
+
+    public record ValidationError(ErrorCode code, String field, String message) {
+        public ValidationError {
+            code = code != null ? code : ErrorCode.MALFORMED;
+            field = field != null ? field : "event";
+            message = message != null ? message : "validation error";
+        }
+    }
+
     /**
      * Result of schema validation.
      */
-    public record ValidationResult(List<String> errors) {
+    public record ValidationResult(List<String> errors, List<ValidationError> details) {
 
         public ValidationResult {
             errors = errors != null ? List.copyOf(errors) : List.of();
+            details = details != null ? List.copyOf(details) : List.of();
+            if (errors.isEmpty() && !details.isEmpty()) {
+                errors = details.stream()
+                    .map(ValidationError::message)
+                    .toList();
+            }
         }
 
         /**
-         * Create a result from a list of errors (empty list means valid).
+         * Create a result from structured validation errors (empty list means valid).
          */
-        public static ValidationResult of(List<String> errors) {
-            return new ValidationResult(errors);
+        public static ValidationResult of(List<ValidationError> details) {
+            return new ValidationResult(List.of(), details);
         }
 
         /** @return {@code true} if no validation errors were found */
         public boolean isValid() {
-            return errors.isEmpty();
+            return details.isEmpty();
         }
 
         /** @return first error message, or {@code null} if valid */
@@ -165,9 +210,18 @@ public final class EventSchemaValidator {
             return errors.isEmpty() ? null : errors.get(0);
         }
 
+        /** @return first structured error, or {@code null} if valid */
+        public ValidationError firstDetail() {
+            return details.isEmpty() ? null : details.get(0);
+        }
+
         /** @return comma-joined summary of all errors */
         public String summary() {
             return String.join("; ", errors);
+        }
+
+        public boolean hasCode(ErrorCode code) {
+            return details.stream().anyMatch(error -> error.code() == code);
         }
     }
 }

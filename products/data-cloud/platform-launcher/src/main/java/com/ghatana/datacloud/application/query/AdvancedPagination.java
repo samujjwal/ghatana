@@ -43,7 +43,7 @@ import java.util.*;
  */
 public class AdvancedPagination {
 
-    private static final Logger logger = LoggerFactory.getLogger(AdvancedPagination.class);
+    private static final Logger log = LoggerFactory.getLogger(AdvancedPagination.class);
 
     private static final int DEFAULT_PAGE_SIZE = 20;
     private static final int MAX_PAGE_SIZE = 1000;
@@ -94,7 +94,7 @@ public class AdvancedPagination {
 
         String nextCursor = end < total ? encodeCursor(end) : null;
 
-        logger.debug("Offset-limit pagination: offset={}, limit={}, total={}, pageSize={}",
+        log.debug("Offset-limit pagination: offset={}, limit={}, total={}, pageSize={}",
                 offset, limit, total, page.size());
 
         return new PaginationResult<>(page,
@@ -127,7 +127,7 @@ public class AdvancedPagination {
 
         String nextCursor = endIndex < total ? encodeCursor(endIndex) : null;
 
-        logger.debug("Cursor-based pagination: cursor={}, limit={}, total={}, pageSize={}",
+        log.debug("Cursor-based pagination: cursor={}, limit={}, total={}, pageSize={}",
                 request.cursor(), limit, total, page.size());
 
         return new PaginationResult<>(page,
@@ -160,7 +160,7 @@ public class AdvancedPagination {
 
         String nextKey = endIndex < total ? extractKey(items.get(endIndex - 1)) : null;
 
-        logger.debug("Keyset pagination: lastKey={}, limit={}, total={}, pageSize={}",
+        log.debug("Keyset pagination: lastKey={}, limit={}, total={}, pageSize={}",
                 request.lastKey(), limit, total, page.size());
 
         return new PaginationResult<>(page,
@@ -219,7 +219,7 @@ public class AdvancedPagination {
             int endIndex = json.indexOf("}", startIndex);
             return Integer.parseInt(json.substring(startIndex, endIndex).trim());
         } catch (Exception e) {
-            logger.warn("Failed to decode cursor: {}", cursor, e);
+            log.warn("Failed to decode cursor: {}", cursor, e);
             return 0;
         }
     }

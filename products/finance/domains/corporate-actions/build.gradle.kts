@@ -5,6 +5,7 @@
  * including dividends, stock splits, mergers, and acquisitions.
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

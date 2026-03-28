@@ -80,7 +80,7 @@ import java.util.UUID;
  */
 public class WebhookDeliveryService {
 
-    private static final Logger logger = LoggerFactory.getLogger(WebhookDeliveryService.class);
+    private static final Logger log = LoggerFactory.getLogger(WebhookDeliveryService.class);
     private static final int MAX_TIMEOUT_SECONDS = 300;
 
     private final HttpClient httpClient;
@@ -105,7 +105,7 @@ public class WebhookDeliveryService {
         this.eventRepository = Objects.requireNonNull(eventRepository, "WebhookEventRepository cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "MetricsCollector cannot be null");
         this.mapper = Objects.requireNonNull(mapper, "ObjectMapper cannot be null");
-        logger.info("WebhookDeliveryService initialized");
+        log.info("WebhookDeliveryService initialized");
     }
 
     /**
@@ -125,7 +125,7 @@ public class WebhookDeliveryService {
 
         // Verify tenant isolation
         if (!webhook.getTenantId().equals(event.getTenantId())) {
-            logger.error("Tenant mismatch: webhook {} vs event {}",
+            log.error("Tenant mismatch: webhook {} vs event {}",
                     webhook.getTenantId(), event.getTenantId());
             return Promise.ofException(
                     new IllegalArgumentException("Tenant mismatch"));
@@ -140,7 +140,7 @@ public class WebhookDeliveryService {
                     metrics.incrementCounter("webhook.delivery.error",
                             "tenant", webhook.getTenantId(),
                             "error", error.getClass().getSimpleName());
-                    logger.error("Error delivering webhook event", error);
+                    log.error("Error delivering webhook event", error);
                 });
     }
 
@@ -199,14 +199,14 @@ public class WebhookDeliveryService {
                                         "attempt", String.valueOf(attemptNumber));
 
                                 if (savedDelivery.isSuccess()) {
-                                    logger.info("Webhook {} delivered successfully in {}ms",
+                                    log.info("Webhook {} delivered successfully in {}ms",
                                             webhook.getId(), duration);
                                 } else if (savedDelivery.isRetryable()
                                         && attemptNumber < webhook.getMaxRetries()) {
                                     // Schedule retry with exponential backoff
                                     scheduleRetry(webhook, event, attemptNumber);
                                 } else {
-                                    logger.warn("Webhook {} delivery failed (no retry): status={}",
+                                    log.warn("Webhook {} delivery failed (no retry): status={}",
                                             webhook.getId(), statusCode);
                                 }
 
@@ -219,7 +219,7 @@ public class WebhookDeliveryService {
                         long duration = System.currentTimeMillis() - startTime;
                         metrics.incrementCounter("webhook.delivery.network_error",
                                 "tenant", webhook.getTenantId());
-                        logger.error("Network error delivering webhook {}: {}",
+                        log.error("Network error delivering webhook {}: {}",
                                 webhook.getId(), error.getMessage());
 
                         // Network failure is retryable
@@ -252,7 +252,7 @@ public class WebhookDeliveryService {
 
         // In a production system, this would be scheduled via a task queue
         // For now, we just log it as the persistence layer would handle replays
-        logger.info("Scheduling webhook {} retry {} in {}ms",
+        log.info("Scheduling webhook {} retry {} in {}ms",
                 webhook.getId(), attemptNumber + 1, delayMs);
 
         metrics.incrementCounter("webhook.retry_scheduled",

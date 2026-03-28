@@ -5,8 +5,15 @@ import java.util.Map;
 
 /**
  * Kernel workflow interface.
- * 
- * Workflows define business processes that can be executed by the kernel.
+ *
+ * <p>Workflows define orchestrated, step-based business processes that are executed
+ * by the kernel. Each step can reference a {@code KernelOperator} and receives
+ * per-step parameters, enabling conditional branching and parallel execution.</p>
+ *
+ * @doc.type interface
+ * @doc.purpose Orchestrated step-based business process definition for kernel execution
+ * @doc.layer kernel
+ * @doc.pattern Workflow
  */
 public interface KernelWorkflow {
     

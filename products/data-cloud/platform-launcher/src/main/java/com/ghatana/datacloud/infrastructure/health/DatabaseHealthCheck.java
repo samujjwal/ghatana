@@ -78,7 +78,7 @@ import java.util.*;
  */
 public final class DatabaseHealthCheck {
 
-    private static final Logger logger = LoggerFactory.getLogger(DatabaseHealthCheck.class);
+    private static final Logger log = LoggerFactory.getLogger(DatabaseHealthCheck.class);
 
     private final EntityManager entityManager;
     private final MetricsCollector metrics;
@@ -165,7 +165,7 @@ public final class DatabaseHealthCheck {
             HealthStatus status = determineStatus(latencyMs);
             lastStatus = status;
 
-            logger.debug("Database health check: {} (latency: {}ms)", status, latencyMs);
+            log.debug("Database health check: {} (latency: {}ms)", status, latencyMs);
             return Promise.of(status);
 
         } catch (Exception e) {
@@ -173,7 +173,7 @@ public final class DatabaseHealthCheck {
             lastLatencyMs = latencyMs;
             lastCheckTime = checkStartTime;
 
-            logger.warn("Database health check failed: {}", e.getMessage());
+            log.warn("Database health check failed: {}", e.getMessage());
             metrics.incrementCounter("database.health.check", "status", "FAILURE",
                     "error", e.getClass().getSimpleName());
 
@@ -234,7 +234,7 @@ public final class DatabaseHealthCheck {
      */
     private HealthStatus determineStatus(long latencyMs) {
         if (latencyMs > config.getDegradedThresholdMs()) {
-            logger.warn("Database latency elevated: {}ms > {}ms threshold",
+            log.warn("Database latency elevated: {}ms > {}ms threshold",
                     latencyMs, config.getDegradedThresholdMs());
             return HealthStatus.DEGRADED;
         }
@@ -255,7 +255,7 @@ public final class DatabaseHealthCheck {
             poolStatus.put("last_checked", Instant.now().toString());
         } catch (Exception e) {
             poolStatus.put("pool_status", "unknown");
-            logger.debug("Could not retrieve connection pool details", e);
+            log.debug("Could not retrieve connection pool details", e);
         }
         return poolStatus;
     }

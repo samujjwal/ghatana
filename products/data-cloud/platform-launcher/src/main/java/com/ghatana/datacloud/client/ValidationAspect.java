@@ -295,7 +295,7 @@ public final class ValidationAspect implements AIAspect<Record, Record> {
     /**
      * Exception thrown on validation failure.
      */
-    public static class ValidationException extends RuntimeException {
+    public static class ValidationException extends com.ghatana.platform.core.exception.ValidationException {
         private final List<ValidationError> errors;
 
         public ValidationException(List<ValidationError> errors) {

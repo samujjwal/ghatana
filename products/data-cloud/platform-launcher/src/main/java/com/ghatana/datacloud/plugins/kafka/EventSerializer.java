@@ -3,6 +3,7 @@ package com.ghatana.datacloud.plugins.kafka;
 import com.ghatana.datacloud.event.model.Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.platform.core.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,7 +93,7 @@ public class EventSerializer {
     /**
      * Serialization exception.
      */
-    public static class SerializationException extends RuntimeException {
+    public static class SerializationException extends ServiceException {
 
         public SerializationException(String message, Throwable cause) {
             super(message, cause);

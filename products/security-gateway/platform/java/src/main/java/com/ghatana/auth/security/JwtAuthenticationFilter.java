@@ -4,6 +4,7 @@ import com.ghatana.auth.core.port.JwtTokenProvider;
 import com.ghatana.auth.core.port.JwtClaims;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.domain.auth.UserPrincipal;
+import com.ghatana.platform.core.exception.UnauthorizedException;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
@@ -223,7 +224,7 @@ public class JwtAuthenticationFilter {
     /**
      * Authentication exception thrown when JWT validation fails.
      */
-    public static class AuthenticationException extends RuntimeException {
+    public static class AuthenticationException extends UnauthorizedException {
 
         public AuthenticationException(String message) {
             super(message);

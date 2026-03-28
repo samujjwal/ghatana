@@ -6,6 +6,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -130,6 +132,12 @@ class EventDeliveryServiceTest extends EventloopTestBase {
 
             assertThat(result.failed()).containsExactly("bad-dest");
             assertThat(result.delivered()).containsExactly("good-dest");
+            assertThat(result.failureDetails())
+                .containsEntry(
+                    "bad-dest",
+                    new EventDeliveryService.DeliveryFailure(
+                        EventDeliveryService.DeliveryFailureCategory.UNKNOWN,
+                        "connection refused"));
             assertThat(capturedGood).hasSize(1);
         }
 
@@ -149,6 +157,36 @@ class EventDeliveryServiceTest extends EventloopTestBase {
             assertThat(result.failed()).containsExactlyInAnyOrder("d1", "d2");
             assertThat(result.delivered()).isEmpty();
         }
+
+        @Test
+        @DisplayName("unchecked IO failures are marked retryable")
+        void shouldCategorizeUncheckedIoAsRetryable() {
+            EventDeliveryService service = EventDeliveryService.withDestinations(
+                new EventDeliveryService.EventDestination("io-dest",
+                    new UncheckedIoProducer("socket timeout"))
+            );
+
+            EventDeliveryService.DeliveryResult result = runPromise(
+                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS));
+
+            assertThat(result.failureDetails().get("io-dest").category())
+                .isEqualTo(EventDeliveryService.DeliveryFailureCategory.RETRYABLE);
+        }
+
+        @Test
+        @DisplayName("illegal argument failures are marked non-retryable")
+        void shouldCategorizeIllegalArgumentAsNonRetryable() {
+            EventDeliveryService service = EventDeliveryService.withDestinations(
+                new EventDeliveryService.EventDestination("invalid-dest",
+                    new InvalidPayloadProducer("bad payload"))
+            );
+
+            EventDeliveryService.DeliveryResult result = runPromise(
+                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS));
+
+            assertThat(result.failureDetails().get("invalid-dest").category())
+                .isEqualTo(EventDeliveryService.DeliveryFailureCategory.NON_RETRYABLE);
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -165,6 +203,7 @@ class EventDeliveryServiceTest extends EventloopTestBase {
             var r = new EventDeliveryService.DeliveryResult(List.of("d1"), List.of());
             assertThat(r.isFullyDelivered()).isTrue();
             assertThat(r.hasFailures()).isFalse();
+            assertThat(r.failureDetails()).isEmpty();
         }
 
         @Test
@@ -210,6 +249,36 @@ class EventDeliveryServiceTest extends EventloopTestBase {
         public boolean send(String tenantId, String eventType, String payloadJson,
                             Map<String, String> headers) {
             throw new RuntimeException(errorMessage);
+        }
+    }
+
+    private static final class UncheckedIoProducer implements EventDeliveryService.MessageSender {
+
+        private final String errorMessage;
+
+        private UncheckedIoProducer(String errorMessage) {
+            this.errorMessage = errorMessage;
+        }
+
+        @Override
+        public boolean send(String tenantId, String eventType, String payloadJson,
+                            Map<String, String> headers) {
+            throw new UncheckedIOException(new IOException(errorMessage));
+        }
+    }
+
+    private static final class InvalidPayloadProducer implements EventDeliveryService.MessageSender {
+
+        private final String errorMessage;
+
+        private InvalidPayloadProducer(String errorMessage) {
+            this.errorMessage = errorMessage;
+        }
+
+        @Override
+        public boolean send(String tenantId, String eventType, String payloadJson,
+                            Map<String, String> headers) {
+            throw new IllegalArgumentException(errorMessage);
         }
     }
 }

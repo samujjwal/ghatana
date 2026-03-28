@@ -62,7 +62,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class H2StateAdapter implements StateAdapter<String, String> {
 
-    private static final Logger logger = LoggerFactory.getLogger(H2StateAdapter.class);
+    private static final Logger log = LoggerFactory.getLogger(H2StateAdapter.class);
 
     // Constants
     private static final String ADAPTER_TYPE = "H2";
@@ -138,7 +138,7 @@ public class H2StateAdapter implements StateAdapter<String, String> {
         // Prepare statements
         prepareStatements();
 
-        logger.info("H2 adapter opened at {}/{}", dbPath, dbName);
+        log.info("H2 adapter opened at {}/{}", dbPath, dbName);
     }
 
     /**
@@ -219,10 +219,10 @@ public class H2StateAdapter implements StateAdapter<String, String> {
                 putStmt.executeUpdate();
             }
 
-            logger.debug("Put key {} in H2 (ttl={}ms)", key, ttlMillis);
+            log.debug("Put key {} in H2 (ttl={}ms)", key, ttlMillis);
             return Promise.of(null);
         } catch (SQLException e) {
-            logger.error("Failed to put key {} in H2", key, e);
+            log.error("Failed to put key {} in H2", key, e);
             return Promise.ofException(e);
         }
     }
@@ -275,10 +275,10 @@ public class H2StateAdapter implements StateAdapter<String, String> {
                 connection.setAutoCommit(true);
             }
 
-            logger.debug("Batch put {} entries in H2", entries.size());
+            log.debug("Batch put {} entries in H2", entries.size());
             return Promise.of(null);
         } catch (SQLException e) {
-            logger.error("Failed to batch put entries in H2", e);
+            log.error("Failed to batch put entries in H2", e);
             return Promise.ofException(e);
         }
     }
@@ -310,18 +310,18 @@ public class H2StateAdapter implements StateAdapter<String, String> {
                         if (hasExpiry && System.currentTimeMillis() > expiresAt) {
                             // Expired - delete asynchronously
                             deleteAsync(key);
-                            logger.debug("Key {} expired, removed from H2", key);
+                            log.debug("Key {} expired, removed from H2", key);
                             return Promise.of(Optional.empty());
                         }
 
-                        logger.debug("Got key {} from H2", key);
+                        log.debug("Got key {} from H2", key);
                         return Promise.of(Optional.of(value));
                     }
                 }
             }
             return Promise.of(Optional.empty());
         } catch (SQLException e) {
-            logger.error("Failed to get key {} from H2", key, e);
+            log.error("Failed to get key {} from H2", key, e);
             return Promise.ofException(e);
         }
     }
@@ -336,7 +336,7 @@ public class H2StateAdapter implements StateAdapter<String, String> {
                 deleteStmt.executeUpdate();
             }
         } catch (SQLException e) {
-            logger.warn("Failed to delete expired key {}", key, e);
+            log.warn("Failed to delete expired key {}", key, e);
         }
     }
 
@@ -390,10 +390,10 @@ public class H2StateAdapter implements StateAdapter<String, String> {
                 }
             }
 
-            logger.debug("Batch got {} of {} keys from H2", result.size(), keys.size());
+            log.debug("Batch got {} of {} keys from H2", result.size(), keys.size());
             return Promise.of(result);
         } catch (SQLException e) {
-            logger.error("Failed to batch get keys from H2", e);
+            log.error("Failed to batch get keys from H2", e);
             return Promise.ofException(e);
         }
     }
@@ -417,10 +417,10 @@ public class H2StateAdapter implements StateAdapter<String, String> {
                 deleteStmt.setString(1, key);
                 deleteStmt.executeUpdate();
             }
-            logger.debug("Deleted key {} from H2", key);
+            log.debug("Deleted key {} from H2", key);
             return Promise.of(null);
         } catch (SQLException e) {
-            logger.error("Failed to delete key {} from H2", key, e);
+            log.error("Failed to delete key {} from H2", key, e);
             return Promise.ofException(e);
         }
     }
@@ -456,10 +456,10 @@ public class H2StateAdapter implements StateAdapter<String, String> {
                 stmt.executeUpdate();
             }
 
-            logger.debug("Batch deleted {} keys from H2", keys.size());
+            log.debug("Batch deleted {} keys from H2", keys.size());
             return Promise.of(null);
         } catch (SQLException e) {
-            logger.error("Failed to batch delete keys from H2", e);
+            log.error("Failed to batch delete keys from H2", e);
             return Promise.ofException(e);
         }
     }
@@ -475,17 +475,17 @@ public class H2StateAdapter implements StateAdapter<String, String> {
             return Promise.ofException(new IllegalStateException("H2 adapter is closed"));
         }
 
-        logger.warn("DESTRUCTIVE OPERATION: clear() called on H2 state table '{}' — "
+        log.warn("DESTRUCTIVE OPERATION: clear() called on H2 state table '{}' — "
                 + "deleting ALL entries across all tenants.", tableName);
 
         try {
             try (Statement stmt = connection.createStatement()) {
                 stmt.executeUpdate(String.format("DELETE FROM %s", tableName));
             }
-            logger.warn("DESTRUCTIVE OPERATION COMPLETED: Cleared H2 state table '{}'", tableName);
+            log.warn("DESTRUCTIVE OPERATION COMPLETED: Cleared H2 state table '{}'", tableName);
             return Promise.of(null);
         } catch (SQLException e) {
-            logger.error("Failed to clear H2", e);
+            log.error("Failed to clear H2", e);
             return Promise.ofException(e);
         }
     }
@@ -513,7 +513,7 @@ public class H2StateAdapter implements StateAdapter<String, String> {
                 }
             }
         } catch (SQLException e) {
-            logger.error("Failed to check existence of key {} in H2", key, e);
+            log.error("Failed to check existence of key {} in H2", key, e);
             return Promise.ofException(e);
         }
     }
@@ -555,7 +555,7 @@ public class H2StateAdapter implements StateAdapter<String, String> {
 
             return Promise.of(stats);
         } catch (SQLException e) {
-            logger.error("Failed to get H2 statistics", e);
+            log.error("Failed to get H2 statistics", e);
             return Promise.ofException(e);
         }
     }
@@ -582,7 +582,7 @@ public class H2StateAdapter implements StateAdapter<String, String> {
             }
             return Promise.of(0L);
         } catch (SQLException e) {
-            logger.error("Failed to get H2 size", e);
+            log.error("Failed to get H2 size", e);
             return Promise.ofException(e);
         }
     }
@@ -609,7 +609,7 @@ public class H2StateAdapter implements StateAdapter<String, String> {
             }
             return Promise.of(0L);
         } catch (SQLException e) {
-            logger.error("Failed to get H2 entry count", e);
+            log.error("Failed to get H2 entry count", e);
             return Promise.ofException(e);
         }
     }
@@ -635,10 +635,10 @@ public class H2StateAdapter implements StateAdapter<String, String> {
                     connection.close();
                 }
 
-                logger.info("H2 adapter closed at {}", dbPath);
+                log.info("H2 adapter closed at {}", dbPath);
                 return Promise.of(null);
             } catch (SQLException e) {
-                logger.error("Failed to close H2 adapter", e);
+                log.error("Failed to close H2 adapter", e);
                 return Promise.ofException(e);
             }
         }
@@ -681,7 +681,7 @@ public class H2StateAdapter implements StateAdapter<String, String> {
         try {
             return Promise.of(connection.isValid(5));
         } catch (SQLException e) {
-            logger.warn("H2 health check failed", e);
+            log.warn("H2 health check failed", e);
             return Promise.of(false);
         }
     }
@@ -715,12 +715,12 @@ public class H2StateAdapter implements StateAdapter<String, String> {
                         tableName, System.currentTimeMillis()
                 ));
                 if (deleted > 0) {
-                    logger.info("Cleaned up {} expired entries from H2", deleted);
+                    log.info("Cleaned up {} expired entries from H2", deleted);
                 }
                 return Promise.of(deleted);
             }
         } catch (SQLException e) {
-            logger.error("Failed to cleanup expired entries", e);
+            log.error("Failed to cleanup expired entries", e);
             return Promise.ofException(e);
         }
     }
@@ -739,10 +739,10 @@ public class H2StateAdapter implements StateAdapter<String, String> {
             try (Statement stmt = connection.createStatement()) {
                 stmt.execute("SHUTDOWN COMPACT");
             }
-            logger.info("H2 compaction completed");
+            log.info("H2 compaction completed");
             return Promise.of(null);
         } catch (SQLException e) {
-            logger.error("Failed to compact H2", e);
+            log.error("Failed to compact H2", e);
             return Promise.ofException(e);
         }
     }

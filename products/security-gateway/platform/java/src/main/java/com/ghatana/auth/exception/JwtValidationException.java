@@ -1,5 +1,7 @@
 package com.ghatana.auth.exception;
 
+import com.ghatana.platform.core.exception.UnauthorizedException;
+
 /**
  * Thrown when JWT token validation fails.
  *
@@ -28,7 +30,7 @@ package com.ghatana.auth.exception;
  * @doc.layer product
  * @doc.pattern Exception
  */
-public class JwtValidationException extends RuntimeException {
+public class JwtValidationException extends UnauthorizedException {
 
     /**
      * Creates JWT validation exception with message.

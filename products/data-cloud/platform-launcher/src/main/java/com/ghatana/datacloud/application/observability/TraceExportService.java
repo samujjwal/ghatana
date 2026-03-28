@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
  * );
  *
  * Promise<Void> export = exportService.exportCollectedSpans(tenantId);
- * export.whenResult(v -> logger.info("Export complete"));
+ * export.whenResult(v -> log.info("Export complete"));
  * }</pre>
  *
  * <p>
@@ -74,7 +74,7 @@ import java.util.stream.Collectors;
  */
 public final class TraceExportService {
 
-    private static final Logger logger = LoggerFactory.getLogger(TraceExportService.class);
+    private static final Logger log = LoggerFactory.getLogger(TraceExportService.class);
 
     private final TraceExporter traceExporter;
     private final MetricsCollector metrics;
@@ -151,7 +151,7 @@ public final class TraceExportService {
                                 "tenant", tenantId,
                                 "span_count", String.valueOf(result.getExportedCount())
                         );
-                        logger.info(
+                        log.info(
                                 "Exported {} spans for tenant {} in {}ms",
                                 result.getExportedCount(),
                                 tenantId,
@@ -167,13 +167,13 @@ public final class TraceExportService {
                         // Move failed spans to dead letter queue
                         addToDeadLetterQueue(spans);
 
-                        logger.warn(
+                        log.warn(
                                 "Export failed for tenant {}: {} errors",
                                 tenantId,
                                 result.getErrorCount()
                         );
                         for (String error : result.getErrors()) {
-                            logger.debug("Export error: {}", error);
+                            log.debug("Export error: {}", error);
                         }
                     }
 
@@ -197,7 +197,7 @@ public final class TraceExportService {
                     // Move spans to DLQ on exception
                     addToDeadLetterQueue(spans);
 
-                    logger.error(
+                    log.error(
                             "Export exception for tenant {} after {}ms",
                             tenantId,
                             durationMs,
@@ -272,7 +272,7 @@ public final class TraceExportService {
     public void clearDeadLetterQueue() {
         int size = deadLetterQueue.size();
         deadLetterQueue.clear();
-        logger.info("Cleared {} spans from dead letter queue", size);
+        log.info("Cleared {} spans from dead letter queue", size);
     }
 
     /**

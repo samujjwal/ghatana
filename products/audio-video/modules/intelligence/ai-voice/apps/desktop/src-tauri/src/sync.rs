@@ -1,4 +1,5 @@
 use crate::models::{AvSyncAssessment, AvSyncQuality};
+use crate::metrics::AudioRuntimeMetrics;
 
 pub fn assess_sync(
     audio_duration_seconds: f64,
@@ -36,7 +37,17 @@ pub fn assess_sync(
         quality,
         recommendation,
     }
+    .tap(|report| AudioRuntimeMetrics::global().record_sync_drift(report.drift_ms))
 }
+
+trait Tap: Sized {
+    fn tap<F: FnOnce(&Self)>(self, func: F) -> Self {
+        func(&self);
+        self
+    }
+}
+
+impl<T> Tap for T {}
 
 #[cfg(test)]
 mod tests {

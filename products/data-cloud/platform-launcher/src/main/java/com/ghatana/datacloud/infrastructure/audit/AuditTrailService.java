@@ -68,7 +68,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AuditTrailService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AuditTrailService.class);
+    private static final Logger log = LoggerFactory.getLogger(AuditTrailService.class);
 
     private final MetricsCollector metrics;
     private final Map<String, List<AuditEvent>> auditLog;
@@ -106,7 +106,7 @@ public class AuditTrailService {
             auditLog.computeIfAbsent(key, k -> new ArrayList<>())
                 .add(event);
 
-            logger.info("Audit event logged: {} by {} on {}", 
+            log.info("Audit event logged: {} by {} on {}", 
                 event.eventType, event.userId, event.resourceId);
 
             metrics.incrementCounter("audit.event.logged",
@@ -115,7 +115,7 @@ public class AuditTrailService {
 
             return Promise.of(null);
         } catch (Exception ex) {
-            logger.error("Error logging audit event", ex);
+            log.error("Error logging audit event", ex);
             metrics.incrementCounter("audit.event.error",
                 "tenant", event.tenantId,
                 "eventType", event.eventType);
@@ -158,7 +158,7 @@ public class AuditTrailService {
             // Sort by timestamp descending
             results.sort((a, b) -> Long.compare(b.timestamp, a.timestamp));
 
-            logger.debug("Audit query returned {} events for tenant: {}", results.size(), tenantId);
+            log.debug("Audit query returned {} events for tenant: {}", results.size(), tenantId);
 
             metrics.incrementCounter("audit.query.success",
                 "tenant", tenantId,
@@ -166,7 +166,7 @@ public class AuditTrailService {
 
             return Promise.of(results);
         } catch (Exception ex) {
-            logger.error("Error querying audit events", ex);
+            log.error("Error querying audit events", ex);
             metrics.incrementCounter("audit.query.error", "tenant", tenantId);
             return Promise.ofException(ex);
         }
@@ -199,11 +199,11 @@ public class AuditTrailService {
             // Sort by timestamp ascending
             results.sort((a, b) -> Long.compare(a.timestamp, b.timestamp));
 
-            logger.debug("Found {} events for resource: {}", results.size(), resourceId);
+            log.debug("Found {} events for resource: {}", results.size(), resourceId);
 
             return Promise.of(results);
         } catch (Exception ex) {
-            logger.error("Error getting resource events", ex);
+            log.error("Error getting resource events", ex);
             return Promise.ofException(ex);
         }
     }
@@ -237,11 +237,11 @@ public class AuditTrailService {
                 System.currentTimeMillis()
             );
 
-            logger.debug("Audit stats: tenant={}, totalEvents={}", tenantId, totalEvents);
+            log.debug("Audit stats: tenant={}, totalEvents={}", tenantId, totalEvents);
 
             return Promise.of(stats);
         } catch (Exception ex) {
-            logger.error("Error getting audit stats", ex);
+            log.error("Error getting audit stats", ex);
             return Promise.ofException(ex);
         }
     }
@@ -273,7 +273,7 @@ public class AuditTrailService {
                 default -> throw new IllegalArgumentException("Unsupported format: " + format);
             };
 
-            logger.info("Audit trail exported for tenant: {} in format: {}", tenantId, format);
+            log.info("Audit trail exported for tenant: {} in format: {}", tenantId, format);
 
             metrics.incrementCounter("audit.export.success",
                 "tenant", tenantId,
@@ -281,7 +281,7 @@ public class AuditTrailService {
 
             return Promise.of(exported);
         } catch (Exception ex) {
-            logger.error("Error exporting audit trail", ex);
+            log.error("Error exporting audit trail", ex);
             metrics.incrementCounter("audit.export.error",
                 "tenant", tenantId,
                 "format", format);
@@ -317,7 +317,7 @@ public class AuditTrailService {
             
             return mapper.writeValueAsString(exportEvents);
         } catch (JsonProcessingException e) {
-            logger.error("Failed to export audit events as JSON", e);
+            log.error("Failed to export audit events as JSON", e);
             // Return a basic JSON array on error
             return "[]";
         }
@@ -352,7 +352,7 @@ public class AuditTrailService {
             try {
                 detailsJson = mapper.writeValueAsString(event.details != null ? event.details : Map.of());
             } catch (JsonProcessingException e) {
-                logger.warn("Failed to serialize details for audit event", e);
+                log.warn("Failed to serialize details for audit event", e);
             }
             csv.append(escapeCsvField(detailsJson)).append("\n");
         }

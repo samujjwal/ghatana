@@ -7,6 +7,7 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataResult;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.kernel.util.TypedDataSerializer;
 import io.activej.promise.Promise;
 
@@ -32,7 +33,7 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class PatientRecordService {
+public class PatientRecordService implements KernelLifecycleAware {
 
     private static final String DATASET_ID = "phr.patient.records";
     private static final String AUDIT_DATASET = "phr.audit";

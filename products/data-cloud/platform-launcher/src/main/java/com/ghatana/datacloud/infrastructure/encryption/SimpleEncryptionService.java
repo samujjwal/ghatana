@@ -6,6 +6,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import com.ghatana.platform.core.exception.ServiceException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Objects;
@@ -190,7 +191,7 @@ public class SimpleEncryptionService {
     /**
      * Exception thrown when encryption or decryption fails.
      */
-    public static class EncryptionException extends RuntimeException {
+    public static class EncryptionException extends ServiceException {
         public EncryptionException(String message) {
             super(message);
         }

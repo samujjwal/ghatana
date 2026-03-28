@@ -6,6 +6,7 @@ import com.ghatana.agent.framework.api.OutputGenerator;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.LLMGateway;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.tutorputor.contentstudio.knowledge.KnowledgeBaseService;
 import com.ghatana.tutorputor.contentstudio.prompt.PromptTemplates;
 import io.activej.promise.Promise;
@@ -334,7 +335,7 @@ public class ContentGenerationOutputGenerator
     /**
      * Exception thrown when budget is exceeded.
      */
-    public static class BudgetExceededException extends RuntimeException {
+    public static class BudgetExceededException extends ServiceException {
         public BudgetExceededException(String message) {
             super(message);
         }

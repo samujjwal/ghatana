@@ -64,7 +64,7 @@ import java.util.concurrent.ExecutorService;
  */
 public class JpaCollectionRepositoryImpl implements com.ghatana.datacloud.entity.CollectionRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(JpaCollectionRepositoryImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(JpaCollectionRepositoryImpl.class);
 
     private final EntityManager entityManager;
     private final Eventloop eventloop;
@@ -156,12 +156,12 @@ public class JpaCollectionRepositoryImpl implements com.ghatana.datacloud.entity
             try {
                 MetaCollection saved = entityManager.merge(collection);
                 entityManager.getTransaction().commit();
-                logger.debug("Collection saved: tenantId={}, name={}, id={}",
+                log.debug("Collection saved: tenantId={}, name={}, id={}",
                         saved.getTenantId(), saved.getName(), saved.getId());
                 return saved;
             } catch (Exception e) {
                 entityManager.getTransaction().rollback();
-                logger.error("Failed to save collection: tenantId={}, name={}",
+                log.error("Failed to save collection: tenantId={}, name={}",
                         collection.getTenantId(), collection.getName(), e);
                 throw e;
             }
@@ -181,21 +181,21 @@ public class JpaCollectionRepositoryImpl implements com.ghatana.datacloud.entity
                     collection.setActive(false);
                     entityManager.merge(collection);
                     entityManager.getTransaction().commit();
-                    logger.debug("Collection soft-deleted: tenantId={}, id={}", tenantId, id);
+                    log.debug("Collection soft-deleted: tenantId={}, id={}", tenantId, id);
                     return true;
                 } else if (collection == null) {
-                    logger.warn("Collection not found for deletion: tenantId={}, id={}", tenantId, id);
+                    log.warn("Collection not found for deletion: tenantId={}, id={}", tenantId, id);
                     entityManager.getTransaction().commit();
                     return false;
                 } else {
-                    logger.warn("Collection tenant mismatch: tenantId={}, id={}, collectionTenantId={}",
+                    log.warn("Collection tenant mismatch: tenantId={}, id={}, collectionTenantId={}",
                             tenantId, id, collection.getTenantId());
                     entityManager.getTransaction().commit();
                     return false;
                 }
             } catch (Exception e) {
                 entityManager.getTransaction().rollback();
-                logger.error("Failed to delete collection: tenantId={}, id={}", tenantId, id, e);
+                log.error("Failed to delete collection: tenantId={}, id={}", tenantId, id, e);
                 throw e;
             }
         });

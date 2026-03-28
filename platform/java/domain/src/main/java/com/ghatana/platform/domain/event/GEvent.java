@@ -238,6 +238,16 @@ public class GEvent implements Event  {
         return payload.get(key);
     }
 
+    /**
+     * Returns the full payload map for this event.
+     *
+     * @return unmodifiable view of the payload; never {@code null}
+     */
+    @Override
+    public java.util.Map<String, Object> toPayloadMap() {
+        return payload != null ? java.util.Collections.unmodifiableMap(payload) : java.util.Collections.emptyMap();
+    }
+
     // -------------------------------------------------------------------------------------------------
     // Custom builder extensions for convenience in tests and simple construction sites
     // Allows: GEvent.builder().type("event.type").payload(...).headers(...).build();

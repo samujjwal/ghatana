@@ -20,7 +20,7 @@ plugins {
 }
 
 group = "com.ghatana.datacloud"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 description = "Data Cloud Storage Plugins — extracted from platform-launcher (Phase 1)"
 

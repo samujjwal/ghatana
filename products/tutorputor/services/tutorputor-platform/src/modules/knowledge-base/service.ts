@@ -6,6 +6,7 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
+import { createStandaloneLogger } from '@tutorputor/core/logger';
 
 // ============================================================================
 // Types
@@ -130,12 +131,14 @@ type KhanAcademySearchResponse = {
 // Knowledge Base Service
 // ============================================================================
 
-export class KnowledgeBaseService {
+export class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
+  private prisma: PrismaClient;
+  private logger = createStandaloneLogger({ service: 'KnowledgeBaseService' });
   private cache: Map<string, any> = new Map();
   private cacheTimeoutMs = 30 * 60 * 1000; // 30 minutes
 
   constructor(
-    private readonly prisma: PrismaClient,
+    prisma: PrismaClient,
     private readonly config: {
       wikipediaApiUrl?: string;
       openStaxApiUrl?: string;
@@ -418,7 +421,7 @@ export class KnowledgeBaseService {
           }
         }
       } catch (error) {
-        console.warn("Wikipedia query failed:", error);
+        this.logger.warn({ error, query }, "Wikipedia query failed");
       }
     }
 
@@ -489,7 +492,7 @@ export class KnowledgeBaseService {
           });
         }
       } catch (error) {
-        console.warn("OpenStax query failed:", error);
+        this.logger.warn({ error, domain }, "OpenStax query failed");
         // Provide fallback link
         sources.push({
           name: "OpenStax",
@@ -579,7 +582,7 @@ export class KnowledgeBaseService {
           });
         }
       } catch (error) {
-        console.warn("Khan Academy query failed:", error);
+        this.logger.warn({ error, domain }, "Khan Academy query failed");
         // Provide fallback link
         sources.push({
           name: "Khan Academy",

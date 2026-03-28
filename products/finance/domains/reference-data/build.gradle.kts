@@ -5,6 +5,7 @@
  * counterparty data, and financial instrument reference data.
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

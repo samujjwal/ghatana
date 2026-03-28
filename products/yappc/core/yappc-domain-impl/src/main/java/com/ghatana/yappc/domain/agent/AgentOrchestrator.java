@@ -1,6 +1,7 @@
 package com.ghatana.products.yappc.domain.agent;
 
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
@@ -453,7 +454,7 @@ public class AgentOrchestrator {
     /**
      * Exception for workflow step failures.
      */
-    public static class WorkflowStepException extends RuntimeException {
+    public static class WorkflowStepException extends ServiceException {
         private final String stepId;
         private final AgentResult.AgentError error;
 

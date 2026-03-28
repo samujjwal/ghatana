@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package ghatana.contracts.media.v1;
+
+option java_package = "com.ghatana.contracts.media.v1";
+option java_multiple_files = true;
+option java_outer_classname = "AudioVideoErrorTaxonomyProto";
+
+enum AudioVideoErrorCategory {
+  AUDIO_VIDEO_ERROR_CATEGORY_UNSPECIFIED = 0;
+  AUDIO_VIDEO_ERROR_CATEGORY_VALIDATION = 1;
+  AUDIO_VIDEO_ERROR_CATEGORY_RUNTIME = 2;
+}
+
+enum AudioVideoErrorCode {
+  AUDIO_VIDEO_ERROR_CODE_UNSPECIFIED = 0;
+  AUDIO_VIDEO_ERROR_CODE_INVALID_REQUEST = 1;
+  AUDIO_VIDEO_ERROR_CODE_INPUT_UNAVAILABLE = 2;
+  AUDIO_VIDEO_ERROR_CODE_PLATFORM_UNAVAILABLE = 3;
+  AUDIO_VIDEO_ERROR_CODE_TEMPORARILY_UNAVAILABLE = 4;
+  AUDIO_VIDEO_ERROR_CODE_RECORDING_FAILED = 5;
+  AUDIO_VIDEO_ERROR_CODE_PROCESSING_FAILED = 6;
+}
+
+message AudioVideoError {
+  AudioVideoErrorCode code = 1;
+  AudioVideoErrorCategory category = 2;
+  bool retryable = 3;
+  string message = 4;
+}

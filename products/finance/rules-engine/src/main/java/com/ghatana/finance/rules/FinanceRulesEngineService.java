@@ -7,6 +7,7 @@ package com.ghatana.finance.rules;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.json.PlatformObjectMapper;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -397,7 +398,7 @@ public final class FinanceRulesEngineService {
     /**
      * Thrown when finance rules engine returns an error HTTP status or the request fails.
      */
-    public static final class FinanceRulesEvaluationException extends RuntimeException {
+    public static final class FinanceRulesEvaluationException extends ServiceException {
         public FinanceRulesEvaluationException(String message) {
             super(message);
         }

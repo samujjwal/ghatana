@@ -7,6 +7,7 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequ
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.InMemoryCacheAdapter;
 import io.activej.promise.Promise;
@@ -47,7 +48,7 @@ import java.util.UUID;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class RiskManagementService {
+public class RiskManagementService implements KernelLifecycleAware {
 
     private static final String RISK_DATASET = "finance.risk.metrics";
     private static final String ALERT_DATASET = "finance.risk.alerts";
@@ -523,4 +524,3 @@ public class RiskManagementService {
         public Instant getTimestamp() { return timestamp; }
     }
 }
-

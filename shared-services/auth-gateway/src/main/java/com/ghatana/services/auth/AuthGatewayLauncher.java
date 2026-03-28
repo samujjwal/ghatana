@@ -3,8 +3,10 @@
  */
 package com.ghatana.services.auth;
 
+import com.ghatana.platform.config.ConfigManager;
 import com.ghatana.platform.http.server.response.ErrorResponse;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
+import com.ghatana.platform.http.server.servlet.HealthCheckServlet;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;
 import com.ghatana.platform.security.model.User;
@@ -77,6 +79,11 @@ public class AuthGatewayLauncher extends Launcher {
     private static final int DEFAULT_PORT = 8081;
 
     @Provides
+    ConfigManager configManager() {
+        return ConfigManager.createDefault("auth-gateway");
+    }
+
+    @Provides
     Eventloop eventloop() {
         return Eventloop.builder()
                 .withThreadName("auth-gateway")
@@ -94,57 +101,51 @@ public class AuthGatewayLauncher extends Launcher {
     }
 
     @Provides
-    JwtTokenProvider jwtTokenProvider() {
-        String secret = System.getenv("JWT_SECRET");
+    JwtTokenProvider jwtTokenProvider(ConfigManager config) {
+        String secret = config.getString("JWT_SECRET").orElse(null);
         if (secret == null || secret.isBlank() || secret.length() < 32) {
             throw new IllegalStateException(
                     "JWT_SECRET environment variable must be set to a secure value " +
                     "(minimum 32 characters). Do NOT use default secrets in production.");
         }
-        long expiryMs = Long.parseLong(System.getenv().getOrDefault("JWT_EXPIRY_MS", "3600000"));
+        long expiryMs = config.getLong("JWT_EXPIRY_MS").orElse(3_600_000L);
 
         return JwtTokenProviders.fromSharedSecret(secret, expiryMs);
     }
 
     @Provides
-    CredentialStore credentialStore() {
-        boolean useJdbc = Boolean.parseBoolean(
-                System.getenv().getOrDefault("USE_JDBC_CREDENTIALS", "false"));
+    CredentialStore credentialStore(ConfigManager config) {
+        boolean useJdbc = config.getBoolean("USE_JDBC_CREDENTIALS").orElse(false);
 
         if (useJdbc) {
             // Production path: JDBC-backed store requires AUTH_DB_URL
-            String jdbcUrl = System.getenv("AUTH_DB_URL");
+            String jdbcUrl = config.getString("AUTH_DB_URL").orElse(null);
             if (jdbcUrl == null || jdbcUrl.isBlank()) {
                 throw new IllegalStateException(
                         "USE_JDBC_CREDENTIALS=true but AUTH_DB_URL is not set");
             }
             com.zaxxer.hikari.HikariConfig cfg = new com.zaxxer.hikari.HikariConfig();
             cfg.setJdbcUrl(jdbcUrl);
-            cfg.setUsername(System.getenv().getOrDefault("AUTH_DB_USER", ""));
-            cfg.setPassword(System.getenv().getOrDefault("AUTH_DB_PASSWORD", ""));
+            cfg.setUsername(config.getString("AUTH_DB_USER").orElse(""));
+            cfg.setPassword(config.getString("AUTH_DB_PASSWORD").orElse(""));
             cfg.setPoolName("auth-credential-pool");
-            cfg.setMinimumIdle(Integer.parseInt(
-                System.getenv().getOrDefault("AUTH_DB_POOL_MIN_IDLE", "2")));
-            cfg.setMaximumPoolSize(Integer.parseInt(
-                System.getenv().getOrDefault("AUTH_DB_POOL_MAX_SIZE", "10")));
-            cfg.setConnectionTimeout(Long.parseLong(
-                System.getenv().getOrDefault("AUTH_DB_CONNECT_TIMEOUT_MS", "30000")));
-            cfg.setIdleTimeout(Long.parseLong(
-                System.getenv().getOrDefault("AUTH_DB_IDLE_TIMEOUT_MS", "600000")));
-            cfg.setMaxLifetime(Long.parseLong(
-                System.getenv().getOrDefault("AUTH_DB_MAX_LIFETIME_MS", "1800000")));
+            cfg.setMinimumIdle(config.getInt("AUTH_DB_POOL_MIN_IDLE").orElse(2));
+            cfg.setMaximumPoolSize(config.getInt("AUTH_DB_POOL_MAX_SIZE").orElse(10));
+            cfg.setConnectionTimeout(config.getLong("AUTH_DB_CONNECT_TIMEOUT_MS").orElse(30_000L));
+            cfg.setIdleTimeout(config.getLong("AUTH_DB_IDLE_TIMEOUT_MS").orElse(600_000L));
+            cfg.setMaxLifetime(config.getLong("AUTH_DB_MAX_LIFETIME_MS").orElse(1_800_000L));
             JdbcCredentialStore store = new JdbcCredentialStore(new com.zaxxer.hikari.HikariDataSource(cfg));
             store.ensureSchema();
             LOGGER.info("Using JdbcCredentialStore (AUTH_DB_URL configured)");
             return store;
         }
 
-        // Development / bootstrap path: in-memory store seeded from env vars
+        // Development / bootstrap path: in-memory store seeded from config
         LOGGER.warn("USE_JDBC_CREDENTIALS is false — using InMemoryCredentialStore (NOT for production)");
         InMemoryCredentialStore store = new InMemoryCredentialStore();
-        String adminUser = System.getenv().getOrDefault("ADMIN_USERNAME", "admin");
-        String adminPassword = System.getenv("ADMIN_PASSWORD");
-        String adminTenant = System.getenv().getOrDefault("ADMIN_TENANT", "default");
+        String adminUser = config.getString("ADMIN_USERNAME").orElse("admin");
+        String adminPassword = config.getString("ADMIN_PASSWORD").orElse(null);
+        String adminTenant = config.getString("ADMIN_TENANT").orElse("default");
         if (adminPassword != null && !adminPassword.isBlank()) {
             store.seedAdmin(adminUser, PasswordHasher.hash(adminPassword), adminTenant);
             LOGGER.info("Seeded admin user: {}", adminUser);
@@ -158,11 +159,9 @@ public class AuthGatewayLauncher extends Launcher {
     }
 
     @Provides
-    RateLimiter rateLimiter(MetricsCollector metrics) {
-        int requestsPerMinute = Integer.parseInt(
-                System.getenv().getOrDefault("RATE_LIMIT_REQUESTS_PER_MINUTE", "100"));
-        int burstSize = Integer.parseInt(
-            System.getenv().getOrDefault("RATE_LIMIT_BURST_SIZE", String.valueOf(requestsPerMinute)));
+    RateLimiter rateLimiter(ConfigManager config, MetricsCollector metrics) {
+        int requestsPerMinute = config.getInt("RATE_LIMIT_REQUESTS_PER_MINUTE").orElse(100);
+        int burstSize = config.getInt("RATE_LIMIT_BURST_SIZE").orElse(requestsPerMinute);
 
         return DefaultRateLimiter.create(
             RateLimiterConfig.builder()
@@ -176,6 +175,7 @@ public class AuthGatewayLauncher extends Launcher {
 
     @Provides
     RoutingServlet servlet(
+            ConfigManager config,
             Eventloop eventloop,
             JwtTokenProvider tokenProvider,
             TenantExtractor tenantExtractor,
@@ -186,21 +186,14 @@ public class AuthGatewayLauncher extends Launcher {
         // Platform JWT for cross-product token exchange.
         // Products forward their own JWT here; we validate it and return a
         // short-lived platform-wide token accepted by all services.
-        final String platformSecret = System.getenv().getOrDefault(
-                "PLATFORM_JWT_SECRET", "dev-platform-jwt-secret-change-me-in-prod!");
-        final long platformTokenTtlMs = Long.parseLong(
-                System.getenv().getOrDefault("PLATFORM_TOKEN_TTL_MS", String.valueOf(15 * 60 * 1000L)));
+        final String platformSecret = config.getString("PLATFORM_JWT_SECRET")
+                .orElse("dev-platform-jwt-secret-change-me-in-prod!");
+        final long platformTokenTtlMs = config.getLong("PLATFORM_TOKEN_TTL_MS")
+                .orElse(15L * 60 * 1000);
         final JwtTokenProvider platformTokenProvider = JwtTokenProviders.fromSharedSecret(platformSecret, platformTokenTtlMs);
 
-        return RoutingServlet.builder(eventloop)
-                // Health check
-                .with(GET, "/health", request -> {
-                    metrics.incrementCounter("auth.gateway.health.count");
-                    return HttpResponse.ok200()
-                            .withJson("{\"status\":\"healthy\",\"service\":\"auth-gateway\"}")
-                            .build()
-                            .toPromise();
-                })
+        return HealthCheckServlet.addHealthEndpoints(
+                RoutingServlet.builder(eventloop), "auth-gateway", "1.0.0")
                 // Login - issue JWT token after credential validation
                 .with(POST, "/auth/login", request -> {
                     metrics.incrementCounter("auth.gateway.login.count");
@@ -217,14 +210,14 @@ public class AuthGatewayLauncher extends Launcher {
 
                             if (username == null || username.isEmpty()) {
                                 metrics.incrementCounter("auth.gateway.login.rejected");
-                                return Promise.of(HttpResponse.ofCode(400)
-                                        .withJson("{\"error\":\"Username is required\"}")
+                                return Promise.of(ResponseBuilder.status(400)
+                                        .json(ErrorResponse.of(400, "VALIDATION_ERROR", "Username is required"))
                                         .build());
                             }
                             if (password == null || password.isEmpty()) {
                                 metrics.incrementCounter("auth.gateway.login.rejected");
-                                return Promise.of(HttpResponse.ofCode(400)
-                                        .withJson("{\"error\":\"Password is required\"}")
+                                return Promise.of(ResponseBuilder.status(400)
+                                        .json(ErrorResponse.of(400, "VALIDATION_ERROR", "Password is required"))
                                         .build());
                             }
 
@@ -234,23 +227,23 @@ public class AuthGatewayLauncher extends Launcher {
                                         if (userOpt.isEmpty()) {
                                             LOGGER.warn("Login attempt for unknown user: {}", username);
                                             metrics.incrementCounter("auth.gateway.login.failed");
-                                            return Promise.of(HttpResponse.ofCode(401)
-                                                    .withJson("{\"error\":\"Invalid username or password\"}")
+                                            return Promise.of(ResponseBuilder.status(401)
+                                                    .json(ErrorResponse.of(401, "AUTHENTICATION_ERROR", "Invalid username or password"))
                                                     .build());
                                         }
                                         CredentialStore.StoredUser user = userOpt.get();
                                         if (!user.enabled()) {
                                             LOGGER.warn("Login attempt for disabled user: {}", username);
                                             metrics.incrementCounter("auth.gateway.login.disabled");
-                                            return Promise.of(HttpResponse.ofCode(403)
-                                                    .withJson("{\"error\":\"Account is disabled\"}")
+                                            return Promise.of(ResponseBuilder.status(403)
+                                                    .json(ErrorResponse.of(403, "FORBIDDEN", "Account is disabled"))
                                                     .build());
                                         }
                                         if (!PasswordHasher.verify(password, user.passwordHash())) {
                                             LOGGER.warn("Invalid password for user: {}", username);
                                             metrics.incrementCounter("auth.gateway.login.failed");
-                                            return Promise.of(HttpResponse.ofCode(401)
-                                                    .withJson("{\"error\":\"Invalid username or password\"}")
+                                            return Promise.of(ResponseBuilder.status(401)
+                                                    .json(ErrorResponse.of(401, "AUTHENTICATION_ERROR", "Invalid username or password"))
                                                     .build());
                                         }
 
@@ -281,8 +274,8 @@ public class AuthGatewayLauncher extends Launcher {
                         .then(Promise::of, ex -> {
                             LOGGER.error("Login failed", ex);
                             metrics.incrementCounter("auth.gateway.login.errors");
-                            return Promise.of(HttpResponse.ofCode(500)
-                                    .withJson("{\"error\":\"Login failed\"}")
+                            return Promise.of(ResponseBuilder.status(500)
+                                    .json(ErrorResponse.of(500, "INTERNAL_SERVER_ERROR", "Login failed"))
                                     .build());
                         });
                 })
@@ -296,8 +289,8 @@ public class AuthGatewayLauncher extends Launcher {
 
                     String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                        return HttpResponse.ofCode(401)
-                                .withJson("{\"error\":\"Missing or invalid Authorization header\"}")
+                        return ResponseBuilder.status(401)
+                                .json(ErrorResponse.of(401, "UNAUTHORIZED", "Missing or invalid Authorization header"))
                                 .build()
                                 .toPromise();
                     }
@@ -306,8 +299,8 @@ public class AuthGatewayLauncher extends Launcher {
                         String token = authHeader.substring(7);
 
                         if (!tokenProvider.validateToken(token)) {
-                            return HttpResponse.ofCode(401)
-                                    .withJson("{\"valid\":false,\"error\":\"Invalid or expired token\"}")
+                            return ResponseBuilder.status(401)
+                                    .json(ErrorResponse.of(401, "UNAUTHORIZED", "Invalid or expired token"))
                                     .build()
                                     .toPromise();
                         }
@@ -329,8 +322,8 @@ public class AuthGatewayLauncher extends Launcher {
                         LOGGER.error("Token validation failed", ex);
                         metrics.incrementCounter("auth.gateway.validate.errors");
 
-                        return HttpResponse.ofCode(401)
-                                .withJson("{\"valid\":false,\"error\":\"Invalid token\"}")
+                        return ResponseBuilder.status(401)
+                                .json(ErrorResponse.of(401, "UNAUTHORIZED", "Invalid token"))
                                 .build()
                                 .toPromise();
                     }
@@ -344,8 +337,8 @@ public class AuthGatewayLauncher extends Launcher {
                     }
                     String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                        return HttpResponse.ofCode(401)
-                                .withJson("{\"error\":\"Missing refresh token in Authorization header\"}")
+                        return ResponseBuilder.status(401)
+                                .json(ErrorResponse.of(401, "UNAUTHORIZED", "Missing refresh token in Authorization header"))
                                 .build()
                                 .toPromise();
                     }
@@ -353,8 +346,8 @@ public class AuthGatewayLauncher extends Launcher {
                         String refreshToken = authHeader.substring(7);
 
                         if (!tokenProvider.validateToken(refreshToken)) {
-                            return HttpResponse.ofCode(401)
-                                    .withJson("{\"error\":\"Invalid or expired refresh token\"}")
+                            return ResponseBuilder.status(401)
+                                    .json(ErrorResponse.of(401, "UNAUTHORIZED", "Invalid or expired refresh token"))
                                     .build()
                                     .toPromise();
                         }
@@ -373,8 +366,8 @@ public class AuthGatewayLauncher extends Launcher {
                     } catch (Exception ex) {
                         LOGGER.error("Token refresh failed", ex);
                         metrics.incrementCounter("auth.gateway.refresh.errors");
-                        return HttpResponse.ofCode(401)
-                                .withJson("{\"error\":\"Invalid or expired refresh token\"}")
+                        return ResponseBuilder.status(401)
+                                .json(ErrorResponse.of(401, "UNAUTHORIZED", "Invalid or expired refresh token"))
                                 .build()
                                 .toPromise();
                     }
@@ -410,8 +403,8 @@ public class AuthGatewayLauncher extends Launcher {
                     }
                     String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                        return Promise.of(HttpResponse.ofCode(401)
-                                .withJson("{\"error\":\"Missing or invalid Authorization header\"}")
+                        return Promise.of(ResponseBuilder.status(401)
+                                .json(ErrorResponse.of(401, "UNAUTHORIZED", "Missing or invalid Authorization header"))
                                 .build());
                     }
                     try {
@@ -419,8 +412,8 @@ public class AuthGatewayLauncher extends Launcher {
                         // Validate the incoming product-scoped JWT
                         if (!tokenProvider.validateToken(productToken)) {
                             metrics.incrementCounter("auth.gateway.exchange.rejected");
-                            return Promise.of(HttpResponse.ofCode(401)
-                                    .withJson("{\"error\":\"Invalid or expired product token\"}")
+                            return Promise.of(ResponseBuilder.status(401)
+                                    .json(ErrorResponse.of(401, "UNAUTHORIZED", "Invalid or expired product token"))
                                     .build());
                         }
                         String userId = tokenProvider.getUserIdFromToken(productToken).orElse("unknown");
@@ -451,8 +444,8 @@ public class AuthGatewayLauncher extends Launcher {
                     } catch (Exception ex) {
                         LOGGER.error("Cross-product token exchange failed", ex);
                         metrics.incrementCounter("auth.gateway.exchange.errors");
-                        return Promise.of(HttpResponse.ofCode(500)
-                                .withJson("{\"error\":\"Token exchange failed\"}")
+                        return Promise.of(ResponseBuilder.status(500)
+                                .json(ErrorResponse.of(500, "INTERNAL_SERVER_ERROR", "Token exchange failed"))
                                 .build());
                     }
                 })
@@ -460,8 +453,8 @@ public class AuthGatewayLauncher extends Launcher {
     }
 
     @Provides
-    HttpServer httpServer(Eventloop eventloop, RoutingServlet servlet) {
-        int port = Integer.parseInt(System.getenv().getOrDefault("PORT", String.valueOf(DEFAULT_PORT)));
+    HttpServer httpServer(ConfigManager config, Eventloop eventloop, RoutingServlet servlet) {
+        int port = config.getInt("PORT").orElse(DEFAULT_PORT);
 
         return HttpServer.builder(eventloop, servlet)
                 .withListenPort(port)
@@ -475,8 +468,8 @@ public class AuthGatewayLauncher extends Launcher {
 
     @Override
     protected void run() throws Exception {
-        LOGGER.info("Starting Auth Gateway Service on port {}...",
-                System.getenv().getOrDefault("PORT", String.valueOf(DEFAULT_PORT)));
+        int port = ConfigManager.createDefault("auth-gateway").getInt("PORT").orElse(DEFAULT_PORT);
+        LOGGER.info("Starting Auth Gateway Service on port {}...", port);
         awaitShutdown();
     }
 

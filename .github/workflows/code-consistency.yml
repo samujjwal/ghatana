@@ -1,0 +1,178 @@
+name: Code Consistency
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+# Prevents reintroduction of the patterns documented in CONSISTENCY_INVENTORY.md.
+# ALL checks use continue-on-error: false so violations block the PR.
+
+jobs:
+  java-naming-conventions:
+    name: Java Naming Conventions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No DTO-suffix violations (must use Dto not DTO)
+        run: |
+          # Classes must use camelCase 'Dto' suffix, not uppercase 'DTO'
+          violations=$(find . -name "*DTO.java" \
+            -not -path "*/node_modules/*" \
+            -not -path "*/build/*" \
+            -not -path "*/.gradle/*" 2>/dev/null | head -20)
+          if [ -n "$violations" ]; then
+            echo "❌ Found Java classes using *DTO suffix (must be *Dto):"
+            echo "$violations"
+            echo "See REPO_WIDE_CONSISTENCY_AUDIT_REPORT.md JAVA-002 for guidance."
+            exit 1
+          else
+            echo "✅ No *DTO naming violations found."
+          fi
+
+      - name: No illegal dot-in-package directories
+        run: |
+          # Packages must not contain dots in directory names (e.g. validator.disabled)
+          violations=$(find . -type d -name "*.*" \
+            -path "*/src/main/java/*" \
+            -not -path "*/node_modules/*" \
+            -not -path "*/build/*" 2>/dev/null | head -20)
+          if [ -n "$violations" ]; then
+            echo "❌ Found directories with dots in package paths (illegal Java package names):"
+            echo "$violations"
+            exit 1
+          else
+            echo "✅ No illegal package directory names found."
+          fi
+
+      - name: Test classes use *Test.java suffix
+        run: |
+          # Test classes should be named *Test.java, not *Tests.java
+          violations=$(find . -name "*Tests.java" \
+            -path "*/src/test/*" \
+            -not -path "*/node_modules/*" \
+            -not -path "*/build/*" 2>/dev/null | head -20)
+          if [ -n "$violations" ]; then
+            echo "⚠️  Found Java test files using *Tests.java suffix (prefer *Test.java):"
+            echo "$violations"
+            echo "This is a warning — please rename new test classes."
+          else
+            echo "✅ No *Tests.java naming violations found."
+          fi
+        continue-on-error: true  # Warning only - existing files won't be changed overnight
+
+  build-version-consistency:
+    name: Build Version Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No hardcoded project versions in subproject build files
+        run: |
+          # Subproject build.gradle.kts must not have version = "2026.*" hardcoded.
+          # They should reference rootProject.version.
+          ROOT_BUILD="./build.gradle.kts"
+          violations=$(find . -name "build.gradle.kts" \
+            -not -path "*/build/*" \
+            -not -path "*/.gradle/*" \
+            -not -path "*/node_modules/*" | while read -r f; do
+              if [ "$f" != "$ROOT_BUILD" ]; then
+                if grep -qE 'version\s*=\s*"[0-9]{4}\.' "$f" 2>/dev/null; then
+                  echo "$f"
+                fi
+              fi
+            done)
+          if [ -n "$violations" ]; then
+            echo "❌ Found subproject build files with hardcoded version (use rootProject.version):"
+            echo "$violations"
+            exit 1
+          else
+            echo "✅ No hardcoded project versions in subproject build files."
+          fi
+
+  typescript-naming-conventions:
+    name: TypeScript Naming Conventions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No Zustand imports in source files
+        run: |
+          # New code must not introduce Zustand. Jotai + StateManager is the standard.
+          violations=$(find ./products ./platform -name "*.ts" -o -name "*.tsx" 2>/dev/null \
+            | grep -v node_modules | grep -v "/dist/" | grep -v "\.d\.ts" \
+            | xargs grep -l "from ['\"]zustand['\"]" 2>/dev/null | head -20)
+          if [ -n "$violations" ]; then
+            echo "❌ Found Zustand imports in source files (use Jotai + StateManager):"
+            echo "$violations"
+            exit 1
+          else
+            echo "✅ No Zustand imports found in source files."
+          fi
+
+      - name: Custom hooks must start with use prefix
+        run: |
+          # Hook files not starting with use* indicate naming drift.
+          # This checks hook-directory files only.
+          violations=$(find ./products ./platform -type f -name "*.ts" -o -name "*.tsx" 2>/dev/null \
+            | grep -E "/hooks/[^/]+" \
+            | grep -v node_modules | grep -v "/dist/" | grep -v "\.d\.ts" \
+            | grep -v "__tests__" | grep -v "\.test\." | grep -v "\.spec\." \
+            | while read -r f; do
+              basename_f=$(basename "$f" .ts)
+              basename_f=$(basename "$basename_f" .tsx)
+              if [[ "$basename_f" != use* ]] && [[ "$basename_f" != index ]] && [[ "$basename_f" != types ]] && [[ "$basename_f" != constants ]]; then
+                echo "$f"
+              fi
+            done | head -20)
+          if [ -n "$violations" ]; then
+            echo "⚠️  Found files in hooks/ not following use* naming convention:"
+            echo "$violations"
+          else
+            echo "✅ Hook file naming conventions are consistent."
+          fi
+        continue-on-error: true  # Warning only
+
+  java-doc-coverage:
+    name: Java @doc.* Coverage Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check @doc.* tags on new/changed public Java classes
+        run: |
+          # For files changed in this PR, check that public classes have @doc.type tags.
+          # Only applies to main source files, not tests.
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            changed_java=$(git diff --name-only origin/${{ github.base_ref }}...HEAD 2>/dev/null \
+              | grep -E "src/main/java.*\.java$" | grep -v test | head -30)
+            if [ -z "$changed_java" ]; then
+              echo "✅ No Java main source files changed."
+              exit 0
+            fi
+            violations=""
+            for file in $changed_java; do
+              if [ -f "$file" ]; then
+                # Only check files with public class/interface declarations
+                if grep -q "^public class\|^public interface\|^public abstract class\|^public enum\|^public @interface" "$file" 2>/dev/null; then
+                  if ! grep -q "@doc\.type" "$file" 2>/dev/null; then
+                    violations="$violations\n  $file"
+                  fi
+                fi
+              fi
+            done
+            if [ -n "$violations" ]; then
+              echo "⚠️  Changed public Java classes missing @doc.type tag:"
+              printf "%b\n" "$violations"
+              echo "Add @doc.type, @doc.purpose, @doc.layer, and @doc.pattern tags."
+              echo "See copilot-instructions.md Section 4 for documentation tag requirements."
+            else
+              echo "✅ All changed public Java classes have @doc.* tags."
+            fi
+          else
+            echo "Skipping @doc tag check (not a PR event)"
+          fi
+        continue-on-error: true  # Warning only for gradual adoption

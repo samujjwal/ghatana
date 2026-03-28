@@ -4,6 +4,7 @@
 package com.ghatana.datacloud.config;
 
 import com.ghatana.datacloud.config.model.ConfigKey;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -456,7 +457,7 @@ public record ReloadStatusInfo(
 /**
  * Exception thrown when a reload is already in progress.
  */
-public static class ReloadInProgressException extends RuntimeException {
+public static class ReloadInProgressException extends ServiceException {
 
     public ReloadInProgressException(String message) {
         super(message);

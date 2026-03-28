@@ -6,6 +6,11 @@ import lombok.experimental.SuperBuilder;
 /**
  * Base class for all agent input types.
  * Provides common fields and functionality for agent inputs.
+ *
+ * @doc.type class
+ * @doc.purpose Base agent input with common fields (id, timestamp, tenantId)
+ * @doc.layer product
+ * @doc.pattern ValueObject
  */
 @Data
 @SuperBuilder

@@ -1,6 +1,8 @@
 package com.ghatana.platform.domain.event;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -372,6 +374,20 @@ public interface Event {
         } else {
             return getTimestamp().isAfter(fromTime);
         }
+    }
+
+    /**
+     * Returns the full payload map for this event.
+     *
+     * <p>The default implementation returns an empty map. Concrete implementations
+     * (e.g., {@link GEvent}) override this to return the actual payload data.
+     * Callers that need to access the full payload (for example to copy all fields
+     * into a derived event) should use this method instead of casting to a concrete type.
+     *
+     * @return unmodifiable view of the payload map; never {@code null}
+     */
+    default Map<String, Object> toPayloadMap() {
+        return java.util.Collections.emptyMap();
     }
 
     /**

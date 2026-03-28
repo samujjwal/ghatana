@@ -13,6 +13,7 @@ import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.domain.event.EventTime;
 import com.ghatana.platform.domain.event.GEvent;
+
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.core.state.StateStore;
 
@@ -214,12 +215,7 @@ public class WindowingOperator extends AbstractStreamOperator {
         Event first = bufferedEvents.get(0);
         Map<String, Object> payload = new HashMap<>();
 
-        if (first instanceof GEvent) {
-            Map<String, Object> original = ((GEvent) first).getPayload();
-            if (original != null) {
-                payload.putAll(original);
-            }
-        }
+        payload.putAll(first.toPayloadMap());
 
         // Add windowing metadata
         payload.put("windowing_window_id", windowId);

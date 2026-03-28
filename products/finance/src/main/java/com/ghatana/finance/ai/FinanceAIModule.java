@@ -25,7 +25,14 @@ public final class FinanceAIModule {
         return ModuleBuilder.create()
             // Core AI services
             .bind(ModelApprovalRepository.class).to(ModelApprovalRepository::new)
-            .bind(ModelGovernanceService.class).to(FinanceModelGovernanceImpl::new, ModelApprovalRepository.class)
+            .bind(ModelPerformanceRepository.class).to(ModelPerformanceRepository::new)
+            .bind(AlertService.class).to(AlertService::new)
+            .bind(ModelGovernanceService.class).to(
+                FinanceModelGovernanceImpl::new,
+                ModelApprovalRepository.class,
+                ModelPerformanceRepository.class,
+                AlertService.class
+            )
             .bind(AgentOrchestrator.class).to(FinanceAgentOrchestratorImpl::new)
             .bind(AutonomyManager.class).to(FinanceAutonomyManagerImpl::new)
             .bind(AIEvaluationFramework.class).to(FinanceAIEvaluationImpl::new)

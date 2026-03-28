@@ -69,7 +69,7 @@ import java.util.*;
  */
 public class CollectionService {
 
-    private static final Logger logger = LoggerFactory.getLogger(CollectionService.class);
+    private static final Logger log = LoggerFactory.getLogger(CollectionService.class);
 
     private final CollectionRepository repository;
     private final MetricsCollector metrics;
@@ -137,13 +137,13 @@ public class CollectionService {
                     metrics.incrementCounter("collection.create.success",
                         "tenant", tenantId,
                         "collection", collection.getName());
-                    logger.info("Collection created: tenantId={}, name={}, id={}, createdBy={}",
+                    log.info("Collection created: tenantId={}, name={}, id={}, createdBy={}",
                         tenantId, collection.getName(), ((MetaCollection) result).getId(), userId);
                 } else {
                     metrics.incrementCounter("collection.create.error",
                         "tenant", tenantId,
                         "error", ex.getClass().getSimpleName());
-                    logger.error("Failed to create collection: tenantId={}, name={}",
+                    log.error("Failed to create collection: tenantId={}, name={}",
                         tenantId, collection.getName(), ex);
                 }
             });
@@ -200,7 +200,7 @@ public class CollectionService {
                 if (ex == null) {
                     metrics.incrementCounter("collection.count.active", "tenant", tenantId);
                     metrics.increment("collection.count.active", result.size(), Map.of("tenant", tenantId));
-                    logger.debug("Listed collections: tenantId={}, count={}", tenantId, result.size());
+                    log.debug("Listed collections: tenantId={}, count={}", tenantId, result.size());
                 } else {
                     metrics.incrementCounter("collection.list.error",
                         "tenant", tenantId,
@@ -241,7 +241,7 @@ public class CollectionService {
                     metrics.incrementCounter("collection.update.success",
                         "tenant", tenantId,
                         "collection", collection.getName());
-                    logger.info("Collection updated: tenantId={}, name={}, version={}, updatedBy={}",
+                    log.info("Collection updated: tenantId={}, name={}, version={}, updatedBy={}",
                         tenantId, collection.getName(), result.getVersion(), userId);
                 } else {
                     metrics.incrementCounter("collection.update.error",
@@ -277,7 +277,7 @@ public class CollectionService {
                     metrics.incrementCounter("collection.delete.success",
                         "tenant", tenantId,
                         "collectionId", collectionId.toString());
-                    logger.info("Collection deleted: tenantId={}, collectionId={}, deletedBy={}",
+                    log.info("Collection deleted: tenantId={}, collectionId={}, deletedBy={}",
                         tenantId, collectionId, userId);
                 } else {
                     metrics.incrementCounter("collection.delete.error",
@@ -356,7 +356,7 @@ public class CollectionService {
                 if (ex == null) {
                     metrics.incrementCounter("collection.field.add.success",
                         "tenant", tenantId, "collection", collectionName);
-                    logger.info("Field added: tenantId={}, collection={}, field={}", 
+                    log.info("Field added: tenantId={}, collection={}, field={}", 
                         tenantId, collectionName, field.getName());
                 } else {
                     metrics.incrementCounter("collection.field.add.error",
@@ -421,7 +421,7 @@ public class CollectionService {
                 if (ex == null) {
                     metrics.incrementCounter("collection.field.update.success",
                         "tenant", tenantId, "collection", collectionName);
-                    logger.info("Field updated: tenantId={}, collection={}, fieldId={}", 
+                    log.info("Field updated: tenantId={}, collection={}, fieldId={}", 
                         tenantId, collectionName, fieldId);
                 } else {
                     metrics.incrementCounter("collection.field.update.error",
@@ -475,7 +475,7 @@ public class CollectionService {
                 if (ex == null) {
                     metrics.incrementCounter("collection.field.delete.success",
                         "tenant", tenantId, "collection", collectionName);
-                    logger.info("Field deleted: tenantId={}, collection={}, fieldId={}", 
+                    log.info("Field deleted: tenantId={}, collection={}, fieldId={}", 
                         tenantId, collectionName, fieldId);
                 } else {
                     metrics.incrementCounter("collection.field.delete.error",

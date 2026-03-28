@@ -12,6 +12,7 @@ import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.domain.event.EventTime;
 import com.ghatana.platform.domain.event.GEvent;
+
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.core.state.StateStore;
 
@@ -213,21 +214,8 @@ public class JoinOperator extends AbstractStreamOperator {
     private Event mergeEvents(Event stream1, Event stream2, String matchKey) {
         Map<String, Object> merged = new HashMap<>();
 
-        if (stream1 instanceof GEvent) {
-            Map<String, Object> payload1 = ((GEvent) stream1).getPayload();
-            if (payload1 != null) {
-                merged.putAll(payload1);
-            }
-        }
-        if (stream2 instanceof GEvent) {
-            Map<String, Object> payload2 = ((GEvent) stream2).getPayload();
-            if (payload2 != null) {
-                payload2.forEach((key, value) -> {
-                    String prefixedKey = "stream2_" + key;
-                    merged.put(prefixedKey, value);
-                });
-            }
-        }
+        merged.putAll(stream1.toPayloadMap());
+        stream2.toPayloadMap().forEach((key, value) -> merged.put("stream2_" + key, value));
 
         // Add join metadata
         merged.put("join_match_key", matchKey);

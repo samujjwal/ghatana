@@ -3,7 +3,7 @@ package com.ghatana.finance.extension;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
-import com.ghatana.kernel.extension.KernelExtension;
+import com.ghatana.kernel.extension.AbstractKernelExtension;
 import com.ghatana.kernel.module.KernelModule;
 import io.activej.promise.Promise;
 
@@ -11,7 +11,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Compliance engine extension for SOX, PCI-DSS, and financial regulations.
@@ -26,14 +25,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-public class ComplianceKernelExtension implements KernelExtension {
+public class ComplianceKernelExtension extends AbstractKernelExtension {
 
     private static final String EXTENSION_ID = "compliance-engine-finance";
     private static final String VERSION = "1.0.0";
 
-    private volatile KernelContext context;
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
-    private final AtomicBoolean started = new AtomicBoolean(false);
     private final ConcurrentHashMap<String, ComplianceRule> rules = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AuditEntry> auditLog = new ConcurrentHashMap<>();
 
@@ -83,22 +79,8 @@ public class ComplianceKernelExtension implements KernelExtension {
     }
 
     @Override
-    public void onModuleInitialized(KernelContext context) {
-        if (!initialized.compareAndSet(false, true)) {
-            return;
-        }
-        this.context = context;
+    protected void onInitialize(KernelContext context) {
         initializeComplianceRules();
-    }
-
-    @Override
-    public void onModuleStarted(KernelContext context) {
-        started.set(true);
-    }
-
-    @Override
-    public void onModuleStopped(KernelContext context) {
-        started.set(false);
     }
 
     @Override
@@ -122,8 +104,10 @@ public class ComplianceKernelExtension implements KernelExtension {
      * @return Promise containing compliance check result
      */
     public Promise<ComplianceCheckResult> validateTrade(String tradeId, TradeDetails tradeDetails) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
         // Check pre-trade compliance rules
@@ -150,8 +134,10 @@ public class ComplianceKernelExtension implements KernelExtension {
      */
     public Promise<ComplianceCheckResult> validatePCICompliance(String transactionId,
                                                                  PaymentDetails paymentDetails) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
         // PCI-DSS specific checks
@@ -182,8 +168,10 @@ public class ComplianceKernelExtension implements KernelExtension {
      */
     public Promise<ComplianceCheckResult> validateSOXControl(String controlId,
                                                               Map<String, Object> controlData) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
         // SOX Section 302 - Corporate Responsibility for Financial Reports
@@ -214,8 +202,10 @@ public class ComplianceKernelExtension implements KernelExtension {
      * @return Promise containing audit entries
      */
     public Promise<Set<AuditEntry>> getAuditTrail(String entityId) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
         Set<AuditEntry> entries = ConcurrentHashMap.newKeySet();
@@ -235,8 +225,10 @@ public class ComplianceKernelExtension implements KernelExtension {
      * @return Promise completing when rule is added
      */
     public Promise<Void> addComplianceRule(ComplianceRule rule) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
         rules.put(rule.getRuleId(), rule);

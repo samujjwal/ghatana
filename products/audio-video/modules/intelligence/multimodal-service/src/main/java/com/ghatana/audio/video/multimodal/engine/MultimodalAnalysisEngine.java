@@ -1,5 +1,10 @@
 package com.ghatana.audio.video.multimodal.engine;
 
+import com.ghatana.media.common.AudioData;
+import com.ghatana.media.common.ColorSpace;
+import com.ghatana.media.common.ImageData;
+import com.ghatana.media.common.ImageFormat;
+import com.ghatana.media.sync.AudioVideoSyncPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,13 +34,17 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
 
     private static final int ANALYSIS_TIMEOUT_SECONDS = 60;
 
-    private final SttClientAdapter sttClient;
-    private final VisionClientAdapter visionClient;
+    private final MultimodalMediaGateway mediaGateway;
+    private final AudioVideoRuntimeSettings settings;
     private final ExecutorService executor;
 
-    public MultimodalAnalysisEngine(SttClientAdapter sttClient, VisionClientAdapter visionClient) {
-        this.sttClient = sttClient;
-        this.visionClient = visionClient;
+    public MultimodalAnalysisEngine(MultimodalMediaGateway mediaGateway) {
+        this(mediaGateway, AudioVideoRuntimeSettings.load());
+    }
+
+    MultimodalAnalysisEngine(MultimodalMediaGateway mediaGateway, AudioVideoRuntimeSettings settings) {
+        this.mediaGateway = mediaGateway;
+        this.settings = settings;
         this.executor = Executors.newVirtualThreadPerTaskExecutor();
         LOG.info("MultimodalAnalysisEngine initialised");
     }
@@ -163,7 +172,7 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
     private AudioResult transcribeAudio(byte[] audioData) {
         try {
             LOG.debug("Transcribing {} bytes of audio", audioData.length);
-            return sttClient.transcribe(audioData);
+            return mediaGateway.transcribe(audioData);
         } catch (Exception e) {
             LOG.error("STT transcription failed", e);
             return AudioResult.error(e.getMessage());
@@ -173,7 +182,7 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
     private VisualResult analyseImage(byte[] imageData) {
         try {
             LOG.debug("Analysing image ({} bytes)", imageData.length);
-            return visionClient.detectObjects(imageData);
+            return mediaGateway.analyseImage(imageData);
         } catch (Exception e) {
             LOG.error("Image analysis failed", e);
             return VisualResult.error(e.getMessage());
@@ -184,7 +193,7 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
         try {
             LOG.debug("Analysing video ({} bytes, {}fps, max {} frames)",
                     videoData.length, sampleFps, maxFrames);
-            return visionClient.analyseVideo(videoData, sampleFps, maxFrames);
+            return mediaGateway.analyseVideo(videoData, sampleFps, maxFrames);
         } catch (Exception e) {
             LOG.error("Video analysis failed", e);
             return VisualResult.error(e.getMessage());
@@ -275,7 +284,8 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
             return alignments;
         }
 
-        long driftMs = estimateDriftMs(audio, video);
+        SyncAssessment syncAssessment = assessSync(audio, video);
+        long driftMs = syncAssessment.driftMs();
         if (Math.abs(driftMs) > 1L) {
             LOG.debug("A/V drift estimated at {}ms — applying PTS correction", driftMs);
         }
@@ -284,7 +294,7 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
             // Corrected PTS: shift video timestamp by the measured drift
             long correctedPtsMs = frame.getTimestampMs() + driftMs;
             String activeText   = audio.getTranscriptionAtTimestamp(correctedPtsMs);
-            double confidence   = computeSyncConfidence(driftMs);
+                double confidence   = computeSyncConfidence(syncAssessment.averageDriftMs(), syncAssessment.quality());
             alignments.add(new TemporalAlignment(
                     frame.getTimestampMs(),
                     frame.getFrameNumber(),
@@ -295,6 +305,39 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
         }
 
         return alignments;
+    }
+
+    private SyncAssessment assessSync(AudioResult audio, VisualResult video) {
+        long fallbackDriftMs = estimateDriftMs(audio, video);
+        if (audio == null || video == null || video.getFrameResults().isEmpty()) {
+            return new SyncAssessment(fallbackDriftMs, Math.abs(fallbackDriftMs), AudioVideoSyncPipeline.SyncQuality.GOOD);
+        }
+
+        try (AudioVideoSyncPipeline pipeline = new AudioVideoSyncPipeline(
+                null,
+                settings.syncAudioBufferMs(),
+                settings.syncVideoBufferMs(),
+                settings.syncToleranceMs())) {
+            for (AudioResult.TimedSegment segment : audio.getTimedSegments()) {
+                long midpointUs = ((segment.getStartMs() + segment.getEndMs()) / 2) * 1000;
+                pipeline.feedAudio(dummyAudioFrame(), midpointUs);
+            }
+            for (FrameResult frame : video.getFrameResults()) {
+                pipeline.feedVideo(dummyVideoFrame(), frame.getTimestampMs() * 1000);
+            }
+            try {
+                Thread.sleep(Math.min(100L, Math.max(16L, video.getFrameResults().size() * 16L)));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return new SyncAssessment(
+                    pipeline.getLastDriftMs(),
+                    pipeline.getQualityMetrics().getAverageDrift(),
+                    pipeline.getQualityMetrics().getCurrentQuality());
+        } catch (Exception e) {
+            LOG.debug("Falling back to local sync estimate after pipeline failure", e);
+            return new SyncAssessment(fallbackDriftMs, Math.abs(fallbackDriftMs), AudioVideoSyncPipeline.SyncQuality.GOOD);
+        }
     }
 
     /**
@@ -327,10 +370,15 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
         return deltas.get(deltas.size() / 2);
     }
 
-    /** Confidence decreases linearly from 1.0 at 0ms drift to 0.0 at 500ms drift. */
-    private static double computeSyncConfidence(long driftMs) {
-        final long maxDrift = 500L;
-        return Math.max(0.0, 1.0 - (double) Math.abs(driftMs) / maxDrift);
+    /** Confidence decreases with average drift and is capped by platform sync quality. */
+    private static double computeSyncConfidence(double averageDriftMs, AudioVideoSyncPipeline.SyncQuality quality) {
+        double base = Math.max(0.0, 1.0 - averageDriftMs / 500.0);
+        return switch (quality) {
+            case EXCELLENT -> base;
+            case GOOD -> Math.min(base, 0.9);
+            case FAIR -> Math.min(base, 0.7);
+            case POOR -> Math.min(base, 0.4);
+        };
     }
 
     private String buildNarrative(AudioResult audio, VisualResult video,
@@ -366,6 +414,7 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
 
     @Override
     public void close() {
+        mediaGateway.close();
         executor.shutdown();
         try {
             if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -376,4 +425,15 @@ public class MultimodalAnalysisEngine implements AutoCloseable {
             executor.shutdownNow();
         }
     }
+
+    private static AudioData dummyAudioFrame() {
+        return new AudioData(new byte[] {0, 0}, 16000, 1, 16);
+    }
+
+    private static ImageData dummyVideoFrame() {
+        return new ImageData(new byte[] {0}, 1, 1, ImageFormat.PNG, ColorSpace.RGB);
+    }
+
+    private record SyncAssessment(long driftMs, double averageDriftMs,
+                                  AudioVideoSyncPipeline.SyncQuality quality) {}
 }

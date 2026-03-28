@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -41,6 +42,7 @@ import java.util.*;
  *   <li>{@code prompts/agent-name.txt} - LLM prompt template (if applicable)</li>
  * </ul>
  * 
+ * @doc.type class
  * @doc.pattern Tool
  * @doc.purpose Migrate Java agents to YAML configuration
  * @doc.layer migration
@@ -475,7 +477,7 @@ public class AgentMigrationTool {
     /**
      * Migration exception.
      */
-    public static class MigrationException extends RuntimeException {
+    public static class MigrationException extends ServiceException {
         public MigrationException(String message) { super(message); }
         public MigrationException(String message, Throwable cause) { super(message, cause); }
     }

@@ -14,6 +14,11 @@ import java.util.*;
  * Execution: Test plans → Test runs → Results 2. Quality Gate: Build artifacts
  * → Quality checks → Pass/Fail 3. Coverage Monitoring: Code coverage → Trend
  * analysis → Reports
+ *
+ * @doc.type class
+ * @doc.purpose QA pipeline registration and management for test execution, quality gates, and coverage
+ * @doc.layer product
+ * @doc.pattern Registrar
  */
 @Slf4j
 @RequiredArgsConstructor

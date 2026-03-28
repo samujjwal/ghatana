@@ -6,6 +6,11 @@ import lombok.experimental.SuperBuilder;
 /**
  * Base class for all agent output types.
  * Provides common fields and functionality for agent outputs.
+ *
+ * @doc.type class
+ * @doc.purpose Base agent output with common fields (requestId, status, processingTime)
+ * @doc.layer product
+ * @doc.pattern ValueObject
  */
 @Data
 @SuperBuilder

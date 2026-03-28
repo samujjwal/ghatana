@@ -200,6 +200,33 @@ public interface AepEngine extends AutoCloseable {
             return new Event(type, payload, headers, timestamp, identityContext, consentContext, version,
                 Optional.ofNullable(idempotencyKey));
         }
+
+        /**
+         * Returns the correlation ID for this event, or {@code null} if not set.
+         *
+         * <p>The correlation ID is propagated from {@code headers.get("correlationId")}.
+         * Events belonging to the same logical operation should share the same correlation ID
+         * to enable end-to-end tracing through the AEP pipeline.
+         *
+         * @return correlation ID string, or {@code null}
+         */
+        public String correlationId() {
+            return headers.get("correlationId");
+        }
+
+        /**
+         * Returns a copy of this event with the given correlation ID set in the headers.
+         *
+         * @param correlationId the correlation ID to propagate; if {@code null} the event is returned unchanged
+         * @return event with correlationId header set
+         */
+        public Event withCorrelationId(String correlationId) {
+            if (correlationId == null) return this;
+            java.util.Map<String, String> newHeaders = new java.util.HashMap<>(headers);
+            newHeaders.put("correlationId", correlationId);
+            return new Event(type, payload, java.util.Collections.unmodifiableMap(newHeaders),
+                timestamp, identityContext, consentContext, version, idempotencyKey);
+        }
     }
 
     /**

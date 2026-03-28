@@ -279,3 +279,63 @@ export function titleCase(str: string): string {
     .map((word) => capitalize(word))
     .join(' ');
 }
+
+// ── Date / Time utilities ──────────────────────────────────────────────────────
+
+/**
+ * Format a Date or ISO date string to the given format pattern.
+ * Uses the platform's standard ISO-8601 representation by default.
+ *
+ * @param date - Date object or ISO 8601 string
+ * @param format - Output format: 'date' (YYYY-MM-DD), 'datetime', 'time', or 'relative'. Defaults to 'date'.
+ * @returns Formatted string
+ *
+ * @example
+ * ```typescript
+ * formatDate(new Date())            // "2026-03-27"
+ * formatDate('2026-03-27T10:30:00Z', 'datetime') // "2026-03-27 10:30:00"
+ * ```
+ */
+export function formatDate(date: Date | string, format: 'date' | 'datetime' | 'time' | 'relative' = 'date'): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return '';
+
+  switch (format) {
+    case 'date':
+      return d.toISOString().split('T')[0];
+    case 'datetime':
+      return d.toISOString().replace('T', ' ').slice(0, 19);
+    case 'time':
+      return d.toISOString().slice(11, 19);
+    case 'relative':
+      return formatDistanceToNow(d);
+  }
+}
+
+/**
+ * Returns the current UTC timestamp as an ISO 8601 string.
+ *
+ * @example
+ * ```typescript
+ * getCurrentTimestamp() // "2026-03-27T10:30:00.000Z"
+ * ```
+ */
+export function getCurrentTimestamp(): string {
+  return new Date().toISOString();
+}
+
+/**
+ * Returns true if the given string is a valid ISO 8601 date.
+ *
+ * @example
+ * ```typescript
+ * isValidISODate('2026-03-27')              // true
+ * isValidISODate('2026-03-27T10:30:00.000Z') // true
+ * isValidISODate('not-a-date')             // false
+ * ```
+ */
+export function isValidISODate(dateString: string): boolean {
+  if (!dateString) return false;
+  const d = new Date(dateString);
+  return !isNaN(d.getTime()) && dateString.trim().length > 0;
+}

@@ -2,6 +2,7 @@ package com.ghatana.products.finance.domains.sanctions.service;
 
 
 import com.ghatana.platform.core.event.EventBusPort;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -163,7 +164,7 @@ public class BundleImportWorkflowService {
     private record ImportRequest(String importId, String bundleId, String uploaderId,
                                   String status, byte[] payload) {}
 
-    public static class BundleSignatureException extends RuntimeException {
+    public static class BundleSignatureException extends ServiceException {
         public BundleSignatureException(String message) { super(message); }
     }
 

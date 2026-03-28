@@ -19,7 +19,10 @@
  *   FEATURE_STORE_URL — base URL, e.g. http://feature-store:8080
  */
 
+import { createStandaloneLogger } from '@tutorputor/core/logger';
+
 const REQUEST_TIMEOUT_MS = 5_000;
+const logger = createStandaloneLogger({ component: 'FeatureStoreClient' });
 
 class FeatureStoreClient {
   private static instance: FeatureStoreClient;
@@ -28,7 +31,7 @@ class FeatureStoreClient {
   private constructor() {
     this.baseUrl = process.env['FEATURE_STORE_URL'];
     if (!this.baseUrl) {
-      console.warn('[FeatureStoreClient] FEATURE_STORE_URL not configured — feature store is disabled');
+      logger.warn({ message: 'FEATURE_STORE_URL not configured', status: 'disabled' });
     }
   }
 
@@ -45,10 +48,12 @@ class FeatureStoreClient {
    */
   ingestAsync(tenantId: string, entityId: string, features: Record<string, unknown>): void {
     this.ingest(tenantId, entityId, features).catch((err: unknown) => {
-      console.warn(
-        `[FeatureStoreClient] ingestAsync failed for entity ${entityId}: ` +
-        `${err instanceof Error ? err.message : String(err)}`,
-      );
+      logger.warn({
+        message: 'ingestAsync failed',
+        entityId,
+        tenantId,
+        error: err instanceof Error ? err.message : String(err),
+      });
     });
   }
 
@@ -104,14 +109,17 @@ class FeatureStoreClient {
         { signal: controller.signal },
       );
       if (!res.ok) {
-        console.warn(`[FeatureStoreClient] getFeatures returned HTTP ${res.status}`);
+        logger.warn({ message: 'getFeatures failed', httpStatus: res.status, tenantId, entityId });
         return {};
       }
       return (await res.json()) as Record<string, unknown>;
     } catch (err: unknown) {
-      console.warn(
-        `[FeatureStoreClient] getFeatures failed: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      logger.warn({
+        message: 'getFeatures exception',
+        tenantId,
+        entityId,
+        error: err instanceof Error ? err.message : String(err),
+      });
       return {};
     } finally {
       clearTimeout(timeoutId);

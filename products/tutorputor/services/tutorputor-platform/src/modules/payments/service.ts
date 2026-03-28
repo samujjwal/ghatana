@@ -5,11 +5,9 @@
  * @doc.pattern Service
  */
 
-// PrismaClient type – payment models not yet in shared @tutorputor/core/db schema.
-// Until the schema is extended, use a permissive type so the service compiles.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type PrismaClient = any;
+import { PrismaClient } from '@tutorputor/core/db';
 import Stripe from 'stripe';
+import { createStandaloneLogger } from '@tutorputor/core/logger';
 import type {
   TenantId,
   SubscriptionId,
@@ -1491,7 +1489,11 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
       .catch(() => null);
 
     if (!customer) {
-      console.warn(`handleTrialWillEnd: no local customer for stripe sub ${stripeSub.id}`);
+      this.logger.warn({
+        message: 'handleTrialWillEnd: no local customer found',
+        stripeSubscriptionId: stripeSub.id,
+        stripeCustomerId: String(stripeSub.customer),
+      });
       return;
     }
 
@@ -1514,14 +1516,14 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
       });
     } else {
       // Fallback: structured log so downstream observability can pick it up
-      console.log(JSON.stringify({
+      this.logger.info({
         event: 'trial.will_end',
         tenantId: customer.tenantId,
         email: customer.email,
         trialEndDate,
         planName,
         subscriptionId: stripeSub.id,
-      }));
+      });
     }
   }
 }

@@ -4,6 +4,7 @@ import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import io.activej.promise.SettablePromise;
+import com.ghatana.platform.core.exception.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -683,7 +684,7 @@ public class CheckpointCoordinatorImpl implements CheckpointCoordinator {
     /**
      * Exception thrown when checkpoint times out waiting for operator acknowledgements.
      */
-    public static class CheckpointTimeoutException extends RuntimeException {
+    public static class CheckpointTimeoutException extends TimeoutException {
         public CheckpointTimeoutException(String message) {
             super(message);
         }

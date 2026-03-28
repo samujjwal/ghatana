@@ -3,6 +3,7 @@ package com.ghatana.products.finance.domains.ems.port;
 import com.ghatana.products.finance.domains.ems.domain.ExecutionFill;
 import com.ghatana.products.finance.domains.ems.domain.ExecutionSide;
 import com.ghatana.products.finance.domains.ems.domain.RoutedOrder;
+import com.ghatana.platform.core.exception.ServiceException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -102,14 +103,14 @@ public interface ExchangeAdapterPort {
     boolean isConnected();
 
     /** Thrown when the adapter cannot establish a connection to the exchange. */
-    class ExchangeConnectionException extends RuntimeException {
+    class ExchangeConnectionException extends ServiceException {
         public ExchangeConnectionException(String message, Throwable cause) {
             super(message, cause);
         }
     }
 
     /** Thrown when the exchange rejects an order or cancellation synchronously. */
-    class ExchangeRejectException extends RuntimeException {
+    class ExchangeRejectException extends ServiceException {
         private final String rejectReason;
         public ExchangeRejectException(String routingId, String rejectReason) {
             super("Exchange rejected order " + routingId + ": " + rejectReason);

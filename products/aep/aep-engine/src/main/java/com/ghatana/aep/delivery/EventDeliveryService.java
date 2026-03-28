@@ -13,6 +13,7 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -100,6 +101,7 @@ public final class EventDeliveryService {
 
         List<String> delivered = new ArrayList<>();
         List<String> failed = new ArrayList<>();
+        Map<String, DeliveryFailure> failureDetails = new HashMap<>();
 
         for (EventDestination dest : destinations) {
             try {
@@ -114,20 +116,43 @@ public final class EventDeliveryService {
                     log.debug("Delivered event type={} to destination={}", event.type(), dest.name());
                 } else {
                     failed.add(dest.name());
+                    failureDetails.put(dest.name(), new DeliveryFailure(
+                        DeliveryFailureCategory.RETRYABLE,
+                        "destination returned false"));
                     log.warn("Delivery to destination={} returned false for event type={}",
                         dest.name(), event.type());
                 }
             } catch (JsonProcessingException e) {
                 failed.add(dest.name());
+                failureDetails.put(dest.name(), new DeliveryFailure(
+                    DeliveryFailureCategory.NON_RETRYABLE,
+                    e.getOriginalMessage() != null ? e.getOriginalMessage() : e.getMessage()));
                 log.error("Failed to serialize event for delivery to {}: {}", dest.name(), e.getMessage());
+            } catch (UncheckedIOException e) {
+                failed.add(dest.name());
+                failureDetails.put(dest.name(), new DeliveryFailure(
+                    DeliveryFailureCategory.RETRYABLE,
+                    e.getMessage()));
+                log.error("Retryable delivery failure for destination={}: {}",
+                    dest.name(), e.getMessage(), e);
+            } catch (IllegalArgumentException e) {
+                failed.add(dest.name());
+                failureDetails.put(dest.name(), new DeliveryFailure(
+                    DeliveryFailureCategory.NON_RETRYABLE,
+                    e.getMessage()));
+                log.error("Non-retryable delivery failure for destination={}: {}",
+                    dest.name(), e.getMessage(), e);
             } catch (Exception e) {
                 failed.add(dest.name());
+                failureDetails.put(dest.name(), new DeliveryFailure(
+                    DeliveryFailureCategory.UNKNOWN,
+                    e.getMessage()));
                 log.error("Failed to deliver event type={} to destination={}: {}",
                     event.type(), dest.name(), e.getMessage(), e);
             }
         }
 
-        return Promise.of(new DeliveryResult(delivered, failed));
+        return Promise.of(new DeliveryResult(delivered, failed, failureDetails));
     }
 
     private Map<String, Object> buildDeliveryPayload(
@@ -189,11 +214,21 @@ public final class EventDeliveryService {
      *
      * @param delivered names of destinations that received the event successfully
      * @param failed    names of destinations where delivery failed
+     * @param failureDetails failure category and message by destination
      */
-    public record DeliveryResult(List<String> delivered, List<String> failed) {
+    public record DeliveryResult(
+        List<String> delivered,
+        List<String> failed,
+        Map<String, DeliveryFailure> failureDetails
+    ) {
         public DeliveryResult {
             delivered = delivered != null ? List.copyOf(delivered) : List.of();
             failed    = failed    != null ? List.copyOf(failed)    : List.of();
+            failureDetails = failureDetails != null ? Map.copyOf(failureDetails) : Map.of();
+        }
+
+        public DeliveryResult(List<String> delivered, List<String> failed) {
+            this(delivered, failed, Map.of());
         }
 
         /** True when all destinations received the event. */
@@ -207,7 +242,20 @@ public final class EventDeliveryService {
         }
 
         static DeliveryResult noDestinations() {
-            return new DeliveryResult(List.of(), List.of());
+            return new DeliveryResult(List.of(), List.of(), Map.of());
+        }
+    }
+
+    public enum DeliveryFailureCategory {
+        RETRYABLE,
+        NON_RETRYABLE,
+        UNKNOWN
+    }
+
+    public record DeliveryFailure(DeliveryFailureCategory category, String message) {
+        public DeliveryFailure {
+            category = category != null ? category : DeliveryFailureCategory.UNKNOWN;
+            message = message != null ? message : "delivery failure";
         }
     }
 }

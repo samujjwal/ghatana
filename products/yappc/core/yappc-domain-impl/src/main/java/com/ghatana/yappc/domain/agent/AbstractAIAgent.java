@@ -1,6 +1,8 @@
 package com.ghatana.products.yappc.domain.agent;
 
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
@@ -257,7 +259,7 @@ public abstract class AbstractAIAgent<TInput, TOutput> implements AIAgent<TInput
     /**
      * Exception thrown when an agent is excluded for a user.
      */
-    public static class AgentExcludedException extends RuntimeException {
+    public static class AgentExcludedException extends ServiceException {
         private final AgentName agentName;
         private final String userId;
 
@@ -279,7 +281,7 @@ public abstract class AbstractAIAgent<TInput, TOutput> implements AIAgent<TInput
     /**
      * Exception wrapping an agent execution failure.
      */
-    public static class AgentExecutionException extends RuntimeException {
+    public static class AgentExecutionException extends ServiceException {
         private final AgentResult<?> result;
 
         public AgentExecutionException(AgentResult<?> result) {
@@ -295,7 +297,7 @@ public abstract class AbstractAIAgent<TInput, TOutput> implements AIAgent<TInput
     /**
      * Exception wrapping a health check failure.
      */
-    public static class HealthCheckException extends RuntimeException {
+    public static class HealthCheckException extends ServiceException {
         private final AgentHealth health;
 
         public HealthCheckException(AgentHealth health) {

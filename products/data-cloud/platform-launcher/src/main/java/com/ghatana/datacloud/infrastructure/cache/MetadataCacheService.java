@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.infrastructure.cache;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.datacloud.entity.MetaCollection;
 import com.ghatana.datacloud.entity.MetaField;
@@ -68,7 +69,7 @@ import java.util.*;
  */
 public class MetadataCacheService {
 
-    private static final Logger logger = LoggerFactory.getLogger(MetadataCacheService.class);
+    private static final Logger log = LoggerFactory.getLogger(MetadataCacheService.class);
 
     private static final long DEFAULT_TTL_SECONDS = 3600; // 1 hour
     private static final String COLLECTION_KEY_PREFIX = "meta:collection:";
@@ -155,14 +156,14 @@ public class MetadataCacheService {
                             Tags.of("tenant", tenantId, "type", "collection", "collection", name),
                             cached.length());
                     
-                    logger.debug("Cache hit: collection={}", name);
+                    log.debug("Cache hit: collection={}", name);
                     return Promise.of(Optional.of(deserializeCollection(cached)));
                 }
 
                 metrics.incrementCounter("cache.miss",
                     "tenant", tenantId,
                     "type", "collection");
-                logger.debug("Cache miss: collection={}", name);
+                log.debug("Cache miss: collection={}", name);
 
                 return repository.findByName(tenantId, name)
                     .then(collection -> {
@@ -178,7 +179,7 @@ public class MetadataCacheService {
                     metrics.incrementCounter("cache.error",
                         "tenant", tenantId,
                         "type", "collection");
-                    logger.warn("Cache error for collection: {}", name, ex);
+                    log.warn("Cache error for collection: {}", name, ex);
                 }
             });
     }
@@ -208,9 +209,9 @@ public class MetadataCacheService {
                         "type", "collection",
                         "reason", "manual");
                     
-                    logger.debug("Invalidated collection cache: {}", name);
+                    log.debug("Invalidated collection cache: {}", name);
                 } else {
-                    logger.warn("Failed to invalidate collection cache: {}", name, ex);
+                    log.warn("Failed to invalidate collection cache: {}", name, ex);
                 }
             });
     }
@@ -230,9 +231,9 @@ public class MetadataCacheService {
                 if (ex == null) {
                     metrics.incrementCounter("cache.invalidate_tenant",
                         "tenant", tenantId);
-                    logger.debug("Invalidated all collections for tenant: {}", tenantId);
+                    log.debug("Invalidated all collections for tenant: {}", tenantId);
                 } else {
-                    logger.warn("Failed to invalidate tenant cache: {}", tenantId, ex);
+                    log.warn("Failed to invalidate tenant cache: {}", tenantId, ex);
                 }
             });
     }
@@ -290,9 +291,9 @@ public class MetadataCacheService {
                     metrics.incrementCounter("cache.invalidate",
                         "tenant", tenantId,
                         "type", "field");
-                    logger.debug("Invalidated field cache: {}.{}", collectionName, fieldName);
+                    log.debug("Invalidated field cache: {}.{}", collectionName, fieldName);
                 } else {
-                    logger.warn("Failed to invalidate field cache: {}.{}", collectionName, fieldName, ex);
+                    log.warn("Failed to invalidate field cache: {}.{}", collectionName, fieldName, ex);
                 }
             });
     }
@@ -315,9 +316,9 @@ public class MetadataCacheService {
                     metrics.incrementCounter("cache.invalidate_fields",
                         "tenant", tenantId,
                         "collection", collectionName);
-                    logger.debug("Invalidated all fields for collection: {}", collectionName);
+                    log.debug("Invalidated all fields for collection: {}", collectionName);
                 } else {
-                    logger.warn("Failed to invalidate collection fields: {}", collectionName, ex);
+                    log.warn("Failed to invalidate collection fields: {}", collectionName, ex);
                 }
             });
     }
@@ -363,7 +364,7 @@ public class MetadataCacheService {
             return objectMapper.writeValueAsString(collection);
         } catch (Exception e) {
             metrics.incrementCounter("cache.serialization_error", "type", "collection");
-            logger.error("Failed to serialize collection: id={}, name={}",
+            log.error("Failed to serialize collection: id={}, name={}",
                 collection.getId(), collection.getName(), e);
             throw new CacheSerializationException("Failed to serialize collection", e);
         }
@@ -387,7 +388,7 @@ public class MetadataCacheService {
             return objectMapper.readValue(cached, MetaCollection.class);
         } catch (Exception e) {
             metrics.incrementCounter("cache.deserialization_error", "type", "collection");
-            logger.error("Failed to deserialize collection from cache", e);
+            log.error("Failed to deserialize collection from cache", e);
             throw new CacheSerializationException("Failed to deserialize collection", e);
         }
     }
@@ -410,7 +411,7 @@ public class MetadataCacheService {
             return objectMapper.writeValueAsString(field);
         } catch (Exception e) {
             metrics.incrementCounter("cache.serialization_error", "type", "field");
-            logger.error("Failed to serialize field: id={}, name={}",
+            log.error("Failed to serialize field: id={}, name={}",
                 field.getId(), field.getName(), e);
             throw new CacheSerializationException("Failed to serialize field", e);
         }
@@ -434,7 +435,7 @@ public class MetadataCacheService {
             return objectMapper.readValue(cached, MetaField.class);
         } catch (Exception e) {
             metrics.incrementCounter("cache.deserialization_error", "type", "field");
-            logger.error("Failed to deserialize field from cache", e);
+            log.error("Failed to deserialize field from cache", e);
             throw new CacheSerializationException("Failed to deserialize field", e);
         }
     }
@@ -459,7 +460,7 @@ public class MetadataCacheService {
      * @doc.layer product
      * @doc.pattern Exception
      */
-    public static class CacheSerializationException extends RuntimeException {
+    public static class CacheSerializationException extends ServiceException {
         public CacheSerializationException(String message, Throwable cause) {
             super(message, cause);
         }

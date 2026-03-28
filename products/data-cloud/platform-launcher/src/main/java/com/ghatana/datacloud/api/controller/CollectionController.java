@@ -76,7 +76,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Collections", description = "Collection CRUD and listing endpoints")
 public class CollectionController {
 
-        private static final Logger logger = LoggerFactory.getLogger(CollectionController.class);
+        private static final Logger log = LoggerFactory.getLogger(CollectionController.class);
 
         private static final HttpHeader HEADER_TENANT_ID = HttpHeaders.of("X-Tenant-ID");
         private static final HttpHeader HEADER_USER_ID = HttpHeaders.of("X-User-ID");
@@ -103,7 +103,7 @@ public class CollectionController {
                 this.metrics = Objects.requireNonNull(metrics, "MetricsCollector cannot be null");
                 this.mapper = Objects.requireNonNull(mapper, "ObjectMapper cannot be null");
                 this.dtoMapper = Objects.requireNonNull(dtoMapper, "DtoMapper cannot be null");
-                logger.info("CollectionController initialized");
+                log.info("CollectionController initialized");
         }
 
         /**
@@ -177,7 +177,7 @@ public class CollectionController {
                 } catch (Exception e) {
                         metrics.incrementCounter("controller.collection.error",
                                         "error_type", e.getClass().getSimpleName());
-                        logger.error("Error handling collection request", e);
+                        log.error("Error handling collection request", e);
                         return Promise.of(ResponseBuilder.internalServerError()
                                         .json(Collections.singletonMap("error", "Internal server error"))
                                         .build());
@@ -309,13 +309,13 @@ public class CollectionController {
                                                                                         "error_type",
                                                                                         e.getClass().getSimpleName(),
                                                                                         "tenant", tenantId);
-                                                                        logger.error("Failed to create collection", e);
+                                                                        log.error("Failed to create collection", e);
                                                                 });
                                         } catch (Exception e) {
                                                 metrics.incrementCounter("controller.collection.create.error",
                                                                 "error_type", "PARSE_ERROR",
                                                                 "tenant", tenantId);
-                                                logger.error("Failed to parse create collection request", e);
+                                                log.error("Failed to parse create collection request", e);
                                                 return Promise.of(ResponseBuilder.badRequest()
                                                                 .json(Collections.singletonMap("error",
                                                                                 "Invalid request format"))
@@ -389,8 +389,8 @@ public class CollectionController {
                                         metrics.incrementCounter("controller.collection.get.error",
                                                         "error_type", e.getClass().getSimpleName(),
                                                         "tenant", tenantId);
-                                        logger.error("Failed to get collection", e);
-                                        logger.error("Failed to get collection", e);
+                                        log.error("Failed to get collection", e);
+                                        log.error("Failed to get collection", e);
                                 });
         }
 
@@ -480,7 +480,7 @@ public class CollectionController {
                                                                                                                         .getSimpleName(),
                                                                                                         "tenant",
                                                                                                         tenantId);
-                                                                                        logger.error(
+                                                                                        log.error(
                                                                                                         "Failed to update collection",
                                                                                                         error);
                                                                                         return Promise.of(
@@ -496,7 +496,7 @@ public class CollectionController {
                                                 metrics.incrementCounter("controller.collection.update.error",
                                                                 "error_type", "PARSE_ERROR",
                                                                 "tenant", tenantId);
-                                                logger.error("Failed to parse update collection request", e);
+                                                log.error("Failed to parse update collection request", e);
                                                 return Promise.of(ResponseBuilder.badRequest()
                                                                 .json(Collections.singletonMap("error",
                                                                                 "Invalid request format"))
@@ -540,7 +540,7 @@ public class CollectionController {
                                         metrics.incrementCounter("controller.collection.delete.error",
                                                         "error_type", e.getClass().getSimpleName(),
                                                         "tenant", tenantId);
-                                        logger.error("Failed to delete collection", e);
+                                        log.error("Failed to delete collection", e);
                                         return Promise.of(ResponseBuilder.internalServerError()
                                                         .json(Collections.singletonMap("error",
                                                                         "Failed to delete collection"))
@@ -614,7 +614,7 @@ public class CollectionController {
                                         metrics.incrementCounter("controller.collection.list.error",
                                                         "error_type", e.getClass().getSimpleName(),
                                                         "tenant", tenantId);
-                                        logger.error("Failed to list collections", e);
+                                        log.error("Failed to list collections", e);
                                         return Promise.of(ResponseBuilder.internalServerError()
                                                         .json(Collections.singletonMap("error",
                                                                         "Failed to list collections"))

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { contentStudioFetch } from "../lib/contentStudioClient";
 
 export interface ContentGenerationRequest {
   topic: string;
@@ -15,42 +16,6 @@ export interface ContentGenerationResult {
     metadata: Record<string, unknown>;
   };
   error?: string;
-}
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("auth_token");
-  const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "X-Tenant-ID": tenantId,
-    "X-Correlation-ID": crypto.randomUUID(),
-  };
-  if (token)
-    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
-  return headers;
-}
-
-async function contentStudioFetch<T>(
-  path: string,
-  options?: RequestInit,
-): Promise<T> {
-  const response = await fetch(`/api/content-studio${path}`, {
-    ...options,
-    headers: { ...getAuthHeaders(), ...options?.headers },
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(
-      body?.error || `HTTP ${response.status}: ${response.statusText}`,
-    ) as Error & { statusCode: number };
-    err.statusCode = response.status;
-    throw err;
-  }
-  return response.json() as Promise<T>;
 }
 
 // ---------------------------------------------------------------------------

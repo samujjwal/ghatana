@@ -79,7 +79,7 @@ import static com.ghatana.platform.observability.util.BlockingExecutors.blocking
  */
 public class AdminStorageManagementService {
 
-        private static final Logger logger = LoggerFactory.getLogger(AdminStorageManagementService.class);
+        private static final Logger log = LoggerFactory.getLogger(AdminStorageManagementService.class);
 
         private final Map<String, ?> connectorRegistry;
         private final MetricsCollector metrics;
@@ -160,7 +160,7 @@ public class AdminStorageManagementService {
                         metrics.recordTimer("admin.api.profile.list.duration", durationMs);
                         metrics.incrementCounter("admin.api.profile.list.success");
 
-                        logger.info(
+                        log.info(
                                         "Listed {} profiles for tenant {} (offset={}, pageSize={})",
                                         allProfiles.size(), tenantId, request.offset(), request.pageSize());
 
@@ -234,7 +234,7 @@ public class AdminStorageManagementService {
                         metrics.recordTimer("admin.api.profile.create.duration", durationMs);
                         metrics.incrementCounter("admin.api.profile.create.success");
 
-                        logger.info(
+                        log.info(
                                         "Created storage profile '{}' for tenant {} (id={})",
                                         profile.name(), tenantId, profile.id());
 
@@ -367,7 +367,7 @@ public class AdminStorageManagementService {
                         metrics.recordTimer("admin.api.profile.update.duration", durationMs);
                         metrics.incrementCounter("admin.api.profile.update.success");
 
-                        logger.info(
+                        log.info(
                                         "Updated storage profile {} for tenant {}",
                                         profileId, tenantId);
 
@@ -416,7 +416,7 @@ public class AdminStorageManagementService {
                         metrics.recordTimer("admin.api.profile.delete.duration", durationMs);
                         metrics.incrementCounter("admin.api.profile.delete.success");
 
-                        logger.info(
+                        log.info(
                                         "Deleted storage profile {} for tenant {}",
                                         profileId, tenantId);
 
@@ -466,7 +466,7 @@ public class AdminStorageManagementService {
                         metrics.recordTimer("admin.api.connector.list.duration", durationMs);
                         metrics.incrementCounter("admin.api.connector.list.success");
 
-                        logger.info(
+                        log.info(
                                         "Listed {} connectors for tenant {}",
                                         connectors.size(), tenantId);
 
@@ -518,7 +518,7 @@ public class AdminStorageManagementService {
                         metrics.recordTimer("admin.api.connector.healthcheck.duration", durationMs);
                         metrics.incrementCounter("admin.api.connector.healthcheck.success");
 
-                        logger.info(
+                        log.info(
                                         "Health check passed for connector {} (latency={}ms)",
                                         connectorId, connectorLatencyMs);
 

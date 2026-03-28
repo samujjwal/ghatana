@@ -7,6 +7,9 @@
 
 import type { AnimationSpec, AnimationRenderer } from "./service";
 import { AnimationRuntime } from "./service";
+import { createStandaloneLogger } from '@tutorputor/core/logger';
+
+const logger = createStandaloneLogger({ component: 'AnimationExportService' });
 
 // Browser API type augmentations for Node.js environment
 interface BrowserDocument {
@@ -285,9 +288,10 @@ export class AnimationExportService {
     // 3. Use a library like ffmpeg.wasm
 
     // For now, return a mock blob
-    console.warn(
-      "Video encoding not fully implemented. Returning placeholder.",
-    );
+    logger.warn({
+      message: 'Video encoding not fully implemented, returning placeholder',
+      frameCount: frames.length,
+    });
 
     // Placeholder: Create a simple data URL
     const mockData = new Uint8Array(frames.length * 100);
@@ -307,7 +311,10 @@ export class AnimationExportService {
     // - omggif
     // - gifenc
 
-    console.warn("GIF encoding not fully implemented. Returning placeholder.");
+    logger.warn({
+      message: 'GIF encoding not fully implemented, returning placeholder',
+      frameCount: frames.length,
+    });
 
     // Placeholder: Create a simple data URL
     const mockData = new Uint8Array(frames.length * 100);

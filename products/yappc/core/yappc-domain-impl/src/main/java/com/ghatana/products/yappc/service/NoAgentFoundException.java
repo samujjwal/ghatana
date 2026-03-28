@@ -2,6 +2,8 @@ package com.ghatana.products.yappc.service;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
+
 /**
  * Exception thrown when no suitable agent can be found for a task.
  *
@@ -10,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * @doc.layer product
  * @doc.pattern Exception
  */
-public class NoAgentFoundException extends RuntimeException {
+public class NoAgentFoundException extends ResourceNotFoundException {
 
     private final String taskId;
 

@@ -30,6 +30,9 @@ import type {
 } from "@tutorputor/contracts/v1/types";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
 import type { Redis } from "ioredis";
+import { createStandaloneLogger } from '@tutorputor/core/logger';
+
+const logger = createStandaloneLogger({ component: 'AnalyticsService' });
 
 // =============================================================================
 // Types
@@ -85,7 +88,12 @@ export function createAnalyticsService(
             JSON.stringify(event),
           );
         } catch (err) {
-          console.warn("Failed to publish learning event to Redis:", err);
+          logger.warn({
+            message: 'Failed to publish learning event to Redis',
+            error: err instanceof Error ? err.message : String(err),
+            tenantId,
+            eventType: event.type,
+          });
         }
       }
 

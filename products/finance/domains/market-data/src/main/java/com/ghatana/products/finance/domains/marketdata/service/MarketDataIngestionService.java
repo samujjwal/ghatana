@@ -4,6 +4,7 @@ import com.ghatana.products.finance.domains.marketdata.domain.MarketTick;
 import com.ghatana.products.finance.domains.marketdata.domain.TickSource;
 import com.ghatana.products.finance.domains.marketdata.port.MarketDataStore;
 import com.ghatana.products.finance.domains.referencedata.service.InstrumentService;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -83,7 +84,7 @@ public class MarketDataIngestionService {
     // Checked exception
     // -----------------------------------------------------------------------
 
-    public static final class UnknownInstrumentException extends RuntimeException {
+    public static final class UnknownInstrumentException extends ResourceNotFoundException {
         public UnknownInstrumentException(String instrumentId) {
             super("Market tick rejected: unknown instrument id=" + instrumentId);
         }

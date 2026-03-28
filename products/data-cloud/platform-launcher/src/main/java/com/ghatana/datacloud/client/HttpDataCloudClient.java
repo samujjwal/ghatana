@@ -20,7 +20,7 @@ import java.util.*;
  * @doc.pattern Client, Facade
  */
 public class HttpDataCloudClient implements DataCloudClient {
-    private static final Logger logger = LoggerFactory.getLogger(HttpDataCloudClient.class);
+    private static final Logger log = LoggerFactory.getLogger(HttpDataCloudClient.class);
 
     private final String serverUrl;
 
@@ -31,7 +31,7 @@ public class HttpDataCloudClient implements DataCloudClient {
      */
     public HttpDataCloudClient(String serverUrl) {
         this.serverUrl = serverUrl;
-        logger.info("HttpDataCloudClient initialized with server: {}", serverUrl);
+        log.info("HttpDataCloudClient initialized with server: {}", serverUrl);
     }
 
     // ============ Entity Operations ============
@@ -172,7 +172,7 @@ public class HttpDataCloudClient implements DataCloudClient {
 
     @Override
     public void close() {
-        logger.info("HttpDataCloudClient closed");
+        log.info("HttpDataCloudClient closed");
     }
 }
 

@@ -9,6 +9,11 @@ import org.slf4j.LoggerFactory;
  * Handles QA department events. Processes test suite execution, coverage
  * reports, bug reports, and performance metrics. Coordinates with engineering
  * for quality gates and with DevOps for test environments.
+ *
+ * @doc.type class
+ * @doc.purpose QA event processing coordinator
+ * @doc.layer product
+ * @doc.pattern EventHandler
  */
 public class QaEventHandler {
 

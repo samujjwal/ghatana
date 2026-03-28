@@ -58,7 +58,7 @@ import java.util.*;
  */
 public class WorkflowService {
 
-    private static final Logger logger = LoggerFactory.getLogger(WorkflowService.class);
+    private static final Logger log = LoggerFactory.getLogger(WorkflowService.class);
 
     private final WorkflowRepository workflowRepository;
     private final CollectionRepository collectionRepository;
@@ -119,7 +119,7 @@ public class WorkflowService {
                 if (!validationErrors.isEmpty()) {
                     metrics.incrementCounter("workflow.create.validation_failed",
                         "tenant", tenantId);
-                    logger.warn("Workflow validation failed: tenantId={}, errors={}",
+                    log.warn("Workflow validation failed: tenantId={}, errors={}",
                         tenantId, validationErrors);
                     return Promise.ofException(
                         new IllegalArgumentException("Workflow validation failed: " + validationErrors)
@@ -149,13 +149,13 @@ public class WorkflowService {
                 if (ex == null) {
                     metrics.incrementCounter("workflow.create.success",
                         "tenant", tenantId);
-                    logger.info("Workflow created: tenantId={}, id={}, name={}, createdBy={}",
+                    log.info("Workflow created: tenantId={}, id={}, name={}, createdBy={}",
                         tenantId, result.getId(), result.getName(), userId);
                 } else {
                     metrics.incrementCounter("workflow.create.error",
                         "tenant", tenantId,
                         "error", ex.getClass().getSimpleName());
-                    logger.error("Failed to create workflow: tenantId={}", tenantId, ex);
+                    log.error("Failed to create workflow: tenantId={}", tenantId, ex);
                 }
             });
     }
@@ -214,7 +214,7 @@ public class WorkflowService {
                         "tenant", tenantId);
                     metrics.increment("workflow.list.count", result.size(),
                         Map.of("tenant", tenantId));
-                    logger.debug("Listed workflows: tenantId={}, count={}",
+                    log.debug("Listed workflows: tenantId={}, count={}",
                         tenantId, result.size());
                 } else {
                     metrics.incrementCounter("workflow.list.error",
@@ -280,7 +280,7 @@ public class WorkflowService {
                 if (ex == null) {
                     metrics.incrementCounter("workflow.update.success",
                         "tenant", tenantId);
-                    logger.info("Workflow updated: tenantId={}, id={}, version={}, updatedBy={}",
+                    log.info("Workflow updated: tenantId={}, id={}, version={}, updatedBy={}",
                         tenantId, workflowId, result.getVersion(), userId);
                 } else {
                     metrics.incrementCounter("workflow.update.error",
@@ -308,7 +308,7 @@ public class WorkflowService {
                 if (ex == null) {
                     metrics.incrementCounter("workflow.delete.success",
                         "tenant", tenantId);
-                    logger.info("Workflow deleted: tenantId={}, id={}, deletedBy={}",
+                    log.info("Workflow deleted: tenantId={}, id={}, deletedBy={}",
                         tenantId, workflowId, userId);
                 } else {
                     metrics.incrementCounter("workflow.delete.error",

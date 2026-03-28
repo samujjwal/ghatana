@@ -156,6 +156,21 @@
         <property name="message" value="Blocking .getResult() on Promise is forbidden. Use async chaining with .then() or .map()."/>
     </module>
 
+    <!-- RULE: Warn when code extends RuntimeException directly (prefer platform exceptions) -->
+    <!-- Exempt: platform/core/exception classes which ARE the base exceptions -->
+    <module name="RegexpSingleline">
+        <property name="id" value="NoDirectRuntimeException"/>
+        <property name="severity" value="warning"/>
+        <property name="format" value="^\s*(public|protected)?\s*(abstract\s+)?class\s+\w+\s+extends\s+(java\.lang\.)?RuntimeException\b"/>
+        <property name="message" value="Do not extend RuntimeException directly in product code. Use platform exceptions: ServiceException, ResourceNotFoundException, ConfigurationException, etc. See REPO_WIDE_CONSISTENCY_AUDIT_REPORT.md §JAVA-005."/>
+    </module>
+
+    <!-- Suppress NoDirectRuntimeException for platform core exception hierarchy -->
+    <module name="SuppressionSingleFilter">
+        <property name="id" value="NoDirectRuntimeException"/>
+        <property name="files" value=".*[\\/]platform[\\/]java[\\/]core[\\/].*[\\/]exception[\\/].*\.java$"/>
+    </module>
+
     <!--
         Ghatana @doc Tag Policy
 

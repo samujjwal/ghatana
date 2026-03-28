@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
  */
 public class DynamicQueryBuilder {
 
-    private static final Logger logger = LoggerFactory.getLogger(DynamicQueryBuilder.class);
+    private static final Logger log = LoggerFactory.getLogger(DynamicQueryBuilder.class);
 
     private static final Set<String> ALLOWED_OPERATORS = Set.of(
         "=", "!=", "<", "<=", ">", ">=", "LIKE", "IN", "NOT IN", "IS NULL", "IS NOT NULL"
@@ -134,7 +134,7 @@ public class DynamicQueryBuilder {
         sql.append(" AND ").append(fieldName).append(" ").append(upperOp).append(" :").append(paramName);
         parameters.put(paramName, value);
 
-        logger.debug("Added filter: field={}, operator={}, value={}", fieldName, operator, value);
+        log.debug("Added filter: field={}, operator={}, value={}", fieldName, operator, value);
         return this;
     }
 
@@ -176,7 +176,7 @@ public class DynamicQueryBuilder {
         }
 
         sql.append(" ORDER BY ").append(fieldName).append(" ").append(upperDir);
-        logger.debug("Added sort: field={}, direction={}", fieldName, direction);
+        log.debug("Added sort: field={}, direction={}", fieldName, direction);
         return this;
     }
 
@@ -197,7 +197,7 @@ public class DynamicQueryBuilder {
         }
 
         sql.append(" LIMIT ").append(limit).append(" OFFSET ").append(offset);
-        logger.debug("Added pagination: offset={}, limit={}", offset, limit);
+        log.debug("Added pagination: offset={}, limit={}", offset, limit);
         return this;
     }
 
@@ -232,7 +232,7 @@ public class DynamicQueryBuilder {
         sql.append(" AND ").append(jsonPath).append(" ").append(upperOp).append(" :").append(paramName);
         parameters.put(paramName, value);
 
-        logger.debug("Added JSONB filter: path={}, operator={}, value={}", jsonPath, operator, value);
+        log.debug("Added JSONB filter: path={}, operator={}, value={}", jsonPath, operator, value);
         return this;
     }
 
@@ -261,7 +261,7 @@ public class DynamicQueryBuilder {
         sql.append(" AND ").append(fieldName).append(" @> :").append(paramName);
         parameters.put(paramName, value);
 
-        logger.debug("Added array containment filter: field={}, value={}", fieldName, value);
+        log.debug("Added array containment filter: field={}, value={}", fieldName, value);
         return this;
     }
 
@@ -295,7 +295,7 @@ public class DynamicQueryBuilder {
         sql.append(" AND ").append(fieldName).append(" IN (:").append(paramName).append(")");
         parameters.put(paramName, values);
 
-        logger.debug("Added IN filter: field={}, valueCount={}", fieldName, values.size());
+        log.debug("Added IN filter: field={}, valueCount={}", fieldName, values.size());
         return this;
     }
 
@@ -319,7 +319,7 @@ public class DynamicQueryBuilder {
             }
         }
 
-        logger.debug("Built query: {}", built);
+        log.debug("Built query: {}", built);
         return com.ghatana.datacloud.application.QuerySpec.of(
             built,
             new HashMap<>(parameters)

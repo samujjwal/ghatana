@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * @doc.pattern Service
  */
 public class KnowledgeGraphAgent {
-    private static final Logger logger = LoggerFactory.getLogger(KnowledgeGraphAgent.class);
+    private static final Logger log = LoggerFactory.getLogger(KnowledgeGraphAgent.class);
 
     private final GraphRepository graphRepository;
 
@@ -60,7 +60,7 @@ public class KnowledgeGraphAgent {
                                             relationships,
                                             suggestions
                                     );
-                                    logger.debug("Enriched collection {} with {} relationships and {} suggestions",
+                                    log.debug("Enriched collection {} with {} relationships and {} suggestions",
                                             collection.id, relationships.size(), suggestions.size());
                                     return Promise.of(enriched);
                                 })
@@ -89,7 +89,7 @@ public class KnowledgeGraphAgent {
                                     0.85  // similarity score
                             ))
                             .toList();
-                    logger.debug("Inferred {} relationships for collection {}", relationships.size(), collectionId);
+                    log.debug("Inferred {} relationships for collection {}", relationships.size(), collectionId);
                     return Promise.of(relationships);
                 });
     }
@@ -106,7 +106,7 @@ public class KnowledgeGraphAgent {
     public Promise<List<SchemaSuggestion>> suggestSchemaImprovements(UUID collectionId) {
         Objects.requireNonNull(collectionId, "collectionId cannot be null");
 
-        logger.debug("Suggesting schema improvements for collection {}", collectionId);
+        log.debug("Suggesting schema improvements for collection {}", collectionId);
 
         return graphRepository.findSimilarCollections(collectionId, 0.7)
                 .map(similarCollections -> {
@@ -149,7 +149,7 @@ public class KnowledgeGraphAgent {
                         ));
                     }
 
-                    logger.debug("Generated {} schema suggestions for collection {}", suggestions.size(), collectionId);
+                    log.debug("Generated {} schema suggestions for collection {}", suggestions.size(), collectionId);
                     return suggestions;
                 });
     }

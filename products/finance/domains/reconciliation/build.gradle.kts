@@ -5,6 +5,7 @@
  * including matching, break management, and exception handling.
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

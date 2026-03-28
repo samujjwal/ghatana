@@ -26,6 +26,9 @@ import type {
 import type { TutorPrismaClient } from "@tutorputor/core/db";
 
 import { aiClient } from "../../clients/ai-client";
+import { createStandaloneLogger } from '@tutorputor/core/logger';
+
+const logger = createStandaloneLogger({ component: 'PathwaysService' });
 
 // =============================================================================
 // Types
@@ -35,7 +38,7 @@ export type HealthAwarePathwaysService = PathwaysService & {
   checkHealth: () => Promise<boolean>;
 };
 
-type LearningPathWithNodes = any;
+type LearningPathWithNodes = Record<string, unknown>;
 
 // =============================================================================
 // Implementation
@@ -73,7 +76,7 @@ async function computeLearnerLevel(
   });
 
   const gradedScores = attempts
-    .map((a: any) => a.scorePercent)
+    .map((a: Record<string, unknown>) => a.scorePercent as number)
     .filter((s: number | null): s is number => s !== null);
 
   const avgScore =
@@ -83,7 +86,7 @@ async function computeLearnerLevel(
 
   // Count advanced-difficulty completions
   const advancedCount = enrollments.filter(
-    (e: any) => e.module?.difficulty === 'ADVANCED',
+    (e: Record<string, unknown>) => (e.module as Record<string, unknown>)?.difficulty === 'ADVANCED',
   ).length;
   const advancedRatio = advancedCount / completedCount;
 
@@ -115,7 +118,7 @@ export function createPathwaysService(
 
         if (aiPath && aiPath.nodes && aiPath.nodes.length > 0) {
           // Map AI nodes to DB modules via search
-          const pathNodes: any[] = []; // Temporary type as we build for create
+          const pathNodes: Array<Record<string, unknown>> = []; // Temporary type as we build for create
 
           for (const aiNode of aiPath.nodes) {
             // Find best matching module
@@ -145,7 +148,7 @@ export function createPathwaysService(
 
             if (match) {
               // Prevent duplicates
-              if (!pathNodes.find((n: any) => n.contentId === match.id)) {
+              if (!pathNodes.find((n: Record<string, unknown>) => n.contentId === match.id)) {
                 pathNodes.push({
                   title: match.title,
                   description: match.description ?? "",
@@ -169,7 +172,7 @@ export function createPathwaysService(
                 goal: goal,
                 status: "ACTIVE",
                 nodes: {
-                  create: pathNodes.map((n: any) => ({
+                  create: pathNodes.map((n: Record<string, unknown>) => ({
                     moduleId: n.contentId,
                     orderIndex: n.orderIndex,
                   })),
@@ -183,7 +186,7 @@ export function createPathwaysService(
               title: path.title,
               description: path.goal,
               progress: 0,
-              nodes: pathNodes.map((n: any) => ({
+              nodes: pathNodes.map((n: Record<string, unknown>) => ({
                 id: `temp-${n.orderIndex}` as LearningPathNodeId,
                 title: n.title,
                 description: n.description,
@@ -193,14 +196,16 @@ export function createPathwaysService(
                 orderIndex: n.orderIndex,
                 estimatedTimeMinutes: 30,
               })),
-            } as any;
+            } as unknown as LearningPath;
           }
         }
       } catch (err) {
-        console.warn(
-          "AI Pathway generation failed, falling back to heuristics.",
-          err,
-        );
+        logger.warn({
+          message: 'AI Pathway generation failed, falling back to heuristics',
+          error: err instanceof Error ? err.message : String(err),
+          goal,
+          tenantId,
+        });
       }
 
       // Fetch available modules considering constraints
@@ -223,24 +228,24 @@ export function createPathwaysService(
       });
 
       // Score and rank modules based on goal relevance
-      const scoredModules = modules.map((module: any) => {
+      const scoredModules = modules.map((module: Record<string, unknown>) => {
         let score = 0;
         const goalLower = goal.toLowerCase();
 
         // Title match
-        if (module.title.toLowerCase().includes(goalLower)) score += 10;
+        if ((module.title as string).toLowerCase().includes(goalLower)) score += 10;
 
         // Description match
-        if (module.description.toLowerCase().includes(goalLower)) score += 5;
+        if ((module.description as string).toLowerCase().includes(goalLower)) score += 5;
 
         // Tag match
-        const tagMatch = module.tags.some((t: any) =>
-          t.label.toLowerCase().includes(goalLower),
+        const tagMatch = (module.tags as Array<Record<string, unknown>>).some((t: Record<string, unknown>) =>
+          (t.label as string).toLowerCase().includes(goalLower),
         );
         if (tagMatch) score += 8;
 
         // Domain relevance
-        if (goalLower.includes(module.domain.toLowerCase())) score += 7;
+        if (goalLower.includes((module.domain as string).toLowerCase())) score += 7;
 
         // Prefer easier modules first (lower difficulty = higher score)
         if (module.difficulty === "INTRO") score += 3;
@@ -250,7 +255,7 @@ export function createPathwaysService(
       });
 
       // Sort by score and limit
-      scoredModules.sort((a: any, b: any) => b.score - a.score);
+      scoredModules.sort((a: Record<string, unknown>, b: Record<string, unknown>) => (b.score as number) - (a.score as number));
       const selectedModules = scoredModules.slice(0, maxModules);
 
       // Calculate estimated duration
@@ -351,7 +356,7 @@ export function createPathwaysService(
       }
 
       // Find and mark node as completed
-      const node = path.nodes.find((n: any) => n.moduleId === completedModuleId);
+      const node = path.nodes.find((n: Record<string, unknown>) => n.moduleId === completedModuleId);
       if (node) {
         await prisma.learningPathNode.update({
           where: { id: node.id },
@@ -373,8 +378,8 @@ export function createPathwaysService(
         throw new Error("Path not found after update");
       }
 
-      const requiredNodes = updatedPath.nodes.filter((n: any) => !n.isOptional);
-      const allCompleted = requiredNodes.every((n: any) => n.completedAt !== null);
+      const requiredNodes = updatedPath.nodes.filter((n: Record<string, unknown>) => !n.isOptional);
+      const allCompleted = requiredNodes.every((n: Record<string, unknown>) => n.completedAt !== null);
 
       if (allCompleted) {
         await prisma.learningPath.update({
@@ -398,37 +403,39 @@ export function createPathwaysService(
 // Helper Functions
 // =============================================================================
 
-function mapToModuleSummary(module: any): ModuleSummary {
+function mapToModuleSummary(module: Record<string, unknown>): ModuleSummary {
   return {
     id: module.id as ModuleId,
-    slug: module.slug,
-    title: module.title,
+    slug: module.slug as string,
+    title: module.title as string,
+    description: module.description as string,
     domain: module.domain as "MATH" | "SCIENCE" | "TECH",
     difficulty: module.difficulty as "INTRO" | "INTERMEDIATE" | "ADVANCED",
-    estimatedTimeMinutes: module.estimatedTimeMinutes,
-    tags: module.tags.map((t: any) => t.label),
+    estimatedTimeMinutes: module.estimatedTimeMinutes as number,
+    tags: (module.tags as Array<Record<string, unknown>>).map((t: Record<string, unknown>) => t.label as string),
     status: module.status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
-    publishedAt: module.publishedAt?.toISOString(),
+    publishedAt: (module.publishedAt as Date | undefined)?.toISOString(),
   };
 }
 
 function mapToLearningPath(path: LearningPathWithNodes): LearningPath {
+  const nodes = (path.nodes as Array<Record<string, unknown>> | undefined) ?? [];
   return {
     id: path.id as LearningPathId,
     userId: path.userId as UserId,
     tenantId: path.tenantId as TenantId,
-    title: path.title,
-    goal: path.goal,
+    title: path.title as string,
+    goal: path.goal as string,
     status: path.status as "ACTIVE" | "COMPLETED" | "PAUSED",
-    nodes: path.nodes.map((node: any) => ({
+    nodes: nodes.map((node: Record<string, unknown>) => ({
       id: node.id as LearningPathNodeId,
       moduleId: node.moduleId as ModuleId,
-      orderIndex: node.orderIndex,
-      isOptional: node.isOptional,
-      completedAt: node.completedAt?.toISOString(),
+      orderIndex: node.orderIndex as number,
+      isOptional: node.isOptional as boolean,
+      completedAt: (node.completedAt as Date | undefined)?.toISOString(),
     })),
-    createdAt: path.createdAt.toISOString(),
-    updatedAt: path.updatedAt.toISOString(),
+    createdAt: (path.createdAt as Date).toISOString(),
+    updatedAt: (path.updatedAt as Date).toISOString(),
   };
 }
 

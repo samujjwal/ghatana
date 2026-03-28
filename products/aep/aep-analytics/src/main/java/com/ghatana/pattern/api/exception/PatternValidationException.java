@@ -1,5 +1,7 @@
 package com.ghatana.pattern.api.exception;
 
+import com.ghatana.platform.core.exception.ValidationException;
+
 /**
  * Exception thrown when pattern validation fails during compilation.
  * 
@@ -14,6 +16,9 @@ package com.ghatana.pattern.api.exception;
  * 
  * @doc.pattern Exception Pattern (validation errors), Value Object Pattern (error details)
  * @doc.compiler-phase Validation (thrown during first compilation phase)
+ * @doc.type exception
+ * @doc.purpose Pattern compilation validation failure — carries patternId and specific validation error
+ * @doc.layer product
  * @doc.threading Thread-safe (immutable after construction)
  * @doc.apiNote Catch during compile() to handle validation errors gracefully
  * @doc.errorHandling Contains patternId and specific validation error for debugging
@@ -47,7 +52,7 @@ package com.ghatana.pattern.api.exception;
  *   </tr>
  * </table>
  */
-public class PatternValidationException extends RuntimeException {
+public class PatternValidationException extends ValidationException {
     
     private final String patternId;
     private final String validationError;

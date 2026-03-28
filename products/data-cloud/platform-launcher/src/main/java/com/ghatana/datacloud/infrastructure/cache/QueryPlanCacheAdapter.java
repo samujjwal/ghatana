@@ -49,7 +49,7 @@ import java.util.concurrent.ForkJoinPool;
  */
 public class QueryPlanCacheAdapter {
 
-    private static final Logger logger = LoggerFactory.getLogger(QueryPlanCacheAdapter.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryPlanCacheAdapter.class);
     private static final String CACHE_PREFIX = "query_plan:";
     private static final String SCHEMA_VERSION_PREFIX = "schema_version:";
     private static final long TTL_SECONDS = 60 * 60; // 1 hour
@@ -105,16 +105,16 @@ public class QueryPlanCacheAdapter {
                     long duration = System.currentTimeMillis() - startTime;
                     metricsCollector.recordTimer("cache.query_plan.hit", duration);
                     metricsCollector.incrementCounter("cache.query_plan.hits");
-                    logger.debug("Query plan cache hit ({}ms)", duration);
+                    log.debug("Query plan cache hit ({}ms)", duration);
                     return Promise.of(objectMapper.readValue(cached, QueryPlan.class));
                 }
             }
             
             metricsCollector.incrementCounter("cache.query_plan.misses");
-            logger.debug("Query plan cache miss");
+            log.debug("Query plan cache miss");
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Error reading from cache: {}", cacheKeyStr, e);
+            log.error("Error reading from cache: {}", cacheKeyStr, e);
             metricsCollector.incrementCounter("cache.query_plan.errors");
             return Promise.of(null);
         }
@@ -134,11 +134,11 @@ public class QueryPlanCacheAdapter {
             String newVersion = String.valueOf(System.currentTimeMillis());
             commands.set(SCHEMA_VERSION_PREFIX + collectionId, newVersion);
             
-            logger.info("Invalidated query plan cache for collection: {}", collectionId);
+            log.info("Invalidated query plan cache for collection: {}", collectionId);
             metricsCollector.incrementCounter("cache.query_plan.invalidations");
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Error invalidating cache for collection: {}", collectionId, e);
+            log.error("Error invalidating cache for collection: {}", collectionId, e);
             metricsCollector.incrementCounter("cache.query_plan.errors");
             return Promise.ofException(e);
         }
@@ -154,12 +154,12 @@ public class QueryPlanCacheAdapter {
             List<String> keys = commands.keys(CACHE_PREFIX + "*");
             if (!keys.isEmpty()) {
                 commands.del(keys.toArray(new String[0]));
-                logger.info("Cleared {} query plans from cache", keys.size());
+                log.info("Cleared {} query plans from cache", keys.size());
                 metricsCollector.incrementCounter("cache.query_plan.clears");
             }
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Error clearing cache", e);
+            log.error("Error clearing cache", e);
             metricsCollector.incrementCounter("cache.query_plan.errors");
             return Promise.ofException(e);
         }
@@ -188,7 +188,7 @@ public class QueryPlanCacheAdapter {
                     MAX_CACHE_SIZE
             ));
         } catch (Exception e) {
-            logger.error("Error getting cache stats", e);
+            log.error("Error getting cache stats", e);
             metricsCollector.incrementCounter("cache.query_plan.errors");
             return Promise.of(new CacheStats(0, 0, TTL_SECONDS, MAX_CACHE_SIZE));
         }

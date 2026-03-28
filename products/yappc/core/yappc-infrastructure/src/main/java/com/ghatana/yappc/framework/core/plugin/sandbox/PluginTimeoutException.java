@@ -4,6 +4,8 @@
  */
 package com.ghatana.yappc.framework.core.plugin.sandbox;
 
+import com.ghatana.platform.core.exception.TimeoutException;
+
 /**
  * Thrown when a plugin invocation exceeds its wall-clock time budget.
  *
@@ -12,7 +14,7 @@ package com.ghatana.yappc.framework.core.plugin.sandbox;
  * @doc.layer product
  * @doc.pattern Exception
  */
-public class PluginTimeoutException extends RuntimeException {
+public class PluginTimeoutException extends TimeoutException {
 
     /**
      * @param pluginId  plugin that timed out

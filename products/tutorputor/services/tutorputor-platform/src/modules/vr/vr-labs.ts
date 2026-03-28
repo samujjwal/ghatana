@@ -111,7 +111,7 @@ export class VRLabServiceImpl implements VRLabService {
     const { tenantId, params } = args;
     const { category, difficulty, isPublished, search, page = 1, limit = 20 } = params;
 
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
 
     if (category) where.category = category;
     if (difficulty) where.difficulty = difficulty;
@@ -344,14 +344,14 @@ export class VRLabServiceImpl implements VRLabService {
         sceneId,
         name: data.name,
         type: data.type,
-        position: data.position as any,
-        rotation: data.rotation as any,
-        scale: data.scale as any,
+        position: data.position as Record<string, number>,
+        rotation: data.rotation as Record<string, number>,
+        scale: data.scale as Record<string, number>,
         modelUrl: data.modelUrl,
-        materialOverrides: data.materialOverrides as any,
+        materialOverrides: data.materialOverrides as Record<string, unknown>,
         allowedInteractions: data.allowedInteractions,
         interactionRange: data.interactionRange,
-        behavior: data.behavior as any,
+        behavior: data.behavior as Record<string, unknown>,
         tooltip: data.tooltip,
         audioFeedbackUrl: data.audioFeedbackUrl,
       },
@@ -373,14 +373,14 @@ export class VRLabServiceImpl implements VRLabService {
       data: {
         ...(data.name && { name: data.name }),
         ...(data.type && { type: data.type }),
-        ...(data.position && { position: data.position as any }),
-        ...(data.rotation && { rotation: data.rotation as any }),
-        ...(data.scale && { scale: data.scale as any }),
+        ...(data.position && { position: data.position as Record<string, number> }),
+        ...(data.rotation && { rotation: data.rotation as Record<string, number> }),
+        ...(data.scale && { scale: data.scale as Record<string, number> }),
         ...(data.modelUrl && { modelUrl: data.modelUrl }),
-        ...(data.materialOverrides && { materialOverrides: data.materialOverrides as any }),
+        ...(data.materialOverrides && { materialOverrides: data.materialOverrides as Record<string, unknown> }),
         ...(data.allowedInteractions && { allowedInteractions: data.allowedInteractions }),
         ...(data.interactionRange && { interactionRange: data.interactionRange }),
-        ...(data.behavior && { behavior: data.behavior as any }),
+        ...(data.behavior && { behavior: data.behavior as Record<string, unknown> }),
         ...(data.tooltip && { tooltip: data.tooltip }),
         ...(data.audioFeedbackUrl && { audioFeedbackUrl: data.audioFeedbackUrl }),
       },
@@ -417,7 +417,7 @@ export class VRLabServiceImpl implements VRLabService {
         description: data.description,
         order: data.order,
         type: data.type,
-        criteria: data.criteria as any,
+        criteria: data.criteria as Record<string, unknown>,
         hints: data.hints,
         points: data.points,
         isOptional: data.isOptional,
@@ -442,7 +442,7 @@ export class VRLabServiceImpl implements VRLabService {
         ...(data.description && { description: data.description }),
         ...(data.order !== undefined && { order: data.order }),
         ...(data.type && { type: data.type }),
-        ...(data.criteria && { criteria: data.criteria as any }),
+        ...(data.criteria && { criteria: data.criteria as Record<string, unknown> }),
         ...(data.hints && { hints: data.hints }),
         ...(data.points !== undefined && { points: data.points }),
         ...(data.isOptional !== undefined && { isOptional: data.isOptional }),
@@ -476,82 +476,85 @@ export class VRLabServiceImpl implements VRLabService {
       + '-' + uuidv4().slice(0, 8);
   }
 
-  private mapToVRLab(lab: any): VRLab {
+  private mapToVRLab(lab: Record<string, unknown>): VRLab {
+    const scenes = (lab.scenes as Array<Record<string, unknown>> | undefined) ?? [];
+    const objectives = (lab.objectives as Array<Record<string, unknown>> | undefined) ?? [];
     return {
-      id: lab.id,
-      slug: lab.slug,
-      title: lab.title,
-      description: lab.description,
-      category: lab.category,
-      difficulty: lab.difficulty,
-      scenes: lab.scenes?.map((s: any) => this.mapToVRScene(s)) || [],
-      objectives: lab.objectives?.map((o: any) => this.mapToVRLabObjective(o)) || [],
-      thumbnailUrl: lab.thumbnailUrl,
-      previewVideoUrl: lab.previewVideoUrl,
-      estimatedDuration: lab.estimatedDuration,
-      requiredDevices: lab.requiredDevices,
-      minRequirements: lab.minRequirements,
-      completionRate: lab.completionRate,
-      averageRating: lab.averageRating,
-      totalSessions: lab.totalSessions,
-      isPublished: lab.isPublished,
-      createdAt: lab.createdAt.toISOString(),
-      updatedAt: lab.updatedAt.toISOString(),
-      createdBy: lab.createdBy,
-      tags: lab.tags,
-      prerequisites: lab.prerequisites,
+      id: lab.id as string,
+      slug: lab.slug as string,
+      title: lab.title as string,
+      description: lab.description as string,
+      category: lab.category as string,
+      difficulty: lab.difficulty as string,
+      scenes: scenes.map((s) => this.mapToVRScene(s)),
+      objectives: objectives.map((o) => this.mapToVRLabObjective(o)),
+      thumbnailUrl: lab.thumbnailUrl as string | undefined,
+      previewVideoUrl: lab.previewVideoUrl as string | undefined,
+      estimatedDuration: lab.estimatedDuration as number,
+      requiredDevices: lab.requiredDevices as string[],
+      minRequirements: lab.minRequirements as Record<string, unknown>,
+      completionRate: lab.completionRate as number,
+      averageRating: lab.averageRating as number,
+      totalSessions: lab.totalSessions as number,
+      isPublished: lab.isPublished as boolean,
+      createdAt: (lab.createdAt as Date).toISOString(),
+      updatedAt: (lab.updatedAt as Date).toISOString(),
+      createdBy: lab.createdBy as string,
+      tags: lab.tags as string[],
+      prerequisites: lab.prerequisites as string[],
     };
   }
 
-  private mapToVRScene(scene: any): VRScene {
+  private mapToVRScene(scene: Record<string, unknown>): VRScene {
+    const interactables = (scene.interactables as Array<Record<string, unknown>> | undefined) ?? [];
     return {
-      id: scene.id,
-      labId: scene.labId,
-      name: scene.name,
-      description: scene.description,
-      order: scene.order,
-      environmentUrl: scene.environmentUrl,
-      skyboxUrl: scene.skyboxUrl,
-      lightingPreset: scene.lightingPreset,
-      interactables: scene.interactables?.map((i: any) => this.mapToVRInteractable(i)) || [],
-      spawnPoints: scene.spawnPoints,
-      ambientSoundUrl: scene.ambientSoundUrl,
-      narrationUrl: scene.narrationUrl,
-      estimatedDuration: scene.estimatedDuration,
+      id: scene.id as string,
+      labId: scene.labId as string,
+      name: scene.name as string,
+      description: scene.description as string,
+      order: scene.order as number,
+      environmentUrl: scene.environmentUrl as string,
+      skyboxUrl: scene.skyboxUrl as string,
+      lightingPreset: scene.lightingPreset as string,
+      interactables: interactables.map((i) => this.mapToVRInteractable(i)),
+      spawnPoints: scene.spawnPoints as Array<Record<string, unknown>>,
+      ambientSoundUrl: scene.ambientSoundUrl as string | undefined,
+      narrationUrl: scene.narrationUrl as string | undefined,
+      estimatedDuration: scene.estimatedDuration as number,
     };
   }
 
-  private mapToVRInteractable(interactable: any): VRInteractable {
+  private mapToVRInteractable(interactable: Record<string, unknown>): VRInteractable {
     return {
-      id: interactable.id,
-      sceneId: interactable.sceneId,
-      name: interactable.name,
-      type: interactable.type,
-      position: interactable.position,
-      rotation: interactable.rotation,
-      scale: interactable.scale,
-      modelUrl: interactable.modelUrl,
-      materialOverrides: interactable.materialOverrides,
-      allowedInteractions: interactable.allowedInteractions,
-      interactionRange: interactable.interactionRange,
-      behavior: interactable.behavior,
-      tooltip: interactable.tooltip,
-      audioFeedbackUrl: interactable.audioFeedbackUrl,
+      id: interactable.id as string,
+      sceneId: interactable.sceneId as string,
+      name: interactable.name as string,
+      type: interactable.type as string,
+      position: interactable.position as Record<string, number>,
+      rotation: interactable.rotation as Record<string, number>,
+      scale: interactable.scale as Record<string, number>,
+      modelUrl: interactable.modelUrl as string,
+      materialOverrides: interactable.materialOverrides as Record<string, unknown>,
+      allowedInteractions: interactable.allowedInteractions as string[],
+      interactionRange: interactable.interactionRange as number,
+      behavior: interactable.behavior as Record<string, unknown>,
+      tooltip: interactable.tooltip as string | undefined,
+      audioFeedbackUrl: interactable.audioFeedbackUrl as string | undefined,
     };
   }
 
-  private mapToVRLabObjective(objective: any): VRLabObjective {
+  private mapToVRLabObjective(objective: Record<string, unknown>): VRLabObjective {
     return {
-      id: objective.id,
-      labId: objective.labId,
-      title: objective.title,
-      description: objective.description,
-      order: objective.order,
-      type: objective.type,
-      criteria: objective.criteria,
-      hints: objective.hints,
-      points: objective.points,
-      isOptional: objective.isOptional,
+      id: objective.id as string,
+      labId: objective.labId as string,
+      title: objective.title as string,
+      description: objective.description as string | undefined,
+      order: objective.order as number,
+      type: objective.type as string,
+      criteria: objective.criteria as Record<string, unknown>,
+      hints: objective.hints as string[] | undefined,
+      points: objective.points as number,
+      isOptional: objective.isOptional as boolean,
     };
   }
 }

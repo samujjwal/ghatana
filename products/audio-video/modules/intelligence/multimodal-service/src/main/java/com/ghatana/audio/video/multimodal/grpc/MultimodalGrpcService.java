@@ -1,11 +1,12 @@
 package com.ghatana.audio.video.multimodal.grpc;
 
-import com.ghatana.audio.video.multimodal.adapter.GrpcSttClientAdapter;
-import com.ghatana.audio.video.multimodal.adapter.GrpcVisionClientAdapter;
+import com.ghatana.audio.video.multimodal.engine.AudioVideoProcessingError;
 import com.ghatana.audio.video.multimodal.engine.MultimodalAnalysisEngine;
+import com.ghatana.audio.video.multimodal.engine.PlatformMultimodalAdapter;
 import com.ghatana.audio.video.multimodal.engine.MultimodalResult;
 import com.ghatana.audio.video.multimodal.engine.VideoAudioResult;
 import com.ghatana.audio.video.multimodal.grpc.proto.*;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,28 +15,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * gRPC service implementation for multimodal audio+video analysis.
+ *
+ * @doc.type class
+ * @doc.purpose gRPC service exposing multimodal STT+vision analysis over gRPC transport
+ * @doc.layer product
+ * @doc.pattern Service, Adapter
+ */
 public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServiceImplBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(MultimodalGrpcService.class);
 
     private final MultimodalAnalysisEngine engine;
-    private final GrpcSttClientAdapter sttAdapter;
-    private final GrpcVisionClientAdapter visionAdapter;
+    private final PlatformMultimodalAdapter platformAdapter;
     private final AtomicLong requestCount = new AtomicLong(0);
     private final AtomicLong totalProcessingTime = new AtomicLong(0);
 
     public MultimodalGrpcService() {
-        String sttUrl = System.getenv().getOrDefault("STT_GRPC_HOST", "localhost");
-        int sttPort = Integer.parseInt(System.getenv().getOrDefault("STT_GRPC_PORT", "50051"));
-        String visionUrl = System.getenv().getOrDefault("VISION_GRPC_HOST", "localhost");
-        int visionPort = Integer.parseInt(System.getenv().getOrDefault("VISION_GRPC_PORT", "50054"));
-
-        this.sttAdapter = new GrpcSttClientAdapter(sttUrl, sttPort);
-        this.visionAdapter = new GrpcVisionClientAdapter(visionUrl, visionPort);
-        this.engine = new MultimodalAnalysisEngine(sttAdapter, visionAdapter);
-
-        LOG.info("Multimodal service initialized (STT={}:{}, Vision={}:{})",
-                sttUrl, sttPort, visionUrl, visionPort);
+        this.platformAdapter = new PlatformMultimodalAdapter();
+        this.engine = new MultimodalAnalysisEngine(platformAdapter);
+        LOG.info("Multimodal service initialized against platform audio-video library");
     }
 
     @Override
@@ -81,7 +81,9 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
             responseBuilder
                     .putMetadata("has_audio", String.valueOf(result.getAudioResult() != null))
                     .putMetadata("has_visual", String.valueOf(result.getVisualResult() != null))
-                    .putMetadata("has_text", String.valueOf(!request.getText().isEmpty()));
+                    .putMetadata("has_text", String.valueOf(!request.getText().isEmpty()))
+                    .putMetadata("processing_backend", platformAdapter.backendName())
+                    .putMetadata("platform_metrics_enabled", String.valueOf(platformAdapter.metricsEnabled()));
 
             totalProcessingTime.addAndGet(result.getProcessingTimeMs());
             responseObserver.onNext(responseBuilder.build());
@@ -91,9 +93,7 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
 
         } catch (Exception e) {
             LOG.error("Multimodal processing failed", e);
-            responseObserver.onError(io.grpc.Status.INTERNAL
-                    .withDescription("Multimodal processing failed: " + e.getMessage())
-                    .asRuntimeException());
+            responseObserver.onError(toStatus(e, "Multimodal processing failed").asRuntimeException());
         }
     }
 
@@ -142,9 +142,7 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
 
         } catch (Exception e) {
             LOG.error("Video with audio analysis failed", e);
-            responseObserver.onError(io.grpc.Status.INTERNAL
-                    .withDescription("Video-audio analysis failed: " + e.getMessage())
-                    .asRuntimeException());
+            responseObserver.onError(toStatus(e, "Video-audio analysis failed").asRuntimeException());
         }
     }
 
@@ -154,38 +152,28 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
         try {
             LOG.debug("Generating description with style: {}", request.getStyle());
 
+            com.ghatana.audio.video.multimodal.engine.MultimodalRequest engineRequest =
+                    com.ghatana.audio.video.multimodal.engine.MultimodalRequest.builder()
+                            .audioData(request.getAudioData().isEmpty() ? null : request.getAudioData().toByteArray())
+                            .imageData(request.getImageData().isEmpty() ? null : request.getImageData().toByteArray())
+                            .text(request.getContext())
+                            .build();
+
+            MultimodalResult analysis = engine.analyse(engineRequest);
+
             List<String> keyElements = new ArrayList<>();
-            StringBuilder description = new StringBuilder();
-
-            if (!request.getAudioData().isEmpty()) {
-                com.ghatana.audio.video.multimodal.engine.AudioResult audio =
-                        sttAdapter.transcribe(request.getAudioData().toByteArray());
-                if (!audio.isError() && !audio.getTranscription().isEmpty()) {
-                    description.append("Speech: \"").append(audio.getTranscription()).append("\". ");
-                    keyElements.add("speech");
-                }
+            if (analysis.getAudioResult() != null && !analysis.getAudioResult().isError()) {
+                keyElements.add("speech");
             }
-
-            if (!request.getImageData().isEmpty()) {
-                com.ghatana.audio.video.multimodal.engine.VisualResult visual =
-                        visionAdapter.detectObjects(request.getImageData().toByteArray());
-                if (!visual.isError()) {
-                    description.append("Visual: ").append(visual.getSceneDescription()).append(". ");
-                    keyElements.add("visual");
-                }
+            if (analysis.getVisualResult() != null && !analysis.getVisualResult().isError()) {
+                keyElements.add("visual");
             }
-
             if (!request.getContext().isEmpty()) {
-                description.append("Context: ").append(request.getContext()).append(".");
                 keyElements.add("context");
             }
 
-            if (description.length() == 0) {
-                description.append("No content to describe.");
-            }
-
             responseObserver.onNext(DescriptionResponse.newBuilder()
-                    .setDescription(description.toString())
+                    .setDescription(analysis.getCombinedAnalysis())
                     .setConfidence(keyElements.isEmpty() ? 0.0 : 0.85)
                     .addAllKeyElements(keyElements)
                     .build());
@@ -194,9 +182,7 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
 
         } catch (Exception e) {
             LOG.error("Description generation failed", e);
-            responseObserver.onError(io.grpc.Status.INTERNAL
-                    .withDescription("Description generation failed: " + e.getMessage())
-                    .asRuntimeException());
+            responseObserver.onError(toStatus(e, "Description generation failed").asRuntimeException());
         }
     }
 
@@ -208,7 +194,7 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
             double avgTime = count > 0 ? (double) totalTime / count : 0.0;
 
             responseObserver.onNext(StatusResponse.newBuilder()
-                    .setStatus("healthy")
+                    .setStatus("healthy:" + platformAdapter.backendName())
                     .setTotalRequests(count)
                     .setAvgProcessingTimeMs(avgTime)
                     .build());
@@ -233,5 +219,14 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
             LOG.error("Health check failed", e);
             responseObserver.onError(e);
         }
+    }
+
+    private Status toStatus(Exception exception, String context) {
+        AudioVideoProcessingError error = AudioVideoProcessingError.fromThrowable(context, exception);
+        Status baseStatus = error.retryable() ? Status.UNAVAILABLE : Status.INTERNAL;
+        if ("validation".equals(error.category())) {
+            baseStatus = Status.INVALID_ARGUMENT;
+        }
+        return baseStatus.withDescription(error.code() + ": " + error.message());
     }
 }

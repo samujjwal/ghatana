@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @doc.pattern Client, Facade
  */
 public class DistributedHttpDataCloudClient implements DataCloudClient {
-    private static final Logger logger = LoggerFactory.getLogger(DistributedHttpDataCloudClient.class);
+    private static final Logger log = LoggerFactory.getLogger(DistributedHttpDataCloudClient.class);
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -59,7 +59,7 @@ public class DistributedHttpDataCloudClient implements DataCloudClient {
                 .connectTimeout(Duration.ofSeconds(5))
                 .executor(executor)
                 .build();
-        logger.info("DistributedHttpDataCloudClient initialized with {} nodes", nodeUrls.length);
+        log.info("DistributedHttpDataCloudClient initialized with {} nodes", nodeUrls.length);
     }
 
     // ── Routing ─────────────────────────────────────────────────────────
@@ -315,7 +315,7 @@ public class DistributedHttpDataCloudClient implements DataCloudClient {
 
     @Override
     public void close() {
-        logger.info("DistributedHttpDataCloudClient closed");
+        log.info("DistributedHttpDataCloudClient closed");
         executor.shutdown();
     }
 }

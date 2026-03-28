@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  *
  * // Check if changes are breaking
  * if (diff.hasBreakingChanges()) {
- *     logger.warn("Breaking changes detected: {}", diff.getBreakingChanges());
+ *     log.warn("Breaking changes detected: {}", diff.getBreakingChanges());
  * }
  *
  * // Get recommended version bump
@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
  */
 public class SchemaDiffService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SchemaDiffService.class);
+    private static final Logger log = LoggerFactory.getLogger(SchemaDiffService.class);
 
     private final MetricsCollector metrics;
 
@@ -99,7 +99,7 @@ public class SchemaDiffService {
                 + oldSchema.getName() + " vs " + newSchema.getName());
         }
 
-        logger.debug("Comparing schemas: collection={}, oldVersion={}, newVersion={}",
+        log.debug("Comparing schemas: collection={}, oldVersion={}, newVersion={}",
             oldSchema.getName(), oldSchema.getSchemaVersion(), newSchema.getSchemaVersion());
 
         // Build field maps for comparison
@@ -113,7 +113,7 @@ public class SchemaDiffService {
             if (!oldFields.containsKey(name)) {
                 FieldChange change = FieldChange.added(field);
                 diff.addChange(change);
-                logger.debug("Field added: {}", name);
+                log.debug("Field added: {}", name);
             }
         });
 
@@ -122,7 +122,7 @@ public class SchemaDiffService {
             if (!newFields.containsKey(name)) {
                 FieldChange change = FieldChange.removed(field);
                 diff.addChange(change);
-                logger.warn("Field removed (BREAKING): {}", name);
+                log.warn("Field removed (BREAKING): {}", name);
             }
         });
 
@@ -142,7 +142,7 @@ public class SchemaDiffService {
         metrics.increment("schema.diff.changes", diff.getAllChanges().size(),
             Map.of("collection", oldSchema.getName()));
 
-        logger.info("Schema diff completed: collection={}, changes={}, breaking={}",
+        log.info("Schema diff completed: collection={}, changes={}, breaking={}",
             oldSchema.getName(), diff.getAllChanges().size(), diff.hasBreakingChanges());
 
         return diff;
@@ -163,21 +163,21 @@ public class SchemaDiffService {
         Objects.requireNonNull(diff, "Schema diff must not be null");
 
         if (diff.hasBreakingChanges()) {
-            logger.info("Recommending MAJOR version bump due to breaking changes");
+            log.info("Recommending MAJOR version bump due to breaking changes");
             return VersionBump.MAJOR;
         }
 
         if (diff.hasNonBreakingChanges()) {
-            logger.info("Recommending MINOR version bump due to non-breaking changes");
+            log.info("Recommending MINOR version bump due to non-breaking changes");
             return VersionBump.MINOR;
         }
 
         if (diff.hasMetadataChanges()) {
-            logger.info("Recommending PATCH version bump due to metadata changes");
+            log.info("Recommending PATCH version bump due to metadata changes");
             return VersionBump.PATCH;
         }
 
-        logger.info("No changes detected, no version bump needed");
+        log.info("No changes detected, no version bump needed");
         return VersionBump.NONE;
     }
 
@@ -259,33 +259,33 @@ public class SchemaDiffService {
         // Type change (breaking)
         if (!oldField.getType().equals(newField.getType())) {
             changes.add(FieldChange.typeChanged(oldField, newField));
-            logger.warn("Field type changed (BREAKING): field={}, oldType={}, newType={}",
+            log.warn("Field type changed (BREAKING): field={}, oldType={}, newType={}",
                 oldField.getName(), oldField.getType(), newField.getType());
         }
 
         // Required constraint tightened (breaking)
         if (!oldField.getRequired() && newField.getRequired()) {
             changes.add(FieldChange.madeRequired(oldField, newField));
-            logger.warn("Field made required (BREAKING): field={}", oldField.getName());
+            log.warn("Field made required (BREAKING): field={}", oldField.getName());
         }
 
         // Required constraint relaxed (non-breaking)
         if (oldField.getRequired() && !newField.getRequired()) {
             changes.add(FieldChange.madeOptional(oldField, newField));
-            logger.debug("Field made optional (non-breaking): field={}", oldField.getName());
+            log.debug("Field made optional (non-breaking): field={}", oldField.getName());
         }
 
         // Label changed (metadata only)
         if (!Objects.equals(oldField.getLabel(), newField.getLabel())) {
             changes.add(FieldChange.labelChanged(oldField, newField));
-            logger.debug("Field label changed (metadata): field={}, oldLabel={}, newLabel={}",
+            log.debug("Field label changed (metadata): field={}, oldLabel={}, newLabel={}",
                 oldField.getName(), oldField.getLabel(), newField.getLabel());
         }
 
         // Default value changed (potentially breaking)
         if (!Objects.equals(oldField.getDefaultValue(), newField.getDefaultValue())) {
             changes.add(FieldChange.defaultValueChanged(oldField, newField));
-            logger.info("Field default value changed: field={}", oldField.getName());
+            log.info("Field default value changed: field={}", oldField.getName());
         }
 
         return changes;

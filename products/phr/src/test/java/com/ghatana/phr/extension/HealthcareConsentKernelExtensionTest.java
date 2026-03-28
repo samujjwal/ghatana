@@ -159,12 +159,15 @@ class HealthcareConsentKernelExtensionTest extends EventloopTestBase {
     void shouldVerifyValidConsentCorrectly() {
         extension.onModuleStarted(null);
 
-        // Grant consent
-        Promise<HealthcareConsentKernelExtension.ConsentRecord> grantPromise =
+        HealthcareConsentKernelExtension.ConsentRecord firstConsent = runPromise(() ->
             extension.grantConsent("patient-verify", HealthcareConsentKernelExtension.ConsentPurpose.TREATMENT,
                 HealthcareConsentKernelExtension.ConsentScope.ALL_DATA,
-                HealthcareConsentKernelExtension.ConsentDuration.NINETY_DAYS);
-        runPromise(() -> grantPromise);
+                HealthcareConsentKernelExtension.ConsentDuration.NINETY_DAYS));
+        HealthcareConsentKernelExtension.ConsentRecord secondConsent = runPromise(() ->
+            extension.grantConsent("patient-verify", HealthcareConsentKernelExtension.ConsentPurpose.TREATMENT,
+                HealthcareConsentKernelExtension.ConsentScope.ALL_DATA,
+                HealthcareConsentKernelExtension.ConsentDuration.NINETY_DAYS));
+        assertNotEquals(firstConsent.getConsentId(), secondConsent.getConsentId());
 
         // Verify
         Promise<HealthcareConsentKernelExtension.ConsentVerification> verifyPromise =
@@ -173,6 +176,7 @@ class HealthcareConsentKernelExtensionTest extends EventloopTestBase {
         HealthcareConsentKernelExtension.ConsentVerification verification = runPromise(() -> verifyPromise);
         assertTrue(verification.isValid());
         assertTrue(verification.getRecord().isPresent());
+        assertEquals(secondConsent.getConsentId(), verification.getRecord().orElseThrow().getConsentId());
     }
 
     @Test

@@ -3,6 +3,8 @@ package com.ghatana.products.yappc.service;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.ghatana.platform.core.exception.ServiceException;
+
 /**
  * Exception thrown when task execution fails.
  *
@@ -11,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
  * @doc.layer product
  * @doc.pattern Exception
  */
-public class TaskExecutionException extends RuntimeException {
+public class TaskExecutionException extends ServiceException {
 
     private final String taskId;
     private final String agentName;

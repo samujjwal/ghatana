@@ -2,6 +2,8 @@ package com.ghatana.core.pattern;
 
 import java.util.List;
 
+import com.ghatana.platform.core.exception.ServiceException;
+
 /**
  * Exception thrown when pattern compilation fails.
  *
@@ -11,7 +13,7 @@ import java.util.List;
  * @doc.layer core
  * @doc.pattern Exception
  */
-public class PatternCompilationException extends RuntimeException {
+public class PatternCompilationException extends ServiceException {
 
     private final List<String> compilationErrors;
 

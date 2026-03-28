@@ -88,7 +88,7 @@ import java.util.stream.Collectors;
  */
 public class AdminCollectionStorageService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AdminCollectionStorageService.class);
+    private static final Logger log = LoggerFactory.getLogger(AdminCollectionStorageService.class);
 
     private final Map<String, StorageConnector> connectorRegistry;
     private final MetricsCollector metrics;
@@ -201,7 +201,7 @@ public class AdminCollectionStorageService {
                 "tenant", tenantId,
                 "collection", collectionName);
 
-        logger.info(
+        log.info(
                 "Assigned storage profile {} to collection {} for tenant {}",
                 storageProfileId, collectionName, tenantId);
 
@@ -317,7 +317,7 @@ public class AdminCollectionStorageService {
                             "tenant", tenantId,
                             "collection", collectionName);
 
-                    logger.info(
+                    log.info(
                             "Updated storage routing for collection {} in tenant {}",
                             collectionName, tenantId);
 

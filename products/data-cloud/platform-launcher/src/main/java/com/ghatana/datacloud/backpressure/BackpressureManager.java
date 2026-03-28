@@ -64,7 +64,7 @@ import java.util.function.Supplier;
  * @doc.pattern Bulkhead, Circuit Breaker
  */
 public class BackpressureManager {
-    private static final Logger logger = LoggerFactory.getLogger(BackpressureManager.class);
+    private static final Logger log = LoggerFactory.getLogger(BackpressureManager.class);
     
     /**
      * Backpressure strategies.
@@ -237,7 +237,7 @@ public class BackpressureManager {
     private <T> Promise<T> executeWithDrop(Priority priority, Supplier<Promise<T>> operation) {
         if (!semaphore.tryAcquire()) {
             droppedRequests.incrementAndGet();
-            logger.warn("Request dropped due to backpressure (active: {}, max: {})", 
+            log.warn("Request dropped due to backpressure (active: {}, max: {})", 
                 activeRequests.get(), maxConcurrent);
             return Promise.ofException(new BackpressureException("System overloaded, request dropped"));
         }
@@ -253,7 +253,7 @@ public class BackpressureManager {
         // Try to queue
         if (pendingQueue.size() >= queueCapacity) {
             droppedRequests.incrementAndGet();
-            logger.warn("Request dropped - queue full (queue: {}, capacity: {})",
+            log.warn("Request dropped - queue full (queue: {}, capacity: {})",
                 pendingQueue.size(), queueCapacity);
             return Promise.ofException(new BackpressureException("Queue capacity exceeded"));
         }
@@ -266,7 +266,7 @@ public class BackpressureManager {
             (CompletableFuture<Object>) (CompletableFuture<?>) future);
         
         pendingQueue.offer(request);
-        logger.debug("Request queued (queue size: {})", pendingQueue.size());
+        log.debug("Request queued (queue size: {})", pendingQueue.size());
         
         // Try to process queue
         processQueue();
@@ -281,7 +281,7 @@ public class BackpressureManager {
         return Promise.<Void>ofBlocking(blockingExecutor, () -> {
             if (!semaphore.tryAcquire(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
                 droppedRequests.incrementAndGet();
-                logger.warn("Request timed out waiting for slot");
+                log.warn("Request timed out waiting for slot");
                 throw new BackpressureException("Request timed out waiting for slot");
             }
             return null;
@@ -409,7 +409,7 @@ public class BackpressureManager {
             try {
                 updateAdaptiveLimit();
             } catch (Exception e) {
-                logger.error("Error in adaptive monitoring", e);
+                log.error("Error in adaptive monitoring", e);
             }
         }, 1, 1, TimeUnit.SECONDS);
     }
@@ -432,11 +432,11 @@ public class BackpressureManager {
         if (currentLoadFactor > 0.9) {
             // High load - reduce limit
             adaptiveLimit = Math.max(1, (int) (adaptiveLimit * 0.9));
-            logger.debug("Reducing adaptive limit to {} (load: {:.2f})", adaptiveLimit, currentLoadFactor);
+            log.debug("Reducing adaptive limit to {} (load: {:.2f})", adaptiveLimit, currentLoadFactor);
         } else if (currentLoadFactor < 0.5 && adaptiveLimit < maxConcurrent) {
             // Low load - increase limit
             adaptiveLimit = Math.min(maxConcurrent, (int) (adaptiveLimit * 1.1));
-            logger.debug("Increasing adaptive limit to {} (load: {:.2f})", adaptiveLimit, currentLoadFactor);
+            log.debug("Increasing adaptive limit to {} (load: {:.2f})", adaptiveLimit, currentLoadFactor);
         }
     }
     

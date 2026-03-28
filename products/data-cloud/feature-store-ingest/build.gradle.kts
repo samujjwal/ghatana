@@ -8,12 +8,28 @@ description = "EventCloud tailing service for real-time feature ingestion (migra
 
 dependencies {
     // Platform libraries (updated paths)
+
+    // AI model inference and feature transformation pipeline
     implementation(project(":platform:java:ai-integration"))
+
+    // EventLogStore SPI — required to subscribe to platform event streams
     implementation(project(":products:data-cloud:spi"))
-    // WarmTierEventLogStore is used for the postgres ingest mode (postgres backend)
+
+    // WarmTierEventLogStore is used for the postgres ingest mode (postgres backend).
+    // NOTE (FINDING-DC-M2): This transitive dependency on platform-launcher brings in
+    // heavyweight storage plugins (Kafka, S3, Redis, etc.) that are not needed here.
+    // Mitigation: Once the platform-launcher split (DC-H2 Phase 2) is complete and
+    // WarmTierEventLogStore is extracted to a dedicated module, this dep should be
+    // replaced with the lighter-weight extracted module.
     implementation(project(":products:data-cloud:platform-launcher"))
+
+    // Metrics, tracing, and structured logging
     implementation(project(":platform:java:observability"))
+
+    // Core utilities: EventloopTestBase, ConfigLoader, etc.
     implementation(project(":platform:java:core"))
+
+    // Shared domain types (TenantContext, etc.)
     implementation(project(":platform:java:domain"))
 
     // Connection pool for PostgreSQL (production FeatureStoreService)

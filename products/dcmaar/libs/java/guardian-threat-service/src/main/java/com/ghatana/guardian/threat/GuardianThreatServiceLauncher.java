@@ -29,6 +29,11 @@ import java.util.Map;
  * <p>Exposes a small JSON API that wraps {@link GuardianAgentAdapter} so that
  * non-Java runtimes (e.g. Guardian's Node backend) can offload threat
  * assessment and health scoring to a canonical Java implementation.</p>
+ *
+ * @doc.type class
+ * @doc.purpose HTTP service launcher for Guardian threat assessment and health scoring API
+ * @doc.layer product
+ * @doc.pattern Launcher, Service
  */
 public class GuardianThreatServiceLauncher {
 

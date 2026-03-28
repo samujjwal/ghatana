@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.ghatana.audio.video"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 description = "Audio-Video Common Library - Shared security, observability, and resilience utilities"
 
@@ -19,6 +19,7 @@ dependencies {
     api(libs.grpc.protobuf)
     api(libs.protobuf.java)
     implementation(project(":platform:java:security"))
+    implementation(project(":platform:java:core"))
 
     // JWT validation
     implementation(libs.nimbus.jose.jwt)

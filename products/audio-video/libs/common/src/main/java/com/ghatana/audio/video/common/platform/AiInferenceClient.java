@@ -2,6 +2,7 @@ package com.ghatana.audio.video.common.platform;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ghatana.platform.core.util.JsonUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -45,7 +46,7 @@ public final class AiInferenceClient {
 
     private final String baseUrl;
     private final HttpClient http;
-    private final ObjectMapper json = new ObjectMapper();
+    private final ObjectMapper json = JsonUtils.getDefaultMapper();
 
     private AiInferenceClient(String baseUrl) {
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;

@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AutoScalingEngine {
 
     private final Eventloop eventloop;
-    private final MetricsCollector metricsCollector;
+    private final ClusterMetricsCollector metricsCollector;
     private final ScalingPolicyManager policyManager;
     private final ScalingExecutor scalingExecutor;
     private final PredictiveScaler predictiveScaler;
@@ -34,7 +34,7 @@ public class AutoScalingEngine {
     private final Map<String, ScalingEvent> activeScalingStates;
 
     public AutoScalingEngine(
-            MetricsCollector metricsCollector,
+            ClusterMetricsCollector metricsCollector,
             ScalingPolicyManager policyManager,
             ScalingExecutor scalingExecutor,
             PredictiveScaler predictiveScaler,

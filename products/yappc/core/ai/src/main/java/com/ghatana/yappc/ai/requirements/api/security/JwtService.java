@@ -2,6 +2,7 @@ package com.ghatana.yappc.ai.requirements.api.security;
 
 import com.ghatana.platform.security.jwt.JwtTokenProvider;
 import com.ghatana.platform.security.model.User;
+import com.ghatana.platform.core.exception.UnauthorizedException;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import org.slf4j.Logger;
@@ -106,7 +107,7 @@ public final class JwtService {
     /**
      * Exception thrown when JWT validation fails.
      */
-    public static class JwtValidationException extends RuntimeException {
+    public static class JwtValidationException extends UnauthorizedException {
         public JwtValidationException(String message) {
             super(message);
         }

@@ -22,12 +22,13 @@ const apiClient: AxiosInstance = axios.create(apiConfig);
 // Request interceptor for API calls
 apiClient.interceptors.request.use(
   (config) => {
-    // You can add auth tokens here
-    // const token = getAuthToken();
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
-    
+    // Automatically read auth token from localStorage when present.
+    // For explicit token management, call apiClient.setAuthToken().
+    const storedToken = localStorage.getItem('auth_token');
+    if (storedToken) {
+      config.headers.Authorization = `Bearer ${storedToken}`;
+    }
+
     // Log request in development
     if (import.meta.env.DEV) {
       console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
@@ -142,17 +143,29 @@ export async function del<T = any>(
   return apiRequest<T>({ ...config, method: 'DELETE', url });
 }
 
+/**
+ * Helper function for PATCH requests
+ */
+export async function patch<T = any>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig
+): Promise<AxiosResponse<T>> {
+  return apiRequest<T>({ ...config, method: 'PATCH', url, data });
+}
+
 export default {
   // HTTP methods
   get,
   post,
   put,
+  patch,
   delete: del,
-  
+
   // Axios instance for custom requests
   client: apiClient,
-  
-  // Helper to set auth token
+
+  // Helper to set auth token (overrides localStorage-auto-read for this session)
   setAuthToken: (token: string | null) => {
     if (token) {
       apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -160,7 +173,7 @@ export default {
       delete apiClient.defaults.headers.common['Authorization'];
     }
   },
-  
+
   // Helper to set base URL
   setBaseURL: (baseURL: string) => {
     apiClient.defaults.baseURL = baseURL;

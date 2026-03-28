@@ -67,7 +67,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class RedisStateAdapter implements StateAdapter<String, String> {
 
-    private static final Logger logger = LoggerFactory.getLogger(RedisStateAdapter.class);
+    private static final Logger log = LoggerFactory.getLogger(RedisStateAdapter.class);
 
     // Constants
     private static final String ADAPTER_TYPE = "Redis";
@@ -137,7 +137,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
         );
 
         this.executor = Executors.newVirtualThreadPerTaskExecutor();
-        logger.info("Redis adapter connected to {}:{} (db={}, prefix={})", host, port, database, keyPrefix);
+        log.info("Redis adapter connected to {}:{} (db={}, prefix={})", host, port, database, keyPrefix);
     }
 
     /**
@@ -158,7 +158,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
         this.database = 0;
 
         this.executor = Executors.newVirtualThreadPerTaskExecutor();
-        logger.info("Redis adapter initialized with external pool (prefix={})", keyPrefix);
+        log.info("Redis adapter initialized with external pool (prefix={})", keyPrefix);
     }
 
     /**
@@ -195,7 +195,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
                     jedis.set(fullKey, value);
                 }
 
-                logger.debug("Put key {} in Redis (ttl={}ms)", key, ttlMillis);
+                log.debug("Put key {} in Redis (ttl={}ms)", key, ttlMillis);
             }
             return Promise.of(null);
         } catch (Exception e) {
@@ -237,7 +237,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
                 }
 
                 pipeline.sync();
-                logger.debug("Batch put {} entries in Redis", entries.size());
+                log.debug("Batch put {} entries in Redis", entries.size());
             }
             return Promise.of(null);
         } catch (Exception e) {
@@ -264,7 +264,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
                 String value = jedis.get(fullKey(key));
 
                 if (value != null) {
-                    logger.debug("Got key {} from Redis", key);
+                    log.debug("Got key {} from Redis", key);
                     return Promise.of(Optional.of(value));
                 }
                 return Promise.of(Optional.empty());
@@ -309,7 +309,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
                     }
                 }
 
-                logger.debug("Batch got {} of {} keys from Redis", result.size(), keys.size());
+                log.debug("Batch got {} of {} keys from Redis", result.size(), keys.size());
                 return Promise.of(result);
             }
         } catch (Exception e) {
@@ -334,7 +334,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
         try {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.del(fullKey(key));
-                logger.debug("Deleted key {} from Redis", key);
+                log.debug("Deleted key {} from Redis", key);
             }
             return Promise.of(null);
         } catch (Exception e) {
@@ -367,7 +367,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
                         .toArray(String[]::new);
 
                 jedis.del(fullKeys);
-                logger.debug("Batch deleted {} keys from Redis", keys.size());
+                log.debug("Batch deleted {} keys from Redis", keys.size());
             }
             return Promise.of(null);
         } catch (Exception e) {
@@ -389,7 +389,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
             return Promise.ofException(new IllegalStateException("Redis adapter is closed"));
         }
 
-        logger.warn("DESTRUCTIVE OPERATION: clear() called on RedisStateAdapter (prefix='{}') — "
+        log.warn("DESTRUCTIVE OPERATION: clear() called on RedisStateAdapter (prefix='{}') — "
                 + "scanning and deleting ALL keys matching this prefix.", keyPrefix);
 
         try {
@@ -412,7 +412,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
                     }
                 } while (!"0".equals(cursor));
 
-                logger.info("Cleared {} keys from Redis (prefix={})", deletedCount, keyPrefix);
+                log.info("Cleared {} keys from Redis (prefix={})", deletedCount, keyPrefix);
             }
             return Promise.of(null);
         } catch (Exception e) {
@@ -560,10 +560,10 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
                 if (jedisPool != null && !jedisPool.isClosed()) {
                     jedisPool.close();
                 }
-                logger.info("Redis adapter closed");
+                log.info("Redis adapter closed");
                 return Promise.of(null);
             } catch (Exception e) {
-                logger.error("Failed to close Redis adapter", e);
+                log.error("Failed to close Redis adapter", e);
                 return Promise.ofException(e);
             }
         }
@@ -597,7 +597,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
                 return Promise.of("PONG".equals(pong));
             }
         } catch (Exception e) {
-            logger.warn("Redis health check failed", e);
+            log.warn("Redis health check failed", e);
             return Promise.of(false);
         }
     }
@@ -650,7 +650,7 @@ public class RedisStateAdapter implements StateAdapter<String, String> {
                     }
                 } while (!"0".equals(cursor));
 
-                logger.debug("Scanned {} keys matching pattern '{}'", result.size(), pattern);
+                log.debug("Scanned {} keys matching pattern '{}'", result.size(), pattern);
                 return Promise.of(result);
             }
         } catch (Exception e) {

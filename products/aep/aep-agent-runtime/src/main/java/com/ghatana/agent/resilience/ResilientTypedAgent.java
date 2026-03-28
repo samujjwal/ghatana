@@ -17,6 +17,7 @@ package com.ghatana.agent.resilience;
 
 import com.ghatana.agent.*;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.platform.core.exception.ServiceUnavailableException;
 import com.ghatana.platform.resilience.CircuitBreaker;
 import com.ghatana.platform.resilience.RetryPolicy;
 import io.activej.eventloop.Eventloop;
@@ -272,7 +273,7 @@ public final class ResilientTypedAgent<I, O> implements TypedAgent<I, O> {
     /**
      * Thrown when the bulkhead rejects a call because max concurrency is reached.
      */
-    public static final class BulkheadFullException extends RuntimeException {
+    public static final class BulkheadFullException extends ServiceUnavailableException {
         private final String agentId;
         private final int maxConcurrency;
 

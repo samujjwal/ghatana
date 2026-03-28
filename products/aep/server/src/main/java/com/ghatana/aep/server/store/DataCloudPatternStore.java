@@ -6,7 +6,7 @@ package com.ghatana.aep.server.store;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.DataCloudClient.Entity;
 import com.ghatana.datacloud.DataCloudClient.Filter;
@@ -77,8 +77,7 @@ public final class DataCloudPatternStore implements PatternRepository {
     /** Data-Cloud collection name for AEP pattern storage. */
     public static final String COLLECTION = "aep_patterns";
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule());
+    private static final ObjectMapper MAPPER = JsonUtils.getDefaultMapper();
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     /** Cache TTL: 60 seconds. */

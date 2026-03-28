@@ -12,6 +12,7 @@ import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.quality.QualityLevel;
 import com.ghatana.datacloud.entity.quality.QualityMetrics;
 import com.ghatana.datacloud.entity.quality.QualityScoreExplanation;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import io.activej.promise.Promise;
 
 import java.time.Duration;
@@ -301,7 +302,7 @@ public class MLQualityScorer {
     /**
      * Exception thrown when a required model is not found in the registry.
      */
-    public static class ModelNotFoundException extends RuntimeException {
+    public static class ModelNotFoundException extends ResourceNotFoundException {
         public ModelNotFoundException(String message) {
             super(message);
         }

@@ -111,7 +111,7 @@ class ReactiveAgentGapTest {
                     .eventTypeField("type")
                     .eventTypeValue("TICK")
                     .threshold(2)
-                    .countingWindow(Duration.ofMillis(10))
+                    .countingWindow(Duration.ofMillis(500))
                     .action("accumulated", true)
                     .build();
 
@@ -122,8 +122,8 @@ class ReactiveAgentGapTest {
             var result1 = runOnEventloop(() -> agent.process(ctx, Map.of("type", "TICK")));
             assertThat(result1.isSuccess()).isTrue();
 
-            // Wait for window to expire
-            Thread.sleep(50);
+            // Wait for window to expire (sleep > window duration)
+            Thread.sleep(750);
             agent.resetState();
 
             // Second batch — should re-accumulate from zero

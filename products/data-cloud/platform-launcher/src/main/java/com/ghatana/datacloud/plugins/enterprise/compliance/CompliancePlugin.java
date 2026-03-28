@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  * @doc.pattern Plugin, Policy Enforcer
  */
 public class CompliancePlugin implements Plugin {
-    private static final Logger logger = LoggerFactory.getLogger(CompliancePlugin.class);
+    private static final Logger log = LoggerFactory.getLogger(CompliancePlugin.class);
     
     private static final PluginMetadata METADATA = PluginMetadata.builder()
         .id("compliance-plugin")
@@ -82,7 +82,7 @@ public class CompliancePlugin implements Plugin {
     
     @Override
     public @NotNull Promise<Void> initialize(@NotNull PluginContext context) {
-        logger.info("Initializing CompliancePlugin");
+        log.info("Initializing CompliancePlugin");
         state = PluginState.INITIALIZED;
         
         // Initialize default policies
@@ -95,7 +95,7 @@ public class CompliancePlugin implements Plugin {
     public @NotNull Promise<Void> start() {
         state = PluginState.STARTED;
         running = true;
-        logger.info("CompliancePlugin started");
+        log.info("CompliancePlugin started");
         return Promise.complete();
     }
     
@@ -103,7 +103,7 @@ public class CompliancePlugin implements Plugin {
     public @NotNull Promise<Void> stop() {
         state = PluginState.STOPPED;
         running = false;
-        logger.info("CompliancePlugin stopped");
+        log.info("CompliancePlugin stopped");
         return Promise.complete();
     }
     
@@ -111,7 +111,7 @@ public class CompliancePlugin implements Plugin {
     public @NotNull Promise<Void> shutdown() {
         state = PluginState.STOPPED;
         running = false;
-        logger.info("CompliancePlugin shutdown");
+        log.info("CompliancePlugin shutdown");
         // Clean up resources
         policies.clear();
         reports.clear();
@@ -166,7 +166,7 @@ public class CompliancePlugin implements Plugin {
             .build();
         
         if (!findings.isEmpty()) {
-            logger.warn("PII detected in tenant {}: {} findings", tenantId, findings.size());
+            log.warn("PII detected in tenant {}: {} findings", tenantId, findings.size());
         }
         
         return Promise.of(result);
@@ -204,7 +204,7 @@ public class CompliancePlugin implements Plugin {
             .timestamp(Instant.now())
             .build();
         
-        logger.info("Retention policy enforced: {} days for {}", retentionDays, collectionName);
+        log.info("Retention policy enforced: {} days for {}", retentionDays, collectionName);
         
         return Promise.of(result);
     }
@@ -239,7 +239,7 @@ public class CompliancePlugin implements Plugin {
         
         reports.put(report.getId(), report);
         
-        logger.info("Compliance report generated: {} for framework {}", tenantId, framework);
+        log.info("Compliance report generated: {} for framework {}", tenantId, framework);
         
         return Promise.of(report);
     }
@@ -263,7 +263,7 @@ public class CompliancePlugin implements Plugin {
             .timestamp(Instant.now())
             .build();
         
-        logger.info("Right to be forgotten processed: {} for tenant {}", entityId, tenantId);
+        log.info("Right to be forgotten processed: {} for tenant {}", entityId, tenantId);
         
         return Promise.of(result);
     }
@@ -291,7 +291,7 @@ public class CompliancePlugin implements Plugin {
         policies.put("default:gdpr", gdprPolicy);
         policies.put("default:hipaa", hipaaPolicy);
         
-        logger.info("Default compliance policies initialized");
+        log.info("Default compliance policies initialized");
     }
     
     /**

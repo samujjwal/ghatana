@@ -2,6 +2,7 @@
  * EMS Domain Module - Execution Management System
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

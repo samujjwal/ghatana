@@ -6,7 +6,7 @@ description = "Software-Org Product - Agentic software organization simulation"
 
 subprojects {
     group = "com.ghatana.softwareorg"
-    version = "2026.3.1-SNAPSHOT"
+    version = rootProject.version
 }
 
 // Root project aggregates all software-org modules

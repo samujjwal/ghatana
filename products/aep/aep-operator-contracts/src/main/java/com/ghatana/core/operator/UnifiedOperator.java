@@ -468,42 +468,100 @@ public interface UnifiedOperator {
     // ============================================================================
 
     /**
-     * Initialize operator (called once before start).
-     * 
-     * <p>Use this to:
+     * Initialize this operator with the supplied configuration.
+     *
+     * <p><b>When called:</b> Exactly once, before any call to {@link #start()}. The platform
+     * will not submit events to {@link #process(Event)} until after a successful initialization.
+     *
+     * <p><b>Responsibilities of the implementation:</b>
      * <ul>
-     *   <li>Validate configuration</li>
-     *   <li>Allocate resources (state stores, connections)</li>
-     *   <li>Load pre-trained models (for learning operators)</li>
+     *   <li>Validate the configuration and throw {@link com.ghatana.core.operator.OperatorException}
+     *       for any unsupported or out-of-range value.</li>
+     *   <li>Allocate required resources: state stores, connection pools, pre-trained ML models,
+     *       etc.</li>
+     *   <li>Transition internal state from {@code CREATED} → {@code INITIALIZED}.</li>
+     *   <li>Must be idempotent: calling it again on an already-initialized operator should
+     *       either succeed silently or throw {@link IllegalStateException}.</li>
      * </ul>
-     * 
-     * @param config operator configuration
-     * @return Promise of initialization completion
-     * @throws OperatorException if initialization fails
+     *
+     * <p><b>State transitions:</b>
+     * <pre>
+     * CREATED ──initialize()──▶ INITIALIZED
+     *                            │
+     *                     ┌──── ▼ (error)
+     *                     │    FAILED
+     *                     └─────────────────────────
+     * </pre>
+     *
+     * <p><b>Failure handling:</b> Any exception thrown (or a failed Promise rejection) will
+     * move the operator into the {@code FAILED} state. The platform will not call
+     * {@link #start()} on a failed operator.
+     *
+     * @param config operator configuration provided by the deploy-time wiring; never {@code null}
+     * @return promise that completes when initialization is finished; completing with an exception
+     *         moves the operator to {@code FAILED}
+     * @throws com.ghatana.core.operator.OperatorException if configuration is invalid or a required
+     *         resource cannot be acquired
+     * @see #start()
+     * @see OperatorState
      */
     Promise<Void> initialize(OperatorConfig config);
 
     /**
-     * Start operator execution.
-     * 
-     * <p>Called after initialization. Operator transitions to RUNNING state.
-     * 
-     * @return Promise of start completion
-     * @throws OperatorException if start fails
+     * Start processing events.
+     *
+     * <p><b>When called:</b> After a successful {@link #initialize(OperatorConfig)}. The platform
+     * will begin routing events to {@link #process(Event)} only after the returned Promise resolves.
+     *
+     * <p><b>Responsibilities of the implementation:</b>
+     * <ul>
+     *   <li>Start any background tasks (e.g., periodic flushes, model refresh schedules).</li>
+     *   <li>Open connections that were deferred from initialization.</li>
+     *   <li>Transition internal state from {@code INITIALIZED} → {@code RUNNING}.</li>
+     *   <li>Must not block the event loop — all I/O must be async.</li>
+     * </ul>
+     *
+     * <p><b>State transitions:</b>
+     * <pre>
+     * INITIALIZED ──start()──▶ RUNNING
+     *                           │
+     *                    ┌───── ▼ (error)
+     *                    │     FAILED
+     *                    └──────────────────────────
+     * </pre>
+     *
+     * @return promise that completes when the operator is ready to accept events
+     * @throws com.ghatana.core.operator.OperatorException if the operator cannot be started
+     * @see #initialize(OperatorConfig)
+     * @see #stop()
      */
     Promise<Void> start();
 
     /**
-     * Stop operator gracefully.
-     * 
-     * <p>Operator should:
+     * Stop this operator gracefully, releasing all resources.
+     *
+     * <p><b>When called:</b> When the platform undeploys this operator or the pipeline is torn
+     * down. May also be called after a failure to ensure cleanup.
+     *
+     * <p><b>Responsibilities of the implementation:</b>
      * <ul>
-     *   <li>Finish processing in-flight events</li>
-     *   <li>Flush buffered state</li>
-     *   <li>Release resources</li>
+     *   <li>Drain and complete any in-flight event processing; do not drop events silently.</li>
+     *   <li>Flush all buffered or pending state to durable storage.</li>
+     *   <li>Cancel background tasks started in {@link #start()}.</li>
+     *   <li>Close connections, release thread pools, and free external resources.</li>
+     *   <li>Transition internal state to {@code STOPPED} (or {@code FAILED} if cleanup fails).</li>
+     *   <li>Must be idempotent: calling twice must not throw.</li>
      * </ul>
-     * 
-     * @return Promise of stop completion
+     *
+     * <p><b>State transitions:</b>
+     * <pre>
+     * RUNNING ──stop()──▶ STOPPED
+     * FAILED  ──stop()──▶ STOPPED  (cleanup path)
+     * </pre>
+     *
+     * @return promise that completes when the operator has fully stopped; resolving with an
+     *         exception is acceptable but the operator must still release all resources
+     * @see #start()
      */
     Promise<Void> stop();
 

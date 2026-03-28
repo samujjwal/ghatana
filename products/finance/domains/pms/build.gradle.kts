@@ -2,6 +2,7 @@
  * PMS Domain Module - Portfolio Management System
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

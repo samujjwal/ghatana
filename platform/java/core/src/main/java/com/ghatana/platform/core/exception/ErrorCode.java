@@ -3,11 +3,18 @@ package com.ghatana.platform.core.exception;
 /**
  * Comprehensive error codes for the entire system.
  * Each error code has a unique identifier, default message, and optional HTTP status code.
- * 
+ *
  * <p>Error code format: PREFIX-NNN where PREFIX indicates the domain (GEN, AUTH, KG, etc.)</p>
- * 
+ *
  * <p>HTTP status codes are provided for errors that may be exposed via HTTP APIs.
  * For internal errors, the HTTP status defaults to 500.</p>
+ *
+ * <p><strong>Canonical source:</strong> This enum is the single source of truth for domain-level
+ * error classification across all platform services. The protobuf {@code ErrorProto} message
+ * defined in {@code ghatana/contracts/common/v1/error.proto} serves as the wire-format
+ * representation for cross-service transport and is complementary to this enum — it is NOT a
+ * replacement. Services should use this enum for internal logic and convert to/from the wire
+ * format at serialization boundaries only.</p>
  *
  * @doc.type enum
  * @doc.purpose Comprehensive error code enumeration for system-wide error categorization and HTTP mapping

@@ -11,6 +11,9 @@
  */
 
 import type { AIProxyService } from "@tutorputor/contracts/v1/services";
+import { createStandaloneLogger } from '@tutorputor/core/logger';
+
+const logger = createStandaloneLogger({ component: 'OllamaAIProxyService' });
 import type {
   TenantId,
   UserId,
@@ -75,7 +78,11 @@ export class OllamaAIProxyService implements AIProxyService {
         safety: { blocked: false },
       };
     } catch (error) {
-      console.error("Failed to call AI Proxy Service:", error);
+      logger.error({
+        message: 'Failed to call AI Proxy Service',
+        error: error instanceof Error ? error.message : String(error),
+        baseUrl: this.baseUrl,
+      });
       return {
         answer:
           "I'm sorry, I'm having trouble connecting to the AI service. Please ensure the AI Proxy service is running on port 3300.",

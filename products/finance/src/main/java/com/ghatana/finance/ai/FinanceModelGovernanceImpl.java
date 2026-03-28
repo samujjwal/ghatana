@@ -8,7 +8,10 @@ package com.ghatana.finance.ai;
 import com.ghatana.kernel.ai.AgentOrchestrator;
 import com.ghatana.kernel.ai.ModelGovernanceService;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -21,11 +24,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FinanceModelGovernanceImpl implements ModelGovernanceService {
 
+    private static final double MIN_CONFIDENCE = 0.70;
+    private static final double MIN_ACCURACY = 0.80;
+    private static final long MAX_LATENCY_MILLIS = 2_500L;
+
     private final ModelApprovalRepository approvalRepository;
+    private final ModelPerformanceRepository performanceRepository;
+    private final AlertService alertService;
     private final Map<String, ModelRecord> modelRegistry = new ConcurrentHashMap<>();
 
-    public FinanceModelGovernanceImpl(ModelApprovalRepository approvalRepository) {
-        this.approvalRepository = approvalRepository;
+    public FinanceModelGovernanceImpl(
+            ModelApprovalRepository approvalRepository,
+            ModelPerformanceRepository performanceRepository,
+            AlertService alertService) {
+        this.approvalRepository = Objects.requireNonNull(approvalRepository, "approvalRepository cannot be null");
+        this.performanceRepository = Objects.requireNonNull(performanceRepository, "performanceRepository cannot be null");
+        this.alertService = Objects.requireNonNull(alertService, "alertService cannot be null");
     }
 
     @Override
@@ -64,12 +78,40 @@ public class FinanceModelGovernanceImpl implements ModelGovernanceService {
 
     @Override
     public void recordModelPerformance(String modelId, ModelPerformanceMetrics metrics) {
-        // Stub: performance recording to be implemented
+        Objects.requireNonNull(modelId, "modelId cannot be null");
+        Objects.requireNonNull(metrics, "metrics cannot be null");
+
+        ModelPerformanceRecord record = new ModelPerformanceRecord();
+        record.setModelId(modelId);
+        record.setConfidence(metrics.getConfidence());
+        record.setAccuracy(metrics.getAccuracy());
+        record.setLatency(metrics.getLatencyMillis());
+        record.setTimestamp(Instant.now());
+        performanceRepository.save(record);
+
+        List<String> degradations = new java.util.ArrayList<>();
+        if (metrics.getConfidence() < MIN_CONFIDENCE) {
+            degradations.add("confidence=" + metrics.getConfidence());
+        }
+        if (metrics.getAccuracy() < MIN_ACCURACY) {
+            degradations.add("accuracy=" + metrics.getAccuracy());
+        }
+        if (metrics.getLatencyMillis() > MAX_LATENCY_MILLIS) {
+            degradations.add("latencyMillis=" + metrics.getLatencyMillis());
+        }
+
+        if (!degradations.isEmpty()) {
+            alertService.sendAlert(
+                "Model performance degradation",
+                "Model " + modelId + " breached thresholds: " + String.join(", ", degradations)
+            );
+        }
     }
 
     @Override
     public boolean isModelCompliant(String modelId, CompliancePolicy policy) {
-        return true;
+        ModelMetadata metadata = getModelMetadata(modelId);
+        return metadata != null && policy.evaluate(metadata);
     }
 
     @Override

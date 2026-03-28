@@ -6,6 +6,11 @@ import java.util.Map;
 /**
  * Manages DevOps department state (deployments, incidents, configuration,
  * health). Thread-safe storage with tenant isolation.
+ *
+ * @doc.type class
+ * @doc.purpose Thread-safe state repository for DevOps department events
+ * @doc.layer product
+ * @doc.pattern StateManager
  */
 public class DevopsStateManager {
 

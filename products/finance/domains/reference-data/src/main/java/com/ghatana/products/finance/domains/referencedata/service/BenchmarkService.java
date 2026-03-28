@@ -4,6 +4,8 @@ import com.ghatana.products.finance.domains.referencedata.domain.Benchmark;
 import com.ghatana.products.finance.domains.referencedata.domain.BenchmarkConstituent;
 import com.ghatana.products.finance.domains.referencedata.domain.BenchmarkValue;
 import com.ghatana.products.finance.domains.referencedata.port.BenchmarkStore;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
+import com.ghatana.platform.core.exception.ValidationException;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,13 +117,13 @@ public class BenchmarkService {
 
     // ── Exceptions ────────────────────────────────────────────────────────────
 
-    public static final class BenchmarkNotFoundException extends RuntimeException {
+    public static final class BenchmarkNotFoundException extends ResourceNotFoundException {
         public BenchmarkNotFoundException(UUID id) {
             super("Benchmark not found: " + id);
         }
     }
 
-    public static final class InvalidConstituentWeightsException extends RuntimeException {
+    public static final class InvalidConstituentWeightsException extends ValidationException {
         public InvalidConstituentWeightsException(UUID benchmarkId, BigDecimal total) {
             super("Constituent weights sum to " + total + " for benchmark " + benchmarkId
                     + "; must be 1.0 (±0.001)");

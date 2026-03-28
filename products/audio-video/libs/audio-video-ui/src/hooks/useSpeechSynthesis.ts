@@ -6,6 +6,16 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
+import {
+  AudioVideoPlatformError,
+  AudioVideoProvider,
+  AudioVideoRuntimeMetricsSnapshot,
+  AudioVideoSpeechHookConfig,
+  createPlatformError,
+  getAudioVideoPlatformMetrics,
+  incrementAudioVideoPlatformMetric,
+  synthesizeWithPlatformFallback,
+} from './audioVideoPlatform';
 
 /**
  * Options for speech synthesis utterances.
@@ -44,6 +54,10 @@ export interface UseSpeechSynthesisResult {
    * Components may use this flag to conditionally render TTS controls.
    */
   isSupported: boolean;
+  /** Active provider for the current or most recent speech request. */
+  activeProvider: AudioVideoProvider;
+  /** Shared runtime metrics for browser and platform speech operations. */
+  metrics: AudioVideoRuntimeMetricsSnapshot;
 }
 
 const DEFAULT_OPTIONS: Required<SpeechSynthesisOptions> = {
@@ -71,26 +85,95 @@ const DEFAULT_OPTIONS: Required<SpeechSynthesisOptions> = {
  * }
  * ```
  */
-export function useSpeechSynthesis(): UseSpeechSynthesisResult {
+export function useSpeechSynthesis(
+  hookConfig?: AudioVideoSpeechHookConfig,
+): UseSpeechSynthesisResult {
   const isSupported =
     typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   // Keep a ref so cancel() in cleanup closure always has the same reference
   const isSupportedRef = useRef(isSupported);
+  const activeProviderRef = useRef<AudioVideoProvider>('none');
+  const metricsRef = useRef<AudioVideoRuntimeMetricsSnapshot>(getAudioVideoPlatformMetrics());
+  const fallbackAudioRef = useRef<HTMLAudioElement | null>(null);
+  const fallbackAbortRef = useRef<AbortController | null>(null);
+
+  const cancelFallbackPlayback = useCallback(() => {
+    fallbackAbortRef.current?.abort();
+    fallbackAbortRef.current = null;
+    if (fallbackAudioRef.current) {
+      fallbackAudioRef.current.pause();
+      fallbackAudioRef.current.src = '';
+      fallbackAudioRef.current = null;
+    }
+  }, []);
 
   const cancel = useCallback(() => {
     if (isSupportedRef.current) {
       window.speechSynthesis.cancel();
     }
-  }, []);
+    cancelFallbackPlayback();
+  }, [cancelFallbackPlayback]);
 
   const speak = useCallback(
     (text: string, options?: SpeechSynthesisOptions) => {
-      if (!text || !isSupportedRef.current) return;
+      if (!text) return;
+
+      if (hookConfig?.fallback?.preferPlatform && hookConfig.fallback.ttsEndpoint) {
+        incrementAudioVideoPlatformMetric('ttsFallbackRequests');
+        activeProviderRef.current = 'platform';
+        metricsRef.current = getAudioVideoPlatformMetrics();
+        cancelFallbackPlayback();
+        const controller = new AbortController();
+        fallbackAbortRef.current = controller;
+        void synthesizeWithPlatformFallback(text, options, hookConfig.fallback, controller.signal)
+          .then((audioBlob) => {
+            const url = URL.createObjectURL(audioBlob);
+            const audio = new Audio(url);
+            fallbackAudioRef.current = audio;
+            void audio.play().finally(() => URL.revokeObjectURL(url));
+          })
+          .catch((error: AudioVideoPlatformError | Error) => {
+            incrementAudioVideoPlatformMetric('fallbackFailures');
+            metricsRef.current = getAudioVideoPlatformMetrics();
+            throw (error instanceof Error
+              ? error
+              : createPlatformError('media.processing_failed', 'runtime', true, 'Platform speech synthesis failed.'));
+          });
+        return;
+      }
+
+      if (!isSupportedRef.current) {
+        if (!hookConfig?.fallback?.ttsEndpoint) {
+          return;
+        }
+        incrementAudioVideoPlatformMetric('ttsFallbackRequests');
+        activeProviderRef.current = 'platform';
+        metricsRef.current = getAudioVideoPlatformMetrics();
+        cancelFallbackPlayback();
+        const controller = new AbortController();
+        fallbackAbortRef.current = controller;
+        void synthesizeWithPlatformFallback(text, options, hookConfig.fallback, controller.signal)
+          .then((audioBlob) => {
+            const url = URL.createObjectURL(audioBlob);
+            const audio = new Audio(url);
+            fallbackAudioRef.current = audio;
+            void audio.play().finally(() => URL.revokeObjectURL(url));
+          })
+          .catch(() => {
+            incrementAudioVideoPlatformMetric('fallbackFailures');
+            metricsRef.current = getAudioVideoPlatformMetrics();
+          });
+        return;
+      }
 
       const merged = { ...DEFAULT_OPTIONS, ...options };
       // Cancel any ongoing speech to avoid queue buildup
       window.speechSynthesis.cancel();
+      cancelFallbackPlayback();
+      incrementAudioVideoPlatformMetric('browserSynthesisRequests');
+      activeProviderRef.current = 'browser';
+      metricsRef.current = getAudioVideoPlatformMetrics();
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = merged.rate;
@@ -101,7 +184,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
 
       window.speechSynthesis.speak(utterance);
     },
-    [],
+    [cancelFallbackPlayback, hookConfig],
   );
 
   // Cancel any pending speech on unmount
@@ -110,8 +193,15 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
       if (isSupportedRef.current) {
         window.speechSynthesis.cancel();
       }
+      cancelFallbackPlayback();
     };
-  }, []);
+  }, [cancelFallbackPlayback]);
 
-  return { speak, cancel, isSupported };
+  return {
+    speak,
+    cancel,
+    isSupported,
+    activeProvider: activeProviderRef.current,
+    metrics: metricsRef.current,
+  };
 }

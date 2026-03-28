@@ -3,6 +3,7 @@ import * as protoLoader from "@grpc/proto-loader";
 import path from "path";
 import { fileURLToPath } from "url";
 import CircuitBreaker from "opossum";
+import { createStandaloneLogger } from "@tutorputor/core/logger";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,6 +55,7 @@ export class AiClient {
   private learningClient: any;
   private contentClient: any;
   private breaker: CircuitBreaker;
+  private logger = createStandaloneLogger({ component: 'AiClient' });
 
   constructor() {
     // In a real scenario, we might want to use different credentials or secure channels
@@ -80,13 +82,18 @@ export class AiClient {
       breakerOptions,
     );
     this.breaker.fallback(() => {
-      console.warn(
-        "AI Service Circuit Breaker Open or Timeout - Returning null/fallback",
-      );
+      this.logger.warn({
+        message: 'AI Service Circuit Breaker Open or Timeout',
+        action: 'fallback',
+        grpcHost: GRPC_HOST,
+      });
       return null; // Return null to signal fallback to caller logic
     });
 
-    console.log(`AiClient initialized, connecting to ${GRPC_HOST}`);
+    this.logger.info({
+      message: 'AiClient initialized',
+      grpcHost: GRPC_HOST,
+    });
   }
 
   /**

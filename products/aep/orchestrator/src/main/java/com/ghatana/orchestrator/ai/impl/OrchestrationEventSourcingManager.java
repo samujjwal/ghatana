@@ -7,6 +7,7 @@ import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.orchestrator.ai.AIAgentOrchestrationManager.AgentDefinition;
 import com.ghatana.orchestrator.ai.AIAgentOrchestrationManager.AgentExecutionStatus;
 import com.ghatana.orchestrator.ai.AIAgentOrchestrationManager.ExecutionState;
+import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 import java.nio.ByteBuffer;
@@ -42,7 +43,7 @@ public class OrchestrationEventSourcingManager {
     static final String EVT_EXECUTION_FAILED = "ORCHESTRATION_EXECUTION_FAILED";
     static final String EVT_EXECUTION_CANCELLED = "ORCHESTRATION_EXECUTION_CANCELLED";
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = JsonUtils.getDefaultMapper();
 
     private final EventLogStore eventLogStore;
     private final TenantContext systemTenant;

@@ -215,14 +215,7 @@ public class AggregationOperator extends AbstractStreamOperator {
      * Creates aggregate result event.
      */
     private Event createAggregateEvent(Event source, AggregateState state, String windowId) {
-        Map<String, Object> payload = new HashMap<>();
-
-        if (source instanceof GEvent) {
-            Map<String, Object> original = ((GEvent) source).getPayload();
-            if (original != null) {
-                payload.putAll(original);
-            }
-        }
+        Map<String, Object> payload = new HashMap<>(source.toPayloadMap());
 
         // Add aggregation results
         payload.put("aggregate_type", strategy.name());

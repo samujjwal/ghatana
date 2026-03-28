@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.ghatana.tutorputor"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21

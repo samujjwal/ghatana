@@ -5,6 +5,7 @@
  * including settlement, clearing, and custody operations.
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

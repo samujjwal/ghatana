@@ -1,6 +1,7 @@
 //! Tauri commands for the AI Voice application.
 
 use crate::error::AppError;
+use crate::metrics::AudioMetricsSnapshot;
 use crate::models::*;
 use crate::project_storage::{AudioTrack, Project, ProjectMetadata, ProjectSettings, ProjectStorage};
 use crate::python;
@@ -75,6 +76,12 @@ pub async fn ai_voice_stop_audio(
 
     tracing::info!("Stopped audio playback");
     Ok(())
+}
+
+/// Expose runtime audio metrics for observability and diagnostics.
+#[tauri::command]
+pub async fn ai_voice_get_audio_runtime_metrics() -> Result<AudioMetricsSnapshot, AppError> {
+    Ok(crate::metrics::AudioRuntimeMetrics::global().snapshot())
 }
 
 /// Export audio to file.

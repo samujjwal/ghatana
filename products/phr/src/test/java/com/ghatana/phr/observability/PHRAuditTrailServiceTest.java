@@ -1,6 +1,8 @@
 package com.ghatana.phr.observability;
 
+import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
 import com.ghatana.kernel.observability.AuditTrailService;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -125,5 +127,93 @@ class PHRAuditTrailServiceTest {
         assertTrue(result.isValid());
         assertEquals("Audit trail intact", result.getMessage());
         assertTrue(result.getViolations().isEmpty());
+    }
+
+    @Test
+    void testPersistsAcrossServiceRestart() {
+        InMemoryAuditAdapter adapter = new InMemoryAuditAdapter();
+        AuditTrailService writer = new PHRAuditTrailServiceImpl(adapter);
+
+        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
+            .eventId("evt-persist-001")
+            .eventType("patient.audit.persisted")
+            .entityId("patient-persisted")
+            .userId("provider-1")
+            .tenantId("tenant-1")
+            .action("write")
+            .data(Map.of("source", "restart-test"))
+            .build();
+
+        writer.recordAuditEvent(event);
+
+        AuditTrailService reader = new PHRAuditTrailServiceImpl(adapter);
+        List<AuditTrailService.AuditEvent> events = reader.queryAuditEvents(
+            AuditTrailService.AuditQuery.builder().entityId("patient-persisted").build()
+        );
+
+        assertEquals(1, events.size());
+        assertEquals("evt-persist-001", events.getFirst().getEventId());
+    }
+
+    private static final class InMemoryAuditAdapter implements DataCloudKernelAdapter {
+        @Override
+        public Promise<DataResult> readData(DataReadRequest request) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> writeData(DataWriteRequest request) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> deleteData(DataDeleteRequest request) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<QueryResult> queryData(DataQueryRequest request) {
+            return Promise.of(new QueryResult(List.of(), 0, false));
+        }
+
+        @Override
+        public Promise<Void> createSchema(SchemaCreateRequest request) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<SchemaInfo> getSchema(String datasetId) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<List<DatasetInfo>> listDatasets() {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<TransactionHandle> beginTransaction() {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> commitTransaction(TransactionHandle handle) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> rollbackTransaction(TransactionHandle handle) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<DataStream> openReadStream(DataStreamRequest request) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<DataStream> openWriteStream(DataStreamRequest request) {
+            return Promise.of(null);
+        }
     }
 }

@@ -46,6 +46,15 @@ function requireEnv(name: string, fallbackForTest?: string): string {
   );
 }
 
+function validateStripeKey(key: string): void {
+  const stripeKeyPattern = /^sk_(test|live)_[a-zA-Z0-9]{24,}$/;
+  if (!stripeKeyPattern.test(key)) {
+    throw new Error(
+      `[startup] Invalid STRIPE_SECRET_KEY format. Expected sk_test_* or sk_live_* with at least 24 characters.`,
+    );
+  }
+}
+
 export interface PlatformOptions {
   redisUrl?: string;
   jwtSecret?: string;
@@ -218,8 +227,9 @@ export async function setupPlatform(
   app.log.info("✅ Notification routes registered");
 
   // Subscription payments: /api/v1/payments/...
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-  const stripe = new Stripe(stripeKey ?? "sk_test_placeholder", {
+  const stripeKey = requireEnv('STRIPE_SECRET_KEY', 'sk_test_placeholder_key');
+  validateStripeKey(stripeKey);
+  const stripe = new Stripe(stripeKey, {
     apiVersion: "2023-10-16" as any,
   });
   const subscriptionService = new SubscriptionServiceImpl(prisma, stripe);

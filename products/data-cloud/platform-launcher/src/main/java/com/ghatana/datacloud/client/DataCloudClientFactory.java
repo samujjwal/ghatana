@@ -37,7 +37,7 @@ import java.util.Objects;
  * @doc.pattern Factory, Builder
  */
 public class DataCloudClientFactory {
-    private static final Logger logger = LoggerFactory.getLogger(DataCloudClientFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(DataCloudClientFactory.class);
     
     private DataCloudClientFactory() {
         // Prevent instantiation
@@ -60,7 +60,7 @@ public class DataCloudClientFactory {
     public static DataCloudClient embedded(ServerConfig config) {
         Objects.requireNonNull(config, "config cannot be null");
         
-        logger.info("Creating embedded Data-Cloud client with plugin integration");
+        log.info("Creating embedded Data-Cloud client with plugin integration");
         
         // Create embedded client using builder pattern with memory storage for now
         // In production, this would be configured based on ServerConfig
@@ -68,7 +68,7 @@ public class DataCloudClientFactory {
             .withMemoryStorage()
             .build();
         
-        logger.info("Embedded Data-Cloud client created successfully with plugins");
+        log.info("Embedded Data-Cloud client created successfully with plugins");
         return client;
     }
     
@@ -91,12 +91,12 @@ public class DataCloudClientFactory {
         Objects.requireNonNull(serverUrl, "serverUrl cannot be null");
         validateUrl(serverUrl);
         
-        logger.info("Creating standalone Data-Cloud client: {}", serverUrl);
+        log.info("Creating standalone Data-Cloud client: {}", serverUrl);
         
         // Create HTTP client implementation
         HttpDataCloudClient client = new HttpDataCloudClient(serverUrl);
         
-        logger.info("Standalone Data-Cloud client created successfully");
+        log.info("Standalone Data-Cloud client created successfully");
         return client;
     }
     
@@ -127,12 +127,12 @@ public class DataCloudClientFactory {
             validateUrl(url.trim());
         }
         
-        logger.info("Creating distributed Data-Cloud client with {} nodes", urls.length);
+        log.info("Creating distributed Data-Cloud client with {} nodes", urls.length);
         
         // Create HTTP client with load balancing
         DistributedHttpDataCloudClient client = new DistributedHttpDataCloudClient(urls);
         
-        logger.info("Distributed Data-Cloud client created successfully");
+        log.info("Distributed Data-Cloud client created successfully");
         return client;
     }
     
@@ -190,7 +190,7 @@ public class DataCloudClientFactory {
         DataCloudStartupValidator.validate(config);
 
         String mode = config.deploymentMode();
-        logger.info("Creating Data-Cloud client from environment — mode={}", mode);
+        log.info("Creating Data-Cloud client from environment — mode={}", mode);
 
         return switch (mode) {
             case "STANDALONE"   -> standalone(config.serverUrl());

@@ -5,6 +5,7 @@
  * including MiFID II, EMIR, SFTR, and other regulatory reporting.
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

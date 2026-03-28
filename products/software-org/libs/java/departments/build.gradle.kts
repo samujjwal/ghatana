@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.ghatana.softwareorg"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 description = "All department implementations for software-org: compliance, devops, engineering, finance, hr, marketing, product, qa, sales, support"
 

@@ -6,7 +6,9 @@ package com.ghatana.aep.identity;
 
 import com.ghatana.identity.AgentIdentity;
 import com.ghatana.identity.CredentialToken;
+import com.ghatana.identity.spi.IdentityResolver;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -122,6 +124,7 @@ class AepIdentityTest extends EventloopTestBase {
             assertThat(token.agentId()).isEqualTo("agent1");
             assertThat(token.tenantId()).isEqualTo("t1");
             assertThat(token.isExpired()).isFalse();
+            assertThat(runPromise(() -> service.isCredentialValid(token.tokenId()))).isTrue();
         }
 
         @Test
@@ -132,6 +135,23 @@ class AepIdentityTest extends EventloopTestBase {
             runBlocking(() -> service.revoke(token.tokenId()));
             boolean valid = runPromise(() -> service.isCredentialValid(token.tokenId()));
             assertThat(valid).isFalse();
+        }
+
+        @Test
+        @DisplayName("withResolvers chains until one resolver finds the identity")
+        void withResolversChainsResolvers() {
+            IdentityResolver miss = (tenantId, agentId) -> Promise.of(Optional.empty());
+            AepLocalIdentityResolver hit = new AepLocalIdentityResolver();
+            AgentIdentity id = identity("t1", "agent1");
+            hit.register(id);
+
+            IdentityResolutionService chainedService = IdentityResolutionService.withResolvers(
+                List.of(miss, hit));
+
+            Optional<AgentIdentity> result = runPromise(() ->
+                chainedService.resolveIdentity("t1", "agent1"));
+
+            assertThat(result).isPresent().hasValue(id);
         }
     }
 }

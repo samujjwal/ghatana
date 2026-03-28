@@ -11,6 +11,7 @@ import com.ghatana.phr.kernel.service.ImmunizationService.ImmunizationRecord;
 import com.ghatana.phr.kernel.service.LabResultService.LabObservation;
 import com.ghatana.phr.kernel.service.MedicationService.Prescription;
 import com.ghatana.phr.kernel.service.MedicationService.PrescriptionStatus;
+import com.ghatana.platform.core.exception.ServiceException;
 
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -658,7 +659,7 @@ if (rx.prescriberId() != null) {
      * @doc.layer product
      * @doc.pattern Exception
      */
-    public static class FhirTransformationException extends RuntimeException {
+    public static class FhirTransformationException extends ServiceException {
         public FhirTransformationException(String message, Throwable cause) {
             super(message, cause);
         }

@@ -306,7 +306,7 @@ public final class AepInputValidator {
      * @doc.layer product
      * @doc.pattern ValueObject
      */
-    public static final class ValidationException extends RuntimeException {
+    public static final class ValidationException extends com.ghatana.platform.core.exception.ValidationException {
         public ValidationException(String message) {
             super(message);
         }

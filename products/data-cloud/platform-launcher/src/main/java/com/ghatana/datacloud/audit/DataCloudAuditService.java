@@ -37,7 +37,7 @@ import java.util.UUID;
  */
 public class DataCloudAuditService implements AuditService {
 
-    private static final Logger logger = LoggerFactory.getLogger(DataCloudAuditService.class);
+    private static final Logger log = LoggerFactory.getLogger(DataCloudAuditService.class);
     private static final String AUDIT_STREAM = "audit-log";
     private static final String AUDIT_EVENT_TYPE = "platform.audit.event";
     private static final String AUDIT_EVENT_VERSION = "1.0.0";
@@ -51,14 +51,14 @@ public class DataCloudAuditService implements AuditService {
 
     @Override
     public Promise<Void> record(AuditEvent event) {
-        logger.debug("Recording audit event: type={}, principal={}, resource={}",
+        log.debug("Recording audit event: type={}, principal={}, resource={}",
                 event.getEventType(), event.getPrincipal(), event.getResourceId());
 
         Event dataCloudEvent = convertToDataCloudEvent(event);
 
         return storagePlugin.append(dataCloudEvent)
                 .toVoid()
-                .whenException(e -> logger.error("Failed to persist audit event", e));
+                .whenException(e -> log.error("Failed to persist audit event", e));
     }
 
     private Event convertToDataCloudEvent(AuditEvent auditEvent) {

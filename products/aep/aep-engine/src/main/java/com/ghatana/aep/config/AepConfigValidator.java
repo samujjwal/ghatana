@@ -70,6 +70,8 @@ public final class AepConfigValidator {
         validateWorkerThreads(config.workerThreads(), violations);
         validateInstanceId(config.instanceId(), violations);
         validateCustomConfig(config.customConfig(), violations);
+        validateIdempotencySettings(config.customConfig(), violations);
+        validateConsentConfig(config.customConfig(), violations);
 
         if (!violations.isEmpty()) {
             throw new IllegalArgumentException("AepConfig validation failed: " + String.join("; ", violations));
@@ -130,6 +132,50 @@ public final class AepConfigValidator {
             if (entry.getValue() == null) {
                 violations.add("customConfig key '" + entry.getKey() + "' must not map to null; "
                     + "remove the key or supply a non-null value");
+            }
+        }
+    }
+
+    /**
+     * Validates idempotency settings when they are explicitly supplied in {@code customConfig}.
+     *
+     * <ul>
+     *   <li>{@code idempotencyTtlSeconds} — must be a positive integer</li>
+     *   <li>{@code idempotencyMaxKeysPerTenant} — must be a positive integer</li>
+     * </ul>
+     */
+    private static void validateIdempotencySettings(java.util.Map<String, Object> customConfig,
+                                                    List<String> violations) {
+        Object ttl = customConfig.get(Aep.AepConfig.IDEMPOTENCY_TTL_SECONDS_KEY);
+        if (ttl != null) {
+            if (!(ttl instanceof Number) || ((Number) ttl).intValue() <= 0) {
+                violations.add(Aep.AepConfig.IDEMPOTENCY_TTL_SECONDS_KEY
+                    + " must be a positive integer, but was: " + ttl);
+            }
+        }
+        Object maxKeys = customConfig.get(Aep.AepConfig.IDEMPOTENCY_MAX_KEYS_PER_TENANT_KEY);
+        if (maxKeys != null) {
+            if (!(maxKeys instanceof Number) || ((Number) maxKeys).intValue() <= 0) {
+                violations.add(Aep.AepConfig.IDEMPOTENCY_MAX_KEYS_PER_TENANT_KEY
+                    + " must be a positive integer, but was: " + maxKeys);
+            }
+        }
+    }
+
+    /**
+     * Validates consent-related settings when they are explicitly supplied in {@code customConfig}.
+     *
+     * <ul>
+     *   <li>{@code consentProvider} — must be a non-blank string when set</li>
+     * </ul>
+     */
+    private static void validateConsentConfig(java.util.Map<String, Object> customConfig,
+                                              List<String> violations) {
+        Object provider = customConfig.get(Aep.AepConfig.CONSENT_PROVIDER_KEY);
+        if (provider != null) {
+            if (!(provider instanceof String) || ((String) provider).isBlank()) {
+                violations.add(Aep.AepConfig.CONSENT_PROVIDER_KEY
+                    + " must be a non-blank string when set, but was: " + provider);
             }
         }
     }

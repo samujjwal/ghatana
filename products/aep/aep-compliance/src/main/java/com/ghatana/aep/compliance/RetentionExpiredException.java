@@ -4,15 +4,17 @@
  */
 package com.ghatana.aep.compliance;
 
+import com.ghatana.platform.core.exception.GovernancePolicyException;
+
 /**
  * Thrown when a data asset is accessed after its retention period has expired.
  *
  * @doc.type class
  * @doc.purpose Signal that a data asset's retention window has elapsed
  * @doc.layer product
- * @doc.pattern ValueObject
+ * @doc.pattern Exception
  */
-public final class RetentionExpiredException extends RuntimeException {
+public final class RetentionExpiredException extends GovernancePolicyException {
 
     private final String tenantId;
     private final String dataId;

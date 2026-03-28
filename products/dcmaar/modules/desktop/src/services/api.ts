@@ -1,33 +1,21 @@
-import axios from 'axios';
+/**
+ * DCMAAR Desktop API client.
+ *
+ * Thin wrapper around the canonical {@link ./api/client} that adds
+ * product-level error notifications via {@link showApiError}.
+ * Auth token is read automatically from localStorage by the base client.
+ *
+ * Import this file for service calls within the desktop module.
+ */
+import canonicalClient from './api/client';
 import { showApiError } from './notification';
 
+// Re-exported for backwards compat with files that use `API_BASE_URL`
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 5000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Request interceptor
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    console.error('Request error:', error);
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor
-api.interceptors.response.use(
+// Add DCMAAR-specific error notification on top of the base interceptors.
+// Fires once at module load — the canonical client is a singleton.
+canonicalClient.client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.code === 'ECONNREFUSED') {
@@ -41,4 +29,4 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+export default canonicalClient;

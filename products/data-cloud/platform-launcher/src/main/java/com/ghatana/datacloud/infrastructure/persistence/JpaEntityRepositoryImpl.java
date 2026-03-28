@@ -78,7 +78,7 @@ import java.util.stream.Collectors;
  */
 public class JpaEntityRepositoryImpl implements EntityRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(JpaEntityRepositoryImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(JpaEntityRepositoryImpl.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String ACTIVE_ENTITY_SCOPE_SQL = " AND " + DataCloudColumnNames.TENANT_ID +
         " = :tenantId AND " + DataCloudColumnNames.COLLECTION_NAME + " = :collectionName AND " +
@@ -149,7 +149,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             List<Entity> results = query.getResultList();
             Optional<Entity> result = results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
 
-            logger.debug("findById: tenantId={}, collection={}, id={}, found={}",
+            log.debug("findById: tenantId={}, collection={}, id={}, found={}",
                 tenantId, collectionName, entityId, result.isPresent());
             return result;
         });
@@ -212,7 +212,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
                         } else if (SAFE_SORT_FIELD.matcher(field).matches()) {
                             // JSONB data field — use native function; append as native query suffix
                             // Note: JPQL does not support JSONB operators; delegate to native path.
-                            logger.debug("findAll: JSONB sort on '{}' not supported in JPQL; ignoring sort.", field);
+                            log.debug("findAll: JSONB sort on '{}' not supported in JPQL; ignoring sort.", field);
                         }
                     }
                 }
@@ -226,7 +226,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
 
             List<Entity> results = query.getResultList();
 
-            logger.debug("findAll: tenantId={}, collection={}, offset={}, limit={}, found={}",
+            log.debug("findAll: tenantId={}, collection={}, offset={}, limit={}, found={}",
                 tenantId, collectionName, offset, limit, results.size());
             return results;
         });
@@ -274,7 +274,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
                 if (appSpec.limit() > 0) nativeQuery.setMaxResults(appSpec.limit());
                 @SuppressWarnings("unchecked")
                 List<Entity> results = nativeQuery.getResultList();
-                logger.debug("findByQuery(AppSpec): tenantId={}, collection={}, returned={}",
+                log.debug("findByQuery(AppSpec): tenantId={}, collection={}, returned={}",
                     tenantId, collectionName, results.size());
                 return results;
             });
@@ -311,13 +311,13 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
                 q.setFirstResult(offset);
                 q.setMaxResults(limit);
                 List<Entity> results = q.getResultList();
-                logger.debug("findByQuery(StorageSpec): tenantId={}, collection={}, returned={}",
+                log.debug("findByQuery(StorageSpec): tenantId={}, collection={}, returned={}",
                     tenantId, collectionName, results.size());
                 return results;
             });
         }
 
-        logger.error("findByQuery: unsupported querySpec type: {}", querySpec.getClass().getName());
+        log.error("findByQuery: unsupported querySpec type: {}", querySpec.getClass().getName());
         return Promise.ofException(new IllegalArgumentException(
             "Unsupported querySpec type: " + querySpec.getClass().getName() +
             ". Use application.QuerySpec (from DynamicQueryBuilder) or entity.storage.QuerySpec."));
@@ -349,7 +349,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         return Promise.ofBlocking(dbExecutor, () -> {
             Entity saved = entityManager.merge(entity);
             entityManager.flush();
-            logger.debug("save: tenantId={}, collection={}, id={}, version={}",
+            log.debug("save: tenantId={}, collection={}, id={}, version={}",
                 tenantId, saved.getCollectionName(), saved.getId(), saved.getVersion());
             return saved;
         });
@@ -381,7 +381,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             query.setParameter("collectionName", collectionName);
             query.setParameter("id", entityId);
             int updated = query.executeUpdate();
-            logger.debug("delete: tenantId={}, collection={}, id={}, updated={}",
+            log.debug("delete: tenantId={}, collection={}, id={}, updated={}",
                 tenantId, collectionName, entityId, updated);
             return null;
         });
@@ -508,7 +508,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
                 }
             }
             entityManager.flush();
-            logger.debug("saveAll: tenantId={}, count={}", tenantId, saved.size());
+            log.debug("saveAll: tenantId={}, count={}", tenantId, saved.size());
             return saved;
         });
     }
@@ -540,7 +540,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             query.setParameter("collectionName", collectionName);
             query.setParameter("ids", entityIds);
             int updated = query.executeUpdate();
-            logger.debug("deleteAll: tenantId={}, collection={}, ids={}, updated={}",
+            log.debug("deleteAll: tenantId={}, collection={}, ids={}, updated={}",
                 tenantId, collectionName, entityIds.size(), updated);
             return null;
         });

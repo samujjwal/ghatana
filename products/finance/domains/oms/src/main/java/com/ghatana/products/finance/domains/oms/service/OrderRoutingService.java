@@ -2,6 +2,7 @@ package com.ghatana.products.finance.domains.oms.service;
 
 
 import com.ghatana.platform.core.event.EventBusPort;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -141,7 +142,7 @@ public class OrderRoutingService {
                      String side, long quantity, BigDecimal limitPrice,
                      String orderType, String timeInForce);
 
-        class EmsRejectException extends RuntimeException {
+        class EmsRejectException extends ServiceException {
             public EmsRejectException(String reason) { super(reason); }
         }
     }

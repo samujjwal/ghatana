@@ -54,7 +54,7 @@ export class VRAnalyticsServiceImpl implements VRAnalyticsService {
 
     // Average score
     const totalScore = sessions.reduce((sum, s) => {
-      const progress = s.progress as any;
+      const progress = s.progress as Record<string, unknown>;
       return sum + (progress?.totalPoints || 0);
     }, 0);
     const avgScore = sessions.length > 0 ? totalScore / sessions.length : 0;
@@ -63,7 +63,7 @@ export class VRAnalyticsServiceImpl implements VRAnalyticsService {
     const objectiveCompletionRates: Record<string, number> = {};
     for (const objective of lab.objectives) {
       const completions = sessions.filter((s) => {
-        const progress = s.progress as any;
+        const progress = s.progress as Record<string, unknown>;
         return progress?.completedObjectives?.includes(objective.id);
       }).length;
       objectiveCompletionRates[objective.id] = sessions.length > 0 ? completions / sessions.length : 0;
@@ -72,7 +72,7 @@ export class VRAnalyticsServiceImpl implements VRAnalyticsService {
     // Most interacted objects
     const interactionCounts: Map<string, { id: string; name: string; count: number }> = new Map();
     for (const session of sessions) {
-      const progress = session.progress as any;
+      const progress = session.progress as Record<string, unknown>;
       for (const log of progress?.interactionsLog || []) {
         const existing = interactionCounts.get(log.interactableId);
         if (existing) {
@@ -93,7 +93,7 @@ export class VRAnalyticsServiceImpl implements VRAnalyticsService {
     // Scene time distribution
     const sceneTimeDistribution: Record<string, number> = {};
     for (const session of sessions) {
-      const progress = session.progress as any;
+      const progress = session.progress as Record<string, unknown>;
       for (const sceneId of progress?.scenesVisited || []) {
         sceneTimeDistribution[sceneId] = (sceneTimeDistribution[sceneId] || 0) + 1;
       }
@@ -101,7 +101,7 @@ export class VRAnalyticsServiceImpl implements VRAnalyticsService {
 
     // Average FPS
     const fpsSum = sessions.reduce((sum, s) => {
-      const metrics = s.performanceMetrics as any;
+      const metrics = s.performanceMetrics as Record<string, unknown>;
       return sum + (metrics?.averageFps || 0);
     }, 0);
     const avgFps = sessions.length > 0 ? fpsSum / sessions.length : 0;
@@ -184,7 +184,7 @@ export class VRAnalyticsServiceImpl implements VRAnalyticsService {
       {
         labId: string;
         labTitle: string;
-        sessions: any[];
+        sessions: Array<Record<string, unknown>>;
         maxPoints: number;
       }
     > = new Map();
@@ -212,7 +212,7 @@ export class VRAnalyticsServiceImpl implements VRAnalyticsService {
         entry.sessions.length > 0 ? completedSessions.length / entry.sessions.length : 0;
 
       const scores = entry.sessions.map((s) => {
-        const progress = s.progress as any;
+        const progress = s.progress as Record<string, unknown>;
         return progress?.totalPoints || 0;
       });
       const bestScore = Math.max(...scores, 0);
@@ -229,7 +229,7 @@ export class VRAnalyticsServiceImpl implements VRAnalyticsService {
     // Calculate overall stats
     const completedLabs = labProgress.filter((l) => l.completionRate > 0.8).length;
     const totalScore = sessions.reduce((sum, s) => {
-      const progress = s.progress as any;
+      const progress = s.progress as Record<string, unknown>;
       return sum + (progress?.totalPoints || 0);
     }, 0);
     const avgScore = sessions.length > 0 ? totalScore / sessions.length : 0;

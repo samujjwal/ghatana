@@ -114,6 +114,9 @@ Prisma.NullTypes = NullTypes
  */
 
 exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
+  ReadUncommitted: 'ReadUncommitted',
+  ReadCommitted: 'ReadCommitted',
+  RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
 });
 
@@ -372,6 +375,112 @@ exports.Prisma.PurchaseScalarFieldEnum = {
   moduleId: 'moduleId',
   amountCents: 'amountCents',
   purchasedAt: 'purchasedAt'
+};
+
+exports.Prisma.StripeCustomerScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  stripeCustomerId: 'stripeCustomerId',
+  email: 'email',
+  name: 'name',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.SubscriptionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  stripeCustomerId: 'stripeCustomerId',
+  stripeSubscriptionId: 'stripeSubscriptionId',
+  stripePriceId: 'stripePriceId',
+  tier: 'tier',
+  status: 'status',
+  billingInterval: 'billingInterval',
+  currentPeriodStart: 'currentPeriodStart',
+  currentPeriodEnd: 'currentPeriodEnd',
+  cancelAtPeriodEnd: 'cancelAtPeriodEnd',
+  canceledAt: 'canceledAt',
+  trialStart: 'trialStart',
+  trialEnd: 'trialEnd',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PaymentMethodScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  stripeCustomerId: 'stripeCustomerId',
+  stripePaymentMethodId: 'stripePaymentMethodId',
+  type: 'type',
+  isDefault: 'isDefault',
+  lastFour: 'lastFour',
+  brand: 'brand',
+  expMonth: 'expMonth',
+  expYear: 'expYear',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.InvoiceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  stripeCustomerId: 'stripeCustomerId',
+  subscriptionId: 'subscriptionId',
+  stripeInvoiceId: 'stripeInvoiceId',
+  number: 'number',
+  status: 'status',
+  currency: 'currency',
+  subtotalCents: 'subtotalCents',
+  taxCents: 'taxCents',
+  totalCents: 'totalCents',
+  amountPaidCents: 'amountPaidCents',
+  amountDueCents: 'amountDueCents',
+  dueDate: 'dueDate',
+  paidAt: 'paidAt',
+  hostedInvoiceUrl: 'hostedInvoiceUrl',
+  invoicePdfUrl: 'invoicePdfUrl',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.TransactionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  invoiceId: 'invoiceId',
+  paymentMethodId: 'paymentMethodId',
+  stripePaymentIntentId: 'stripePaymentIntentId',
+  stripeChargeId: 'stripeChargeId',
+  type: 'type',
+  status: 'status',
+  amountCents: 'amountCents',
+  currency: 'currency',
+  failureReason: 'failureReason',
+  receiptUrl: 'receiptUrl',
+  createdAt: 'createdAt',
+  processedAt: 'processedAt'
+};
+
+exports.Prisma.WebhookEventScalarFieldEnum = {
+  id: 'id',
+  stripeEventId: 'stripeEventId',
+  type: 'type',
+  data: 'data',
+  processed: 'processed',
+  processedAt: 'processedAt',
+  error: 'error',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.UsageSnapshotScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  subscriptionId: 'subscriptionId',
+  periodStart: 'periodStart',
+  periodEnd: 'periodEnd',
+  users: 'users',
+  modules: 'modules',
+  storageGB: 'storageGB',
+  classrooms: 'classrooms',
+  vrSessions: 'vrSessions',
+  capturedAt: 'capturedAt'
 };
 
 exports.Prisma.LTIPlatformScalarFieldEnum = {
@@ -1014,6 +1123,7 @@ exports.Prisma.TenantScalarFieldEnum = {
   id: 'id',
   name: 'name',
   subdomain: 'subdomain',
+  adminEmail: 'adminEmail',
   subscriptionTier: 'subscriptionTier',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1967,6 +2077,11 @@ exports.Prisma.NullableJsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 
+exports.Prisma.QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+};
+
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
@@ -1976,11 +2091,6 @@ exports.Prisma.JsonNullValueFilter = {
   DbNull: Prisma.DbNull,
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
-};
-
-exports.Prisma.QueryMode = {
-  default: 'default',
-  insensitive: 'insensitive'
 };
 exports.ModuleDomain = exports.$Enums.ModuleDomain = {
   MATH: 'MATH',
@@ -2059,6 +2169,29 @@ exports.CheckoutStatus = exports.$Enums.CheckoutStatus = {
   COMPLETED: 'COMPLETED',
   FAILED: 'FAILED',
   CANCELLED: 'CANCELLED'
+};
+
+exports.SubscriptionTier = exports.$Enums.SubscriptionTier = {
+  FREE: 'FREE',
+  STARTER: 'STARTER',
+  PROFESSIONAL: 'PROFESSIONAL',
+  ENTERPRISE: 'ENTERPRISE'
+};
+
+exports.SubscriptionStatus = exports.$Enums.SubscriptionStatus = {
+  ACTIVE: 'ACTIVE',
+  PAST_DUE: 'PAST_DUE',
+  CANCELED: 'CANCELED',
+  INCOMPLETE: 'INCOMPLETE',
+  INCOMPLETE_EXPIRED: 'INCOMPLETE_EXPIRED',
+  TRIALING: 'TRIALING',
+  UNPAID: 'UNPAID'
+};
+
+exports.BillingInterval = exports.$Enums.BillingInterval = {
+  MONTHLY: 'MONTHLY',
+  QUARTERLY: 'QUARTERLY',
+  ANNUAL: 'ANNUAL'
 };
 
 exports.StudyGroupVisibility = exports.$Enums.StudyGroupVisibility = {
@@ -2285,12 +2418,6 @@ exports.SimulationTemplateStatus = exports.$Enums.SimulationTemplateStatus = {
   DRAFT: 'DRAFT',
   PUBLISHED: 'PUBLISHED',
   ARCHIVED: 'ARCHIVED'
-};
-
-exports.SubscriptionTier = exports.$Enums.SubscriptionTier = {
-  FREE: 'FREE',
-  BASIC: 'BASIC',
-  ENTERPRISE: 'ENTERPRISE'
 };
 
 exports.AssetType = exports.$Enums.AssetType = {
@@ -2575,6 +2702,13 @@ exports.Prisma.ModelName = {
   HelpRequest: 'HelpRequest',
   CheckoutSession: 'CheckoutSession',
   Purchase: 'Purchase',
+  StripeCustomer: 'StripeCustomer',
+  Subscription: 'Subscription',
+  PaymentMethod: 'PaymentMethod',
+  Invoice: 'Invoice',
+  Transaction: 'Transaction',
+  WebhookEvent: 'WebhookEvent',
+  UsageSnapshot: 'UsageSnapshot',
   LTIPlatform: 'LTIPlatform',
   StudyGroup: 'StudyGroup',
   StudyGroupMember: 'StudyGroupMember',

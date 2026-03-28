@@ -6,6 +6,7 @@ package com.ghatana.aep.connector.strategy;
 
 import io.activej.promise.Promise;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,6 +32,23 @@ public interface QueueProducerStrategy {
      * @return true if sent successfully
      */
     boolean send(QueueMessage message);
+
+    /**
+     * Send multiple messages to the queue.
+     *
+     * <p>The default implementation preserves backward compatibility by sending
+     * messages one by one through {@link #send(QueueMessage)}. Strategies with
+     * native broker batching can override this for higher throughput.
+     *
+     * @param messages messages to send
+     * @return true if every message was accepted successfully
+     */
+    default boolean sendBatch(List<QueueMessage> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return true;
+        }
+        return messages.stream().allMatch(this::send);
+    }
 
     /**
      * Send a keyed payload to the queue asynchronously.

@@ -7,6 +7,7 @@
  * finance-specific business logic.
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

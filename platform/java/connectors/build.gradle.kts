@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.ghatana.core"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 dependencies {
     // Platform dependencies

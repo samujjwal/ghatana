@@ -2,6 +2,7 @@
  * Compliance Domain Module - Regulatory Compliance
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

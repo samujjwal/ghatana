@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.application.workflow;
 
 import io.activej.promise.Promise;
+import com.ghatana.platform.observability.MetricsCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,7 @@ import static com.ghatana.platform.observability.util.BlockingExecutors.blocking
  */
 public class AgentRecommendationService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AgentRecommendationService.class);
+    private static final Logger log = LoggerFactory.getLogger(AgentRecommendationService.class);
 
     private final ObservationRepository observationRepository;
     private final MetricsCollector metricsCollector;
@@ -85,7 +86,7 @@ public class AgentRecommendationService {
         long startTime = System.currentTimeMillis();
 
         try {
-            logger.info("Generating recommendations for workflow: {}", workflowId);
+            log.info("Generating recommendations for workflow: {}", workflowId);
 
             List<Suggestion> suggestions = new ArrayList<>();
 
@@ -107,8 +108,8 @@ public class AgentRecommendationService {
                     .orElse(0.0);
 
             long duration = System.currentTimeMillis() - startTime;
-            metricsCollector.recordTimer("agent.generate_recommendations", duration);
-            metricsCollector.recordConfidenceScore("agent.recommendation_confidence", overallConfidence);
+            metricsCollector.increment("agent.generate_recommendations", duration, java.util.Map.of());
+            metricsCollector.increment("agent.recommendation_confidence", overallConfidence, java.util.Map.of());
 
             WorkflowRecommendation recommendation = new WorkflowRecommendation(
                     UUID.randomUUID().toString(),
@@ -119,7 +120,7 @@ public class AgentRecommendationService {
                     System.currentTimeMillis()
             );
 
-            logger.info("Generated {} recommendations for workflow: {} ({}ms)",
+            log.info("Generated {} recommendations for workflow: {} ({}ms)",
                     suggestions.size(), workflowId, duration);
 
             return Promise.of(recommendation);
@@ -255,7 +256,7 @@ public class AgentRecommendationService {
      */
     public Promise<Void> recordFeedback(UUID workflowId, String suggestionId, String feedback) {
         try {
-            logger.info("Recording feedback for suggestion: {} - {}", suggestionId, feedback);
+            log.info("Recording feedback for suggestion: {} - {}", suggestionId, feedback);
 
             Observation observation = new Observation(
                     UUID.randomUUID().toString(),
@@ -267,10 +268,10 @@ public class AgentRecommendationService {
 
             observationRepository.save(observation);
             metricsCollector.incrementCounter("agent.feedback_recorded", "type", feedback);
-            logger.debug("Feedback recorded successfully");
+            log.debug("Feedback recorded successfully");
             return Promise.of(null);
         } catch (Exception error) {
-            logger.error("Error recording feedback: {}", error.getMessage());
+            log.error("Error recording feedback: {}", error.getMessage());
             metricsCollector.incrementCounter("agent.feedback_error");
             return Promise.ofException(new RuntimeException("Failed to record feedback: " + error.getMessage()));
         }
@@ -304,7 +305,7 @@ public class AgentRecommendationService {
                     );
                 })
                 .mapException(error -> {
-                    logger.error("Error getting quality metrics: {}", error.getMessage());
+                    log.error("Error getting quality metrics: {}", error.getMessage());
                     throw new RuntimeException("Failed to get quality metrics: " + error.getMessage());
                 });
     }
@@ -361,15 +362,19 @@ public class AgentRecommendationService {
  * Observation repository interface.
  */
 interface ObservationRepository {
-    Promise<Void> save(AgentRecommendationService.Observation observation);
-    Promise<List<AgentRecommendationService.Observation>> getObservationsByWorkflow(UUID workflowId);
-}
 
-/**
- * Metrics collector interface.
- */
-interface MetricsCollector {
-    void recordTimer(String name, long duration);
-    void recordConfidenceScore(String name, double score);
-    void incrementCounter(String name, String... tags);
+    /**
+     * Persists a feedback observation.
+     *
+     * @param observation the observation to store (required)
+     */
+    void save(AgentRecommendationService.Observation observation);
+
+    /**
+     * Returns all observations recorded for a given workflow.
+     *
+     * @param workflowId the workflow identifier (required)
+     * @return promise resolving to the list of observations
+     */
+    io.activej.promise.Promise<java.util.List<AgentRecommendationService.Observation>> getObservationsByWorkflow(java.util.UUID workflowId);
 }

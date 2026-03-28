@@ -5,6 +5,7 @@
  * including price feeds, market depth, and market data analytics.
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

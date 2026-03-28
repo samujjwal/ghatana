@@ -8,13 +8,13 @@ const currentDirPath = path.dirname(currentFilePath);
 const databaseUrl =
   process.env.TUTORPUTOR_DATABASE_URL ??
   process.env.DATABASE_URL ??
-  `file:${path.resolve(currentDirPath, "prisma", "dev.db")}`;
+  "postgresql://localhost:5432/tutorputor";
 
 export default defineConfig({
   schema: path.resolve(currentDirPath, "prisma", "schema.prisma"),
   datasources: {
     db: {
-      kind: "sqlite",
+      kind: "postgresql",
       url: databaseUrl,
     },
   },

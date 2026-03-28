@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package ghatana.contracts.media.v1;
+
+option java_package = "com.ghatana.contracts.media.v1";
+option java_multiple_files = true;
+option java_outer_classname = "AudioVideoConfigSchemaProto";
+
+message AudioVideoRuntimeConfig {
+  string language_tag = 1;
+  uint32 stt_sample_rate = 2;
+  uint32 stt_channels = 3;
+  uint32 stt_bits_per_sample = 4;
+  uint32 default_image_width = 5;
+  uint32 default_image_height = 6;
+  uint32 sync_tolerance_ms = 7;
+  uint32 sync_audio_buffer_ms = 8;
+  uint32 sync_video_buffer_ms = 9;
+  uint32 default_video_sample_fps = 10;
+  uint32 default_video_max_frames = 11;
+  string stt_model_id = 12;
+  string vision_model_id = 13;
+  string tts_voice_id = 14;
+  bool metrics_enabled = 15;
+  uint32 max_input_streams = 16;
+  uint32 max_output_streams = 17;
+  uint64 device_acquire_timeout_ms = 18;
+  uint64 leak_detection_threshold_ms = 19;
+}

@@ -207,6 +207,9 @@ class AepRemediationTest extends EventloopTestBase {
             EventSchemaValidator.ValidationResult result = validator.validate(null);
             assertThat(result.isValid()).isFalse();
             assertThat(result.firstError()).contains("null");
+            assertThat(result.firstDetail()).isNotNull();
+            assertThat(result.firstDetail().code()).isEqualTo(EventSchemaValidator.ErrorCode.MALFORMED);
+            assertThat(result.firstDetail().field()).isEqualTo("event");
         }
 
         @Test
@@ -218,6 +221,12 @@ class AepRemediationTest extends EventloopTestBase {
             EventSchemaValidator.ValidationResult result = validator.validate(event);
             assertThat(result.isValid()).isFalse();
             assertThat(result.summary()).contains("maximum length");
+            assertThat(result.hasCode(EventSchemaValidator.ErrorCode.SIZE_EXCEEDED)).isTrue();
+            assertThat(result.details())
+                .anySatisfy(detail -> {
+                    assertThat(detail.field()).isEqualTo("event.type");
+                    assertThat(detail.code()).isEqualTo(EventSchemaValidator.ErrorCode.SIZE_EXCEEDED);
+                });
         }
 
         @Test
@@ -289,6 +298,42 @@ class AepRemediationTest extends EventloopTestBase {
                 .build());
             assertThat(eng).isNotNull();
             eng.close();
+        }
+
+        @Test
+        @DisplayName("Aep.create() uses configured consent provider when available")
+        void shouldUseConfiguredConsentProvider() {
+            AepEngine eng = Aep.create(Aep.AepConfig.builder()
+                .consentProvider("deny-all-test")
+                .build());
+            try {
+                AepEngine.ProcessingResult result = runPromise(() -> eng.process(
+                    TENANT_ID,
+                    AepEngine.Event.of("user.clicked", Map.of("buttonId", "buy"))));
+
+                assertThat(result.success()).isFalse();
+                assertThat(result.metadata()).containsEntry("skipped", true);
+                assertThat(result.metadata()).containsEntry("reason", "Event rejected by consent policy");
+            } finally {
+                eng.close();
+            }
+        }
+
+        @Test
+        @DisplayName("Aep.create() falls back to default consent provider when configured provider is missing")
+        void shouldFallbackWhenConsentProviderMissing() {
+            AepEngine eng = Aep.create(Aep.AepConfig.builder()
+                .consentProvider("missing-provider")
+                .build());
+            try {
+                AepEngine.ProcessingResult result = runPromise(() -> eng.process(
+                    TENANT_ID,
+                    AepEngine.Event.of("user.clicked", Map.of("buttonId", "buy"))));
+
+                assertThat(result.success()).isTrue();
+            } finally {
+                eng.close();
+            }
         }
     }
 

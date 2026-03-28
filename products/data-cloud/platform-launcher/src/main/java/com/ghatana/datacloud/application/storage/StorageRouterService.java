@@ -82,7 +82,7 @@ import java.util.*;
  */
 public class StorageRouterService {
 
-    private static final Logger logger = LoggerFactory.getLogger(StorageRouterService.class);
+    private static final Logger log = LoggerFactory.getLogger(StorageRouterService.class);
 
     private static final Duration DEFAULT_CACHE_TTL = Duration.ofMinutes(5);
     private static final String METRIC_ROUTING_DECISION = "storage_routing.decision";
@@ -158,21 +158,21 @@ public class StorageRouterService {
             String collectionName,
             String query) {
         if (tenantId == null || tenantId.isBlank()) {
-            logger.error("Cannot resolve backend: missing tenantId");
+            log.error("Cannot resolve backend: missing tenantId");
             metrics.incrementCounter(METRIC_ROUTING_ERROR, "reason", "missing_tenant");
             return Promise.ofException(
                     new IllegalArgumentException("tenantId cannot be null or blank"));
         }
 
         if (collectionName == null || collectionName.isBlank()) {
-            logger.error("Cannot resolve backend: missing collectionName");
+            log.error("Cannot resolve backend: missing collectionName");
             metrics.incrementCounter(METRIC_ROUTING_ERROR, "reason", "missing_collection");
             return Promise.ofException(
                     new IllegalArgumentException("collectionName cannot be null or blank"));
         }
 
         if (query == null || query.isBlank()) {
-            logger.error("Cannot resolve backend: missing query");
+            log.error("Cannot resolve backend: missing query");
             metrics.incrementCounter(METRIC_ROUTING_ERROR, "reason", "missing_query");
             return Promise.ofException(
                     new IllegalArgumentException("query cannot be null or blank"));
@@ -183,7 +183,7 @@ public class StorageRouterService {
         RoutingTarget cached = routingCache.getIfPresent(cacheKey);
 
         if (cached != null) {
-            logger.debug(
+            log.debug(
                     "Routing cache hit [tenant={}, collection={}]",
                     tenantId,
                     collectionName);
@@ -192,7 +192,7 @@ public class StorageRouterService {
         }
 
         // Cache miss: fetch from repository
-        logger.debug(
+        log.debug(
                 "Routing cache miss [tenant={}, collection={}]",
                 tenantId,
                 collectionName);
@@ -201,7 +201,7 @@ public class StorageRouterService {
         return repository.findByTenantAndName(tenantId, collectionName)
                 .then(profile -> {
                     if (profile.isEmpty()) {
-                        logger.warn(
+                        log.warn(
                                 "No storage profile found for collection [tenant={}, collection={}]",
                                 tenantId,
                                 collectionName);
@@ -217,7 +217,7 @@ public class StorageRouterService {
 
                     // Verify tenant isolation
                     if (!storageProfile.getTenantId().equals(tenantId)) {
-                        logger.error(
+                        log.error(
                                 "Tenant mismatch in routing [requested={}, actual={}]",
                                 tenantId,
                                 storageProfile.getTenantId());
@@ -240,7 +240,7 @@ public class StorageRouterService {
                     // Cache the result
                     routingCache.put(cacheKey, target);
 
-                    logger.debug(
+                    log.debug(
                             "Resolved backend routing [tenant={}, collection={}, primary={}, fallbacks={}]",
                             tenantId,
                             collectionName,
@@ -279,7 +279,7 @@ public class StorageRouterService {
         return repository.findByTenantAndName(tenantId, collectionName)
                 .then(profile -> {
                     if (profile.isEmpty()) {
-                        logger.warn(
+                        log.warn(
                                 "No profile found for backends lookup [tenant={}, collection={}]",
                                 tenantId,
                                 collectionName);
@@ -295,7 +295,7 @@ public class StorageRouterService {
                     backends.add(storageProfile.getPrimaryBackendId());
                     backends.addAll(storageProfile.getFallbackBackendIds());
 
-                    logger.debug(
+                    log.debug(
                             "Listed all available backends [tenant={}, collection={}, count={}]",
                             tenantId,
                             collectionName,
@@ -322,7 +322,7 @@ public class StorageRouterService {
         String cacheKey = makeCacheKey(tenantId, collectionName);
         routingCache.invalidate(cacheKey);
 
-        logger.debug(
+        log.debug(
                 "Invalidated routing cache [tenant={}, collection={}]",
                 tenantId,
                 collectionName);
@@ -348,7 +348,7 @@ public class StorageRouterService {
 
         keysToRemove.forEach(routingCache::invalidate);
 
-        logger.debug(
+        log.debug(
                 "Invalidated all routing cache for tenant [tenant={}, count={}]",
                 tenantId,
                 keysToRemove.size());
@@ -368,7 +368,7 @@ public class StorageRouterService {
      */
     public void clearCache() {
         routingCache.invalidateAll();
-        logger.info("Cleared all routing cache");
+        log.info("Cleared all routing cache");
     }
 
     /**

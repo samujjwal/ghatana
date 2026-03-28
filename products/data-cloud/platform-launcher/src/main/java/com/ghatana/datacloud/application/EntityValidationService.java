@@ -96,7 +96,7 @@ import java.util.*;
  */
 public class EntityValidationService {
 
-    private static final Logger logger = LoggerFactory.getLogger(EntityValidationService.class);
+    private static final Logger log = LoggerFactory.getLogger(EntityValidationService.class);
 
     private final CollectionRepository collectionRepository;
     private final ValidationService validationService;
@@ -152,7 +152,7 @@ public class EntityValidationService {
         validateParameters(tenantId, collectionName);
         Objects.requireNonNull(entityData, "entityData cannot be null");
 
-        logger.debug("Validating entity: tenantId={}, collection={}, dataSize={}",
+        log.debug("Validating entity: tenantId={}, collection={}, dataSize={}",
                 tenantId, collectionName, entityData.size());
 
         // Fetch collection schema
@@ -164,7 +164,7 @@ public class EntityValidationService {
             metrics.incrementCounter("entity.validation.collection_not_found",
                     "tenant", tenantId,
                     "collection", collectionName);
-            logger.warn("Collection repository returned null promise for validation: tenantId={}, collection={}",
+            log.warn("Collection repository returned null promise for validation: tenantId={}, collection={}",
                     tenantId, collectionName);
             return Promise.of(new EntityValidationResult(
                     false,
@@ -181,7 +181,7 @@ public class EntityValidationService {
                         metrics.incrementCounter("entity.validation.collection_not_found",
                                 "tenant", tenantId,
                                 "collection", collectionName);
-                        logger.warn("Collection not found for validation: tenantId={}, collection={}",
+                        log.warn("Collection not found for validation: tenantId={}, collection={}",
                                 tenantId, collectionName);
                         return Promise.of(new EntityValidationResult(
                                 false,
@@ -198,7 +198,7 @@ public class EntityValidationService {
                         metrics.incrementCounter("entity.validation.collection_inactive",
                                 "tenant", tenantId,
                                 "collection", collectionName);
-                        logger.warn("Collection is inactive: tenantId={}, collection={}",
+                        log.warn("Collection is inactive: tenantId={}, collection={}",
                                 tenantId, collectionName);
                         return Promise.of(new EntityValidationResult(
                                 false,
@@ -216,14 +216,14 @@ public class EntityValidationService {
                                     metrics.incrementCounter("entity.validation.success",
                                             "tenant", tenantId,
                                             "collection", collectionName);
-                                    logger.debug("Entity validation passed: tenantId={}, collection={}",
+                                    log.debug("Entity validation passed: tenantId={}, collection={}",
                                             tenantId, collectionName);
                                 } else {
                                     metrics.incrementCounter("entity.validation.failed",
                                             "tenant", tenantId,
                                             "collection", collectionName,
                                             "error_count", String.valueOf(validationResult.getErrors().size()));
-                                    logger.warn("Entity validation failed: tenantId={}, collection={}, errors={}",
+                                    log.warn("Entity validation failed: tenantId={}, collection={}, errors={}",
                                             tenantId, collectionName, validationResult.getErrors().size());
                                 }
 
@@ -239,7 +239,7 @@ public class EntityValidationService {
                                 "tenant", tenantId,
                                 "collection", collectionName,
                                 "error_type", exception.getClass().getSimpleName());
-                        logger.error("Entity validation error: tenantId={}, collection={}",
+                        log.error("Entity validation error: tenantId={}, collection={}",
                                 tenantId, collectionName, exception);
                     }
                 });
@@ -271,7 +271,7 @@ public class EntityValidationService {
         CachedSchema cachedSchema = schemaCache.get(cacheKey);
         if (cachedSchema != null && !cachedSchema.isExpired()) {
             // Use cached schema
-            logger.debug("Using cached schema: tenantId={}, collection={}",
+            log.debug("Using cached schema: tenantId={}, collection={}",
                     tenantId, collectionName);
             metrics.incrementCounter("entity.validation.cache_hit",
                     "tenant", tenantId,
@@ -334,7 +334,7 @@ public class EntityValidationService {
      * Clears validation schema cache (useful for testing or manual refresh).
      */
     public void clearSchemaCache() {
-        logger.info("Clearing entity validation schema cache");
+        log.info("Clearing entity validation schema cache");
         schemaCache.clear();
     }
 
@@ -347,7 +347,7 @@ public class EntityValidationService {
     public void clearSchemaCacheEntry(String tenantId, String collectionName) {
         String key = getCacheKey(tenantId, collectionName);
         schemaCache.remove(key);
-        logger.debug("Cleared schema cache entry: tenantId={}, collection={}",
+        log.debug("Cleared schema cache entry: tenantId={}, collection={}",
                 tenantId, collectionName);
     }
 

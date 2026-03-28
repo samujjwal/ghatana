@@ -6,6 +6,7 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadReque
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.kernel.util.TypedDataSerializer;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.InMemoryCacheAdapter;
@@ -49,7 +50,7 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class ConsentManagementService implements ConsentService {
+public class ConsentManagementService implements ConsentService, KernelLifecycleAware {
 
     private static final String CONSENT_DATASET = "phr.consent.grants";
     private static final String AUDIT_DATASET = "phr.consent.audit";
@@ -816,7 +817,7 @@ public class ConsentManagementService implements ConsentService {
     /**
      * Thrown when a consent operation exceeds the per-actor rate limit.
      */
-    public static class RateLimitExceededException extends RuntimeException {
+    public static class RateLimitExceededException extends com.ghatana.platform.core.exception.RateLimitExceededException {
         public RateLimitExceededException(String message) {
             super(message);
         }

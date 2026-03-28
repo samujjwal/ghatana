@@ -29,10 +29,15 @@ import java.util.List;
  * @doc.layer product
  * @doc.pattern Service
  */
-public final class DefaultConsentService implements ConsentService {
+public final class DefaultConsentService implements ConsentProvider {
 
     /** The canonical event-processing purpose identifier. */
     public static final String EVENT_PROCESSING_PURPOSE = "event_processing";
+
+    @Override
+    public String name() {
+        return "default";
+    }
 
     @Override
     public Promise<ConsentDecision> evaluateConsent(String tenantId, AepEngine.Event event) {

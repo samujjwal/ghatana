@@ -1,3 +1,17 @@
+/**
+ * useAuth — TutorPutor Admin product hook.
+ *
+ * Verifies the session against `/api/v1/auth/me` and stores the result in a
+ * Jotai atom. Exposes `user`, `tenantId`, and `accessToken` for admin views.
+ *
+ * For generic token-level auth shared across products, use
+ * {@link @ghatana/platform-shell#useAuth} instead.
+ *
+ * @doc.type hook
+ * @doc.purpose TutorPutor Admin session check + auth state
+ * @doc.layer product
+ * @doc.pattern Custom Hook
+ */
 import { atom, useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import type { UserSummary, TenantId } from "@tutorputor/contracts/v1/types";

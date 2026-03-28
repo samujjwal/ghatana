@@ -1,6 +1,7 @@
 package com.ghatana.products.yappc.design.figma;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -259,7 +260,7 @@ public class FigmaClient {
      * @doc.layer product
      * @doc.pattern Exception
      */
-    public static class FigmaApiException extends RuntimeException {
+    public static class FigmaApiException extends ServiceException {
         public FigmaApiException(String message) {
             super(message);
         }

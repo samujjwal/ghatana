@@ -1,6 +1,7 @@
 package com.ghatana.products.finance.domains.compliance.service;
 
 import com.ghatana.products.finance.domains.compliance.domain.*;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +77,7 @@ public class JurisdictionRuleRouterService {
 
     public record OpaDecision(boolean allow, boolean requiresReview, String reason) {}
 
-    public static class PolicyNotFoundException extends RuntimeException {
+    public static class PolicyNotFoundException extends ResourceNotFoundException {
         public PolicyNotFoundException(String path) {
             super("OPA policy not found: " + path);
         }

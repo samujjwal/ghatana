@@ -6,6 +6,7 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadReque
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.kernel.util.TypedDataSerializer;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -34,7 +35,7 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class BillingService {
+public class BillingService implements KernelLifecycleAware {
 
     private static final String ENCOUNTER_DATASET = "phr.billing.encounters";
     private static final String CLAIM_DATASET = "phr.billing.claims";

@@ -222,6 +222,11 @@ import java.util.UUID;
  *                   <li>PreparedStatement not cached: Created per operation (use pg_stat_statements
  *                       for query plan caching)</li>
  *                 </ul>
+ *
+ * @doc.type class
+ * @doc.purpose PostgreSQL implementation of PatternRepository with metrics instrumentation
+ * @doc.layer product
+ * @doc.pattern Repository
  */
 public class PostgresPatternRepository implements PatternRepository {
     

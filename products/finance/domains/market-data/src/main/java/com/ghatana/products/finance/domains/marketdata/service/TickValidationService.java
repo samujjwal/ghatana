@@ -4,6 +4,7 @@ import com.ghatana.products.finance.domains.marketdata.domain.MarketTick;
 import com.ghatana.products.finance.domains.marketdata.domain.TickSource;
 import com.ghatana.products.finance.domains.marketdata.port.MarketDataStore;
 import com.ghatana.products.finance.domains.referencedata.domain.Instrument;
+import com.ghatana.platform.core.exception.ValidationException;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -121,13 +122,13 @@ public class TickValidationService {
     // Checked exceptions
     // -----------------------------------------------------------------------
 
-    public static final class FutureDateTickException extends RuntimeException {
+    public static final class FutureDateTickException extends ValidationException {
         public FutureDateTickException(Instant ts) {
             super("Tick timestamp is in the future: " + ts);
         }
     }
 
-    public static final class NegativeVolumeException extends RuntimeException {
+    public static final class NegativeVolumeException extends ValidationException {
         public NegativeVolumeException(long volume) {
             super("Tick volume must be ≥ 0, got: " + volume);
         }

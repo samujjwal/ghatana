@@ -68,7 +68,11 @@ export function createLearningService(
 ): HealthAwareLearningService {
   return {
     async getDashboard(tenantId, userId) {
-      const [enrollments, modules] = await prisma.$transaction([
+      const [user, enrollments, modules] = await prisma.$transaction([
+        prisma.user.findFirst({
+          where: { tenantId, id: userId },
+          select: { id: true, email: true, displayName: true, role: true },
+        }),
         prisma.enrollment.findMany({
           where: { tenantId, userId },
           orderBy: { updatedAt: "desc" },
@@ -86,8 +90,17 @@ export function createLearningService(
         }),
       ]);
 
+      if (!user) {
+        throw new Error(`User ${userId} not found in tenant ${tenantId}`);
+      }
+
       return {
-        user: buildUserSummary(userId),
+        user: {
+          id: user.id as UserId,
+          email: user.email,
+          displayName: user.displayName,
+          role: user.role,
+        },
         currentEnrollments: enrollments.map(mapEnrollment),
         recommendedModules: modules.map((module: any) =>
           mapModuleSummary(module),
@@ -194,15 +207,6 @@ async function assertModuleExists(
 
 export function clampProgress(current: number, requested: number) {
   return Math.max(current, Math.min(requested, 100));
-}
-
-function buildUserSummary(userId: UserId): DashboardSummary["user"] {
-  return {
-    id: userId,
-    email: `${userId}@students.tutorputor.local`,
-    displayName: "TutorPutor Learner",
-    role: "student",
-  };
 }
 
 function mapEnrollment(record: any): Enrollment {

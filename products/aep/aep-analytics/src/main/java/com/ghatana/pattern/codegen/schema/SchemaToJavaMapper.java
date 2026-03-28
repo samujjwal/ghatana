@@ -7,10 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ghatana.platform.domain.event.EventParameterSpec;
 import com.ghatana.platform.domain.event.EventParameterType;
 import com.ghatana.platform.domain.event.EventType;
-// PHASE 3 TODO: Circular dependency with libs:validation - temporarily commented out
-// import com.ghatana.platform.core.validation.ValidationError;
-// import com.ghatana.platform.validation.ValidationResult;
-// import com.ghatana.platform.core.validation.json.JsonSchemaValidator;
+// ADR: JSON schema validation deferred — platform JsonSchemaValidator not yet extracted from libs:validation.
+// When the platform module is available, add the validator as a constructor dep and re-enable validateJsonSchema.
 import com.ghatana.pattern.api.codegen.GeneratedTypeKey;
 import com.ghatana.pattern.api.exception.EventClassCompilationException;
 import com.ghatana.pattern.api.model.PatternSpecification;
@@ -37,19 +35,20 @@ import java.util.Set;
 /**
  * Converts event/catalog metadata into strongly-typed field definitions that can be fed to the
  * bytecode generators.
+ *
+ * @doc.type class
+ * @doc.purpose Maps event schema and catalog metadata to typed code-generation field definitions
+ * @doc.layer product
+ * @doc.pattern Mapper
  */
 public final class SchemaToJavaMapper {
     private static final String BASE_PACKAGE = "com.ghatana.event.core.gen";
 
-    // PHASE 3 TODO: Temporarily removed to break circular dependency
-    // private final JsonSchemaValidator jsonSchemaValidator;
     private final FieldNamingStrategy namingStrategy;
     private final ObjectMapper objectMapper;
 
-    public SchemaToJavaMapper(/* JsonSchemaValidator jsonSchemaValidator, */
-                              FieldNamingStrategy namingStrategy,
+    public SchemaToJavaMapper(FieldNamingStrategy namingStrategy,
                               ObjectMapper objectMapper) {
-        // this.jsonSchemaValidator = Objects.requireNonNull(jsonSchemaValidator, "jsonSchemaValidator");
         this.namingStrategy = Objects.requireNonNull(namingStrategy, "namingStrategy");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
     }
@@ -258,67 +257,6 @@ public final class SchemaToJavaMapper {
     private void validateJsonSchema(String schema,
                                     List<FieldDefinition> payloadFields,
                                     GeneratedTypeKey key) throws EventClassCompilationException {
-        // PHASE 3 TODO: Validation temporarily disabled to break circular dependency
-        // Validation logic commented out - will be re-enabled in Phase 4
-        /*
-        try {
-            ObjectNode sample = objectMapper.createObjectNode();
-            for (FieldDefinition field : payloadFields) {
-                sample.set(field.originalName(), sampleValue(field.javaType()));
-            }
-            ValidationResult result = jsonSchemaValidator.validateSchemaString(schema, objectMapper.writeValueAsString(sample));
-            if (!result.isValid()) {
-                List<EventClassCompilationException.Violation> violations = result.getErrors().stream()
-                        .map(this::toViolation)
-                        .toList();
-                throw new EventClassCompilationException(
-                        EventClassCompilationException.Reason.VALIDATION,
-                        key,
-                        "JSON schema validation failed",
-                        null,
-                        violations
-                );
-            }
-        } catch (EventClassCompilationException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new EventClassCompilationException(
-                    EventClassCompilationException.Reason.SCHEMA_MAP,
-                    key,
-                    "Failed to validate JSON schema",
-                    e,
-                    List.of()
-            );
-        }
-        */
+        // Validation deferred: platform JsonSchemaValidator not yet available (see ADR comment near imports).
     }
-
-    private JsonNode sampleValue(Class<?> javaType) {
-        if (javaType == String.class) {
-            return objectMapper.getNodeFactory().textNode("");
-        } else if (Number.class.isAssignableFrom(javaType)) {
-            return objectMapper.getNodeFactory().numberNode(0);
-        } else if (javaType == Boolean.class) {
-            return objectMapper.getNodeFactory().booleanNode(true);
-        } else if (javaType == Instant.class || javaType == LocalDate.class || javaType == LocalTime.class) {
-            return objectMapper.getNodeFactory().textNode(Instant.now().toString());
-        } else if (List.class.isAssignableFrom(javaType)) {
-            ArrayNode arrayNode = objectMapper.createArrayNode();
-            arrayNode.add("");
-            return arrayNode;
-        } else if (Map.class.isAssignableFrom(javaType)) {
-            ObjectNode objectNode = objectMapper.createObjectNode();
-            objectNode.put("sample", "");
-            return objectNode;
-        } else {
-            return objectMapper.getNodeFactory().nullNode();
-        }
-    }
-
-    // PHASE 3 TODO: Validation temporarily disabled
-    // private EventClassCompilationException.Violation toViolation(ValidationError error) {
-    //     String field = error.getPath() == null ? "" : error.getPath();
-    //     String message = error.getMessage() == null ? "validation error" : error.getMessage();
-    //     return new EventClassCompilationException.Violation(field, message);
-    // }
 }

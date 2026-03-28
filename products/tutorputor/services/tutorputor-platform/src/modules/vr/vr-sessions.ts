@@ -62,7 +62,7 @@ export class VRSessionServiceImpl implements VRSessionService {
         status: 'initializing',
         currentSceneId: lab.scenes[0].id,
         deviceType: data.deviceType,
-        deviceInfo: data.deviceInfo as any,
+        deviceInfo: data.deviceInfo as Record<string, unknown>,
         progress: {
           completedObjectives: [],
           currentObjectiveId: lab.objectives[0]?.id,
@@ -190,7 +190,7 @@ export class VRSessionServiceImpl implements VRSessionService {
     const { tenantId, userId, labId, status, pagination } = args;
     const { page = 1, limit = 20 } = pagination;
 
-    const where: any = { tenantId, userId };
+    const where: Record<string, unknown> = { tenantId, userId };
     if (labId) where.labId = labId;
     if (status) where.status = status;
 
@@ -359,21 +359,21 @@ export class VRSessionServiceImpl implements VRSessionService {
   // Private helper methods
   // ============================================
 
-  private mapToVRSession(session: any): VRSession {
+  private mapToVRSession(session: Record<string, unknown>): VRSession {
     return {
-      id: session.id,
-      userId: session.userId,
-      labId: session.labId,
-      status: session.status,
-      currentSceneId: session.currentSceneId,
-      deviceType: session.deviceType,
-      deviceInfo: session.deviceInfo,
-      progress: session.progress,
-      startedAt: session.startedAt.toISOString(),
-      lastActiveAt: session.lastActiveAt.toISOString(),
-      endedAt: session.endedAt?.toISOString(),
-      totalDuration: session.totalDuration,
-      performanceMetrics: session.performanceMetrics,
+      id: session.id as string,
+      userId: session.userId as string,
+      labId: session.labId as string,
+      status: session.status as string,
+      currentSceneId: session.currentSceneId as string,
+      deviceType: session.deviceType as string,
+      deviceInfo: session.deviceInfo as Record<string, unknown>,
+      progress: session.progress as Record<string, unknown>,
+      startedAt: (session.startedAt as Date).toISOString(),
+      lastActiveAt: (session.lastActiveAt as Date).toISOString(),
+      endedAt: (session.endedAt as Date | undefined)?.toISOString(),
+      totalDuration: session.totalDuration as number,
+      performanceMetrics: session.performanceMetrics as Record<string, unknown>,
     };
   }
 }

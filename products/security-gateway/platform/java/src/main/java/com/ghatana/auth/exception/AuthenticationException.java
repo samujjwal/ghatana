@@ -1,5 +1,7 @@
 package com.ghatana.auth.exception;
 
+import com.ghatana.platform.core.exception.UnauthorizedException;
+
 /**
  * Base exception for authentication failures.
  *
@@ -49,7 +51,7 @@ package com.ghatana.auth.exception;
  * @doc.layer platform
  * @doc.pattern Exception
  */
-public class AuthenticationException extends RuntimeException {
+public class AuthenticationException extends UnauthorizedException {
     
     /**
      * Create exception with message.

@@ -11,6 +11,9 @@
  */
 
 import type { AIProxyService } from "@tutorputor/contracts/v1/services";
+import { createStandaloneLogger } from '@tutorputor/core/logger';
+
+const logger = createStandaloneLogger({ component: 'AIContentGenerationService' });
 import type {
   TenantId,
   UserId,
@@ -99,7 +102,8 @@ export class AIContentGenerationService {
         lastError = new Error("AI concept generation returned empty content");
       } catch (error) {
         lastError = error;
-        console.warn("[AI] Concept generation error", {
+        logger.warn({
+          message: 'AI concept generation error',
           conceptName,
           attempt,
           error: error instanceof Error ? error.message : String(error),

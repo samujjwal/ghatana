@@ -1,5 +1,7 @@
 package com.ghatana.datacloud.backpressure;
 
+import com.ghatana.platform.core.exception.ServiceUnavailableException;
+
 /**
  * Exception thrown when backpressure limits are exceeded.
  *
@@ -24,7 +26,7 @@ package com.ghatana.datacloud.backpressure;
  * @doc.layer infrastructure
  * @doc.pattern Exception
  */
-public class BackpressureException extends RuntimeException {
+public class BackpressureException extends ServiceUnavailableException {
     private static final long serialVersionUID = 1L;
     
     private static final long DEFAULT_RETRY_MS = 1000;

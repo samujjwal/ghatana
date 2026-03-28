@@ -193,7 +193,7 @@ public final class ScalingOperationModels {
 
     // ==================== Service Interfaces ====================
 
-    public interface MetricsCollector {
+    public interface ClusterMetricsCollector {
         ClusterMetrics collectClusterMetrics(String clusterId);
         Map<String, Object> collectNodeMetrics(String nodeId);
         List<ClusterMetrics> collectAllClusterMetrics();

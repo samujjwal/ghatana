@@ -35,7 +35,7 @@ import java.util.concurrent.ForkJoinPool;
  */
 public class CacheService {
 
-    private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
+    private static final Logger log = LoggerFactory.getLogger(CacheService.class);
     private static final int MAX_CACHE_SIZE = 10000;
     private static final long CACHE_TTL_MS = 300000; // 5 minutes
 
@@ -58,7 +58,7 @@ public class CacheService {
 
             if (entry != null && !entry.isExpired()) {
                 hits++;
-                logger.debug("Cache hit: {}", key);
+                log.debug("Cache hit: {}", key);
                 return Promise.of(Optional.of(entry.entity()));
             }
 
@@ -66,7 +66,7 @@ public class CacheService {
             if (entry != null) {
                 cache.remove(key);
             }
-            logger.debug("Cache miss: {}", key);
+            log.debug("Cache miss: {}", key);
             return Promise.of(Optional.empty());
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -88,7 +88,7 @@ public class CacheService {
 
             String key = buildKey(tenantId, collectionName, entity.getId());
             cache.put(key, new CacheEntry(entity, System.currentTimeMillis()));
-            logger.debug("Cached entity: {}", key);
+            log.debug("Cached entity: {}", key);
             return Promise.of(null);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -106,7 +106,7 @@ public class CacheService {
         try {
             String key = buildKey(tenantId, collectionName, entityId);
             cache.remove(key);
-            logger.debug("Invalidated cache: {}", key);
+            log.debug("Invalidated cache: {}", key);
             return Promise.of(null);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -123,7 +123,7 @@ public class CacheService {
         try {
             String prefix = tenantId + ":" + collectionName + ":";
             cache.keySet().removeIf(key -> key.startsWith(prefix));
-            logger.debug("Invalidated collection cache: {}", collectionName);
+            log.debug("Invalidated collection cache: {}", collectionName);
             return Promise.of(null);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -147,7 +147,7 @@ public class CacheService {
     public Promise<Void> clear() {
         try {
             cache.clear();
-            logger.info("Cache cleared");
+            log.info("Cache cleared");
             return Promise.of(null);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -162,7 +162,7 @@ public class CacheService {
         cache.entrySet().stream()
             .min(Comparator.comparingLong(e -> e.getValue().timestamp()))
             .ifPresent(e -> cache.remove(e.getKey()));
-        logger.debug("Evicted oldest cache entry");
+        log.debug("Evicted oldest cache entry");
     }
 
     /**

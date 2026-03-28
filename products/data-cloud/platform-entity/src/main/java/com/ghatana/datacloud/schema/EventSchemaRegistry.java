@@ -6,6 +6,7 @@
 package com.ghatana.datacloud.schema;
 
 import com.ghatana.datacloud.schema.SchemaCompatibilityChecker.CompatibilityResult;
+import com.ghatana.platform.core.exception.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -219,7 +220,7 @@ public class EventSchemaRegistry {
     /**
      * Exception thrown when a schema registration fails compatibility checks.
      */
-    public static class SchemaRegistrationException extends RuntimeException {
+    public static class SchemaRegistrationException extends ServiceException {
         private final String subject;
         private final int version;
         private final CompatibilityMode mode;

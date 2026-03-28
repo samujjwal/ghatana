@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@tutorputor/core/db";
+import { createStandaloneLogger, logError } from '@tutorputor/core/logger';
 import type { DataDeletionResult, RetainedDataInfo } from "./types";
 
 /**
@@ -8,6 +9,7 @@ import type { DataDeletionResult, RetainedDataInfo } from "./types";
  * @doc.pattern Service
  */
 export class DataDeleter {
+  private logger = createStandaloneLogger({ service: 'DataDeleter' });
   private prisma: PrismaClient;
 
   constructor(prisma: PrismaClient) {
@@ -39,7 +41,7 @@ export class DataDeleter {
             // For now, let's assume we can't easily anonymize without a valid ID,
             // so we might delete them OR keep them if the schema allows nullable authorId.
             // Let's check schema later. For now, I'll delete content to be safe.
-          } as any,
+          },
         });
       } catch (_e) {
         // Fallback to delete
@@ -86,7 +88,7 @@ export class DataDeleter {
         retainedData,
       };
     } catch (error) {
-      console.error("Deletion failed", error);
+      logError(this.logger, error as Error, { userId, tenantId });
       return {
         requestId: `del_${userId}_${Date.now()}`,
         status: "failed",

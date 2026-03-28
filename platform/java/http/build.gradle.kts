@@ -38,6 +38,9 @@ dependencies {
     
     // Guava
     api(libs.guava)
+
+    // Caffeine for bounded tenant limiter cache
+    implementation(libs.caffeine)
     
     // JSON Processing
     api(libs.jackson.databind)

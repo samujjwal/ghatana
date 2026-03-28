@@ -44,7 +44,7 @@ import static com.ghatana.platform.observability.util.BlockingExecutors.blocking
  */
 public class AdvancedQueryBuilder {
 
-    private static final Logger logger = LoggerFactory.getLogger(AdvancedQueryBuilder.class);
+    private static final Logger log = LoggerFactory.getLogger(AdvancedQueryBuilder.class);
 
     private final MetaCollection collection;
     private final List<FilterExpression> filters = new ArrayList<>();
@@ -76,7 +76,7 @@ public class AdvancedQueryBuilder {
             throw new IllegalArgumentException("Invalid operator: " + operator);
         }
         filters.add(new FilterExpression(field, operator, value));
-        logger.debug("Added filter: {} {} {}", field, operator, value);
+        log.debug("Added filter: {} {} {}", field, operator, value);
         return this;
     }
 
@@ -92,7 +92,7 @@ public class AdvancedQueryBuilder {
             throw new IllegalArgumentException("IN filter values cannot be empty");
         }
         filters.add(new FilterExpression(field, "IN", new ArrayList<>(values)));
-        logger.debug("Added IN filter: {} IN {}", field, values.size());
+        log.debug("Added IN filter: {} IN {}", field, values.size());
         return this;
     }
 
@@ -109,7 +109,7 @@ public class AdvancedQueryBuilder {
             throw new IllegalArgumentException("BETWEEN boundaries cannot be null");
         }
         filters.add(new FilterExpression(field, "BETWEEN", new Object[]{start, end}));
-        logger.debug("Added BETWEEN filter: {} BETWEEN {} AND {}", field, start, end);
+        log.debug("Added BETWEEN filter: {} BETWEEN {} AND {}", field, start, end);
         return this;
     }
 
@@ -125,7 +125,7 @@ public class AdvancedQueryBuilder {
             throw new IllegalArgumentException("LIKE pattern cannot be empty");
         }
         filters.add(new FilterExpression(field, "LIKE", pattern));
-        logger.debug("Added LIKE filter: {} LIKE {}", field, pattern);
+        log.debug("Added LIKE filter: {} LIKE {}", field, pattern);
         return this;
     }
 
@@ -141,7 +141,7 @@ public class AdvancedQueryBuilder {
             throw new IllegalArgumentException("Invalid direction: " + direction);
         }
         sorts.add(new SortExpression(field, direction, "primary"));
-        logger.debug("Added sort: {} {}", field, direction);
+        log.debug("Added sort: {} {}", field, direction);
         return this;
     }
 
@@ -163,7 +163,7 @@ public class AdvancedQueryBuilder {
             default -> priority = "quaternary";
         }
         sorts.add(new SortExpression(field, direction, priority));
-        logger.debug("Added {} sort: {} {}", priority, field, direction);
+        log.debug("Added {} sort: {} {}", priority, field, direction);
         return this;
     }
 
@@ -175,7 +175,7 @@ public class AdvancedQueryBuilder {
      */
     public AdvancedQueryBuilder withOptimization(boolean enabled) {
         this.optimizationEnabled = enabled;
-        logger.debug("Query optimization: {}", enabled ? "enabled" : "disabled");
+        log.debug("Query optimization: {}", enabled ? "enabled" : "disabled");
         return this;
     }
 
@@ -213,12 +213,12 @@ public class AdvancedQueryBuilder {
      * @return query plan
      */
     public QueryPlan build() {
-        logger.info("Building query with {} filters and {} sorts",
+        log.info("Building query with {} filters and {} sorts",
                 filters.size(), sorts.size());
 
         // Check cache
         if (cachedPlan != null && optimizationEnabled) {
-            logger.debug("Using cached query plan");
+            log.debug("Using cached query plan");
             return cachedPlan;
         }
 
@@ -237,7 +237,7 @@ public class AdvancedQueryBuilder {
             this.cachedPlan = plan;
         }
 
-        logger.info("Query plan built: {} (optimized: {})",
+        log.info("Query plan built: {} (optimized: {})",
                 plan.id(), optimizationEnabled);
 
         return plan;
@@ -352,7 +352,7 @@ public class AdvancedQueryBuilder {
      */
     private Promise<QueryResults> executeQuery(QueryPlan plan) {
         try {
-            logger.info("Executing optimized query: {}", plan.id());
+            log.info("Executing optimized query: {}", plan.id());
             // Placeholder - in production this would execute SQL/JSONB query
             return Promise.of(new QueryResults(plan.id(), Collections.emptyList(), 0, plan.limit));
         } catch (Exception e) {

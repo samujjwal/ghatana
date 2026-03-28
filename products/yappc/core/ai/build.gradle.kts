@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.ghatana.products.yappc"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 description = "YAPPC AI Module - Consolidated AI capabilities (merged: ai + canvas-ai + ai-requirements)"
 

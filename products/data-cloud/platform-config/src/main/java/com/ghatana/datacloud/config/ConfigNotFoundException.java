@@ -1,5 +1,7 @@
 package com.ghatana.datacloud.config;
 
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
+
 /**
  * Exception thrown when a configuration cannot be found.
  *
@@ -8,7 +10,7 @@ package com.ghatana.datacloud.config;
  * @doc.layer core
  * @doc.pattern Exception
  */
-public class ConfigNotFoundException extends RuntimeException {
+public class ConfigNotFoundException extends ResourceNotFoundException {
 
     public ConfigNotFoundException(String message) {
         super(message);

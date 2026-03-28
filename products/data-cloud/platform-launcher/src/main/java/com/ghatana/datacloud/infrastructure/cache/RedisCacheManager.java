@@ -63,7 +63,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class RedisCacheManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(RedisCacheManager.class);
+    private static final Logger log = LoggerFactory.getLogger(RedisCacheManager.class);
 
     private final RedisClient redisClient;
     private final MetricsCollector metrics;
@@ -153,7 +153,7 @@ public class RedisCacheManager {
             .then(
                 result -> Promise.of(result),
                 ex -> {
-                    logger.warn("Cache error for key {}: {}", cacheKey, ex.getMessage());
+                    log.warn("Cache error for key {}: {}", cacheKey, ex.getMessage());
                     metrics.incrementCounter("cache.error", "namespace", namespace);
                     // Return loader result on cache error
                     return loader.get();
@@ -175,15 +175,15 @@ public class RedisCacheManager {
         try {
             Object value = redisClient.get(cacheKey);
             if (value != null) {
-                logger.debug("Cache hit for key: {}", cacheKey);
+                log.debug("Cache hit for key: {}", cacheKey);
                 metrics.incrementCounter("cache.get.success", "namespace", namespace);
             } else {
-                logger.debug("Cache miss for key: {}", cacheKey);
+                log.debug("Cache miss for key: {}", cacheKey);
                 metrics.incrementCounter("cache.get.miss", "namespace", namespace);
             }
             return Promise.of(value);
         } catch (Exception ex) {
-            logger.error("Error getting from cache: {}", cacheKey, ex);
+            log.error("Error getting from cache: {}", cacheKey, ex);
             metrics.incrementCounter("cache.get.error", "namespace", namespace);
             return Promise.ofException(ex);
         }
@@ -208,11 +208,11 @@ public class RedisCacheManager {
 
         try {
             redisClient.set(cacheKey, value, ttlSeconds);
-            logger.debug("Cache set for key: {} with TTL: {}s", cacheKey, ttlSeconds);
+            log.debug("Cache set for key: {} with TTL: {}s", cacheKey, ttlSeconds);
             metrics.incrementCounter("cache.set.success", "namespace", namespace);
             return Promise.of(null);
         } catch (Exception ex) {
-            logger.error("Error setting cache: {}", cacheKey, ex);
+            log.error("Error setting cache: {}", cacheKey, ex);
             metrics.incrementCounter("cache.set.error", "namespace", namespace);
             return Promise.ofException(ex);
         }
@@ -242,11 +242,11 @@ public class RedisCacheManager {
 
         try {
             redisClient.delete(cacheKey);
-            logger.debug("Cache invalidated for key: {}", cacheKey);
+            log.debug("Cache invalidated for key: {}", cacheKey);
             metrics.incrementCounter("cache.invalidate.success", "namespace", namespace);
             return Promise.of(null);
         } catch (Exception ex) {
-            logger.error("Error invalidating cache: {}", cacheKey, ex);
+            log.error("Error invalidating cache: {}", cacheKey, ex);
             metrics.incrementCounter("cache.invalidate.error", "namespace", namespace);
             return Promise.ofException(ex);
         }
@@ -267,13 +267,13 @@ public class RedisCacheManager {
                 .toList();
 
             redisClient.deleteAll(cacheKeys);
-            logger.debug("Cache invalidated for {} keys", keys.size());
+            log.debug("Cache invalidated for {} keys", keys.size());
             metrics.incrementCounter("cache.invalidate_all.success",
                 "namespace", namespace,
                 "count", String.valueOf(keys.size()));
             return Promise.of(null);
         } catch (Exception ex) {
-            logger.error("Error invalidating cache for {} keys", keys.size(), ex);
+            log.error("Error invalidating cache for {} keys", keys.size(), ex);
             metrics.incrementCounter("cache.invalidate_all.error", "namespace", namespace);
             return Promise.ofException(ex);
         }
@@ -288,11 +288,11 @@ public class RedisCacheManager {
         try {
             String pattern = namespace + ":*";
             redisClient.deleteByPattern(pattern);
-            logger.info("Cache cleared for namespace: {}", namespace);
+            log.info("Cache cleared for namespace: {}", namespace);
             metrics.incrementCounter("cache.clear.success", "namespace", namespace);
             return Promise.of(null);
         } catch (Exception ex) {
-            logger.error("Error clearing cache for namespace: {}", namespace, ex);
+            log.error("Error clearing cache for namespace: {}", namespace, ex);
             metrics.incrementCounter("cache.clear.error", "namespace", namespace);
             return Promise.ofException(ex);
         }
@@ -314,10 +314,10 @@ public class RedisCacheManager {
                 System.currentTimeMillis()
             );
 
-            logger.debug("Cache stats: size={}, memory={}", size, memory);
+            log.debug("Cache stats: size={}, memory={}", size, memory);
             return Promise.of(stats);
         } catch (Exception ex) {
-            logger.error("Error getting cache stats", ex);
+            log.error("Error getting cache stats", ex);
             return Promise.ofException(ex);
         }
     }

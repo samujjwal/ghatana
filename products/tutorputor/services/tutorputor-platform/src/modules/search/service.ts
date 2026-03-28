@@ -187,10 +187,10 @@ export class SearchServiceImpl {
     });
 
     // Search threads if type filter allows
-    let threads: any[] = [];
+    let threads: Array<Record<string, unknown>> = [];
     if (!filters?.type || filters.type.includes("thread")) {
       try {
-        threads = await (this.prisma as any).thread.findMany({
+        threads = await (this.prisma as Record<string, unknown>).thread.findMany({
           where: {
             tenantId,
             OR: [
@@ -205,7 +205,7 @@ export class SearchServiceImpl {
     }
 
     // Search learning paths
-    let paths: any[] = [];
+    let paths: Array<Record<string, unknown>> = [];
     if (!filters?.type || filters.type.includes("learning_path")) {
       try {
         paths = await this.prisma.learningPath.findMany({
@@ -224,7 +224,7 @@ export class SearchServiceImpl {
 
     if (!filters?.type || filters.type.includes("module")) {
       results.push(
-        ...modules.map((m: any) => ({
+        ...modules.map((m: Record<string, unknown>) => ({
           id: m.id,
           type: "module" as const,
           title: m.title,
@@ -256,7 +256,7 @@ export class SearchServiceImpl {
 
     if (!filters?.type || filters.type.includes("thread")) {
       results.push(
-        ...threads.map((t: any) => ({
+        ...threads.map((t: Record<string, unknown>) => ({
           id: t.id,
           type: "thread" as const,
           title: t.title,
@@ -271,7 +271,7 @@ export class SearchServiceImpl {
 
     if (!filters?.type || filters.type.includes("learning_path")) {
       results.push(
-        ...paths.map((p: any) => ({
+        ...paths.map((p: Record<string, unknown>) => ({
           id: p.id,
           type: "learning_path" as const,
           title: p.title,
@@ -343,7 +343,7 @@ export class SearchServiceImpl {
       select: { id: true, slug: true, title: true },
     });
 
-    return modules.map((m: any) => ({
+    return modules.map((m: Record<string, unknown>) => ({
       text: m.title,
       type: "module" as const,
       id: m.slug || m.id,
@@ -358,7 +358,7 @@ export class SearchServiceImpl {
       select: { title: true },
     });
 
-    return modules.map((m: any) => m.title);
+    return modules.map((m: Record<string, unknown>) => m.title as string);
   }
 
   async getSimilar(
@@ -384,7 +384,7 @@ export class SearchServiceImpl {
       take: limit,
     });
 
-    return similar.map((m: any) => ({
+    return similar.map((m: Record<string, unknown>) => ({
       id: m.id,
       type: "module" as const,
       title: m.title,

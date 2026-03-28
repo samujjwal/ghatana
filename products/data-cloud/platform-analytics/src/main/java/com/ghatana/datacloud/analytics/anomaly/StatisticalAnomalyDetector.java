@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.OptionalDouble;
 import java.util.stream.Collectors;
 
 /**
@@ -60,7 +61,7 @@ import java.util.stream.Collectors;
  */
 public final class StatisticalAnomalyDetector implements AnomalyDetectionCapability {
 
-    private static final Logger LOG = LoggerFactory.getLogger(StatisticalAnomalyDetector.class);
+    private static final Logger log = LoggerFactory.getLogger(StatisticalAnomalyDetector.class);
 
     /** Maximum entities fetched per baseline update or detection pass. */
     static final int MAX_SAMPLE_SIZE = 10_000;
@@ -92,6 +93,8 @@ public final class StatisticalAnomalyDetector implements AnomalyDetectionCapabil
     private final Counter detectedCritical;
     private final Counter baselineUpdateCounter;
     private final Counter detectionErrorCounter;
+    /** Tracks fields that could not be converted to a numeric value during detection. */
+    private final Counter nonNumericFieldCounter;
     private final Timer   detectionTimer;
 
     /**
@@ -137,6 +140,9 @@ public final class StatisticalAnomalyDetector implements AnomalyDetectionCapabil
         this.detectionErrorCounter = Counter.builder("data_cloud.anomaly.detection_errors")
                 .description("Detection errors")
                 .register(meterRegistry);
+        this.nonNumericFieldCounter = Counter.builder("data_cloud.anomaly.non_numeric_fields")
+                .description("Field values that could not be converted to a numeric type during detection")
+                .register(meterRegistry);
         this.detectionTimer = Timer.builder("data_cloud.anomaly.detection_duration")
                 .description("End-to-end detection latency")
                 .register(meterRegistry);
@@ -176,7 +182,7 @@ public final class StatisticalAnomalyDetector implements AnomalyDetectionCapabil
                 return Promise.of(anomalies);
             } catch (Exception e) {
                 detectionErrorCounter.increment();
-                LOG.error("Anomaly detection failed for tenant={} collection={}",
+                log.error("Anomaly detection failed for tenant={} collection={}",
                         context.getTenantId(), context.getCollectionName(), e);
                 return Promise.ofException(e);
             } finally {
@@ -214,7 +220,7 @@ public final class StatisticalAnomalyDetector implements AnomalyDetectionCapabil
                 updated++;
             }
             baselineUpdateCounter.increment();
-            LOG.debug("Baseline updated tenant={} collection={} fields={}", tenantId, collectionName, updated);
+            log.debug("Baseline updated tenant={} collection={} fields={}", tenantId, collectionName, updated);
             return Promise.complete();
         });
     }
@@ -278,8 +284,12 @@ public final class StatisticalAnomalyDetector implements AnomalyDetectionCapabil
             if (entity.getData() == null) continue;
 
             for (Map.Entry<String, Object> field : entity.getData().entrySet()) {
-                Double value = toDouble(field.getValue());
-                if (value == null) continue;
+                OptionalDouble valueOpt = toOptionalDouble(field.getValue());
+                if (valueOpt.isEmpty()) {
+                    nonNumericFieldCounter.increment();
+                    continue;
+                }
+                double value = valueOpt.getAsDouble();
 
                 String bKey = baselineKey(tenantId, collection, field.getKey());
                 FieldBaseline baseline = baselines.get(bKey);
@@ -312,7 +322,7 @@ public final class StatisticalAnomalyDetector implements AnomalyDetectionCapabil
             }
         }
 
-        LOG.debug("Detection finished tenant={} collection={} entities={} anomalies={}",
+        log.debug("Detection finished tenant={} collection={} entities={} anomalies={}",
                 tenantId, collection, entities.size(), anomalies.size());
         return anomalies;
     }
@@ -324,9 +334,9 @@ public final class StatisticalAnomalyDetector implements AnomalyDetectionCapabil
         for (Entity entity : entities) {
             if (entity.getData() == null) continue;
             for (Map.Entry<String, Object> e : entity.getData().entrySet()) {
-                Double value = toDouble(e.getValue());
-                if (value != null) {
-                    result.computeIfAbsent(e.getKey(), k -> new ArrayList<>()).add(value);
+                OptionalDouble value = toOptionalDouble(e.getValue());
+                if (value.isPresent()) {
+                    result.computeIfAbsent(e.getKey(), k -> new ArrayList<>()).add(value.getAsDouble());
                 }
             }
         }
@@ -492,16 +502,27 @@ public final class StatisticalAnomalyDetector implements AnomalyDetectionCapabil
         return tenantId + "::" + collection + "::" + field;
     }
 
-    private static Double toDouble(Object value) {
-        if (value instanceof Number n) return n.doubleValue();
+    /**
+     * Attempt to convert an arbitrary field value to a double for numeric analysis.
+     *
+     * <p>Returns {@link OptionalDouble#empty()} for {@code null}, boolean, or
+     * complex-object values so the caller can make the skip decision explicit rather
+     * than relying on a {@code null} return value. Unparseable string values also
+     * yield empty; parseable numeric strings (e.g. {@code "3.14"}) are accepted.
+     *
+     * @param value raw field value from the entity data map (may be null)
+     * @return an OptionalDouble containing the numeric equivalent, or empty if not convertible
+     */
+    static OptionalDouble toOptionalDouble(Object value) {
+        if (value instanceof Number n) return OptionalDouble.of(n.doubleValue());
         if (value instanceof String s) {
             try {
-                return Double.parseDouble(s);
+                return OptionalDouble.of(Double.parseDouble(s));
             } catch (NumberFormatException ignored) {
-                // non-numeric string — skip
+                // non-numeric string field — caller decides whether to track the skip
             }
         }
-        return null;
+        return OptionalDouble.empty();
     }
 
     private void recordMetrics(Anomaly anomaly) {

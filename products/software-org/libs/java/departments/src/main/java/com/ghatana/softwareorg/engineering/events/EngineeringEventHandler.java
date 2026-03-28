@@ -12,6 +12,11 @@ import org.slf4j.LoggerFactory;
  * Handles engineering department events. Processes feature requests, commits,
  * builds, code reviews, and quality gates. Emits metrics and side effects for
  * downstream departments.
+ *
+ * @doc.type class
+ * @doc.purpose Engineering event processing coordinator
+ * @doc.layer product
+ * @doc.pattern EventHandler
  */
 public class EngineeringEventHandler {
 

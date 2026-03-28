@@ -50,7 +50,7 @@ import static com.ghatana.platform.observability.util.BlockingExecutors.blocking
  */
 public class RealtimeExecutionMonitor {
 
-    private static final Logger logger = LoggerFactory.getLogger(RealtimeExecutionMonitor.class);
+    private static final Logger log = LoggerFactory.getLogger(RealtimeExecutionMonitor.class);
 
     private final Map<String, ExecutionSubscription> subscriptions = new ConcurrentHashMap<>();
     private final List<ExecutionEvent> offlineEventCache = new CopyOnWriteArrayList<>();
@@ -72,7 +72,7 @@ public class RealtimeExecutionMonitor {
         ExecutionSubscription subscription = new ExecutionSubscription(executionId, listener);
         subscriptions.put(executionId, subscription);
 
-        logger.info("Subscribed to execution: {}", executionId);
+        log.info("Subscribed to execution: {}", executionId);
     }
 
     /**
@@ -82,7 +82,7 @@ public class RealtimeExecutionMonitor {
      */
     public void unsubscribe(String executionId) {
         if (subscriptions.remove(executionId) != null) {
-            logger.info("Unsubscribed from execution: {}", executionId);
+            log.info("Unsubscribed from execution: {}", executionId);
         }
     }
 
@@ -111,7 +111,7 @@ public class RealtimeExecutionMonitor {
         // Cache if offline
         if (!isOnline) {
             cacheOfflineEvent(event);
-            logger.debug("Cached offline event for execution: {}", executionId);
+            log.debug("Cached offline event for execution: {}", executionId);
             return;
         }
 
@@ -143,7 +143,7 @@ public class RealtimeExecutionMonitor {
         );
 
         streamExecutionUpdate(executionId, update);
-        logger.error("Execution error: {} - {}", executionId, error);
+        log.error("Execution error: {} - {}", executionId, error);
     }
 
     /**
@@ -157,7 +157,7 @@ public class RealtimeExecutionMonitor {
             try {
                 subscription.listener().onExecutionEvent(event);
             } catch (Exception e) {
-                logger.error("Error broadcasting event to execution: {}", event.executionId(), e);
+                log.error("Error broadcasting event to execution: {}", event.executionId(), e);
                 unsubscribe(event.executionId());
             }
         }
@@ -185,7 +185,7 @@ public class RealtimeExecutionMonitor {
     public List<ExecutionEvent> getOfflineEvents() {
         List<ExecutionEvent> events = new ArrayList<>(offlineEventCache);
         offlineEventCache.clear();
-        logger.debug("Retrieved {} offline events", events.size());
+        log.debug("Retrieved {} offline events", events.size());
         return events;
     }
 
@@ -197,14 +197,14 @@ public class RealtimeExecutionMonitor {
     public Promise<Void> syncOfflineEvents() {
         try {
             List<ExecutionEvent> events = getOfflineEvents();
-            logger.info("Syncing {} offline events", events.size());
+            log.info("Syncing {} offline events", events.size());
 
             for (ExecutionEvent event : events) {
                 broadcast(event);
             }
 
             isOnline = true;
-            logger.info("Offline events synced successfully");
+            log.info("Offline events synced successfully");
             return Promise.complete();
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -218,7 +218,7 @@ public class RealtimeExecutionMonitor {
      */
     public void setOnlineStatus(boolean online) {
         this.isOnline = online;
-        logger.info("Online status changed: {}", online ? "ONLINE" : "OFFLINE");
+        log.info("Online status changed: {}", online ? "ONLINE" : "OFFLINE");
 
         if (online && !offlineEventCache.isEmpty()) {
             syncOfflineEvents();

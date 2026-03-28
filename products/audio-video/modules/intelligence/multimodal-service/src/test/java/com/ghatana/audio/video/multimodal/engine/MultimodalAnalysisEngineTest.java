@@ -35,8 +35,8 @@ class MultimodalAnalysisEngineTest extends EventloopTestBase {
             .build();
 
         try (MultimodalAnalysisEngine engine = new MultimodalAnalysisEngine(
-                audioData -> audio,
-                new FakeVisionClientAdapter(visual, visual))) {
+            new FakeMediaGateway(audio, visual, visual),
+            AudioVideoRuntimeSettings.defaults())) {
             MultimodalResult result = runPromise(() -> Promise.of(engine.analyse(
                 MultimodalRequest.builder()
                     .audioData(new byte[] {1, 2, 3})
@@ -79,8 +79,8 @@ class MultimodalAnalysisEngineTest extends EventloopTestBase {
             .build();
 
         try (MultimodalAnalysisEngine engine = new MultimodalAnalysisEngine(
-                audioData -> audio,
-                new FakeVisionClientAdapter(VisualResult.error("unused"), video))) {
+            new FakeMediaGateway(audio, VisualResult.error("unused"), video),
+            AudioVideoRuntimeSettings.defaults())) {
             VideoAudioResult result = runPromise(() -> Promise.of(
                 engine.analyseVideoWithAudio(new byte[] {9, 8, 7}, true, true, 2)
             ));
@@ -88,29 +88,51 @@ class MultimodalAnalysisEngineTest extends EventloopTestBase {
             assertEquals(2, result.getTemporalAlignments().size());
             assertEquals("hello", result.getTemporalAlignments().get(0).getSpeechText());
             assertEquals("world", result.getTemporalAlignments().get(1).getSpeechText());
+            assertTrue(result.getTemporalAlignments().get(0).getSyncConfidence() > 0.0);
             assertTrue(result.getCombinedNarrative().contains("[0s] \"hello\""));
             assertTrue(result.getCombinedNarrative().contains("[1s] \"world\""));
             assertFalse(result.getVideoResult().isError());
         }
     }
 
-    private static final class FakeVisionClientAdapter implements VisionClientAdapter {
+    private static final class FakeMediaGateway implements MultimodalMediaGateway {
+        private final AudioResult audioResult;
         private final VisualResult imageResult;
         private final VisualResult videoResult;
 
-        private FakeVisionClientAdapter(VisualResult imageResult, VisualResult videoResult) {
+        private FakeMediaGateway(AudioResult audioResult, VisualResult imageResult, VisualResult videoResult) {
+            this.audioResult = audioResult;
             this.imageResult = imageResult;
             this.videoResult = videoResult;
         }
 
         @Override
-        public VisualResult detectObjects(byte[] imageData) {
+        public AudioResult transcribe(byte[] audioData) {
+            return audioResult;
+        }
+
+        @Override
+        public VisualResult analyseImage(byte[] imageData) {
             return imageResult;
         }
 
         @Override
         public VisualResult analyseVideo(byte[] videoData, int sampleFps, int maxFrames) {
             return videoResult;
+        }
+
+        @Override
+        public String backendName() {
+            return "test";
+        }
+
+        @Override
+        public boolean metricsEnabled() {
+            return true;
+        }
+
+        @Override
+        public void close() {
         }
     }
 }

@@ -1,20 +1,15 @@
 package com.ghatana.core.pipeline;
 
 import com.ghatana.core.operator.OperatorId;
-import com.ghatana.core.operator.OperatorResult;
-import com.ghatana.core.operator.OperatorState;
-import com.ghatana.core.operator.UnifiedOperator;
-import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.platform.domain.event.Event;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -101,6 +96,24 @@ public class PipelineExecutionEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(PipelineExecutionEngine.class);
 
+    private final PipelineExecutionGraphBuilder graphBuilder;
+    private final PipelineStageExecutor stageExecutor;
+    private final PipelineEventRouter eventRouter;
+
+    public PipelineExecutionEngine() {
+        this(new PipelineExecutionGraphBuilder(), new PipelineStageExecutor(), new PipelineEventRouter());
+    }
+
+    PipelineExecutionEngine(
+            PipelineExecutionGraphBuilder graphBuilder,
+            PipelineStageExecutor stageExecutor,
+            PipelineEventRouter eventRouter
+    ) {
+        this.graphBuilder = Objects.requireNonNull(graphBuilder, "graphBuilder cannot be null");
+        this.stageExecutor = Objects.requireNonNull(stageExecutor, "stageExecutor cannot be null");
+        this.eventRouter = Objects.requireNonNull(eventRouter, "eventRouter cannot be null");
+    }
+
     /**
      * Executes a pipeline's DAG against an input event.
      *
@@ -131,128 +144,10 @@ public class PipelineExecutionEngine {
         }
 
         // Step 2: Build execution graph
-        ExecutionGraph graph = buildExecutionGraph(pipeline);
+        PipelineExecutionGraph graph = graphBuilder.build(pipeline);
 
         // Step 3: Execute stages in topological order
         return executeStages(pipeline, inputEvent, context, graph, startTimeMs);
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // Graph construction
-    // ════════════════════════════════════════════════════════════════
-
-    /**
-     * Builds the execution graph: adjacency lists segmented by edge label,
-     * in-degree map, and source/terminal stage identification.
-     */
-    private ExecutionGraph buildExecutionGraph(Pipeline pipeline) {
-        List<PipelineStage> stages = pipeline.getStages();
-        List<PipelineEdge> edges = pipeline.getEdges();
-
-        // Stage lookup
-        Map<String, PipelineStage> stageMap = new LinkedHashMap<>();
-        for (PipelineStage stage : stages) {
-            stageMap.put(stage.stageId(), stage);
-        }
-
-        // Adjacency lists by edge label
-        Map<String, List<EdgeTarget>> primaryAdj = new LinkedHashMap<>();
-        Map<String, List<EdgeTarget>> errorAdj = new LinkedHashMap<>();
-        Map<String, List<EdgeTarget>> fallbackAdj = new LinkedHashMap<>();
-        Map<String, List<EdgeTarget>> broadcastAdj = new LinkedHashMap<>();
-
-        // Incoming edge tracker (for source identification — any edge type disqualifies)
-        Set<String> hasIncomingEdge = new HashSet<>();
-
-        for (PipelineStage s : stages) {
-            primaryAdj.put(s.stageId(), new ArrayList<>());
-            errorAdj.put(s.stageId(), new ArrayList<>());
-            fallbackAdj.put(s.stageId(), new ArrayList<>());
-            broadcastAdj.put(s.stageId(), new ArrayList<>());
-        }
-
-        for (PipelineEdge edge : edges) {
-            EdgeTarget target = new EdgeTarget(edge.to(), edge.label());
-            hasIncomingEdge.add(edge.to()); // Any edge disqualifies from being a source
-            switch (edge.label()) {
-                case PipelineEdge.LABEL_PRIMARY -> primaryAdj.get(edge.from()).add(target);
-                case PipelineEdge.LABEL_ERROR -> errorAdj.get(edge.from()).add(target);
-                case PipelineEdge.LABEL_FALLBACK -> fallbackAdj.get(edge.from()).add(target);
-                case PipelineEdge.LABEL_BROADCAST -> broadcastAdj.get(edge.from()).add(target);
-                default -> primaryAdj.get(edge.from()).add(target);
-            }
-        }
-
-        // Source stages: no incoming edges of any kind
-        List<String> sourceStages = new ArrayList<>();
-        for (PipelineStage stage : stages) {
-            if (!hasIncomingEdge.contains(stage.stageId())) {
-                sourceStages.add(stage.stageId());
-            }
-        }
-
-        // Terminal stages: no outgoing primary/broadcast edges
-        List<String> terminalStages = new ArrayList<>();
-        for (PipelineStage stage : stages) {
-            String sid = stage.stageId();
-            if (primaryAdj.get(sid).isEmpty() && broadcastAdj.get(sid).isEmpty()) {
-                terminalStages.add(sid);
-            }
-        }
-
-        // Topological sort via Kahn's algorithm (primary + broadcast edges only)
-        List<String> topoOrder = topologicalSort(stages, edges);
-
-        return new ExecutionGraph(stageMap, primaryAdj, errorAdj, fallbackAdj, broadcastAdj,
-                sourceStages, terminalStages, topoOrder);
-    }
-
-    /**
-     * Kahn's algorithm for topological sort. Uses primary and broadcast edges
-     * (which define the data-flow DAG). Error and fallback edges are excluded
-     * since they are conditional and don't create data-flow dependencies.
-     */
-    private List<String> topologicalSort(List<PipelineStage> stages, List<PipelineEdge> edges) {
-        Map<String, Integer> inDegree = new LinkedHashMap<>();
-        Map<String, List<String>> adj = new LinkedHashMap<>();
-
-        for (PipelineStage s : stages) {
-            inDegree.put(s.stageId(), 0);
-            adj.put(s.stageId(), new ArrayList<>());
-        }
-
-        for (PipelineEdge e : edges) {
-            String label = e.label();
-            // Only primary and broadcast edges form the data-flow DAG
-            if (PipelineEdge.LABEL_PRIMARY.equals(label) || PipelineEdge.LABEL_BROADCAST.equals(label)) {
-                adj.get(e.from()).add(e.to());
-                inDegree.merge(e.to(), 1, Integer::sum);
-            }
-        }
-
-        Queue<String> queue = new LinkedList<>();
-        for (var entry : inDegree.entrySet()) {
-            if (entry.getValue() == 0) {
-                queue.add(entry.getKey());
-            }
-        }
-
-        List<String> result = new ArrayList<>();
-        while (!queue.isEmpty()) {
-            String curr = queue.poll();
-            result.add(curr);
-            for (String neighbor : adj.getOrDefault(curr, List.of())) {
-                int newDeg = inDegree.merge(neighbor, -1, Integer::sum);
-                if (newDeg == 0) {
-                    queue.add(neighbor);
-                }
-            }
-        }
-
-        if (result.size() != stages.size()) {
-            throw new IllegalStateException("Pipeline contains a cycle — topological sort failed");
-        }
-        return result;
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -265,13 +160,13 @@ public class PipelineExecutionEngine {
      */
     private Promise<PipelineExecutionResult> executeStages(
             Pipeline pipeline, Event inputEvent, PipelineExecutionContext context,
-            ExecutionGraph graph, long startTimeMs) {
+            PipelineExecutionGraph graph, long startTimeMs) {
 
         // Per-stage input accumulator: stageId → list of events to process
-        Map<String, List<Event>> stageInputs = new ConcurrentHashMap<>();
+        Map<String, List<Event>> stageInputs = new java.util.concurrent.ConcurrentHashMap<>();
 
         // Seed source stages with the pipeline input event
-        for (String sourceStageId : graph.sourceStages) {
+        for (String sourceStageId : graph.sourceStages()) {
             stageInputs.computeIfAbsent(sourceStageId, k -> new ArrayList<>()).add(inputEvent);
         }
 
@@ -279,7 +174,7 @@ public class PipelineExecutionEngine {
         List<StageExecutionResult> stageResults = new ArrayList<>();
 
         // Execute in topological order (sequential — Promise chain)
-        return executeStageSequence(graph.topoOrder, 0, graph, context, stageInputs, stageResults)
+        return executeStageSequence(graph.topoOrder(), 0, graph, context, stageInputs, stageResults)
                 .map(unused -> buildFinalResult(pipeline.getId(), inputEvent, graph, stageInputs,
                         stageResults, startTimeMs));
     }
@@ -288,7 +183,7 @@ public class PipelineExecutionEngine {
      * Recursively executes stages in topological order via Promise chaining.
      */
     private Promise<Void> executeStageSequence(
-            List<String> topoOrder, int index, ExecutionGraph graph,
+            List<String> topoOrder, int index, PipelineExecutionGraph graph,
             PipelineExecutionContext context, Map<String, List<Event>> stageInputs,
             List<StageExecutionResult> stageResults) {
 
@@ -304,7 +199,7 @@ public class PipelineExecutionEngine {
         }
 
         String stageId = topoOrder.get(index);
-        PipelineStage stage = graph.stageMap.get(stageId);
+        PipelineStage stage = graph.stageMap().get(stageId);
 
         if (stage == null) {
             logger.warn("Stage {} not found in pipeline, skipping", stageId);
@@ -317,21 +212,21 @@ public class PipelineExecutionEngine {
         if (inputs.isEmpty()) {
             // No input events — activate fallback edge if present
             logger.debug("Stage {} has no input events, checking fallback edges", stageId);
-            activateFallbackEdges(stageId, graph, stageInputs, context);
+            eventRouter.activateFallbackEdges(stageId, graph, stageInputs);
             return executeStageSequence(topoOrder, index + 1, graph, context, stageInputs, stageResults);
         }
 
         // Execute the stage
-        return executeSingleStage(stageId, stage, inputs, graph, context)
+        return stageExecutor.executeSingleStage(stageId, stage, inputs, context)
                 .then(result -> {
                     stageResults.add(result);
 
                     if (result.success()) {
                         // Route outputs to downstream stages
-                        routeOutputs(stageId, result, graph, stageInputs);
+                        eventRouter.routeOutputs(stageId, result, graph, stageInputs);
                     } else {
                         // Route to error edges
-                        routeError(stageId, inputs, graph, stageInputs);
+                        eventRouter.routeError(stageId, inputs, graph, stageInputs);
 
                         if (!context.isContinueOnError()) {
                             logger.error("Stage {} failed and continueOnError=false, aborting pipeline: {}",
@@ -348,204 +243,6 @@ public class PipelineExecutionEngine {
                 });
     }
 
-    /**
-     * Executes a single stage: resolves operator, processes all input events,
-     * merges results.
-     */
-    private Promise<StageExecutionResult> executeSingleStage(
-            String stageId, PipelineStage stage, List<Event> inputs,
-            ExecutionGraph graph, PipelineExecutionContext context) {
-
-        OperatorId operatorId = stage.operatorId();
-        OperatorCatalog catalog = context.getOperatorCatalog();
-        Instant stageStart = Instant.now();
-
-        logger.debug("Executing stage '{}' with operator {} ({} input event(s))",
-                stageId, operatorId, inputs.size());
-
-        return catalog.get(operatorId)
-                .then(optionalOp -> {
-                    if (optionalOp.isEmpty()) {
-                        Duration dur = Duration.between(stageStart, Instant.now());
-                        String msg = String.format("Operator not found in catalog: %s (stage: %s)", operatorId, stageId);
-                        logger.error(msg);
-                        return Promise.of(StageExecutionResult.failure(stageId, operatorId, inputs, dur, msg));
-                    }
-
-                    UnifiedOperator operator = optionalOp.get();
-
-                    // Validate operator is in a processable state
-                    OperatorState opState = operator.getState();
-                    if (opState != OperatorState.RUNNING && opState != OperatorState.INITIALIZED) {
-                        Duration dur = Duration.between(stageStart, Instant.now());
-                        String msg = String.format("Operator %s is in non-processable state: %s (stage: %s)",
-                                operatorId, opState, stageId);
-                        logger.error(msg);
-                        return Promise.of(StageExecutionResult.failure(stageId, operatorId, inputs, dur, msg));
-                    }
-
-                    // Process each input event and merge results
-                    return processInputEvents(operator, inputs)
-                            .map(mergedResult -> {
-                                Duration dur = Duration.between(stageStart, Instant.now());
-                                if (mergedResult.isSuccess()) {
-                                    logger.debug("Stage '{}' succeeded: {} output event(s) in {}ms",
-                                            stageId, mergedResult.getOutputEvents().size(), dur.toMillis());
-                                    return StageExecutionResult.success(stageId, operatorId, inputs,
-                                            mergedResult, dur);
-                                } else {
-                                    logger.warn("Stage '{}' operator returned failure: {}",
-                                            stageId, mergedResult.getErrorMessage());
-                                    return StageExecutionResult.failure(stageId, operatorId, inputs,
-                                            dur, mergedResult.getErrorMessage());
-                                }
-                            })
-                            .mapException(ex -> {
-                                logger.error("Stage '{}' threw exception: {}", stageId, ex.getMessage(), ex);
-                                return new RuntimeException(
-                                        String.format("Stage '%s' operator exception: %s", stageId, ex.getMessage()), ex);
-                            });
-                })
-                .mapException(ex -> {
-                    // Catalog lookup failure
-                    logger.error("Failed to resolve operator {} for stage '{}': {}",
-                            operatorId, stageId, ex.getMessage(), ex);
-                    return new RuntimeException(
-                            String.format("Operator catalog error for stage '%s': %s", stageId, ex.getMessage()), ex);
-                })
-                // Convert exceptions to StageExecutionResult.failure
-                .then(
-                        result -> Promise.of(result),
-                        ex -> {
-                            Duration dur = Duration.between(stageStart, Instant.now());
-                            return Promise.of(StageExecutionResult.failure(
-                                    stageId, operatorId, inputs, dur, ex.getMessage()));
-                        }
-                );
-    }
-
-    /**
-     * Processes all input events through an operator, merging results.
-     * For single-event input (common path), directly invokes {@code process()}.
-     * For multiple events, processes sequentially and merges via {@link OperatorResult.Builder#mergeWith}.
-     */
-    private Promise<OperatorResult> processInputEvents(UnifiedOperator operator, List<Event> inputs) {
-        // Guard against synchronous throws from operators — they must be converted to
-        // a failed Promise so the engine's mapException/then-error-handler can catch them.
-        try {
-            if (inputs.size() == 1) {
-                return operator.process(inputs.get(0));
-            }
-
-            // Multiple inputs: process sequentially, merge results via Builder
-            return processSequential(operator, inputs, 0,
-                    OperatorResult.builder().success());
-        } catch (Exception e) {
-            logger.warn("Operator '{}' threw synchronously during process(): {}",
-                    operator.getId(), e.getMessage(), e);
-            return Promise.ofException(e);
-        }
-    }
-
-    /**
-     * Processes events sequentially through an operator, accumulating merged results.
-     */
-    private Promise<OperatorResult> processSequential(UnifiedOperator operator, List<Event> inputs,
-                                                       int index, OperatorResult.Builder accumulator) {
-        if (index >= inputs.size()) {
-            return Promise.of(accumulator.build());
-        }
-
-        return operator.process(inputs.get(index))
-                .then(result -> {
-                    accumulator.mergeWith(result);
-                    return processSequential(operator, inputs, index + 1, accumulator);
-                });
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // Output routing
-    // ════════════════════════════════════════════════════════════════
-
-    /**
-     * Routes successful stage outputs to downstream stages via primary and broadcast edges.
-     */
-    private void routeOutputs(String stageId, StageExecutionResult result,
-                               ExecutionGraph graph, Map<String, List<Event>> stageInputs) {
-        List<Event> outputs = result.getOutputEvents();
-
-        if (outputs.isEmpty()) {
-            // No output — activate fallback edges
-            logger.debug("Stage '{}' produced no output, activating fallback edges", stageId);
-            activateFallbackEdges(stageId, graph, stageInputs, null);
-            return;
-        }
-
-        // Route to primary downstream stages
-        for (EdgeTarget target : graph.primaryAdj.getOrDefault(stageId, List.of())) {
-            stageInputs.computeIfAbsent(target.stageId, k -> new ArrayList<>()).addAll(outputs);
-            logger.trace("Routed {} event(s) from '{}' → '{}' (primary)",
-                    outputs.size(), stageId, target.stageId);
-        }
-
-        // Route to broadcast downstream stages (same outputs sent to all)
-        for (EdgeTarget target : graph.broadcastAdj.getOrDefault(stageId, List.of())) {
-            stageInputs.computeIfAbsent(target.stageId, k -> new ArrayList<>()).addAll(outputs);
-            logger.trace("Routed {} event(s) from '{}' → '{}' (broadcast)",
-                    outputs.size(), stageId, target.stageId);
-        }
-    }
-
-    /**
-     * Routes the original input events to error-handling stages when a stage fails.
-     */
-    private void routeError(String stageId, List<Event> originalInputs,
-                             ExecutionGraph graph, Map<String, List<Event>> stageInputs) {
-        List<EdgeTarget> errorTargets = graph.errorAdj.getOrDefault(stageId, List.of());
-        if (errorTargets.isEmpty()) {
-            logger.debug("Stage '{}' failed but has no error edges", stageId);
-            return;
-        }
-
-        for (EdgeTarget target : errorTargets) {
-            stageInputs.computeIfAbsent(target.stageId, k -> new ArrayList<>()).addAll(originalInputs);
-            logger.debug("Routed {} event(s) from '{}' → '{}' (error)",
-                    originalInputs.size(), stageId, target.stageId);
-        }
-    }
-
-    /**
-     * Activates fallback edges for a stage that produced no output or had no input.
-     * Creates a synthetic "fallback" event carrying the stage ID so the fallback
-     * handler knows which stage triggered it.
-     */
-    private void activateFallbackEdges(String stageId, ExecutionGraph graph,
-                                        Map<String, List<Event>> stageInputs,
-                                        PipelineExecutionContext context) {
-        List<EdgeTarget> fallbackTargets = graph.fallbackAdj.getOrDefault(stageId, List.of());
-        if (fallbackTargets.isEmpty()) {
-            return;
-        }
-
-        // Create a synthetic fallback event
-        Event fallbackEvent = Event.builder()
-                .type("pipeline.fallback")
-                .payload(Map.of(
-                        "_fallback_source_stage", stageId,
-                        "_fallback_reason", "no_output"
-                ))
-                .headers(Map.of(
-                        "stage", stageId,
-                        "fallback", "true"
-                ))
-                .build();
-
-        for (EdgeTarget target : fallbackTargets) {
-            stageInputs.computeIfAbsent(target.stageId, k -> new ArrayList<>()).add(fallbackEvent);
-            logger.debug("Activated fallback from '{}' → '{}'", stageId, target.stageId);
-        }
-    }
-
     // ════════════════════════════════════════════════════════════════
     // Result building
     // ════════════════════════════════════════════════════════════════
@@ -555,7 +252,7 @@ public class PipelineExecutionEngine {
      * Output events are collected from terminal stages (those with no outgoing primary/broadcast edges).
      */
     private PipelineExecutionResult buildFinalResult(
-            String pipelineId, Event inputEvent, ExecutionGraph graph,
+            String pipelineId, Event inputEvent, PipelineExecutionGraph graph,
             Map<String, List<Event>> stageInputs, List<StageExecutionResult> stageResults,
             long startTimeMs) {
 
@@ -563,7 +260,7 @@ public class PipelineExecutionEngine {
 
         // Collect output events from terminal stages
         List<Event> outputEvents = new ArrayList<>();
-        for (String terminalId : graph.terminalStages) {
+        for (String terminalId : graph.terminalStages()) {
             // Terminal stage output = the stage's execution result outputs
             stageResults.stream()
                     .filter(r -> r.stageId().equals(terminalId) && r.success())
@@ -603,26 +300,4 @@ public class PipelineExecutionEngine {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // Internal data structures
-    // ════════════════════════════════════════════════════════════════
-
-    /**
-     * Edge target: a stage ID and the label of the edge leading to it.
-     */
-    private record EdgeTarget(String stageId, String label) {}
-
-    /**
-     * Pre-computed execution graph derived from a Pipeline definition.
-     */
-    private record ExecutionGraph(
-            Map<String, PipelineStage> stageMap,
-            Map<String, List<EdgeTarget>> primaryAdj,
-            Map<String, List<EdgeTarget>> errorAdj,
-            Map<String, List<EdgeTarget>> fallbackAdj,
-            Map<String, List<EdgeTarget>> broadcastAdj,
-            List<String> sourceStages,
-            List<String> terminalStages,
-            List<String> topoOrder
-    ) {}
 }

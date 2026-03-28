@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  */
 public class WorkflowSuggestionsEngine {
 
-    private static final Logger logger = LoggerFactory.getLogger(WorkflowSuggestionsEngine.class);
+    private static final Logger log = LoggerFactory.getLogger(WorkflowSuggestionsEngine.class);
 
     private final Map<String, UserWorkflowPattern> userPatterns = new HashMap<>();
     private final WorkflowTemplateLibrary templates = new WorkflowTemplateLibrary();
@@ -71,7 +71,7 @@ public class WorkflowSuggestionsEngine {
             throw new IllegalArgumentException("userId cannot be null");
         }
 
-        logger.info("Generating suggestions for user: {}", userId);
+        log.info("Generating suggestions for user: {}", userId);
 
         List<WorkflowSuggestion> suggestions = new ArrayList<>();
 
@@ -91,7 +91,7 @@ public class WorkflowSuggestionsEngine {
                 .limit(5)
                 .collect(Collectors.toList());
 
-        logger.info("Generated {} suggestions for user {}", topSuggestions.size(), userId);
+        log.info("Generated {} suggestions for user {}", topSuggestions.size(), userId);
         return topSuggestions;
     }
 
@@ -175,7 +175,7 @@ public class WorkflowSuggestionsEngine {
         );
 
         pattern.recordWorkflow(workflow);
-        logger.debug("Recorded workflow for user: {}", userId);
+        log.debug("Recorded workflow for user: {}", userId);
     }
 
     /**
@@ -186,7 +186,7 @@ public class WorkflowSuggestionsEngine {
      */
     public void recordFeedback(String suggestionId, boolean helpful) {
         feedback.recordFeedback(suggestionId, helpful);
-        logger.debug("Recorded feedback for suggestion: {} (helpful: {})", suggestionId, helpful);
+        log.debug("Recorded feedback for suggestion: {} (helpful: {})", suggestionId, helpful);
     }
 
     /**

@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.ghatana.guardian"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 java {
     withSourcesJar()

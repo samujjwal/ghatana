@@ -2,6 +2,7 @@ package com.ghatana.auth.core.port;
 
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.domain.auth.UserPrincipal;
+import com.ghatana.platform.core.exception.UnauthorizedException;
 import io.activej.promise.Promise;
 
 import java.time.Duration;
@@ -34,7 +35,7 @@ public interface JwtTokenProvider {
     /**
      * Exception thrown when JWT validation fails.
      */
-    class JwtValidationException extends RuntimeException {
+    class JwtValidationException extends UnauthorizedException {
         public JwtValidationException(String message) {
             super(message);
         }

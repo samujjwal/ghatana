@@ -1,0 +1,29 @@
+{
+  "runtimeConfig": {
+    "languageTag": "en-GB",
+    "sttSampleRate": 22050,
+    "sttChannels": 1,
+    "sttBitsPerSample": 16,
+    "defaultImageWidth": 1280,
+    "defaultImageHeight": 720,
+    "syncToleranceMs": 55,
+    "syncAudioBufferMs": 650,
+    "syncVideoBufferMs": 280,
+    "defaultVideoSampleFps": 2,
+    "defaultVideoMaxFrames": 24,
+    "sttModelId": "whisper-small",
+    "visionModelId": "yolov8s",
+    "ttsVoiceId": "piper-en-gb",
+    "metricsEnabled": true,
+    "maxInputStreams": 3,
+    "maxOutputStreams": 4,
+    "deviceAcquireTimeoutMs": 4200,
+    "leakDetectionThresholdMs": 61000
+  },
+  "error": {
+    "code": "media.temporarily_unavailable",
+    "category": "runtime",
+    "retryable": true,
+    "message": "temporary backend outage"
+  }
+}

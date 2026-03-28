@@ -174,11 +174,11 @@ export class ContentGenerationOrchestrator {
         let accumulatedCost = 0;
 
         for (const claim of claimNeeds) {
-            // Cost guard: stop if approaching limit
-            if (accumulatedCost >= this.config.maxCostUsd) {
+            // Cost guard: stop if limit exceeded
+            if (accumulatedCost > this.config.maxCostUsd) {
                 this.logger.warn(
-                    { experienceId, claimRef: claim.claimRef, accumulatedCost },
-                    'Cost limit reached, skipping remaining claims',
+                    { experienceId, claimRef: claim.claimRef, accumulatedCost, maxCost: this.config.maxCostUsd },
+                    'Cost limit exceeded, skipping remaining claims',
                 );
                 break;
             }

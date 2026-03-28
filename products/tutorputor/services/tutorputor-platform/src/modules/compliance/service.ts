@@ -6,6 +6,7 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
+import { createStandaloneLogger, logError } from '@tutorputor/core/logger';
 import type {
   ComplianceService,
   TenantId,
@@ -38,6 +39,7 @@ export class ComplianceServiceImpl implements ComplianceService {
   private exporter: DataExporter;
   private deleter: DataDeleter;
   private uploadBaseUrl: string;
+  private logger = createStandaloneLogger({ service: 'ComplianceService' });
 
   constructor(
     prisma: PrismaClient,
@@ -168,10 +170,10 @@ export class ComplianceServiceImpl implements ComplianceService {
   ) {
     try {
       const result = await this.exporter.exportUserData(userId, tenantId);
-      console.log(`Export ${requestId} completed: ${result.filePath}`);
+      this.logger.info({ requestId, userId, tenantId, filePath: result.filePath }, `Export completed`);
       // Update status in DB if model existed
-    } catch (_e) {
-      console.error(`Export ${requestId} failed`);
+    } catch (error) {
+      logError(this.logger, error as Error, { requestId, userId, tenantId });
     }
   }
 

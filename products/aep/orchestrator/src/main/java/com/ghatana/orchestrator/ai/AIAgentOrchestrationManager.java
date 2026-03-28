@@ -10,6 +10,11 @@ import java.util.Map;
  * AI-enhanced agent orchestration manager that extends the existing orchestrator
  * with AI-specific capabilities from event-core. This interface consolidates
  * agent orchestration, chaining, and scheduling functionality.
+ *
+ * @doc.type interface
+ * @doc.purpose AI-specific agent orchestration — registration, chaining, and scheduling
+ * @doc.layer product
+ * @doc.pattern Orchestrator
  */
 public interface AIAgentOrchestrationManager {
 

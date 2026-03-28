@@ -355,6 +355,24 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
 
             assertThat(result.detections()).isEmpty();
         }
+
+        @Test
+        @DisplayName("events without a real correlation key do not share sequence state")
+        void shouldNotUseGlobalFallbackForMissingCorrelationKey() {
+            engine = Aep.forTesting();
+
+            runPromise(() -> engine.registerPattern(TENANT_A,
+                new AepEngine.PatternDefinition("anonymous-two-step", null, AepEngine.PatternType.SEQUENCE,
+                    Map.of("expectedTypes", List.of("step.one", "step.two"),
+                           "correlationField", "missingField"))));
+
+            runPromise(() -> engine.process(TENANT_A,
+                new AepEngine.Event("step.one", Map.of("other", "a"), Map.of(), Instant.now())));
+            AepEngine.ProcessingResult result = runPromise(() -> engine.process(TENANT_A,
+                new AepEngine.Event("step.two", Map.of("other", "b"), Map.of(), Instant.now().plusSeconds(1))));
+
+            assertThat(result.detections()).isEmpty();
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────

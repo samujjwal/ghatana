@@ -2,8 +2,15 @@ package com.ghatana.kernel.plugin;
 
 /**
  * Kernel operator interface.
- * 
- * Operators provide data processing capabilities for kernel workflows.
+ *
+ * <p>Operators provide typed data processing capabilities for kernel workflows.
+ * Each operator declares its accepted input types and produced output types so the
+ * kernel can validate pipeline compatibility at registration time.</p>
+ *
+ * @doc.type interface
+ * @doc.purpose Data processing capability unit for kernel workflow pipelines
+ * @doc.layer kernel
+ * @doc.pattern Plugin
  */
 public interface KernelOperator {
     

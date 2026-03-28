@@ -5,6 +5,7 @@
  * validation, and execution workflows.
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

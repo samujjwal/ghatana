@@ -1,7 +1,8 @@
 package com.ghatana.refactorer.server.observability;
 
 import com.ghatana.platform.http.server.response.ResponseBuilder;
-import com.ghatana.refactorer.server.auth.RateLimiter;
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.refactorer.server.auth.RoleBasedAccessControl;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -52,7 +53,8 @@ public final class RequestLoggingFilter implements AsyncServlet {
 
     private final AsyncServlet delegate;
     private final RefactorerMetrics refactorerMetrics;
-    private final RateLimiter rateLimiter;
+    private final DefaultRateLimiter rateLimiter;
+    private final long requestLimit;
     private final RoleBasedAccessControl rbac;
     private final boolean authRequired;
     private final AtomicLong requestCounter = new AtomicLong(0);
@@ -60,12 +62,14 @@ public final class RequestLoggingFilter implements AsyncServlet {
     public RequestLoggingFilter(
             AsyncServlet delegate,
             RefactorerMetrics refactorerMetrics,
-            RateLimiter rateLimiter,
+            DefaultRateLimiter rateLimiter,
+            long requestLimit,
             RoleBasedAccessControl rbac,
             boolean authRequired) {
         this.delegate = Objects.requireNonNull(delegate);
         this.refactorerMetrics = Objects.requireNonNull(refactorerMetrics);
         this.rateLimiter = rateLimiter;
+        this.requestLimit = requestLimit;
         this.rbac = rbac;
         this.authRequired = authRequired;
     }
@@ -208,17 +212,18 @@ public final class RequestLoggingFilter implements AsyncServlet {
             return true;
         }
 
-        boolean allowed = rateLimiter.tryAcquire(clientId);
-        if (!allowed) {
-            RateLimiter.RateLimitState state = rateLimiter.getState(clientId);
+        RateLimiter.AcquireResult result = rateLimiter.tryAcquire(clientId);
+        if (!result.allowed()) {
             logger.logSecurityEvent(
                     "rate_limit_exceeded",
                     extractUserId(request),
                     getClientIpAddress(request),
                     false,
-                    Map.of("clientId", clientId, "state", state.toString()));
+                    Map.of("clientId", clientId,
+                            "remaining", String.valueOf(result.remainingTokens()),
+                            "resetAt", String.valueOf(result.resetAtEpochSeconds())));
         }
-        return allowed;
+        return result.allowed();
     }
 
     private boolean checkAuthentication(HttpRequest request, String userId) {
@@ -259,20 +264,20 @@ public final class RequestLoggingFilter implements AsyncServlet {
             Timer.Sample timerSample,
             String method,
             String uri) {
-        RateLimiter.RateLimitState state = rateLimiter.getState(clientId);
+        RateLimiter.AcquireResult state = rateLimiter.tryAcquire(clientId);
 
         HttpResponse response
                 = ResponseBuilder.status(429)
                         .header(
                                 HttpHeaders.of("X-RateLimit-Limit"),
-                                String.valueOf(state.getLimit()))
+                                String.valueOf(requestLimit))
                         .header(
                                 HttpHeaders.of("X-RateLimit-Remaining"),
-                                String.valueOf(state.getRemaining()))
+                                String.valueOf(state.remainingTokens()))
                         .header(
                                 HttpHeaders.of("X-RateLimit-Reset"),
-                                String.valueOf(state.getResetTimeSeconds()))
-                        .header(HttpHeaders.of("Retry-After"), String.valueOf(60)) // 1 minute
+                                String.valueOf(state.resetAtEpochSeconds()))
+                        .header(HttpHeaders.of("Retry-After"), String.valueOf(state.retryAfterSeconds()))
                         .text("Rate limit exceeded")
                         .build();
 

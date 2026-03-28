@@ -89,6 +89,11 @@ class PhrKernelModuleTest extends EventloopTestBase {
     @DisplayName("Should initialize successfully")
     void shouldInitializeSuccessfully() {
         assertDoesNotThrow(() -> module.initialize(mockContext));
+        assertNotNull(module.getServiceCatalog());
+        assertNotNull(module.getServiceCatalog().clinical().patientRecords());
+        assertNotNull(module.getServiceCatalog().administrative().appointments());
+        assertNotNull(module.getServiceCatalog().patient().consent());
+        assertNotNull(module.getServiceCatalog().emergency().emergencyAccess());
 
         // Second initialization should throw
         IllegalStateException exception = assertThrows(IllegalStateException.class,

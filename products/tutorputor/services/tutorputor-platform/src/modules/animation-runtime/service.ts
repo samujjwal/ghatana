@@ -74,9 +74,9 @@ export interface AnimationState {
 }
 
 export interface AnimationRenderer {
-  setProperty(property: string, value: any): void;
-  getProperty(property: string): any;
-  applyTransform(transform: Record<string, any>): void;
+  setProperty(property: string, value: unknown): void;
+  getProperty(property: string): unknown;
+  applyTransform(transform: Record<string, unknown>): void;
   render(): void;
 }
 
@@ -85,7 +85,7 @@ export interface AnimationEvent {
   timestamp: number;
   keyframeIndex?: number;
   keyframe?: AnimationKeyframe;
-  data?: any;
+  data?: unknown;
 }
 
 export type AnimationEventListener = (event: AnimationEvent) => void;
@@ -409,7 +409,7 @@ export class AnimationRuntime {
 
     // Apply easing
     const easing = nextKeyframe.easing || "linear";
-    const easedProgress = applyEasing(segmentProgress, easing as any);
+    const easedProgress = applyEasing(segmentProgress, easing as string);
 
     // Interpolate properties
     const interpolated: Record<string, any> = {};
@@ -433,7 +433,7 @@ export class AnimationRuntime {
     return interpolated;
   }
 
-  private interpolateValue(start: any, end: any, progress: number): any {
+  private interpolateValue(start: unknown, end: unknown, progress: number): unknown {
     // Handle different value types
     if (typeof start === "number" && typeof end === "number") {
       return lerp(start, end, progress);
@@ -456,7 +456,7 @@ export class AnimationRuntime {
       start !== null &&
       end !== null
     ) {
-      const result: any = {};
+      const result: Record<string, unknown> = {};
       for (const key of Object.keys(end)) {
         result[key] = this.interpolateValue(start[key], end[key], progress);
       }

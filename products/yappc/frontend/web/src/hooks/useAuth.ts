@@ -1,12 +1,14 @@
 /**
- * useAuth Hook
+ * useAuth Hook — YAPPC Web product hook.
  *
- * Reactive wrapper around the singleton AuthService.
- * Provides real-time auth state, current user, token accessor,
- * and permission/role helpers to any component or hook.
+ * Wraps the singleton AuthService to provide YAPPC-specific auth state:
+ * full User object, permission/role checks, and cross-tab session sync.
+ *
+ * For generic token-level auth state shared across products, use
+ * {@link @ghatana/platform-shell#useAuth} which reads from authTokenAtom.
  *
  * @doc.type hook
- * @doc.purpose Auth state access for components and hooks
+ * @doc.purpose YAPPC product auth state — wraps AuthService singleton
  * @doc.layer product
  * @doc.pattern Custom Hook
  */

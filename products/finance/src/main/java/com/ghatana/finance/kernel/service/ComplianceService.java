@@ -3,6 +3,7 @@ package com.ghatana.finance.kernel.service;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.service.KernelLifecycleAware;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -38,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class ComplianceService {
+public class ComplianceService implements KernelLifecycleAware {
 
     private static final String COMPLIANCE_DATASET = "finance.compliance";
     private static final String ALERT_DATASET = "finance.compliance.alerts";

@@ -18,7 +18,7 @@ plugins {
 }
 
 group = "com.ghatana.datacloud"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 description = "Data Cloud Client SDK — extracted from platform-launcher (Phase 1)"
 

@@ -261,7 +261,12 @@ public class AuthService extends HttpServerLauncher {
                         token = authHeader.substring(7);
                     } else {
                         String bodyStr = body.getString(StandardCharsets.UTF_8);
-                        token = extractJsonField(bodyStr, "token");
+                        try {
+                            var tokenRequest = JsonUtils.fromJson(bodyStr, java.util.Map.class);
+                            token = tokenRequest != null ? (String) tokenRequest.get("token") : null;
+                        } catch (Exception e) {
+                            token = null;
+                        }
                     }
                     if (token == null || token.isEmpty()) {
                         return Promise.of(HttpResponse.ofCode(400)
@@ -329,7 +334,12 @@ public class AuthService extends HttpServerLauncher {
                     String sessionId = extractCookieValue(cookieHeader, "ghatana_session");
                     if (sessionId == null) {
                         String bodyStr = body.getString(StandardCharsets.UTF_8);
-                        sessionId = extractJsonField(bodyStr, "sessionId");
+                        try {
+                            var logoutRequest = JsonUtils.fromJson(bodyStr, java.util.Map.class);
+                            sessionId = logoutRequest != null ? (String) logoutRequest.get("sessionId") : null;
+                        } catch (Exception e) {
+                            sessionId = null;
+                        }
                     }
                     if (sessionId != null && !sessionId.isEmpty()) {
                         sessionManager.invalidateSession(sessionId);
@@ -435,18 +445,4 @@ public class AuthService extends HttpServerLauncher {
         }
     }
 
-    /** Simple JSON field extractor (avoids adding a JSON library dependency). */
-    private static String extractJsonField(String json, String field) {
-        if (json == null) return null;
-        String key = "\"" + field + "\"";
-        int idx = json.indexOf(key);
-        if (idx < 0) return null;
-        int colon = json.indexOf(':', idx + key.length());
-        if (colon < 0) return null;
-        int start = json.indexOf('"', colon + 1);
-        if (start < 0) return null;
-        int end = json.indexOf('"', start + 1);
-        if (end < 0) return null;
-        return json.substring(start + 1, end);
-    }
 }

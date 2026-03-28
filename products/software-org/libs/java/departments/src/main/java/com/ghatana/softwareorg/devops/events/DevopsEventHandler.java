@@ -9,6 +9,11 @@ import org.slf4j.LoggerFactory;
  * Handles DevOps department events. Processes deployments, incidents,
  * infrastructure changes, and health checks. Coordinates with engineering (QA
  * approval), support (incident response), and compliance.
+ *
+ * @doc.type class
+ * @doc.purpose DevOps event processing coordinator
+ * @doc.layer product
+ * @doc.pattern EventHandler
  */
 public class DevopsEventHandler {
 

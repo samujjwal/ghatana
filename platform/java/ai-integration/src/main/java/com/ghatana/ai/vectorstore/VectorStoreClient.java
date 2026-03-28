@@ -1,5 +1,6 @@
 package com.ghatana.ai.vectorstore;
 
+import com.ghatana.platform.core.client.AsyncClient;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,14 +10,17 @@ import java.util.Map;
 /**
  * Interface for vector store operations.
  * 
- * <p>Provides persistence and search capabilities for vector embeddings.</p>
+ * <p>Extends {@link AsyncClient} and provides persistence and search capabilities
+ * for vector embeddings with lifecycle management.</p>
  *
  * @doc.type interface
  * @doc.purpose Client for vector similarity search operations
  * @doc.layer platform
  * @doc.pattern Service
+ * 
+ * @see com.ghatana.platform.core.client.AsyncClient
  */
-public interface VectorStoreClient {
+public interface VectorStoreClient extends AsyncClient {
     
     /**
      * Store a vector with associated content.

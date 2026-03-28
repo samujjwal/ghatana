@@ -12,7 +12,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * lightweight deployments.
  *
  * <p>Thread-safe via {@link ConcurrentHashMap}.</p>
+ *
+ * @deprecated Use {@link UnifiedOperatorCatalog} instead. It provides the same
+ *             in-memory registration behaviour with additional ServiceLoader
+ *             discovery support and consistent logging.
  */
+@Deprecated(since = "1.1.0", forRemoval = true)
 public class InMemoryOperatorCatalog implements OperatorCatalog {
 
     private final ConcurrentHashMap<OperatorId, UnifiedOperator> operators = new ConcurrentHashMap<>();

@@ -47,7 +47,7 @@ import static com.ghatana.platform.observability.util.BlockingExecutors.blocking
  */
 public class QueryRecommender {
 
-    private static final Logger logger = LoggerFactory.getLogger(QueryRecommender.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryRecommender.class);
 
     private final MetricsCollector metricsCollector;
     private final Map<String, UserQueryPattern> userPatterns = new HashMap<>();
@@ -76,7 +76,7 @@ public class QueryRecommender {
             String queryText) {
 
         try {
-            logger.info("Generating recommendations for user: {} query: {}", userId, queryText);
+            log.info("Generating recommendations for user: {} query: {}", userId, queryText);
 
             List<QueryRecommendation> recommendations = new ArrayList<>();
 
@@ -108,7 +108,7 @@ public class QueryRecommender {
             pattern.recordQuery(queryText, topRecommendations.size(), 0);
 
             metricsCollector.incrementCounter("recommendations.generated");
-            logger.debug("Generated {} recommendations for user: {}", topRecommendations.size(), userId);
+            log.debug("Generated {} recommendations for user: {}", topRecommendations.size(), userId);
 
             return Promise.of(topRecommendations);
         } catch (Exception e) {
@@ -146,7 +146,7 @@ public class QueryRecommender {
 
         pattern.recordQuery(query, resultCount, executionTime);
         metricsCollector.incrementCounter("ai.query_recorded");
-        logger.debug("Recorded query for user: {}", userId);
+        log.debug("Recorded query for user: {}", userId);
     }
 
     /**
@@ -161,7 +161,7 @@ public class QueryRecommender {
                 "ai.feedback_recorded",
                 "helpful", String.valueOf(helpful)
         );
-        logger.debug("Recorded feedback for recommendation: {} (helpful: {})", recommendationId, helpful);
+        log.debug("Recorded feedback for recommendation: {} (helpful: {})", recommendationId, helpful);
     }
 
     /**
@@ -276,7 +276,7 @@ public class QueryRecommender {
                 0
         ));
 
-        logger.info("Initialized {} query templates", templates.size());
+        log.info("Initialized {} query templates", templates.size());
     }
 
     /**

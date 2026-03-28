@@ -10,6 +10,11 @@ import io.activej.promise.Promise;
  * 
  * Day 27 Implementation: Provides checkpoint creation, restoration, and management
  * capabilities for durable state recovery.
+ *
+ * @doc.type interface
+ * @doc.purpose State store checkpoint lifecycle — create, restore, and list checkpoints
+ * @doc.layer product
+ * @doc.pattern Repository, Command
  */
 public interface CheckpointManager {
     

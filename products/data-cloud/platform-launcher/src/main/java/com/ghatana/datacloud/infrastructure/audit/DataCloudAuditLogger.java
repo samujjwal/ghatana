@@ -24,7 +24,7 @@ import java.util.Objects;
  * @doc.pattern Observer
  */
 public class DataCloudAuditLogger {
-    private static final Logger logger = LoggerFactory.getLogger(DataCloudAuditLogger.class);
+    private static final Logger log = LoggerFactory.getLogger(DataCloudAuditLogger.class);
     
     private final boolean enabled;
     
@@ -49,7 +49,7 @@ public class DataCloudAuditLogger {
     public void logDataAccess(String tenantId, String operation, String collectionId, String entityId, boolean success) {
         if (!enabled) return;
         
-        logger.info("AUDIT: eventType=DATA_ACCESS, timestamp={}, tenantId={}, operation={}, " +
+        log.info("AUDIT: eventType=DATA_ACCESS, timestamp={}, tenantId={}, operation={}, " +
                 "collectionId={}, entityId={}, success={}, principal={}",
                 Instant.now(), tenantId, operation, collectionId, entityId, success, getCurrentPrincipal());
     }
@@ -66,7 +66,7 @@ public class DataCloudAuditLogger {
     public void logDataModification(String tenantId, String operation, String collectionId, String entityId, boolean success) {
         if (!enabled) return;
         
-        logger.info("AUDIT: eventType=DATA_MODIFICATION, timestamp={}, tenantId={}, operation={}, " +
+        log.info("AUDIT: eventType=DATA_MODIFICATION, timestamp={}, tenantId={}, operation={}, " +
                 "collectionId={}, entityId={}, success={}, principal={}",
                 Instant.now(), tenantId, operation, collectionId, entityId, success, getCurrentPrincipal());
     }
@@ -82,7 +82,7 @@ public class DataCloudAuditLogger {
     public void logSearch(String tenantId, String query, int resultCount, boolean success) {
         if (!enabled) return;
         
-        logger.info("AUDIT: eventType=SEARCH_EXECUTED, timestamp={}, tenantId={}, query={}, " +
+        log.info("AUDIT: eventType=SEARCH_EXECUTED, timestamp={}, tenantId={}, query={}, " +
                 "resultCount={}, success={}, principal={}",
                 Instant.now(), tenantId, query, resultCount, success, getCurrentPrincipal());
     }
@@ -99,7 +99,7 @@ public class DataCloudAuditLogger {
     public void logBulkOperation(String tenantId, String operation, String collectionId, int count, boolean success) {
         if (!enabled) return;
         
-        logger.info("AUDIT: eventType=BULK_OPERATION, timestamp={}, tenantId={}, operation={}, " +
+        log.info("AUDIT: eventType=BULK_OPERATION, timestamp={}, tenantId={}, operation={}, " +
                 "collectionId={}, count={}, success={}, principal={}",
                 Instant.now(), tenantId, operation, collectionId, count, success, getCurrentPrincipal());
     }
@@ -135,12 +135,12 @@ public class DataCloudAuditLogger {
             }
         } catch (Exception e) {
             // Security context not available — log as WARN: unauthenticated audit entries are security events
-            logger.warn("SECURITY: Unauthenticated request — audit principal resolved as ANONYMOUS: {}", e.getMessage());
+            log.warn("SECURITY: Unauthenticated request — audit principal resolved as ANONYMOUS: {}", e.getMessage());
         }
 
         // DC3-H6: Use ANONYMOUS (not SYSTEM) so unauthenticated writes are distinguishable
         // from legitimate system/daemon operations in the audit trail.
-        logger.warn("SECURITY: Audit entry recorded with ANONYMOUS principal — no active TenantContext");
+        log.warn("SECURITY: Audit entry recorded with ANONYMOUS principal — no active TenantContext");
         return "ANONYMOUS";
     }
     

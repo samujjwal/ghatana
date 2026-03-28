@@ -14,6 +14,7 @@ pub mod ml_integration_commands;
 pub mod ml_model_bridge;
 pub mod models;
 pub mod playback;
+pub mod pool;
 pub mod project_storage;
 pub mod python;
 pub mod recorder;
@@ -79,6 +80,7 @@ pub fn run() {
             commands::ai_voice_get_audio_info,
             commands::ai_voice_play_audio,
             commands::ai_voice_stop_audio,
+            commands::ai_voice_get_audio_runtime_metrics,
             commands::ai_voice_export_audio,
             commands::ai_voice_create_audio_session,
             commands::ai_voice_get_audio_session,

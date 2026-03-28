@@ -4,6 +4,8 @@
  */
 package com.ghatana.orchestrator.store;
 
+import com.ghatana.platform.core.exception.ConflictException;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import io.activej.inject.annotation.Inject;
 import java.time.Instant;
 import java.util.List;
@@ -306,7 +308,7 @@ public class PostgresqlCheckpointStore implements CheckpointStore {
 /**
  * Exception thrown when attempting to create a duplicate execution.
  */
-class DuplicateExecutionException extends RuntimeException {
+class DuplicateExecutionException extends ConflictException {
     public DuplicateExecutionException(String message) {
         super(message);
     }
@@ -315,7 +317,7 @@ class DuplicateExecutionException extends RuntimeException {
 /**
  * Exception thrown when a checkpoint is not found.
  */
-class CheckpointNotFoundException extends RuntimeException {
+class CheckpointNotFoundException extends ResourceNotFoundException {
     public CheckpointNotFoundException(String message) {
         super(message);
     }

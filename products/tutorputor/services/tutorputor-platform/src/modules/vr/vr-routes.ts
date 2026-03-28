@@ -50,7 +50,7 @@ export const vrRoutes = async (app: any) => {
     const tenantId = asTenantId(getTenantId(req));
     const userId = asUserId(getUserId(req));
     requireRole(req, ["admin", "content_creator", "superadmin"]);
-    const body = req.body as any;
+    const body = req.body as Record<string, unknown>;
 
     await respondWithErrors(reply, async () => {
       const lab = await labService.createLab({ tenantId, userId, data: body });
@@ -109,7 +109,7 @@ export const vrRoutes = async (app: any) => {
     const { labId } = req.params as { labId: string };
 
     await respondWithErrors(reply, () =>
-      labService.updateLab({ tenantId, userId, labId, data: req.body as any }),
+      labService.updateLab({ tenantId, userId, labId, data: req.body as Record<string, unknown> }),
     );
   });
 
@@ -162,7 +162,7 @@ export const vrRoutes = async (app: any) => {
       const scene = await labService.addScene({
         tenantId,
         userId,
-        data: { ...(req.body as any), labId },
+        data: { ...(req.body as Record<string, unknown>), labId },
       });
       reply.code(201);
       return scene;

@@ -10,6 +10,11 @@ import java.util.function.Consumer;
 
 /**
  * Emits audit events for runtime compilation activities.
+ *
+ * @doc.type class
+ * @doc.purpose Audit event emitter for pattern compilation lifecycle activities
+ * @doc.layer product
+ * @doc.pattern Observer (audit sink)
  */
 public final class CompilationAuditLogger {
     private final Consumer<AuditEvent> sink;

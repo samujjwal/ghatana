@@ -139,6 +139,11 @@ import java.util.UUID;
  *                   <li>findByEventType is array containment (@>), not exact match; may return
  *                       patterns with additional event types</li>
  *                 </ul>
+ *
+ * @doc.type interface
+ * @doc.purpose Async repository contract for pattern CRUD, query, and lifecycle operations
+ * @doc.layer product
+ * @doc.pattern Repository
  */
 public interface PatternRepository {
     

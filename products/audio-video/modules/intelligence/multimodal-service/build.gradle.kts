@@ -13,8 +13,16 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":platform:contracts"))
+
     // Audio-Video common (shared AI inference client, health/metrics, gRPC interceptors)
     implementation(project(":products:audio-video:libs:common"))
+
+    // Canonical platform media processing library
+    implementation(project(":platform:java:audio-video"))
+
+    // Reuse the existing product video frame extraction utility instead of re-implementing it
+    implementation(project(":products:audio-video:modules:vision:vision-service"))
 
     // gRPC
     implementation(libs.grpc.netty)

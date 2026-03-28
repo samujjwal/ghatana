@@ -4,6 +4,8 @@
  */
 package com.ghatana.finance.ledger.service;
 
+import com.ghatana.platform.core.exception.ServiceException;
+
 /**
  * Thrown when a journal's debit totals do not equal its credit totals per currency.
  *
@@ -17,7 +19,7 @@ package com.ghatana.finance.ledger.service;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class UnbalancedJournalException extends IllegalStateException {
+public class UnbalancedJournalException extends ServiceException {
 
     public UnbalancedJournalException(String message) {
         super(message);

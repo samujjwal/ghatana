@@ -3,7 +3,7 @@ package com.ghatana.finance.extension;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
-import com.ghatana.kernel.extension.KernelExtension;
+import com.ghatana.kernel.extension.AbstractKernelExtension;
 import com.ghatana.kernel.module.KernelModule;
 import io.activej.promise.Promise;
 
@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -29,14 +28,11 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-public class RiskManagementKernelExtension implements KernelExtension {
+public class RiskManagementKernelExtension extends AbstractKernelExtension {
 
     private static final String EXTENSION_ID = "risk-management-realtime";
     private static final String VERSION = "1.0.0";
 
-    private volatile KernelContext context;
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
-    private final AtomicBoolean started = new AtomicBoolean(false);
     private final ConcurrentHashMap<String, PositionRisk> positionRisks = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, PortfolioRisk> portfolioRisks = new ConcurrentHashMap<>();
     private final AtomicReference<RiskLimits> riskLimits = new AtomicReference<>();
@@ -86,22 +82,8 @@ public class RiskManagementKernelExtension implements KernelExtension {
     }
 
     @Override
-    public void onModuleInitialized(KernelContext context) {
-        if (!initialized.compareAndSet(false, true)) {
-            return;
-        }
-        this.context = context;
+    protected void onInitialize(KernelContext context) {
         initializeRiskLimits();
-    }
-
-    @Override
-    public void onModuleStarted(KernelContext context) {
-        started.set(true);
-    }
-
-    @Override
-    public void onModuleStopped(KernelContext context) {
-        started.set(false);
     }
 
     @Override
@@ -128,8 +110,10 @@ public class RiskManagementKernelExtension implements KernelExtension {
      */
     public Promise<PositionRisk> calculatePositionRisk(String positionId, BigDecimal quantity,
                                                       BigDecimal currentPrice, BigDecimal avgCost) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
         // Calculate unrealized P&L
@@ -172,8 +156,10 @@ public class RiskManagementKernelExtension implements KernelExtension {
      */
     public Promise<PortfolioRisk> calculatePortfolioRisk(String portfolioId,
                                                         Map<String, PositionRisk> positionRisks) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
         BigDecimal totalMarketValue = BigDecimal.ZERO;
@@ -220,8 +206,10 @@ public class RiskManagementKernelExtension implements KernelExtension {
      * @return Promise completing when limits are updated
      */
     public Promise<Void> updateRiskLimits(RiskLimits limits) {
-        if (!started.get()) {
-            return Promise.ofException(new IllegalStateException("Extension not started"));
+        try {
+            requireStarted();
+        } catch (IllegalStateException exception) {
+            return Promise.ofException(exception);
         }
 
         riskLimits.set(limits);

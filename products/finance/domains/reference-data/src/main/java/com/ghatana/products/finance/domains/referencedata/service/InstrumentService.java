@@ -7,6 +7,7 @@ import com.ghatana.products.finance.domains.referencedata.domain.Instrument;
 import com.ghatana.products.finance.domains.referencedata.domain.InstrumentStatus;
 import com.ghatana.products.finance.domains.referencedata.domain.InstrumentType;
 import com.ghatana.products.finance.domains.referencedata.port.InstrumentStore;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -215,7 +216,7 @@ public class InstrumentService {
 
     // ── Exceptions ────────────────────────────────────────────────────────────
 
-    public static final class DuplicateInstrumentException extends RuntimeException {
+    public static final class DuplicateInstrumentException extends ServiceException {
         public DuplicateInstrumentException(String symbol, String exchange) {
             super("Instrument already exists: " + symbol + "@" + exchange);
         }

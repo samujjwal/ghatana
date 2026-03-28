@@ -7,12 +7,12 @@ import okhttp3.OkHttpClient;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.util.concurrent.RateLimiter;
 
 /**
@@ -35,7 +35,17 @@ import com.google.common.util.concurrent.RateLimiter;
  */
 public final class HttpClientFactory {
 
-    private static final ConcurrentMap<String, RateLimiter> TENANT_LIMITERS = new ConcurrentHashMap<>();
+    /**
+     * Bounded cache for per-tenant Guava RateLimiters.
+     *
+     * <p>Limiters are evicted 10 minutes after the last access, preventing
+     * unbounded growth when many short-lived tenants use the service.
+     * Maximum size is capped at 10,000 entries for additional safety.
+     */
+    private static final Cache<String, RateLimiter> TENANT_LIMITERS = Caffeine.newBuilder()
+            .maximumSize(10_000)
+            .expireAfterAccess(10, TimeUnit.MINUTES)
+            .build();
     private static final Executor DEFAULT_EXECUTOR = Executors.newCachedThreadPool();
 
     private HttpClientFactory() {
@@ -78,7 +88,7 @@ public final class HttpClientFactory {
 
         double rps = requestsPerSecond > 0 ? requestsPerSecond : 5.0;
 
-        RateLimiter limiter = TENANT_LIMITERS.computeIfAbsent(tenantId, id -> RateLimiter.create(rps));
+        RateLimiter limiter = TENANT_LIMITERS.get(tenantId, id -> RateLimiter.create(rps));
 
         OkHttpClient client = new OkHttpClient.Builder()
                 .callTimeout(Duration.ofSeconds(30))

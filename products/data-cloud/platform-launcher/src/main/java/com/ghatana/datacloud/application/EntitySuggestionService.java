@@ -71,7 +71,7 @@ import java.util.stream.Collectors;
  */
 public class EntitySuggestionService {
 
-    private static final Logger logger = LoggerFactory.getLogger(EntitySuggestionService.class);
+    private static final Logger log = LoggerFactory.getLogger(EntitySuggestionService.class);
 
     private final com.ghatana.datacloud.entity.EntitySuggestionService aiService;
     private final EntityValidationService validationService;
@@ -175,7 +175,7 @@ public class EntitySuggestionService {
         if (cached != null && !cached.isExpired(cacheTtlMillis)) {
             metrics.incrementCounter("entity.suggestion.generate.cache_hit",
                     "tenant", tenantId, "collection", collectionName);
-            logger.debug("Suggestion cache hit for collection={}", collectionName);
+            log.debug("Suggestion cache hit for collection={}", collectionName);
             return Promise.of(cached.suggestion);
         }
 
@@ -186,7 +186,7 @@ public class EntitySuggestionService {
                     return validationService.validateEntity(tenantId, collectionName, suggestion.suggestedData())
                             .map(validationResult -> {
                                 if (!validationResult.isValid()) {
-                                    logger.warn("Generated suggestion has validation errors for collection={}",
+                                    log.warn("Generated suggestion has validation errors for collection={}",
                                             collectionName);
                                     metrics.incrementCounter("entity.suggestion.validation.failed",
                                             "tenant", tenantId,
@@ -204,7 +204,7 @@ public class EntitySuggestionService {
                                         "confidence", suggestion.isHighConfidence() ? "high"
                                                 : (suggestion.isMediumConfidence() ? "medium" : "low"));
 
-                                logger.info("Generated suggestion (confidence={}) validated in {}ms",
+                                log.info("Generated suggestion (confidence={}) validated in {}ms",
                                         suggestion.confidence(), duration);
 
                                 return suggestion;
@@ -218,7 +218,7 @@ public class EntitySuggestionService {
                             "collection", collectionName,
                             "error", error.getClass().getSimpleName());
 
-                    logger.error("Failed to generate entity suggestion: {}", error.getMessage(), error);
+                    log.error("Failed to generate entity suggestion: {}", error.getMessage(), error);
                 });
     }
 
@@ -255,7 +255,7 @@ public class EntitySuggestionService {
         if (cached != null && !cached.isExpired(cacheTtlMillis)) {
             metrics.incrementCounter("entity.enrichment.cache_hit",
                     "tenant", tenantId, "collection", collectionName);
-            logger.debug("Enrichment cache hit for entity={}", entityId);
+            log.debug("Enrichment cache hit for entity={}", entityId);
             return Promise.of(cached.enrichments);
         }
 
@@ -267,7 +267,7 @@ public class EntitySuggestionService {
                             .filter(enrichment -> {
                                 // Filter by confidence threshold
                                 if (enrichment.confidence() < 0.5) {
-                                    logger.debug("Filtering low-confidence enrichment: field={}, confidence={}",
+                                    log.debug("Filtering low-confidence enrichment: field={}, confidence={}",
                                             enrichment.fieldName(), enrichment.confidence());
                                     return false;
                                 }
@@ -285,7 +285,7 @@ public class EntitySuggestionService {
                             "collection", collectionName,
                             "count", String.valueOf(validated.size()));
 
-                    logger.info("Suggested {} enrichments (from {}) in {}ms",
+                    log.info("Suggested {} enrichments (from {}) in {}ms",
                             validated.size(), enrichments.size(), duration);
 
                     return Promise.of(validated);
@@ -298,7 +298,7 @@ public class EntitySuggestionService {
                             "collection", collectionName,
                             "error", error.getClass().getSimpleName());
 
-                    logger.error("Failed to suggest enrichments for entity={}: {}",
+                    log.error("Failed to suggest enrichments for entity={}: {}",
                             entityId, error.getMessage(), error);
                 });
     }
@@ -342,7 +342,7 @@ public class EntitySuggestionService {
                             "collection", collectionName,
                             "count", String.valueOf(relations.size()));
 
-                    logger.info("Found {} related entities in {}ms", relations.size(), duration);
+                    log.info("Found {} related entities in {}ms", relations.size(), duration);
 
                     return Promise.of(relations);
                 })
@@ -354,7 +354,7 @@ public class EntitySuggestionService {
                             "collection", collectionName,
                             "error", error.getClass().getSimpleName());
 
-                    logger.error("Failed to suggest relations for entity={}: {}",
+                    log.error("Failed to suggest relations for entity={}: {}",
                             entityId, error.getMessage(), error);
                 });
     }
@@ -367,11 +367,11 @@ public class EntitySuggestionService {
     public void clearSuggestionCache(String tenantId) {
         if (tenantId == null) {
             suggestionCache.clear();
-            logger.info("Cleared all suggestion caches");
+            log.info("Cleared all suggestion caches");
         } else {
             int beforeSize = suggestionCache.size();
             suggestionCache.entrySet().removeIf(entry -> entry.getKey().startsWith(tenantId + ":"));
-            logger.info("Cleared suggestion cache for tenant={} (removed {} entries)",
+            log.info("Cleared suggestion cache for tenant={} (removed {} entries)",
                     tenantId, beforeSize - suggestionCache.size());
         }
     }
@@ -384,11 +384,11 @@ public class EntitySuggestionService {
     public void clearEnrichmentCache(String tenantId) {
         if (tenantId == null) {
             enrichmentCache.clear();
-            logger.info("Cleared all enrichment caches");
+            log.info("Cleared all enrichment caches");
         } else {
             int beforeSize = enrichmentCache.size();
             enrichmentCache.entrySet().removeIf(entry -> entry.getKey().startsWith(tenantId + ":"));
-            logger.info("Cleared enrichment cache for tenant={} (removed {} entries)",
+            log.info("Cleared enrichment cache for tenant={} (removed {} entries)",
                     tenantId, beforeSize - enrichmentCache.size());
         }
     }

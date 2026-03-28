@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 enum ModuleDomain {
@@ -457,6 +457,182 @@ model Purchase {
   @@unique([tenantId, userId, moduleId])
   @@index([tenantId, userId])
   @@index([tenantId, moduleId])
+}
+
+// =============================================================================
+// Subscription & Payment Management
+// =============================================================================
+
+enum SubscriptionTier {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  UNPAID
+}
+
+enum BillingInterval {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+model StripeCustomer {
+  id               String   @id @default(cuid())
+  tenantId         String   @unique
+  stripeCustomerId String   @unique
+  email            String
+  name             String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subscriptions  Subscription[]
+  paymentMethods PaymentMethod[]
+  invoices       Invoice[]
+
+  @@index([tenantId])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  tenantId             String
+  customer             StripeCustomer     @relation(fields: [stripeCustomerId], references: [stripeCustomerId], onDelete: Cascade)
+  stripeCustomerId     String
+  stripeSubscriptionId String             @unique
+  stripePriceId        String
+  tier                 SubscriptionTier
+  status               SubscriptionStatus
+  billingInterval      BillingInterval
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  canceledAt           DateTime?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  invoices       Invoice[]
+  usageSnapshots UsageSnapshot[]
+
+  @@index([tenantId])
+  @@index([stripeCustomerId])
+  @@index([status])
+}
+
+model PaymentMethod {
+  id                    String         @id @default(cuid())
+  tenantId              String
+  customer              StripeCustomer @relation(fields: [stripeCustomerId], references: [stripeCustomerId], onDelete: Cascade)
+  stripeCustomerId      String
+  stripePaymentMethodId String         @unique
+  type                  String
+  isDefault             Boolean        @default(false)
+  lastFour              String?
+  brand                 String?
+  expMonth              Int?
+  expYear               Int?
+  createdAt             DateTime       @default(now())
+
+  transactions Transaction[]
+
+  @@index([tenantId])
+  @@index([stripeCustomerId])
+}
+
+model Invoice {
+  id               String         @id @default(cuid())
+  tenantId         String
+  customer         StripeCustomer @relation(fields: [stripeCustomerId], references: [stripeCustomerId], onDelete: Cascade)
+  stripeCustomerId String
+  subscription     Subscription?  @relation(fields: [subscriptionId], references: [id])
+  subscriptionId   String?
+  stripeInvoiceId  String         @unique
+  number           String
+  status           String
+  currency         String
+  subtotalCents    Int
+  taxCents         Int
+  totalCents       Int
+  amountPaidCents  Int
+  amountDueCents   Int
+  dueDate          DateTime
+  paidAt           DateTime?
+  hostedInvoiceUrl String?
+  invoicePdfUrl    String?
+  createdAt        DateTime       @default(now())
+
+  transactions Transaction[]
+
+  @@index([tenantId])
+  @@index([stripeCustomerId])
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+model Transaction {
+  id                    String         @id @default(cuid())
+  tenantId              String
+  invoice               Invoice?       @relation(fields: [invoiceId], references: [id])
+  invoiceId             String?
+  paymentMethod         PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  paymentMethodId       String?
+  stripePaymentIntentId String?
+  stripeChargeId        String?
+  type                  String
+  status                String
+  amountCents           Int
+  currency              String
+  failureReason         String?
+  receiptUrl            String?
+  createdAt             DateTime       @default(now())
+  processedAt           DateTime?
+
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@index([status])
+}
+
+model WebhookEvent {
+  id            String    @id @default(cuid())
+  stripeEventId String    @unique
+  type          String
+  data          Json
+  processed     Boolean   @default(false)
+  processedAt   DateTime?
+  error         String?
+  createdAt     DateTime  @default(now())
+
+  @@index([processed])
+  @@index([type])
+}
+
+model UsageSnapshot {
+  id             String       @id @default(cuid())
+  tenantId       String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscriptionId String
+  periodStart    DateTime
+  periodEnd      DateTime
+  users          Int          @default(0)
+  modules        Int          @default(0)
+  storageGB      Float        @default(0)
+  classrooms     Int          @default(0)
+  vrSessions     Int          @default(0)
+  capturedAt     DateTime     @default(now())
+
+  @@index([tenantId])
+  @@index([subscriptionId])
+  @@index([periodStart, periodEnd])
 }
 
 // =============================================================================
@@ -1576,16 +1752,11 @@ model Curriculum {
 // Admin & Tenant Management (Block 4 - Day 38)
 // =============================================================================
 
-enum SubscriptionTier {
-  FREE
-  BASIC
-  ENTERPRISE
-}
-
 model Tenant {
   id               String           @id @default(cuid())
   name             String
   subdomain        String           @unique
+  adminEmail       String?
   subscriptionTier SubscriptionTier @default(FREE)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
@@ -1595,6 +1766,7 @@ model Tenant {
   identityProviders IdentityProvider[]
 
   @@index([subdomain])
+  @@map("tenants")
 }
 
 model TenantSettings {

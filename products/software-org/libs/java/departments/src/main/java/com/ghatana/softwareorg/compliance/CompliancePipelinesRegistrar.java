@@ -8,6 +8,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 
+/**
+ * Compliance Pipelines Registrar — manages audit, policy enforcement, and incident reporting pipelines.
+ *
+ * @doc.type class
+ * @doc.purpose Compliance pipeline registration and management
+ * @doc.layer product
+ * @doc.pattern Registrar
+ */
 @Slf4j
 @RequiredArgsConstructor
 @Getter

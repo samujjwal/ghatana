@@ -9,7 +9,7 @@ plugins {
 // - Rust/Cargo: cargo build
 
 group = "com.ghatana.audio-video"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 // Aggregate task to build all language components
 tasks.register("buildAll") {

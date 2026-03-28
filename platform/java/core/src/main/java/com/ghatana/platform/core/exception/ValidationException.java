@@ -38,6 +38,17 @@ public class ValidationException extends BaseException {
     }
 
     /**
+     * Creates a new ValidationException with the specified message and cause.
+     *
+     * @param message The error message
+     * @param cause The cause
+     */
+    public ValidationException(String message, Throwable cause) {
+        super(ErrorCode.VALIDATION_ERROR, message, cause);
+        this.validationErrors = new HashMap<>();
+    }
+
+    /**
      * Creates a new ValidationException with the specified message and validation errors.
      *
      * @param message The error message

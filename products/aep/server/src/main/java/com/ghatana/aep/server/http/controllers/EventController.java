@@ -16,6 +16,11 @@ import java.util.Map;
 /**
  * Controller for event processing endpoints.
  * Handles single event and batch event processing.
+ *
+ * @doc.type class
+ * @doc.purpose HTTP controller for event ingestion and processing endpoints
+ * @doc.layer product
+ * @doc.pattern Controller
  */
 public class EventController {
     private static final Logger log = LoggerFactory.getLogger(EventController.class);

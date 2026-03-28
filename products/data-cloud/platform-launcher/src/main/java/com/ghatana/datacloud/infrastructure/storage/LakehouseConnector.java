@@ -112,7 +112,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LakehouseConnector implements StorageConnector {
 
-    private static final Logger logger = LoggerFactory.getLogger(LakehouseConnector.class);
+    private static final Logger log = LoggerFactory.getLogger(LakehouseConnector.class);
     private final MetricsCollector metrics;
     private final Map<String, List<Entity>> lakehouseStore = new ConcurrentHashMap<>();
 
@@ -124,7 +124,7 @@ public class LakehouseConnector implements StorageConnector {
      */
     public LakehouseConnector(MetricsCollector metrics) {
         this.metrics = Objects.requireNonNull(metrics, "MetricsCollector cannot be null");
-        logger.info("LakehouseConnector initialized");
+        log.info("LakehouseConnector initialized");
     }
 
     @Override
@@ -167,7 +167,7 @@ public class LakehouseConnector implements StorageConnector {
                     "operation", "create",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", entity.getTenantId());
-            logger.error("Failed to create entity in lakehouse store", e);
+            log.error("Failed to create entity in lakehouse store", e);
             return Promise.ofException(e);
         }
     }
@@ -198,7 +198,7 @@ public class LakehouseConnector implements StorageConnector {
                     "operation", "read",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to read entity from lakehouse store", e);
+            log.error("Failed to read entity from lakehouse store", e);
             return Promise.ofException(e);
         }
     }
@@ -240,7 +240,7 @@ public class LakehouseConnector implements StorageConnector {
                     "operation", "update",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", entity.getTenantId());
-            logger.error("Failed to update entity in lakehouse store", e);
+            log.error("Failed to update entity in lakehouse store", e);
             return Promise.ofException(e);
         }
     }
@@ -279,7 +279,7 @@ public class LakehouseConnector implements StorageConnector {
                     "operation", "delete",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to delete entity from lakehouse store", e);
+            log.error("Failed to delete entity from lakehouse store", e);
             return Promise.ofException(e);
         }
     }
@@ -333,7 +333,7 @@ public class LakehouseConnector implements StorageConnector {
                     "operation", "query",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to query lakehouse store", e);
+            log.error("Failed to query lakehouse store", e);
             return Promise.ofException(e);
         }
     }
@@ -375,7 +375,7 @@ public class LakehouseConnector implements StorageConnector {
                     "operation", "scan",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to scan lakehouse store", e);
+            log.error("Failed to scan lakehouse store", e);
             return Promise.ofException(e);
         }
     }
@@ -411,7 +411,7 @@ public class LakehouseConnector implements StorageConnector {
                     "operation", "count",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to count entities in lakehouse store", e);
+            log.error("Failed to count entities in lakehouse store", e);
             return Promise.ofException(e);
         }
     }
@@ -461,7 +461,7 @@ public class LakehouseConnector implements StorageConnector {
                     "operation", "bulk_create",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to bulk create entities in lakehouse store", e);
+            log.error("Failed to bulk create entities in lakehouse store", e);
             return Promise.ofException(e);
         }
     }
@@ -506,7 +506,7 @@ public class LakehouseConnector implements StorageConnector {
                     "operation", "bulk_update",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to bulk update entities in lakehouse store", e);
+            log.error("Failed to bulk update entities in lakehouse store", e);
             return Promise.ofException(e);
         }
     }
@@ -546,7 +546,7 @@ public class LakehouseConnector implements StorageConnector {
                     "operation", "bulk_delete",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to bulk delete entities from lakehouse store", e);
+            log.error("Failed to bulk delete entities from lakehouse store", e);
             return Promise.ofException(e);
         }
     }
@@ -579,7 +579,7 @@ public class LakehouseConnector implements StorageConnector {
                     "operation", "truncate",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to truncate lakehouse store", e);
+            log.error("Failed to truncate lakehouse store", e);
             return Promise.ofException(e);
         }
     }
@@ -600,10 +600,10 @@ public class LakehouseConnector implements StorageConnector {
     @Override
     public Promise<Void> healthCheck() {
         try {
-            logger.debug("LakehouseConnector health check passed");
+            log.debug("LakehouseConnector health check passed");
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("LakehouseConnector health check failed", e);
+            log.error("LakehouseConnector health check failed", e);
             return Promise.ofException(e);
         }
     }

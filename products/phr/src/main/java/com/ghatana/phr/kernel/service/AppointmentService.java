@@ -7,6 +7,7 @@ import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataResult;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.service.KernelLifecycleAware;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -43,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class AppointmentService {
+public class AppointmentService implements KernelLifecycleAware {
 
     private static final String APPOINTMENT_DATASET = "phr.appointments";
     private static final String SLOT_DATASET = "phr.appointment.slots";

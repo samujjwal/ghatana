@@ -3,6 +3,8 @@ package com.ghatana.products.finance.domains.referencedata.service;
 import com.ghatana.products.finance.domains.referencedata.domain.Instrument;
 import com.ghatana.products.finance.domains.referencedata.domain.InstrumentStatus;
 import com.ghatana.products.finance.domains.referencedata.port.InstrumentStore;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,13 +126,13 @@ public class InstrumentLifecycleService {
 
     // ── Exceptions ────────────────────────────────────────────────────────────
 
-    public static final class InstrumentNotFoundException extends RuntimeException {
+    public static final class InstrumentNotFoundException extends ResourceNotFoundException {
         public InstrumentNotFoundException(UUID id) {
             super("Instrument not found: " + id);
         }
     }
 
-    public static final class InvalidStatusTransitionException extends RuntimeException {
+    public static final class InvalidStatusTransitionException extends ServiceException {
         public InvalidStatusTransitionException(UUID id,
                                                 InstrumentStatus from, InstrumentStatus to) {
             super("Invalid status transition for " + id + ": " + from + " → " + to);

@@ -8,6 +8,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 
+/**
+ * Support Pipelines Registrar — manages ticket triage, escalation, and resolution pipelines.
+ *
+ * @doc.type class
+ * @doc.purpose Support pipeline registration and management
+ * @doc.layer product
+ * @doc.pattern Registrar
+ */
 @Slf4j
 @RequiredArgsConstructor
 @Getter

@@ -68,7 +68,7 @@ import java.util.*;
 @Tag(name = "Webhooks", description = "Webhook subscription management endpoints")
 public class WebhookController {
 
-    private static final Logger logger = LoggerFactory.getLogger(WebhookController.class);
+    private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 
     private static final HttpHeader HEADER_TENANT_ID = HttpHeaders.of("X-Tenant-Id");
 
@@ -90,7 +90,7 @@ public class WebhookController {
         this.webhookService = Objects.requireNonNull(webhookService, "WebhookService cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "MetricsCollector cannot be null");
         this.mapper = Objects.requireNonNull(mapper, "ObjectMapper cannot be null");
-        logger.info("WebhookController initialized");
+        log.info("WebhookController initialized");
     }
 
     /**
@@ -132,7 +132,7 @@ public class WebhookController {
                         .build());
             }
         } catch (Exception e) {
-            logger.error("Error handling webhook request", e);
+            log.error("Error handling webhook request", e);
             metrics.incrementCounter("controller.webhook.error",
                     "error_type", "INTERNAL");
             return Promise.of(ResponseBuilder.internalServerError()
@@ -203,7 +203,7 @@ public class WebhookController {
                                     .build();
                             return Promise.of(response);
                         } catch (Exception e) {
-                            logger.error("Error serializing created webhook", e);
+                            log.error("Error serializing created webhook", e);
                             return Promise.of(ResponseBuilder.internalServerError()
                                     .json(Collections.singletonMap("error", "Failed to serialize response"))
                                     .build());
@@ -221,7 +221,7 @@ public class WebhookController {
                                 .build());
                     });
         } catch (Exception e) {
-            logger.error("Error parsing webhook request", e);
+            log.error("Error parsing webhook request", e);
             return Promise.of(ResponseBuilder.badRequest()
                     .json(Collections.singletonMap("error", "Invalid request format"))
                     .build());
@@ -251,13 +251,13 @@ public class WebhookController {
                                 .build();
                         return Promise.of(httpResponse);
                     } catch (Exception e) {
-                        logger.error("Error serializing webhook list", e);
+                        log.error("Error serializing webhook list", e);
                         return Promise.of(ResponseBuilder.internalServerError()
                                 .json(Collections.singletonMap("error", "Failed to serialize response"))
                                 .build());
                     }
                 }, error -> {
-                    logger.error("Error listing webhooks", error);
+                    log.error("Error listing webhooks", error);
                     metrics.incrementCounter("controller.webhook.list.error");
                     return Promise.of(ResponseBuilder.internalServerError()
                             .json(Collections.singletonMap("error", "Failed to list webhooks"))
@@ -369,14 +369,14 @@ public class WebhookController {
                                                     .build();
                                             return Promise.of(notFound);
                                         }
-                                        logger.error("Error updating webhook", error);
+                                        log.error("Error updating webhook", error);
                                         metrics.incrementCounter("controller.webhook.update.error");
                                         return Promise.of(ResponseBuilder.internalServerError()
                                                 .json(Collections.singletonMap("error", "Failed to update webhook"))
                                                 .build());
                                     });
                         } catch (Exception e) {
-                            logger.error("Error parsing update request", e);
+                            log.error("Error parsing update request", e);
                             return Promise.of(ResponseBuilder.badRequest()
                                     .json(Collections.singletonMap("error", "Invalid request format"))
                                     .build());
@@ -413,7 +413,7 @@ public class WebhookController {
                                 .build();
                         return Promise.of(ok);
                     }, error -> {
-                        logger.error("Error deleting webhook", error);
+                        log.error("Error deleting webhook", error);
                         metrics.incrementCounter("controller.webhook.delete.error");
                         return Promise.of(ResponseBuilder.internalServerError()
                                 .json(Collections.singletonMap("error", "Failed to delete webhook"))

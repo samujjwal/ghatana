@@ -7,6 +7,8 @@ import com.ghatana.products.finance.domains.oms.port.DualCalendarPort;
 import com.ghatana.products.finance.domains.oms.port.OrderStore;
 import com.ghatana.products.finance.domains.referencedata.port.InstrumentStore;
 import com.ghatana.products.finance.domains.marketdata.port.L1Cache;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
+import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -146,13 +148,13 @@ public class OrderCaptureService {
 
     // ─── Domain exceptions ────────────────────────────────────────────────────
 
-    public static class UnknownInstrumentException extends RuntimeException {
+    public static class UnknownInstrumentException extends ResourceNotFoundException {
         public UnknownInstrumentException(String instrumentId) {
             super("Unknown instrument: " + instrumentId);
         }
     }
 
-    public static class InactiveInstrumentException extends RuntimeException {
+    public static class InactiveInstrumentException extends ServiceException {
         public InactiveInstrumentException(String instrumentId, String status) {
             super("Instrument " + instrumentId + " is not active: " + status);
         }

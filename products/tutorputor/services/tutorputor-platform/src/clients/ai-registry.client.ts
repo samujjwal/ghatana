@@ -15,8 +15,11 @@
  *   AI_REGISTRY_URL — base URL, e.g. http://ai-registry:8080
  */
 
+import { createStandaloneLogger } from '@tutorputor/core/logger';
+
 const CACHE_TTL_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 5_000;
+const logger = createStandaloneLogger({ component: 'AiRegistryClient' });
 
 export interface ModelRecord {
   id: string;
@@ -49,7 +52,7 @@ class AiRegistryClient {
   private constructor() {
     this.baseUrl = process.env['AI_REGISTRY_URL'];
     if (!this.baseUrl) {
-      console.warn('[AiRegistryClient] AI_REGISTRY_URL not configured — AI Registry queries are disabled');
+      logger.warn({ message: 'AI_REGISTRY_URL not configured', status: 'disabled' });
     }
   }
 
@@ -83,14 +86,14 @@ class AiRegistryClient {
     try {
       const res = await fetch(`${this.baseUrl}${path}`, { signal: controller.signal });
       if (!res.ok) {
-        console.warn(`[AiRegistryClient] GET ${path} returned HTTP ${res.status}`);
+        logger.warn({ message: 'GET request failed', path, httpStatus: res.status });
         return null;
       }
       const data = (await res.json()) as T;
       this.cacheSet(cacheKey, data);
       return data;
     } catch (err: unknown) {
-      console.warn(`[AiRegistryClient] GET ${path} failed: ${err instanceof Error ? err.message : String(err)}`);
+      logger.warn({ message: 'GET request exception', path, error: err instanceof Error ? err.message : String(err) });
       return null;
     } finally {
       clearTimeout(timeoutId);

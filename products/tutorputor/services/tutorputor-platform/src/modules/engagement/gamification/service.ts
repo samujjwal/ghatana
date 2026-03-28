@@ -97,20 +97,16 @@ export interface AwardPointsInput {
   sourceId?: string;
 }
 
-type LegacyGamificationPrismaClient = PrismaClient & {
-  badge: any;
-  badgeEarned: any;
-  userPoints: any;
-};
+type GamificationPrismaClient = PrismaClient;
 
 export class GamificationService {
-  private prisma: LegacyGamificationPrismaClient;
+  private prisma: GamificationPrismaClient;
   // Level XP thresholds
   private readonly LEVEL_XP = [
     0, 100, 250, 500, 1000, 2000, 4000, 8000, 16000, 32000,
   ];
 
-  constructor(prisma: LegacyGamificationPrismaClient) {
+  constructor(prisma: GamificationPrismaClient) {
     this.prisma = prisma;
   }
 
@@ -177,7 +173,7 @@ export class GamificationService {
       orderBy: { name: "asc" },
     });
 
-    return badges.map((badge: any) => ({
+    return badges.map((badge) => ({
       id: badge.id as BadgeId,
       name: badge.name,
       description: badge.description,
@@ -296,7 +292,7 @@ export class GamificationService {
       orderBy: { earnedAt: "desc" },
     });
 
-    return earned.map((e: any) => ({
+    return earned.map((e) => ({
       id: e.id,
       badge: {
         id: e.badge.id as BadgeId,
@@ -374,7 +370,7 @@ export class GamificationService {
       totalPoints,
       currentStreak: 0, // Would track in separate table
       longestStreak: 0,
-      badges: achievements.map((a: any) => ({
+      badges: achievements.map((a) => ({
         id: a.id,
         badge: {
           id: a.badge.id as BadgeId,
@@ -410,17 +406,17 @@ export class GamificationService {
     // Legacy code used 'userId' as name if join wasn't possible or simple.
 
     // Get badge counts
-    const userIds = pointsEntries.map((p: any) => p.userId);
+    const userIds = pointsEntries.map((p) => p.userId);
     const badgeCounts = await this.prisma.badgeEarned.groupBy({
       by: ["userId"],
       where: { tenantId, userId: { in: userIds } },
       _count: { id: true },
     });
     const badgeMap = new Map(
-      badgeCounts.map((b: any) => [b.userId, b._count.id]),
+      badgeCounts.map((b) => [b.userId, b._count.id]),
     );
 
-    return pointsEntries.map((p: any, index: number) => ({
+    return pointsEntries.map((p, index: number) => ({
       rank: offset + index + 1,
       userId: p.userId as UserId,
       displayName: p.userId, // Todo: fetch names

@@ -4,6 +4,7 @@ import com.ghatana.products.finance.domains.referencedata.domain.EntityRelations
 import com.ghatana.products.finance.domains.referencedata.domain.MarketEntity;
 import com.ghatana.products.finance.domains.referencedata.domain.RelationshipType;
 import com.ghatana.products.finance.domains.referencedata.port.EntityStore;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,7 +84,7 @@ public class EntityService {
         return Promise.ofBlocking(executor, () -> store.findAllDescendantIds(rootEntityId).getResult());
     }
 
-    public static final class EntityNotFoundException extends RuntimeException {
+    public static final class EntityNotFoundException extends ResourceNotFoundException {
         public EntityNotFoundException(UUID id) {
             super("Entity not found: " + id);
         }

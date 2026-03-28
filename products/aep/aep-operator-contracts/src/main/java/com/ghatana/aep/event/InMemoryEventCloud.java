@@ -38,6 +38,7 @@ public class InMemoryEventCloud implements EventCloud {
     private final Map<String, List<StoredEvent>> eventsByTenant = new ConcurrentHashMap<>();
     private final List<SubscriptionEntry> subscriptions = new CopyOnWriteArrayList<>();
     private final AtomicLong eventCounter = new AtomicLong(0);
+    private volatile long lastGlobalPurgeAtMs;
 
     /** Create an instance with no TTL enforcement. */
     public InMemoryEventCloud() {
@@ -63,9 +64,9 @@ public class InMemoryEventCloud implements EventCloud {
         Objects.requireNonNull(eventType, "eventType required");
         Objects.requireNonNull(payload, "payload required");
 
-        // Enforce TTL before adding new events to keep memory bounded.
+        // Enforce TTL before adding new events to keep memory bounded without scanning all tenants.
         if (defaultTtl != null) {
-            purgeExpired();
+            purgeExpired(tenantId);
         }
 
         String eventId = tenantId + "-" + eventCounter.incrementAndGet();
@@ -144,11 +145,37 @@ public class InMemoryEventCloud implements EventCloud {
         long cutoffMs = System.currentTimeMillis() - defaultTtl.toMillis();
         int removed = 0;
         for (List<StoredEvent> events : eventsByTenant.values()) {
-            int before = events.size();
-            events.removeIf(e -> e.timestamp() < cutoffMs);
-            removed += before - events.size();
+            removed += purgeExpired(events, cutoffMs);
         }
+        lastGlobalPurgeAtMs = System.currentTimeMillis();
         return removed;
+    }
+
+    private void purgeExpired(String tenantId) {
+        List<StoredEvent> events = eventsByTenant.get(tenantId);
+        if (events == null || events.isEmpty()) {
+            maybePurgeOtherTenants();
+            return;
+        }
+
+        long cutoffMs = System.currentTimeMillis() - defaultTtl.toMillis();
+        purgeExpired(events, cutoffMs);
+        maybePurgeOtherTenants();
+    }
+
+    private void maybePurgeOtherTenants() {
+        long nowMs = System.currentTimeMillis();
+        long ttlMs = Math.max(defaultTtl.toMillis(), 1L);
+        if (nowMs - lastGlobalPurgeAtMs < ttlMs) {
+            return;
+        }
+        purgeExpired();
+    }
+
+    private static int purgeExpired(List<StoredEvent> events, long cutoffMs) {
+        int before = events.size();
+        events.removeIf(event -> event.timestamp() < cutoffMs);
+        return before - events.size();
     }
 
     /**

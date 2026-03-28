@@ -5,6 +5,7 @@
  * including cross-market surveillance, algo monitoring, and behavioral analytics.
  */
 plugins {
+    id("com.ghatana.finance-domain-conventions")
     id("java-library")
 }
 

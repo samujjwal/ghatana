@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class PluginAutoScaler implements AutoScaler {
 
-    private static final Logger logger = LoggerFactory.getLogger(PluginAutoScaler.class);
+    private static final Logger log = LoggerFactory.getLogger(PluginAutoScaler.class);
 
     // Dependencies
     private final DataCloudMetrics metrics;
@@ -243,7 +243,7 @@ public class PluginAutoScaler implements AutoScaler {
             .description("Number of registered scaling policies")
             .register(meterRegistry);
 
-        logger.info("PluginAutoScaler initialized with config: evaluationInterval={}, defaultCooldown={}",
+        log.info("PluginAutoScaler initialized with config: evaluationInterval={}, defaultCooldown={}",
             config.evaluationInterval(), config.defaultCooldown());
     }
 
@@ -257,7 +257,7 @@ public class PluginAutoScaler implements AutoScaler {
         pluginPolicies.computeIfAbsent(policy.pluginId(), k -> new CopyOnWriteArrayList<>())
             .add(policy.policyId());
 
-        logger.info("Registered scaling policy: {} for plugin {}", policy.policyId(), policy.pluginId());
+        log.info("Registered scaling policy: {} for plugin {}", policy.policyId(), policy.pluginId());
         return Promise.complete();
     }
 
@@ -269,7 +269,7 @@ public class PluginAutoScaler implements AutoScaler {
             if (pluginPolicyList != null) {
                 pluginPolicyList.remove(policyId);
             }
-            logger.info("Unregistered scaling policy: {}", policyId);
+            log.info("Unregistered scaling policy: {}", policyId);
         }
         return Promise.complete();
     }
@@ -658,7 +658,7 @@ public class PluginAutoScaler implements AutoScaler {
                         ));
                     }
                 } catch (Exception e) {
-                    logger.warn("Hook failed for plugin {}", pluginId, e);
+                    log.warn("Hook failed for plugin {}", pluginId, e);
                 }
             }
 
@@ -716,11 +716,11 @@ public class PluginAutoScaler implements AutoScaler {
                     try {
                         hook.afterScale(event);
                     } catch (Exception e) {
-                        logger.warn("Post-scale hook failed for plugin {}", pluginId, e);
+                        log.warn("Post-scale hook failed for plugin {}", pluginId, e);
                     }
                 }
 
-                logger.info("Scaled plugin {} from {} to {} instances ({})",
+                log.info("Scaled plugin {} from {} to {} instances ({})",
                     pluginId, previousInstances, newInstances, recommendation.reason());
 
                 return Promise.of(event);
@@ -742,11 +742,11 @@ public class PluginAutoScaler implements AutoScaler {
                     try {
                         hook.onScaleFailure(recommendation, e);
                     } catch (Exception he) {
-                        logger.warn("Failure hook failed for plugin {}", pluginId, he);
+                        log.warn("Failure hook failed for plugin {}", pluginId, he);
                     }
                 }
 
-                logger.error("Failed to scale plugin {}", pluginId, e);
+                log.error("Failed to scale plugin {}", pluginId, e);
                 return Promise.of(failedEvent);
             }
         } catch (Exception e) {
@@ -909,13 +909,13 @@ public class PluginAutoScaler implements AutoScaler {
     @Override
     public void registerHook(String hookId, ScalingHook hook) {
         hooks.put(hookId, hook);
-        logger.info("Registered scaling hook: {}", hookId);
+        log.info("Registered scaling hook: {}", hookId);
     }
 
     @Override
     public void unregisterHook(String hookId) {
         hooks.remove(hookId);
-        logger.info("Unregistered scaling hook: {}", hookId);
+        log.info("Unregistered scaling hook: {}", hookId);
     }
 
     @Override
@@ -928,7 +928,7 @@ public class PluginAutoScaler implements AutoScaler {
     @Override
     public Promise<Void> start() {
         if (running.compareAndSet(false, true)) {
-            logger.info("Starting PluginAutoScaler...");
+            log.info("Starting PluginAutoScaler...");
 
             // Schedule periodic evaluation
             scheduler.scheduleAtFixedRate(
@@ -946,7 +946,7 @@ public class PluginAutoScaler implements AutoScaler {
                 TimeUnit.MILLISECONDS
             );
 
-            logger.info("PluginAutoScaler started");
+            log.info("PluginAutoScaler started");
         }
         return Promise.complete();
     }
@@ -954,7 +954,7 @@ public class PluginAutoScaler implements AutoScaler {
     @Override
     public Promise<Void> stop() {
         if (running.compareAndSet(true, false)) {
-            logger.info("Stopping PluginAutoScaler...");
+            log.info("Stopping PluginAutoScaler...");
 
             scheduler.shutdown();
             evaluationExecutor.shutdown();
@@ -972,7 +972,7 @@ public class PluginAutoScaler implements AutoScaler {
                 Thread.currentThread().interrupt();
             }
 
-            logger.info("PluginAutoScaler stopped");
+            log.info("PluginAutoScaler stopped");
         }
         return Promise.complete();
     }
@@ -985,14 +985,14 @@ public class PluginAutoScaler implements AutoScaler {
     @Override
     public void pause() {
         if (paused.compareAndSet(false, true)) {
-            logger.info("PluginAutoScaler paused");
+            log.info("PluginAutoScaler paused");
         }
     }
 
     @Override
     public void resume() {
         if (paused.compareAndSet(true, false)) {
-            logger.info("PluginAutoScaler resumed");
+            log.info("PluginAutoScaler resumed");
         }
     }
 
@@ -1006,18 +1006,18 @@ public class PluginAutoScaler implements AutoScaler {
             return;
         }
 
-        logger.debug("Running auto-scaling evaluation...");
+        log.debug("Running auto-scaling evaluation...");
         
         for (String pluginId : executor.getManagedPlugins()) {
             try {
                 ScalingRecommendation recommendation = evaluate(pluginId).getResult();
                 if (recommendation.direction() != ScaleDirection.NONE) {
-                    logger.info("Scaling recommendation for {}: {} to {} instances",
+                    log.info("Scaling recommendation for {}: {} to {} instances",
                         pluginId, recommendation.direction(), recommendation.targetInstances());
                     scale(recommendation);
                 }
             } catch (Exception e) {
-                logger.error("Error evaluating plugin {}", pluginId, e);
+                log.error("Error evaluating plugin {}", pluginId, e);
             }
         }
     }
@@ -1034,7 +1034,7 @@ public class PluginAutoScaler implements AutoScaler {
                 // For now, we'll simulate metric collection
                 collectPluginMetrics(pluginId);
             } catch (Exception e) {
-                logger.debug("Error collecting metrics for plugin {}", pluginId, e);
+                log.debug("Error collecting metrics for plugin {}", pluginId, e);
             }
         }
     }

@@ -8,6 +8,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 
+/**
+ * Marketing Pipelines Registrar — manages campaign execution, lead generation, and brand monitoring pipelines.
+ *
+ * @doc.type class
+ * @doc.purpose Marketing pipeline registration and management
+ * @doc.layer product
+ * @doc.pattern Registrar
+ */
 @Slf4j
 @RequiredArgsConstructor
 @Getter

@@ -1,6 +1,7 @@
 package com.ghatana.products.finance.domains.marketdata.websocket;
 
 import com.ghatana.products.finance.domains.marketdata.domain.L1Quote;
+import com.ghatana.platform.core.exception.ServiceException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,7 +95,7 @@ public class SubscriptionRegistry {
     // Exception
     // -----------------------------------------------------------------------
 
-    public static final class SubscriptionLimitExceededException extends RuntimeException {
+    public static final class SubscriptionLimitExceededException extends ServiceException {
         public SubscriptionLimitExceededException(String connectionId, int current, int adding) {
             super(String.format(
                     "Connection %s has %d subscriptions; adding %d would exceed limit of %d",

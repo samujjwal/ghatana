@@ -1,6 +1,7 @@
 package com.ghatana.refactorer.server.auth;
 
 import com.ghatana.platform.governance.rbac.Role;
+import com.ghatana.platform.core.exception.UnauthorizedException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -476,7 +477,7 @@ public final class RoleBasedAccessControl {
 
     /**
  * Exception thrown when access is denied. */
-    public static final class AccessDeniedException extends RuntimeException {
+    public static final class AccessDeniedException extends UnauthorizedException {
         private static final long serialVersionUID = 1L;
 
         public AccessDeniedException(String message) {

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.ghatana.services"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 application {
     mainClass.set("com.ghatana.services.auth.AuthGatewayLauncher")

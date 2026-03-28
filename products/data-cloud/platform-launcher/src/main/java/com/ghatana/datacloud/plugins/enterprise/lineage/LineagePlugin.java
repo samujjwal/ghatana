@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.pattern Plugin, Observer
  */
 public class LineagePlugin implements Plugin {
-    private static final Logger logger = LoggerFactory.getLogger(LineagePlugin.class);
+    private static final Logger log = LoggerFactory.getLogger(LineagePlugin.class);
     
     private static final PluginMetadata METADATA = PluginMetadata.builder()
         .id("lineage-plugin")
@@ -72,7 +72,7 @@ public class LineagePlugin implements Plugin {
     
     @Override
     public @NotNull Promise<Void> initialize(@NotNull PluginContext context) {
-        logger.info("Initializing LineagePlugin");
+        log.info("Initializing LineagePlugin");
         state = PluginState.INITIALIZED;
         return Promise.complete();
     }
@@ -81,7 +81,7 @@ public class LineagePlugin implements Plugin {
     public @NotNull Promise<Void> start() {
         state = PluginState.STARTED;
         running = true;
-        logger.info("LineagePlugin started");
+        log.info("LineagePlugin started");
         return Promise.complete();
     }
     
@@ -89,7 +89,7 @@ public class LineagePlugin implements Plugin {
     public @NotNull Promise<Void> stop() {
         state = PluginState.STOPPED;
         running = false;
-        logger.info("LineagePlugin stopped");
+        log.info("LineagePlugin stopped");
         return Promise.complete();
     }
     
@@ -97,7 +97,7 @@ public class LineagePlugin implements Plugin {
     public @NotNull Promise<Void> shutdown() {
         state = PluginState.STOPPED;
         running = false;
-        logger.info("LineagePlugin shutdown");
+        log.info("LineagePlugin shutdown");
         // Clean up resources
         lineageStore.clear();
         upstreamDependencies.clear();
@@ -153,7 +153,7 @@ public class LineagePlugin implements Plugin {
         downstreamDependencies.computeIfAbsent(sourceKey, k -> ConcurrentHashMap.newKeySet())
             .add(targetKey);
         
-        logger.debug("Recorded transformation: {} -> {}", sourceCollection, targetCollection);
+        log.debug("Recorded transformation: {} -> {}", sourceCollection, targetCollection);
         
         return Promise.complete();
     }
@@ -215,7 +215,7 @@ public class LineagePlugin implements Plugin {
                     .timestamp(Instant.now())
                     .build();
                 
-                logger.debug("Impact analysis: {} affects {} collections",
+                log.debug("Impact analysis: {} affects {} collections",
                     collectionName, downstream.size());
                 
                 return analysis;

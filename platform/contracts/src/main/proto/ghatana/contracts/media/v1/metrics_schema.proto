@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package ghatana.contracts.media.v1;
+
+option java_package = "com.ghatana.contracts.media.v1";
+option java_multiple_files = true;
+option java_outer_classname = "AudioVideoMetricsSchemaProto";
+
+message AudioVideoRuntimeMetrics {
+  uint64 browser_recognition_sessions = 1;
+  uint64 browser_synthesis_requests = 2;
+  uint64 stt_fallback_requests = 3;
+  uint64 tts_fallback_requests = 4;
+  uint64 fallback_failures = 5;
+  uint64 audio_load_attempts = 6;
+  uint64 audio_load_failures = 7;
+  uint64 playbacks_started = 8;
+  uint64 playback_failures = 9;
+  uint64 recordings_started = 10;
+  uint64 recording_failures = 11;
+  uint64 active_input_leases = 12;
+  uint64 active_output_leases = 13;
+  uint64 device_backpressure_events = 14;
+  uint64 device_acquire_timeouts = 15;
+  uint64 leak_detections = 16;
+  uint64 sync_drift_observations = 17;
+  uint64 last_sync_drift_ms = 18;
+}

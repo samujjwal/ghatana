@@ -10,6 +10,11 @@ import com.ghatana.softwareorg.engineering.domain.BuildResult;
 /**
  * Manages engineering department state (features, commits, builds, reviews).
  * Thread-safe storage for domain objects with tenant isolation.
+ *
+ * @doc.type class
+ * @doc.purpose Thread-safe state repository for engineering department domain objects
+ * @doc.layer product
+ * @doc.pattern StateManager
  */
 public class EngineeringStateManager {
 

@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.ghatana.services"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 description = "Shared Services - Cross-product microservices"
 

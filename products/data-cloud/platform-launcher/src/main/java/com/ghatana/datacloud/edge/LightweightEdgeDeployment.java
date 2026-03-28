@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class LightweightEdgeDeployment implements EdgeDeployment {
 
-    private static final Logger logger = LoggerFactory.getLogger(LightweightEdgeDeployment.class);
+    private static final Logger log = LoggerFactory.getLogger(LightweightEdgeDeployment.class);
 
     // State
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -145,7 +145,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
         if (initialized.compareAndSet(false, true)) {
             this.config = Objects.requireNonNull(config, "config");
             
-            logger.info("Initializing edge deployment: id={}, region={}", 
+            log.info("Initializing edge deployment: id={}, region={}", 
                 config.edgeId(), config.region());
 
             // Initialize executors with resource limits
@@ -172,7 +172,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             scheduleResourceCheck();
 
             mode.set(EdgeMode.DISCONNECTED);
-            logger.info("Edge deployment initialized: {}", config.edgeId());
+            log.info("Edge deployment initialized: {}", config.edgeId());
         }
         return Promise.complete();
     }
@@ -227,12 +227,12 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
         }
 
         if (centralConnection == null) {
-            logger.warn("No central connection configured - operating in standalone mode");
+            log.warn("No central connection configured - operating in standalone mode");
             mode.set(EdgeMode.DISCONNECTED);
             return Promise.complete();
         }
 
-        logger.info("Connecting to central: {}", config.centralUrl());
+        log.info("Connecting to central: {}", config.centralUrl());
 
         try {
             Boolean result = centralConnection.connect(config.centralUrl(), config.edgeId()).getResult();
@@ -246,20 +246,20 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
                     try {
                         h.onConnect();
                     } catch (Exception e) {
-                        logger.warn("Hook onConnect failed", e);
+                        log.warn("Hook onConnect failed", e);
                     }
                 });
 
                 // Trigger initial sync
                 syncNow(SyncDirection.BIDIRECTIONAL);
 
-                logger.info("Connected to central Data-Cloud");
+                log.info("Connected to central Data-Cloud");
             } else {
-                logger.warn("Failed to connect to central");
+                log.warn("Failed to connect to central");
                 mode.set(EdgeMode.DISCONNECTED);
             }
         } catch (Exception e) {
-            logger.error("Error connecting to central", e);
+            log.error("Error connecting to central", e);
             mode.set(EdgeMode.DISCONNECTED);
             return Promise.ofException(e);
         }
@@ -272,7 +272,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             return Promise.complete();
         }
 
-        logger.info("Disconnecting from central (graceful={})", graceful);
+        log.info("Disconnecting from central (graceful={})", graceful);
 
         try {
             if (graceful) {
@@ -280,7 +280,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
                 try {
                     syncNow(SyncDirection.UPLOAD).getResult();
                 } catch (Exception e) {
-                    logger.warn("Error flushing during graceful disconnect", e);
+                    log.warn("Error flushing during graceful disconnect", e);
                 }
             }
 
@@ -297,11 +297,11 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
                 try {
                     h.onDisconnect();
                 } catch (Exception e) {
-                    logger.warn("Hook onDisconnect failed", e);
+                    log.warn("Hook onDisconnect failed", e);
                 }
             });
 
-            logger.info("Disconnected from central");
+            log.info("Disconnected from central");
         } catch (Exception e) {
             return Promise.ofException(e);
         }
@@ -310,7 +310,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
 
     @Override
     public Promise<Void> shutdown() {
-        logger.info("Shutting down edge deployment: {}", config != null ? config.edgeId() : "uninitialized");
+        log.info("Shutting down edge deployment: {}", config != null ? config.edgeId() : "uninitialized");
 
         return disconnect(true).then(() -> {
             if (scheduler != null) {
@@ -332,7 +332,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             }
 
             initialized.set(false);
-            logger.info("Edge deployment shut down");
+            log.info("Edge deployment shut down");
             return Promise.complete();
         });
     }
@@ -348,12 +348,12 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
     public Promise<Void> setMode(EdgeMode newMode) {
         EdgeMode oldMode = mode.getAndSet(newMode);
         if (oldMode != newMode) {
-            logger.info("Edge mode changed: {} -> {}", oldMode, newMode);
+            log.info("Edge mode changed: {} -> {}", oldMode, newMode);
             hooks.values().forEach(h -> {
                 try {
                     h.onModeChange(oldMode, newMode);
                 } catch (Exception e) {
-                    logger.warn("Hook onModeChange failed", e);
+                    log.warn("Hook onModeChange failed", e);
                 }
             });
         }
@@ -373,14 +373,14 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             return Promise.ofException(new IllegalStateException("Edge not initialized"));
         }
 
-        logger.debug("Starting sync: direction={}", direction);
+        log.debug("Starting sync: direction={}", direction);
 
         // Notify hooks
         hooks.values().forEach(h -> {
             try {
                 h.beforeSync(direction);
             } catch (Exception e) {
-                logger.warn("Hook beforeSync failed", e);
+                log.warn("Hook beforeSync failed", e);
             }
         });
 
@@ -395,7 +395,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
         try {
             if (!connected.get() || centralConnection == null) {
                 // Offline - queue changes for later
-                logger.debug("Offline sync - changes queued");
+                log.debug("Offline sync - changes queued");
                 EdgeSyncEvent offlineEvent = createSyncEvent(direction, 0, 0, 0, 0, startTime, true, null);
                 recordSyncHistory(offlineEvent);
                 return Promise.of(offlineEvent);
@@ -428,7 +428,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
         } catch (Exception e) {
             success = false;
             errorMessage = e.getMessage();
-            logger.error("Sync failed", e);
+            log.error("Sync failed", e);
 
             if (syncFailureCounter != null) {
                 syncFailureCounter.increment();
@@ -439,7 +439,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
                 try {
                     hook.onSyncFailure(direction, e);
                 } catch (Exception he) {
-                    logger.warn("Hook onSyncFailure failed", he);
+                    log.warn("Hook onSyncFailure failed", he);
                 }
             }
         }
@@ -457,7 +457,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             try {
                 hook.afterSync(event);
             } catch (Exception e) {
-                logger.warn("Hook afterSync failed", e);
+                log.warn("Hook afterSync failed", e);
             }
         }
 
@@ -645,7 +645,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
 
     @Override
     public Promise<EdgeSyncEvent> fullSync() {
-        logger.info("Starting full sync for edge: {}", config.edgeId());
+        log.info("Starting full sync for edge: {}", config.edgeId());
         lastSyncTime = null; // Reset to sync everything
         lastFullSyncTime = Instant.now();
         return syncNow(SyncDirection.BIDIRECTIONAL);
@@ -666,13 +666,13 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
     @Override
     public void registerSyncFilter(String filterId, SyncFilter filter) {
         syncFilters.put(filterId, filter);
-        logger.info("Registered sync filter: {}", filterId);
+        log.info("Registered sync filter: {}", filterId);
     }
 
     @Override
     public void unregisterSyncFilter(String filterId) {
         syncFilters.remove(filterId);
-        logger.info("Unregistered sync filter: {}", filterId);
+        log.info("Unregistered sync filter: {}", filterId);
     }
 
     // ==================== Status & Monitoring ====================
@@ -751,7 +751,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             return Promise.ofException(new IllegalStateException("Not connected"));
         }
 
-        logger.info("Prefetching {} keys", keys.size());
+        log.info("Prefetching {} keys", keys.size());
         
         try {
             for (String key : keys) {
@@ -769,7 +769,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
 
     @Override
     public Promise<Void> evict(Set<String> keys) {
-        logger.info("Evicting {} keys", keys.size());
+        log.info("Evicting {} keys", keys.size());
         for (String key : keys) {
             LocalEntry entry = localStorage.get(key);
             if (entry != null && !entry.dirty()) {
@@ -811,13 +811,13 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
     @Override
     public void registerHook(String hookId, EdgeHook hook) {
         hooks.put(hookId, hook);
-        logger.info("Registered edge hook: {}", hookId);
+        log.info("Registered edge hook: {}", hookId);
     }
 
     @Override
     public void unregisterHook(String hookId) {
         hooks.remove(hookId);
-        logger.info("Unregistered edge hook: {}", hookId);
+        log.info("Unregistered edge hook: {}", hookId);
     }
 
     // ==================== Local Data Operations ====================
@@ -880,7 +880,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
                         try {
                             syncNow(SyncDirection.BIDIRECTIONAL);
                         } catch (Exception e) {
-                            logger.warn("Scheduled sync failed", e);
+                            log.warn("Scheduled sync failed", e);
                         }
                     }
                 },
@@ -900,7 +900,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
                             centralConnection.sendHeartbeat(getStatus());
                             lastHeartbeat = Instant.now();
                         } catch (Exception e) {
-                            logger.warn("Heartbeat failed - checking connection", e);
+                            log.warn("Heartbeat failed - checking connection", e);
                             checkConnection();
                         }
                     }
@@ -939,12 +939,12 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
                     try {
                         connect();
                     } catch (Exception e) {
-                        logger.warn("Reconnection failed", e);
+                        log.warn("Reconnection failed", e);
                     }
                 }, 30, TimeUnit.SECONDS);
             }
         } catch (Exception e) {
-            logger.warn("Connection check failed", e);
+            log.warn("Connection check failed", e);
         }
     }
 
@@ -958,12 +958,12 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
         long usedDisk = getUsedDiskMb();
 
         if (usedMemory > limits.maxMemoryMb() * 0.9) {
-            logger.warn("Memory usage high: {}MB / {}MB", usedMemory, limits.maxMemoryMb());
+            log.warn("Memory usage high: {}MB / {}MB", usedMemory, limits.maxMemoryMb());
             evictStaleData();
         }
 
         if (usedDisk > limits.maxDiskMb() * 0.9) {
-            logger.warn("Disk usage high: {}MB / {}MB", usedDisk, limits.maxDiskMb());
+            log.warn("Disk usage high: {}MB / {}MB", usedDisk, limits.maxDiskMb());
             evictStaleData();
         }
     }

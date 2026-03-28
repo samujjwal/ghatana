@@ -76,7 +76,7 @@ import java.util.UUID;
  */
 public class WebhookService {
 
-    private static final Logger logger = LoggerFactory.getLogger(WebhookService.class);
+    private static final Logger log = LoggerFactory.getLogger(WebhookService.class);
 
     private final WebhookRepository webhookRepository;
     private final MetricsCollector metrics;
@@ -90,7 +90,7 @@ public class WebhookService {
     public WebhookService(WebhookRepository webhookRepository, MetricsCollector metrics) {
         this.webhookRepository = Objects.requireNonNull(webhookRepository, "WebhookRepository cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "MetricsCollector cannot be null");
-        logger.info("WebhookService initialized");
+        log.info("WebhookService initialized");
     }
 
     /**
@@ -137,7 +137,7 @@ public class WebhookService {
                                 "tenant", tenantId,
                                 "event_type", eventType.name());
                         metrics.recordTimer("webhook.register.duration", duration);
-                        logger.info("Webhook registered: {} for tenant {}", saved.getId(), tenantId);
+                        log.info("Webhook registered: {} for tenant {}", saved.getId(), tenantId);
                         return saved;
                     })
                     .whenException(error -> {
@@ -145,13 +145,13 @@ public class WebhookService {
                         metrics.incrementCounter("webhook.register.error",
                                 "tenant", tenantId,
                                 "error", error.getClass().getSimpleName());
-                        logger.error("Failed to register webhook for tenant {}", tenantId, error);
+                        log.error("Failed to register webhook for tenant {}", tenantId, error);
                     });
         } catch (IllegalArgumentException e) {
             metrics.incrementCounter("webhook.register.error",
                     "tenant", tenantId,
                     "error", "VALIDATION");
-            logger.warn("Invalid webhook configuration for tenant {}: {}", tenantId, e.getMessage());
+            log.warn("Invalid webhook configuration for tenant {}: {}", tenantId, e.getMessage());
             return Promise.ofException(e);
         }
     }
@@ -170,7 +170,7 @@ public class WebhookService {
                     metrics.incrementCounter("webhook.list",
                             "tenant", tenantId,
                             "count", String.valueOf(webhooks.size()));
-                    logger.debug("Listed {} webhooks for tenant {}", webhooks.size(), tenantId);
+                    log.debug("Listed {} webhooks for tenant {}", webhooks.size(), tenantId);
                     return webhooks;
                 });
     }
@@ -191,7 +191,7 @@ public class WebhookService {
                     List<Webhook> enabled = webhooks.stream()
                             .filter(Webhook::isEnabled)
                             .toList();
-                    logger.debug("Found {} enabled webhooks for tenant {} and event type {}",
+                    log.debug("Found {} enabled webhooks for tenant {} and event type {}",
                             enabled.size(), tenantId, eventType);
                     return enabled;
                 });
@@ -211,9 +211,9 @@ public class WebhookService {
         return webhookRepository.findById(id, tenantId)
                 .map(webhook -> {
                     if (webhook.isPresent()) {
-                        logger.debug("Retrieved webhook {} for tenant {}", id, tenantId);
+                        log.debug("Retrieved webhook {} for tenant {}", id, tenantId);
                     } else {
-                        logger.debug("Webhook {} not found for tenant {}", id, tenantId);
+                        log.debug("Webhook {} not found for tenant {}", id, tenantId);
                     }
                     return webhook;
                 });
@@ -246,7 +246,7 @@ public class WebhookService {
                     metrics.incrementCounter("webhook.update",
                             "tenant", tenantId,
                             "enabled", String.valueOf(enabled));
-                    logger.info("Updated webhook {} enabled status to {} for tenant {}",
+                    log.info("Updated webhook {} enabled status to {} for tenant {}",
                             id, enabled, tenantId);
                     return updated;
                 })
@@ -254,7 +254,7 @@ public class WebhookService {
                     metrics.incrementCounter("webhook.update.error",
                             "tenant", tenantId,
                             "error", error.getClass().getSimpleName());
-                    logger.error("Failed to update webhook {} for tenant {}", id, tenantId, error);
+                    log.error("Failed to update webhook {} for tenant {}", id, tenantId, error);
 
                 });
     }
@@ -286,14 +286,14 @@ public class WebhookService {
                 .map(updated -> {
                     metrics.incrementCounter("webhook.url_update",
                             "tenant", tenantId);
-                    logger.info("Updated webhook {} URL for tenant {}", id, tenantId);
+                    log.info("Updated webhook {} URL for tenant {}", id, tenantId);
                     return updated;
                 })
                 .whenException(error -> {
                     metrics.incrementCounter("webhook.url_update.error",
                             "tenant", tenantId,
                             "error", error.getClass().getSimpleName());
-                    logger.error("Failed to update webhook URL {} for tenant {}", id, tenantId, error);
+                    log.error("Failed to update webhook URL {} for tenant {}", id, tenantId, error);
 
                 });
     }
@@ -313,13 +313,13 @@ public class WebhookService {
                 .whenResult(() -> {
                     metrics.incrementCounter("webhook.delete",
                             "tenant", tenantId);
-                    logger.info("Deleted webhook {} for tenant {}", id, tenantId);
+                    log.info("Deleted webhook {} for tenant {}", id, tenantId);
                 })
                 .whenException(error -> {
                     metrics.incrementCounter("webhook.delete.error",
                             "tenant", tenantId,
                             "error", error.getClass().getSimpleName());
-                    logger.error("Failed to delete webhook {} for tenant {}", id, tenantId, error);
+                    log.error("Failed to delete webhook {} for tenant {}", id, tenantId, error);
                 });
     }
 }

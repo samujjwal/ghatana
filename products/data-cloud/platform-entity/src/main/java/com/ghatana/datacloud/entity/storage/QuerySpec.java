@@ -82,6 +82,18 @@ import java.util.*;
  */
 public final class QuerySpec {
 
+    /**
+     * Default result limit when none is specified by the caller.
+     * Adapters that receive a limit of 0 should substitute this value.
+     */
+    public static final int DEFAULT_LIMIT = 100;
+
+    /**
+     * Hard ceiling on result limit to guard against runaway queries.
+     * Adapters may enforce this or a stricter backend-specific cap.
+     */
+    public static final int MAX_LIMIT = 10_000;
+
     private final String filter;
     private final List<SortField> sortFields;
     private final int limit;
@@ -326,6 +338,10 @@ public final class QuerySpec {
         public Builder limit(int limit) {
             if (limit < 0) {
                 throw new IllegalArgumentException("Limit cannot be negative");
+            }
+            if (limit > MAX_LIMIT) {
+                throw new IllegalArgumentException(
+                    "Limit " + limit + " exceeds maximum allowed value " + MAX_LIMIT);
             }
             this.limit = limit;
             return this;

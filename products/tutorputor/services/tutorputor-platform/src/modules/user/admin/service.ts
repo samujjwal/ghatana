@@ -6,6 +6,9 @@
  */
 
 import type { PrismaClient } from '@tutorputor/core/db';
+import { createStandaloneLogger } from '@tutorputor/core/logger';
+
+const logger = createStandaloneLogger({ component: 'InstitutionAdminService' });
 import type {
     InstitutionAdminService,
     TenantId,
@@ -352,9 +355,12 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
                                 },
                             });
                         } catch (e) {
-                            console.warn(
-                                `Failed to add user ${userData.email} to classroom ${classroomId}`
-                            );
+                            logger.warn({
+                                message: 'Failed to add user to classroom',
+                                email: userData.email,
+                                classroomId,
+                                error: e instanceof Error ? e.message : String(e),
+                            });
                         }
                     }
                 }
@@ -414,7 +420,12 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
                     assignedCount++;
                 }
             } catch (e) {
-                console.warn(`Failed to assign pathway to user ${member.userId}`);
+                logger.warn({
+                    message: 'Failed to assign pathway to user',
+                    userId: member.userId,
+                    pathwayId,
+                    error: e instanceof Error ? e.message : String(e),
+                });
             }
         }
 

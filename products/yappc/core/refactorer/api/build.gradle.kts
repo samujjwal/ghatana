@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.ghatana.products.yappc.refactorer"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 description = "Refactorer API - Unified API, adapters & infrastructure (merged: refactorer-api + refactorer-adapters + refactorer-infra)"
 

@@ -5,6 +5,7 @@ import com.ghatana.products.yappc.domain.agent.AgentRegistry;
 import com.ghatana.products.yappc.domain.agent.AIAgent;
 import com.ghatana.products.yappc.domain.task.TaskDefinition;
 import com.ghatana.products.yappc.domain.task.TaskExecutionContext;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import io.activej.promise.Promise;
 import io.activej.promise.SettablePromise;
 import org.jetbrains.annotations.NotNull;
@@ -314,7 +315,7 @@ public class TaskOrchestrator {
     /**
      * Exception thrown when no capable agent is found.
      */
-    public static class NoCapableAgentException extends RuntimeException {
+    public static class NoCapableAgentException extends ResourceNotFoundException {
         private static final long serialVersionUID = 1L;
 
         public NoCapableAgentException(String message) {

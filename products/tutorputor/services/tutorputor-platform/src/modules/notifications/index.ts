@@ -32,13 +32,13 @@ export const notificationRoutes = async (app: any) => {
   app.get("/", async (req: RouteRequest, reply: RouteReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
-    const query = (req.query ?? {}) as any;
+    const query = (req.query ?? {}) as Record<string, unknown>;
     const unreadOnly = query.unreadOnly === "true";
     const page = query.page ? Number(query.page) : 1;
     const limit = Math.min(query.limit ? Number(query.limit) : 20, 100);
 
     await respondWithErrors(reply, async () => {
-      const where: any = { tenantId, userId };
+      const where: Record<string, unknown> = { tenantId, userId };
       if (unreadOnly) where.isRead = false;
 
       const [notifications, total] = await Promise.all([

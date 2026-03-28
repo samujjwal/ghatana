@@ -138,7 +138,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     memberOf?: boolean;
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<StudyGroup>> {
-    const where: any = {
+    const where = {
       tenantId: args.tenantId,
       status: "ACTIVE",
     };
@@ -198,7 +198,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       "ADMIN",
     ]);
 
-    const data: any = {};
+    const data: Record<string, unknown> = {};
     if (args.patch.name !== undefined) data.name = args.patch.name;
     if (args.patch.description !== undefined)
       data.description = args.patch.description;
@@ -683,7 +683,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     includeCompleted?: boolean;
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<StudySession>> {
-    const where: any = { groupId: args.groupId };
+    const where = { groupId: args.groupId };
 
     if (!args.includeCompleted) {
       where.status = { in: ["SCHEDULED", "IN_PROGRESS"] };
@@ -997,7 +997,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       actorId?: string;
     },
   ): Promise<void> {
-    await createSocialNotification(this.prisma as any, {
+    await createSocialNotification(this.prisma, {
       tenantId,
       userId,
       type: notification.type,
@@ -1095,7 +1095,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     return map[status] ?? "attending";
   }
 
-  private mapGroupFromDb(group: any): StudyGroup {
+  private mapGroupFromDb(group: Record<string, any>): StudyGroup {
     return {
       id: group.id,
       tenantId: group.tenantId,
@@ -1118,7 +1118,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     };
   }
 
-  private mapMemberFromDb(member: any): StudyGroupMember {
+  private mapMemberFromDb(member: Record<string, any>): StudyGroupMember {
     return {
       id: member.id,
       groupId: member.groupId,
@@ -1133,7 +1133,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     };
   }
 
-  private mapJoinRequestFromDb(request: any): StudyGroupJoinRequest {
+  private mapJoinRequestFromDb(request: Record<string, any>): StudyGroupJoinRequest {
     return {
       id: request.id,
       groupId: request.groupId,
@@ -1147,7 +1147,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     };
   }
 
-  private mapInviteFromDb(invite: any): StudyGroupInvite {
+  private mapInviteFromDb(invite: Record<string, any>): StudyGroupInvite {
     return {
       id: invite.id,
       groupId: invite.groupId,
@@ -1160,7 +1160,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     };
   }
 
-  private mapSessionFromDb(session: any): StudySession {
+  private mapSessionFromDb(session: Record<string, any>): StudySession {
     return {
       id: session.id,
       groupId: session.groupId,
@@ -1188,7 +1188,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     };
   }
 
-  private mapRsvpFromDb(rsvp: any): SessionRsvp {
+  private mapRsvpFromDb(rsvp: Record<string, any>): SessionRsvp {
     return {
       sessionId: rsvp.sessionId,
       userId: rsvp.userId,

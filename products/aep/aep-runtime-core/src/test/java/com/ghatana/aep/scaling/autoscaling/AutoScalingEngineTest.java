@@ -11,7 +11,7 @@ import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.PredictiveScal
 import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.ScalingAction;
 import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.ScalingEvaluationRequest;
 import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.ScalingEvaluationResult;
-import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.MetricsCollector;
+import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.ClusterMetricsCollector;
 import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.ScalingPolicyManager;
 import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.ScalingExecutor;
 import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.PredictiveScaler;
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
  * so that {@code Promise.ofBlocking(eventloop, ...)} callbacks are processed
  * by the test-managed eventloop thread.
  *
- * <p>All infrastructure dependencies ({@link MetricsCollector}, {@link ScalingPolicyManager},
+ * <p>All infrastructure dependencies ({@link ClusterMetricsCollector}, {@link ScalingPolicyManager},
  * {@link ScalingExecutor}, {@link PredictiveScaler}, {@link CostOptimizer}) are mocked with
  * Mockito so tests are deterministic and in-process.
  *
@@ -55,7 +55,7 @@ class AutoScalingEngineTest extends EventloopTestBase {
 
     private static final String CLUSTER_ID = "cluster-test";
 
-    @Mock MetricsCollector metricsCollector;
+    @Mock ClusterMetricsCollector metricsCollector;
     @Mock ScalingPolicyManager policyManager;
     @Mock ScalingExecutor scalingExecutor;
     @Mock PredictiveScaler predictiveScaler;
@@ -136,7 +136,7 @@ class AutoScalingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("evaluateScaling: returns failure result when MetricsCollector throws")
+        @DisplayName("evaluateScaling: returns failure result when ClusterMetricsCollector throws")
         void evaluateScaling_whenMetricsCollectorThrows_returnsFailure() {
             when(metricsCollector.collectClusterMetrics(CLUSTER_ID))
                     .thenThrow(new RuntimeException("metrics unavailable"));

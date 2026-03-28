@@ -37,10 +37,25 @@ import java.util.Objects;
 public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessmentResult> {
 
     private static final String AGENT_ID = "risk-assessment-agent";
+    private static final String MODEL_ID = "risk-assessment-v1";
 
     private final ModelRegistry modelRegistry;
     private final InferenceService inferenceService;
     private final RiskAlertService riskAlertService;
+
+    /**
+     * Creates a new risk assessment agent.
+     *
+     * @param modelRegistry the model registry for risk models
+     * @param inferenceService the inference service for predictions
+     * @param riskAlertService the risk alert service for notifications
+     */
+    public RiskAssessmentAgent(
+            ModelRegistry modelRegistry,
+            InferenceService inferenceService,
+            RiskAlertService riskAlertService) {
+        this(defaultOutputGenerator(inferenceService), modelRegistry, inferenceService, riskAlertService);
+    }
 
     /**
      * Creates a new risk assessment agent.
@@ -192,7 +207,7 @@ public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessme
             .then($ -> {
                 // Recalibrate models if accuracy is degrading
                 if (shouldRecalibrate(output)) {
-                    return modelRegistry.triggerRetraining("risk-assessment-v1");
+                    return modelRegistry.triggerRetraining(MODEL_ID);
                 }
                 return Promise.complete();
             })
@@ -202,6 +217,8 @@ public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessme
     // ==================== Private Methods ====================
 
     private Map<String, Object> extractRiskFeatures(PortfolioUpdate update) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> marketConditions = (Map<String, Object>) getMarketConditions();
         return Map.of(
             "total_value", calculateTotalValue(update),
             "position_count", update.getPositions().size(),
@@ -209,8 +226,16 @@ public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessme
             "sector_concentration", calculateSectorConcentration(update),
             "geography_concentration", calculateGeographyConcentration(update),
             "leverage_ratio", calculateLeverage(update),
-            "margin_utilization", calculateMarginUtilization(update)
+            "margin_utilization", calculateMarginUtilization(update),
+            "market_vix", marketConditions.get("vix"),
+            "market_correlation", marketConditions.get("market_correlation")
         );
+    }
+
+    private static OutputGenerator<PortfolioUpdate, RiskAssessmentResult> defaultOutputGenerator(
+            InferenceService inferenceService) {
+        Objects.requireNonNull(inferenceService, "inferenceService cannot be null");
+        return (input, context) -> Promise.of(inferenceService.predict(MODEL_ID, input.getRiskFeatures()));
     }
 
     private double calculateTotalValue(PortfolioUpdate update) {

@@ -66,7 +66,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class TracingService {
 
-    private static final Logger logger = LoggerFactory.getLogger(
+    private static final Logger log = LoggerFactory.getLogger(
             TracingService.class);
 
     private final DistributedTracer tracer;
@@ -101,12 +101,12 @@ public final class TracingService {
                     if (ex == null) {
                         metrics.incrementCounter("tracing.span.created",
                                 "tenant", tenantId, "operation", operationName);
-                        logger.debug("Span created: {} for tenant {}", operationName,
+                        log.debug("Span created: {} for tenant {}", operationName,
                                 tenantId);
                     } else {
                         metrics.incrementCounter("tracing.span.creation.failed",
                                 "tenant", tenantId, "operation", operationName);
-                        logger.warn("Failed to create span for operation {} tenant {}",
+                        log.warn("Failed to create span for operation {} tenant {}",
                                 operationName, tenantId, ex);
                     }
                 });
@@ -130,7 +130,7 @@ public final class TracingService {
                         metrics.incrementCounter("tracing.child.span.created",
                                 "parent_operation", parentSpan.getOperationName());
                     } else {
-                        logger.warn("Failed to create child span under {}",
+                        log.warn("Failed to create child span under {}",
                                 parentSpan.getOperationName(), ex);
                     }
                 });
@@ -161,10 +161,10 @@ public final class TracingService {
                                     "operation", span.getOperationName(),
                                     "status", status.getCode());
                         }
-                        logger.debug("Span ended: {} with status {}",
+                        log.debug("Span ended: {} with status {}",
                                 span.getOperationName(), status);
                     } else {
-                        logger.warn("Failed to end span {}", span.getOperationName(),
+                        log.warn("Failed to end span {}", span.getOperationName(),
                                 ex);
                     }
                 });
@@ -185,7 +185,7 @@ public final class TracingService {
         return tracer.recordAttribute(span, key, value)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
-                        logger.warn("Failed to record attribute {} on span {}",
+                        log.warn("Failed to record attribute {} on span {}",
                                 key, span.getSpanId(), ex);
                     }
                 });
@@ -211,7 +211,7 @@ public final class TracingService {
                                 "event", eventName,
                                 "operation", span.getOperationName());
                     } else {
-                        logger.warn("Failed to record event {} on span {}",
+                        log.warn("Failed to record event {} on span {}",
                                 eventName, span.getSpanId(), ex);
                     }
                 });
@@ -238,7 +238,7 @@ public final class TracingService {
                     } else {
                         metrics.incrementCounter("tracing.context.extraction.failed",
                                 "tenant", tenantId);
-                        logger.warn("Failed to extract trace context for tenant {}",
+                        log.warn("Failed to extract trace context for tenant {}",
                                 tenantId, ex);
                     }
                 });
@@ -264,7 +264,7 @@ public final class TracingService {
                     } else {
                         metrics.incrementCounter("tracing.context.injection.failed",
                                 "tenant", context.getTenantId());
-                        logger.warn("Failed to inject trace context for tenant {}",
+                        log.warn("Failed to inject trace context for tenant {}",
                                 context.getTenantId(), ex);
                     }
                 });
@@ -282,7 +282,7 @@ public final class TracingService {
         return tracer.getCurrentContext(tenantId)
                 .whenComplete((context, ex) -> {
                     if (ex != null) {
-                        logger.warn("Failed to get current trace context for tenant {}",
+                        log.warn("Failed to get current trace context for tenant {}",
                                 tenantId, ex);
                     }
                 });
@@ -301,7 +301,7 @@ public final class TracingService {
                         metrics.incrementCounter("tracing.health.check",
                                 "status", healthy ? "healthy" : "unhealthy");
                     } else {
-                        logger.warn("Failed to check tracer health", ex);
+                        log.warn("Failed to check tracer health", ex);
                     }
                 });
     }
@@ -319,10 +319,10 @@ public final class TracingService {
                     long duration = System.currentTimeMillis() - startTime;
                     if (ex == null) {
                         metrics.recordTimer("tracing.flush.duration", duration);
-                        logger.debug("Tracing flush completed in {} ms", duration);
+                        log.debug("Tracing flush completed in {} ms", duration);
                     } else {
                         metrics.incrementCounter("tracing.flush.failed");
-                        logger.warn("Failed to flush tracing backend", ex);
+                        log.warn("Failed to flush tracing backend", ex);
                     }
                 });
     }

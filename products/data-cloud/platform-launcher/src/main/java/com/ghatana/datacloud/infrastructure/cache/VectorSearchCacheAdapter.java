@@ -48,7 +48,7 @@ import java.util.concurrent.ForkJoinPool;
  */
 public class VectorSearchCacheAdapter {
 
-    private static final Logger logger = LoggerFactory.getLogger(VectorSearchCacheAdapter.class);
+    private static final Logger log = LoggerFactory.getLogger(VectorSearchCacheAdapter.class);
     private static final String CACHE_PREFIX = "vector_search:";
     private static final String SCHEMA_VERSION_PREFIX = "schema_version:";
     private static final long TTL_SECONDS = 60 * 60; // 1 hour
@@ -104,7 +104,7 @@ public class VectorSearchCacheAdapter {
                     long duration = System.currentTimeMillis() - startTime;
                     metricsCollector.recordTimer("cache.vector_search.hit", duration);
                     metricsCollector.incrementCounter("cache.vector_search.hits");
-                    logger.debug("Vector search cache hit ({}ms)", duration);
+                    log.debug("Vector search cache hit ({}ms)", duration);
 
                     @SuppressWarnings("unchecked")
                     List<SearchResult> results = objectMapper.readValue(cached, List.class);
@@ -113,10 +113,10 @@ public class VectorSearchCacheAdapter {
             }
 
             metricsCollector.incrementCounter("cache.vector_search.misses");
-            logger.debug("Vector search cache miss");
+            log.debug("Vector search cache miss");
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Error reading from cache: {}", cacheKeyStr, e);
+            log.error("Error reading from cache: {}", cacheKeyStr, e);
             metricsCollector.incrementCounter("cache.vector_search.errors");
             return Promise.of(null);
         }
@@ -136,11 +136,11 @@ public class VectorSearchCacheAdapter {
             String newVersion = String.valueOf(System.currentTimeMillis());
             commands.set(SCHEMA_VERSION_PREFIX + collectionId, newVersion);
 
-            logger.info("Invalidated vector search cache for collection: {}", collectionId);
+            log.info("Invalidated vector search cache for collection: {}", collectionId);
             metricsCollector.incrementCounter("cache.vector_search.invalidations");
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Error invalidating cache for collection: {}", collectionId, e);
+            log.error("Error invalidating cache for collection: {}", collectionId, e);
             metricsCollector.incrementCounter("cache.vector_search.errors");
             return Promise.ofException(e);
         }
@@ -156,12 +156,12 @@ public class VectorSearchCacheAdapter {
             List<String> keys = commands.keys(CACHE_PREFIX + "*");
             if (!keys.isEmpty()) {
                 commands.del(keys.toArray(new String[0]));
-                logger.info("Cleared {} search results from cache", keys.size());
+                log.info("Cleared {} search results from cache", keys.size());
                 metricsCollector.incrementCounter("cache.vector_search.clears");
             }
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Error clearing cache", e);
+            log.error("Error clearing cache", e);
             metricsCollector.incrementCounter("cache.vector_search.errors");
             return Promise.ofException(e);
         }
@@ -190,7 +190,7 @@ public class VectorSearchCacheAdapter {
                     MAX_CACHE_SIZE
             ));
         } catch (Exception e) {
-            logger.error("Error getting cache stats", e);
+            log.error("Error getting cache stats", e);
             metricsCollector.incrementCounter("cache.vector_search.errors");
             return Promise.of(new CacheStats(0, 0, TTL_SECONDS, MAX_CACHE_SIZE));
         }

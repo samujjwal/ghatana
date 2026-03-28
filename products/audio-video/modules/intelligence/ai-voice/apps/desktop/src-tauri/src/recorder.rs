@@ -14,6 +14,7 @@ use crate::config::AudioRuntimeConfig;
 use crate::device::AudioDeviceManager;
 use crate::error::{AppError, AppResult};
 use crate::metrics::AudioRuntimeMetrics;
+use crate::pool::{AudioDeviceLeaseKind, AudioDevicePool};
 use crate::resilience::CircuitBreaker;
 
 static RECORDING_BREAKER: Lazy<CircuitBreaker> = Lazy::new(|| {
@@ -36,6 +37,7 @@ impl RecordingHandle {
         AudioRuntimeMetrics::global().record_recording_started();
 
         let join = thread::spawn(move || {
+            let _lease = AudioDevicePool::global().acquire(AudioDeviceLeaseKind::Input, "recording")?;
             let selection = match RECORDING_BREAKER.run("start", AudioDeviceManager::default_input)
             {
                 Ok(selection) => selection,

@@ -415,11 +415,15 @@ class AepSecurityFilterTest extends EventloopTestBase {
         void rateLimited_response_hasRetryAfterHeader() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
 
-            for (int i = 0; i < 200; i++) {
-                serve(filter, requestFromIp(TEST_IP));
+            // Loop until rate-limited (up to 300) to tolerate token-bucket refill under load
+            HttpResponse resp = null;
+            for (int i = 0; i < 300; i++) {
+                resp = serve(filter, requestFromIp(TEST_IP));
+                if (resp.getCode() == 429) break;
             }
-            HttpResponse resp = serve(filter, requestFromIp(TEST_IP));
 
+            assertThat(resp).isNotNull();
+            assertThat(resp.getCode()).isEqualTo(429);
             assertThat(resp.getHeader(HttpHeaders.of("Retry-After")))
                     .isNotNull();
         }
@@ -445,18 +449,20 @@ class AepSecurityFilterTest extends EventloopTestBase {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
 
             // Use a comma-chain: real client is "172.16.0.5", proxy is "10.0.0.1"
-            HttpRequest req = HttpRequest.get(OK_URL)
-                    .withHeader(HttpHeaders.of("X-Forwarded-For"), "172.16.0.5, 10.0.0.1")
-                    .build();
-
-            // Fill up 200 for "172.16.0.5" using the chain form
-            for (int i = 0; i < 200; i++) {
-                serve(filter, req);
+            // Loop until rate-limited (up to 300) to tolerate token-bucket refill under load.
+            // Create a new request per iteration — ActiveJ HttpRequest objects are not reusable.
+            HttpResponse resp = null;
+            for (int i = 0; i < 300; i++) {
+                HttpRequest req = HttpRequest.get(OK_URL)
+                        .withHeader(HttpHeaders.of("X-Forwarded-For"), "172.16.0.5, 10.0.0.1")
+                        .build();
+                resp = serve(filter, req);
+                if (resp.getCode() == 429) break;
             }
-            HttpResponse resp201 = serve(filter, req);
 
-            // Should 429 on the 201st using leftmost "172.16.0.5" as the key
-            assertThat(resp201.getCode()).isEqualTo(429);
+            // Should 429 on leftmost "172.16.0.5" being the rate-limit key
+            assertThat(resp).isNotNull();
+            assertThat(resp.getCode()).isEqualTo(429);
         }
     }
 

@@ -4,7 +4,7 @@
  */
 package com.ghatana.aep.scaling.autoscaling;
 
-import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.MetricsCollector;
+import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.ClusterMetricsCollector;
 import com.ghatana.aep.scaling.cluster.ClusterManagementModels.ClusterMetrics;
 import com.ghatana.aep.scaling.cluster.ClusterManagementSystem;
 import org.slf4j.Logger;
@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.layer product
  * @doc.pattern Service
  */
-public class DefaultMetricsCollector implements MetricsCollector {
+public class DefaultMetricsCollector implements ClusterMetricsCollector {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultMetricsCollector.class);
 

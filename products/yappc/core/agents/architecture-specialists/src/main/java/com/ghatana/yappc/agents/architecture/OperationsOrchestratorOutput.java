@@ -5,6 +5,11 @@ import java.util.Map;
 
 /**
  * Output for OperationsOrchestratorAgent.
+ *
+ * @doc.type record
+ * @doc.purpose Output contract for operations orchestration agent
+ * @doc.layer product
+ * @doc.pattern ValueObject
  */
 public record OperationsOrchestratorOutput(
     String operationId,

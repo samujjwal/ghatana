@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -39,14 +41,19 @@ final class ConnectorBackedEventCloud implements EventCloud {
         Objects.requireNonNull(eventType, "eventType required");
         Objects.requireNonNull(payload, "payload required");
 
-        // Blocks the caller until publish completes — acceptable for synchronous API contract.
-        // Callers that need non-blocking publish should use EventCloudConnector directly.
-        String[] resultHolder = new String[1];
+        String eventId = UUID.randomUUID().toString();
         connector.publish(eventType, payload)
-                .whenResult(id -> resultHolder[0] = id)
-                .whenException(e -> log.error("publish failed: tenantId={} eventType={}", tenantId, eventType, e));
+                .whenResult(connectorEventId ->
+                    log.debug("publish succeeded: tenantId={} eventType={} localEventId={} connectorEventId={}",
+                        tenantId, eventType, eventId, connectorEventId))
+                .whenException(e -> log.error(
+                    "publish failed: tenantId={} eventType={} localEventId={}",
+                    tenantId,
+                    eventType,
+                    eventId,
+                    e));
 
-        return resultHolder[0] != null ? resultHolder[0] : "pending";
+        return eventId;
     }
 
     @Override
@@ -55,16 +62,23 @@ final class ConnectorBackedEventCloud implements EventCloud {
         Objects.requireNonNull(eventType, "eventType required");
         Objects.requireNonNull(handler, "handler required");
 
+        AtomicBoolean cancelled = new AtomicBoolean(false);
         AtomicReference<EventCloudConnector.ConnectorSubscription> delegateRef = new AtomicReference<>();
 
         connector.subscribe(eventType, DEFAULT_CONSUMER_GROUP,
                         (eventId, topic, payload) -> handler.handle(eventId, topic, payload))
-                .whenResult(delegateRef::set)
+                .whenResult(delegate -> {
+                    delegateRef.set(delegate);
+                    if (cancelled.get()) {
+                        delegate.cancel();
+                    }
+                })
                 .whenException(e -> log.error("subscribe failed: tenantId={} eventType={}", tenantId, eventType, e));
 
         return new Subscription() {
             @Override
             public void cancel() {
+                cancelled.set(true);
                 EventCloudConnector.ConnectorSubscription d = delegateRef.get();
                 if (d != null) {
                     d.cancel();
@@ -74,7 +88,7 @@ final class ConnectorBackedEventCloud implements EventCloud {
             @Override
             public boolean isCancelled() {
                 EventCloudConnector.ConnectorSubscription d = delegateRef.get();
-                return d != null && d.isCancelled();
+                return cancelled.get() || (d != null && d.isCancelled());
             }
         };
     }

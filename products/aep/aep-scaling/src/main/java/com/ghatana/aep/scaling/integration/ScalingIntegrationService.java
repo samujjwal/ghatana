@@ -20,6 +20,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Integrates all scaling services (auto-scaling, cluster management, load balancing, distributed processing).
  * Provides a unified API for scaling operations across the platform.
+ *
+ * @doc.type class
+ * @doc.purpose Unified scaling service integrating auto-scaling, cluster management, and load balancing
+ * @doc.layer product
+ * @doc.pattern Service, Facade
  */
 @Slf4j
 public class ScalingIntegrationService {

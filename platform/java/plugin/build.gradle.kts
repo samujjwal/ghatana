@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "com.ghatana.platform"
-version = "2026.3.1-SNAPSHOT"
+version = rootProject.version
 
 java {
     toolchain {

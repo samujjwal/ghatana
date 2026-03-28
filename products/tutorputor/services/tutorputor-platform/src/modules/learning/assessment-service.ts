@@ -29,6 +29,11 @@ import type {
 } from "@tutorputor/contracts/v1/types";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
 
+import { aiClient } from "../../clients/ai-client";
+import { createStandaloneLogger } from '@tutorputor/core/logger';
+
+const logger = createStandaloneLogger({ component: 'AssessmentService' });
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -52,8 +57,6 @@ interface DomainError extends Error {
 const DEFAULT_GENERATOR_MODEL =
   process.env['ASSESSMENT_MODEL_ID'] ?? 'tutorputor-assessment-v1';
 const MAX_GENERATED_ITEMS = 10;
-
-import { aiClient } from "../../clients/ai-client";
 
 // =============================================================================
 // Implementation
@@ -259,10 +262,12 @@ async function generateItems(
       };
     }
   } catch (error) {
-    console.warn(
-      "AI Assessment generation failed, falling back to deterministic:",
-      error,
-    );
+    logger.warn({
+      message: 'AI Assessment generation failed, falling back to deterministic',
+      error: error instanceof Error ? error.message : String(error),
+      moduleId: module.id,
+      difficulty: args.difficulty,
+    });
   }
 
   // Fallback to deterministic

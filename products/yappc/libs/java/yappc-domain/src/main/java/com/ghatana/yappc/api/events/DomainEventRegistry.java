@@ -6,6 +6,7 @@ package com.ghatana.yappc.api.events;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.ghatana.platform.core.exception.ServiceException;
 
 import java.util.Collections;
 import java.util.Map;
@@ -203,7 +204,7 @@ public class DomainEventRegistry {
     /**
      * Thrown when {@link #validate()} finds one or more invalid event registrations.
      */
-    public static final class InvalidEventRegistrationException extends RuntimeException {
+    public static final class InvalidEventRegistrationException extends ServiceException {
         public InvalidEventRegistrationException(String message) {
             super(message);
         }

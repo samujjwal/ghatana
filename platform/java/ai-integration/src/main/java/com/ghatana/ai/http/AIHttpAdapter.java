@@ -1,5 +1,6 @@
 package com.ghatana.ai.http;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.embedding.EmbeddingService;
 import com.ghatana.ai.vectorstore.VectorStore;
@@ -131,7 +132,7 @@ public final class AIHttpAdapter {
                         // Parse request
                         Map<String, Object> req = objectMapper.readValue(
                                 body.getArray(),
-                                Map.class
+                                new TypeReference<Map<String, Object>>() {}
                         );
 
                         String text = (String) req.get("text");
@@ -228,7 +229,7 @@ public final class AIHttpAdapter {
                         // Parse request
                         Map<String, Object> req = objectMapper.readValue(
                                 body.getArray(),
-                                Map.class
+                                new TypeReference<Map<String, Object>>() {}
                         );
 
                         String query = (String) req.get("query");

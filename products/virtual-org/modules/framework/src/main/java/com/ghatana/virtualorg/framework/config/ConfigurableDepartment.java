@@ -5,6 +5,7 @@ import com.ghatana.virtualorg.framework.Department;
 import com.ghatana.virtualorg.framework.DepartmentType;
 import com.ghatana.virtualorg.framework.agent.Agent;
 import com.ghatana.virtualorg.framework.task.Task;
+import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -255,7 +256,7 @@ public class ConfigurableDepartment extends Department {
     /**
      * Exception when no suitable agent is found.
      */
-    public static class NoSuitableAgentException extends RuntimeException {
+    public static class NoSuitableAgentException extends ResourceNotFoundException {
 
         public NoSuitableAgentException(String message) {
             super(message);

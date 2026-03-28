@@ -25,7 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * // Subscribe to entity events
  * publisher.subscribe(EntityCreatedEvent.class, event -> {
- *     logger.info("Entity created: {}", event.getEntityId());
+ *     log.info("Entity created: {}", event.getEntityId());
  *     return Promise.complete();
  * });
  *
@@ -51,7 +51,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class InMemoryDomainEventPublisher implements DomainEventPublisher {
 
-    private static final Logger logger = LoggerFactory.getLogger(InMemoryDomainEventPublisher.class);
+    private static final Logger log = LoggerFactory.getLogger(InMemoryDomainEventPublisher.class);
 
     private final Map<Class<? extends DomainEvent>, List<DomainEventSubscriber<?>>> subscribers =
             new ConcurrentHashMap<>();
@@ -60,7 +60,7 @@ public class InMemoryDomainEventPublisher implements DomainEventPublisher {
     public Promise<Void> publish(DomainEvent event) {
         Objects.requireNonNull(event, "event must not be null");
 
-        logger.debug("Publishing event: {} (id={})", event.getEventType(), event.getEventId());
+        log.debug("Publishing event: {} (id={})", event.getEventType(), event.getEventId());
 
         List<Promise<Void>> handlerPromises = new ArrayList<>();
 
@@ -82,13 +82,13 @@ public class InMemoryDomainEventPublisher implements DomainEventPublisher {
         }
 
         if (handlerPromises.isEmpty()) {
-            logger.trace("No subscribers for event: {}", event.getEventType());
+            log.trace("No subscribers for event: {}", event.getEventType());
             return Promise.complete();
         }
 
         return Promises.all(handlerPromises)
                 .mapException(e -> {
-                    logger.error("Error publishing event {}: {}", 
+                    log.error("Error publishing event {}: {}", 
                             event.getEventId(), e.getMessage(), e);
                     return e;
                 })
@@ -117,7 +117,7 @@ public class InMemoryDomainEventPublisher implements DomainEventPublisher {
         Objects.requireNonNull(subscriber, "subscriber must not be null");
 
         subscribers.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>()).add(subscriber);
-        logger.info("Subscribed {} to {}", subscriber.getName(), eventType.getSimpleName());
+        log.info("Subscribed {} to {}", subscriber.getName(), eventType.getSimpleName());
     }
 
     @Override
@@ -128,7 +128,7 @@ public class InMemoryDomainEventPublisher implements DomainEventPublisher {
         List<DomainEventSubscriber<?>> eventSubscribers = subscribers.get(eventType);
         if (eventSubscribers != null) {
             eventSubscribers.remove(subscriber);
-            logger.info("Unsubscribed {} from {}", subscriber.getName(), eventType.getSimpleName());
+            log.info("Unsubscribed {} from {}", subscriber.getName(), eventType.getSimpleName());
         }
     }
 
@@ -137,10 +137,10 @@ public class InMemoryDomainEventPublisher implements DomainEventPublisher {
         try {
             DomainEventSubscriber<T> typedSubscriber = (DomainEventSubscriber<T>) subscriber;
             return typedSubscriber.handle(event)
-                    .whenException(e -> logger.error("Subscriber {} failed to handle event {}: {}",
+                    .whenException(e -> log.error("Subscriber {} failed to handle event {}: {}",
                             subscriber.getName(), event.getEventId(), e.getMessage(), e));
         } catch (Exception e) {
-            logger.error("Error invoking subscriber {} for event {}: {}",
+            log.error("Error invoking subscriber {} for event {}: {}",
                     subscriber.getName(), event.getEventId(), e.getMessage(), e);
             return Promise.ofException(e);
         }
@@ -162,6 +162,6 @@ public class InMemoryDomainEventPublisher implements DomainEventPublisher {
      */
     public void clearAllSubscribers() {
         subscribers.clear();
-        logger.info("Cleared all event subscribers");
+        log.info("Cleared all event subscribers");
     }
 }

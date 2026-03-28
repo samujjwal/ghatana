@@ -108,7 +108,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class TimeSeriesConnector implements StorageConnector {
 
-    private static final Logger logger = LoggerFactory.getLogger(TimeSeriesConnector.class);
+    private static final Logger log = LoggerFactory.getLogger(TimeSeriesConnector.class);
     private static final long DEFAULT_RETENTION_MILLIS = 30 * 24 * 60 * 60 * 1000L; // 30 days
     private final MetricsCollector metrics;
     private final Map<String, List<Entity>> timeSeriesStore = new ConcurrentHashMap<>();
@@ -121,7 +121,7 @@ public class TimeSeriesConnector implements StorageConnector {
      */
     public TimeSeriesConnector(MetricsCollector metrics) {
         this.metrics = Objects.requireNonNull(metrics, "MetricsCollector cannot be null");
-        logger.info("TimeSeriesConnector initialized");
+        log.info("TimeSeriesConnector initialized");
     }
 
     @Override
@@ -165,7 +165,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "operation", "create",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", entity.getTenantId());
-            logger.error("Failed to create entity in time-series store", e);
+            log.error("Failed to create entity in time-series store", e);
             return Promise.ofException(e);
         }
     }
@@ -196,7 +196,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "operation", "read",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to read entity from time-series store", e);
+            log.error("Failed to read entity from time-series store", e);
             return Promise.ofException(e);
         }
     }
@@ -239,7 +239,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "operation", "update",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", entity.getTenantId());
-            logger.error("Failed to update entity in time-series store", e);
+            log.error("Failed to update entity in time-series store", e);
             return Promise.ofException(e);
         }
     }
@@ -275,7 +275,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "operation", "delete",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to delete entity from time-series store", e);
+            log.error("Failed to delete entity from time-series store", e);
             return Promise.ofException(e);
         }
     }
@@ -325,7 +325,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "operation", "query",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to query time-series store", e);
+            log.error("Failed to query time-series store", e);
             return Promise.ofException(e);
         }
     }
@@ -365,7 +365,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "operation", "scan",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to scan time-series store", e);
+            log.error("Failed to scan time-series store", e);
             return Promise.ofException(e);
         }
     }
@@ -397,7 +397,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "operation", "count",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to count entities in time-series store", e);
+            log.error("Failed to count entities in time-series store", e);
             return Promise.ofException(e);
         }
     }
@@ -445,7 +445,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "operation", "bulk_create",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to bulk create entities in time-series store", e);
+            log.error("Failed to bulk create entities in time-series store", e);
             return Promise.ofException(e);
         }
     }
@@ -488,7 +488,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "operation", "bulk_update",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to bulk update entities in time-series store", e);
+            log.error("Failed to bulk update entities in time-series store", e);
             return Promise.ofException(e);
         }
     }
@@ -526,7 +526,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "operation", "bulk_delete",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to bulk delete entities from time-series store", e);
+            log.error("Failed to bulk delete entities from time-series store", e);
             return Promise.ofException(e);
         }
     }
@@ -560,7 +560,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "operation", "truncate",
                     "error_type", e.getClass().getSimpleName(),
                     "tenant", tenantId);
-            logger.error("Failed to truncate time-series store", e);
+            log.error("Failed to truncate time-series store", e);
             return Promise.ofException(e);
         }
     }
@@ -581,10 +581,10 @@ public class TimeSeriesConnector implements StorageConnector {
     @Override
     public Promise<Void> healthCheck() {
         try {
-            logger.debug("TimeSeriesConnector health check passed");
+            log.debug("TimeSeriesConnector health check passed");
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("TimeSeriesConnector health check failed", e);
+            log.error("TimeSeriesConnector health check failed", e);
             return Promise.ofException(e);
         }
     }

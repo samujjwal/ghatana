@@ -73,7 +73,7 @@ import java.util.stream.Collectors;
 public class InMemoryCollectionStorageProfileRepository
                 implements CollectionStorageProfileRepository {
 
-        private static final Logger logger = LoggerFactory.getLogger(
+        private static final Logger log = LoggerFactory.getLogger(
                         InMemoryCollectionStorageProfileRepository.class);
 
         /**
@@ -92,19 +92,19 @@ public class InMemoryCollectionStorageProfileRepository
         @Override
         public Promise<CollectionStorageProfile> save(CollectionStorageProfile profile) {
                 if (profile == null) {
-                        logger.error("Cannot save null profile");
+                        log.error("Cannot save null profile");
                         return Promise.ofException(
                                         new IllegalArgumentException("Profile cannot be null"));
                 }
 
                 if (profile.getTenantId() == null || profile.getTenantId().isBlank()) {
-                        logger.error("Cannot save profile without tenantId");
+                        log.error("Cannot save profile without tenantId");
                         return Promise.ofException(
                                         new IllegalArgumentException("Profile must have non-blank tenantId"));
                 }
 
                 if (profile.getCollectionName() == null || profile.getCollectionName().isBlank()) {
-                        logger.error("Cannot save profile without collectionName");
+                        log.error("Cannot save profile without collectionName");
                         return Promise.ofException(
                                         new IllegalArgumentException("Profile must have non-blank collectionName"));
                 }
@@ -128,7 +128,7 @@ public class InMemoryCollectionStorageProfileRepository
                 String key = makeKey(profile.getTenantId(), profile.getCollectionName());
                 storage.put(key, profile);
 
-                logger.debug(
+                log.debug(
                                 "Saved collection storage profile [tenant={}, collection={}]",
                                 profile.getTenantId(),
                                 profile.getCollectionName());
@@ -153,7 +153,7 @@ public class InMemoryCollectionStorageProfileRepository
                 String key = makeKey(tenantId, collectionName);
                 CollectionStorageProfile profile = storage.get(key);
 
-                logger.debug(
+                log.debug(
                                 "Retrieved collection storage profile [tenant={}, collection={}, found={}]",
                                 tenantId,
                                 collectionName,
@@ -184,7 +184,7 @@ public class InMemoryCollectionStorageProfileRepository
                                 .findFirst()
                                 .orElse(null);
 
-                logger.debug(
+                log.debug(
                                 "Retrieved collection storage profile by ID [tenant={}, id={}, found={}]",
                                 tenantId,
                                 profileId,
@@ -205,7 +205,7 @@ public class InMemoryCollectionStorageProfileRepository
                                 .filter(p -> p.getTenantId().equals(tenantId))
                                 .collect(Collectors.toUnmodifiableList());
 
-                logger.debug(
+                log.debug(
                                 "Listed all collection storage profiles [tenant={}, count={}]",
                                 tenantId,
                                 profiles.size());
@@ -228,7 +228,7 @@ public class InMemoryCollectionStorageProfileRepository
                                 .filter(p -> p.hasFailoverSupport() == hasFailover)
                                 .collect(Collectors.toUnmodifiableList());
 
-                logger.debug(
+                log.debug(
                                 "Listed collection storage profiles with failover [tenant={}, hasFailover={}, count={}]",
                                 tenantId,
                                 hasFailover,
@@ -252,7 +252,7 @@ public class InMemoryCollectionStorageProfileRepository
                 String key = makeKey(tenantId, collectionName);
                 storage.remove(key);
 
-                logger.debug(
+                log.debug(
                                 "Deleted collection storage profile [tenant={}, collection={}]",
                                 tenantId,
                                 collectionName);
@@ -276,7 +276,7 @@ public class InMemoryCollectionStorageProfileRepository
                                 .removeIf(p -> p.getTenantId().equals(tenantId)
                                                 && p.getId().equals(profileId.toString()));
 
-                logger.debug(
+                log.debug(
                                 "Deleted collection storage profile by ID [tenant={}, id={}]",
                                 tenantId,
                                 profileId);
@@ -296,7 +296,7 @@ public class InMemoryCollectionStorageProfileRepository
                                 .filter(p -> p.getTenantId().equals(tenantId))
                                 .count();
 
-                logger.debug("Counted collection storage profiles [tenant={}, count={}]", tenantId, count);
+                log.debug("Counted collection storage profiles [tenant={}, count={}]", tenantId, count);
 
                 return Promise.of(count);
         }
@@ -316,7 +316,7 @@ public class InMemoryCollectionStorageProfileRepository
                 String key = makeKey(tenantId, collectionName);
                 boolean exists = storage.containsKey(key);
 
-                logger.debug(
+                log.debug(
                                 "Checked existence of collection storage profile [tenant={}, collection={}, exists={}]",
                                 tenantId,
                                 collectionName,
@@ -339,7 +339,7 @@ public class InMemoryCollectionStorageProfileRepository
 
                 keysToDelete.forEach(storage::remove);
 
-                logger.warn(
+                log.warn(
                                 "Deleted all collection storage profiles for tenant [tenant={}, count={}]",
                                 tenantId,
                                 keysToDelete.size());
@@ -363,7 +363,7 @@ public class InMemoryCollectionStorageProfileRepository
          */
         public void clear() {
                 storage.clear();
-                logger.info("Cleared all collection storage profiles from in-memory repository");
+                log.info("Cleared all collection storage profiles from in-memory repository");
         }
 
         /**

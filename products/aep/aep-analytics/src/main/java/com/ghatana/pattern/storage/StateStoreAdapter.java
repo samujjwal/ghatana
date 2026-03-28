@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
  * key namespacing. All keys are prefixed with "tenantId:patternId:" to ensure isolation between
  * patterns and tenants.
  * 
+ * @doc.type class
+ * @doc.purpose Wraps a generic StateStore with pattern-scoped namespacing for pattern state isolation
+ * @doc.layer product
  * @doc.pattern Adapter Pattern - Wraps generic StateStore interface to add pattern-specific behavior
  *               (namespacing, scoping) without modifying the underlying store implementation.
  *               Enables reuse of generic state stores (Redis, RocksDB, H2) for pattern state.

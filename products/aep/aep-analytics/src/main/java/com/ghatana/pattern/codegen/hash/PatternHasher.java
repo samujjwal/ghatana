@@ -13,6 +13,11 @@ import java.util.Objects;
 
 /**
  * Produces stable hashes for (EventType, PatternSpecification) pairs.
+ *
+ * @doc.type class
+ * @doc.purpose Stable hash generation for EventType and PatternSpecification pairs
+ * @doc.layer product
+ * @doc.pattern Value Object (deterministic, side-effect-free)
  */
 public final class PatternHasher {
     private final ObjectMapper objectMapper;

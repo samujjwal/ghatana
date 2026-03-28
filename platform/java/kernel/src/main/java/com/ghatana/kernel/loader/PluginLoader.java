@@ -14,9 +14,15 @@ import java.util.ServiceLoader;
 
 /**
  * Plugin loader for dynamic plugin loading.
- * 
- * This loader can discover and load plugins from JAR files
- * without requiring kernel modifications.
+ *
+ * <p>Discovers and loads {@link com.ghatana.kernel.plugin.KernelPlugin} implementations
+ * from JAR files in a configurable plugin directory using {@link java.util.ServiceLoader},
+ * enabling hot-extension of the kernel without modifying the core modules.</p>
+ *
+ * @doc.type class
+ * @doc.purpose Dynamic JAR-based plugin discovery and lifecycle management
+ * @doc.layer kernel
+ * @doc.pattern Service
  */
 public class PluginLoader {
     private final PluginRegistry pluginRegistry;

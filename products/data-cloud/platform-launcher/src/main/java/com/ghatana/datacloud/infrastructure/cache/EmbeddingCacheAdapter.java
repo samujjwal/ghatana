@@ -51,7 +51,7 @@ import java.util.concurrent.ForkJoinPool;
  */
 public class EmbeddingCacheAdapter {
 
-    private static final Logger logger = LoggerFactory.getLogger(EmbeddingCacheAdapter.class);
+    private static final Logger log = LoggerFactory.getLogger(EmbeddingCacheAdapter.class);
     private static final String CACHE_PREFIX = "embedding:";
     private static final long TTL_SECONDS = 24 * 60 * 60; // 24 hours
     private static final int MAX_CACHE_SIZE = 10_000;
@@ -97,12 +97,12 @@ public class EmbeddingCacheAdapter {
             if (cached != null) {
                 long duration = System.currentTimeMillis() - startTime;
                 metricsCollector.incrementCounter("cache.embedding.hits");
-                logger.debug("Embedding cache hit for text: {} ({}ms)", text.hashCode(), duration);
+                log.debug("Embedding cache hit for text: {} ({}ms)", text.hashCode(), duration);
                 return Promise.of(objectMapper.readValue(cached, float[].class));
             }
 
             metricsCollector.incrementCounter("cache.embedding.misses");
-            logger.debug("Embedding cache miss for text: {}", text.hashCode());
+            log.debug("Embedding cache miss for text: {}", text.hashCode());
             // Compute embedding on cache miss
             return provider.provide()
                             .then(embedding -> {
@@ -116,17 +116,17 @@ public class EmbeddingCacheAdapter {
                                     checkAndEvictIfNeeded();
 
                                     long duration = System.currentTimeMillis() - startTime;
-                                    logger.debug("Embedding computed and cached: {} ({}ms)", text.hashCode(), duration);
+                                    log.debug("Embedding computed and cached: {} ({}ms)", text.hashCode(), duration);
 
                                     return Promise.of(embedding);
                                 } catch (Exception ex) {
-                                    logger.error("Error storing embedding in cache", ex);
+                                    log.error("Error storing embedding in cache", ex);
                                     metricsCollector.incrementCounter("cache.embedding.errors");
                                     return Promise.ofException(ex);
                                 }
                             });
         } catch (Exception e) {
-            logger.error("Error reading from embedding cache", e);
+            log.error("Error reading from embedding cache", e);
             metricsCollector.incrementCounter("cache.embedding.errors");
             return Promise.ofException(e);
         }
@@ -151,11 +151,11 @@ public class EmbeddingCacheAdapter {
 
             if (!keysToDelete.isEmpty()) {
                 commands.del(keysToDelete.toArray(new String[0]));
-                logger.info("Cleared {} embeddings from cache", keysToDelete.size());
+                log.info("Cleared {} embeddings from cache", keysToDelete.size());
             }
             return Promise.of(null);
         } catch (Exception e) {
-            logger.error("Error clearing embedding cache", e);
+            log.error("Error clearing embedding cache", e);
             return Promise.ofException(e);
         }
     }
@@ -189,7 +189,7 @@ public class EmbeddingCacheAdapter {
                     MAX_CACHE_SIZE
             ));
         } catch (Exception e) {
-            logger.error("Error getting cache stats", e);
+            log.error("Error getting cache stats", e);
             return Promise.of(new CacheStats(0, 0, TTL_SECONDS, MAX_CACHE_SIZE));
         }
     }
@@ -230,11 +230,11 @@ public class EmbeddingCacheAdapter {
                 }
                 
                 commands.del(keysToDelete);
-                logger.warn("Evicted {} embeddings from cache due to size limit", toEvict);
+                log.warn("Evicted {} embeddings from cache due to size limit", toEvict);
                 metricsCollector.incrementCounter("cache.embedding.evictions");
             }
         } catch (Exception e) {
-            logger.error("Error checking/evicting cache", e);
+            log.error("Error checking/evicting cache", e);
         }
     }
 

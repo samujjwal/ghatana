@@ -12,6 +12,7 @@ use crate::config::AudioRuntimeConfig;
 use crate::device::AudioDeviceManager;
 use crate::error::{AppError, AppResult};
 use crate::metrics::AudioRuntimeMetrics;
+use crate::pool::{AudioDeviceLeaseKind, AudioDevicePool};
 use crate::resilience::CircuitBreaker;
 
 static PLAYBACK_BREAKER: Lazy<CircuitBreaker> = Lazy::new(|| {
@@ -37,6 +38,7 @@ impl PlaybackHandle {
         AudioRuntimeMetrics::global().record_playback_started();
 
         let join = thread::spawn(move || {
+            let _lease = AudioDevicePool::global().acquire(AudioDeviceLeaseKind::Output, "playback")?;
             let input_path = path
                 .to_str()
                 .ok_or_else(|| AppError::Audio("Invalid audio path".to_string()))?;

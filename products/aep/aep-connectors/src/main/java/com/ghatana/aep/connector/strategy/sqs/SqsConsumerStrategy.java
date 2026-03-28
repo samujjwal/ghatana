@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
+import java.net.URI;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -61,6 +62,9 @@ public class SqsConsumerStrategy extends AbstractResilientConnector implements Q
         return Promise.ofBlocking(ioExecutor, () -> {
             if (running.compareAndSet(false, true)) {
                 var builder = SqsClient.builder().region(Region.of(config.region()));
+                if (config.endpointOverride() != null && !config.endpointOverride().isBlank()) {
+                    builder.endpointOverride(URI.create(config.endpointOverride()));
+                }
                 if (config.accessKey() != null && config.secretKey() != null) {
                     builder.credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(config.accessKey(), config.secretKey())
