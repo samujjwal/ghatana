@@ -1,0 +1,13 @@
+[package]
+name = "speech-audio-rust"
+version = "0.1.0"
+edition = "2021"
+description = "Shared audio primitives and file utilities for Ghatana speech products"
+
+[dependencies]
+hound = "3.5"
+thiserror = "1.0"
+symphonia = { version = "0.5", features = ["aac", "flac", "isomp4", "mp3", "ogg", "pcm", "vorbis", "wav"] }
+
+[dev-dependencies]
+tempfile = "3.13"

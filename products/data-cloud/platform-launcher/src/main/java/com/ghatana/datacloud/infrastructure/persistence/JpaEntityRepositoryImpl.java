@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.application.DynamicQueryBuilder;
 import com.ghatana.datacloud.application.QuerySpec;
+import com.ghatana.datacloud.entity.DataCloudColumnNames;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
 import com.ghatana.datacloud.infrastructure.config.JpaThreadPoolConfig;
@@ -17,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -80,6 +80,12 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaEntityRepositoryImpl.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final String ACTIVE_ENTITY_SCOPE_SQL = " AND " + DataCloudColumnNames.TENANT_ID +
+        " = :tenantId AND " + DataCloudColumnNames.COLLECTION_NAME + " = :collectionName AND " +
+        DataCloudColumnNames.ACTIVE + " = true";
+    private static final String ACTIVE_ENTITY_COUNT_SQL = "SELECT COUNT(*) FROM entities WHERE " +
+        DataCloudColumnNames.TENANT_ID + " = :tenantId AND " + DataCloudColumnNames.COLLECTION_NAME +
+        " = :collectionName AND " + DataCloudColumnNames.ACTIVE + " = true";
 
     private final ExecutorService dbExecutor;
 
@@ -88,10 +94,10 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
 
     /**
      * Creates a repository backed by the default virtual-thread executor.
-     * Uses default thread pool configuration from JpaThreadPoolConfig.
+     * Uses thread pool configuration from environment variables.
      */
     public JpaEntityRepositoryImpl() {
-        this(newDbExecutor(JpaThreadPoolConfig.builder().build()));
+        this(JpaThreadPoolConfig.fromEnvironment());
     }
 
     /**
@@ -100,7 +106,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
      * @param config thread pool configuration (can be loaded from environment)
      */
     public JpaEntityRepositoryImpl(JpaThreadPoolConfig config) {
-        this(newDbExecutor(Objects.requireNonNull(config, "config must not be null")));
+        this(Objects.requireNonNull(config, "config must not be null").createExecutorService());
     }
 
     /**
@@ -110,79 +116,6 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
      */
     public JpaEntityRepositoryImpl(ExecutorService dbExecutor) {
         this.dbExecutor = Objects.requireNonNull(dbExecutor, "dbExecutor must not be null");
-    }
-
-    /**
-     * Creates an executor service based on the thread pool configuration.
-     *
-     * @param config thread pool configuration
-     * @return configured executor service
-     */
-    private static ExecutorService newDbExecutor(JpaThreadPoolConfig config) {
-        return switch (config.getType()) {
-            case VIRTUAL -> createVirtualThreadExecutor(config);
-            case PLATFORM -> createPlatformThreadExecutor(config);
-        };
-    }
-
-    /**
-     * Creates a virtual thread executor (Java 21+).
-     * Virtual threads are lightweight and ideal for I/O-bound operations like database access.
-     *
-     * @param config thread pool configuration
-     * @return virtual thread executor
-     */
-    private static ExecutorService createVirtualThreadExecutor(JpaThreadPoolConfig config) {
-        logger.info("Creating virtual thread executor for JPA: prefix={}, queueSize={}",
-                config.getThreadNamePrefix(), config.getQueueSize());
-        
-        return Executors.newThreadPerTaskExecutor(new ThreadFactory() {
-            private final AtomicInteger counter = new AtomicInteger(1);
-            private final String prefix = config.getThreadNamePrefix();
-
-            @Override
-            public Thread newThread(Runnable runnable) {
-                return Thread.ofVirtual()
-                        .name(prefix + "-" + counter.getAndIncrement())
-                        .unstarted(runnable);
-            }
-        });
-    }
-
-    /**
-     * Creates a platform thread executor (traditional thread pool).
-     * Uses bounded queue to prevent memory exhaustion under high load.
-     *
-     * @param config thread pool configuration
-     * @return platform thread executor
-     */
-    private static ExecutorService createPlatformThreadExecutor(JpaThreadPoolConfig config) {
-        logger.info("Creating platform thread executor for JPA: prefix={}, coreSize={}, maxSize={}, queueSize={}, keepAlive={}s",
-                config.getThreadNamePrefix(), config.getCorePoolSize(), config.getMaxPoolSize(),
-                config.getQueueSize(), config.getKeepAliveSeconds());
-        
-        ThreadFactory factory = new ThreadFactory() {
-            private final AtomicInteger counter = new AtomicInteger(1);
-            private final String prefix = config.getThreadNamePrefix();
-
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName(prefix + "-" + counter.getAndIncrement());
-                t.setDaemon(false);
-                return t;
-            }
-        };
-
-        return new ThreadPoolExecutor(
-                config.getCorePoolSize(),
-                config.getMaxPoolSize(),
-                config.getKeepAliveSeconds(),
-                TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(config.getQueueSize()),
-                factory,
-                new ThreadPoolExecutor.CallerRunsPolicy()
-        );
     }
 
     /**
@@ -329,8 +262,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         if (querySpec instanceof QuerySpec appSpec) {
             return Promise.ofBlocking(dbExecutor, () -> {
                 String baseSql = appSpec.sql();
-                String scopedSql = baseSql +
-                    " AND tenant_id = :tenantId AND collection_name = :collectionName AND active = true";
+                String scopedSql = baseSql + ACTIVE_ENTITY_SCOPE_SQL;
                 Query nativeQuery = entityManager.createNativeQuery(scopedSql, Entity.class);
                 Map<String, Object> params = appSpec.parameters();
                 for (Map.Entry<String, Object> entry : params.entrySet()) {
@@ -533,9 +465,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             // data @> CAST(:filterJson AS jsonb) is safe — no string interpolation.
             String filterJson = OBJECT_MAPPER.writeValueAsString(filter);
             Query q = entityManager.createNativeQuery(
-                "SELECT COUNT(*) FROM entities WHERE tenant_id = :tenantId " +
-                "AND collection_name = :collectionName AND active = true " +
-                "AND data @> CAST(:filterJson AS jsonb)");
+                ACTIVE_ENTITY_COUNT_SQL + " AND " + DataCloudColumnNames.DATA + " @> CAST(:filterJson AS jsonb)");
             q.setParameter("tenantId", tenantId);
             q.setParameter("collectionName", collectionName);
             q.setParameter("filterJson", filterJson);

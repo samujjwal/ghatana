@@ -45,7 +45,7 @@ public interface EntityStore {
      * @param entities entities to save
      * @return promise of batch result
      */
-    Promise<BatchResult> saveBatch(TenantContext tenant, List<Entity> entities);
+    Promise<BatchResult<String>> saveBatch(TenantContext tenant, List<Entity> entities);
 
     /**
      * Find an entity by ID.
@@ -90,7 +90,7 @@ public interface EntityStore {
      * @param ids entity IDs
      * @return promise of batch result
      */
-    Promise<BatchResult> deleteBatch(TenantContext tenant, List<EntityId> ids);
+    Promise<BatchResult<String>> deleteBatch(TenantContext tenant, List<EntityId> ids);
 
     /**
      * Count entities matching a query.
@@ -405,39 +405,4 @@ public interface EntityStore {
         }
     }
 
-    /**
-     * Batch operation result.
-     */
-    record BatchResult(
-        int totalCount,
-        int successCount,
-        int failureCount,
-        List<BatchError> errors
-    ) {
-        public BatchResult {
-            errors = errors != null ? List.copyOf(errors) : List.of();
-        }
-
-        public boolean isFullySuccessful() {
-            return failureCount == 0;
-        }
-
-        public static BatchResult success(int count) {
-            return new BatchResult(count, count, 0, List.of());
-        }
-
-        public static BatchResult failure(int count, List<BatchError> errors) {
-            return new BatchResult(count, 0, count, errors);
-        }
-    }
-
-    /**
-     * Batch error detail.
-     */
-    record BatchError(
-        int index,
-        String entityId,
-        String errorCode,
-        String errorMessage
-    ) {}
 }

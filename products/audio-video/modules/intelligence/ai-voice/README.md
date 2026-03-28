@@ -150,6 +150,32 @@ pnpm tauri build
 
 ## 📚 Documentation
 
+### Backend Patterns
+
+The Rust backend now follows explicit audio-module ownership instead of ad hoc helpers:
+
+- `speech-audio-rust` owns decode, metadata, waveform extraction, slicing, mixing, and resampling.
+- `src-tauri/src/device.rs` owns device selection for recording and playback.
+- `src-tauri/src/buffer.rs` owns shared buffering semantics.
+- `src-tauri/src/session.rs`, `sync.rs`, `stream.rs`, and `effects.rs` own local editing/session workflows.
+- `src-tauri/src/error.rs` owns error categorization and retryability metadata.
+
+Example command flow:
+
+```rust
+let metadata = audio::load_audio_metadata(&path)?;
+let session = crate::session::new_audio_session(
+  path.clone(),
+  Some(project_id),
+  AudioSessionMode::Edit,
+  metadata.duration,
+);
+let sync = crate::sync::assess_sync(metadata.duration, video_duration, 0, 0, 40);
+let stream = crate::stream::build_stream_plan(&path, 250)?;
+```
+
+For the full audit closure matrix and the repo-standard remediation rationale, see `../../../../../docs/audits/AUDIO_VIDEO_AUDIT_CLOSURE_2026-03-27.md`.
+
 ### User Guides
 - **[Integration Guide](./INTEGRATION_GUIDE.md)** - Complete API examples and usage
 - **[Deployment Guide](./DEPLOYMENT_GUIDE.md)** - Production deployment instructions

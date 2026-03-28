@@ -1,14 +1,29 @@
 //! Microphone recording utilities.
 
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::traits::{DeviceTrait, StreamTrait};
 use cpal::{SampleFormat, StreamConfig};
 use hound::{SampleFormat as WavSampleFormat, WavSpec, WavWriter};
+use once_cell::sync::Lazy;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::{sync::mpsc, thread};
 
+use crate::buffer::SampleAccumulator;
+use crate::config::AudioRuntimeConfig;
+use crate::device::AudioDeviceManager;
 use crate::error::{AppError, AppResult};
+use crate::metrics::AudioRuntimeMetrics;
+use crate::resilience::CircuitBreaker;
+
+static RECORDING_BREAKER: Lazy<CircuitBreaker> = Lazy::new(|| {
+    let config = AudioRuntimeConfig::current();
+    CircuitBreaker::new(
+        "recording",
+        config.circuit_breaker_failure_threshold,
+        std::time::Duration::from_millis(config.circuit_breaker_cooldown_ms),
+    )
+});
 
 pub struct RecordingHandle {
     stop_tx: mpsc::Sender<()>,
@@ -18,26 +33,35 @@ pub struct RecordingHandle {
 impl RecordingHandle {
     pub fn start_default(output_path: PathBuf) -> AppResult<Self> {
         let (stop_tx, stop_rx) = mpsc::channel::<()>();
+        AudioRuntimeMetrics::global().record_recording_started();
 
         let join = thread::spawn(move || {
-            let host = cpal::default_host();
-            let device = host
-                .default_input_device()
-                .ok_or_else(|| AppError::Audio("No input device available".to_string()))?;
+            let selection = match RECORDING_BREAKER.run("start", AudioDeviceManager::default_input)
+            {
+                Ok(selection) => selection,
+                Err(error) => {
+                    AudioRuntimeMetrics::global().record_recording_failure();
+                    return Err(error);
+                }
+            };
 
-            let supported_config = device.default_input_config().map_err(|e| {
-                AppError::Audio(format!("Failed to get default input config: {}", e))
-            })?;
+            let crate::device::DeviceSelection {
+                device,
+                config: supported_config,
+                name,
+            } = selection;
 
             let sample_format = supported_config.sample_format();
             let config: StreamConfig = supported_config.into();
 
             let sample_rate = config.sample_rate.0;
             let channels = config.channels as usize;
+            let initial_capacity = sample_rate as usize
+                * AudioRuntimeConfig::current().recording_initial_buffer_seconds;
 
             tracing::info!(
                 "Starting mic recording: device={} sample_rate={} channels={} format={:?}",
-                device.name().unwrap_or_default(),
+                name,
                 sample_rate,
                 channels,
                 sample_format
@@ -46,7 +70,9 @@ impl RecordingHandle {
             let is_recording = Arc::new(AtomicBool::new(true));
             let is_recording_stream = Arc::clone(&is_recording);
 
-            let samples: Arc<Mutex<Vec<i16>>> = Arc::new(Mutex::new(Vec::new()));
+            let samples: Arc<Mutex<SampleAccumulator>> = Arc::new(Mutex::new(
+                SampleAccumulator::with_capacity(initial_capacity),
+            ));
             let samples_clone = Arc::clone(&samples);
 
             let err_fn = |err| {
@@ -113,7 +139,7 @@ impl RecordingHandle {
                 let guard = samples
                     .lock()
                     .map_err(|_| AppError::Audio("Failed to lock sample buffer".to_string()))?;
-                guard.clone()
+                guard.snapshot()
             };
 
             if let Some(parent) = output_path.parent() {
@@ -163,40 +189,26 @@ impl RecordingHandle {
     }
 }
 
-fn push_mono_samples_f32(data: &[f32], channels: usize, buf: &Arc<Mutex<Vec<i16>>>) {
+fn push_mono_samples_f32(data: &[f32], channels: usize, buf: &Arc<Mutex<SampleAccumulator>>) {
     let mut guard = match buf.lock() {
         Ok(g) => g,
         Err(_) => return,
     };
-
-    for frame in data.chunks(channels.max(1)) {
-        let s = frame.first().copied().unwrap_or(0.0);
-        let i16_sample = (s * 32767.0).clamp(-32768.0, 32767.0) as i16;
-        guard.push(i16_sample);
-    }
+    guard.push_f32_frames(data, channels);
 }
 
-fn push_mono_samples_i16(data: &[i16], channels: usize, buf: &Arc<Mutex<Vec<i16>>>) {
+fn push_mono_samples_i16(data: &[i16], channels: usize, buf: &Arc<Mutex<SampleAccumulator>>) {
     let mut guard = match buf.lock() {
         Ok(g) => g,
         Err(_) => return,
     };
-
-    for frame in data.chunks(channels.max(1)) {
-        let s = frame.first().copied().unwrap_or(0);
-        guard.push(s);
-    }
+    guard.push_i16_frames(data, channels);
 }
 
-fn push_mono_samples_u16(data: &[u16], channels: usize, buf: &Arc<Mutex<Vec<i16>>>) {
+fn push_mono_samples_u16(data: &[u16], channels: usize, buf: &Arc<Mutex<SampleAccumulator>>) {
     let mut guard = match buf.lock() {
         Ok(g) => g,
         Err(_) => return,
     };
-
-    for frame in data.chunks(channels.max(1)) {
-        let s = frame.first().copied().unwrap_or(0);
-        let i16_sample = (s as i32 - 32768) as i16;
-        guard.push(i16_sample);
-    }
+    guard.push_u16_frames(data, channels);
 }

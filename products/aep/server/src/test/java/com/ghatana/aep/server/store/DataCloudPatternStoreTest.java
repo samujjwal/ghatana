@@ -249,6 +249,18 @@ class DataCloudPatternStoreTest {
 
             verify(client).delete("system", DataCloudPatternStore.COLLECTION, id.toString());
         }
+
+        @Test
+        @DisplayName("delete(tenant,id): uses tenant-scoped delete for persisted patterns")
+        void deleteWithTenant_callsTenantScopedDelete() {
+            UUID id = UUID.randomUUID();
+            when(client.delete(TENANT, DataCloudPatternStore.COLLECTION, id.toString()))
+                    .thenReturn(Promise.of((Void) null));
+
+            store.delete(TENANT, id).getResult();
+
+            verify(client).delete(TENANT, DataCloudPatternStore.COLLECTION, id.toString());
+        }
     }
 
     // =========================================================================

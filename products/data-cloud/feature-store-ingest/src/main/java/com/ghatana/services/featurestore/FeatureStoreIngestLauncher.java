@@ -311,6 +311,7 @@ public class FeatureStoreIngestLauncher {
      */
     static List<Feature> extractFeatures(String entityId, Map<String, Object> payload, Instant eventTimestamp) {
         Instant ts = eventTimestamp != null ? eventTimestamp : Instant.now();
+        String resolvedEntityId = entityId != null ? entityId : Identifier.random().raw();
         var features = new java.util.ArrayList<Feature>();
 
         // ── Numeric pass-through ─────────────────────────────────────────
@@ -332,7 +333,7 @@ public class FeatureStoreIngestLauncher {
             features.add(Feature.builder()
                 .name(sanitizeFeatureName(kv.getKey()))
                 .value(numeric)
-                .entityId(entityId != null ? entityId : Identifier.random().raw())
+                .entityId(resolvedEntityId)
                 .timestamp(ts)
                 .build());
         }
@@ -341,13 +342,13 @@ public class FeatureStoreIngestLauncher {
         features.add(Feature.builder()
             .name("hour_of_day")
             .value((double) ts.atZone(java.time.ZoneOffset.UTC).getHour())
-            .entityId(entityId != null ? entityId : Identifier.random().raw())
+            .entityId(resolvedEntityId)
             .timestamp(ts)
             .build());
         features.add(Feature.builder()
             .name("day_of_week")
             .value((double) ts.atZone(java.time.ZoneOffset.UTC).getDayOfWeek().getValue())
-            .entityId(entityId != null ? entityId : Identifier.random().raw())
+            .entityId(resolvedEntityId)
             .timestamp(ts)
             .build());
 

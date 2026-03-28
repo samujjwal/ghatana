@@ -310,7 +310,6 @@ public class CollectionController {
                                                                                         e.getClass().getSimpleName(),
                                                                                         "tenant", tenantId);
                                                                         logger.error("Failed to create collection", e);
-                                                                        logger.error("Failed to create collection", e);
                                                                 });
                                         } catch (Exception e) {
                                                 metrics.incrementCounter("controller.collection.create.error",

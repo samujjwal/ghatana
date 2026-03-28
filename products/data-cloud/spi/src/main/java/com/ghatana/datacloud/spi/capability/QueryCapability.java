@@ -54,7 +54,13 @@ public interface QueryCapability<T> {
     Promise<PagedResult<T>> queryPaged(QuerySpec query, int page, int pageSize);
 
     /**
-     * Query specification.
+         * Query specification for plugin-native query adapters.
+         *
+         * <p>This contract is intentionally distinct from {@link com.ghatana.datacloud.spi.EntityStore.QuerySpec}.
+         * EntityStore.QuerySpec models collection-scoped entity queries with typed filter and sort operators,
+         * while this record models a lighter plugin capability surface for generic projections and key/value
+         * filters. Keep the two shapes separate unless the underlying plugin and entity-store semantics are
+         * proven to be identical.
      */
     record QuerySpec(
             Map<String, Object> filters,

@@ -158,6 +158,105 @@ pub struct RecordingResult {
     pub duration: f64,
 }
 
+/// Audio session mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AudioSessionMode {
+    Edit,
+    Record,
+    Playback,
+    Streaming,
+}
+
+/// Audio session lifecycle state.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AudioSessionState {
+    Active,
+    Closed,
+}
+
+/// Managed audio session.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AudioSession {
+    pub id: String,
+    pub source_path: String,
+    pub project_id: Option<String>,
+    pub mode: AudioSessionMode,
+    pub state: AudioSessionState,
+    pub duration_seconds: f64,
+    pub created_at: String,
+    pub closed_at: Option<String>,
+}
+
+/// Audio stream chunk metadata.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AudioStreamChunk {
+    pub index: u32,
+    pub start_ms: u64,
+    pub end_ms: u64,
+    pub sample_count: usize,
+    pub peak_level: f32,
+}
+
+/// Planned stream segmentation for an audio file.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AudioStreamPlan {
+    pub path: String,
+    pub sample_rate: u32,
+    pub channels: u16,
+    pub chunk_ms: u32,
+    pub total_chunks: usize,
+    pub chunks: Vec<AudioStreamChunk>,
+}
+
+/// Product-side sync quality rating.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AvSyncQuality {
+    Excellent,
+    Good,
+    Fair,
+    Poor,
+}
+
+/// Sync assessment result for local playback workflows.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AvSyncAssessment {
+    pub audio_duration_seconds: f64,
+    pub video_duration_seconds: f64,
+    pub drift_ms: i64,
+    pub tolerance_ms: i64,
+    pub within_tolerance: bool,
+    pub quality: AvSyncQuality,
+    pub recommendation: String,
+}
+
+/// Builtin effects configuration for product-side fallback processing.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BuiltinEffectsConfig {
+    pub gain_db: Option<f32>,
+    pub normalize: bool,
+    pub fade_in_ms: Option<u32>,
+    pub fade_out_ms: Option<u32>,
+    pub echo_delay_ms: Option<u32>,
+    pub echo_decay: Option<f32>,
+}
+
+/// Result of builtin effects processing.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BuiltinEffectsResult {
+    pub output_path: String,
+    pub duration_seconds: f64,
+    pub peak_level: f32,
+}
+
 /// Training status response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

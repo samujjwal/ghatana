@@ -329,30 +329,11 @@ public final class CoquiTtsAdapter implements TtsEngine {
     }
 
     private float[] bytesToFloats(byte[] data, int bitsPerSample) {
-        int bytesPerSample = bitsPerSample / 8;
-        int numSamples = data.length / bytesPerSample;
-        float[] floats = new float[numSamples];
-
-        for (int i = 0; i < numSamples; i++) {
-            int sample = 0;
-            for (int j = 0; j < bytesPerSample; j++) {
-                sample |= (data[i * bytesPerSample + j] & 0xFF) << (j * 8);
-            }
-            floats[i] = sample / (float) (1 << (bitsPerSample - 1));
-        }
-
-        return floats;
+        return AudioConverter.pcmToFloatSamples(data, bitsPerSample);
     }
 
     private byte[] floatsToBytes(float[] samples) {
-        byte[] bytes = new byte[samples.length * 2];
-        for (int i = 0; i < samples.length; i++) {
-            int sample = (int) (samples[i] * 32767);
-            sample = Math.max(-32768, Math.min(32767, sample));
-            bytes[i * 2] = (byte) (sample & 0xFF);
-            bytes[i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
-        }
-        return bytes;
+        return AudioConverter.floatSamplesToPcm16(samples);
     }
 
     // ====================================================================================

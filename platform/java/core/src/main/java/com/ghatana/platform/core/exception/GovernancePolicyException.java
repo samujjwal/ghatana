@@ -11,17 +11,17 @@ package com.ghatana.platform.core.exception;
  * @doc.layer core
  * @doc.pattern Exception, Policy Violation
  */
-public class GovernancePolicyException extends RuntimeException {
+public class GovernancePolicyException extends BaseException {
     
     public GovernancePolicyException(String message) {
-        super(message);
+        super(ErrorCode.GOVERNANCE_POLICY_VIOLATION, message);
     }
     
     public GovernancePolicyException(String message, Throwable cause) {
-        super(message, cause);
+        super(ErrorCode.GOVERNANCE_POLICY_VIOLATION, message, cause);
     }
     
     public GovernancePolicyException(Throwable cause) {
-        super(cause);
+        super(ErrorCode.GOVERNANCE_POLICY_VIOLATION, cause);
     }
 }

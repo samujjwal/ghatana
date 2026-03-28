@@ -300,20 +300,7 @@ public final class WhisperCppAdapter implements SttEngine {
     }
 
     private float[] bytesToFloats(byte[] data, int bitsPerSample) {
-        int bytesPerSample = bitsPerSample / 8;
-        int numSamples = data.length / bytesPerSample;
-        float[] floats = new float[numSamples];
-
-        for (int i = 0; i < numSamples; i++) {
-            int sample = 0;
-            for (int j = 0; j < bytesPerSample; j++) {
-                sample |= (data[i * bytesPerSample + j] & 0xFF) << (j * 8);
-            }
-            // Convert to float [-1, 1]
-            floats[i] = sample / (float) (1 << (bitsPerSample - 1));
-        }
-
-        return floats;
+        return AudioConverter.pcmToFloatSamples(data, bitsPerSample);
     }
 
     private float[] resample(float[] samples, int fromRate, int toRate) {

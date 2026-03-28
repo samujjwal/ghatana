@@ -3,6 +3,7 @@ package com.ghatana.datacloud.client;
 import com.ghatana.datacloud.*;
 
 import com.ghatana.datacloud.spi.StoragePlugin;
+import com.ghatana.datacloud.spi.BatchError;
 import io.activej.promise.Promise;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -137,7 +138,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
                         batchResult.successCount(),
                         batchResult.failureCount(),
                         batchResult.errors().stream()
-                                .map(StoragePlugin.BatchError::errorMessage)
+                            .map(BatchError::errorMessage)
                                 .collect(Collectors.toList())
                 )));
     }

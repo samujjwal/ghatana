@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::models::{DownloadTask, SeparationTask, TrainingSession, VoiceModel};
+use crate::models::{AudioSession, DownloadTask, SeparationTask, TrainingSession, VoiceModel};
 use crate::playback::PlaybackHandle;
 use crate::recorder::RecordingHandle;
 
@@ -34,6 +34,9 @@ pub struct AppState {
 
     /// Active download tasks
     pub download_tasks: Arc<RwLock<HashMap<String, DownloadTask>>>,
+
+    /// Managed local audio sessions
+    pub audio_sessions: Arc<RwLock<HashMap<String, AudioSession>>>,
 
     /// Currently playing audio path
     pub playing_audio: Arc<RwLock<Option<String>>>,
@@ -80,6 +83,7 @@ impl AppState {
             training_sessions: Arc::new(RwLock::new(HashMap::new())),
             separation_tasks: Arc::new(RwLock::new(HashMap::new())),
             download_tasks: Arc::new(RwLock::new(HashMap::new())),
+            audio_sessions: Arc::new(RwLock::new(HashMap::new())),
             playing_audio: Arc::new(RwLock::new(None)),
             playback_handle: Arc::new(RwLock::new(None)),
             is_recording: Arc::new(RwLock::new(false)),

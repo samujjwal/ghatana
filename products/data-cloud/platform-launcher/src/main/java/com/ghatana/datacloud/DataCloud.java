@@ -2,6 +2,7 @@ package com.ghatana.datacloud;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.spi.TenantContext;
@@ -391,7 +392,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<BatchResult> saveBatch(TenantContext tenant, List<Entity> entities) {
+        public Promise<BatchResult<String>> saveBatch(TenantContext tenant, List<Entity> entities) {
             for (Entity entity : entities) {
                 save(tenant, entity);
             }
@@ -438,7 +439,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<BatchResult> deleteBatch(TenantContext tenant, List<EntityId> ids) {
+        public Promise<BatchResult<String>> deleteBatch(TenantContext tenant, List<EntityId> ids) {
             for (EntityId id : ids) {
                 delete(tenant, id);
             }

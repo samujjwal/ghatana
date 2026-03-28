@@ -49,6 +49,17 @@ public class PlatformException extends BaseException {
     }
 
     /**
+     * Create an exception with an error code, message, cause, and initial metadata.
+     */
+    public PlatformException(
+            @NotNull ErrorCode errorCode,
+            @NotNull String message,
+            @Nullable Throwable cause,
+            @NotNull Map<String, Object> metadata) {
+        super(errorCode, message, cause, metadata);
+    }
+
+    /**
      * Get the HTTP status code derived from the error code.
      */
     public int getHttpStatus() {

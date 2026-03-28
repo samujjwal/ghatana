@@ -3,8 +3,13 @@
 //! This module provides the Tauri backend for the AI Voice desktop application.
 
 pub mod audio;
+pub mod buffer;
 pub mod commands;
+pub mod config;
+pub mod device;
 pub mod error;
+pub mod effects;
+pub mod metrics;
 pub mod ml_integration_commands;
 pub mod ml_model_bridge;
 pub mod models;
@@ -12,7 +17,11 @@ pub mod playback;
 pub mod project_storage;
 pub mod python;
 pub mod recorder;
+pub mod resilience;
+pub mod session;
 pub mod state;
+pub mod stream;
+pub mod sync;
 
 use state::AppState;
 use once_cell::sync::OnceCell;
@@ -71,6 +80,13 @@ pub fn run() {
             commands::ai_voice_play_audio,
             commands::ai_voice_stop_audio,
             commands::ai_voice_export_audio,
+            commands::ai_voice_create_audio_session,
+            commands::ai_voice_get_audio_session,
+            commands::ai_voice_list_audio_sessions,
+            commands::ai_voice_close_audio_session,
+            commands::ai_voice_analyze_sync,
+            commands::ai_voice_stream_audio,
+            commands::ai_voice_apply_builtin_effects,
             // Stem separation
             commands::ai_voice_separate_stems,
             commands::ai_voice_separation_progress,

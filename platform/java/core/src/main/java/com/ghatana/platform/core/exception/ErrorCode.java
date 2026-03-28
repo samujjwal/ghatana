@@ -29,6 +29,7 @@ public enum ErrorCode {
     INVALID_CREDENTIALS("AUTH-003", "Invalid credentials", 401),
     TOKEN_EXPIRED("AUTH-004", "Token expired", 401),
     INSUFFICIENT_PERMISSIONS("AUTH-005", "Insufficient permissions", 403),
+    GOVERNANCE_POLICY_VIOLATION("AUTH-006", "Governance policy violation", 403),
     UNAUTHORIZED("AUTH-401", "Authentication required", 401),
     FORBIDDEN("AUTH-403", "Access denied", 403),
     

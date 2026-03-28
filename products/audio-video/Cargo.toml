@@ -1,8 +1,8 @@
 [workspace]
-name = "audio-video"
 members = [
-    "modules/*/clients/*",
-    "libs/rust/*",
+    "apps/desktop/src-tauri",
+    "modules/intelligence/ai-voice/apps/desktop/src-tauri",
+    "modules/intelligence/speech/libs/speech-audio-rust",
 ]
 resolver = "2"
 

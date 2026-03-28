@@ -17,6 +17,8 @@
 package com.ghatana.datacloud.plugins.vector;
 
 import com.ghatana.datacloud.*;
+import com.ghatana.datacloud.spi.BatchError;
+import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.StoragePlugin;
 import com.ghatana.datacloud.RecordQuery.FilterCondition;
 import com.ghatana.datacloud.RecordQuery.Operator;
@@ -338,9 +340,9 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
     }
     
     @Override
-    public Promise<BatchResult> insertBatch(List<DataRecord> records) {
+    public Promise<BatchResult<UUID>> insertBatch(List<DataRecord> records) {
         int success = 0;
-        List<BatchError> errors = new ArrayList<>();
+        List<BatchError<UUID>> errors = new ArrayList<>();
         
         for (int i = 0; i < records.size(); i++) {
             try {
@@ -382,9 +384,9 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
     }
     
     @Override
-    public Promise<BatchResult> updateBatch(List<DataRecord> records) {
+    public Promise<BatchResult<UUID>> updateBatch(List<DataRecord> records) {
         int success = 0;
-        List<BatchError> errors = new ArrayList<>();
+        List<BatchError<UUID>> errors = new ArrayList<>();
         
         for (int i = 0; i < records.size(); i++) {
             try {
@@ -404,9 +406,9 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
     }
     
     @Override
-    public Promise<BatchResult> deleteBatch(String tenantId, String collectionName, List<UUID> ids) {
+    public Promise<BatchResult<UUID>> deleteBatch(String tenantId, String collectionName, List<UUID> ids) {
         int success = 0;
-        List<BatchError> errors = new ArrayList<>();
+        List<BatchError<UUID>> errors = new ArrayList<>();
         
         for (int i = 0; i < ids.size(); i++) {
             try {

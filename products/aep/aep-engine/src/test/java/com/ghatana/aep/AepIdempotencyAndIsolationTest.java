@@ -121,6 +121,46 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
             assertThat(r1.success()).isTrue();
             assertThat(r2.success()).isTrue();
         }
+
+        @Test
+        @DisplayName("expired idempotency keys are processed again after TTL")
+        void shouldAllowProcessingAgainAfterConfiguredTtl() throws Exception {
+            engine = Aep.create(Aep.AepConfig.builder()
+                .idempotencyTtlSeconds(1)
+                .build());
+
+            AepEngine.Event first = AepEngine.Event.of("order.placed", Map.of("amount", 100))
+                .withIdempotencyKey("ttl-key");
+            AepEngine.Event second = AepEngine.Event.of("order.placed", Map.of("amount", 100))
+                .withIdempotencyKey("ttl-key");
+
+            AepEngine.ProcessingResult r1 = runPromise(() -> engine.process(TENANT_A, first));
+            Thread.sleep(1_100L);
+            AepEngine.ProcessingResult r2 = runPromise(() -> engine.process(TENANT_A, second));
+
+            assertThat(r1.success()).isTrue();
+            assertThat(r2.success()).isTrue();
+        }
+
+        @Test
+        @DisplayName("oldest idempotency keys are evicted when tenant budget is exceeded")
+        void shouldEvictOldestKeysWhenBudgetExceeded() {
+            engine = Aep.create(Aep.AepConfig.builder()
+                .maxIdempotencyKeysPerTenant(2)
+                .build());
+
+            runPromise(() -> engine.process(TENANT_A,
+                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-1")));
+            runPromise(() -> engine.process(TENANT_A,
+                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-2")));
+            runPromise(() -> engine.process(TENANT_A,
+                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-3")));
+
+            AepEngine.ProcessingResult result = runPromise(() -> engine.process(TENANT_A,
+                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-1")));
+
+            assertThat(result.success()).isTrue();
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────

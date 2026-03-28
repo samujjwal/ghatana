@@ -12,6 +12,7 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -136,6 +137,11 @@ public final class Aep {
         double anomalyThreshold,
         Map<String, Object> customConfig
     ) {
+        public static final String IDEMPOTENCY_TTL_SECONDS_KEY = "idempotencyTtlSeconds";
+        public static final String IDEMPOTENCY_MAX_KEYS_PER_TENANT_KEY = "idempotencyMaxKeysPerTenant";
+        private static final long DEFAULT_IDEMPOTENCY_TTL_SECONDS = 86_400L;
+        private static final int DEFAULT_IDEMPOTENCY_MAX_KEYS_PER_TENANT = 10_000;
+
         public AepConfig {
             instanceId = instanceId != null ? instanceId : UUID.randomUUID().toString();
             if (workerThreads <= 0) workerThreads = Runtime.getRuntime().availableProcessors();
@@ -162,7 +168,7 @@ public final class Aep {
             private boolean enableMetrics = true;
             private boolean enableTracing = false;
             private double anomalyThreshold = 0.9;
-            private Map<String, Object> customConfig = Map.of();
+            private Map<String, Object> customConfig = new LinkedHashMap<>();
 
             public Builder instanceId(String instanceId) {
                 this.instanceId = instanceId;
@@ -195,7 +201,17 @@ public final class Aep {
             }
 
             public Builder customConfig(Map<String, Object> config) {
-                this.customConfig = config;
+                this.customConfig = config != null ? new LinkedHashMap<>(config) : new LinkedHashMap<>();
+                return this;
+            }
+
+            public Builder idempotencyTtlSeconds(long ttlSeconds) {
+                this.customConfig.put(IDEMPOTENCY_TTL_SECONDS_KEY, ttlSeconds);
+                return this;
+            }
+
+            public Builder maxIdempotencyKeysPerTenant(int maxKeys) {
+                this.customConfig.put(IDEMPOTENCY_MAX_KEYS_PER_TENANT_KEY, maxKeys);
                 return this;
             }
 
@@ -203,6 +219,22 @@ public final class Aep {
                 return new AepConfig(instanceId, workerThreads, maxPipelinesPerTenant,
                     enableMetrics, enableTracing, anomalyThreshold, customConfig);
             }
+        }
+
+        public long idempotencyTtlSeconds() {
+            Object raw = customConfig.get(IDEMPOTENCY_TTL_SECONDS_KEY);
+            if (raw instanceof Number number && number.longValue() > 0) {
+                return number.longValue();
+            }
+            return DEFAULT_IDEMPOTENCY_TTL_SECONDS;
+        }
+
+        public int maxIdempotencyKeysPerTenant() {
+            Object raw = customConfig.get(IDEMPOTENCY_MAX_KEYS_PER_TENANT_KEY);
+            if (raw instanceof Number number && number.intValue() > 0) {
+                return number.intValue();
+            }
+            return DEFAULT_IDEMPOTENCY_MAX_KEYS_PER_TENANT;
         }
     }
 
@@ -239,8 +271,8 @@ public final class Aep {
         // Sequence progress: tenantId -> patternId -> correlationKey -> (progress, lastEventTime)
         private final Map<String, Map<String, Map<String, SequenceProgress>>> sequenceProgressByTenant =
             new ConcurrentHashMap<>();
-        // Idempotency tracking: tenantId -> idempotencyKey (bounded via size check)
-        private final Map<String, Set<String>> seenIdempotencyKeysByTenant = new ConcurrentHashMap<>();
+        // Idempotency tracking: tenantId -> idempotencyKey -> first-seen processing time
+        private final Map<String, Map<String, Instant>> seenIdempotencyKeysByTenant = new ConcurrentHashMap<>();
         // Subscriber failure tracking: tenantId -> patternId -> failureCount
         private final Map<String, Map<String, Long>> subscriberFailureCountByTenant = new ConcurrentHashMap<>();
 
@@ -276,14 +308,17 @@ public final class Aep {
             // AEP-011: Idempotency check
             Optional<String> idempotencyKey = event.idempotencyKey();
             if (idempotencyKey.isPresent()) {
-                Set<String> seen = seenIdempotencyKeysByTenant
-                    .computeIfAbsent(tenantId, k -> ConcurrentHashMap.newKeySet());
-                if (!seen.add(idempotencyKey.get())) {
+                Instant now = Instant.now();
+                Map<String, Instant> seen = seenIdempotencyKeysByTenant
+                    .computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>());
+                purgeExpiredIdempotencyKeys(seen, now);
+                if (seen.putIfAbsent(idempotencyKey.get(), now) != null) {
                     logger.debug("Duplicate event suppressed by idempotency key={} for tenant={}",
                         idempotencyKey.get(), tenantId);
                     return Promise.of(AepEngine.ProcessingResult.skipped(eventId,
                         "Duplicate event suppressed: idempotencyKey=" + idempotencyKey.get()));
                 }
+                trimIdempotencyKeysToBudget(seen);
             }
 
             // Resolve identity and consent
@@ -498,6 +533,25 @@ public final class Aep {
             if (closed) {
                 throw new IllegalStateException("AepEngine is closed");
             }
+        }
+
+        private void purgeExpiredIdempotencyKeys(Map<String, Instant> seenKeys, Instant now) {
+            Instant cutoff = now.minusSeconds(config.idempotencyTtlSeconds());
+            seenKeys.entrySet().removeIf(entry -> entry.getValue().isBefore(cutoff));
+        }
+
+        private void trimIdempotencyKeysToBudget(Map<String, Instant> seenKeys) {
+            int maxKeys = config.maxIdempotencyKeysPerTenant();
+            if (seenKeys.size() <= maxKeys) {
+                return;
+            }
+
+            int keysToRemove = seenKeys.size() - maxKeys;
+            seenKeys.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .limit(keysToRemove)
+                .toList()
+                .forEach(entry -> seenKeys.remove(entry.getKey(), entry.getValue()));
         }
 
         private Optional<AepEngine.Detection> matchPattern(String tenantId, AepEngine.Pattern pattern,

@@ -717,14 +717,6 @@ public final class PiperOnnxEngine implements TtsEngine {
     }
 
     private byte[] floatsToBytes(float[] samples) {
-        byte[] bytes = new byte[samples.length * 2]; // 16-bit samples
-        for (int i = 0; i < samples.length; i++) {
-            // Convert float [-1, 1] to int16
-            int sample = (int) (samples[i] * 32767);
-            sample = Math.max(-32768, Math.min(32767, sample));
-            bytes[i * 2] = (byte) (sample & 0xFF);
-            bytes[i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
-        }
-        return bytes;
+        return AudioConverter.floatSamplesToPcm16(samples);
     }
 }

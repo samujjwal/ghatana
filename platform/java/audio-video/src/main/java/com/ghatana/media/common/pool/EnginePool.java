@@ -9,6 +9,8 @@ package com.ghatana.media.common.pool;
 import com.ghatana.media.stt.api.SttEngine;
 import com.ghatana.media.tts.api.TtsEngine;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.*;
@@ -60,7 +62,8 @@ public class EnginePool<T> implements AutoCloseable {
     private final AtomicReference<ResourceUsageSnapshot> lastUsageSnapshot = new AtomicReference<>();
     
     // Leak detection tracking
-    private final ConcurrentMap<T, BorrowInfo> borrowTracking = new ConcurrentHashMap<>();
+    private final ConcurrentMap<IdentityWeakReference<T>, BorrowInfo> borrowTracking = new ConcurrentHashMap<>();
+    private final ReferenceQueue<T> borrowTrackingQueue = new ReferenceQueue<>();
     private final Duration leakDetectionThreshold;
     private final long leakCheckIntervalMillis;
     private final ScheduledExecutorService leakDetectionExecutor;
@@ -195,9 +198,11 @@ public class EnginePool<T> implements AutoCloseable {
         
         pooled.lastBorrowed = Instant.now();
         inUse.put(pooled.engine, pooled);
+        cleanupCollectedBorrowEntries();
         
         // Track borrow for leak detection
-        borrowTracking.put(pooled.engine, new BorrowInfo(
+        borrowTracking.put(new IdentityWeakReference<>(pooled.engine, borrowTrackingQueue), new BorrowInfo(
+            pooled.engine,
             Instant.now(),
             Thread.currentThread().getStackTrace()
         ));
@@ -221,7 +226,8 @@ public class EnginePool<T> implements AutoCloseable {
         }
         
         // Remove from leak tracking
-        borrowTracking.remove(engine);
+        cleanupCollectedBorrowEntries();
+        borrowTracking.remove(new IdentityWeakReference<>(engine));
         
         totalReturned.incrementAndGet();
         
@@ -274,6 +280,7 @@ public class EnginePool<T> implements AutoCloseable {
      * Get detailed resource usage snapshot.
      */
     public ResourceUsageSnapshot getResourceUsage() {
+        cleanupCollectedBorrowEntries();
         ResourceUsageSnapshot snapshot = new ResourceUsageSnapshot(
             available.size(),
             inUse.size(),
@@ -292,16 +299,17 @@ public class EnginePool<T> implements AutoCloseable {
      * Get list of potentially leaked engines.
      */
     public List<LeakInfo> getPotentialLeaks() {
+        cleanupCollectedBorrowEntries();
         List<LeakInfo> leaks = new ArrayList<>();
         Instant threshold = Instant.now().minus(leakDetectionThreshold);
         
-        for (Map.Entry<T, BorrowInfo> entry : borrowTracking.entrySet()) {
-            if (!entry.getValue().borrowTime.isAfter(threshold)) {
+        for (BorrowInfo info : borrowTracking.values()) {
+            if (!info.borrowTime.isAfter(threshold)) {
                 leaks.add(new LeakInfo(
-                    entry.getKey(),
-                    entry.getValue().borrowTime,
-                    Duration.between(entry.getValue().borrowTime, Instant.now()),
-                    entry.getValue().stackTrace
+                    info.engineRef.get(),
+                    info.borrowTime,
+                    Duration.between(info.borrowTime, Instant.now()),
+                    info.stackTrace
                 ));
             }
         }
@@ -409,33 +417,38 @@ public class EnginePool<T> implements AutoCloseable {
     
     private void detectLeaks() {
         if (closed) return;
+        cleanupCollectedBorrowEntries();
         
-        Instant threshold = Instant.now().minus(leakDetectionThreshold);
-        List<T> leakedEngines = new ArrayList<>();
+        Instant now = Instant.now();
+        Instant threshold = now.minus(leakDetectionThreshold);
+        List<BorrowInfo> leakedBorrows = new ArrayList<>();
         
-        for (Map.Entry<T, BorrowInfo> entry : borrowTracking.entrySet()) {
-            if (!entry.getValue().borrowTime.isAfter(threshold)) {
-                leakedEngines.add(entry.getKey());
+        for (BorrowInfo info : borrowTracking.values()) {
+            if (!info.borrowTime.isAfter(threshold)) {
+                leakedBorrows.add(info);
             }
         }
         
-        if (!leakedEngines.isEmpty()) {
-            leakDetections.addAndGet(leakedEngines.size());
+        if (!leakedBorrows.isEmpty()) {
+            leakDetections.addAndGet(leakedBorrows.size());
             LOG.log(Level.SEVERE, 
-                "Detected " + leakedEngines.size() + " potential resource leaks. " +
+                "Detected " + leakedBorrows.size() + " potential resource leaks. " +
                 "Engines borrowed for > " + leakDetectionThreshold.toMinutes() + " minutes");
             
             // Log stack traces for debugging
-            for (T engine : leakedEngines) {
-                BorrowInfo info = borrowTracking.get(engine);
-                if (info != null) {
-                    // Build a plain RuntimeException and set its stack trace manually
-                    // (anonymous Throwable subclasses cannot be declared inside generic classes)
-                    RuntimeException leakTrace = new RuntimeException("Borrow stack trace");
-                    leakTrace.setStackTrace(info.stackTrace);
-                    LOG.log(Level.SEVERE, "Leaked engine borrowed at:", leakTrace);
-                }
+            for (BorrowInfo info : leakedBorrows) {
+                RuntimeException leakTrace = new RuntimeException("Borrow stack trace");
+                leakTrace.setStackTrace(info.stackTrace);
+                LOG.log(Level.SEVERE, "Leaked engine borrowed at:", leakTrace);
             }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void cleanupCollectedBorrowEntries() {
+        IdentityWeakReference<T> reference;
+        while ((reference = (IdentityWeakReference<T>) borrowTrackingQueue.poll()) != null) {
+            borrowTracking.remove(reference);
         }
     }
 
@@ -445,12 +458,46 @@ public class EnginePool<T> implements AutoCloseable {
     }
     
     private static class BorrowInfo {
+        final WeakReference<Object> engineRef;
         final Instant borrowTime;
         final StackTraceElement[] stackTrace;
         
-        BorrowInfo(Instant borrowTime, StackTraceElement[] stackTrace) {
+        BorrowInfo(Object engine, Instant borrowTime, StackTraceElement[] stackTrace) {
+            this.engineRef = new WeakReference<>(engine);
             this.borrowTime = borrowTime;
             this.stackTrace = stackTrace;
+        }
+    }
+
+    private static final class IdentityWeakReference<T> extends WeakReference<T> {
+        private final int identityHash;
+
+        IdentityWeakReference(T referent, ReferenceQueue<T> queue) {
+            super(referent, queue);
+            this.identityHash = System.identityHashCode(referent);
+        }
+
+        IdentityWeakReference(T referent) {
+            super(referent);
+            this.identityHash = System.identityHashCode(referent);
+        }
+
+        @Override
+        public int hashCode() {
+            return identityHash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof IdentityWeakReference<?> other)) {
+                return false;
+            }
+            Object referent = get();
+            Object otherReferent = other.get();
+            return referent != null && referent == otherReferent;
         }
     }
     

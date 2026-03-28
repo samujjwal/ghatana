@@ -23,4 +23,12 @@ dependencies {
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
     compileOnly(libs.spotbugs.annotations)
+
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.assertj.core)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 public final class WhisperOnnxEngine implements SttEngine {
 
     private static final Logger LOG = Logger.getLogger(WhisperOnnxEngine.class.getName());
+    private static final ConcurrentMap<Integer, float[]> HANN_WINDOW_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, float[][]> MEL_FILTER_CACHE = new ConcurrentHashMap<>();
 
     // Model constants
     private static final int SAMPLE_RATE = 16000;
@@ -306,20 +308,7 @@ public final class WhisperOnnxEngine implements SttEngine {
     }
 
     private float[] bytesToFloats(byte[] data, int bitsPerSample) {
-        int bytesPerSample = bitsPerSample / 8;
-        int numSamples = data.length / bytesPerSample;
-        float[] floats = new float[numSamples];
-
-        for (int i = 0; i < numSamples; i++) {
-            int sample = 0;
-            for (int j = 0; j < bytesPerSample; j++) {
-                sample |= (data[i * bytesPerSample + j] & 0xFF) << (j * 8);
-            }
-            // Convert to float in range [-1, 1]
-            floats[i] = sample / (float) (1 << (bitsPerSample - 1));
-        }
-
-        return floats;
+        return AudioConverter.pcmToFloatSamples(data, bitsPerSample);
     }
 
     private float[][] computeMelSpectrogram(float[] samples, int sampleRate, int nMels, int nFft, int hopLength) {
@@ -329,10 +318,14 @@ public final class WhisperOnnxEngine implements SttEngine {
         }
 
         // Pre-compute Hann window
-        float[] hannWindow = computeHannWindow(nFft);
+        float[] hannWindow = HANN_WINDOW_CACHE.computeIfAbsent(nFft, WhisperOnnxEngine::computeHannWindow);
 
         // Pre-compute mel filterbank [nMels x (nFft/2 + 1)]
-        float[][] melFilters = computeMelFilterbank(sampleRate, nFft, nMels);
+        String melCacheKey = sampleRate + ":" + nFft + ":" + nMels;
+        float[][] melFilters = MEL_FILTER_CACHE.computeIfAbsent(
+            melCacheKey,
+            ignored -> computeMelFilterbank(sampleRate, nFft, nMels)
+        );
 
         float[][] logMelSpec = new float[nFrames][nMels];
 

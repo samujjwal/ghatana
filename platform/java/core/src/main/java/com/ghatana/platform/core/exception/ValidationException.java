@@ -44,9 +44,8 @@ public class ValidationException extends BaseException {
      * @param validationErrors The validation errors
      */
     public ValidationException(String message, Map<String, Object> validationErrors) {
-        super(ErrorCode.VALIDATION_ERROR, message);
+        super(ErrorCode.VALIDATION_ERROR, message, null, metadataFor(validationErrors));
         this.validationErrors = new HashMap<>(validationErrors);
-        addMetadata("validationErrors", validationErrors);
     }
 
     /**
@@ -57,9 +56,8 @@ public class ValidationException extends BaseException {
      * @param validationErrors The validation errors
      */
     public ValidationException(String message, Throwable cause, Map<String, Object> validationErrors) {
-        super(ErrorCode.VALIDATION_ERROR, message, cause);
+        super(ErrorCode.VALIDATION_ERROR, message, cause, metadataFor(validationErrors));
         this.validationErrors = new HashMap<>(validationErrors);
-        addMetadata("validationErrors", validationErrors);
     }
 
     /**
@@ -105,5 +103,11 @@ public class ValidationException extends BaseException {
      */
     public static ValidationException forErrors(Map<String, Object> errors) {
         return new ValidationException("Validation failed with " + errors.size() + " errors", errors);
+    }
+
+    private static Map<String, Object> metadataFor(Map<String, Object> validationErrors) {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("validationErrors", new HashMap<>(validationErrors));
+        return metadata;
     }
 }

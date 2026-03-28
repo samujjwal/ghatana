@@ -7,6 +7,7 @@ package com.ghatana.aep.connector;
 import com.ghatana.aep.connector.config.RetryConfig;
 import com.ghatana.aep.connector.strategy.QueueMessage;
 import com.ghatana.aep.connector.strategy.QueueProducerStrategy;
+import com.ghatana.aep.connector.util.RetryExecutor;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,37 +57,24 @@ public final class RetryingConnectorDecorator implements QueueProducerStrategy {
 
     @Override
     public boolean send(QueueMessage message) {
-        int attempts = 0;
-        long delayMs = retryConfig.initialDelay().toMillis();
-
-        while (attempts < retryConfig.maxAttempts()) {
-            try {
-                boolean result = delegate.send(message);
-                if (result) {
-                    return true;
-                }
-                // Treat false return as a soft failure worth retrying
-                attempts++;
-                if (attempts < retryConfig.maxAttempts()) {
-                    log.warn("Connector returned false on attempt {}/{}, retrying in {}ms.",
-                        attempts, retryConfig.maxAttempts(), delayMs);
-                    sleep(delayMs);
-                    delayMs = nextDelay(delayMs);
-                }
-            } catch (Exception e) {
-                attempts++;
-                if (attempts >= retryConfig.maxAttempts()) {
-                    log.error("All {} attempts exhausted for message key={}: {}",
-                        retryConfig.maxAttempts(), message.getId(), e.getMessage());
-                    throw e instanceof RuntimeException re ? re : new RuntimeException(e);
-                }
-                log.warn("Attempt {}/{} threw exception: {}. Retrying in {}ms.",
-                    attempts, retryConfig.maxAttempts(), e.getMessage(), delayMs);
-                sleep(delayMs);
-                delayMs = nextDelay(delayMs);
+        try {
+            boolean result = RetryExecutor.execute(
+                retryConfig,
+                log,
+                "connector send",
+                () -> delegate.send(message),
+                Boolean.TRUE::equals
+            );
+            if (!result) {
+                log.error("All {} attempts exhausted for message key={} without a successful send.",
+                    retryConfig.maxAttempts(), message.getId());
             }
+            return result;
+        } catch (Exception e) {
+            log.error("All {} attempts exhausted for message key={}: {}",
+                retryConfig.maxAttempts(), message.getId(), e.getMessage());
+            throw e instanceof RuntimeException re ? re : new RuntimeException(e);
         }
-        return false;
     }
 
     @Override
@@ -107,18 +95,5 @@ public final class RetryingConnectorDecorator implements QueueProducerStrategy {
     @Override
     public boolean isRunning() {
         return delegate.isRunning();
-    }
-
-    private void sleep(long ms) {
-        if (ms <= 0) return;
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    private long nextDelay(long currentMs) {
-        return Math.min((long) (currentMs * retryConfig.backoffMultiplier()), retryConfig.maxDelay().toMillis());
     }
 }

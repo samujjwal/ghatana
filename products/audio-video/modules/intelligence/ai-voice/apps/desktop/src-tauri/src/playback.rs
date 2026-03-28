@@ -1,12 +1,27 @@
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{mpsc, Arc};
 use std::thread;
 
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::traits::{DeviceTrait, StreamTrait};
 use cpal::SampleFormat;
+use once_cell::sync::Lazy;
 
+use crate::buffer::PlaybackCursor;
+use crate::config::AudioRuntimeConfig;
+use crate::device::AudioDeviceManager;
 use crate::error::{AppError, AppResult};
+use crate::metrics::AudioRuntimeMetrics;
+use crate::resilience::CircuitBreaker;
+
+static PLAYBACK_BREAKER: Lazy<CircuitBreaker> = Lazy::new(|| {
+    let config = AudioRuntimeConfig::current();
+    CircuitBreaker::new(
+        "playback",
+        config.circuit_breaker_failure_threshold,
+        std::time::Duration::from_millis(config.circuit_breaker_cooldown_ms),
+    )
+});
 
 pub struct PlaybackHandle {
     stop_flag: Arc<AtomicBool>,
@@ -19,12 +34,19 @@ impl PlaybackHandle {
         let (stop_tx, stop_rx) = mpsc::channel::<()>();
         let stop_flag = Arc::new(AtomicBool::new(false));
         let stop_flag_thread = Arc::clone(&stop_flag);
+        AudioRuntimeMetrics::global().record_playback_started();
 
         let join = thread::spawn(move || {
-            let buffer = crate::audio::load_wav_as_audio_buffer(
-                path.to_str()
-                    .ok_or_else(|| AppError::Audio("Invalid audio path".to_string()))?,
-            )?;
+            let input_path = path
+                .to_str()
+                .ok_or_else(|| AppError::Audio("Invalid audio path".to_string()))?;
+            let buffer = match PLAYBACK_BREAKER.run("decode", || crate::audio::load_wav_as_audio_buffer(input_path)) {
+                Ok(buffer) => buffer,
+                Err(error) => {
+                    AudioRuntimeMetrics::global().record_playback_failure();
+                    return Err(error);
+                }
+            };
 
             tracing::info!(
                 "Playback input: sample_rate={} channels={}",
@@ -32,14 +54,19 @@ impl PlaybackHandle {
                 buffer.config.channels
             );
 
-            let host = cpal::default_host();
-            let device = host
-                .default_output_device()
-                .ok_or_else(|| AppError::Audio("No output device available".to_string()))?;
+            let selection = match PLAYBACK_BREAKER.run("open-output-device", AudioDeviceManager::default_output) {
+                Ok(selection) => selection,
+                Err(error) => {
+                    AudioRuntimeMetrics::global().record_playback_failure();
+                    return Err(error);
+                }
+            };
 
-            let supported_config = device
-                .default_output_config()
-                .map_err(|e| AppError::Audio(format!("Failed to get output config: {}", e)))?;
+            let crate::device::DeviceSelection {
+                device,
+                config: supported_config,
+                name,
+            } = selection;
 
             let config: cpal::StreamConfig = supported_config.clone().into();
             let out_channels = config.channels as usize;
@@ -52,6 +79,7 @@ impl PlaybackHandle {
                 out_channels,
                 out_format
             );
+            tracing::info!("Playback device={}", name);
 
             let resampler = speech_audio_rust::Resampler::new(out_sample_rate);
             let buffer = resampler
@@ -85,8 +113,8 @@ impl PlaybackHandle {
                 v
             };
 
-            let idx = Arc::new(Mutex::new(0usize));
-            let idx_cb = Arc::clone(&idx);
+            let cursor = Arc::new(PlaybackCursor::new(out_samples));
+            let cursor_cb = Arc::clone(&cursor);
 
             let done = Arc::new(AtomicBool::new(false));
             let done_cb = Arc::clone(&done);
@@ -99,7 +127,6 @@ impl PlaybackHandle {
 
             let stream = match out_format {
                 SampleFormat::F32 => {
-                    let samples = out_samples;
                     device
                         .build_output_stream(
                             &config,
@@ -111,19 +138,8 @@ impl PlaybackHandle {
                                     done_cb.store(true, Ordering::SeqCst);
                                     return;
                                 }
-
-                                let mut i = match idx_cb.lock() {
-                                    Ok(guard) => guard,
-                                    Err(poisoned) => poisoned.into_inner(),
-                                };
-                                for out in data.iter_mut() {
-                                    if *i < samples.len() {
-                                        *out = samples[*i];
-                                        *i += 1;
-                                    } else {
-                                        *out = 0.0;
-                                        done_cb.store(true, Ordering::SeqCst);
-                                    }
+                                if cursor_cb.fill_f32(data) {
+                                    done_cb.store(true, Ordering::SeqCst);
                                 }
                             },
                             err_fn,
@@ -134,7 +150,6 @@ impl PlaybackHandle {
                         })?
                 }
                 SampleFormat::I16 => {
-                    let samples = out_samples;
                     device
                         .build_output_stream(
                             &config,
@@ -146,22 +161,8 @@ impl PlaybackHandle {
                                     done_cb.store(true, Ordering::SeqCst);
                                     return;
                                 }
-
-                                let mut i = match idx_cb.lock() {
-                                    Ok(guard) => guard,
-                                    Err(poisoned) => poisoned.into_inner(),
-                                };
-                                for out in data.iter_mut() {
-                                    if *i < samples.len() {
-                                        let v = (samples[*i] * i16::MAX as f32)
-                                            .clamp(i16::MIN as f32, i16::MAX as f32)
-                                            as i16;
-                                        *out = v;
-                                        *i += 1;
-                                    } else {
-                                        *out = 0;
-                                        done_cb.store(true, Ordering::SeqCst);
-                                    }
+                                if cursor_cb.fill_i16(data) {
+                                    done_cb.store(true, Ordering::SeqCst);
                                 }
                             },
                             err_fn,
@@ -172,7 +173,6 @@ impl PlaybackHandle {
                         })?
                 }
                 SampleFormat::U16 => {
-                    let samples = out_samples;
                     device
                         .build_output_stream(
                             &config,
@@ -184,22 +184,8 @@ impl PlaybackHandle {
                                     done_cb.store(true, Ordering::SeqCst);
                                     return;
                                 }
-
-                                let mut i = match idx_cb.lock() {
-                                    Ok(guard) => guard,
-                                    Err(poisoned) => poisoned.into_inner(),
-                                };
-                                for out in data.iter_mut() {
-                                    if *i < samples.len() {
-                                        let v_i16 = (samples[*i] * i16::MAX as f32)
-                                            .clamp(i16::MIN as f32, i16::MAX as f32)
-                                            as i16;
-                                        *out = (v_i16 as i32 + 32768) as u16;
-                                        *i += 1;
-                                    } else {
-                                        *out = u16::MAX / 2;
-                                        done_cb.store(true, Ordering::SeqCst);
-                                    }
+                                if cursor_cb.fill_u16(data) {
+                                    done_cb.store(true, Ordering::SeqCst);
                                 }
                             },
                             err_fn,
@@ -224,7 +210,9 @@ impl PlaybackHandle {
                 if stop_rx.try_recv().is_ok() {
                     stop_flag_thread.store(true, Ordering::SeqCst);
                 }
-                thread::sleep(std::time::Duration::from_millis(10));
+                thread::sleep(std::time::Duration::from_millis(
+                    AudioRuntimeConfig::current().playback_poll_interval_ms,
+                ));
             }
 
             drop(stream);

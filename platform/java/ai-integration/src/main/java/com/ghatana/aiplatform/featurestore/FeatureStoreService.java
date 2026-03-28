@@ -84,14 +84,18 @@ public class FeatureStoreService {
     /**
      * Constructs service with database and metrics dependencies.
      *
-     * @param dataSource database connection pool
+     * @param dataSource database connection pool; when null the service operates in cache-only mode
      * @param metrics metrics collector
      */
     public FeatureStoreService(DataSource dataSource, MetricsCollector metrics) {
-        this.dataSource   = Objects.requireNonNull(dataSource, "dataSource must not be null");
+        this.dataSource   = dataSource;
         this.metrics      = Objects.requireNonNull(metrics, "metrics must not be null");
         this.featureCache = new RedisFeatureCacheAdapter(metrics, Duration.ofSeconds(CACHE_TTL_SECONDS));
-        LOGGER.info("FeatureStoreService initialized with TTL-enforced feature cache (TTL={}s)", CACHE_TTL_SECONDS);
+        LOGGER.info(
+                "FeatureStoreService initialized with TTL-enforced feature cache (TTL={}s, persistentStore={})",
+                CACHE_TTL_SECONDS,
+                dataSource != null
+        );
     }
 
     /**
@@ -115,8 +119,10 @@ public class FeatureStoreService {
             featureCache.set(tenantId, feature.getEntityId(), feature.getName(),
                     feature.getValue(), 0, Duration.ofSeconds(CACHE_TTL_SECONDS));
 
-            // Write to database (cold path — durable store)
-            persistToDatabase(tenantId, feature);
+            // Write to database (cold path — durable store) when configured.
+            if (dataSource != null) {
+                persistToDatabase(tenantId, feature);
+            }
 
             metrics.incrementCounter("feature.store.ingest.count",
                     "tenant", tenantId,
@@ -183,14 +189,21 @@ public class FeatureStoreService {
                 return result;
             }
 
-            // Partial or full cache miss — load from database for the misses
-            Map<String, Double> dbFeatures = loadFromDatabase(tenantId, entityId, cacheMisses);
+            if (dataSource != null) {
+                // Partial or full cache miss — load from database for the misses
+                Map<String, Double> dbFeatures = loadFromDatabase(tenantId, entityId, cacheMisses);
 
-            // Backfill cache for the misses
-            dbFeatures.forEach((name, value) ->
-                    featureCache.set(tenantId, entityId, name, value, 0, Duration.ofSeconds(CACHE_TTL_SECONDS)));
+                // Backfill cache for the misses
+                dbFeatures.forEach((name, value) ->
+                        featureCache.set(tenantId, entityId, name, value, 0, Duration.ofSeconds(CACHE_TTL_SECONDS)));
 
-            result.putAll(dbFeatures);
+                result.putAll(dbFeatures);
+            } else {
+                // Cache-only mode is useful for local runs and tests; unknown features default to 0.0.
+                for (String name : cacheMisses) {
+                    result.put(name, 0.0);
+                }
+            }
 
             LOGGER.debug("Cache miss for features: tenant={}, entity={}, misses={}/{}",
                     tenantId, entityId, cacheMisses.size(), featureNames.size());

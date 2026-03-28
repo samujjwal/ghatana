@@ -90,6 +90,105 @@ pub async fn ai_voice_export_audio(
     Ok(())
 }
 
+/// Create a managed audio session for local editing or playback work.
+#[tauri::command]
+pub async fn ai_voice_create_audio_session(
+    path: String,
+    project_id: Option<String>,
+    mode: Option<AudioSessionMode>,
+    state: State<'_, AppState>,
+) -> Result<AudioSession, AppError> {
+    let metadata = audio::load_audio_metadata(&path)?;
+    let session = crate::session::new_audio_session(
+        path,
+        project_id,
+        mode.unwrap_or(AudioSessionMode::Edit),
+        metadata.duration,
+    );
+    state
+        .audio_sessions
+        .write()
+        .await
+        .insert(session.id.clone(), session.clone());
+    Ok(session)
+}
+
+/// Return a managed audio session by id.
+#[tauri::command]
+pub async fn ai_voice_get_audio_session(
+    session_id: String,
+    state: State<'_, AppState>,
+) -> Result<AudioSession, AppError> {
+    state
+        .audio_sessions
+        .read()
+        .await
+        .get(&session_id)
+        .cloned()
+        .ok_or_else(|| AppError::NotInitialized(format!("Audio session not found: {}", session_id)))
+}
+
+/// List managed audio sessions.
+#[tauri::command]
+pub async fn ai_voice_list_audio_sessions(
+    state: State<'_, AppState>,
+) -> Result<Vec<AudioSession>, AppError> {
+    Ok(state.audio_sessions.read().await.values().cloned().collect())
+}
+
+/// Close a managed audio session.
+#[tauri::command]
+pub async fn ai_voice_close_audio_session(
+    session_id: String,
+    state: State<'_, AppState>,
+) -> Result<AudioSession, AppError> {
+    let mut sessions = state.audio_sessions.write().await;
+    let existing = sessions
+        .remove(&session_id)
+        .ok_or_else(|| AppError::NotInitialized(format!("Audio session not found: {}", session_id)))?;
+    let closed = crate::session::close_audio_session(existing);
+    sessions.insert(session_id, closed.clone());
+    Ok(closed)
+}
+
+/// Build a local sync assessment from audio metadata and video timing.
+#[tauri::command]
+pub async fn ai_voice_analyze_sync(
+    audio_path: String,
+    video_duration_seconds: f64,
+    audio_offset_ms: Option<i64>,
+    video_offset_ms: Option<i64>,
+    tolerance_ms: Option<i64>,
+) -> Result<AvSyncAssessment, AppError> {
+    let metadata = audio::load_audio_metadata(&audio_path)?;
+    Ok(crate::sync::assess_sync(
+        metadata.duration,
+        video_duration_seconds,
+        audio_offset_ms.unwrap_or_default(),
+        video_offset_ms.unwrap_or_default(),
+        tolerance_ms.unwrap_or(40),
+    ))
+}
+
+/// Create a stream segmentation plan for chunked processing.
+#[tauri::command]
+pub async fn ai_voice_stream_audio(
+    path: String,
+    chunk_ms: Option<u32>,
+) -> Result<AudioStreamPlan, AppError> {
+    crate::stream::build_stream_plan(&path, chunk_ms.unwrap_or(250))
+}
+
+/// Apply lightweight builtin effects when Python processing is unavailable or unnecessary.
+#[tauri::command]
+pub async fn ai_voice_apply_builtin_effects(
+    input_path: String,
+    output_path: String,
+    effects: BuiltinEffectsConfig,
+) -> Result<BuiltinEffectsResult, AppError> {
+    crate::effects::apply_builtin_effects(&input_path, &output_path, &effects)
+}
+
 // ============================================================================
 // Stem Separation Commands
 // ============================================================================

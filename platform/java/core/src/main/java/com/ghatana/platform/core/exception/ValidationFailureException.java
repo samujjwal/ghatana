@@ -11,7 +11,7 @@ package com.ghatana.platform.core.exception;
  * @doc.layer core
  * @doc.pattern Exception, Data Holder
  */
-public class ValidationFailureException extends RuntimeException {
+public class ValidationFailureException extends BaseException {
     
     private final transient Object validationResult;
     
@@ -21,7 +21,7 @@ public class ValidationFailureException extends RuntimeException {
      * @param validationResult The validation result containing error details
      */
     public ValidationFailureException(Object validationResult) {
-        super("Validation failed");
+        super(ErrorCode.VALIDATION_ERROR, "Validation failed");
         this.validationResult = validationResult;
     }
     
@@ -31,7 +31,7 @@ public class ValidationFailureException extends RuntimeException {
      * @param message The error message
      */
     public ValidationFailureException(String message) {
-        super(message);
+        super(ErrorCode.VALIDATION_ERROR, message);
         this.validationResult = null;
     }
     

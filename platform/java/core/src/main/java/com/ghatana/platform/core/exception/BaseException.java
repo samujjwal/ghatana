@@ -126,11 +126,15 @@ import java.util.Map;
  * <h2>ErrorCode Integration</h2>
  * Every BaseException includes an {@link ErrorCode} enum providing:
  * <pre>{@code
- * public interface ErrorCode {
- *     String getCode();          // Unique error identifier (e.g., "INVALID_USER_ID")
- *     String getDefaultMessage(); // Standard message (e.g., "Invalid user ID")
- *     int getHttpStatus();        // HTTP status code (200-599)
- *     String getCategory();       // Category (INPUT, RESOURCE, AUTH, SYSTEM, etc.)
+ * enum ErrorCode {
+ *     INVALID_REQUEST("GEN-400", "Invalid request format or parameters", 400),
+ *     VALIDATION_ERROR("GEN-002", "Validation error", 422),
+ *     AUTHORIZATION_ERROR("AUTH-002", "Authorization error", 403);
+ *
+ *     String getCode();
+ *     String getDefaultMessage();
+ *     int getHttpStatus();
+ *     String getCategory();
  * }
  * }</pre>
  *

@@ -41,15 +41,12 @@ public class RateLimitExceededException extends PlatformException {
             double requestsPerSecond,
             double currentRate,
             long retryAfterMillis) {
-        super(ErrorCode.RATE_LIMITED, message);
+        super(ErrorCode.RATE_LIMITED, message, null,
+            metadataFor(tenantId, requestsPerSecond, currentRate, retryAfterMillis));
         this.tenantId = tenantId;
         this.requestsPerSecond = requestsPerSecond;
         this.currentRate = currentRate;
         this.retryAfterMillis = retryAfterMillis;
-        withMetadata("tenantId", tenantId);
-        withMetadata("requestsPerSecond", requestsPerSecond);
-        withMetadata("currentRate", currentRate);
-        withMetadata("retryAfterMillis", retryAfterMillis);
     }
 
     /**
@@ -85,5 +82,18 @@ public class RateLimitExceededException extends PlatformException {
 
     public long getRetryAfterMillis() {
         return retryAfterMillis;
+    }
+
+    private static java.util.Map<String, Object> metadataFor(
+            @Nullable String tenantId,
+            double requestsPerSecond,
+            double currentRate,
+            long retryAfterMillis) {
+        java.util.Map<String, Object> metadata = new java.util.HashMap<>();
+        metadata.put("tenantId", tenantId);
+        metadata.put("requestsPerSecond", requestsPerSecond);
+        metadata.put("currentRate", currentRate);
+        metadata.put("retryAfterMillis", retryAfterMillis);
+        return metadata;
     }
 }

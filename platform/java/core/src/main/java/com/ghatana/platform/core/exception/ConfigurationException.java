@@ -55,11 +55,9 @@ public class ConfigurationException extends PlatformException {
      * @param value    the invalid value (nullable)
      */
     public ConfigurationException(@NotNull String message, @NotNull String field, @Nullable Object value) {
-        super(ErrorCode.CONFIGURATION_ERROR, message);
+        super(ErrorCode.CONFIGURATION_ERROR, message, null, metadataFor(field, value));
         this.fieldName = field;
         this.invalidValue = value;
-        withMetadata("field", field);
-        withMetadata("invalidValue", value);
     }
 
     // --- Factory methods ---
@@ -120,5 +118,12 @@ public class ConfigurationException extends PlatformException {
 
     public @Nullable Object getInvalidValue() {
         return invalidValue;
+    }
+
+    private static java.util.Map<String, Object> metadataFor(@NotNull String field, @Nullable Object value) {
+        java.util.Map<String, Object> metadata = new java.util.HashMap<>();
+        metadata.put("field", field);
+        metadata.put("invalidValue", value);
+        return metadata;
     }
 }

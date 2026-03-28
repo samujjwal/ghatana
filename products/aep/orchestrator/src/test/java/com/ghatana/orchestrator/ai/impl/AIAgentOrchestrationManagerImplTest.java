@@ -10,6 +10,7 @@ import static org.mockito.Mockito.mock;
 
 import com.ghatana.aep.AepEngine;
 import com.ghatana.aep.agent.AepContextBridge;
+import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.agent.registry.service.AgentRegistryService;
 import com.ghatana.orchestrator.ai.AIAgentOrchestrationManager.AgentDefinition;
 import com.ghatana.orchestrator.core.Orchestrator;
@@ -81,7 +82,7 @@ class AIAgentOrchestrationManagerImplTest extends EventloopTestBase {
     @BeforeEach
     void setUpManager() {
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        AepContextBridge contextBridge = new AepContextBridge(mock(AepEngine.class));
+        AepContextBridge contextBridge = new AepContextBridge(MemoryStore.noOp(), mock(AepEngine.class));
         // Use backwards-compatible constructor (null eventLogStore = in-memory mode)
         manager = new AIAgentOrchestrationManagerImpl(
                 agentRegistryService, orchestrator, executionQueue, agentStepRunner, metrics, executor, contextBridge);

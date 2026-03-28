@@ -261,6 +261,22 @@ public final class DataCloudPatternStore implements PatternRepository {
                     log.error("[pattern-store] delete failed id={}: {}", id, e.getMessage(), e));
     }
 
+    /**
+     * Deletes a pattern within a specific tenant scope.
+     *
+     * @param tenantId tenant identifier
+     * @param id       pattern identifier
+     * @return promise completing when the entity is removed
+     */
+    public Promise<Void> delete(String tenantId, UUID id) {
+        cache.remove(id);
+        return client.delete(tenantId, COLLECTION, id.toString())
+                .map(ignored -> (Void) null)
+                .whenException(e ->
+                    log.error("[pattern-store] tenant delete failed tenant={} id={}: {}",
+                            tenantId, id, e.getMessage(), e));
+    }
+
     /** {@inheritDoc} */
     @Override
     public Promise<Boolean> exists(UUID id) {

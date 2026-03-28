@@ -5,6 +5,7 @@
 package com.ghatana.aep.connector;
 
 import com.ghatana.aep.connector.config.RetryConfig;
+import com.ghatana.aep.connector.util.RetryExecutor;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,33 +53,7 @@ public abstract class AbstractResilientConnector {
      * @throws Exception the last exception if all attempts fail
      */
     protected <T> T withRetry(String operationName, ThrowingSupplier<T> operation) throws Exception {
-        int attempts = 0;
-        long delayMs = retryConfig.initialDelay().toMillis();
-        Exception last = null;
-
-        while (attempts < retryConfig.maxAttempts()) {
-            try {
-                return operation.get();
-            } catch (Exception e) {
-                last = e;
-                attempts++;
-                if (attempts < retryConfig.maxAttempts()) {
-                    log.warn("Attempt {}/{} failed for operation '{}': {}. Retrying in {}ms.",
-                        attempts, retryConfig.maxAttempts(), operationName, e.getMessage(), delayMs);
-                    try {
-                        Thread.sleep(delayMs);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        throw e;
-                    }
-                    delayMs = Math.min(
-                        (long) (delayMs * retryConfig.backoffMultiplier()),
-                        retryConfig.maxDelay().toMillis()
-                    );
-                }
-            }
-        }
-        throw last;
+        return RetryExecutor.execute(retryConfig, log, operationName, operation::get, ignored -> true);
     }
 
     /**

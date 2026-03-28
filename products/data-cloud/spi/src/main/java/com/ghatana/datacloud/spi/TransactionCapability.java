@@ -113,7 +113,7 @@ public interface TransactionCapability<R extends DataRecord> {
         /**
          * Inserts multiple records within this transaction.
          */
-        Promise<StoragePlugin.BatchResult> insertBatch(List<R> records);
+        Promise<BatchResult<java.util.UUID>> insertBatch(List<R> records);
 
         /**
          * Updates a record within this transaction.
@@ -123,7 +123,7 @@ public interface TransactionCapability<R extends DataRecord> {
         /**
          * Updates multiple records within this transaction.
          */
-        Promise<StoragePlugin.BatchResult> updateBatch(List<R> records);
+        Promise<BatchResult<java.util.UUID>> updateBatch(List<R> records);
 
         /**
          * Deletes a record within this transaction.

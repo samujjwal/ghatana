@@ -90,10 +90,6 @@ sourceSets.test {
         // ── PipelineMigrationController class not present in aep-registry ────
         "com/ghatana/pipeline/registry/web/PipelineMigrationControllerTest.java",
 
-        // ── AepContextBridge / AepAgentAdapter API changed; tests need update ─
-        "com/ghatana/aep/agent/AepContextBridgeTest.java",
-        "com/ghatana/aep/agent/AepAgentAdapterTest.java",
-
         // ── KafkaConsumerStrategy API changed; KafkaDltTest needs refresh ────
         "com/ghatana/aep/connector/strategy/kafka/KafkaDltTest.java",
 

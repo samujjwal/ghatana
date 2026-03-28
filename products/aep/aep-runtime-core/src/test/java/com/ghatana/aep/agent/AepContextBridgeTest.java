@@ -25,6 +25,8 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 @DisplayName("AepContextBridge")
 class AepContextBridgeTest {
 
+    private static final AgentExecutionContext EXEC_CTX = executionContext("tenant-123");
+
     private AepContextBridge bridge;
     private MemoryStore noOpStore;
 
@@ -39,8 +41,6 @@ class AepContextBridgeTest {
     @Nested
     @DisplayName("toAgentContext(execCtx, agentId, traceId)")
     class ExplicitTraceId {
-
-        private static final AgentExecutionContext EXEC_CTX = () -> "tenant-123";
 
         @Test
         @DisplayName("sets tenantId from AgentExecutionContext")
@@ -115,22 +115,22 @@ class AepContextBridgeTest {
         @Test
         @DisplayName("auto-generates a non-blank traceId")
         void generatesTraceId() {
-            AgentContext ctx = bridge.toAgentContext(() -> "tenant-x", "agent-1");
+            AgentContext ctx = bridge.toAgentContext(platformExecutionContext("tenant-x"), "agent-1");
             assertThat(ctx.getTraceId()).isNotBlank();
         }
 
         @Test
         @DisplayName("two calls produce different traceIds")
         void differentTraceIds() {
-            AgentContext a = bridge.toAgentContext(() -> "t", "a");
-            AgentContext b = bridge.toAgentContext(() -> "t", "a");
+            AgentContext a = bridge.toAgentContext(platformExecutionContext("t"), "a");
+            AgentContext b = bridge.toAgentContext(platformExecutionContext("t"), "a");
             assertThat(a.getTraceId()).isNotEqualTo(b.getTraceId());
         }
 
         @Test
         @DisplayName("tenantId flows from the execCtx lambda")
         void tenantIdFromLambda() {
-            AgentContext ctx = bridge.toAgentContext(() -> "my-tenant", "agent-x");
+            AgentContext ctx = bridge.toAgentContext(platformExecutionContext("my-tenant"), "agent-x");
             assertThat(ctx.getTenantId()).isEqualTo("my-tenant");
         }
     }
@@ -152,13 +152,13 @@ class AepContextBridgeTest {
         @DisplayName("toAgentContext throws NPE when agentId is null")
         void nullAgentId() {
             assertThatNullPointerException()
-                    .isThrownBy(() -> bridge.toAgentContext(() -> "t", null, "trace"));
+                    .isThrownBy(() -> bridge.toAgentContext(executionContext("t"), null, "trace"));
         }
 
         @Test
         @DisplayName("toAgentContext accepts null traceId (traceId is @Nullable)")
         void nullTraceId() {
-            AgentContext ctx = bridge.toAgentContext(() -> "t", "agent", null);
+            AgentContext ctx = bridge.toAgentContext(executionContext("t"), "agent", null);
             assertThat(ctx).isNotNull();
             assertThat(ctx.getTraceId()).isNull();
         }
@@ -169,5 +169,58 @@ class AepContextBridgeTest {
             assertThatNullPointerException()
                     .isThrownBy(() -> new AepContextBridge(null));
         }
+    }
+
+    private static AgentExecutionContext executionContext(String tenantId) {
+        return new AgentExecutionContext() {
+            @Override
+            public String tenantId() {
+                return tenantId;
+            }
+
+            @Override
+            public String userId() {
+                return "user-1";
+            }
+
+            @Override
+            public com.ghatana.aep.domain.agent.registry.SecurityContext securityContext() {
+                return null;
+            }
+
+            @Override
+            public String correlationId() {
+                return "corr-123";
+            }
+
+            @Override
+            public java.util.Map<String, Object> metadata() {
+                return java.util.Map.of();
+            }
+
+            @Override
+            public java.util.Set<String> enabledCapabilities() {
+                return java.util.Set.of();
+            }
+
+            @Override
+            public long timeoutMs() {
+                return 1_000L;
+            }
+
+            @Override
+            public long createdAt() {
+                return System.currentTimeMillis();
+            }
+
+            @Override
+            public AgentExecutionContext copy() {
+                return this;
+            }
+        };
+    }
+
+    private static com.ghatana.platform.domain.agent.registry.AgentExecutionContext platformExecutionContext(String tenantId) {
+        return () -> tenantId;
     }
 }

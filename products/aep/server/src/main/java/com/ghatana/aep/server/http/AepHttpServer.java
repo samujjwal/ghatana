@@ -3,6 +3,10 @@ package com.ghatana.aep.server.http;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.aep.compliance.AepSoc2ControlFramework;
 import com.ghatana.aep.server.compliance.AepComplianceService;
+import com.ghatana.aep.server.analytics.DataCloudAnalyticsStore;
+import com.ghatana.aep.server.query.AepQueryService;
+import com.ghatana.aep.server.report.AepReportingService;
+import com.ghatana.aep.server.store.DataCloudPatternStore;
 import com.ghatana.aep.server.store.DataCloudPipelineStore;
 import com.ghatana.aep.security.AepInputValidator;
 import com.ghatana.aep.security.AepSecurityFilter;
@@ -51,6 +55,8 @@ import io.activej.http.*;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -113,12 +119,21 @@ public class AepHttpServer {
     /** Compliance services — non-null when agentDataCloud is configured. */
     @Nullable
     private final AepComplianceService complianceService;
+    @Nullable
+    private final DataCloudPatternStore patternStore;
+    @Nullable
+    private final DataCloudAnalyticsStore analyticsStore;
+    @Nullable
+    private final AepQueryService queryService;
+    @Nullable
+    private final AepReportingService reportingService;
     private final AepSoc2ControlFramework soc2Framework = new AepSoc2ControlFramework();
 
     /** Phase-6: SLO metrics recorder (intake latency, run rates, etc.). */
     private final AepSloMetrics sloMetrics;
     /** Phase-6: Durable run-ledger service for distributed trace correlation. */
     private final RunLedgerService runLedgerService;
+    private final MeterRegistry integrationMeterRegistry;
 
     /**
      * Whether pipelines are backed by Data-Cloud durable storage.
@@ -192,6 +207,11 @@ public class AepHttpServer {
         this.humanReviewQueue = humanReviewQueue;
         this.agentDataCloud = agentDataCloud;
         this.complianceService = agentDataCloud != null ? new AepComplianceService(agentDataCloud) : null;
+        this.integrationMeterRegistry = new SimpleMeterRegistry();
+        this.patternStore = agentDataCloud != null ? new DataCloudPatternStore(agentDataCloud) : null;
+        this.analyticsStore = agentDataCloud != null ? new DataCloudAnalyticsStore(agentDataCloud) : null;
+        this.queryService = agentDataCloud != null ? new AepQueryService(agentDataCloud, integrationMeterRegistry) : null;
+        this.reportingService = agentDataCloud != null ? new AepReportingService(agentDataCloud, integrationMeterRegistry) : null;
         this.sloMetrics = new AepSloMetrics(metricsCollector);
         EventCloudRunLedger runLedger = (agentDataCloud != null && agentDataCloud.eventLogStore() != null)
             ? new EventCloudRunLedger(agentDataCloud.eventLogStore())
@@ -231,10 +251,16 @@ public class AepHttpServer {
             () -> "ok");
         this.pipelineController = new PipelineController(this.pipelineRepository, this.objectMapper);
         this.agentController = new AgentController(this.engine, this.agentDataCloud);
-        this.patternController = new PatternController(this.engine);
-        this.analyticsController = new AnalyticsController(this.engine);
-        this.deploymentController = new DeploymentController(this.deploymentAdapter);
+        this.patternController = new PatternController(this.engine, this.patternStore);
         this.sseController = new SseController();
+        this.analyticsController = new AnalyticsController(
+            this.engine,
+            this.agentDataCloud,
+            this.analyticsStore,
+            this.queryService,
+            this.reportingService,
+            (tenantId, eventType, payload) -> this.sseController.broadcastSseEvent(tenantId, eventType, payload));
+        this.deploymentController = new DeploymentController(this.deploymentAdapter);
         this.hitlController = new HitlController(this.humanReviewQueue,
             (tenantId, data) -> sseController.publishSseTo(tenantId, "hitl.update", data));
         EpisodeLearningPipeline learningPipeline = agentDataCloud != null
@@ -308,7 +334,15 @@ public class AepHttpServer {
 
             // Analytics endpoints (delegated to AnalyticsController)
             .with(HttpMethod.POST, "/api/v1/analytics/anomalies", analyticsController::handleDetectAnomalies)
+            .with(HttpMethod.GET, "/api/v1/analytics/anomalies", analyticsController::handleQueryAnomalies)
             .with(HttpMethod.POST, "/api/v1/analytics/forecast", analyticsController::handleForecast)
+            .with(HttpMethod.POST, "/api/v1/analytics/kpis", analyticsController::handleSaveKpi)
+            .with(HttpMethod.GET, "/api/v1/analytics/kpis", analyticsController::handleQueryKpis)
+            .with(HttpMethod.POST, "/api/v1/analytics/metrics", analyticsController::handleSaveMetrics)
+            .with(HttpMethod.GET, "/api/v1/analytics/metrics", analyticsController::handleQueryMetrics)
+            .with(HttpMethod.POST, "/api/v1/analytics/query", analyticsController::handleAnalyticsQuery)
+            .with(HttpMethod.POST, "/api/v1/analytics/aggregate", analyticsController::handleAnalyticsAggregate)
+            .with(HttpMethod.POST, "/api/v1/reports", analyticsController::handleCreateReport)
 
             // Agent management endpoints (delegated to AgentController)
             .with(HttpMethod.GET, "/api/v1/agents", agentController::handleListAgents)

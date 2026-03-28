@@ -175,7 +175,7 @@ public interface StoragePlugin<R extends DataRecord> {
      * @param records Records to insert
      * @return Promise with insert result
      */
-    Promise<BatchResult> insertBatch(List<R> records);
+    Promise<BatchResult<UUID>> insertBatch(List<R> records);
 
     /**
      * Gets a record by ID.
@@ -212,7 +212,7 @@ public interface StoragePlugin<R extends DataRecord> {
      * @param records Records to update
      * @return Promise with update result
      */
-    Promise<BatchResult> updateBatch(List<R> records);
+    Promise<BatchResult<UUID>> updateBatch(List<R> records);
 
     /**
      * Deletes a record by ID (soft delete for ENTITY, hard delete for others).
@@ -232,7 +232,7 @@ public interface StoragePlugin<R extends DataRecord> {
      * @param ids Record IDs
      * @return Promise with delete result
      */
-    Promise<BatchResult> deleteBatch(String tenantId, String collectionName, List<UUID> ids);
+    Promise<BatchResult<UUID>> deleteBatch(String tenantId, String collectionName, List<UUID> ids);
 
     // ==================== Query Operations ====================
     /**
@@ -284,45 +284,6 @@ public interface StoragePlugin<R extends DataRecord> {
         public static HealthStatus error(String message, Map<String, Object> details) {
             return new HealthStatus(false, message, details);
         }
-    }
-
-    /**
-     * Result of a batch operation.
-     */
-    record BatchResult(
-            int totalCount,
-            int successCount,
-            int failureCount,
-            List<BatchError> errors
-            ) {
-
-        public boolean isFullySuccessful() {
-            return failureCount == 0;
-        }
-
-        public boolean isPartiallySuccessful() {
-            return successCount > 0 && failureCount > 0;
-        }
-
-        public static BatchResult success(int count) {
-            return new BatchResult(count, count, 0, List.of());
-        }
-
-        public static BatchResult failure(int count, List<BatchError> errors) {
-            return new BatchResult(count, 0, count, errors);
-        }
-    }
-
-    /**
-     * Error detail for batch operations.
-     */
-    record BatchError(
-            int index,
-            UUID recordId,
-            String errorCode,
-            String errorMessage
-            ) {
-
     }
 
     /**

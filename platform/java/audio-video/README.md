@@ -61,6 +61,29 @@ dependencies {
 
 ## Usage
 
+### Interop and Established Patterns
+
+The Java platform module owns canonical engine-facing media types and lifecycle patterns:
+
+- `AudioData` is the canonical Java audio payload.
+- `AudioConverter` is the only supported byte/PCM conversion utility for engine adapters.
+- `AudioMetadataExtractor` is the shared metadata path for WAV bytes and `AudioData`.
+- `EnginePool` owns engine reuse and leak detection.
+- `AudioVideoSyncPipeline` owns drift detection and recovery semantics.
+
+```java
+AudioData audio = AudioConverter.fromFloat32(
+    pcmSamples,
+    16_000,
+    1,
+    AudioFormat.PCM_SIGNED_16
+);
+
+AudioMetadata metadata = AudioMetadataExtractor.fromAudioData(audio);
+```
+
+For cross-module remediation details and the finding-by-finding closure, see `../../../docs/audits/AUDIO_VIDEO_AUDIT_CLOSURE_2026-03-27.md`.
+
 ### Speech-to-Text (STT)
 
 ```java
@@ -232,6 +255,12 @@ try {
 - **AudioVideoLibrary**: Thread-safe, can be shared across threads
 - **SttEngine/TtsEngine/VisionEngine**: Thread-safe, supports concurrent requests
 - **StreamingSession**: Not thread-safe, use from single thread
+
+Established platform pattern for new engines:
+
+- Use `AtomicReference<EngineStatus.State>` for lifecycle state.
+- Expose health via `getStatus()` and `EngineMetrics`.
+- Throw typed `ProcessingError` subclasses with retryability set at creation.
 
 ## Resource Management
 
