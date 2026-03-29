@@ -5,6 +5,7 @@
 package com.ghatana.datacloud.di;
 
 import com.ghatana.datacloud.config.DataCloudEnvConfig;
+import com.ghatana.datacloud.infrastructure.config.DataCloudDatabaseConfig;
 import com.ghatana.datacloud.plugins.iceberg.CoolTierStoragePlugin;
 import com.ghatana.datacloud.plugins.iceberg.IcebergStorageConfig;
 import com.ghatana.datacloud.plugins.redis.RedisHotTierPlugin;
@@ -14,7 +15,6 @@ import com.ghatana.datacloud.plugins.s3archive.S3ArchiveConfig;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.storage.WarmTierEventLogStore;
 import com.ghatana.datacloud.workflow.WorkflowRunRepository;
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
@@ -78,25 +78,15 @@ public class DataCloudStorageModule extends AbstractModule {
      */
     @Provides
     DataSource warmTierDataSource() {
+        // DC-014: standardised via DataCloudDatabaseConfig — consistent pool sizing,
+        // keep-alive, leak detection, and validation across all data-cloud modules.
+        // Reads DATACLOUD_PG_URL / DATACLOUD_PG_USER / DATACLOUD_PG_PASSWORD
+        // plus optional DATACLOUD_PG_POOL_* tuning variables.
         DataCloudEnvConfig env = DataCloudEnvConfig.fromSystem();
-        int poolSize = env.pgPoolSize();
-        HikariConfig cfg = new HikariConfig();
-        cfg.setJdbcUrl(env.pgUrl());
-        cfg.setUsername(env.pgUser());
-        cfg.setPassword(env.pgPassword());
-        cfg.setMaximumPoolSize(poolSize);
-        cfg.setMinimumIdle(Math.min(2, poolSize));
-        cfg.setConnectionTimeout(30_000L);
-        cfg.setConnectionTestQuery(env.pgConnectionTestQuery());
-        cfg.setValidationTimeout(env.pgValidationTimeoutMillis());
-        cfg.setLeakDetectionThreshold(env.pgLeakDetectionThresholdMillis());
-        cfg.setInitializationFailTimeout(-1L);
-        cfg.setIdleTimeout(600_000L);
-        cfg.setMaxLifetime(1_800_000L);
-        cfg.setPoolName("dc-warm-tier");
-        cfg.addDataSourceProperty("ApplicationName", "data-cloud-warm-tier");
+        DataSource dataSource = DataCloudDatabaseConfig.fromEnvironment("DATACLOUD_PG")
+                .createDataSource();
         log.info("Warm-tier DataSource → {}", env.pgUrl());
-        return new HikariDataSource(cfg);
+        return dataSource;
     }
 
     /**

@@ -34,18 +34,23 @@ public final class DataCloudMiddleware {
     private final long rateLimitWindowMs;
     private final int rateLimitMaxEntries;
     private final long maxBodyBytes;
+    private final int rateLimitTenantRequests;
+    private final long rateLimitTenantWindowMs;
 
     private final Map<String, long[]> rateLimitState = new ConcurrentHashMap<>();
+    private final Map<String, long[]> tenantRateLimitState = new ConcurrentHashMap<>();
 
     /**
-     * @param corsAllowOrigin   allowed CORS origin
-     * @param corsAllowMethods  allowed CORS methods
-     * @param corsAllowHeaders  allowed CORS headers
-     * @param corsMaxAge        CORS preflight max-age
-     * @param rateLimitRequests max requests per IP per window
-     * @param rateLimitWindowMs rate limit window in milliseconds
-     * @param rateLimitMaxEntries max tracked IPs
-     * @param maxBodyBytes      max request body size
+     * @param corsAllowOrigin          allowed CORS origin
+     * @param corsAllowMethods         allowed CORS methods
+     * @param corsAllowHeaders         allowed CORS headers
+     * @param corsMaxAge               CORS preflight max-age
+     * @param rateLimitRequests        max requests per IP per window
+     * @param rateLimitWindowMs        IP rate-limit window in milliseconds
+     * @param rateLimitMaxEntries      max tracked IP+tenant entries (eviction threshold)
+     * @param maxBodyBytes             max request body size
+     * @param rateLimitTenantRequests  max requests per tenant per window (0 = disabled)
+     * @param rateLimitTenantWindowMs  per-tenant rate-limit window in milliseconds
      */
     public DataCloudMiddleware(
             String corsAllowOrigin,
@@ -55,7 +60,9 @@ public final class DataCloudMiddleware {
             int rateLimitRequests,
             long rateLimitWindowMs,
             int rateLimitMaxEntries,
-            long maxBodyBytes) {
+            long maxBodyBytes,
+            int rateLimitTenantRequests,
+            long rateLimitTenantWindowMs) {
         this.corsAllowOrigin = corsAllowOrigin;
         this.corsAllowMethods = corsAllowMethods;
         this.corsAllowHeaders = corsAllowHeaders;
@@ -64,6 +71,8 @@ public final class DataCloudMiddleware {
         this.rateLimitWindowMs = rateLimitWindowMs;
         this.rateLimitMaxEntries = rateLimitMaxEntries;
         this.maxBodyBytes = maxBodyBytes;
+        this.rateLimitTenantRequests = rateLimitTenantRequests;
+        this.rateLimitTenantWindowMs = rateLimitTenantWindowMs;
     }
 
     /**
@@ -90,8 +99,48 @@ public final class DataCloudMiddleware {
 
     public AsyncServlet rateLimitFilter(AsyncServlet delegate) {
         return request -> {
-            String ip = remoteIp(request);
             long now = System.currentTimeMillis();
+
+            // --- 1. Per-tenant rate limit (applied before per-IP) ---
+            if (rateLimitTenantRequests > 0) {
+                String tenantId = resolveTenantId(request);
+                if (tenantId != null) {
+                    long[] tenantState = tenantRateLimitState.compute(tenantId, (key, existing) -> {
+                        if (existing == null || (now - existing[1]) >= rateLimitTenantWindowMs) {
+                            return new long[]{1L, now};
+                        }
+                        existing[0]++;
+                        return existing;
+                    });
+
+                    if (tenantState[0] > rateLimitTenantRequests) {
+                        long windowRemaining = rateLimitTenantWindowMs - (now - tenantState[1]);
+                        long retryAfterSec = Math.max(1L, (windowRemaining + 999) / 1000);
+                        log.warn("Tenant rate limit exceeded for tenantId={} count={}",
+                                tenantId, tenantState[0]);
+                        String body = String.format(
+                                "{\"error\":\"Too Many Requests\",\"retryAfterSeconds\":%d}",
+                                retryAfterSec);
+                        return Promise.of(HttpResponse.ofCode(429)
+                                .withHeader(HttpHeaders.CONTENT_TYPE,
+                                        HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                                .withHeader(HttpHeaders.of("Retry-After"),
+                                        HttpHeaderValue.of(String.valueOf(retryAfterSec)))
+                                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
+                                        HttpHeaderValue.of(corsAllowOrigin))
+                                .withBody(body.getBytes(StandardCharsets.UTF_8))
+                                .build());
+                    }
+
+                    if (tenantRateLimitState.size() > rateLimitMaxEntries) {
+                        tenantRateLimitState.entrySet().removeIf(e ->
+                                (now - e.getValue()[1]) >= rateLimitTenantWindowMs);
+                    }
+                }
+            }
+
+            // --- 2. Per-IP rate limit ---
+            String ip = remoteIp(request);
 
             long[] state = rateLimitState.compute(ip, (key, existing) -> {
                 if (existing == null || (now - existing[1]) >= rateLimitWindowMs) {
@@ -129,6 +178,25 @@ public final class DataCloudMiddleware {
 
             return delegate.serve(request);
         };
+    }
+
+    /**
+     * Resolves the tenant identifier from the request.
+     * Checks {@code X-Tenant-Id} header first, then the {@code tenantId} query parameter.
+     *
+     * @param request the incoming HTTP request
+     * @return tenant ID string, or {@code null} if not present
+     */
+    private static String resolveTenantId(HttpRequest request) {
+        String header = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
+        if (header != null && !header.isBlank()) {
+            return header.strip();
+        }
+        String queryParam = request.getQueryParameter("tenantId");
+        if (queryParam != null && !queryParam.isBlank()) {
+            return queryParam.strip();
+        }
+        return null;
     }
 
     public AsyncServlet contentTypeFilter(AsyncServlet delegate) {

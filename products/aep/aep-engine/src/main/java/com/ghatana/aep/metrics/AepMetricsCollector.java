@@ -52,7 +52,21 @@ public final class AepMetricsCollector {
     public static final String IDEMPOTENCY_HITS    = "aep.engine.idempotency.hits";
     public static final String DELIVERY_SUCCESS    = "aep.delivery.success";
     public static final String DELIVERY_FAILED     = "aep.delivery.failed";
-    public static final String CONNECTOR_RETRIES   = "aep.connector.retries";
+    public static final String CONNECTOR_RETRIES       = "aep.connector.retries";
+
+    // ─── Performance / latency metrics (AEP-018) ──────────────────────────────
+    public static final String EVENT_PROCESSING_TIME   = "aep.engine.events.processing.time.ms";
+    public static final String CONSENT_EVAL_TIME       = "aep.consent.eval.time.ms";
+    public static final String PATTERN_MATCH_TIME      = "aep.engine.pattern.match.time.ms";
+    public static final String DELIVERY_TIME           = "aep.delivery.time.ms";
+    public static final String CONNECTOR_RETRY_LATENCY = "aep.connector.retry.latency.ms";
+
+    // ─── Operational metrics (AEP-017) ────────────────────────────────────────
+    public static final String ACTIVE_PATTERNS         = "aep.engine.patterns.active";
+    public static final String RATE_LIMITED_EVENTS     = "aep.engine.events.rate.limited";
+    public static final String CACHE_CONSENT_HITS      = "aep.cache.consent.hits";
+    public static final String CACHE_CONSENT_MISSES    = "aep.cache.consent.misses";
+    public static final String VERSION_MIGRATIONS      = "aep.engine.version.migrations";
 
     private final MetricsCollector delegate;
 
@@ -133,6 +147,75 @@ public final class AepMetricsCollector {
     /** Increments {@value #DELIVERY_FAILED}. */
     public void incrementDeliveryFailed(String tenantId) {
         delegate.incrementCounter(DELIVERY_FAILED, "tenantId", tenantId);
+    }
+
+    // ─── Performance / latency recording (AEP-018) ────────────────────────────
+
+    /**
+     * Records end-to-end event processing duration in milliseconds.
+     *
+     * @param tenantId      owning tenant
+     * @param durationMs    elapsed wall-clock time from intake to completion
+     */
+    public void recordEventProcessingTime(String tenantId, long durationMs) {
+        delegate.recordTimer(EVENT_PROCESSING_TIME, durationMs, "tenantId", tenantId);
+    }
+
+    /**
+     * Records time spent evaluating consent in milliseconds.
+     *
+     * @param tenantId   owning tenant
+     * @param durationMs elapsed time
+     */
+    public void recordConsentEvalTime(String tenantId, long durationMs) {
+        delegate.recordTimer(CONSENT_EVAL_TIME, durationMs, "tenantId", tenantId);
+    }
+
+    /**
+     * Records time spent in pattern matching logic in milliseconds.
+     *
+     * @param tenantId   owning tenant
+     * @param durationMs elapsed time
+     */
+    public void recordPatternMatchTime(String tenantId, long durationMs) {
+        delegate.recordTimer(PATTERN_MATCH_TIME, durationMs, "tenantId", tenantId);
+    }
+
+    /**
+     * Records time spent delivering events to external destinations in milliseconds.
+     *
+     * @param tenantId      owning tenant
+     * @param durationMs    elapsed time
+     */
+    public void recordDeliveryTime(String tenantId, long durationMs) {
+        delegate.recordTimer(DELIVERY_TIME, durationMs, "tenantId", tenantId);
+    }
+
+    /** Increments {@value #RATE_LIMITED_EVENTS} when an event is dropped by rate limiting. */
+    public void incrementRateLimited(String tenantId) {
+        delegate.incrementCounter(RATE_LIMITED_EVENTS, "tenantId", tenantId);
+    }
+
+    /** Increments {@value #CACHE_CONSENT_HITS} when a consent decision is served from cache. */
+    public void incrementConsentCacheHit(String tenantId) {
+        delegate.incrementCounter(CACHE_CONSENT_HITS, "tenantId", tenantId);
+    }
+
+    /** Increments {@value #CACHE_CONSENT_MISSES} when consent cache does not have the entry. */
+    public void incrementConsentCacheMiss(String tenantId) {
+        delegate.incrementCounter(CACHE_CONSENT_MISSES, "tenantId", tenantId);
+    }
+
+    /** Records the current number of active registered patterns for a tenant. */
+    public void gaugeActivePatterns(String tenantId, int count) {
+        // Gauge doesn't support per-tenant tags in the platform interface;
+        // use a namespaced metric name that encodes the tenant dimension.
+        delegate.recordGauge(ACTIVE_PATTERNS + "." + tenantId, (double) count);
+    }
+
+    /** Increments {@value #VERSION_MIGRATIONS} when an event is migrated to the current version. */
+    public void incrementVersionMigrations(String tenantId, String fromVersion) {
+        delegate.incrementCounter(VERSION_MIGRATIONS, "tenantId", tenantId, "fromVersion", fromVersion);
     }
 
     // ─── Generic delegation towards the underlying collector ──────────────────

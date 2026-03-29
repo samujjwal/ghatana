@@ -83,6 +83,8 @@ public final class DataCloudAgentRegistry implements AgentRegistry, AutoCloseabl
 
     /** Default in-memory cache TTL: 24 hours. Entries not accessed within this window are evicted. */
     public static final long DEFAULT_CACHE_TTL_MS = TimeUnit.HOURS.toMillis(24);
+    /** Default maximum number of agents kept in the in-memory cache (LRU eviction above this). */
+    public static final int DEFAULT_MAX_CACHE_SIZE = 10_000;
     /** Background eviction interval: 5 minutes. */
     private static final long EVICTION_INTERVAL_MS = TimeUnit.MINUTES.toMillis(5);
 
@@ -98,6 +100,7 @@ public final class DataCloudAgentRegistry implements AgentRegistry, AutoCloseabl
     private final String registryTenantId;
     private final RegistryEventPublisher eventPublisher;
     private final long cacheTtlMs;
+    private final int maxCacheSize;
     private final ScheduledExecutorService evictionScheduler;
 
     /**
@@ -109,7 +112,7 @@ public final class DataCloudAgentRegistry implements AgentRegistry, AutoCloseabl
      */
     public DataCloudAgentRegistry(@NotNull DataCloudClient dataCloud,
                                    @NotNull String registryTenantId) {
-        this(dataCloud, registryTenantId, DEFAULT_CACHE_TTL_MS);
+        this(dataCloud, registryTenantId, DEFAULT_CACHE_TTL_MS, DEFAULT_MAX_CACHE_SIZE);
     }
 
     /**
@@ -117,16 +120,36 @@ public final class DataCloudAgentRegistry implements AgentRegistry, AutoCloseabl
      *
      * @param dataCloud        Data-Cloud client for entity persistence
      * @param registryTenantId tenant ID used for all registry data
-     * @param cacheTtlMs       TTL in milliseconds for in-memory cache entries; use 0 to disable eviction
+     * @param cacheTtlMs       TTL in milliseconds for in-memory cache entries; use 0 to disable TTL eviction
      */
     public DataCloudAgentRegistry(@NotNull DataCloudClient dataCloud,
                                    @NotNull String registryTenantId,
                                    long cacheTtlMs) {
+        this(dataCloud, registryTenantId, cacheTtlMs, DEFAULT_MAX_CACHE_SIZE);
+    }
+
+    /**
+     * Constructs a registry with custom TTL and max cache size (LRU + TTL hybrid eviction).
+     *
+     * <p>When {@code maxCacheSize} is exceeded, the least-recently-used entries are evicted
+     * first (based on last-access timestamp). TTL eviction then removes entries that have
+     * not been accessed within {@code cacheTtlMs}, regardless of cache size.
+     *
+     * @param dataCloud        Data-Cloud client for entity persistence
+     * @param registryTenantId tenant ID used for all registry data
+     * @param cacheTtlMs       TTL in milliseconds; use 0 to disable TTL eviction
+     * @param maxCacheSize     maximum number of in-memory entries; LRU eviction triggers above this
+     */
+    public DataCloudAgentRegistry(@NotNull DataCloudClient dataCloud,
+                                   @NotNull String registryTenantId,
+                                   long cacheTtlMs,
+                                   int maxCacheSize) {
         this.dataCloud = Objects.requireNonNull(dataCloud, "dataCloud");
         this.registryTenantId = Objects.requireNonNull(registryTenantId, "registryTenantId");
         this.eventPublisher = new RegistryEventPublisher(dataCloud, registryTenantId);
         this.cacheTtlMs = cacheTtlMs;
-        if (cacheTtlMs > 0) {
+        this.maxCacheSize = maxCacheSize > 0 ? maxCacheSize : DEFAULT_MAX_CACHE_SIZE;
+        if (cacheTtlMs > 0 || maxCacheSize > 0) {
             this.evictionScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r, "agent-registry-eviction");
                 t.setDaemon(true);
@@ -294,25 +317,55 @@ public final class DataCloudAgentRegistry implements AgentRegistry, AutoCloseabl
     // ── Cache TTL eviction ─────────────────────────────────────────────────────
 
     /**
-     * Evicts in-memory cache entries whose last-access time exceeds {@link #cacheTtlMs}.
+     * Evicts cache entries based on a hybrid LRU + TTL strategy:
+     * <ol>
+     *   <li><b>TTL pass</b>: removes entries whose last-access time exceeds {@link #cacheTtlMs}
+     *       (when TTL eviction is enabled).</li>
+     *   <li><b>LRU pass</b>: if the cache remains over {@link #maxCacheSize} after the TTL
+     *       pass, the least-recently-used entries (oldest {@link #lastAccessMs}) are removed
+     *       until the cache fits within the limit.</li>
+     * </ol>
      * Called periodically by the background eviction scheduler.
      */
     private void evictExpiredEntries() {
-        long cutoff = System.currentTimeMillis() - cacheTtlMs;
         int evicted = 0;
-        for (Map.Entry<String, Long> entry : lastAccessMs.entrySet()) {
-            if (entry.getValue() < cutoff) {
-                String agentId = entry.getKey();
-                agents.remove(agentId);
-                configs.remove(agentId);
-                // Keep entityIds — needed for deregister() to avoid a DataCloud round-trip
-                lastAccessMs.remove(agentId);
-                evicted++;
-                log.debug("Evicted agent [{}] from in-memory cache (TTL expired)", agentId);
+
+        // ── TTL pass ────────────────────────────────────────────────────────────
+        if (cacheTtlMs > 0) {
+            long cutoff = System.currentTimeMillis() - cacheTtlMs;
+            for (Map.Entry<String, Long> entry : lastAccessMs.entrySet()) {
+                if (entry.getValue() < cutoff) {
+                    String agentId = entry.getKey();
+                    agents.remove(agentId);
+                    configs.remove(agentId);
+                    // entityIds intentionally kept for deregister() to avoid a round-trip
+                    lastAccessMs.remove(agentId);
+                    evicted++;
+                    log.debug("TTL-evicted agent [{}] from in-memory cache", agentId);
+                }
             }
         }
+
+        // ── LRU pass — trim to maxCacheSize ────────────────────────────────────
+        int overBy = agents.size() - maxCacheSize;
+        if (overBy > 0) {
+            // Sort all cached agents by last-access ascending (oldest first = LRU)
+            List<Map.Entry<String, Long>> sortedByAccess = new ArrayList<>(lastAccessMs.entrySet());
+            sortedByAccess.sort(Map.Entry.comparingByValue());
+
+            for (int i = 0; i < overBy && i < sortedByAccess.size(); i++) {
+                String agentId = sortedByAccess.get(i).getKey();
+                agents.remove(agentId);
+                configs.remove(agentId);
+                lastAccessMs.remove(agentId);
+                evicted++;
+                log.debug("LRU-evicted agent [{}] from in-memory cache (cache over maxSize={})", agentId, maxCacheSize);
+            }
+        }
+
         if (evicted > 0) {
-            log.info("Cache eviction cycle completed: {} entry(-ies) evicted", evicted);
+            log.info("Cache eviction cycle completed: {} entry(-ies) evicted (cacheSize={}/{})",
+                evicted, agents.size(), maxCacheSize);
         }
     }
 
@@ -333,6 +386,25 @@ public final class DataCloudAgentRegistry implements AgentRegistry, AutoCloseabl
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    /**
+     * Package-private — test use only.
+     *
+     * <p>Runs one eviction cycle immediately without waiting for the background
+     * scheduler.  Allows tests to verify LRU and TTL eviction behaviour without
+     * sleeping for {@value #EVICTION_INTERVAL_MS} ms.
+     */
+    void triggerEvictionForTesting() {
+        evictExpiredEntries();
+    }
+
+    /**
+     * Returns the number of agents currently held in the in-memory cache.
+     * Intended for observability and tests.
+     */
+    public int getCacheSize() {
+        return agents.size();
     }
 
     // ── Serialisation helper ───────────────────────────────────────────────────

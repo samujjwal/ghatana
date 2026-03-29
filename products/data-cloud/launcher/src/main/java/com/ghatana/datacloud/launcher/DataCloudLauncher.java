@@ -13,9 +13,9 @@ import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.aiplatform.featurestore.FeatureStoreService;
 import com.ghatana.aiplatform.observability.AiMetricsEmitter;
 import com.ghatana.aiplatform.registry.ModelRegistryService;
+import com.ghatana.datacloud.infrastructure.config.DataCloudDatabaseConfig;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -292,29 +292,12 @@ public class DataCloudLauncher {
      * @doc.pattern Factory
      */
     private static DataSource buildDatabaseDataSource() {
-        String url = System.getenv("DATACLOUD_DB_URL");
-        String user = System.getenv("DATACLOUD_DB_USER");
-        String password = System.getenv("DATACLOUD_DB_PASSWORD");
-        if (url == null || url.isBlank()) {
-            throw new IllegalStateException(
-                    "DATACLOUD_DB_URL is required when DATACLOUD_DB_ENABLED=true or DATACLOUD_AI_ENABLED=true");
-        }
-        HikariConfig cfg = new HikariConfig();
-        cfg.setJdbcUrl(url);
-        cfg.setUsername(user);
-        cfg.setPassword(password);
-        cfg.setMaximumPoolSize(10);
-        cfg.setMinimumIdle(2);
-        cfg.setConnectionTimeout(30_000L);
-        cfg.setConnectionTestQuery("SELECT 1");
-        cfg.setValidationTimeout(5_000L);
-        cfg.setLeakDetectionThreshold(60_000L);
-        cfg.setInitializationFailTimeout(-1L);
-        cfg.setIdleTimeout(600_000L);
-        cfg.setMaxLifetime(1_800_000L);
-        cfg.setPoolName("dc-standalone-db");
-        cfg.addDataSourceProperty("ApplicationName", "data-cloud-standalone");
-        return new HikariDataSource(cfg);
+        // DC-014: standardised via DataCloudDatabaseConfig — consistent pool sizing,
+        // keep-alive, leak detection, and validation across all data-cloud modules.
+        // Reads DATACLOUD_DB_URL / DATACLOUD_DB_USER / DATACLOUD_DB_PASSWORD
+        // plus optional DATACLOUD_DB_POOL_* tuning variables.
+        return DataCloudDatabaseConfig.fromEnvironment("DATACLOUD_DB")
+                .createDataSource();
     }
 
     private static void closeDataSource(DataSource dataSource) {

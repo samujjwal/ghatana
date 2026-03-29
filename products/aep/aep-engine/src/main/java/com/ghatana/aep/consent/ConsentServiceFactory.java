@@ -36,17 +36,18 @@ public final class ConsentServiceFactory {
 
     public static ConsentService create(Aep.AepConfig config) {
         DefaultConsentService fallback = new DefaultConsentService();
-        String selectedName = selectedProviderName(config).orElse(fallback.name());
-        if (fallback.name().equals(selectedName)) {
+        Optional<String> selectedName = selectedProviderName(config);
+        if (selectedName.isEmpty()) {
             return fallback;
         }
 
+        String name = selectedName.get();
         Map<String, ConsentProvider> providersByName = discoverProviders();
-        ConsentProvider provider = providersByName.get(selectedName);
+        ConsentProvider provider = providersByName.get(name);
         if (provider == null) {
             logger.warn(
-                "Configured consent provider '{}' was not found. Falling back to default consent service.",
-                selectedName);
+                "Configured consent provider '{}' was not found via ServiceLoader. Falling back to default consent service.",
+                name);
             return fallback;
         }
 

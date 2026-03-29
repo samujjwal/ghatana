@@ -106,6 +106,44 @@ public final class DataCloudDatabaseConfig {
     }
 
     /**
+     * Builds a {@code DataCloudDatabaseConfig} from environment variables using a custom prefix.
+     *
+     * <p>The env var names are derived by appending standard suffixes to {@code prefix}:
+     * <ul>
+     *   <li>{@code {prefix}_URL}           — JDBC URL (required)</li>
+     *   <li>{@code {prefix}_USER}          — database username (required)</li>
+     *   <li>{@code {prefix}_PASSWORD}      — database password (required)</li>
+     *   <li>{@code {prefix}_POOL_MIN_IDLE} — minimum idle connections (default: {@value #DEFAULT_MIN_IDLE})</li>
+     *   <li>{@code {prefix}_POOL_MAX_SIZE} — maximum pool size (default: {@value #DEFAULT_MAX_POOL_SIZE})</li>
+     *   <li>{@code {prefix}_CONN_TIMEOUT_MS}       — connection-acquisition timeout ms</li>
+     *   <li>{@code {prefix}_IDLE_TIMEOUT_MS}       — idle connection eviction timeout ms</li>
+     *   <li>{@code {prefix}_MAX_LIFETIME_MS}        — maximum connection lifetime ms</li>
+     *   <li>{@code {prefix}_KEEPALIVE_INTERVAL_MS}  — keep-alive probe interval ms</li>
+     *   <li>{@code {prefix}_LEAK_DETECTION_MS}      — connection-leak detection threshold ms</li>
+     *   <li>{@code {prefix}_VALIDATION_TIMEOUT_MS}  — connection-test timeout ms</li>
+     * </ul>
+     *
+     * @param prefix root environment variable prefix (e.g., {@code "DATACLOUD_DB"})
+     * @return configured instance
+     * @throws NullPointerException if required environment variables are absent
+     */
+    public static DataCloudDatabaseConfig fromEnvironment(String prefix) {
+        return builder()
+                .jdbcUrl(System.getenv(prefix + "_URL"))
+                .username(System.getenv(prefix + "_USER"))
+                .password(System.getenv(prefix + "_PASSWORD"))
+                .minIdle(envInt(prefix + "_POOL_MIN_IDLE", DEFAULT_MIN_IDLE))
+                .maxPoolSize(envInt(prefix + "_POOL_MAX_SIZE", DEFAULT_MAX_POOL_SIZE))
+                .connectionTimeoutMs(envLong(prefix + "_CONN_TIMEOUT_MS", DEFAULT_CONNECTION_TIMEOUT_MS))
+                .idleTimeoutMs(envLong(prefix + "_IDLE_TIMEOUT_MS", DEFAULT_IDLE_TIMEOUT_MS))
+                .maxLifetimeMs(envLong(prefix + "_MAX_LIFETIME_MS", DEFAULT_MAX_LIFETIME_MS))
+                .keepAliveIntervalMs(envLong(prefix + "_KEEPALIVE_INTERVAL_MS", DEFAULT_KEEPALIVE_INTERVAL_MS))
+                .leakDetectionThresholdMs(envLong(prefix + "_LEAK_DETECTION_MS", DEFAULT_LEAK_DETECTION_THRESHOLD_MS))
+                .validationTimeoutMs(envLong(prefix + "_VALIDATION_TIMEOUT_MS", DEFAULT_VALIDATION_TIMEOUT_MS))
+                .build();
+    }
+
+    /**
      * Builds a {@code DataCloudDatabaseConfig} from environment variables,
      * falling back to the constants defined above.
      *

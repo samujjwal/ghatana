@@ -15,8 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -51,11 +50,23 @@ public final class EventBuffer {
     private static final int DEFAULT_HIGH_WATER_MARK = 8_000;
     private static final int DEFAULT_LOW_WATER_MARK = 2_000;
 
-    private final ConcurrentLinkedQueue<EventEntry> buffer = new ConcurrentLinkedQueue<>();
-    private final AtomicInteger size = new AtomicInteger(0);
+    /**
+     * The backing store. {@link ArrayBlockingQueue} is used instead of
+     * {@link java.util.concurrent.ConcurrentLinkedQueue} because:
+     * <ul>
+     *   <li>Native bounded capacity: {@code offer()} atomically rejects when full,
+     *       eliminating the TOCTOU race between a size check and {@code add()}.</li>
+     *   <li>{@code size()} is O(1) (stored as an {@code AtomicInteger} internally),
+     *       not the O(n) of {@link java.util.concurrent.ConcurrentLinkedQueue}.</li>
+     *   <li>Memory contiguous — better CPU cache locality for sequential drain.</li>
+     * </ul>
+     */
+    private final ArrayBlockingQueue<EventEntry> buffer;
     private final AtomicLong totalEnqueued = new AtomicLong(0);
     private final AtomicLong totalDrained = new AtomicLong(0);
     private final AtomicLong totalSpilled = new AtomicLong(0);
+    /** Counts events rejected due to a full buffer (backpressure events). */
+    private final AtomicLong totalRejected = new AtomicLong(0);
 
     private final EventLogStore spillStore;
     private final String bufferName;
@@ -96,6 +107,7 @@ public final class EventBuffer {
         this.capacity = capacity;
         this.highWaterMark = highWaterMark;
         this.lowWaterMark = lowWaterMark;
+        this.buffer = new ArrayBlockingQueue<>(capacity);
     }
 
     /**
@@ -106,16 +118,17 @@ public final class EventBuffer {
      */
     public boolean offer(EventEntry entry) {
         Objects.requireNonNull(entry, "entry required");
-        int currentSize = size.get();
-        if (currentSize >= capacity) {
+        // ArrayBlockingQueue.offer() is atomic: it enqueues only if capacity allows,
+        // returning false immediately when full — no TOCTOU race possible.
+        boolean accepted = buffer.offer(entry);
+        if (accepted) {
+            totalEnqueued.incrementAndGet();
+        } else {
+            totalRejected.incrementAndGet();
             log.warn("[buffer:{}] Buffer full ({}/{}), backpressure applied",
-                bufferName, currentSize, capacity);
-            return false;
+                bufferName, buffer.size(), capacity);
         }
-        buffer.add(entry);
-        size.incrementAndGet();
-        totalEnqueued.incrementAndGet();
-        return true;
+        return accepted;
     }
 
     /**
@@ -125,12 +138,11 @@ public final class EventBuffer {
      * @return list of drained event entries (may be empty)
      */
     public List<EventEntry> drain(int batchSize) {
-        List<EventEntry> batch = new ArrayList<>(Math.min(batchSize, size.get()));
+        List<EventEntry> batch = new ArrayList<>(Math.min(batchSize, buffer.size()));
         for (int i = 0; i < batchSize; i++) {
             EventEntry entry = buffer.poll();
             if (entry == null) break;
             batch.add(entry);
-            size.decrementAndGet();
             totalDrained.incrementAndGet();
         }
         return batch;
@@ -143,7 +155,7 @@ public final class EventBuffer {
      * @return promise of the number of events spilled
      */
     public Promise<Integer> spillExcess(String tenantId) {
-        int currentSize = size.get();
+        int currentSize = buffer.size();
         if (currentSize <= highWaterMark) {
             return Promise.of(0);
         }
@@ -160,7 +172,7 @@ public final class EventBuffer {
                 int spilled = offsets.size();
                 totalSpilled.addAndGet(spilled);
                 log.debug("[buffer:{}] Spilled {} events to store, buffer size now {}",
-                    bufferName, spilled, size.get());
+                    bufferName, spilled, buffer.size());
                 return spilled;
             });
     }
@@ -169,43 +181,46 @@ public final class EventBuffer {
      * Returns the current in-memory buffer size.
      */
     public int size() {
-        return size.get();
+        return buffer.size();
     }
 
     /**
      * Returns true if the buffer has reached the high-water mark.
      */
     public boolean isOverHighWaterMark() {
-        return size.get() > highWaterMark;
+        return buffer.size() > highWaterMark;
     }
 
     /**
      * Returns true if the buffer is below the low-water mark.
      */
     public boolean isBelowLowWaterMark() {
-        return size.get() < lowWaterMark;
+        return buffer.size() < lowWaterMark;
     }
 
     /**
      * Returns true if the buffer is empty.
      */
     public boolean isEmpty() {
-        return size.get() == 0;
+        return buffer.isEmpty();
     }
 
     /**
      * Returns buffer statistics as a map (for metrics/observability).
      */
     public Map<String, Object> stats() {
+        int currentSize = buffer.size();
         return Map.of(
             "bufferName", bufferName,
-            "size", size.get(),
+            "size", currentSize,
             "capacity", capacity,
+            "utilizationPct", (int) (currentSize * 100L / capacity),
             "highWaterMark", highWaterMark,
             "lowWaterMark", lowWaterMark,
             "totalEnqueued", totalEnqueued.get(),
             "totalDrained", totalDrained.get(),
-            "totalSpilled", totalSpilled.get()
+            "totalSpilled", totalSpilled.get(),
+            "totalRejected", totalRejected.get()
         );
     }
 }

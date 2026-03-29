@@ -4,10 +4,14 @@
  */
 package com.ghatana.aep.async;
 
+import io.activej.async.exception.AsyncTimeoutException;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -112,5 +116,56 @@ public final class AepAsyncUtils {
      */
     public static <T> Promise<T> failed(Exception cause) {
         return Promise.ofException(cause);
+    }
+
+    /**
+     * Adds an explicit timeout to an async operation.
+     *
+     * @param <T>     result type
+     * @param source  source promise
+     * @param timeout maximum duration to wait
+     * @return promise that fails with {@link TimeoutException} when the timeout expires
+     */
+    public static <T> Promise<T> withTimeout(Promise<T> source, Duration timeout) {
+        Objects.requireNonNull(source, "source must not be null");
+        Objects.requireNonNull(timeout, "timeout must not be null");
+
+        return Promises.timeout(timeout, source).then(
+            Promise::of,
+            error -> {
+                if (error instanceof AsyncTimeoutException) {
+                    return Promise.ofException(new TimeoutException(
+                        "Async operation timed out after " + timeout));
+                }
+                return Promise.ofException(error instanceof Exception exception
+                    ? exception
+                    : new RuntimeException(error));
+            }
+        );
+    }
+
+    /**
+     * Adds an explicit timeout to an async operation with contextual error text.
+     *
+     * @param <T>     result type
+     * @param source  source promise
+     * @param timeout maximum duration to wait
+     * @param context operation label for diagnostics
+     * @return promise that fails with contextual {@link TimeoutException}
+     */
+    public static <T> Promise<T> withTimeout(Promise<T> source, Duration timeout, String context) {
+        Objects.requireNonNull(context, "context must not be null");
+        return withTimeout(source, timeout).then(
+            Promise::of,
+            error -> {
+                if (error instanceof TimeoutException) {
+                    return Promise.ofException(new TimeoutException(
+                        context + " timed out after " + timeout));
+                }
+                return Promise.ofException(error instanceof Exception exception
+                    ? exception
+                    : new RuntimeException(error));
+            }
+        );
     }
 }

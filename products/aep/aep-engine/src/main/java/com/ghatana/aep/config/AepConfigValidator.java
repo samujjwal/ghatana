@@ -7,6 +7,7 @@ import com.ghatana.aep.Aep;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Validates {@link Aep.AepConfig} instances before engine creation.
@@ -46,6 +47,7 @@ public final class AepConfigValidator {
     private static final double ANOMALY_THRESHOLD_MIN = 0.0;
     private static final double ANOMALY_THRESHOLD_MAX = 1.0;
     private static final int MAX_PIPELINES_UPPER_BOUND = 10_000;
+    private static final Pattern VERSION_PATTERN = Pattern.compile("^(\\d+)\\.(\\d+)$");
 
     private AepConfigValidator() {
         // Utility class — not instantiable
@@ -72,6 +74,12 @@ public final class AepConfigValidator {
         validateCustomConfig(config.customConfig(), violations);
         validateIdempotencySettings(config.customConfig(), violations);
         validateConsentConfig(config.customConfig(), violations);
+        validateAsyncSettings(config.customConfig(), violations);
+        validateRateLimitSettings(config.customConfig(), violations);
+        validateCacheSettings(config.customConfig(), violations);
+        validateShutdownSettings(config.customConfig(), violations);
+        validateHotReloadSettings(config.customConfig(), violations);
+        validateVersionSettings(config.customConfig(), violations);
 
         if (!violations.isEmpty()) {
             throw new IllegalArgumentException("AepConfig validation failed: " + String.join("; ", violations));
@@ -177,6 +185,71 @@ public final class AepConfigValidator {
                 violations.add(Aep.AepConfig.CONSENT_PROVIDER_KEY
                     + " must be a non-blank string when set, but was: " + provider);
             }
+        }
+    }
+
+    private static void validateAsyncSettings(java.util.Map<String, Object> customConfig,
+                                              List<String> violations) {
+        validatePositiveNumber(customConfig, Aep.AepConfig.ASYNC_TIMEOUT_MS_KEY, violations);
+    }
+
+    private static void validateRateLimitSettings(java.util.Map<String, Object> customConfig,
+                                                  List<String> violations) {
+        Object enabled = customConfig.get(Aep.AepConfig.RATE_LIMIT_ENABLED_KEY);
+        if (enabled != null && !(enabled instanceof Boolean)) {
+            violations.add(Aep.AepConfig.RATE_LIMIT_ENABLED_KEY + " must be a boolean, but was: " + enabled);
+        }
+        validatePositiveNumber(customConfig, Aep.AepConfig.RATE_LIMIT_MAX_REQUESTS_PER_MINUTE_KEY, violations);
+        validatePositiveNumber(customConfig, Aep.AepConfig.RATE_LIMIT_BURST_SIZE_KEY, violations);
+        validatePositiveNumber(customConfig, Aep.AepConfig.RATE_LIMIT_WINDOW_SECONDS_KEY, violations);
+    }
+
+    private static void validateCacheSettings(java.util.Map<String, Object> customConfig,
+                                              List<String> violations) {
+        validatePositiveNumber(customConfig, Aep.AepConfig.CONSENT_CACHE_TTL_SECONDS_KEY, violations);
+        validatePositiveNumber(customConfig, Aep.AepConfig.CONSENT_CACHE_MAX_ENTRIES_KEY, violations);
+        validatePositiveNumber(customConfig, Aep.AepConfig.PATTERN_CACHE_TTL_SECONDS_KEY, violations);
+    }
+
+    private static void validateShutdownSettings(java.util.Map<String, Object> customConfig,
+                                                 List<String> violations) {
+        validatePositiveNumber(customConfig, Aep.AepConfig.SHUTDOWN_DRAIN_TIMEOUT_MS_KEY, violations);
+    }
+
+    private static void validateHotReloadSettings(java.util.Map<String, Object> customConfig,
+                                                  List<String> violations) {
+        Object path = customConfig.get(Aep.AepConfig.HOT_RELOAD_CONFIG_PATH_KEY);
+        if (path != null && (!(path instanceof String) || ((String) path).isBlank())) {
+            violations.add(Aep.AepConfig.HOT_RELOAD_CONFIG_PATH_KEY
+                + " must be a non-blank string when set, but was: " + path);
+        }
+        validatePositiveNumber(customConfig, Aep.AepConfig.HOT_RELOAD_CHECK_INTERVAL_MS_KEY, violations);
+    }
+
+    private static void validateVersionSettings(java.util.Map<String, Object> customConfig,
+                                                List<String> violations) {
+        validateVersionString(customConfig, Aep.AepConfig.CURRENT_EVENT_VERSION_KEY, violations);
+        validateVersionString(customConfig, Aep.AepConfig.MIN_SUPPORTED_EVENT_VERSION_KEY, violations);
+    }
+
+    private static void validatePositiveNumber(java.util.Map<String, Object> customConfig,
+                                               String key,
+                                               List<String> violations) {
+        Object raw = customConfig.get(key);
+        if (raw != null && (!(raw instanceof Number) || ((Number) raw).longValue() <= 0L)) {
+            violations.add(key + " must be a positive number, but was: " + raw);
+        }
+    }
+
+    private static void validateVersionString(java.util.Map<String, Object> customConfig,
+                                              String key,
+                                              List<String> violations) {
+        Object raw = customConfig.get(key);
+        if (raw == null) {
+            return;
+        }
+        if (!(raw instanceof String value) || value.isBlank() || !VERSION_PATTERN.matcher(value).matches()) {
+            violations.add(key + " must be a non-blank semantic version string like 1.0, but was: " + raw);
         }
     }
 }

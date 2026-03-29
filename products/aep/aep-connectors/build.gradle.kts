@@ -6,6 +6,7 @@ plugins {
 dependencies {
     // Depends on core for base classes
     implementation(project(":products:aep:aep-engine"))
+    implementation(project(":platform:java:core"))
     
     // ActiveJ for async operations
     implementation(libs.activej.promise)

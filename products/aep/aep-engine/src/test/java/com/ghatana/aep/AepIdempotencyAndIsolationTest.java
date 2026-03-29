@@ -13,7 +13,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.ghatana.aep.error.AepTenantException;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for AEP engine features added during audit remediation:
@@ -188,7 +191,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getPattern() for wrong tenant returns empty")
+        @DisplayName("getPattern() for wrong tenant rejects cross-tenant access")
         void getPatternShouldRespectTenant() {
             engine = Aep.forTesting();
 
@@ -196,8 +199,9 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
                 new AepEngine.PatternDefinition("my-pattern", null, AepEngine.PatternType.CUSTOM,
                     Map.of())));
 
-            Optional<AepEngine.Pattern> fromB = runPromise(() -> engine.getPattern(TENANT_B, p.id()));
-            assertThat(fromB).isEmpty();
+            assertThatThrownBy(() -> runPromise(() -> engine.getPattern(TENANT_B, p.id())))
+                .isInstanceOf(AepTenantException.class)
+                .hasMessageContaining("different tenant");
         }
 
         @Test

@@ -9,11 +9,15 @@ import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
+import com.ghatana.platform.resilience.CircuitBreaker;
+import com.ghatana.platform.resilience.DeadLetterQueue;
 import com.ghatana.platform.types.identity.Identifier;
 import com.ghatana.platform.types.identity.Offset;
 import com.ghatana.datacloud.storage.WarmTierEventLogStore;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.services.featurestore.config.FeatureIngestConfig;
+import com.ghatana.services.featurestore.exception.FeatureExtractionException;
+import com.ghatana.services.featurestore.exception.FeatureIngestException;
+import com.ghatana.services.featurestore.exception.FeatureStoreWriteException;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -21,7 +25,6 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -69,16 +72,6 @@ public class FeatureStoreIngestLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(FeatureStoreIngestLauncher.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    // ── Configuration keys ────────────────────────────────────────────────
-    private static final String ENV_MODE            = "FEATURE_INGEST_MODE";
-    private static final String ENV_DB_URL          = "FEATURE_INGEST_DB_URL";
-    private static final String ENV_DB_USER         = "FEATURE_INGEST_DB_USER";
-    private static final String ENV_DB_PASSWORD     = "FEATURE_INGEST_DB_PASSWORD";
-    private static final String ENV_TENANTS         = "FEATURE_INGEST_TENANTS";
-    private static final String ENV_BATCH_SIZE      = "FEATURE_INGEST_BATCH_SIZE";
-    private static final String ENV_RETRY_DELAY_MS  = "FEATURE_INGEST_RETRY_DELAY_MS";
-    private static final String ENV_POLL_DELAY_MS   = "FEATURE_INGEST_POLL_DELAY_MS";
-
     private static final int  DEFAULT_BATCH_SIZE      = 100;
     private static final long DEFAULT_RETRY_DELAY_MS  = 5_000L;
     private static final long DEFAULT_POLL_DELAY_MS   = 1_000L;
@@ -93,6 +86,17 @@ public class FeatureStoreIngestLauncher {
     private final AtomicBoolean         running = new AtomicBoolean(false);
     /** Tracks the last-seen offset per tenant (as a numeric long). */
     private final Map<String, Long>     tenantOffsets = new ConcurrentHashMap<>();
+    /**
+     * Circuit breaker protecting FeatureStore writes. Opens after 10 consecutive
+     * failures, resets after 30 seconds. Using sync execution since feature writes
+     * are made outside the ActiveJ eventloop (blocking worker thread).
+     */
+    private final CircuitBreaker featureStoreCircuitBreaker;
+    /**
+     * Dead-letter queue for events whose feature extraction or write failed permanently
+     * after all retries. Bounded to 50,000 entries with a 7-day TTL.
+     */
+    private final DeadLetterQueue deadLetterQueue;
     /**
      * Single-thread scheduler for delayed poll rescheduling. Shared across all
      * tenants to avoid the per-call thread pool leak from creating a new executor
@@ -130,6 +134,44 @@ public class FeatureStoreIngestLauncher {
         this.batchSize     = batchSize;
         this.retryDelayMs  = retryDelayMs;
         this.pollDelayMs   = pollDelayMs;
+        this.featureStoreCircuitBreaker = CircuitBreaker.builder("feature-store-writes")
+            .failureThreshold(10)
+            .resetTimeout(Duration.ofSeconds(30))
+            .successThreshold(2)
+            .build();
+        this.deadLetterQueue = DeadLetterQueue.builder()
+            .maxSize(50_000)
+            .ttl(Duration.ofDays(7))
+            .enableReplay(true)
+            .build();
+    }
+
+    /**
+     * Package-private constructor for tests only.
+     *
+     * <p>Accepts pre-built {@link CircuitBreaker} and {@link DeadLetterQueue}
+     * so tests can configure them (e.g. already-open circuit breaker) without
+     * relying on the scheduler-based threshold.
+     */
+    FeatureStoreIngestLauncher(
+            EventLogStore eventLogStore,
+            FeatureStoreService featureStore,
+            MetricsCollector metrics,
+            List<TenantId> tenants,
+            int batchSize,
+            long retryDelayMs,
+            long pollDelayMs,
+            CircuitBreaker circuitBreaker,
+            DeadLetterQueue deadLetterQueue) {
+        this.eventLogStore              = eventLogStore;
+        this.featureStore               = featureStore;
+        this.metrics                    = metrics;
+        this.tenants                    = tenants;
+        this.batchSize                  = batchSize;
+        this.retryDelayMs               = retryDelayMs;
+        this.pollDelayMs                = pollDelayMs;
+        this.featureStoreCircuitBreaker = circuitBreaker;
+        this.deadLetterQueue            = deadLetterQueue;
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
@@ -151,7 +193,29 @@ public class FeatureStoreIngestLauncher {
         LOG.info("[feature-ingest] started — tenants={} batchSize={}", tenants, batchSize);
     }
 
-    /** Gracefully stops all active polling loops. */
+    /**
+     * Package-private — test use only.
+     *
+     * <p>Delegates directly to {@link #processEntry} so tests can verify
+     * DLQ routing and circuit-breaker behaviour without starting the polling
+     * loop.
+     */
+    void processEntryForTesting(TenantId tenant, EventLogStore.EventEntry entry) {
+        processEntry(tenant, entry);
+    }
+
+    /**
+     * Package-private — test use only.
+     *
+     * <p>Returns the dead-letter queue so tests can inspect stored entries.
+     */
+    DeadLetterQueue getDeadLetterQueueForTesting() {
+        return deadLetterQueue;
+    }
+
+    /**
+     * Gracefully stops all active polling loops.
+     */
     public void stop() {
         running.set(false);
         scheduler.shutdownNow();
@@ -251,47 +315,80 @@ public class FeatureStoreIngestLauncher {
 
     /**
      * Extracts feature vectors from a single log entry and writes them to the
-     * Feature Store. Errors are logged and counted but never propagate.
+     * Feature Store. Uses a circuit breaker to protect against store unavailability.
+     * Events that fail permanently are routed to the dead-letter queue.
+     *
+     * <p>Error classification:
+     * <ul>
+     *   <li>{@link FeatureExtractionException} — payload is malformed; sent to DLQ immediately.</li>
+     *   <li>{@link FeatureStoreWriteException} — store write failed; circuit state determines routing.</li>
+     *   <li>Fallback catch — unanticipated errors; counted but not swallowed.</li>
+     * </ul>
      */
     @SuppressWarnings("unchecked")
     private void processEntry(TenantId tenant, EventLogStore.EventEntry entry) {
         long start = System.nanoTime();
+        String eventId = entry.eventId().toString();
 
+        // ── Feature extraction ───────────────────────────────────────────────
+        List<Feature> features;
         try {
             byte[] raw = new byte[entry.payload().remaining()];
             entry.payload().duplicate().get(raw);
             Map<String, Object> payload = MAPPER.readValue(raw, Map.class);
-
-            String entityId = entry.headers().getOrDefault("entityId", entry.eventId().toString());
-            List<Feature> features = extractFeatures(entityId, payload, entry.timestamp());
-
-            for (Feature feature : features) {
-                try {
-                    featureStore.ingest(tenant.value(), feature);
-                    metrics.incrementCounter("feature.ingest.features.written",
-                        "tenant", tenant.value(),
-                        "feature", feature.getName());
-                } catch (Exception ex) {
-                    LOG.warn("[feature-ingest] failed to write feature={} tenant={}",
-                        feature.getName(), tenant.value(), ex);
-                    metrics.incrementCounter("feature.ingest.features.errors",
-                        "tenant", tenant.value(),
-                        "feature", feature.getName());
-                }
-            }
-
-            long durationNs = System.nanoTime() - start;
-            metrics.recordTimer("feature.ingest.processing.duration",
-                durationNs / 1_000_000, "tenant", tenant.value());
-
-            LOG.debug("[feature-ingest] processed eventId={} tenant={} features={}",
-                entry.eventId(), tenant.value(), features.size());
-
+            String entityId = entry.headers().getOrDefault("entityId", eventId);
+            features = extractFeatures(entityId, payload, entry.timestamp());
         } catch (Exception ex) {
-            LOG.error("[feature-ingest] unhandled error processing eventId={} tenant={}",
-                entry.eventId(), tenant.value(), ex);
-            metrics.incrementCounter("feature.ingest.events.errors", "tenant", tenant.value());
+            FeatureExtractionException extractEx = new FeatureExtractionException(
+                eventId, tenant.value(),
+                "Failed to extract features from event " + eventId + " tenant=" + tenant.value(), ex);
+            LOG.error("[feature-ingest] {}", extractEx.getMessage(), ex);
+            metrics.incrementCounter("feature.ingest.extraction.errors",
+                "tenant", tenant.value(),
+                "error_type", ex.getClass().getSimpleName());
+            deadLetterQueue.store(entry, extractEx, "extraction-failure");
+            metrics.incrementCounter("feature.ingest.dlq.stored",
+                "tenant", tenant.value(), "reason", "extraction-failure");
+            return;
         }
+
+        // ── Feature store writes (circuit-breaker protected) ─────────────────
+        for (Feature feature : features) {
+            try {
+                featureStoreCircuitBreaker.executeSync(
+                    () -> { featureStore.ingest(tenant.value(), feature); return null; },
+                    () -> {
+                        // Circuit is OPEN: route to DLQ rather than dropping silently
+                        metrics.incrementCounter("feature.ingest.circuit.open.rejections",
+                            "tenant", tenant.value(), "feature", feature.getName());
+                        deadLetterQueue.store(entry, new FeatureIngestException(
+                            "Circuit breaker OPEN for feature-store-writes",
+                            FeatureIngestException.ErrorCategory.STORE_UNAVAILABLE),
+                            "circuit-open");
+                        return null;
+                    });
+                metrics.incrementCounter("feature.ingest.features.written",
+                    "tenant", tenant.value(), "feature", feature.getName());
+            } catch (Exception ex) {
+                FeatureStoreWriteException writeEx = new FeatureStoreWriteException(
+                    feature.getName(), tenant.value(), 1,
+                    "Write failed for feature=" + feature.getName() + " tenant=" + tenant.value(), ex);
+                LOG.warn("[feature-ingest] {}", writeEx.getMessage(), ex);
+                metrics.incrementCounter("feature.ingest.features.errors",
+                    "tenant", tenant.value(), "feature", feature.getName(),
+                    "error_category", writeEx.getCategory().name());
+                deadLetterQueue.store(entry, writeEx, "write-failure");
+                metrics.incrementCounter("feature.ingest.dlq.stored",
+                    "tenant", tenant.value(), "reason", "write-failure");
+            }
+        }
+
+        long durationNs = System.nanoTime() - start;
+        metrics.recordTimer("feature.ingest.processing.duration",
+            durationNs / 1_000_000, "tenant", tenant.value());
+
+        LOG.debug("[feature-ingest] processed eventId={} tenant={} features={}",
+            eventId, tenant.value(), features.size());
     }
 
     /**
@@ -370,19 +467,16 @@ public class FeatureStoreIngestLauncher {
     // ── Main / factory ────────────────────────────────────────────────────
 
     /**
-     * Entry point. Reads configuration from environment, wires dependencies,
-     * and runs the polling loop on an ActiveJ {@link Eventloop}.
+     * Entry point. Reads configuration from environment via {@link FeatureIngestConfig},
+     * wires dependencies, and runs the polling loop on an ActiveJ {@link Eventloop}.
      *
      * <p>Registers a JVM shutdown hook for graceful termination.
      */
     public static void main(String[] args) {
-        String mode          = env(ENV_MODE, "inmemory");
-        String tenantsRaw    = env(ENV_TENANTS, "default");
-        int    batchSize     = Integer.parseInt(env(ENV_BATCH_SIZE, String.valueOf(DEFAULT_BATCH_SIZE)));
-        long   retryDelayMs  = Long.parseLong(env(ENV_RETRY_DELAY_MS, String.valueOf(DEFAULT_RETRY_DELAY_MS)));
-        long   pollDelayMs   = Long.parseLong(env(ENV_POLL_DELAY_MS, String.valueOf(DEFAULT_POLL_DELAY_MS)));
+        FeatureIngestConfig cfg = FeatureIngestConfig.fromEnv();
+        cfg.validate();
 
-        List<TenantId> tenants = Arrays.stream(tenantsRaw.split(","))
+        List<TenantId> tenants = Arrays.stream(cfg.tenants.split(","))
             .map(String::strip)
             .filter(s -> !s.isBlank())
             .map(TenantId::of)
@@ -393,22 +487,9 @@ public class FeatureStoreIngestLauncher {
 
         // ── EventLogStore ─────────────────────────────────────────────────
         EventLogStore eventLogStore;
-        if ("postgres".equalsIgnoreCase(mode)) {
-            String dbUrl = env(ENV_DB_URL, null);
-            if (dbUrl == null) {
-                throw new IllegalStateException(
-                    "FEATURE_INGEST_MODE=postgres requires FEATURE_INGEST_DB_URL to be set.");
-            }
-            HikariConfig pgCfg = new HikariConfig();
-            pgCfg.setJdbcUrl(dbUrl);
-            pgCfg.setUsername(env(ENV_DB_USER, "featureingest"));
-            pgCfg.setPassword(env(ENV_DB_PASSWORD, ""));
-            pgCfg.setMaximumPoolSize(5);
-            pgCfg.setMinimumIdle(1);
-            pgCfg.setConnectionTimeout(Duration.ofSeconds(10).toMillis());
-            pgCfg.setPoolName("feature-ingest-eventlog-pool");
-            eventLogStore = new WarmTierEventLogStore(new HikariDataSource(pgCfg));
-            LOG.info("[feature-ingest] EventLogStore backed by PostgreSQL: {}", dbUrl);
+        if (cfg.isPostgresMode()) {
+            eventLogStore = new WarmTierEventLogStore(cfg.buildEventLogStoreDataSource());
+            LOG.info("[feature-ingest] EventLogStore backed by PostgreSQL: {}", cfg.dbUrl);
         } else {
             LOG.warn("[feature-ingest] using InMemoryEventLogStoreProvider — set FEATURE_INGEST_MODE=postgres for production");
             eventLogStore = new InMemoryEventLogStoreProvider();
@@ -416,21 +497,9 @@ public class FeatureStoreIngestLauncher {
 
         // ── FeatureStoreService ──────────────────────────────────────────
         FeatureStoreService featureStore;
-        String dbUrl = env(ENV_DB_URL, null);
-        if (dbUrl != null) {
-            HikariConfig hikari = new HikariConfig();
-            hikari.setJdbcUrl(dbUrl);
-            hikari.setUsername(env(ENV_DB_USER, "featureingest"));
-            hikari.setPassword(env(ENV_DB_PASSWORD, ""));
-            hikari.setMaximumPoolSize(10);
-            hikari.setMinimumIdle(2);
-            hikari.setConnectionTimeout(Duration.ofSeconds(5).toMillis());
-            hikari.setIdleTimeout(Duration.ofMinutes(10).toMillis());
-            hikari.setMaxLifetime(Duration.ofMinutes(30).toMillis());
-            hikari.setPoolName("feature-ingest-pool");
-            DataSource dataSource = new HikariDataSource(hikari);
-            featureStore = new FeatureStoreService(dataSource, metrics);
-            LOG.info("[feature-ingest] FeatureStoreService wired to PostgreSQL: {}", dbUrl);
+        if (cfg.isPostgresMode()) {
+            featureStore = new FeatureStoreService(cfg.buildFeatureStoreDataSource(), metrics);
+            LOG.info("[feature-ingest] FeatureStoreService wired to PostgreSQL: {}", cfg.dbUrl);
         } else {
             LOG.warn("[feature-ingest] FEATURE_INGEST_DB_URL not set — feature writes will fail; set for production");
             featureStore = new FeatureStoreService(null, metrics);
@@ -438,7 +507,8 @@ public class FeatureStoreIngestLauncher {
 
         // ── Launcher ─────────────────────────────────────────────────────
         FeatureStoreIngestLauncher launcher = new FeatureStoreIngestLauncher(
-            eventLogStore, featureStore, metrics, tenants, batchSize, retryDelayMs, pollDelayMs);
+            eventLogStore, featureStore, metrics, tenants,
+            cfg.batchSize, cfg.retryDelayMs, cfg.pollDelayMs);
 
         Eventloop eventloop = Eventloop.create();
 
@@ -450,7 +520,7 @@ public class FeatureStoreIngestLauncher {
 
         eventloop.post(() -> launcher.start(eventloop));
 
-        LOG.info("[feature-ingest] eventloop starting — mode={} tenants={}", mode, tenants);
+        LOG.info("[feature-ingest] eventloop starting — mode={} tenants={}", cfg.mode, tenants);
         eventloop.run();
         LOG.info("[feature-ingest] eventloop exited");
     }

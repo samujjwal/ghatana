@@ -40,7 +40,7 @@ dependencies {
     implementation(project(":platform:java:security"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:plugin"))
-    implementation("io.swagger.core.v3:swagger-annotations:2.2.19")
+    implementation(libs.swagger.annotations)
     implementation(platform(libs.aws.sdk.bom))
     implementation(libs.aws.glacier)
 
@@ -73,7 +73,7 @@ dependencies {
     runtimeOnly(libs.sqlite.jdbc)  // Moved to runtimeOnly to reduce compile-time CVEs
     implementation(libs.h2)
 
-    compileOnly("javax.annotation:javax.annotation-api:1.3.2")
+    compileOnly(libs.javax.annotation.api)
     compileOnly(libs.trino.plugin.toolkit)
     compileOnly(libs.trino.spi)
 
@@ -98,7 +98,7 @@ dependencies {
     testImplementation(libs.hikaricp)
     testImplementation(libs.grpc.testing)
     testImplementation(libs.grpc.inprocess)
-    testCompileOnly("javax.annotation:javax.annotation-api:1.3.2")
+    testCompileOnly(libs.javax.annotation.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 

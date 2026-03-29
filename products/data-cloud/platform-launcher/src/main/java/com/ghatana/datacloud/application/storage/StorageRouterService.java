@@ -4,16 +4,20 @@ import com.ghatana.platform.core.exception.BaseException;
 import com.ghatana.platform.core.exception.ErrorCode;
 import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.resilience.CircuitBreaker;
 import com.ghatana.datacloud.entity.storage.CollectionStorageProfile;
 import com.ghatana.datacloud.entity.storage.CollectionStorageProfileRepository;
+import com.ghatana.datacloud.resilience.DataCloudCircuitBreakers;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * Service for routing queries to appropriate storage backends based on
@@ -89,10 +93,14 @@ public class StorageRouterService {
     private static final String METRIC_ROUTING_CACHE_HIT = "storage_routing.cache_hit";
     private static final String METRIC_ROUTING_CACHE_MISS = "storage_routing.cache_miss";
     private static final String METRIC_ROUTING_ERROR = "storage_routing.error";
+    private static final String METRIC_ROUTING_CB_OPEN = "storage_routing.circuit_open";
+    private static final String METRIC_ROUTING_CB_FALLBACK = "storage_routing.circuit_fallback";
 
     private final CollectionStorageProfileRepository repository;
     private final MetricsCollector metrics;
     private final Duration cacheTtl;
+    private final Eventloop eventloop;
+    private final CircuitBreaker routerCircuitBreaker;
 
     /** DC3-H5: Bounded Caffeine LRU cache; prevents heap exhaustion at 10K tenants × 10 active collections. */
     private static final int MAX_ROUTING_CACHE_ENTRIES = 100_000;
@@ -103,15 +111,61 @@ public class StorageRouterService {
     private final Cache<String, RoutingTarget> routingCache;
 
     /**
-     * Creates StorageRouterService with default TTL.
+     * Creates StorageRouterService with default TTL and a standard circuit breaker.
      *
      * @param repository profile repository for lookups
      * @param metrics    metrics collector for instrumentation
+     * @param eventloop  ActiveJ eventloop for circuit breaker async probes
      */
     public StorageRouterService(
             CollectionStorageProfileRepository repository,
-            MetricsCollector metrics) {
-        this(repository, metrics, DEFAULT_CACHE_TTL);
+            MetricsCollector metrics,
+            Eventloop eventloop) {
+        this(repository, metrics, DEFAULT_CACHE_TTL, eventloop, DataCloudCircuitBreakers.storageRouter());
+    }
+
+    /**
+     * Creates StorageRouterService with custom TTL and a standard circuit breaker.
+     *
+     * @param repository profile repository for lookups
+     * @param metrics    metrics collector for instrumentation
+     * @param cacheTtl   routing cache TTL
+     * @param eventloop  ActiveJ eventloop for circuit breaker async probes
+     */
+    public StorageRouterService(
+            CollectionStorageProfileRepository repository,
+            MetricsCollector metrics,
+            Duration cacheTtl,
+            Eventloop eventloop) {
+        this(repository, metrics, cacheTtl, eventloop, DataCloudCircuitBreakers.storageRouter());
+    }
+
+    /**
+     * Creates StorageRouterService with custom TTL and a provided circuit breaker.
+     *
+     * <p>Use this constructor in tests or to supply a pre-configured circuit breaker.
+     *
+     * @param repository           profile repository for lookups
+     * @param metrics              metrics collector for instrumentation
+     * @param cacheTtl             routing cache TTL
+     * @param eventloop            ActiveJ eventloop for circuit breaker async probes
+     * @param routerCircuitBreaker pre-built circuit breaker instance
+     */
+    public StorageRouterService(
+            CollectionStorageProfileRepository repository,
+            MetricsCollector metrics,
+            Duration cacheTtl,
+            Eventloop eventloop,
+            CircuitBreaker routerCircuitBreaker) {
+        this.repository = Objects.requireNonNull(repository, "repository");
+        this.metrics = Objects.requireNonNull(metrics, "metrics");
+        this.cacheTtl = Objects.requireNonNull(cacheTtl, "cacheTtl");
+        this.eventloop = Objects.requireNonNull(eventloop, "eventloop");
+        this.routerCircuitBreaker = Objects.requireNonNull(routerCircuitBreaker, "routerCircuitBreaker");
+        this.routingCache = Caffeine.newBuilder()
+                .maximumSize(MAX_ROUTING_CACHE_ENTRIES)
+                .expireAfterWrite(cacheTtl)
+                .build();
     }
 
     /**
@@ -128,6 +182,8 @@ public class StorageRouterService {
         this.repository = Objects.requireNonNull(repository, "repository");
         this.metrics = Objects.requireNonNull(metrics, "metrics");
         this.cacheTtl = Objects.requireNonNull(cacheTtl, "cacheTtl");
+        this.eventloop = null;
+        this.routerCircuitBreaker = null;
         this.routingCache = Caffeine.newBuilder()
                 .maximumSize(MAX_ROUTING_CACHE_ENTRIES)
                 .expireAfterWrite(cacheTtl)
@@ -191,68 +247,103 @@ public class StorageRouterService {
             return Promise.of(cached);
         }
 
-        // Cache miss: fetch from repository
+        // Cache miss: fetch from repository (protected by circuit breaker when configured)
         log.debug(
                 "Routing cache miss [tenant={}, collection={}]",
                 tenantId,
                 collectionName);
         metrics.incrementCounter(METRIC_ROUTING_CACHE_MISS, "tenant", tenantId);
 
-        return repository.findByTenantAndName(tenantId, collectionName)
-                .then(profile -> {
-                    if (profile.isEmpty()) {
-                        log.warn(
-                                "No storage profile found for collection [tenant={}, collection={}]",
-                                tenantId,
-                                collectionName);
-                        metrics.incrementCounter(
-                                METRIC_ROUTING_ERROR,
-                                "reason", "profile_not_found");
-                        return Promise.ofException(
-                                new ResourceNotFoundException(
-                                        "No storage profile configured for collection: " + collectionName));
-                    }
+        Supplier<Promise<RoutingTarget>> repositoryOp = () ->
+                repository.findByTenantAndName(tenantId, collectionName)
+                        .then(profile -> buildRoutingTargetFromProfile(
+                                tenantId, collectionName, cacheKey, query, profile));
 
-                    CollectionStorageProfile storageProfile = profile.get();
+        if (routerCircuitBreaker != null) {
+            return routerCircuitBreaker.execute(eventloop, repositoryOp, () -> {
+                RoutingTarget stale = routingCache.getIfPresent(cacheKey);
+                if (stale != null) {
+                    log.warn("Storage router circuit OPEN; serving stale routing "
+                                    + "[tenant={}, collection={}]",
+                            tenantId, collectionName);
+                    metrics.incrementCounter(METRIC_ROUTING_CB_FALLBACK, "tenant", tenantId);
+                    return stale;
+                }
+                metrics.incrementCounter(METRIC_ROUTING_CB_OPEN, "tenant", tenantId);
+                log.error("Storage router circuit OPEN; no stale cache available "
+                                + "[tenant={}, collection={}]",
+                        tenantId, collectionName);
+                throw new BaseException(
+                        ErrorCode.SERVICE_UNAVAILABLE,
+                        "Storage routing unavailable (circuit breaker open)");
+            });
+        }
 
-                    // Verify tenant isolation
-                    if (!storageProfile.getTenantId().equals(tenantId)) {
-                        log.error(
-                                "Tenant mismatch in routing [requested={}, actual={}]",
-                                tenantId,
-                                storageProfile.getTenantId());
-                        metrics.incrementCounter(
-                                METRIC_ROUTING_ERROR,
-                                "reason", "tenant_mismatch");
-                        return Promise.ofException(
-                                new BaseException(
-                                        ErrorCode.FORBIDDEN,
-                                        "Tenant isolation violation in storage routing"));
-                    }
+        return repositoryOp.get();
+    }
 
-                    // Build routing target
-                    RoutingTarget target = new RoutingTarget(
-                            storageProfile.getPrimaryBackendId(),
-                            storageProfile.getFallbackBackendIds(),
-                            query,
-                            storageProfile.hasFailoverSupport());
+    /**
+     * Validates the profile lookup result and builds a {@link RoutingTarget}, or returns
+     * a failed promise for missing/mismatched profiles.
+     */
+    private Promise<RoutingTarget> buildRoutingTargetFromProfile(
+            String tenantId,
+            String collectionName,
+            String cacheKey,
+            String query,
+            Optional<CollectionStorageProfile> profile) {
 
-                    // Cache the result
-                    routingCache.put(cacheKey, target);
+        if (profile.isEmpty()) {
+            log.warn(
+                    "No storage profile found for collection [tenant={}, collection={}]",
+                    tenantId,
+                    collectionName);
+            metrics.incrementCounter(
+                    METRIC_ROUTING_ERROR,
+                    "reason", "profile_not_found");
+            return Promise.ofException(
+                    new ResourceNotFoundException(
+                            "No storage profile configured for collection: " + collectionName));
+        }
 
-                    log.debug(
-                            "Resolved backend routing [tenant={}, collection={}, primary={}, fallbacks={}]",
-                            tenantId,
-                            collectionName,
-                            target.getPrimaryBackendId(),
-                            target.getFallbackBackendIds().size());
-                    metrics.incrementCounter(
-                            METRIC_ROUTING_DECISION,
-                            "primary", target.getPrimaryBackendId(),
-                            "has_fallback", String.valueOf(target.hasFallback()));
+        CollectionStorageProfile storageProfile = profile.get();
 
-                    return Promise.of(target);
-                });
+        // Verify tenant isolation
+        if (!storageProfile.getTenantId().equals(tenantId)) {
+            log.error(
+                    "Tenant mismatch in routing [requested={}, actual={}]",
+                    tenantId,
+                    storageProfile.getTenantId());
+            metrics.incrementCounter(
+                    METRIC_ROUTING_ERROR,
+                    "reason", "tenant_mismatch");
+            return Promise.ofException(
+                    new BaseException(
+                            ErrorCode.FORBIDDEN,
+                            "Tenant isolation violation in storage routing"));
+        }
+
+        // Build routing target and cache it
+        RoutingTarget target = new RoutingTarget(
+                storageProfile.getPrimaryBackendId(),
+                storageProfile.getFallbackBackendIds(),
+                query,
+                storageProfile.hasFailoverSupport());
+
+        routingCache.put(cacheKey, target);
+
+        log.debug(
+                "Resolved backend routing [tenant={}, collection={}, primary={}, fallbacks={}]",
+                tenantId,
+                collectionName,
+                target.getPrimaryBackendId(),
+                target.getFallbackBackendIds().size());
+        metrics.incrementCounter(
+                METRIC_ROUTING_DECISION,
+                "primary", target.getPrimaryBackendId(),
+                "has_fallback", String.valueOf(target.hasFallback()));
+
+        return Promise.of(target);
     }
 
     /**

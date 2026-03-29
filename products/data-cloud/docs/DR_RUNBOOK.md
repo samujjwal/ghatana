@@ -1,7 +1,7 @@
 # Data-Cloud — Disaster Recovery Runbook
 
-> **Version**: 1.0.0  
-> **Last Updated**: 2026-01-19  
+> **Version**: 1.1.0  
+> **Last Updated**: 2026-03-29  
 > **Owner**: Data-Cloud Platform Team  
 > **Audience**: On-call engineers, SREs, and platform leads
 
@@ -12,33 +12,35 @@
 1. [Incident Severity & SLOs](#1-incident-severity--slos)
 2. [On-Call Escalation](#2-on-call-escalation)
 3. [Pre-Recovery Checklist](#3-pre-recovery-checklist)
-4. [ClickHouse — Backup Restore](#4-clickhouse--backup-restore)
-5. [PostgreSQL — Point-in-Time Recovery](#5-postgresql--point-in-time-recovery)
-6. [Kafka — Consumer Group Recovery](#6-kafka--consumer-group-recovery)
-7. [OpenSearch — Index Restore](#7-opensearch--index-restore)
-8. [Ceph/MinIO Blob Storage Recovery](#8-cephminio-blob-storage-recovery)
-9. [Kubernetes — Pod & Deployment Recovery](#9-kubernetes--pod--deployment-recovery)
-10. [Full-Cluster Failover](#10-full-cluster-failover)
-11. [Post-Recovery Verification](#11-post-recovery-verification)
-12. [Runbook Maintenance](#12-runbook-maintenance)
+4. [Automated Backup Scripts](#4-automated-backup-scripts)
+5. [ClickHouse — Backup Restore](#5-clickhouse--backup-restore)
+6. [PostgreSQL — Point-in-Time Recovery](#6-postgresql--point-in-time-recovery)
+7. [Kafka — Consumer Group Recovery](#7-kafka--consumer-group-recovery)
+8. [OpenSearch — Index Restore](#8-opensearch--index-restore)
+9. [Ceph/MinIO Blob Storage Recovery](#9-cephminio-blob-storage-recovery)
+10. [Kubernetes — Pod & Deployment Recovery](#10-kubernetes--pod--deployment-recovery)
+11. [Full-Cluster Failover](#11-full-cluster-failover)
+12. [Post-Recovery Verification](#12-post-recovery-verification)
+13. [Runbook Maintenance](#13-runbook-maintenance)
 
 ---
 
 ## 1. Incident Severity & SLOs
 
-| Severity | Definition | Response Target | Resolution Target |
-|----------|-----------|----------------|--------------------|
-| **P0 — Critical** | Complete data-cloud service outage; data loss occurring | < 5 min page | RTO ≤ 1 h |
-| **P1 — High** | Single tier degraded (ClickHouse/Kafka/Postgres); partial data unavailability | < 15 min page | RTO ≤ 4 h |
-| **P2 — Medium** | Non-critical feature degraded; no data loss | < 30 min notify | RTO ≤ 24 h |
-| **P3 — Low** | Performance degradation only | Next business day | Best effort |
+| Severity          | Definition                                                                    | Response Target   | Resolution Target |
+| ----------------- | ----------------------------------------------------------------------------- | ----------------- | ----------------- |
+| **P0 — Critical** | Complete data-cloud service outage; data loss occurring                       | < 5 min page      | RTO ≤ 1 h         |
+| **P1 — High**     | Single tier degraded (ClickHouse/Kafka/Postgres); partial data unavailability | < 15 min page     | RTO ≤ 4 h         |
+| **P2 — Medium**   | Non-critical feature degraded; no data loss                                   | < 30 min notify   | RTO ≤ 24 h        |
+| **P3 — Low**      | Performance degradation only                                                  | Next business day | Best effort       |
 
 **RPO targets**:
-- ClickHouse time-series:  ≤ 6 h (incremental backup cadence)
+
+- ClickHouse time-series: ≤ 6 h (incremental backup cadence)
 - PostgreSQL entity store: ≤ 5 min (continuous WAL archiving)
-- Kafka event log:          ≤ 0 h (replicated; no backup restore required for broker failures)
-- OpenSearch indexes:       ≤ 24 h (daily snapshot)
-- Ceph blob objects:        ≤ 24 h (daily remote sync)
+- Kafka event log: ≤ 0 h (replicated; no backup restore required for broker failures)
+- OpenSearch indexes: ≤ 24 h (daily snapshot)
+- Ceph blob objects: ≤ 24 h (daily remote sync)
 
 ---
 
@@ -68,7 +70,111 @@ Before executing any recovery procedure, complete all items:
 
 ---
 
-## 4. ClickHouse — Backup Restore
+## 4. Automated Backup Scripts
+
+The following scripts in `products/data-cloud/scripts/` implement the automated backup lifecycle for the PostgreSQL warm-tier entity store.
+
+### 4.1 backup-postgres.sh — create a base backup
+
+```bash
+# Required: POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB, POSTGRES_USER, PGPASSWORD, S3_BUCKET
+# Optional: S3_ENDPOINT (for Ceph/MinIO), BACKUP_RETENTION_DAYS (default 14), S3_PREFIX
+
+POSTGRES_HOST="pg-primary.data-cloud.svc" \
+POSTGRES_DB="datacloud" \
+POSTGRES_USER="backup_svc" \
+S3_BUCKET="ghatana-pg-backups" \
+bash products/data-cloud/scripts/backup-postgres.sh
+
+# Dry-run to validate configuration without writing any backup:
+bash products/data-cloud/scripts/backup-postgres.sh --dry-run
+```
+
+Key behaviors:
+
+- Produces a compressed pg_dump (custom format, gzip by default; zstd if available)
+- Uploads to `s3://<S3_BUCKET>/<S3_PREFIX>/<db>_<timestamp>.dump.gz`
+- Tags each S3 object with `retention-days` and `product=data-cloud`
+- Prunes archives older than `BACKUP_RETENTION_DAYS` (default: 14)
+- Sends an optional webhook notification on success or failure
+
+### 4.2 restore-postgres.sh — restore a base backup (or prepare for PITR)
+
+```bash
+# List available backups before restoring:
+POSTGRES_HOST="... " POSTGRES_DB="datacloud" POSTGRES_USER="postgres" \
+S3_BUCKET="ghatana-pg-backups" \
+bash products/data-cloud/scripts/restore-postgres.sh --list
+
+# Restore the latest backup to the DR/staging instance:
+bash products/data-cloud/scripts/restore-postgres.sh
+
+# Restore a specific backup archive:
+bash products/data-cloud/scripts/restore-postgres.sh --key "data-cloud/postgres/datacloud_20260319T020000Z.dump.gz"
+
+# Dry-run:
+bash products/data-cloud/scripts/restore-postgres.sh --dry-run
+```
+
+> **SAFETY**: This script drops and recreates the target database. Only run against a DR or staging instance — **never the production primary**.
+
+For PITR beyond the base backup, set `TARGET_TIME`:
+
+```bash
+TARGET_TIME="2026-03-19 11:55:00 UTC" \
+bash products/data-cloud/scripts/restore-postgres.sh
+```
+
+This prints the CloudNativePG / postgresql.conf instructions to apply WAL replay to the target time.
+
+### 4.3 validate-backup.sh — integrity validation
+
+Run after each scheduled backup, or as a separate CI/CD stage:
+
+```bash
+# Validate latest backup against a temporary validation database:
+POSTGRES_HOST="pg-validate.data-cloud.svc" \
+POSTGRES_DB="datacloud" \
+POSTGRES_USER="postgres" \
+S3_BUCKET="ghatana-pg-backups" \
+bash products/data-cloud/scripts/validate-backup.sh
+
+# Emit structured JSON result (for CI artifact or alerting):
+bash products/data-cloud/scripts/validate-backup.sh --json
+
+# Non-blocking mode (warnings only, exit 0 for gradual rollout):
+bash products/data-cloud/scripts/validate-backup.sh --warn-only
+```
+
+Validation checks:
+
+1. Backup freshness (< 24 h is PASS; 24–48 h is WARN; > 48 h is FAIL)
+2. S3 download succeeds and archive is non-trivially sized
+3. TOC inspection — pg_restore `--list` confirms TABLE DATA entries are present
+4. Restore to isolated `dc_validate_tmp` database succeeds
+5. Expected tables (`entities`, `events`, `collections`, `tenants`) are present and non-empty
+
+### 4.4 Scheduling recommendations
+
+| Script                | Cadence           | Environment                     |
+| --------------------- | ----------------- | ------------------------------- |
+| `backup-postgres.sh`  | Every 6 h (cron)  | Production                      |
+| `validate-backup.sh`  | After each backup | Isolated validation instance    |
+| `run-backup-drill.sh` | Weekly (CI/CD)    | All environments                |
+| `restore-postgres.sh` | Monthly DR drill  | Staging (restore full + verify) |
+
+### 4.5 Backup monitoring
+
+The backup status is observable through:
+
+- **Prometheus alert** — `DataCloudBackupMissing`: fires if no successful backup recorded within 8 h
+  - Configure in `alert-rules.yml/data-cloud.yml` or `monitoring/alertmanager/`
+- **Webhook notification** — `NOTIFY_WEBHOOK_URL` env var: set to Slack webhook URL for real-time alerts
+- **CloudWatch / Grafana** — S3 PutObject metrics confirm upload activity; set a threshold of 0 PutObjects in 12 h as a stale-backup indicator
+
+---
+
+## 5. ClickHouse — Backup Restore
 
 ### 4.1 Backup inventory
 
@@ -81,6 +187,7 @@ kubectl exec -n data-cloud deploy/data-cloud \
 ```
 
 Sample output:
+
 ```
 2026-01-19T02:00:00Z   full   data-cloud/2026-01-19T02-00-00Z.tar
 2026-01-19T06:00:00Z   diff   data-cloud/2026-01-19T06-00-00Z.tar
@@ -139,7 +246,7 @@ Expected: counts consistent with pre-incident monitoring graphs.
 
 ---
 
-## 5. PostgreSQL — Point-in-Time Recovery
+## 6. PostgreSQL — Point-in-Time Recovery
 
 The warm-tier entity store uses PostgreSQL with continuous WAL archiving to S3 (configured by the DBA team; connection string in `data-cloud` namespace Secret `data-cloud-db-credentials`).
 
@@ -209,7 +316,7 @@ kubectl exec -n data-cloud <data-cloud-pod> \
 
 ---
 
-## 6. Kafka — Consumer Group Recovery
+## 7. Kafka — Consumer Group Recovery
 
 Kafka brokers (production: `kafka-prod.kafka.svc.cluster.local`) are replicated with `replicationFactor=3`. No data backup is required for broker node failures; replication provides automatic recovery.
 
@@ -263,7 +370,7 @@ kubectl exec -n kafka kafka-prod-0 \
 
 ---
 
-## 7. OpenSearch — Index Restore
+## 8. OpenSearch — Index Restore
 
 Production OpenSearch cluster: `opensearch-prod-cluster-master.opensearch.svc.cluster.local`.
 
@@ -296,7 +403,7 @@ curl -s -u "$OPENSEARCH_USER:$OPENSEARCH_PASSWORD" \
 
 ---
 
-## 8. Ceph/MinIO Blob Storage Recovery
+## 9. Ceph/MinIO Blob Storage Recovery
 
 Production Ceph RGW: `https://rook-ceph-rgw-prod.rook-ceph.svc.cluster.local`  
 Bucket: `ghatana-data-cloud-prod`
@@ -333,7 +440,7 @@ mc mirror s3-dr/ghatana-data-cloud-backup/ ceph-prod/ghatana-data-cloud-prod/ --
 
 ---
 
-## 9. Kubernetes — Pod & Deployment Recovery
+## 10. Kubernetes — Pod & Deployment Recovery
 
 ### 9.1 Pod crash-looping
 
@@ -390,7 +497,7 @@ kubectl top pods -n data-cloud
 
 ---
 
-## 10. Full-Cluster Failover
+## 11. Full-Cluster Failover
 
 Execute only for a P0 datacenter-level failure. Coordinate with the infrastructure team before starting.
 
@@ -415,7 +522,7 @@ kubectl patch ingress data-cloud -n data-cloud \
 
 ---
 
-## 11. Post-Recovery Verification
+## 12. Post-Recovery Verification
 
 After any recovery procedure, verify the following before marking the incident resolved:
 
@@ -465,7 +572,7 @@ Open Grafana → **Data-Cloud Overview** dashboard and verify:
 
 ---
 
-## 12. Runbook Maintenance
+## 13. Runbook Maintenance
 
 - **Review cadence**: Quarterly, or after every P0/P1 incident.
 - **Test cadence**: DR restore drill every 6 months — restore ClickHouse from backup in a staging cluster and run the full post-recovery verification checklist.

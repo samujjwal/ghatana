@@ -1,0 +1,71 @@
+# Local development overrides (minikube / kind / Docker Desktop).
+# Minimal resources so the service starts on a developer laptop alongside
+# other workloads.
+#
+# Usage:
+#   helm upgrade --install data-cloud ./helm/data-cloud \
+#     -f helm/data-cloud/values.yaml \
+#     -f helm/data-cloud/values-local.yaml \
+#     --namespace data-cloud-local
+
+replicaCount: 1
+
+image:
+  pullPolicy: Never # Use locally-built image; do not pull from registry
+
+config:
+  logLevel: "DEBUG"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# JVM heap aligned to 512Mi container limit: 70% ≈ 358Mi heap.
+extraEnv:
+  - name: JAVA_TOOL_OPTIONS
+    value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=70.0 -XX:InitialRAMPercentage=40.0"
+
+autoscaling:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: false
+
+# Startup probe timeout relaxed for slow laptop JVM starts.
+startupProbe:
+  httpGet:
+    path: /live
+    port: http
+  failureThreshold: 10
+  periodSeconds: 20
+
+kafka:
+  bootstrapServers: "kafka.kafka.svc.cluster.local:9092"
+  partitions: "1"
+  replicationFactor: "1"
+  readTimeoutMs: "3000"
+
+clickhouse:
+  host: "clickhouse.clickhouse.svc.cluster.local"
+
+opensearch:
+  host: "opensearch-cluster-master.opensearch.svc.cluster.local"
+  scheme: "http"
+
+ceph:
+  endpoint: "http://rook-ceph-rgw-my-store.rook-ceph.svc.cluster.local"
+  bucket: "ghatana-data-cloud-local"
+
+ingress:
+  enabled: false
+
+metrics:
+  serviceMonitor:
+    enabled: false
+
+externalSecrets:
+  enabled: false

@@ -33,6 +33,8 @@ dependencies {
     api(project(":platform:java:domain"))
     api(project(":platform:java:observability"))
     api(project(":platform:contracts"))
+    implementation(project(":platform:java:security"))
+    implementation(project(":platform:java:config"))
 
     // Redis
     implementation("redis.clients:jedis:5.1.0")

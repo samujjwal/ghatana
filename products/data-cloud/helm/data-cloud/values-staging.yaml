@@ -12,6 +12,11 @@ image:
 config:
   logLevel: "DEBUG"
 
+# JVM heap aligned to 1Gi container limit: 75% = ~768Mi heap.
+extraEnv:
+  - name: JAVA_TOOL_OPTIONS
+    value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=40.0"
+
 resources:
   requests:
     cpu: 250m
@@ -69,9 +74,9 @@ externalSecrets:
     name: data-cloud-vault-store
     kind: SecretStore
   vaultPaths:
-    db:         "data-cloud/staging/db"
-    kafka:      "data-cloud/staging/kafka"
+    db: "data-cloud/staging/db"
+    kafka: "data-cloud/staging/kafka"
     clickhouse: "data-cloud/staging/clickhouse"
-    jwt:        "data-cloud/staging/jwt"
+    jwt: "data-cloud/staging/jwt"
   targetSecretName: data-cloud-secret
   deletionPolicy: Retain

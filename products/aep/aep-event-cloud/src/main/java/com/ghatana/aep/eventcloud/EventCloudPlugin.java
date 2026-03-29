@@ -70,8 +70,7 @@ public final class EventCloudPlugin implements Plugin {
     private final EventCloudPluginConfig config;
 
     private volatile PluginState state = PluginState.UNLOADED;
-    private DataCloudBackedEventCloud eventCloudFacade;
-    private DataCloudEventCloudConnector connector;
+    private EventCloudAdapter eventCloudAdapter;
     private EventChannelRegistry channelRegistry;
     private EventCloudRunLedger runLedger;
     private EventCloudAgentStore agentStore;
@@ -130,11 +129,7 @@ public final class EventCloudPlugin implements Plugin {
     public @NotNull Promise<Void> initialize(@NotNull PluginContext context) {
         log.info("[event-cloud] Initializing plugin (embedded={})", config.embedded());
 
-        // Create the AEP EventCloud facade backed by Data-Cloud EventLogStore
-        this.eventCloudFacade = new DataCloudBackedEventCloud(eventLogStore);
-
-        // Create the EventCloudConnector backed by EventLogStore
-        this.connector = new DataCloudEventCloudConnector(eventLogStore);
+        this.eventCloudAdapter = new DataCloudEventCloudAdapter(eventLogStore);
 
         // Create the channel registry for named event streams
         this.channelRegistry = new EventChannelRegistry(eventLogStore);
@@ -221,16 +216,22 @@ public final class EventCloudPlugin implements Plugin {
      * This is the primary interface AEP operators and pipelines use.
      */
     public @NotNull EventCloud eventCloud() {
-        Objects.requireNonNull(eventCloudFacade, "Plugin not initialized");
-        return eventCloudFacade;
+        return adapter().eventCloud();
     }
 
     /**
      * Returns the EventCloudConnector for transport-level integration.
      */
     public @NotNull EventCloudConnector connector() {
-        Objects.requireNonNull(connector, "Plugin not initialized");
-        return connector;
+        return adapter().connector();
+    }
+
+    /**
+     * Returns the event-cloud adapter abstraction.
+     */
+    public @NotNull EventCloudAdapter adapter() {
+        Objects.requireNonNull(eventCloudAdapter, "Plugin not initialized");
+        return eventCloudAdapter;
     }
 
     /**

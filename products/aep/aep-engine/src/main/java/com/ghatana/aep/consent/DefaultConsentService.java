@@ -22,22 +22,20 @@ import java.util.List;
  * </ul>
  *
  * <p>For production use in regulated environments, replace with an implementation
- * that delegates to an external consent management platform.
+ * that delegates to an external consent management platform via the {@link ConsentProvider}
+ * SPI. {@code DefaultConsentService} intentionally does NOT implement {@link ConsentProvider}
+ * — it is an internal fallback, not a named SPI provider eligible for {@link java.util.ServiceLoader}
+ * discovery (AEP-004).
  *
  * @doc.type class
  * @doc.purpose Default event consent evaluation using ConsentContext
  * @doc.layer product
  * @doc.pattern Service
  */
-public final class DefaultConsentService implements ConsentProvider {
+public final class DefaultConsentService implements ConsentService {
 
     /** The canonical event-processing purpose identifier. */
     public static final String EVENT_PROCESSING_PURPOSE = "event_processing";
-
-    @Override
-    public String name() {
-        return "default";
-    }
 
     @Override
     public Promise<ConsentDecision> evaluateConsent(String tenantId, AepEngine.Event event) {

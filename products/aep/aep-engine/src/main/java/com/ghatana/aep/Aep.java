@@ -1,21 +1,41 @@
 package com.ghatana.aep;
 
-import com.ghatana.aep.config.AepConfigValidator;
-import com.ghatana.aep.consent.ConsentServiceFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.aep.async.AepAsyncUtils;
+import com.ghatana.aep.cache.AepConsentCache;
+import com.ghatana.aep.cache.AepPatternCache;
+import com.ghatana.aep.config.AepConfigReloadBridge;
+import com.ghatana.aep.config.UnifiedAepConfigValidator;
 import com.ghatana.aep.consent.ConsentService;
+import com.ghatana.aep.consent.ConsentServiceFactory;
 import com.ghatana.aep.consent.DefaultConsentService;
 import com.ghatana.aep.delivery.EventDeliveryService;
+import com.ghatana.aep.error.AepErrorHandler;
+import com.ghatana.aep.error.AepTenantException;
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.aep.event.InMemoryEventCloud;
 import com.ghatana.aep.forecasting.ForecastingEngine;
 import com.ghatana.aep.forecasting.NaiveForecastingEngine;
+import com.ghatana.aep.health.AepHealthIndicator;
+import com.ghatana.aep.lifecycle.GracefulShutdownCoordinator;
+import com.ghatana.aep.metrics.AepMetricsCollector;
+import com.ghatana.aep.ratelimit.AepRateLimiter;
+import com.ghatana.aep.tracing.AepTraceContext;
+import com.ghatana.aep.version.EventVersionCompatibility;
+import com.ghatana.platform.observability.health.HealthCheckRegistry;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -44,6 +64,7 @@ import java.util.function.Consumer;
 public final class Aep {
 
     private static final Logger logger = LoggerFactory.getLogger(Aep.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private Aep() {
         // Utility class - no instantiation
@@ -59,7 +80,7 @@ public final class Aep {
      */
     public static AepEngine create(AepConfig config) {
         Objects.requireNonNull(config, "config required");
-        AepConfigValidator.validate(config);
+        UnifiedAepConfigValidator.validateApiConfig(config);
 
         EventCloud eventCloud = discoverEventCloud(config);
         ConsentService consentService = ConsentServiceFactory.create(config);
@@ -80,7 +101,7 @@ public final class Aep {
     public static AepEngine create(AepConfig config, EventDeliveryService deliveryService) {
         Objects.requireNonNull(config, "config required");
         Objects.requireNonNull(deliveryService, "deliveryService required");
-        AepConfigValidator.validate(config);
+        UnifiedAepConfigValidator.validateApiConfig(config);
 
         EventCloud eventCloud = discoverEventCloud(config);
         ConsentService consentService = ConsentServiceFactory.create(config);
@@ -143,8 +164,33 @@ public final class Aep {
         public static final String IDEMPOTENCY_TTL_SECONDS_KEY = "idempotencyTtlSeconds";
         public static final String IDEMPOTENCY_MAX_KEYS_PER_TENANT_KEY = "idempotencyMaxKeysPerTenant";
         public static final String CONSENT_PROVIDER_KEY = "consentProvider";
+        public static final String ASYNC_TIMEOUT_MS_KEY = "asyncTimeoutMs";
+        public static final String RATE_LIMIT_ENABLED_KEY = AepRateLimiter.ENABLED_KEY;
+        public static final String RATE_LIMIT_MAX_REQUESTS_PER_MINUTE_KEY = AepRateLimiter.MAX_REQUESTS_PER_MINUTE_KEY;
+        public static final String RATE_LIMIT_BURST_SIZE_KEY = AepRateLimiter.BURST_SIZE_KEY;
+        public static final String RATE_LIMIT_WINDOW_SECONDS_KEY = AepRateLimiter.WINDOW_SECONDS_KEY;
+        public static final String CONSENT_CACHE_TTL_SECONDS_KEY = AepConsentCache.TTL_SECONDS_KEY;
+        public static final String CONSENT_CACHE_MAX_ENTRIES_KEY = AepConsentCache.MAX_ENTRIES_KEY;
+        public static final String PATTERN_CACHE_TTL_SECONDS_KEY = AepPatternCache.TTL_SECONDS_KEY;
+        public static final String SHUTDOWN_DRAIN_TIMEOUT_MS_KEY = GracefulShutdownCoordinator.DRAIN_TIMEOUT_MS_KEY;
+        public static final String HOT_RELOAD_CONFIG_PATH_KEY = AepConfigReloadBridge.CONFIG_PATH_KEY;
+        public static final String HOT_RELOAD_CHECK_INTERVAL_MS_KEY = AepConfigReloadBridge.CHECK_INTERVAL_MS_KEY;
+        public static final String CURRENT_EVENT_VERSION_KEY = "currentEventVersion";
+        public static final String MIN_SUPPORTED_EVENT_VERSION_KEY = "minSupportedEventVersion";
+
         private static final long DEFAULT_IDEMPOTENCY_TTL_SECONDS = 86_400L;
         private static final int DEFAULT_IDEMPOTENCY_MAX_KEYS_PER_TENANT = 10_000;
+        private static final long DEFAULT_ASYNC_TIMEOUT_MS = 10_000L;
+        private static final int DEFAULT_RATE_LIMIT_MAX_REQUESTS_PER_MINUTE = 10_000;
+        private static final int DEFAULT_RATE_LIMIT_BURST_SIZE = 1_000;
+        private static final long DEFAULT_RATE_LIMIT_WINDOW_SECONDS = 60L;
+        private static final long DEFAULT_CONSENT_CACHE_TTL_SECONDS = 300L;
+        private static final int DEFAULT_CONSENT_CACHE_MAX_ENTRIES = 10_000;
+        private static final long DEFAULT_PATTERN_CACHE_TTL_SECONDS = 30L;
+        private static final long DEFAULT_SHUTDOWN_DRAIN_TIMEOUT_MS = 30_000L;
+        private static final long DEFAULT_HOT_RELOAD_CHECK_INTERVAL_MS = 30_000L;
+        private static final String DEFAULT_EVENT_VERSION = EventVersionCompatibility.DEFAULT_CURRENT_VERSION;
+        private static final String DEFAULT_MIN_SUPPORTED_EVENT_VERSION = EventVersionCompatibility.DEFAULT_MIN_VERSION;
 
         public AepConfig {
             instanceId = instanceId != null ? instanceId : UUID.randomUUID().toString();
@@ -158,7 +204,15 @@ public final class Aep {
         }
 
         public static AepConfig forTesting() {
-            return new AepConfig("test-instance", 1, 10, false, false, 0.9, Map.of());
+            return builder()
+                .instanceId("test-instance")
+                .workerThreads(1)
+                .maxPipelinesPerTenant(10)
+                .enableMetrics(false)
+                .enableTracing(false)
+                .anomalyThreshold(0.9)
+                .asyncTimeout(Duration.ofSeconds(2))
+                .build();
         }
 
         public static Builder builder() {
@@ -228,6 +282,62 @@ public final class Aep {
                 return this;
             }
 
+            public Builder asyncTimeout(Duration timeout) {
+                this.customConfig.put(ASYNC_TIMEOUT_MS_KEY, Objects.requireNonNull(timeout, "timeout required").toMillis());
+                return this;
+            }
+
+            public Builder rateLimitEnabled(boolean enabled) {
+                this.customConfig.put(RATE_LIMIT_ENABLED_KEY, enabled);
+                return this;
+            }
+
+            public Builder rateLimiting(int maxRequestsPerMinute, int burstSize) {
+                this.customConfig.put(RATE_LIMIT_ENABLED_KEY, true);
+                this.customConfig.put(RATE_LIMIT_MAX_REQUESTS_PER_MINUTE_KEY, maxRequestsPerMinute);
+                this.customConfig.put(RATE_LIMIT_BURST_SIZE_KEY, burstSize);
+                return this;
+            }
+
+            public Builder rateLimitWindow(Duration duration) {
+                this.customConfig.put(RATE_LIMIT_WINDOW_SECONDS_KEY,
+                    Objects.requireNonNull(duration, "duration required").getSeconds());
+                return this;
+            }
+
+            public Builder consentCache(Duration ttl, int maxEntries) {
+                this.customConfig.put(CONSENT_CACHE_TTL_SECONDS_KEY, Objects.requireNonNull(ttl, "ttl required").getSeconds());
+                this.customConfig.put(CONSENT_CACHE_MAX_ENTRIES_KEY, maxEntries);
+                return this;
+            }
+
+            public Builder patternCacheTtl(Duration ttl) {
+                this.customConfig.put(PATTERN_CACHE_TTL_SECONDS_KEY, Objects.requireNonNull(ttl, "ttl required").getSeconds());
+                return this;
+            }
+
+            public Builder shutdownDrainTimeout(Duration timeout) {
+                this.customConfig.put(SHUTDOWN_DRAIN_TIMEOUT_MS_KEY, Objects.requireNonNull(timeout, "timeout required").toMillis());
+                return this;
+            }
+
+            public Builder hotReload(Path configPath, Duration checkInterval) {
+                this.customConfig.put(HOT_RELOAD_CONFIG_PATH_KEY, Objects.requireNonNull(configPath, "configPath required").toString());
+                this.customConfig.put(HOT_RELOAD_CHECK_INTERVAL_MS_KEY,
+                    Objects.requireNonNull(checkInterval, "checkInterval required").toMillis());
+                return this;
+            }
+
+            public Builder currentEventVersion(String version) {
+                this.customConfig.put(CURRENT_EVENT_VERSION_KEY, version);
+                return this;
+            }
+
+            public Builder minSupportedEventVersion(String version) {
+                this.customConfig.put(MIN_SUPPORTED_EVENT_VERSION_KEY, version);
+                return this;
+            }
+
             public AepConfig build() {
                 return new AepConfig(instanceId, workerThreads, maxPipelinesPerTenant,
                     enableMetrics, enableTracing, anomalyThreshold, customConfig);
@@ -235,19 +345,11 @@ public final class Aep {
         }
 
         public long idempotencyTtlSeconds() {
-            Object raw = customConfig.get(IDEMPOTENCY_TTL_SECONDS_KEY);
-            if (raw instanceof Number number && number.longValue() > 0) {
-                return number.longValue();
-            }
-            return DEFAULT_IDEMPOTENCY_TTL_SECONDS;
+            return longConfig(IDEMPOTENCY_TTL_SECONDS_KEY, DEFAULT_IDEMPOTENCY_TTL_SECONDS);
         }
 
         public int maxIdempotencyKeysPerTenant() {
-            Object raw = customConfig.get(IDEMPOTENCY_MAX_KEYS_PER_TENANT_KEY);
-            if (raw instanceof Number number && number.intValue() > 0) {
-                return number.intValue();
-            }
-            return DEFAULT_IDEMPOTENCY_MAX_KEYS_PER_TENANT;
+            return intConfig(IDEMPOTENCY_MAX_KEYS_PER_TENANT_KEY, DEFAULT_IDEMPOTENCY_MAX_KEYS_PER_TENANT);
         }
 
         public Optional<String> consentProviderName() {
@@ -257,25 +359,93 @@ public final class Aep {
             }
             return Optional.empty();
         }
+
+        public long asyncTimeoutMs() {
+            return longConfig(ASYNC_TIMEOUT_MS_KEY, DEFAULT_ASYNC_TIMEOUT_MS);
+        }
+
+        public boolean rateLimitEnabled() {
+            Object raw = customConfig.get(RATE_LIMIT_ENABLED_KEY);
+            return raw instanceof Boolean value ? value : false;
+        }
+
+        public int rateLimitMaxRequestsPerMinute() {
+            return intConfig(RATE_LIMIT_MAX_REQUESTS_PER_MINUTE_KEY, DEFAULT_RATE_LIMIT_MAX_REQUESTS_PER_MINUTE);
+        }
+
+        public int rateLimitBurstSize() {
+            return intConfig(RATE_LIMIT_BURST_SIZE_KEY, DEFAULT_RATE_LIMIT_BURST_SIZE);
+        }
+
+        public long rateLimitWindowSeconds() {
+            return longConfig(RATE_LIMIT_WINDOW_SECONDS_KEY, DEFAULT_RATE_LIMIT_WINDOW_SECONDS);
+        }
+
+        public long consentCacheTtlSeconds() {
+            return longConfig(CONSENT_CACHE_TTL_SECONDS_KEY, DEFAULT_CONSENT_CACHE_TTL_SECONDS);
+        }
+
+        public int consentCacheMaxEntries() {
+            return intConfig(CONSENT_CACHE_MAX_ENTRIES_KEY, DEFAULT_CONSENT_CACHE_MAX_ENTRIES);
+        }
+
+        public long patternCacheTtlSeconds() {
+            return longConfig(PATTERN_CACHE_TTL_SECONDS_KEY, DEFAULT_PATTERN_CACHE_TTL_SECONDS);
+        }
+
+        public long shutdownDrainTimeoutMs() {
+            return longConfig(SHUTDOWN_DRAIN_TIMEOUT_MS_KEY, DEFAULT_SHUTDOWN_DRAIN_TIMEOUT_MS);
+        }
+
+        public Optional<Path> hotReloadConfigPath() {
+            Object raw = customConfig.get(HOT_RELOAD_CONFIG_PATH_KEY);
+            if (raw instanceof String value && !value.isBlank()) {
+                return Optional.of(Path.of(value));
+            }
+            return Optional.empty();
+        }
+
+        public long hotReloadCheckIntervalMs() {
+            return longConfig(HOT_RELOAD_CHECK_INTERVAL_MS_KEY, DEFAULT_HOT_RELOAD_CHECK_INTERVAL_MS);
+        }
+
+        public String currentEventVersion() {
+            Object raw = customConfig.get(CURRENT_EVENT_VERSION_KEY);
+            if (raw instanceof String value && !value.isBlank()) {
+                return value;
+            }
+            return DEFAULT_EVENT_VERSION;
+        }
+
+        public String minSupportedEventVersion() {
+            Object raw = customConfig.get(MIN_SUPPORTED_EVENT_VERSION_KEY);
+            if (raw instanceof String value && !value.isBlank()) {
+                return value;
+            }
+            return DEFAULT_MIN_SUPPORTED_EVENT_VERSION;
+        }
+
+        private int intConfig(String key, int defaultValue) {
+            Object raw = customConfig.get(key);
+            if (raw instanceof Number number && number.intValue() > 0) {
+                return number.intValue();
+            }
+            return defaultValue;
+        }
+
+        private long longConfig(String key, long defaultValue) {
+            Object raw = customConfig.get(key);
+            if (raw instanceof Number number && number.longValue() > 0L) {
+                return number.longValue();
+            }
+            return defaultValue;
+        }
     }
 
     // ==================== Default Implementation ====================
 
     /**
      * Default AEP engine implementation.
-     *
-     * <p>Fixes addressed in this implementation:
-     * <ul>
-     *   <li>AEP-005: Event delivery to external systems via {@link EventDeliveryService}</li>
-     *   <li>AEP-006: Full consent enforcement via {@link ConsentService}</li>
-     *   <li>AEP-009: Identity resolution delegated cleanly; no duplicate logic</li>
-     *   <li>AEP-011: Idempotency key tracking to deduplicate repeated events</li>
-     *   <li>AEP-012: {@link EventAttributeExtractor} centralises header/payload extraction</li>
-     *   <li>AEP-013: Tenant isolation enforced on pattern registration and lookup</li>
-     *   <li>AEP-014: Basic pipeline execution (sequential step processing)</li>
-     *   <li>AEP-016: Sequence pattern enforces event timestamp ordering</li>
-     *   <li>AEP-017: Subscriber failures tracked via dead-letter queue logging</li>
-     * </ul>
      */
     private static class DefaultAepEngine implements AepEngine {
         private final EventCloud eventCloud;
@@ -284,17 +454,28 @@ public final class Aep {
         private final ConsentService consentService;
         private final EventDeliveryService deliveryService;
         private final EventSchemaValidator schemaValidator = new EventSchemaValidator();
+        private final AepMetricsCollector metrics;
+        private final EventVersionCompatibility versionCompatibility;
+        private final AepPatternCache patternCache;
+        private final GracefulShutdownCoordinator shutdownCoordinator;
+        private final AepHealthIndicator healthIndicator;
+        private final Optional<AepConfigReloadBridge> reloadBridge;
+        private final AtomicReference<AepRateLimiter> rateLimiter;
+        private final AtomicReference<AepConsentCache> consentCache;
+        private final AtomicReference<Duration> asyncTimeout;
+        private final AtomicReference<Double> anomalyThreshold;
+        private final AtomicReference<Boolean> tracingEnabled;
+        private final AtomicReference<Boolean> rateLimitEnabled;
+        private final AtomicReference<Integer> rateLimitMaxRequestsPerMinute;
+        private final AtomicReference<Integer> rateLimitBurstSize;
+        private final AtomicReference<Long> rateLimitWindowSeconds;
+        private final AtomicReference<Long> consentCacheTtlSeconds;
 
-        // Tenant-isolated pattern registry: tenantId -> patternId -> Pattern
         private final Map<String, Map<String, AepEngine.Pattern>> patternsByTenant = new ConcurrentHashMap<>();
-        // Tenant-isolated subscription registry: tenantId -> list of entries
         private final Map<String, List<SubscriptionEntry>> subscriptionsByTenant = new ConcurrentHashMap<>();
-        // Sequence progress: tenantId -> patternId -> correlationKey -> (progress, lastEventTime)
         private final Map<String, Map<String, Map<String, SequenceProgress>>> sequenceProgressByTenant =
             new ConcurrentHashMap<>();
-        // Idempotency tracking: tenantId -> idempotencyKey -> first-seen processing time
         private final Map<String, Map<String, Instant>> seenIdempotencyKeysByTenant = new ConcurrentHashMap<>();
-        // Subscriber failure tracking: tenantId -> patternId -> failureCount
         private final Map<String, Map<String, Long>> subscriberFailureCountByTenant = new ConcurrentHashMap<>();
 
         private volatile boolean closed = false;
@@ -308,91 +489,82 @@ public final class Aep {
             this.forecastingEngine = Objects.requireNonNull(forecastingEngine, "forecastingEngine required");
             this.consentService = Objects.requireNonNull(consentService, "consentService required");
             this.deliveryService = Objects.requireNonNull(deliveryService, "deliveryService required");
+            this.metrics = config.enableMetrics() ? AepMetricsCollector.create() : AepMetricsCollector.noop();
+            this.versionCompatibility = EventVersionCompatibility.builder()
+                .currentVersion(config.currentEventVersion())
+                .minSupportedVersion(config.minSupportedEventVersion())
+                .build();
+            this.patternCache = AepPatternCache.builder()
+                .ttl(Duration.ofSeconds(config.patternCacheTtlSeconds()))
+                .build();
+            this.asyncTimeout = new AtomicReference<>(Duration.ofMillis(config.asyncTimeoutMs()));
+            this.anomalyThreshold = new AtomicReference<>(config.anomalyThreshold());
+            this.tracingEnabled = new AtomicReference<>(config.enableTracing());
+            this.rateLimitEnabled = new AtomicReference<>(config.rateLimitEnabled());
+            this.rateLimitMaxRequestsPerMinute = new AtomicReference<>(config.rateLimitMaxRequestsPerMinute());
+            this.rateLimitBurstSize = new AtomicReference<>(config.rateLimitBurstSize());
+            this.rateLimitWindowSeconds = new AtomicReference<>(config.rateLimitWindowSeconds());
+            this.consentCacheTtlSeconds = new AtomicReference<>(config.consentCacheTtlSeconds());
+            this.rateLimiter = new AtomicReference<>(buildRateLimiter());
+            this.consentCache = new AtomicReference<>(buildConsentCache());
+            this.shutdownCoordinator = GracefulShutdownCoordinator.builder()
+                .componentName("aep-engine-" + config.instanceId())
+                .drainTimeout(Duration.ofMillis(config.shutdownDrainTimeoutMs()))
+                .build();
+            this.shutdownCoordinator.registerShutdownHook();
+            this.healthIndicator = AepHealthIndicator.builder()
+                .engineClosed(() -> closed)
+                .degradeIfErrorRateExceeds(0.10)
+                .build();
+            registerHealthCheck();
+            this.reloadBridge = createReloadBridge();
+            this.reloadBridge.ifPresent(bridge -> {
+                bridge.addListener(this::applyRuntimeTuning);
+                bridge.start();
+            });
         }
 
         @Override
         public Promise<AepEngine.ProcessingResult> process(String tenantId, AepEngine.Event event) {
             checkNotClosed();
-            Objects.requireNonNull(tenantId, "tenantId must not be null");
+            requireTenantId(tenantId);
             Objects.requireNonNull(event, "event must not be null");
-            String eventId = UUID.randomUUID().toString();
+            validateEventTenantContext(tenantId, event);
 
-            // AEP-002: Schema validation
-            EventSchemaValidator.ValidationResult schemaResult = schemaValidator.validate(event);
-            if (!schemaResult.isValid()) {
-                logger.warn("Event schema validation failed for tenant={}, eventId={}: {}",
-                    tenantId, eventId, schemaResult.summary());
-                return Promise.of(AepEngine.ProcessingResult.failed(eventId,
-                    "Schema validation failed: " + schemaResult.summary()));
-            }
+            AepEngine.Event correlatedEvent = AepTraceContext.ensureCorrelationId(event);
+            String fallbackEventId = UUID.randomUUID().toString();
+            Instant startedAt = Instant.now();
+            GracefulShutdownCoordinator.OperationTicket operationTicket =
+                shutdownCoordinator.beginOperation("process");
 
-            // AEP-011: Idempotency check
-            Optional<String> idempotencyKey = event.idempotencyKey();
-            if (idempotencyKey.isPresent()) {
-                Instant now = Instant.now();
-                Map<String, Instant> seen = seenIdempotencyKeysByTenant
-                    .computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>());
-                purgeExpiredIdempotencyKeys(seen, now);
-                if (seen.putIfAbsent(idempotencyKey.get(), now) != null) {
-                    logger.debug("Duplicate event suppressed by idempotency key={} for tenant={}",
-                        idempotencyKey.get(), tenantId);
-                    return Promise.of(AepEngine.ProcessingResult.skipped(eventId,
-                        "Duplicate event suppressed: idempotencyKey=" + idempotencyKey.get()));
-                }
-                trimIdempotencyKeysToBudget(seen);
-            }
+            Promise<AepEngine.ProcessingResult> processingPromise = processingPipeline(
+                tenantId, correlatedEvent, fallbackEventId);
 
-            // Resolve identity and consent
-            AepEngine.Event normalizedEvent = resolveConsent(resolveIdentity(event));
+            Promise<AepEngine.ProcessingResult> contextualPromise = tracingEnabled.get()
+                ? AepTraceContext.withEventContext(tenantId, correlatedEvent, () -> processingPromise)
+                : processingPromise;
 
-            // AEP-006: Delegate consent enforcement to ConsentService
-            return consentService.evaluateConsent(tenantId, normalizedEvent)
-                .then(decision -> {
-                    if (!decision.allowed()) {
-                        return Promise.of(AepEngine.ProcessingResult.skipped(eventId,
-                            "Event rejected by consent policy"));
+            return contextualPromise
+                .whenResult(result -> {
+                    recordOutcomeMetrics(tenantId, result, startedAt);
+                    if (isFailureResult(result)) {
+                        healthIndicator.recordFailure();
+                    } else {
+                        healthIndicator.recordSuccess();
                     }
-
-                    // Process through registered patterns
-                    List<AepEngine.Detection> detections = new ArrayList<>();
-                    Map<String, AepEngine.Pattern> patterns =
-                        patternsByTenant.getOrDefault(tenantId, Map.of());
-
-                    for (AepEngine.Pattern pattern : patterns.values()) {
-                        Optional<AepEngine.Detection> detection =
-                            matchPattern(tenantId, pattern, normalizedEvent);
-                        detection.ifPresent(detections::add);
-                    }
-
-                    // AEP-017: Notify subscribers with enhanced failure tracking
-                    notifySubscribers(tenantId, detections);
-
-                    // AEP-005: Deliver event to external destinations asynchronously
-                    return deliveryService.deliver(tenantId, normalizedEvent, detections)
-                        .map(deliveryResult -> {
-                            Map<String, Object> metadata = new LinkedHashMap<>();
-                            metadata.put("processed", true);
-                            metadata.put("consentStatus",
-                                normalizedEvent.consentContext().status().name());
-                            normalizedEvent.identityContext().stitchedId()
-                                .ifPresent(stitchedId -> metadata.put("stitchedId", stitchedId));
-                            if (deliveryResult.hasFailures()) {
-                                metadata.put("deliveryFailures", deliveryResult.failed());
-                                metadata.put("deliveryFailureCategories", deliveryResult.failureDetails().entrySet().stream()
-                                    .collect(java.util.stream.Collectors.toMap(
-                                        Map.Entry::getKey,
-                                        entry -> entry.getValue().category().name())));
-                            }
-                            return new AepEngine.ProcessingResult(eventId, true, detections, metadata);
-                        });
-                });
+                })
+                .whenException(error -> {
+                    metrics.incrementEventsFailed(tenantId);
+                    metrics.recordEventProcessingTime(tenantId, elapsedMs(startedAt));
+                    healthIndicator.recordFailure();
+                })
+                .whenComplete(($, $$) -> operationTicket.close());
         }
 
-        // AEP-014: Basic pipeline execution — runs steps sequentially
         @Override
         public void submitPipeline(String tenantId, AepEngine.Pipeline pipeline) {
             checkNotClosed();
-            Objects.requireNonNull(tenantId, "tenantId must not be null");
+            requireTenantId(tenantId);
             Objects.requireNonNull(pipeline, "pipeline must not be null");
             logger.info("Submitting pipeline id={} name='{}' with {} steps for tenant={}",
                 pipeline.id(), pipeline.name(), pipeline.steps().size(), tenantId);
@@ -403,44 +575,21 @@ public final class Aep {
                 } catch (Exception e) {
                     logger.error("Pipeline step type={} failed in pipeline={} for tenant={}: {}",
                         step.type(), pipeline.id(), tenantId, e.getMessage(), e);
-                    // Continue with remaining steps; callers observe step failures via logging.
                 }
-            }
-        }
-
-        private void executePipelineStep(String tenantId, String pipelineId,
-                                          AepEngine.PipelineStep step) {
-            logger.debug("Executing pipeline step type={} in pipeline={} for tenant={}",
-                step.type(), pipelineId, tenantId);
-            switch (step.type().toLowerCase(Locale.ROOT)) {
-                case PipelineStepTypes.REGISTER_PATTERN -> {
-                    String name = asString(step.config().get("name"));
-                    String typeStr = asString(step.config().get("patternType"));
-                    if (name == null || typeStr == null) {
-                        logger.warn("{} step missing name or patternType config",
-                            PipelineStepTypes.REGISTER_PATTERN);
-                        return;
-                    }
-                    AepEngine.PatternType patternType =
-                        AepEngine.PatternType.valueOf(typeStr.toUpperCase(Locale.ROOT));
-                    registerPattern(tenantId, new AepEngine.PatternDefinition(
-                        name, asString(step.config().get("description")), patternType, step.config()
-                    ));
-                }
-                case PipelineStepTypes.LOG -> logger.info("[Pipeline {}][{}] {}",
-                    pipelineId, step.type(), step.config().get("message"))
-                ;
-                default -> logger.debug("Unknown pipeline step type={} — no handler registered, skipping",
-                    step.type());
             }
         }
 
         @Override
         public AepEngine.Subscription subscribe(String tenantId, String patternId,
-                                                 Consumer<AepEngine.Detection> handler) {
+                                                Consumer<AepEngine.Detection> handler) {
             checkNotClosed();
+            requireTenantId(tenantId);
+            Objects.requireNonNull(handler, "handler must not be null");
+            Objects.requireNonNull(patternId, "patternId must not be null");
+            validatePatternAccess(tenantId, patternId, false);
+
             SubscriptionEntry entry = new SubscriptionEntry(patternId, handler);
-            subscriptionsByTenant.computeIfAbsent(tenantId, k -> new ArrayList<>()).add(entry);
+            subscriptionsByTenant.computeIfAbsent(tenantId, ignored -> new CopyOnWriteArrayList<>()).add(entry);
 
             return new AepEngine.Subscription() {
                 private volatile boolean cancelled = false;
@@ -460,10 +609,11 @@ public final class Aep {
 
         @Override
         public Promise<AepEngine.Pattern> registerPattern(String tenantId,
-                                                           AepEngine.PatternDefinition definition) {
+                                                          AepEngine.PatternDefinition definition) {
             checkNotClosed();
-            Objects.requireNonNull(tenantId, "tenantId must not be null");
+            requireTenantId(tenantId);
             Objects.requireNonNull(definition, "definition must not be null");
+            validatePatternDefinitionTenant(tenantId, definition);
 
             AepEngine.Pattern pattern = new AepEngine.Pattern(
                 UUID.randomUUID().toString(),
@@ -471,11 +621,14 @@ public final class Aep {
                 definition.description(),
                 definition.type(),
                 definition.config(),
-                java.time.Instant.now()
+                Instant.now()
             );
 
-            patternsByTenant.computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>())
-                .put(pattern.id(), pattern);
+            Map<String, AepEngine.Pattern> patterns = patternsByTenant.computeIfAbsent(
+                tenantId, ignored -> new ConcurrentHashMap<>());
+            patterns.put(pattern.id(), pattern);
+            patternCache.put(tenantId, patterns.values());
+            metrics.gaugeActivePatterns(tenantId, patterns.size());
 
             return Promise.of(pattern);
         }
@@ -483,29 +636,34 @@ public final class Aep {
         @Override
         public Promise<Optional<AepEngine.Pattern>> getPattern(String tenantId, String patternId) {
             checkNotClosed();
-            // AEP-013: Only return patterns that belong to this tenantId
-            Map<String, AepEngine.Pattern> patterns = patternsByTenant.getOrDefault(tenantId, Map.of());
-            return Promise.of(Optional.ofNullable(patterns.get(patternId)));
+            requireTenantId(tenantId);
+            validatePatternAccess(tenantId, patternId, false);
+            return Promise.of(Optional.ofNullable(
+                patternsByTenant.getOrDefault(tenantId, Map.of()).get(patternId)));
         }
 
         @Override
         public Promise<List<AepEngine.Pattern>> listPatterns(String tenantId) {
             checkNotClosed();
-            Map<String, AepEngine.Pattern> patterns = patternsByTenant.getOrDefault(tenantId, Map.of());
-            return Promise.of(new ArrayList<>(patterns.values()));
+            requireTenantId(tenantId);
+            return Promise.of(patternCache.get(tenantId,
+                () -> new ArrayList<>(patternsByTenant.getOrDefault(tenantId, Map.of()).values())));
         }
 
         @Override
         public Promise<Void> deletePattern(String tenantId, String patternId) {
             checkNotClosed();
-            // AEP-013: Only delete patterns in this tenant's registry
+            requireTenantId(tenantId);
+            validatePatternAccess(tenantId, patternId, false);
+
             Map<String, AepEngine.Pattern> patterns = patternsByTenant.get(tenantId);
             if (patterns != null) {
                 patterns.remove(patternId);
+                patternCache.put(tenantId, patterns.values());
+                metrics.gaugeActivePatterns(tenantId, patterns.size());
             }
-            // Clean up sequence progress for this pattern
-            Map<String, Map<String, SequenceProgress>> tenantSeq =
-                sequenceProgressByTenant.get(tenantId);
+
+            Map<String, Map<String, SequenceProgress>> tenantSeq = sequenceProgressByTenant.get(tenantId);
             if (tenantSeq != null) {
                 tenantSeq.remove(patternId);
             }
@@ -514,13 +672,14 @@ public final class Aep {
 
         @Override
         public Promise<List<AepEngine.Anomaly>> detectAnomalies(String tenantId,
-                                                                  List<AepEngine.Event> events) {
+                                                                List<AepEngine.Event> events) {
             checkNotClosed();
+            requireTenantId(tenantId);
             List<AepEngine.Anomaly> anomalies = new ArrayList<>();
             for (AepEngine.Event event : events) {
-                if (isAnomalous(event, config.anomalyThreshold())) {
+                if (isAnomalous(event, anomalyThreshold.get())) {
                     double score = ((Number) event.payload().getOrDefault(
-                        "anomaly_score", config.anomalyThreshold())).doubleValue();
+                        "anomaly_score", anomalyThreshold.get())).doubleValue();
                     anomalies.add(new AepEngine.Anomaly(
                         UUID.randomUUID().toString(),
                         "THRESHOLD_EXCEEDED",
@@ -535,12 +694,26 @@ public final class Aep {
         @Override
         public Promise<AepEngine.Forecast> forecast(String tenantId, AepEngine.TimeSeriesData data) {
             checkNotClosed();
-            return forecastingEngine.forecast(tenantId, data);
+            requireTenantId(tenantId);
+            return AepAsyncUtils.withTimeout(
+                forecastingEngine.forecast(tenantId, data),
+                asyncTimeout.get(),
+                "forecast"
+            );
         }
 
         @Override
         public void close() {
+            if (closed) {
+                return;
+            }
             closed = true;
+            shutdownCoordinator.close();
+            reloadBridge.ifPresent(AepConfigReloadBridge::close);
+            unregisterHealthCheck();
+            patternCache.clear();
+            consentCache.get().clear();
+            rateLimiter.get().resetAll();
             patternsByTenant.clear();
             subscriptionsByTenant.clear();
             sequenceProgressByTenant.clear();
@@ -553,12 +726,331 @@ public final class Aep {
             return eventCloud;
         }
 
-        // ── Internal helpers ────────────────────────────────────────────────
+        private Promise<AepEngine.ProcessingResult> processingPipeline(String tenantId,
+                                                                       AepEngine.Event event,
+                                                                       String fallbackEventId) {
+            return AepErrorHandler.run(tenantId, "event.process", () -> {
+                AepRateLimiter.RateLimitDecision rateLimitDecision = rateLimiter.get().tryAcquire(tenantId);
+                if (!rateLimitDecision.allowed()) {
+                    metrics.incrementRateLimited(tenantId);
+                    return Promise.of(AepEngine.ProcessingResult.skipped(
+                        fallbackEventId,
+                        "Rate limited; retry after " + rateLimitDecision.retryAfterSeconds() + "s"
+                    ));
+                }
+
+                Optional<AepEngine.ProcessingResult> duplicateResult = duplicateEventResult(tenantId, event, fallbackEventId);
+                if (duplicateResult.isPresent()) {
+                    metrics.incrementIdempotencyHits(tenantId);
+                    return Promise.of(duplicateResult.get());
+                }
+
+                AepEngine.Event compatibleEvent;
+                try {
+                    compatibleEvent = versionCompatibility.migrate(tenantId, event);
+                } catch (RuntimeException exception) {
+                    return Promise.of(AepEngine.ProcessingResult.failed(fallbackEventId, exception.getMessage()));
+                }
+
+                if (!Objects.equals(event.version(), compatibleEvent.version())) {
+                    metrics.incrementVersionMigrations(tenantId, event.version());
+                }
+
+                EventSchemaValidator.ValidationResult schemaResult = schemaValidator.validate(compatibleEvent);
+                if (!schemaResult.isValid()) {
+                    metrics.incrementSchemaViolations(tenantId);
+                    return Promise.of(AepEngine.ProcessingResult.failed(
+                        fallbackEventId,
+                        "Schema validation failed: " + schemaResult.summary()
+                    ));
+                }
+
+                AepEngine.Event normalizedEvent = resolveConsent(resolveIdentity(compatibleEvent));
+                String eventId = appendToEventCloud(tenantId, normalizedEvent, fallbackEventId);
+
+                Instant consentStartedAt = Instant.now();
+                return evaluateConsent(tenantId, normalizedEvent)
+                    .then(decision -> {
+                        metrics.recordConsentEvalTime(tenantId, elapsedMs(consentStartedAt));
+                        if (!decision.allowed()) {
+                            metrics.incrementConsentDenied(tenantId);
+                            return Promise.of(AepEngine.ProcessingResult.skipped(
+                                eventId,
+                                "Event rejected by consent policy"
+                            ));
+                        }
+
+                        metrics.incrementConsentAllowed(tenantId);
+                        Instant patternStartedAt = Instant.now();
+                        List<AepEngine.Detection> detections = new ArrayList<>();
+                        List<AepEngine.Pattern> patterns = patternCache.get(tenantId,
+                            () -> new ArrayList<>(patternsByTenant.getOrDefault(tenantId, Map.of()).values()));
+                        for (AepEngine.Pattern pattern : patterns) {
+                            Optional<AepEngine.Detection> detection = matchPattern(tenantId, pattern, normalizedEvent);
+                            detection.ifPresent(found -> {
+                                detections.add(found);
+                                metrics.incrementPatternsMatched(tenantId, found.patternId());
+                            });
+                        }
+                        metrics.recordPatternMatchTime(tenantId, elapsedMs(patternStartedAt));
+
+                        notifySubscribers(tenantId, detections);
+
+                        Instant deliveryStartedAt = Instant.now();
+                        return AepAsyncUtils.withTimeout(
+                                deliveryService.deliver(tenantId, normalizedEvent, detections),
+                                asyncTimeout.get(),
+                                "delivery")
+                            .map(deliveryResult -> {
+                                metrics.recordDeliveryTime(tenantId, elapsedMs(deliveryStartedAt));
+                                if (deliveryResult.hasFailures()) {
+                                    metrics.incrementDeliveryFailed(tenantId);
+                                } else {
+                                    metrics.incrementDeliverySuccess(tenantId);
+                                }
+
+                                Map<String, Object> metadata = new LinkedHashMap<>();
+                                metadata.put("processed", true);
+                                metadata.put("correlationId", normalizedEvent.correlationId());
+                                metadata.put("consentStatus", normalizedEvent.consentContext().status().name());
+                                metadata.put("eventVersion", normalizedEvent.version());
+                                normalizedEvent.identityContext().stitchedId()
+                                    .ifPresent(stitchedId -> metadata.put("stitchedId", stitchedId));
+                                if (deliveryResult.hasFailures()) {
+                                    metadata.put("deliveryFailures", deliveryResult.failed());
+                                    metadata.put("deliveryFailureCategories", deliveryResult.failureDetails().entrySet().stream()
+                                        .collect(java.util.stream.Collectors.toMap(
+                                            Map.Entry::getKey,
+                                            entry -> entry.getValue().category().name())));
+                                }
+                                return new AepEngine.ProcessingResult(eventId, true, detections, metadata);
+                            });
+                    });
+            });
+        }
+
+        private void executePipelineStep(String tenantId, String pipelineId,
+                                         AepEngine.PipelineStep step) {
+            logger.debug("Executing pipeline step type={} in pipeline={} for tenant={}",
+                step.type(), pipelineId, tenantId);
+            switch (step.type().toLowerCase(Locale.ROOT)) {
+                case PipelineStepTypes.REGISTER_PATTERN -> {
+                    String name = asString(step.config().get("name"));
+                    String typeStr = asString(step.config().get("patternType"));
+                    if (name == null || typeStr == null) {
+                        logger.warn("{} step missing name or patternType config",
+                            PipelineStepTypes.REGISTER_PATTERN);
+                        return;
+                    }
+                    AepEngine.PatternType patternType =
+                        AepEngine.PatternType.valueOf(typeStr.toUpperCase(Locale.ROOT));
+                    registerPattern(tenantId, new AepEngine.PatternDefinition(
+                        name, asString(step.config().get("description")), patternType, step.config()
+                    ));
+                }
+                case PipelineStepTypes.LOG -> logger.info("[Pipeline {}][{}] {}",
+                    pipelineId, step.type(), step.config().get("message"));
+                default -> logger.debug("Unknown pipeline step type={} - no handler registered, skipping",
+                    step.type());
+            }
+        }
+
+        private Optional<AepEngine.ProcessingResult> duplicateEventResult(String tenantId,
+                                                                          AepEngine.Event event,
+                                                                          String fallbackEventId) {
+            Optional<String> idempotencyKey = event.idempotencyKey();
+            if (idempotencyKey.isEmpty()) {
+                return Optional.empty();
+            }
+
+            Instant now = Instant.now();
+            Map<String, Instant> seen = seenIdempotencyKeysByTenant
+                .computeIfAbsent(tenantId, ignored -> new ConcurrentHashMap<>());
+            purgeExpiredIdempotencyKeys(seen, now);
+            if (seen.putIfAbsent(idempotencyKey.get(), now) != null) {
+                return Optional.of(AepEngine.ProcessingResult.skipped(
+                    fallbackEventId,
+                    "Duplicate event suppressed: idempotencyKey=" + idempotencyKey.get()));
+            }
+            trimIdempotencyKeysToBudget(seen);
+            return Optional.empty();
+        }
+
+        private Promise<ConsentService.ConsentDecision> evaluateConsent(String tenantId, AepEngine.Event event) {
+            Optional<ConsentService.ConsentDecision> cachedDecision = consentCache.get().get(tenantId, event);
+            if (cachedDecision.isPresent()) {
+                metrics.incrementConsentCacheHit(tenantId);
+                return Promise.of(cachedDecision.get());
+            }
+
+            metrics.incrementConsentCacheMiss(tenantId);
+            return AepAsyncUtils.withTimeout(
+                    consentService.evaluateConsent(tenantId, event),
+                    asyncTimeout.get(),
+                    "consent.eval")
+                .map(decision -> {
+                    consentCache.get().put(tenantId, event, decision);
+                    return decision;
+                });
+        }
+
+        private String appendToEventCloud(String tenantId, AepEngine.Event event, String fallbackEventId) {
+            try {
+                byte[] payload = serializeEvent(event);
+                return eventCloud.append(tenantId, event.type(), payload);
+            } catch (RuntimeException exception) {
+                throw exception;
+            } catch (Exception exception) {
+                throw new IllegalStateException("Failed to append event to event cloud for tenant=" + tenantId,
+                    exception);
+            }
+        }
+
+        private byte[] serializeEvent(AepEngine.Event event) throws JsonProcessingException {
+            Map<String, Object> envelope = new LinkedHashMap<>();
+            envelope.put("type", event.type());
+            envelope.put("payload", event.payload());
+            envelope.put("headers", event.headers());
+            envelope.put("timestamp", event.timestamp().toString());
+            envelope.put("version", event.version());
+            envelope.put("correlationId", event.correlationId());
+            return OBJECT_MAPPER.writeValueAsBytes(envelope);
+        }
+
+        private void recordOutcomeMetrics(String tenantId,
+                                          AepEngine.ProcessingResult result,
+                                          Instant startedAt) {
+            if (isFailureResult(result)) {
+                metrics.incrementEventsFailed(tenantId);
+            } else if (isSkippedResult(result)) {
+                metrics.incrementEventsSkipped(tenantId);
+            } else {
+                metrics.incrementEventsProcessed(tenantId);
+            }
+            metrics.recordEventProcessingTime(tenantId, elapsedMs(startedAt));
+        }
+
+        private boolean isFailureResult(AepEngine.ProcessingResult result) {
+            return Boolean.TRUE.equals(result.metadata().get("failed"));
+        }
+
+        private boolean isSkippedResult(AepEngine.ProcessingResult result) {
+            return Boolean.TRUE.equals(result.metadata().get("skipped"));
+        }
+
+        private void registerHealthCheck() {
+            try {
+                HealthCheckRegistry.getInstance().register(healthIndicator);
+            } catch (IllegalStateException ignored) {
+                logger.debug("HealthCheckRegistry not initialized; skipping AEP health registration");
+            }
+        }
+
+        private void unregisterHealthCheck() {
+            try {
+                HealthCheckRegistry.getInstance().unregister(healthIndicator.getName());
+            } catch (IllegalStateException ignored) {
+                logger.debug("HealthCheckRegistry not initialized during AEP shutdown");
+            }
+        }
+
+        private Optional<AepConfigReloadBridge> createReloadBridge() {
+            return config.hotReloadConfigPath().map(path -> AepConfigReloadBridge.builder()
+                .configPath(path)
+                .checkIntervalMs(config.hotReloadCheckIntervalMs())
+                .build());
+        }
+
+        private void applyRuntimeTuning(AepConfigReloadBridge.RuntimeTuning tuning) {
+            tuning.anomalyThreshold().ifPresent(anomalyThreshold::set);
+            tuning.tracingEnabled().ifPresent(tracingEnabled::set);
+            tuning.asyncTimeout().ifPresent(asyncTimeout::set);
+            tuning.rateLimitEnabled().ifPresent(rateLimitEnabled::set);
+            tuning.rateLimitMaxRequestsPerMinute().ifPresent(rateLimitMaxRequestsPerMinute::set);
+            tuning.rateLimitBurstSize().ifPresent(rateLimitBurstSize::set);
+            tuning.consentCacheTtl().ifPresent(duration -> consentCacheTtlSeconds.set(duration.getSeconds()));
+            rateLimiter.set(buildRateLimiter());
+            consentCache.set(buildConsentCache());
+        }
+
+        private AepRateLimiter buildRateLimiter() {
+            return AepRateLimiter.builder()
+                .enabled(rateLimitEnabled.get())
+                .maxRequestsPerMinute(rateLimitMaxRequestsPerMinute.get())
+                .burstSize(rateLimitBurstSize.get())
+                .windowDuration(Duration.ofSeconds(rateLimitWindowSeconds.get()))
+                .build();
+        }
+
+        private AepConsentCache buildConsentCache() {
+            return AepConsentCache.builder()
+                .ttl(Duration.ofSeconds(consentCacheTtlSeconds.get()))
+                .maxEntries(config.consentCacheMaxEntries())
+                .build();
+        }
 
         private void checkNotClosed() {
-            if (closed) {
+            if (closed || shutdownCoordinator.isShutdownRequested()) {
                 throw new IllegalStateException("AepEngine is closed");
             }
+        }
+
+        private void requireTenantId(String tenantId) {
+            Objects.requireNonNull(tenantId, "tenantId must not be null");
+            if (tenantId.isBlank()) {
+                throw new IllegalArgumentException("tenantId must not be blank");
+            }
+        }
+
+        private void validateEventTenantContext(String tenantId, AepEngine.Event event) {
+            String eventTenantId = firstNonBlank(
+                event.headers().get("tenantId"),
+                event.headers().get("x-tenant-id"),
+                asString(event.payload().get("tenantId"))
+            );
+            if (eventTenantId != null && !tenantId.equals(eventTenantId)) {
+                throw new AepTenantException(tenantId, "event.process",
+                    "Cross-tenant event access rejected for tenantId=" + eventTenantId);
+            }
+        }
+
+        private void validatePatternDefinitionTenant(String tenantId, AepEngine.PatternDefinition definition) {
+            String configuredTenantId = asString(definition.config().get("tenantId"));
+            if (configuredTenantId != null && !configuredTenantId.equals(tenantId)) {
+                throw new AepTenantException(tenantId, "pattern.register",
+                    "Pattern definition tenantId does not match owning tenant");
+            }
+        }
+
+        private void validatePatternAccess(String tenantId, String patternId, boolean requireOwnedPattern) {
+            Objects.requireNonNull(patternId, "patternId must not be null");
+            if ("*".equals(patternId)) {
+                return;
+            }
+            if (patternId.isBlank()) {
+                throw new IllegalArgumentException("patternId must not be blank");
+            }
+
+            Map<String, AepEngine.Pattern> tenantPatterns = patternsByTenant.getOrDefault(tenantId, Map.of());
+            if (tenantPatterns.containsKey(patternId)) {
+                return;
+            }
+
+            Optional<String> owningTenant = findOwningTenant(patternId);
+            if (owningTenant.isPresent() && !owningTenant.get().equals(tenantId)) {
+                throw new AepTenantException(tenantId, "pattern.access",
+                    "Pattern belongs to a different tenant: " + owningTenant.get());
+            }
+            if (requireOwnedPattern) {
+                throw new IllegalArgumentException("Pattern not found for tenant=" + tenantId + ": " + patternId);
+            }
+        }
+
+        private Optional<String> findOwningTenant(String patternId) {
+            return patternsByTenant.entrySet().stream()
+                .filter(entry -> entry.getValue().containsKey(patternId))
+                .map(Map.Entry::getKey)
+                .findFirst();
         }
 
         private void purgeExpiredIdempotencyKeys(Map<String, Instant> seenKeys, Instant now) {
@@ -581,7 +1073,7 @@ public final class Aep {
         }
 
         private Optional<AepEngine.Detection> matchPattern(String tenantId, AepEngine.Pattern pattern,
-                                                             AepEngine.Event event) {
+                                                           AepEngine.Event event) {
             return switch (pattern.type()) {
                 case THRESHOLD -> matchThreshold(pattern, event);
                 case ANOMALY -> matchAnomaly(pattern, event);
@@ -591,7 +1083,6 @@ public final class Aep {
             };
         }
 
-        // AEP-017: Enhanced subscriber notification with failure tracking
         private void notifySubscribers(String tenantId, List<AepEngine.Detection> detections) {
             List<SubscriptionEntry> subs = subscriptionsByTenant.getOrDefault(tenantId, List.of());
             for (AepEngine.Detection detection : detections) {
@@ -600,12 +1091,10 @@ public final class Aep {
                         try {
                             sub.handler.accept(detection);
                         } catch (Exception e) {
-                            // Track failure count per pattern for monitoring
                             long failures = subscriberFailureCountByTenant
-                                .computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>())
+                                .computeIfAbsent(tenantId, ignored -> new ConcurrentHashMap<>())
                                 .merge(detection.patternId(), 1L, Long::sum);
-                            logger.warn(
-                                "Subscriber failed for tenant={}, patternId={} (totalFailures={}): {}",
+                            logger.warn("Subscriber failed for tenant={}, patternId={} (totalFailures={}): {}",
                                 tenantId, detection.patternId(), failures, e.getMessage(), e);
                         }
                     }
@@ -613,7 +1102,6 @@ public final class Aep {
             }
         }
 
-        // AEP-012: Centralised identity extraction using EventAttributeExtractor utility
         private AepEngine.Event resolveIdentity(AepEngine.Event event) {
             String userId = firstNonBlank(
                 event.headers().get("x-user-id"),
@@ -630,7 +1118,6 @@ public final class Aep {
                 asString(event.payload().get("sessionId")),
                 asString(event.payload().get("session_id"))
             );
-            // Stitched ID: prefer explicit userId over anonymous/session fallback
             String stitchedId = firstNonBlank(userId, anonymousId, sessionId);
 
             return event.withIdentityContext(new AepEngine.IdentityContext(
@@ -641,7 +1128,6 @@ public final class Aep {
             ));
         }
 
-        // AEP-012: Centralised consent extraction using EventAttributeExtractor utility
         private AepEngine.Event resolveConsent(AepEngine.Event event) {
             AepEngine.ConsentStatus status = parseConsentStatus(firstNonBlank(
                 event.headers().get("x-consent-status"),
@@ -660,13 +1146,13 @@ public final class Aep {
         }
 
         private Optional<AepEngine.Detection> matchThreshold(AepEngine.Pattern pattern,
-                                                               AepEngine.Event event) {
+                                                             AepEngine.Event event) {
             String field = asString(pattern.config().get("field"));
             Number threshold = asNumber(pattern.config().get("threshold"));
             Number value = asNumber(field != null ? event.payload().get(field) : null);
 
             if (field == null || threshold == null || value == null
-                    || value.doubleValue() <= threshold.doubleValue()) {
+                || value.doubleValue() <= threshold.doubleValue()) {
                 return Optional.empty();
             }
 
@@ -678,10 +1164,11 @@ public final class Aep {
         }
 
         private Optional<AepEngine.Detection> matchAnomaly(AepEngine.Pattern pattern,
-                                                             AepEngine.Event event) {
+                                                           AepEngine.Event event) {
             Number overrideThreshold = asNumber(pattern.config().get("threshold"));
-            double threshold = overrideThreshold != null ? overrideThreshold.doubleValue()
-                : config.anomalyThreshold();
+            double threshold = overrideThreshold != null
+                ? overrideThreshold.doubleValue()
+                : anomalyThreshold.get();
             if (!isAnomalous(event, threshold)) {
                 return Optional.empty();
             }
@@ -691,10 +1178,9 @@ public final class Aep {
             ), 0.95));
         }
 
-        // AEP-016: Sequence matching with timestamp ordering enforcement
         private Optional<AepEngine.Detection> matchSequence(String tenantId,
-                                                              AepEngine.Pattern pattern,
-                                                              AepEngine.Event event) {
+                                                            AepEngine.Pattern pattern,
+                                                            AepEngine.Event event) {
             List<String> expectedTypes = asStringList(pattern.config().get("expectedTypes"));
             if (expectedTypes.isEmpty()) {
                 return Optional.empty();
@@ -706,15 +1192,14 @@ public final class Aep {
                     pattern.id());
                 return Optional.empty();
             }
+
             Map<String, Map<String, SequenceProgress>> tenantState =
-                sequenceProgressByTenant.computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>());
+                sequenceProgressByTenant.computeIfAbsent(tenantId, ignored -> new ConcurrentHashMap<>());
             Map<String, SequenceProgress> patternState =
-                tenantState.computeIfAbsent(pattern.id(), k -> new ConcurrentHashMap<>());
+                tenantState.computeIfAbsent(pattern.id(), ignored -> new ConcurrentHashMap<>());
 
             SequenceProgress current = patternState.getOrDefault(correlationKey,
-                new SequenceProgress(0, java.time.Instant.EPOCH));
-
-            // AEP-016: Reject out-of-order events (enforce temporal ordering)
+                new SequenceProgress(0, Instant.EPOCH));
             if (event.timestamp().isBefore(current.lastEventTime())) {
                 logger.debug("Out-of-order event ignored for sequence pattern={}: eventTime={} < lastEventTime={}",
                     pattern.id(), event.timestamp(), current.lastEventTime());
@@ -723,7 +1208,6 @@ public final class Aep {
 
             int progress = current.progress();
             String nextExpected = expectedTypes.get(progress);
-
             if (nextExpected.equals(event.type())) {
                 progress++;
             } else if (expectedTypes.get(0).equals(event.type())) {
@@ -746,7 +1230,7 @@ public final class Aep {
         }
 
         private Optional<AepEngine.Detection> matchCorrelation(AepEngine.Pattern pattern,
-                                                                 AepEngine.Event event) {
+                                                               AepEngine.Event event) {
             String eventType = asString(pattern.config().get("eventType"));
             List<String> requiredFields = asStringList(pattern.config().get("requiredFields"));
             if (eventType != null && !eventType.equals(event.type())) {
@@ -766,7 +1250,7 @@ public final class Aep {
         }
 
         private Optional<AepEngine.Detection> matchCustom(AepEngine.Pattern pattern,
-                                                            AepEngine.Event event) {
+                                                          AepEngine.Event event) {
             String expectedType = asString(pattern.config().get("eventType"));
             if (expectedType != null && !expectedType.equals(event.type())) {
                 return Optional.empty();
@@ -782,19 +1266,18 @@ public final class Aep {
                 }
             }
 
-            return Optional.of(buildDetection(pattern,
-                Map.of("eventType", event.type()), 0.8));
+            return Optional.of(buildDetection(pattern, Map.of("eventType", event.type()), 0.8));
         }
 
         private AepEngine.Detection buildDetection(AepEngine.Pattern pattern,
-                                                    Map<String, Object> details,
-                                                    double confidence) {
+                                                   Map<String, Object> details,
+                                                   double confidence) {
             return new AepEngine.Detection(
                 pattern.id(),
                 pattern.name(),
                 confidence,
                 details,
-                java.time.Instant.now()
+                Instant.now()
             );
         }
 
@@ -830,14 +1313,12 @@ public final class Aep {
             return event.identityContext().stitchedId().orElse(null);
         }
 
-        // ── Type conversion utilities (AEP-015: centralised to avoid duplication) ──
-
         private static String asString(Object value) {
             return value != null ? String.valueOf(value) : null;
         }
 
         private static String asNestedString(Map<String, Object> payload,
-                                              String parentKey, String childKey) {
+                                             String parentKey, String childKey) {
             Object parent = payload.get(parentKey);
             if (parent instanceof Map<?, ?> map) {
                 Object child = map.get(childKey);
@@ -898,11 +1379,14 @@ public final class Aep {
             }
         }
 
-        // ── Inner record types ────────────────────────────────────────────────
+        private static long elapsedMs(Instant startedAt) {
+            return Math.max(0L, Duration.between(startedAt, Instant.now()).toMillis());
+        }
 
-        private record SubscriptionEntry(String patternId, Consumer<AepEngine.Detection> handler) {}
+        private record SubscriptionEntry(String patternId, Consumer<AepEngine.Detection> handler) {
+        }
 
-        /** Tracks sequence pattern progress with temporal ordering. */
-        private record SequenceProgress(int progress, java.time.Instant lastEventTime) {}
+        private record SequenceProgress(int progress, Instant lastEventTime) {
+        }
     }
 }

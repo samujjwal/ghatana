@@ -12,6 +12,11 @@ image:
 config:
   logLevel: "WARN"
 
+# JVM heap aligned to 4Gi container limit: 75% = ~3Gi heap, leaving ~1Gi for off-heap.
+extraEnv:
+  - name: JAVA_TOOL_OPTIONS
+    value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError"
+
 resources:
   requests:
     cpu: "1"
@@ -26,6 +31,20 @@ autoscaling:
   maxReplicas: 20
   targetCPUUtilizationPercentage: 65
   targetMemoryUtilizationPercentage: 75
+  # Scale up quickly (2 pods/min), scale down conservatively (1 pod/5min).
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
 
 podDisruptionBudget:
   enabled: true
@@ -90,9 +109,9 @@ externalSecrets:
     name: data-cloud-vault-store
     kind: SecretStore
   vaultPaths:
-    db:         "data-cloud/production/db"
-    kafka:      "data-cloud/production/kafka"
+    db: "data-cloud/production/db"
+    kafka: "data-cloud/production/kafka"
     clickhouse: "data-cloud/production/clickhouse"
-    jwt:        "data-cloud/production/jwt"
+    jwt: "data-cloud/production/jwt"
   targetSecretName: data-cloud-secret
   deletionPolicy: Retain

@@ -16,6 +16,18 @@ info:
     - **Learning API** — policy extraction, human-review queue
     - **Analytics API** — ad-hoc ClickHouse-backed analytics queries
     - **Server-Sent Events** — real-time push for events, agents, and learning updates
+    - **WebSocket** — real-time change-data-capture notifications via `GET /ws`
+    - **AI Assist** — gracefully-degrading LLM hints for entities, analytics, pipelines, and brain
+    - **Voice Gateway** — voice intent resolution and classification
+    - **Data Lifecycle & Governance** — retention policies, PII redaction, compliance posture
+    - **AI/ML Model Registry & Feature Store** — model metadata and feature vector management
+    - **Reports** — analytical report generation and retrieval
+
+    ## WebSocket
+    The `/ws` endpoint accepts WebSocket upgrade requests and streams JSON change-data-capture
+    events (entity create / update / delete) scoped to the caller's `tenantId`. Connect with
+    a standard WebSocket client; no subprotocol is required. Each message is a JSON object with
+    `type`, `collection`, `id`, and `data` fields.
 
     ## Authentication
     All endpoints require a `tenantId` (query parameter or `X-Tenant-ID` header) to enforce
@@ -66,6 +78,18 @@ tags:
     description: Ad-hoc analytics queries backed by ClickHouse.
   - name: sse
     description: Server-Sent Event streams for real-time push.
+  - name: models
+    description: AI/ML model registry — register, query, and promote model metadata.
+  - name: features
+    description: ML feature store — ingest and retrieve feature vectors per entity.
+  - name: ai
+    description: AI-assisted hints and suggestions (gracefully degrades when LLM is unavailable).
+  - name: voice
+    description: Voice gateway — intent recognition, classification, and execution.
+  - name: governance
+    description: Data lifecycle, retention policies, PII redaction, and compliance posture.
+  - name: reports
+    description: Reporting — generate and retrieve analytical reports.
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Reusable components
@@ -266,7 +290,6 @@ components:
 # Paths
 # ─────────────────────────────────────────────────────────────────────────────
 paths:
-
   # ── Health / utility ───────────────────────────────────────────────────────
 
   /health:
@@ -280,6 +303,39 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+
+  /health/detail:
+    get:
+      summary: Detailed per-subsystem health breakdown
+      description: |
+        Returns an individual status for every registered health contributor
+        (storage, warm-tier DB, cache, index, message broker, etc.). Intended for
+        operations dashboards and circuit-breaker monitoring.
+      tags: [health]
+      responses:
+        "200":
+          description: Per-subsystem health report.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [UP, DEGRADED, DOWN]
+                  subsystems:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                          enum: [UP, DOWN, UNKNOWN]
+                        latencyMs:
+                          type: integer
+                          format: int64
+                        message:
+                          type: string
 
   /ready:
     get:
@@ -317,10 +373,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  service:     { type: string }
-                  version:     { type: string }
+                  service: { type: string }
+                  version: { type: string }
                   description: { type: string }
-                  timestamp:   { type: string, format: date-time }
+                  timestamp: { type: string, format: date-time }
 
   /metrics:
     get:
@@ -422,7 +478,7 @@ paths:
                 type: object
                 properties:
                   deleted: { type: boolean }
-                  id:      { type: string, format: uuid }
+                  id: { type: string, format: uuid }
         "404": { $ref: "#/components/responses/NotFound" }
 
   # ── Event log ──────────────────────────────────────────────────────────────
@@ -447,7 +503,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  id:     { type: string, format: uuid }
+                  id: { type: string, format: uuid }
                   offset: { type: integer, format: int64 }
         "400": { $ref: "#/components/responses/BadRequest" }
 
@@ -825,9 +881,9 @@ paths:
             schema:
               type: object
               properties:
-                id:        { type: string }
-                content:   { type: string }
-                reason:    { type: string }
+                id: { type: string }
+                content: { type: string }
+                reason: { type: string }
                 emergency: { type: boolean, default: false }
       responses:
         "200": { description: Elevation result. }
@@ -992,7 +1048,7 @@ paths:
                 type: object
                 properties:
                   queryId: { type: string }
-                  status:  { type: string }
+                  status: { type: string }
         "503": { description: Analytics engine not wired. }
 
   /api/v1/analytics/query/{queryId}:
@@ -1125,6 +1181,96 @@ paths:
       responses:
         "200": { description: Anomaly detection results }
         "501": { description: Anomaly detector not configured }
+
+  /api/v1/entities/{collection}/validate:
+    post:
+      summary: Validate a single entity payload against the collection schema
+      description: |
+        Checks the supplied payload against registered validation rules for the collection.
+        Returns a list of violations when the payload is invalid. Does not persist the entity.
+      tags: [entities]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Arbitrary JSON payload to validate.
+              additionalProperties: true
+      responses:
+        "200":
+          description: Validation outcome.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  violations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field: { type: string }
+                        message: { type: string }
+                        code: { type: string }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/entities/{collection}/validate/batch:
+    post:
+      summary: Validate multiple entity payloads in a single request
+      description: |
+        Validates each payload in the `entities` array against the collection schema.
+        Returns per-entity results and a top-level `allValid` flag. Does not persist entities.
+      tags: [entities]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entities]
+              properties:
+                entities:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                  minItems: 1
+                  maxItems: 1000
+      responses:
+        "200":
+          description: Per-entity validation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  allValid:
+                    type: boolean
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index: { type: integer }
+                        valid: { type: boolean }
+                        violations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              field: { type: string }
+                              message: { type: string }
+                              code: { type: string }
+        "400": { $ref: "#/components/responses/BadRequest" }
 
   /api/v1/entities/{collection}/batch:
     post:
@@ -1287,7 +1433,8 @@ paths:
           application/json:
             schema: { type: object }
       responses:
-        "200": { description: Human-readable explanation with remediation steps }
+        "200":
+          { description: Human-readable explanation with remediation steps }
 
   # ── AI/ML Model registry (DC-11) ────────────────────────────────────────
 
@@ -1443,7 +1590,8 @@ paths:
                   enum: [transient, short-term, standard, compliance, permanent]
                 reason: { type: string }
       responses:
-        "200": { description: Classification result with retention days and expiry }
+        "200":
+          { description: Classification result with retention days and expiry }
 
   /api/v1/governance/retention/policy:
     get:

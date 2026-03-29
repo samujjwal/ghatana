@@ -7,6 +7,7 @@ import io.activej.http.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Shared HTTP helper methods for all handler classes extracted from
@@ -35,6 +36,27 @@ public class HttpHandlerSupport {
         this.corsAllowOrigin = corsAllowOrigin;
         this.corsAllowMethods = corsAllowMethods;
         this.corsAllowHeaders = corsAllowHeaders;
+    }
+
+    /**
+     * Resolves or generates a correlation / request ID for distributed tracing.
+     *
+     * <p>Checks {@code X-Request-Id} first, then {@code X-Correlation-Id}.
+     * If neither is present, a new random UUID is returned.
+     *
+     * <p>Callers should pass the returned ID to {@link #jsonResponse(Map, String)}
+     * and {@link #errorResponse(int, String, String)} so the ID propagates back
+     * to clients on every response.
+     *
+     * @param request inbound HTTP request
+     * @return correlation ID guaranteed to be non-null and non-blank
+     */
+    public String resolveCorrelationId(HttpRequest request) {
+        String fromRequestId = request.getHeader(HttpHeaders.of("X-Request-Id"));
+        if (fromRequestId != null && !fromRequestId.isBlank()) return fromRequestId.trim();
+        String fromCorrelationId = request.getHeader(HttpHeaders.of("X-Correlation-Id"));
+        if (fromCorrelationId != null && !fromCorrelationId.isBlank()) return fromCorrelationId.trim();
+        return UUID.randomUUID().toString();
     }
 
     /**
@@ -76,6 +98,57 @@ public class HttpHandlerSupport {
                 .build();
         } catch (Exception e) {
             return HttpResponse.ofCode(code)
+                .withBody(("{\"error\":\"" + message + "\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
+    /**
+     * Builds a 200 OK JSON response with CORS headers and an {@code X-Request-Id}
+     * header set to {@code correlationId}.
+     */
+    public HttpResponse jsonResponse(Map<String, Object> data, String correlationId) {
+        try {
+            String json = objectMapper.writeValueAsString(data);
+            return HttpResponse.ok200()
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(correlationId))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (Exception e) {
+            return HttpResponse.ofCode(500)
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(correlationId))
+                .withBody(("{\"error\":\"" + e.getMessage() + "\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
+    /**
+     * Builds an error response with the given HTTP status code, message, and
+     * an {@code X-Request-Id} header set to {@code correlationId}.
+     */
+    public HttpResponse errorResponse(int code, String message, String correlationId) {
+        try {
+            String json = objectMapper.writeValueAsString(Map.of(
+                "error", message,
+                "code", code,
+                "timestamp", Instant.now().toString(),
+                "requestId", correlationId
+            ));
+            return HttpResponse.ofCode(code)
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(correlationId))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (Exception e) {
+            return HttpResponse.ofCode(code)
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(correlationId))
                 .withBody(("{\"error\":\"" + message + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }

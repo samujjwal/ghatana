@@ -44,7 +44,7 @@ dependencies {
     api(libs.jackson.annotations)
     api(libs.jakarta.validation.api)
     api(libs.micrometer.core)
-    implementation("io.swagger.core.v3:swagger-annotations:2.2.19")
+    implementation(libs.swagger.annotations)
 
     implementation(libs.activej.http)
     implementation(libs.activej.promise)
@@ -55,7 +55,7 @@ dependencies {
 
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
-    compileOnly("javax.annotation:javax.annotation-api:1.3.2")
+    compileOnly(libs.javax.annotation.api)
     compileOnly(libs.spotbugs.annotations)
 
     testImplementation(libs.junit.jupiter.api)
@@ -66,7 +66,7 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.grpc.testing)
     testImplementation(libs.grpc.inprocess)
-    testCompileOnly("javax.annotation:javax.annotation-api:1.3.2")
+    testCompileOnly(libs.javax.annotation.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

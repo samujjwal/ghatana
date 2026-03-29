@@ -23,6 +23,9 @@ vertx = "4.5.8"
 # JSON Schema Validator
 networknt-json-schema = "1.5.9"
 
+# API Documentation (OpenAPI / Swagger annotations)
+swagger-annotations = "2.2.19"
+
 # Playwright
 playwright = "1.43.0"
 
@@ -555,6 +558,9 @@ grpc-protobuf-lite = { module = "io.grpc:grpc-protobuf-lite", version.ref = "grp
 
 # NetworkNT
 networknt-validator = { module = "com.networknt:json-schema-validator", version.ref = "networknt-json-schema" }
+
+# API Documentation
+swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger-annotations" }
 
 # Docker Java SDK
 docker-java = { module = "com.github.docker-java:docker-java", version.ref = "docker-java" }
