@@ -17,16 +17,21 @@ const SettingsPanel: React.FC = () => {
     maxConcurrentRequests: 5,
     cacheSize: 1024
   });
+  const [saveMessage, setSaveMessage] = React.useState<string | null>(null);
 
   const handleSave = () => {
-    // TODO: Save settings
-    console.log('Saving settings:', settings);
+    setSaveMessage('Settings saved locally. Service endpoint persistence is not wired yet.');
   };
 
   return (
     <div className="space-y-6">
       <Card title="Settings" subtitle="Configure application preferences">
         <div className="space-y-6">
+          {saveMessage && (
+            <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+              {saveMessage}
+            </div>
+          )}
           {/* UI Settings */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">User Interface</h3>

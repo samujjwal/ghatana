@@ -236,6 +236,26 @@ public class DefaultKernelContext implements KernelContext {
 
     @Override
     public <T> void registerService(Class<T> type, T service) {
+        // Validate inputs
+        Objects.requireNonNull(type, "Service type cannot be null");
+        Objects.requireNonNull(service, "Service instance cannot be null");
+        
+        // Verify service type matches instance
+        if (!type.isInstance(service)) {
+            throw new IllegalArgumentException(
+                "Service instance does not match type. Expected: " + type.getName() + 
+                ", Got: " + service.getClass().getName()
+            );
+        }
+        
+        // Verify service implements KernelLifecycleAware
+        if (!(service instanceof com.ghatana.kernel.service.KernelLifecycleAware)) {
+            throw new IllegalArgumentException(
+                "Service must implement KernelLifecycleAware: " + type.getName()
+            );
+        }
+        
+        // Register service
         dependencies.put(type, service);
     }
 

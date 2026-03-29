@@ -299,10 +299,10 @@ if [ "${TUTORPUTOR_START_APPS}" = "true" ]; then
     fi
 
     # Build additional libraries needed for admin UI
-    if pnpm --filter "@ghatana/utils" build >>"${LOG_FILE}" 2>&1; then
-      log "  ✓ Built @ghatana/utils"
+    if pnpm --filter "@ghatana/platform-utils" build >>"${LOG_FILE}" 2>&1; then
+      log "  ✓ Built @ghatana/platform-utils"
     else
-      log "  ✗ Failed to build @ghatana/utils (check logs)"
+      log "  ✗ Failed to build @ghatana/platform-utils (check logs)"
     fi
 
     if pnpm --filter "@ghatana/charts" build >>"${LOG_FILE}" 2>&1; then

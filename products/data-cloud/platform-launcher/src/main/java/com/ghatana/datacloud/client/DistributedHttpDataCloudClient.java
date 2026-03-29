@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @doc.layer core
  * @doc.pattern Client, Facade
  */
-public class DistributedHttpDataCloudClient implements DataCloudClient {
+public class DistributedHttpDataCloudClient extends ManagedDataCloudClient {
     private static final Logger log = LoggerFactory.getLogger(DistributedHttpDataCloudClient.class);
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -76,6 +76,7 @@ public class DistributedHttpDataCloudClient implements DataCloudClient {
     // ── HTTP helpers ────────────────────────────────────────────────────
 
     private <T> Promise<T> post(String path, Object body, Class<T> responseType, String tenantId) {
+        requireRunning();
         try {
             String json = MAPPER.writeValueAsString(body);
             HttpRequest.Builder builder = HttpRequest.newBuilder()
@@ -104,6 +105,7 @@ public class DistributedHttpDataCloudClient implements DataCloudClient {
 
     @SuppressWarnings("unchecked")
     private <T> Promise<T> get(String path, Class<T> responseType, String tenantId) {
+        requireRunning();
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url(path)))
@@ -124,6 +126,7 @@ public class DistributedHttpDataCloudClient implements DataCloudClient {
     }
 
     private Promise<Void> delete(String path, String tenantId) {
+        requireRunning();
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url(path)))
@@ -305,16 +308,25 @@ public class DistributedHttpDataCloudClient implements DataCloudClient {
 
     @Override
     public Promise<HealthStatus> healthCheck() {
+        if (!isRunning()) {
+            return Promise.of(closedHealthStatus());
+        }
         return get("/api/v1/health", HealthStatus.class);
     }
 
     @Override
     public Promise<SystemMetrics> getMetrics() {
+        if (!isRunning()) {
+            return Promise.of(systemMetrics(0, 0.0, 1.0, Map.of()));
+        }
         return get("/api/v1/metrics", SystemMetrics.class);
     }
 
     @Override
     public void close() {
+        if (!markClosed()) {
+            return;
+        }
         log.info("DistributedHttpDataCloudClient closed");
         executor.shutdown();
     }

@@ -20,10 +20,14 @@ public record AudioData(
     AudioFormat format
 ) {
     public AudioData {
-        Objects.requireNonNull(data, "data cannot be null");
+        data = Objects.requireNonNull(data, "data cannot be null").clone();
         if (sampleRate <= 0) throw new IllegalArgumentException("sampleRate must be positive");
         if (channels <= 0) throw new IllegalArgumentException("channels must be positive");
         if (bitsPerSample <= 0) throw new IllegalArgumentException("bitsPerSample must be positive");
+        format = Objects.requireNonNull(format, "format cannot be null");
+        if (duration == null) {
+            duration = estimateDuration(data, sampleRate, channels, bitsPerSample);
+        }
     }
 
     public AudioData(byte[] data, int sampleRate, int channels, int bitsPerSample) {
@@ -33,6 +37,16 @@ public record AudioData(
     /** Get the number of samples per channel. */
     public int getSampleCount() {
         return data.length / (channels * (bitsPerSample / 8));
+    }
+
+    /** Returns a defensive copy of the underlying audio bytes. */
+    @Override
+    public byte[] data() {
+        return data.clone();
+    }
+
+    public CanonicalAudioFormat canonicalFormat() {
+        return new CanonicalAudioFormat(sampleRate, channels, bitsPerSample, format);
     }
 
     public static Builder builder() {
@@ -57,5 +71,15 @@ public record AudioData(
         public AudioData build() {
             return new AudioData(data, sampleRate, channels, bitsPerSample, duration, format);
         }
+    }
+
+    private static Duration estimateDuration(byte[] data, int sampleRate, int channels, int bitsPerSample) {
+        int bytesPerFrame = channels * Math.max(bitsPerSample / 8, 1);
+        if (data.length == 0 || bytesPerFrame <= 0 || sampleRate <= 0) {
+            return Duration.ZERO;
+        }
+        long frames = data.length / bytesPerFrame;
+        long millis = Math.round((frames * 1000.0d) / sampleRate);
+        return Duration.ofMillis(millis);
     }
 }

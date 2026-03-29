@@ -6,6 +6,7 @@ package com.ghatana.products.finance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.ghatana.finance.kernel.FinanceCapabilities;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.platform.testing.activej.EventloopTestBase;

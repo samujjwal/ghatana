@@ -17,6 +17,13 @@ import org.jetbrains.annotations.NotNull;
  *   <li><b>Health-checkable</b>: Built-in health check support</li>
  *   <li><b>Resource-managed</b>: Proper connection pooling and cleanup</li>
  * </ul>
+ *
+ * <h3>Error Handling Contract:</h3>
+ * <ul>
+ *   <li>Use rejected Promises for transport, connectivity, timeout, or lifecycle failures.</li>
+ *   <li>Use {@code Result<T, E>} payloads for expected domain outcomes that callers should branch on.</li>
+ *   <li>Do not silently swallow errors; surface them through Promise failure or an explicit result value.</li>
+ * </ul>
  * 
  * <h3>Usage Example:</h3>
  * <pre>{@code

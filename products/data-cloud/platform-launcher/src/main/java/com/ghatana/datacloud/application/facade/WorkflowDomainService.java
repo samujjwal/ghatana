@@ -11,7 +11,9 @@ import com.ghatana.datacloud.entity.MetaCollection;
 import com.ghatana.datacloud.entity.Workflow;
 import io.activej.promise.Promise;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -59,7 +61,14 @@ public final class WorkflowDomainService {
 
     public Promise<Workflow> updateWorkflow(String tenantId, UUID workflowId,
                                             Workflow update, String userId) {
-        return workflowService.updateWorkflow(tenantId, workflowId, update, userId);
+        Objects.requireNonNull(update, "update");
+
+        Map<String, Object> updateData = new LinkedHashMap<>();
+        updateData.put("name", update.getName());
+        updateData.put("description", update.getDescription());
+        updateData.put("status", update.getStatus());
+
+        return workflowService.updateWorkflow(tenantId, workflowId, updateData, userId);
     }
 
     public Promise<Void> deleteWorkflow(String tenantId, UUID workflowId, String userId) {

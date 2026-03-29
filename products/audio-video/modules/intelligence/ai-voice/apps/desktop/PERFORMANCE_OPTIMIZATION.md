@@ -249,7 +249,7 @@ const useCache = <T,>(key: string, fetcher: () => Promise<T>, ttl = 5000) => {
 
 ```typescript
 // Reusable debounce (check if exists in codebase)
-import { debounce } from '@ghatana/utils';
+import { debounce } from '@ghatana/platform-utils';
 
 // Apply to search
 const debouncedSearch = debounce((query: string) => {

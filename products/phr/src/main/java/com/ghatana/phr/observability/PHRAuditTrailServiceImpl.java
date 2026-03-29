@@ -2,7 +2,7 @@ package com.ghatana.phr.observability;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
+import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
 import com.ghatana.kernel.observability.AuditTrailPersistence;
 import com.ghatana.kernel.observability.DefaultAuditTrailService;
 

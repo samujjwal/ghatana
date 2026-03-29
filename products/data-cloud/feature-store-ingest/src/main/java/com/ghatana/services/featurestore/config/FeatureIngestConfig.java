@@ -118,6 +118,7 @@ public final class FeatureIngestConfig {
         cfg.setMaximumPoolSize(EVENT_LOG_MAX_POOL);
         cfg.setMinimumIdle(EVENT_LOG_MIN_IDLE);
         cfg.setConnectionTimeout(Duration.ofSeconds(10).toMillis());
+        cfg.setInitializationFailTimeout(-1L);
         cfg.setPoolName("feature-ingest-eventlog-pool");
         cfg.setAutoCommit(true);
         return new HikariDataSource(cfg);
@@ -142,6 +143,7 @@ public final class FeatureIngestConfig {
         cfg.setConnectionTimeout(Duration.ofSeconds(5).toMillis());
         cfg.setIdleTimeout(Duration.ofMinutes(10).toMillis());
         cfg.setMaxLifetime(Duration.ofMinutes(30).toMillis());
+        cfg.setInitializationFailTimeout(-1L);
         cfg.setPoolName("feature-ingest-pool");
         cfg.setAutoCommit(true);
         return new HikariDataSource(cfg);

@@ -1,7 +1,7 @@
 package com.ghatana.phr.plugin;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.health.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.kernel.plugin.PluginManifest;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;

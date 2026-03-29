@@ -8,14 +8,11 @@ description = "YAPPC Consolidated Shared Utilities Module"
 
 dependencies {
     // Platform modules
-    implementation(project(":platform:java:plugin"))
-    implementation(project(":platform:java:core"))
-
-    // YAPPC SPI — internal only (no public API exports, legacy plugin support)
-    implementation(project(":products:yappc:core:spi"))
+    api(project(":platform:java:plugin"))
+    api(project(":platform:java:core"))
 
     // ActiveJ for async
-    implementation(libs.activej.promise)
+    api(libs.activej.promise)
 
     // Jackson for JSON
     implementation(libs.jackson.databind)

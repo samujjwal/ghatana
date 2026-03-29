@@ -51,7 +51,7 @@ Last audit update: 2026-03-08 (America/Los_Angeles)
 | @ghatana/theme    | apps/tutorputor-web, libs/sim-renderer                                   |
 | @ghatana/tokens   | apps/tutorputor-web, libs/sim-renderer                                   |
 | @ghatana/ui       | apps/tutorputor-admin, apps/tutorputor-web, services/tutorputor-platform |
-| @ghatana/utils    | libs/sim-renderer                                                        |
+| @ghatana/platform-utils | libs/sim-renderer                                                   |
 
 ## CI/config surfaces affecting Tutorputor
 

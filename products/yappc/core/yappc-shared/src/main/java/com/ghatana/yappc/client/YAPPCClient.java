@@ -1,5 +1,6 @@
 package com.ghatana.yappc.client;
 
+import com.ghatana.platform.core.client.AsyncClient;
 import io.activej.promise.Promise;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,7 @@ import java.util.Set;
  * @doc.layer core
  * @doc.pattern ValueObject
 */
-public interface YAPPCClient extends AutoCloseable {
+public interface YAPPCClient extends AsyncClient {
     
     // ========== Lifecycle ==========
     
@@ -219,15 +220,6 @@ public interface YAPPCClient extends AutoCloseable {
     Promise<HealthStatus> checkHealth();
     
     /**
-     * Simple health check returning basic status only.
-     * 
-     * @return a Promise containing the health status
-     */
-    default Promise<HealthStatus> healthCheck() {
-        return checkHealth();
-    }
-    
-    /**
      * Gets system metrics.
      * 
      * @return a Promise containing metrics as key-value pairs
@@ -241,11 +233,4 @@ public interface YAPPCClient extends AutoCloseable {
      */
     Promise<YAPPCConfig> getConfiguration();
     
-    /**
-     * Closes the client and releases all resources.
-     * 
-     * @throws Exception if an error occurs during closure
-     */
-    @Override
-    void close() throws Exception;
 }

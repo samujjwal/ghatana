@@ -1,94 +1,35 @@
-# Library Spec – @ghatana/utils
+# Legacy Library Note - @ghatana/utils
 
-Shared TypeScript utility functions and helpers for frontend projects.
-
----
-
-## 1. Purpose & Scope
-
-- Provide **small, focused utilities** (formatters, classnames, platform/responsive checks, accessibility helpers).
-- Avoid duplicating common logic across apps and libraries.
-
-From `package.json`:
-
-- Name: `@ghatana/utils`.
-- Exports: `.`, `./formatters`, `./cn`, `./platform`, `./responsive`, `./accessibility`.
-- Depends on `clsx`, `tailwind-merge`.
+`@ghatana/utils` was a deprecated compatibility wrapper over `@ghatana/platform-utils` and has been removed from the active workspace.
 
 ---
 
-## 2. Responsibilities & Boundaries
+## 1. Status
 
-**Responsibilities:**
-
-- `cn`: merge Tailwind/utility classes using `clsx` + `tailwind-merge`.
-- `accessibility`: WCAG 2.1 AA helpers (contrast, text color, reduced motion, high contrast, ARIA label cleaning, etc.).
-- `formatters`: date/number/string/collection helpers.
-- `platform` & `responsive`: environment and viewport/feature checks.
-
-**Non-responsibilities:**
-
-- No React components.
-- No product-specific domain logic.
+- Canonical replacement: `@ghatana/platform-utils`
+- Wrapper status: removed after internal consumer migration
+- Historical references to `@ghatana/utils` should be migrated to `@ghatana/platform-utils`
 
 ---
 
-## 3. Consumers & Typical Usage
+## 2. Migration
 
-- `@ghatana/ui` – for `cn`, responsive and a11y utilities.
-- `@ghatana/theme` – for some responsive/platform information when needed.
-- Apps – may import formatters directly.
-
-Example (`cn`):
+Replace imports of `@ghatana/utils` with `@ghatana/platform-utils`:
 
 ```ts
-import { cn } from "@ghatana/utils/cn";
-
-const buttonClass = cn(
-  "px-4 py-2 rounded-md",
-  isPrimary && "bg-blue-600 text-white",
-  disabled && "opacity-50 cursor-not-allowed"
-);
+import { cn } from "@ghatana/platform-utils/cn";
+import { formatDate } from "@ghatana/platform-utils";
 ```
 
 ---
 
-## 4. Dependencies & Relationships
+## 3. Canonical Spec
 
-- Should remain **low in the dependency graph**:
-  - Safe for other libraries to consume.
-  - Should not depend on internal UI or theme libs.
+See `LIBRARY_platform-utils.md` for the canonical utility library contract.
 
 ---
 
-## 5. Gaps, Duplicates, Reuse Misses
+## 4. Compatibility Policy
 
-- **A11y overlap with @yappc/accessibility-audit:**
-
-  - This library handles runtime helpers, while `accessibility-audit` handles axe-based audits.
-  - Need clear docs linking the two (which helper lives where).
-
-- **Potential scattered utilities in apps:**
-  - Some apps may still have local `cn` or responsive helpers; these should be migrated here.
-
----
-
-## 6. Enhancement Opportunities
-
-1. **API docs/examples:**
-
-   - Expand `docs/usage` with concrete examples for each export.
-
-2. **Tree-shaking friendliness:**
-
-   - Ensure each module is independent to minimize bundle impact when importing just one helper.
-
-3. **Platform detection standardization:**
-   - Centralize environment checks here instead of ad-hoc `typeof window` in apps.
-
----
-
-## 7. Usage Guidelines
-
-- When adding a new generic helper, ask: could it be reused by multiple products? If so, it belongs here.
-- Prefer small focused modules over a giant `index` that does everything.
+- Do not add new dependencies on `@ghatana/utils`.
+- Remove any residual aliases or docs that still treat the wrapper as canonical.

@@ -66,7 +66,7 @@ Aura should reuse existing Ghatana assets before creating local equivalents.
 | `@ghatana/ui` | web and mobile-adjacent shared UI primitives | accessible component baseline already exists |
 | `@ghatana/tokens` | design tokens, spacing, typography, colors, transitions | avoid parallel design-token system |
 | `@ghatana/theme` | shared theme and brand preset handling | avoids local theming fork |
-| `@ghatana/utils` | formatting, class merge, responsive and accessibility helpers | avoids utility duplication |
+| `@ghatana/platform-utils` | formatting, class merge, responsive and accessibility helpers | avoids utility duplication |
 | `@ghatana/api` | client transport, retries, middleware | avoids building another fetch wrapper |
 | `@ghatana/realtime` | SSE/WebSocket helpers for notifications or live state | avoids local realtime abstraction |
 | `@ghatana/accessibility-audit` | CI and release accessibility gates | gives reusable automated audit path |
@@ -128,13 +128,13 @@ Aura implementation should run across six coordinated workstreams:
 | 2 | Stand up monorepo layout, Gitea Actions pipelines, baseline lint/test/build jobs | workspace tooling, `platform/java/testing`, `@ghatana/accessibility-audit` | CI runs baseline quality gates on Aura workspace |
 | 3 | Wire auth skeleton, session handling, and sensitive-action re-auth path | `shared-services/auth-service`, `shared-services/auth-gateway`, `platform/java/security` | Login and protected routes work in local/staging |
 | 4 | Finalize Prisma schema, shared domain types, and contract-first persistence model | `platform/contracts`, `products/data-cloud/platform`, `products/data-cloud/spi`, `@ghatana/tutorputor-db` as package pattern | Schema, API, and event semantics align |
-| 5 | Build profile onboarding skeleton, declared-profile UX, and origin labeling | `@ghatana/ui`, `@ghatana/theme`, `@ghatana/utils` | Onboarding persists declared profile fields |
+| 5 | Build profile onboarding skeleton, declared-profile UX, and origin labeling | `@ghatana/ui`, `@ghatana/theme`, `@ghatana/platform-utils` | Onboarding persists declared profile fields |
 | 6 | Implement consent-center foundation and export/delete flow skeleton | `platform/java/governance`, `products/data-cloud/platform`, shared auth, `@ghatana/ui` dialogs/forms | Consent records and self-serve privacy flows persist |
 | 7 | Stand up ingestion foundations for top beauty categories and provenance storage | `platform/java/ingestion`, `products/aep/platform`, `products/data-cloud/spi`, connector patterns from DCMAAR | Source ingest writes canonical product shells plus provenance |
 | 8 | Add canonical product, brand, ingredient, and source entities | `products/data-cloud/platform`, `products/data-cloud/spi`, product schema patterns from Tutorputor | Product detail data can be queried consistently |
 | 9 | Build ingredient analyzer v1 and hard safety exclusions | shared governance and Java domain modules, no local rule engine fork | Allergen and key ingredient conflicts are enforced |
 | 10 | Build basic feed API and feed-card UI with real reason/trust contract rendering | `@ghatana/api`, `@ghatana/ui`, `@ghatana/tokens` | Feed works for cold-start and declared-profile users with reason and trust states visible |
-| 11 | Implement product detail, save/bookmark flows, and saved-items shelf | `@ghatana/ui`, `@ghatana/utils`, shared API wrapper | Save state persists across feed/detail surfaces |
+| 11 | Implement product detail, save/bookmark flows, and saved-items shelf | `@ghatana/ui`, `@ghatana/platform-utils`, shared API wrapper | Save state persists across feed/detail surfaces |
 | 12 | Build shade ontology v1, nearest-match scoring, and confidence gating | `platform/java/ai-integration` patterns, no custom serving stack yet | Supported foundation shade matching works with abstention behavior |
 | 13 | Add compare, feedback capture, outcome event path, and internal alpha gate review | `products/aep/platform`, `products/data-cloud/platform`, `@ghatana/accessibility-audit` | Internal alpha launches with outcome instrumentation live |
 
@@ -146,7 +146,7 @@ Aura implementation should run across six coordinated workstreams:
 | 15 | Harden dashboards, traces, error budgets, and operational alerts | `platform/java/observability`, shared monitoring stack | SLO dashboards exist for feed and recommendations |
 | 16 | Add review ingestion pipeline and normalized review storage | `platform/java/ingestion`, `products/data-cloud/spi`, DCMAAR connector patterns | Review corpus available with provenance |
 | 17 | Implement sentiment and caution extraction pipeline | `platform/java/ai-integration`, shared inference service where suitable | Review-derived sentiment signals land in catalog/recommendation path |
-| 18 | Improve profile editor, inferred attribute visibility, and override UX | `@ghatana/ui`, `@ghatana/theme`, `@ghatana/utils` | Users can inspect and correct inferred data |
+| 18 | Improve profile editor, inferred attribute visibility, and override UX | `@ghatana/ui`, `@ghatana/theme`, `@ghatana/platform-utils` | Users can inspect and correct inferred data |
 | 19 | Add assistant v1, guided prompts, and search-based discovery | `shared-services/ai-inference-service`, `@ghatana/api`, `@ghatana/realtime` if needed | Supported assistant queries resolve into safe recommendation flows |
 | 20 | Add outcome-reporting UX to detail and saved-item surfaces | `@ghatana/ui`, shared event contracts | Users can submit structured post-use outcomes |
 | 21 | Implement experiment assignment and exposure logging | `@ghatana/api`, `products/aep/platform`, platform observability, shared config patterns | Stable experiments run with auditable exposure data |

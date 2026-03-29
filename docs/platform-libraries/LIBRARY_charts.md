@@ -73,7 +73,7 @@ import { TimeSeriesChart } from "@ghatana/charts";
    - Provide preconfigured charts for common observability metrics (success/error rate, latency histograms) without encoding backend logic.
 
 2. **Accessibility:**
-   - Integrate with `@ghatana/utils/accessibility` and `@yappc/accessibility-audit` for keyboard/ARIA patterns and fallbacks.
+  - Integrate with `@ghatana/platform-utils/accessibility` and `@yappc/accessibility-audit` for keyboard/ARIA patterns and fallbacks.
 
 ---
 

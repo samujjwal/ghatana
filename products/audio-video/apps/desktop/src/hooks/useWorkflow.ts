@@ -15,6 +15,7 @@ import type {
   AIVoiceResult,
   AudioData 
 } from '@audio-video/types';
+import { createAudioData } from '@audio-video/types';
 
 interface UseWorkflowOptions {
   onProgress?: (step: number, total: number, message: string) => void;
@@ -26,6 +27,44 @@ export const useWorkflow = (options: UseWorkflowOptions = {}) => {
   const [isRunning, setIsRunning] = useState(false);
   const [currentExecution, setCurrentExecution] = useState<WorkflowExecution | null>(null);
 
+  const parseAiVoiceResult = useCallback((payload: string, originalText: string, task: string): AIVoiceResult => {
+    const parsed = JSON.parse(payload) as {
+      applied_task?: string;
+      voice_used?: string;
+      processing_time_ms?: number;
+      duration_ms?: number;
+      sample_rate?: number;
+    };
+
+    return {
+      processedText: parsed.voice_used
+        ? `${task} completed with ${parsed.voice_used}`
+        : `${task} completed`,
+      originalText,
+      task: parsed.applied_task ?? task,
+      processingTimeMs: parsed.processing_time_ms ?? 0,
+      confidence: parsed.duration_ms && parsed.duration_ms > 0 ? 1 : 0.5,
+    };
+  }, []);
+
+  const parseTtsResult = useCallback((audioBytes: number[], text: string): TTSResult => {
+    const byteArray = Uint8Array.from(audioBytes);
+    return {
+      audio: createAudioData(byteArray.buffer.slice(byteArray.byteOffset, byteArray.byteOffset + byteArray.byteLength), {
+        sampleRate: 22050,
+        channels: 1,
+        bitsPerSample: 16,
+        format: 'wav',
+      }),
+      voiceUsed: 'default',
+      processingTimeMs: 0,
+      characters: text.length,
+      durationMs: 0,
+    };
+  }, []);
+
+  const parseJsonPayload = useCallback(<T,>(payload: string): T => JSON.parse(payload) as T, []);
+
   /**
    * Speech-to-Speech workflow: STT → AI Voice → TTS
    */
@@ -36,24 +75,33 @@ export const useWorkflow = (options: UseWorkflowOptions = {}) => {
     try {
       // Step 1: Transcribe audio
       options.onProgress?.(1, 3, 'Transcribing audio...');
-      const sttResult = await invoke<STTResult>('stt_transcribe', {
+      const transcript = await invoke<string>('stt_transcribe', {
         audioData: Array.from(new Uint8Array(audioData.data)),
         language: 'en-US'
       });
+      const sttResult: STTResult = {
+        text: transcript,
+        confidence: transcript ? 1 : 0,
+        processingTimeMs: 0,
+        language: 'en-US',
+        model: 'desktop-bridge',
+      };
 
       // Step 2: Enhance text with AI Voice
       options.onProgress?.(2, 3, 'Enhancing transcription...');
-      const aiResult = await invoke<AIVoiceResult>('ai_voice_process', {
+      const aiPayload = await invoke<string>('ai_voice_process', {
         text: sttResult.text,
         task: 'enhance'
       });
+      const aiResult = parseAiVoiceResult(aiPayload, sttResult.text, 'enhance');
 
       // Step 3: Synthesize enhanced text
       options.onProgress?.(3, 3, 'Generating speech...');
-      const ttsResult = await invoke<TTSResult>('tts_synthesize', {
+      const ttsPayload = await invoke<number[]>('tts_synthesize', {
         text: aiResult.processedText,
         voiceId: null
       });
+      const ttsResult = parseTtsResult(ttsPayload, aiResult.processedText);
 
       const execution: WorkflowExecution = {
         workflowId: 'speech-to-speech',
@@ -103,17 +151,19 @@ export const useWorkflow = (options: UseWorkflowOptions = {}) => {
     try {
       // Step 1: Translate text
       options.onProgress?.(1, 2, 'Translating text...');
-      const aiResult = await invoke<AIVoiceResult>('ai_voice_process', {
+      const aiPayload = await invoke<string>('ai_voice_process', {
         text,
         task: 'translate'
       });
+      const aiResult = parseAiVoiceResult(aiPayload, text, 'translate');
 
       // Step 2: Synthesize translated text
       options.onProgress?.(2, 2, 'Generating speech...');
-      const ttsResult = await invoke<TTSResult>('tts_synthesize', {
+      const ttsPayload = await invoke<number[]>('tts_synthesize', {
         text: aiResult.processedText,
         voiceId: null
       });
+      const ttsResult = parseTtsResult(ttsPayload, aiResult.processedText);
 
       const execution: WorkflowExecution = {
         workflowId: 'translate-and-speak',
@@ -151,17 +201,19 @@ export const useWorkflow = (options: UseWorkflowOptions = {}) => {
     try {
       // Step 1: Analyze image
       options.onProgress?.(1, 2, 'Analyzing image...');
-      const visionResult = await invoke<string>('vision_process', {
+      const visionPayload = await invoke<string>('vision_process', {
         imageData: Array.from(new Uint8Array(imageData)),
         task: 'analyze'
       });
+      const visionResult = parseJsonPayload<{ objects?: unknown[] }>(visionPayload);
 
       // Step 2: Generate summary
       options.onProgress?.(2, 2, 'Generating summary...');
-      const aiResult = await invoke<AIVoiceResult>('ai_voice_process', {
-        text: visionResult,
+      const aiPayload = await invoke<string>('ai_voice_process', {
+        text: JSON.stringify(visionResult),
         task: 'summarize'
       });
+      const aiResult = parseAiVoiceResult(aiPayload, JSON.stringify(visionResult), 'summarize');
 
       const execution: WorkflowExecution = {
         workflowId: 'analyze-content',
@@ -204,13 +256,14 @@ export const useWorkflow = (options: UseWorkflowOptions = {}) => {
       options.onProgress?.(1, 1, 'Processing multimodal data...');
       
       const request = {
-        audio: input.audio ? Array.from(new Uint8Array(input.audio.data)) : undefined,
-        image: input.image ? Array.from(new Uint8Array(input.image)) : undefined,
+        audioData: input.audio ? Array.from(new Uint8Array(input.audio.data)) : undefined,
+        imageData: input.image ? Array.from(new Uint8Array(input.image)) : undefined,
         text: input.text,
         task: 'analyze'
       };
 
-      const result = await invoke<string>('multimodal_process', { request });
+      const payload = await invoke<string>('multimodal_process', { request });
+      const result = parseJsonPayload<Record<string, unknown>>(payload);
 
       const execution: WorkflowExecution = {
         workflowId: 'multimodal-process',
@@ -233,7 +286,7 @@ export const useWorkflow = (options: UseWorkflowOptions = {}) => {
     } finally {
       setIsRunning(false);
     }
-  }, [options]);
+  }, [options, parseAiVoiceResult, parseJsonPayload, parseTtsResult]);
 
   return {
     isRunning,

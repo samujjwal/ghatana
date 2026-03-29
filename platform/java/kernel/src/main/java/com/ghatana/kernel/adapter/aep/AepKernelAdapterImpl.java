@@ -1,5 +1,6 @@
 package com.ghatana.kernel.adapter.aep;
 
+import com.ghatana.platform.core.client.AsyncClient;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -301,7 +302,27 @@ public class AepKernelAdapterImpl implements AepKernelAdapter {
     /**
      * AEP client interface (to be implemented by AEP platform).
      */
-    public interface AepClient {
+    public interface AepClient extends AsyncClient {
+        @Override
+        default Promise<Void> start() {
+            return Promise.complete();
+        }
+
+        @Override
+        default Promise<Void> stop() {
+            return Promise.complete();
+        }
+
+        @Override
+        default Promise<Boolean> healthCheck() {
+            return Promise.of(true);
+        }
+
+        @Override
+        default boolean isRunning() {
+            return true;
+        }
+
         CompletableFuture<Void> publishEvent(String streamId, String eventId, String eventType,
                                               byte[] payload, Map<String, String> headers, long timestamp);
         CompletableFuture<InnerSubscription> subscribe(String streamId, InnerEventHandler handler);

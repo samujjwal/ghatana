@@ -152,8 +152,8 @@ public class DataCloudClientFactory {
         }
         
         try {
-            new java.net.URL(url);
-        } catch (java.net.MalformedURLException e) {
+            java.net.URI.create(url).toURL();
+        } catch (IllegalArgumentException | java.net.MalformedURLException e) {
             throw new IllegalArgumentException("Invalid URL: " + url, e);
         }
     }

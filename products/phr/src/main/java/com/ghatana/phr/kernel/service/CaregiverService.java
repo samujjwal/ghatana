@@ -1,13 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.kernel.util.TypedDataSerializer;
+import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -17,7 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Caregiver Relationship Service for PHR.
@@ -36,43 +29,27 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class CaregiverService implements KernelLifecycleAware {
+public class CaregiverService extends AbstractDataService {
 
     private static final String RELATIONSHIP_DATASET = "phr.caregiver.relationships";
-    private static final String AUDIT_DATASET         = "phr.caregiver.audit";
 
-    private final DataCloudKernelAdapter dataCloud;
-    private volatile boolean running = false;
-
-    /**
-     * Constructs a CaregiverService.
-     *
-     * @param context kernel context providing DataCloudKernelAdapter
-     */
     public CaregiverService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    /** Starts the service and initializes backing datasets. */
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    /** Stops the service. */
-    public Promise<Void> stop() {
-        running = false;
-        return Promise.complete();
-    }
-
-    /** Returns {@code true} when the service is running. */
-    public boolean isHealthy() {
-        return running;
-    }
-
-    /** Returns the logical service name. */
+    @Override
     public String getName() {
         return "caregiver";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        return createSchema(
+            RELATIONSHIP_DATASET,
+            Map.of("id", "string", "caregiverId", "string", "patientId", "string",
+                "status", "string", "createdAt", "timestamp"),
+            Map.of("retention", "10years")
+        );
     }
 
     // ==================== Core Operations ====================
@@ -84,186 +61,108 @@ public class CaregiverService implements KernelLifecycleAware {
      * @return Promise containing the stored relationship
      */
     public Promise<CaregiverRelationship> createRelationship(CaregiverRelationship relationship) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
-        Objects.requireNonNull(relationship.caregiverId(), "caregiverId");
-        Objects.requireNonNull(relationship.patientId(), "patientId");
-        Objects.requireNonNull(relationship.relationshipType(), "relationshipType");
+        validateRequired(relationship.caregiverId(), "caregiverId");
+        validateRequired(relationship.patientId(), "patientId");
+        validateRequired(relationship.relationshipType(), "relationshipType");
 
         String id = relationship.id() != null ? relationship.id() : generateId("cgv");
         CaregiverRelationship toStore = new CaregiverRelationship(
-                id,
-                relationship.caregiverId(),
-                relationship.patientId(),
-                relationship.relationshipType(),
-                relationship.consentScope() != null ? relationship.consentScope() : Set.of(),
-                RelationshipStatus.ACTIVE,
-                Instant.now(),
-                relationship.expiresAt()
+            id,
+            relationship.caregiverId(),
+            relationship.patientId(),
+            relationship.relationshipType(),
+            relationship.consentScope() != null ? relationship.consentScope() : Set.of(),
+            RelationshipStatus.ACTIVE,
+            Instant.now(),
+            relationship.expiresAt()
         );
 
-        DataWriteRequest req = new DataWriteRequest(
-                RELATIONSHIP_DATASET,
-                id,
-                TypedDataSerializer.toBytes(toStore, "CaregiverRelationship", 1),
-                Map.of("caregiverId", toStore.caregiverId(),
-                        "patientId", toStore.patientId(),
-                        "status", "ACTIVE")
-        );
-
-        return dataCloud.writeData(req)
-                .then($ -> audit("CREATE_RELATIONSHIP", toStore.patientId(),
-                        "Caregiver " + toStore.caregiverId() + " linked as "
-                                + toStore.relationshipType()))
-                .map($ -> toStore);
+        return createRecord(
+            RELATIONSHIP_DATASET,
+            id,
+            toStore,
+            Map.of("caregiverId", toStore.caregiverId(),
+                "patientId", toStore.patientId(),
+                "status", "ACTIVE"),
+            "CaregiverRelationship",
+            1
+        ).then(stored -> audit("CREATE_RELATIONSHIP", stored.patientId(),
+            "Caregiver " + stored.caregiverId() + " linked as " + stored.relationshipType())
+            .map($ -> stored));
     }
 
-    /**
-     * Revokes a caregiver relationship immediately.
-     *
-     * @param relationshipId the relationship identifier
-     * @param revokedBy      the identity revoking the relationship
-     * @return Promise containing the revoked relationship
-     */
     public Promise<CaregiverRelationship> revokeRelationship(String relationshipId) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return getRelationship(relationshipId)
-                .then(opt -> {
-                    if (opt.isEmpty()) {
-                        return Promise.<CaregiverRelationship>ofException(
-                                new IllegalStateException("Relationship not found: " + relationshipId));
-                    }
-                    CaregiverRelationship existing = opt.get();
-                    if (existing.status() == RelationshipStatus.REVOKED) {
-                        return Promise.<CaregiverRelationship>ofException(
-                                new IllegalStateException("Relationship already revoked: " + relationshipId));
-                    }
-                    CaregiverRelationship revoked = new CaregiverRelationship(
-                            existing.id(), existing.caregiverId(), existing.patientId(),
-                            existing.relationshipType(), existing.consentScope(),
-                            RelationshipStatus.REVOKED, existing.createdAt(), Instant.now()
-                    );
-                    DataWriteRequest req = new DataWriteRequest(
-                            RELATIONSHIP_DATASET, relationshipId,
-                            TypedDataSerializer.toBytes(revoked, "CaregiverRelationship", 1),
-                            Map.of("status", "REVOKED")
-                    );
-                    return dataCloud.writeData(req)
-                            .then($ -> audit("REVOKE_RELATIONSHIP", revoked.patientId(),
-                                    "Relationship revoked"))
-                            .map($ -> revoked);
-                });
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.<CaregiverRelationship>ofException(
+                        new IllegalStateException("Relationship not found: " + relationshipId));
+                }
+                CaregiverRelationship existing = opt.get();
+                if (existing.status() == RelationshipStatus.REVOKED) {
+                    return Promise.<CaregiverRelationship>ofException(
+                        new IllegalStateException("Relationship already revoked: " + relationshipId));
+                }
+                CaregiverRelationship revoked = new CaregiverRelationship(
+                    existing.id(), existing.caregiverId(), existing.patientId(),
+                    existing.relationshipType(), existing.consentScope(),
+                    RelationshipStatus.REVOKED, existing.createdAt(), Instant.now()
+                );
+                return updateRecord(
+                    RELATIONSHIP_DATASET,
+                    relationshipId,
+                    revoked,
+                    Map.of("status", "REVOKED"),
+                    "CaregiverRelationship",
+                    1
+                ).then(updated -> audit("REVOKE_RELATIONSHIP", updated.patientId(),
+                    "Relationship revoked")
+                    .map($ -> updated));
+            });
     }
 
-    /**
-     * Retrieves a caregiver relationship by ID.
-     *
-     * @param relationshipId the relationship identifier
-     * @return Promise containing the relationship if found
-     */
     public Promise<Optional<CaregiverRelationship>> getRelationship(String relationshipId) {
-        if (!running) {
-            return Promise.of(Optional.empty());
-        }
-
-        return dataCloud.readData(new DataReadRequest(RELATIONSHIP_DATASET, relationshipId, Map.of()))
-                .map(result -> {
-                    if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable(
-                            TypedDataSerializer.fromBytes(result.getData(), CaregiverRelationship.class));
-                })
-                ;
+        ensureRunning();
+        return readRecord(RELATIONSHIP_DATASET, relationshipId, CaregiverRelationship.class);
     }
 
-    /**
-     * Returns all active caregivers for a patient.
-     *
-     * @param patientId the patient identifier
-     * @return Promise containing the list of active caregiver relationships
-     */
     public Promise<List<CaregiverRelationship>> getActiveCaregiversForPatient(String patientId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        return dataCloud.queryData(new DataQueryRequest(
-                RELATIONSHIP_DATASET,
-                "patientId = :patientId AND status = :status",
-                Map.of("patientId", patientId, "status", "ACTIVE"),
-                500, 0
-        )).map(QueryResult::getResults)
-                .map(results -> results.stream()
-                        .map(r -> TypedDataSerializer.fromBytes(r.getData(), CaregiverRelationship.class))
-                        .filter(Objects::nonNull)
-                        .filter(rel -> rel.status() == RelationshipStatus.ACTIVE)
-                        .filter(rel -> rel.expiresAt() == null || rel.expiresAt().isAfter(Instant.now()))
-                        .toList());
+        return queryRecords(
+            RELATIONSHIP_DATASET,
+            "patientId = :patientId AND status = :status",
+            Map.of("patientId", patientId, "status", "ACTIVE"),
+            500,
+            0,
+            CaregiverRelationship.class
+        ).map(relationships -> relationships.stream()
+            .filter(rel -> rel.status() == RelationshipStatus.ACTIVE)
+            .filter(rel -> rel.expiresAt() == null || rel.expiresAt().isAfter(Instant.now()))
+            .toList());
     }
 
-    /**
-     * Returns all active patients a caregiver is responsible for.
-     *
-     * @param caregiverId the caregiver identifier
-     * @return Promise containing the list of active relationships
-     */
     public Promise<List<CaregiverRelationship>> getPatientsForCaregiver(String caregiverId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        return dataCloud.queryData(new DataQueryRequest(
-                RELATIONSHIP_DATASET,
-                "caregiverId = :caregiverId AND status = :status",
-                Map.of("caregiverId", caregiverId, "status", "ACTIVE"),
-                500, 0
-        )).map(QueryResult::getResults)
-                .map(results -> results.stream()
-                        .map(r -> TypedDataSerializer.fromBytes(r.getData(), CaregiverRelationship.class))
-                        .filter(Objects::nonNull)
-                        .filter(rel -> rel.status() == RelationshipStatus.ACTIVE)
-                        .filter(rel -> rel.expiresAt() == null || rel.expiresAt().isAfter(Instant.now()))
-                        .toList());
+        return queryRecords(
+            RELATIONSHIP_DATASET,
+            "caregiverId = :caregiverId AND status = :status",
+            Map.of("caregiverId", caregiverId, "status", "ACTIVE"),
+            500,
+            0,
+            CaregiverRelationship.class
+        ).map(relationships -> relationships.stream()
+            .filter(rel -> rel.status() == RelationshipStatus.ACTIVE)
+            .filter(rel -> rel.expiresAt() == null || rel.expiresAt().isAfter(Instant.now()))
+            .toList());
     }
 
     // ==================== Private Helpers ====================
-
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> relationships = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                RELATIONSHIP_DATASET,
-                Map.of("id", "string", "caregiverId", "string", "patientId", "string",
-                        "status", "string", "createdAt", "timestamp"),
-                Map.of("retention", "10years")
-        ));
-
-        Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                AUDIT_DATASET,
-                Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
-                Map.of("retention", "10years")
-        ));
-
-        return Promises.all(relationships, audit).map($ -> null);
-    }
-
-    private Promise<Void> audit(String action, String patientId, String details) {
-        String auditId = generateId("aud");
-        record AuditEntry(String id, Instant ts, String action, String patient, String details) {}
-        return dataCloud.writeData(new DataWriteRequest(
-                AUDIT_DATASET, auditId,
-                TypedDataSerializer.toBytes(
-                        new AuditEntry(auditId, Instant.now(), action, patientId, details),
-                        "CaregiverAuditEntry", 1),
-                Map.of("timestamp", Instant.now().toString())
-        ));
-    }
-
-    private String generateId(String prefix) {
-        return prefix + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
 
     // ==================== Inner Types ====================
 

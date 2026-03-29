@@ -27,8 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 /**
  * Concurrency regression tests for {@link EventBuffer}.
@@ -59,8 +57,6 @@ class EventBufferConcurrencyTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        when(spillStore.append(any(), any(), any()))
-            .thenReturn(Promise.complete());
         buffer = new EventBuffer(spillStore, "concurrency-test", CAPACITY, HIGH_WATER, LOW_WATER);
     }
 

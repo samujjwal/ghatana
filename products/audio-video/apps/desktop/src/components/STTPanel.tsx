@@ -254,6 +254,7 @@ const STTPanel: React.FC = () => {
           data: wavBuffer,
           sampleRate: 16000,
           channels: 1,
+          bitsPerSample: 16,
           durationMs: 0, // Will be calculated by server
           format: 'wav'
         },

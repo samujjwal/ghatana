@@ -172,7 +172,7 @@ public class AiAssistHandler {
                               log.warn("[DC-E3] entity suggest AI call failed for collection={} tenant={}: {}",
                                         collection, tenantId, e.getMessage());
                               recommendationMetrics.recordError(
-                                  AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, (Exception) e);
+                                  AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, e);
                               return Promise.of(heuristicEntitySuggestResponse(
                                       collection, context, limit, tenantId, requestId));
                           });
@@ -220,7 +220,7 @@ public class AiAssistHandler {
                           e -> {
                               log.warn("[DC-E3] analytics suggest AI call failed tenant={}: {}", tenantId, e.getMessage());
                               recommendationMetrics.recordError(
-                                  AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, (Exception) e);
+                                  AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, e);
                               return Promise.of(heuristicAnalyticsSuggestResponse(intent, tenantId, requestId));
                           });
             });
@@ -268,7 +268,7 @@ public class AiAssistHandler {
                               log.warn("[DC-E3] pipeline hint AI call failed pipelineId={} tenant={}: {}",
                                         pipelineId, tenantId, e.getMessage());
                               recommendationMetrics.recordError(
-                                  AiRecommendationMetrics.TYPE_PIPELINE_HINT, tenantId, (Exception) e);
+                                  AiRecommendationMetrics.TYPE_PIPELINE_HINT, tenantId, e);
                               return Promise.of(heuristicPipelineHintResponse(pipelineId, tenantId, requestId));
                           });
             });
@@ -317,7 +317,7 @@ public class AiAssistHandler {
                               log.warn("[DC-E3] brain explain AI call failed itemId={} tenant={}: {}",
                                         itemId, tenantId, e.getMessage());
                               recommendationMetrics.recordError(
-                                  AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN, tenantId, (Exception) e);
+                                  AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN, tenantId, e);
                               return Promise.of(heuristicBrainExplainResponse(itemId, tenantId, requestId));
                           });
             });

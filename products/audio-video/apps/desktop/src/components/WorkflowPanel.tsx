@@ -15,34 +15,38 @@ const WorkflowPanel: React.FC = () => {
   const [targetLanguage, setTargetLanguage] = useState('es-ES');
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   
   const { isRunning, currentExecution, workflows, reset } = useWorkflow({
     onProgress: (step, total, message) => {
-      console.log(`Progress: ${step}/${total} - ${message}`);
+      setValidationMessage(null);
+      setStatusMessage(`Step ${step}/${total}: ${message}`);
     },
     onComplete: (result) => {
-      console.log('Workflow completed:', result);
+      setStatusMessage(`Workflow completed: ${result.workflowId}`);
     },
     onError: (error) => {
-      console.error('Workflow error:', error);
+      setValidationMessage(error);
     }
   });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: 'audio' | 'image') => {
     const file = event.target.files?.[0];
     if (type === 'audio') {
-      setAudioFile(file);
+      setAudioFile(file ?? null);
     } else {
-      setImageFile(file);
+      setImageFile(file ?? null);
     }
   };
 
   const executeWorkflow = async () => {
     try {
+      setValidationMessage(null);
       switch (selectedWorkflow) {
         case 'speech-to-speech':
           if (!audioFile) {
-            alert('Please select an audio file');
+            setValidationMessage('Select an audio file before starting speech-to-speech.');
             return;
           }
           const audioData = await audioFile.arrayBuffer();
@@ -50,6 +54,7 @@ const WorkflowPanel: React.FC = () => {
             data: audioData,
             sampleRate: 44100,
             channels: 1,
+            bitsPerSample: 16,
             durationMs: 0,
             format: 'wav'
           });
@@ -57,7 +62,7 @@ const WorkflowPanel: React.FC = () => {
 
         case 'translate-and-speak':
           if (!textInput.trim()) {
-            alert('Please enter text to translate');
+            setValidationMessage('Enter text before starting translation.');
             return;
           }
           await workflows.translateAndSpeak(textInput, targetLanguage);
@@ -65,7 +70,7 @@ const WorkflowPanel: React.FC = () => {
 
         case 'analyze-content':
           if (!imageFile) {
-            alert('Please select an image file');
+            setValidationMessage('Select an image file before content analysis.');
             return;
           }
           const imageData = await imageFile.arrayBuffer();
@@ -79,6 +84,7 @@ const WorkflowPanel: React.FC = () => {
               data: await audioFile.arrayBuffer(),
               sampleRate: 44100,
               channels: 1,
+              bitsPerSample: 16,
               durationMs: 0,
               format: 'wav'
             };
@@ -93,7 +99,7 @@ const WorkflowPanel: React.FC = () => {
           break;
       }
     } catch (error) {
-      console.error('Workflow execution failed:', error);
+      setValidationMessage(error instanceof Error ? error.message : 'Workflow execution failed.');
     }
   };
 
@@ -130,6 +136,16 @@ const WorkflowPanel: React.FC = () => {
     <div className="space-y-6">
       <Card title="Workflow Orchestration" subtitle="Combine multiple services for powerful workflows">
         <div className="space-y-6">
+          {validationMessage && (
+            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {validationMessage}
+            </div>
+          )}
+          {statusMessage && !validationMessage && (
+            <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+              {statusMessage}
+            </div>
+          )}
           {/* Workflow Selection */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Select Workflow</h3>

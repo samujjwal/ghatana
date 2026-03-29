@@ -1,30 +1,22 @@
 package com.ghatana.finance.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
+import com.ghatana.kernel.service.AbstractDataService;
+import com.ghatana.kernel.util.TypedDataSerializer;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.InMemoryCacheAdapter;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
-import com.ghatana.kernel.util.TypedDataSerializer;
-
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Risk Management Service for pre-trade and post-trade risk checks.
@@ -48,15 +40,13 @@ import java.util.UUID;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class RiskManagementService implements KernelLifecycleAware {
+public class RiskManagementService extends AbstractDataService {
 
     private static final String RISK_DATASET = "finance.risk.metrics";
     private static final String ALERT_DATASET = "finance.risk.alerts";
 
     /** Distributed cache for risk profiles — multi-node safe (ISSUE-X02). */
     private final DistributedCachePort<String, RiskMetrics> riskCache;
-    private final DataCloudKernelAdapter dataCloud;
-    private volatile boolean running = false;
 
     // Risk limits — loaded from KernelConfigResolver at start(), with sensible defaults
     private volatile BigDecimal maxPositionLimit;
@@ -79,7 +69,7 @@ public class RiskManagementService implements KernelLifecycleAware {
      */
     public RiskManagementService(KernelContext context,
                                   DistributedCachePort<String, RiskMetrics> riskCache) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
         this.riskCache = Objects.requireNonNull(riskCache, "riskCache must not be null");
 
         // Load configurable risk limits from kernel config
@@ -112,23 +102,42 @@ public class RiskManagementService implements KernelLifecycleAware {
         this(context, new InMemoryCacheAdapter<>(10_000, Duration.ofSeconds(60)));
     }
 
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    public Promise<Void> stop() {
-        running = false;
-        // Flush local layer of the distributed cache on graceful shutdown
-        return riskCache.invalidateAll();
-    }
-
-    public boolean isHealthy() {
-        return running;
-    }
-
+    @Override
     public String getName() {
         return "risk-management";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        Promise<Void> risk = createSchema(
+            RISK_DATASET,
+            Map.of(
+                "traderId", "string",
+                "metricType", "string",
+                "value", "decimal",
+                "timestamp", "timestamp"
+            ),
+            Map.of("retention", "10years")
+        ).whenException(e -> {});
+
+        Promise<Void> alerts = createSchema(
+            ALERT_DATASET,
+            Map.of(
+                "alertId", "string",
+                "traderId", "string",
+                "alertType", "string",
+                "status", "string"
+            ),
+            Map.of("retention", "10years")
+        ).whenException(e -> {});
+
+        return risk.then($ -> alerts);
+    }
+
+    @Override
+    public Promise<Void> stop() {
+        // Flush local layer of the distributed cache on graceful shutdown
+        return riskCache.invalidateAll();
     }
 
     // ==================== Risk Assessment ====================
@@ -145,9 +154,7 @@ public class RiskManagementService implements KernelLifecycleAware {
      */
     public Promise<RiskCheckResult> preTradeCheck(String traderId, String symbol, String side,
                                                    BigDecimal quantity, BigDecimal price) {
-        if (!running) {
-            return Promise.of(RiskCheckResult.rejected("Service not running"));
-        }
+        ensureRunning();
 
         BigDecimal notional = quantity.multiply(price);
 
@@ -181,36 +188,13 @@ public class RiskManagementService implements KernelLifecycleAware {
             });
     }
 
-    /**
-     * Gets risk metrics for a trader, using the distributed cache (ISSUE-X02 fix).
-     *
-     * <p>Cache miss triggers a fresh calculation which is stored in both L1 (local)
-     * and L2 (Redis) so that all nodes serve consistent data.</p>
-     *
-     * @param traderId the trader identifier
-     * @return Promise containing risk metrics
-     */
     public Promise<RiskMetrics> getRiskMetrics(String traderId) {
-        if (!running) {
-            return Promise.of(RiskMetrics.empty());
-        }
-
+        ensureRunning();
         return riskCache.getOrLoad(traderId, id -> calculateRiskMetrics(id));
     }
 
-    /**
-     * Records trade for post-trade risk monitoring.
-     *
-     * <p>Invalidates the risk cache entry for the affected trader so that the next
-     * {@link #getRiskMetrics(String)} call fetches fresh data across all nodes (ISSUE-X02).</p>
-     *
-     * @param trade the trade record
-     * @return Promise completing when recorded
-     */
     public Promise<Void> recordTrade(TradeRecord trade) {
-        if (!running) {
-            return Promise.complete();
-        }
+        ensureRunning();
 
         return updatePosition(trade)
             .then($ -> checkRiskLimits(trade.getTraderId()))
@@ -219,129 +203,77 @@ public class RiskManagementService implements KernelLifecycleAware {
             .then($ -> riskCache.invalidate(trade.getTraderId()));
     }
 
-    /**
-     * Gets all active risk alerts.
-     *
-     * @return Promise containing active alerts
-     */
     public Promise<List<RiskAlert>> getActiveAlerts() {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        DataQueryRequest request = new DataQueryRequest(
+        return queryRecords(
             ALERT_DATASET,
             "status = :status",
             Map.of("status", "ACTIVE"),
             100,
-            0
+            0,
+            RiskAlert.class
         );
-
-        return dataCloud.queryData(request)
-            .map(QueryResult::getResults)
-            .map(results -> results.stream()
-                .map(r -> deserializeAlert(r.getData()))
-                .filter(Objects::nonNull)
-                .toList());
     }
 
     // ==================== Private Methods ====================
 
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> risk = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            RISK_DATASET,
-            Map.of(
-                "traderId", "string",
-                "metricType", "string",
-                "value", "decimal",
-                "timestamp", "timestamp"
-            ),
-            Map.of("retention", "10years")
-        )).whenException(e -> {});
-
-        Promise<Void> alerts = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            ALERT_DATASET,
-            Map.of(
-                "alertId", "string",
-                "traderId", "string",
-                "alertType", "string",
-                "status", "string"
-            ),
-            Map.of("retention", "10years")
-        )).whenException(e -> {});
-
-        return Promises.all(risk, alerts).map($ -> null);
-    }
-
     private Promise<BigDecimal> getCurrentPosition(String traderId, String symbol) {
-        DataQueryRequest request = new DataQueryRequest(
+        return queryRecords(
             "finance.positions",
             "traderId = :traderId AND symbol = :symbol",
             Map.of("traderId", traderId, "symbol", symbol),
             1,
-            0
-        );
-
-        return dataCloud.queryData(request)
-            .map(result -> result.getResults().isEmpty()
-                ? BigDecimal.ZERO
-                : new BigDecimal(result.getResults().get(0).getMetadata().getOrDefault("value", "0")));
+            0,
+            Map.class
+        ).map(results -> results.isEmpty()
+            ? BigDecimal.ZERO
+            : new BigDecimal((String) results.get(0).getOrDefault("value", "0")));
     }
 
     private Promise<BigDecimal> getPortfolioValue(String traderId) {
-        // Sum of all positions
-        DataQueryRequest request = new DataQueryRequest(
+        return queryRecords(
             "finance.positions",
             "traderId = :traderId",
             Map.of("traderId", traderId),
             1000,
-            0
-        );
-
-        return dataCloud.queryData(request)
-            .map(result -> result.getResults().stream()
-                .map(r -> new BigDecimal(r.getMetadata().getOrDefault("value", "0")))
-                .reduce(BigDecimal.ZERO, BigDecimal::add));
+            0,
+            Map.class
+        ).map(results -> results.stream()
+            .map(r -> new BigDecimal((String) r.getOrDefault("value", "0")))
+            .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
     private Promise<RiskMetrics> calculateRiskMetrics(String traderId) {
         return getPortfolioValue(traderId)
-            .then(portfolioValue -> {
-                return getOpenOrdersExposure(traderId)
-                    .then(openExposure -> {
-                        RiskMetrics metrics = new RiskMetrics(
-                            traderId,
-                            portfolioValue,
-                            openExposure,
-                            BigDecimal.ZERO, // daily P&L
-                            Instant.now()
-                        );
-                        return Promise.of(metrics);
-                    });
-            });
+            .then(portfolioValue -> getOpenOrdersExposure(traderId)
+                .map(openExposure -> new RiskMetrics(
+                    traderId,
+                    portfolioValue,
+                    openExposure,
+                    BigDecimal.ZERO,
+                    Instant.now()
+                )));
     }
 
     private Promise<BigDecimal> getOpenOrdersExposure(String traderId) {
-        DataQueryRequest request = new DataQueryRequest(
+        return queryRecords(
             "finance.orders",
             "traderId = :traderId AND status IN ('NEW', 'PENDING')",
             Map.of("traderId", traderId),
             1000,
-            0
-        );
-
-        return dataCloud.queryData(request)
-            .map(result -> result.getResults().stream()
-                .map(r -> {
-                    BigDecimal qty = new BigDecimal(r.getMetadata().getOrDefault("quantity", "0"));
-                    BigDecimal price = new BigDecimal(r.getMetadata().getOrDefault("price", "0"));
-                    return qty.multiply(price);
-                })
-                .reduce(BigDecimal.ZERO, BigDecimal::add));
+            0,
+            Map.class
+        ).map(results -> results.stream()
+            .map(r -> {
+                BigDecimal qty = new BigDecimal((String) r.getOrDefault("quantity", "0"));
+                BigDecimal price = new BigDecimal((String) r.getOrDefault("price", "0"));
+                return qty.multiply(price);
+            })
+            .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
     private Promise<Void> updatePosition(TradeRecord trade) {
-        // Update position in database
         return Promise.complete();
     }
 
@@ -350,7 +282,6 @@ public class RiskManagementService implements KernelLifecycleAware {
             .then(metrics -> {
                 List<Promise<Void>> checks = new ArrayList<>();
 
-                // Check daily loss limit
                 if (metrics.getDailyPnL().abs().compareTo(maxDailyLoss) > 0) {
                     checks.add(createRiskAlert(traderId, "DAILY_LOSS_LIMIT",
                         "Daily loss limit exceeded"));
@@ -362,22 +293,18 @@ public class RiskManagementService implements KernelLifecycleAware {
 
     private Promise<Void> recordRiskMetrics(String traderId) {
         return calculateRiskMetrics(traderId)
-            .then(metrics -> {
-                DataWriteRequest request = new DataWriteRequest(
-                    RISK_DATASET,
-                    generateId(),
-                    serializeMetrics(metrics),
-                    Map.of(
-                        "traderId", traderId,
-                        "timestamp", Instant.now().toString()
-                    )
-                );
-                return dataCloud.writeData(request);
-            });
+            .then(metrics -> createRecord(
+                RISK_DATASET,
+                generateId("risk"),
+                metrics,
+                Map.of("traderId", traderId, "timestamp", Instant.now().toString()),
+                "RiskMetrics",
+                1
+            ).map($ -> null));
     }
 
     private Promise<Void> createRiskAlert(String traderId, String alertType, String message) {
-        String alertId = generateId();
+        String alertId = generateId("alert");
         RiskAlert alert = new RiskAlert(
             alertId,
             traderId,
@@ -387,37 +314,16 @@ public class RiskManagementService implements KernelLifecycleAware {
             "ACTIVE"
         );
 
-        DataWriteRequest request = new DataWriteRequest(
+        return createRecord(
             ALERT_DATASET,
             alertId,
-            serializeAlert(alert),
-            Map.of(
-                "traderId", traderId,
-                "alertType", alertType,
-                "status", "ACTIVE"
-            )
-        );
-
-        return dataCloud.writeData(request);
+            alert,
+            Map.of("traderId", traderId, "alertType", alertType, "status", "ACTIVE"),
+            "RiskAlert",
+            1
+        ).map($ -> null);
     }
 
-    private byte[] serializeMetrics(RiskMetrics metrics) {
-        return TypedDataSerializer.toBytes(metrics, "RiskMetrics", 1);
-    }
-
-    private byte[] serializeAlert(RiskAlert alert) {
-        return TypedDataSerializer.toBytes(alert, "RiskAlert", 1);
-    }
-
-    private RiskAlert deserializeAlert(byte[] data) {
-        return TypedDataSerializer.fromBytes(data, RiskAlert.class);
-    }
-
-    private String generateId() {
-        return "risk-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
-
-    // ==================== Inner Types ====================
     // ==================== Inner Types ====================
 
     public static class RiskCheckResult {

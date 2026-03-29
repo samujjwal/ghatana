@@ -191,13 +191,13 @@ class StorageRouterServiceTest extends EventloopTestBase {
     @Test
     void constructor_nullRepository_throwsNPE() {
         assertThatNullPointerException()
-                .isThrownBy(() -> new StorageRouterService(null, metrics));
+                .isThrownBy(() -> new StorageRouterService(null, metrics, Duration.ofSeconds(10)));
     }
 
     @Test
     void constructor_nullMetrics_throwsNPE() {
         assertThatNullPointerException()
-                .isThrownBy(() -> new StorageRouterService(repository, null));
+                .isThrownBy(() -> new StorageRouterService(repository, null, Duration.ofSeconds(10)));
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────

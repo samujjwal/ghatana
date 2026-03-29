@@ -68,10 +68,12 @@ class DataCloudAgentRegistryLruTest extends EventloopTestBase {
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private void stubRegister() {
-        when(mockEntity.entityId()).thenReturn(UUID.randomUUID());
+        when(mockEntity.getId()).thenReturn(UUID.randomUUID());
         when(dataCloud.createEntity(eq(TENANT_ID), eq(DataCloudAgentRegistry.REGISTRY_COLLECTION),
-                anyMap(), eq("agent-registry")))
+            anyMap()))
             .thenReturn(Promise.of(mockEntity));
+        when(dataCloud.appendEvent(eq(TENANT_ID), anyString(), any()))
+            .thenReturn(Promise.of(0L));
     }
 
     @SuppressWarnings("unchecked")
@@ -82,7 +84,7 @@ class DataCloudAgentRegistryLruTest extends EventloopTestBase {
             .name("Agent-" + id)
             .version("1.0.0")
             .type(AgentType.DETERMINISTIC)
-            .determinismGuarantee(DeterminismGuarantee.FULLY_DETERMINISTIC)
+            .determinism(DeterminismGuarantee.FULL)
             .failureMode(FailureMode.FAIL_FAST)
             .stateMutability(StateMutability.STATELESS)
             .capabilities(Set.of("test"))

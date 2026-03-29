@@ -1,13 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.kernel.util.TypedDataSerializer;
+import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -17,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Telemedicine Session Service for PHR.
@@ -34,43 +27,27 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class TelemedicineService implements KernelLifecycleAware {
+public class TelemedicineService extends AbstractDataService {
 
     private static final String SESSION_DATASET = "phr.telemedicine.sessions";
-    private static final String AUDIT_DATASET   = "phr.telemedicine.audit";
 
-    private final DataCloudKernelAdapter dataCloud;
-    private volatile boolean running = false;
-
-    /**
-     * Constructs a TelemedicineService.
-     *
-     * @param context kernel context providing DataCloudKernelAdapter
-     */
     public TelemedicineService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    /** Starts the service and initializes backing datasets. */
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    /** Stops the service. */
-    public Promise<Void> stop() {
-        running = false;
-        return Promise.complete();
-    }
-
-    /** Returns {@code true} when the service is running. */
-    public boolean isHealthy() {
-        return running;
-    }
-
-    /** Returns the logical service name. */
+    @Override
     public String getName() {
         return "telemedicine";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        return createSchema(
+            SESSION_DATASET,
+            Map.of("id", "string", "patientId", "string", "status", "string",
+                "scheduledAt", "timestamp"),
+            Map.of("retention", "10years")
+        );
     }
 
     // ==================== Core Operations ====================
@@ -82,223 +59,138 @@ public class TelemedicineService implements KernelLifecycleAware {
      * @return Promise containing the stored session
      */
     public Promise<TeleSession> scheduleSession(TeleSession session) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
-        Objects.requireNonNull(session.patientId(), "patientId");
-        Objects.requireNonNull(session.providerId(), "providerId");
-        Objects.requireNonNull(session.scheduledAt(), "scheduledAt");
+        validateRequired(session.patientId(), "patientId");
+        validateRequired(session.providerId(), "providerId");
+        validateRequired(session.scheduledAt(), "scheduledAt");
 
         String id = session.id() != null ? session.id() : generateId("tele");
         TeleSession toStore = new TeleSession(
-                id,
-                session.patientId(),
-                session.providerId(),
-                session.scheduledAt(),
-                session.durationMinutes(),
-                session.platform(),
-                session.joinUrl(),
-                SessionStatus.SCHEDULED,
-                null,
-                null,
-                null
+            id,
+            session.patientId(),
+            session.providerId(),
+            session.scheduledAt(),
+            session.durationMinutes(),
+            session.platform(),
+            session.joinUrl(),
+            SessionStatus.SCHEDULED,
+            null,
+            null,
+            null
         );
 
         return writeSession(toStore, "SCHEDULE_SESSION", "Scheduled telemedicine session");
     }
 
-    /**
-     * Marks a session as in-progress when the patient joins.
-     *
-     * @param sessionId the session identifier
-     * @return Promise containing the updated session
-     */
     public Promise<TeleSession> startSession(String sessionId) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return getSession(sessionId)
-                .then(opt -> requireFound(opt, sessionId))
-                .then(existing -> {
-                    if (existing.status() == SessionStatus.IN_PROGRESS) {
-                        return Promise.of(existing);
-                    }
-                    if (existing.status() != SessionStatus.SCHEDULED) {
-                        return Promise.<TeleSession>ofException(new IllegalStateException(
-                                "Cannot start session in status: " + existing.status()));
-                    }
-                    TeleSession updated = new TeleSession(
-                            existing.id(), existing.patientId(), existing.providerId(),
-                            existing.scheduledAt(), existing.durationMinutes(),
-                            existing.platform(), existing.joinUrl(),
-                            SessionStatus.IN_PROGRESS, Instant.now(), null, null
-                    );
-                    return writeSession(updated, "START_SESSION", "Session started");
-                });
+            .then(opt -> requireFound(opt, sessionId))
+            .then(existing -> {
+                if (existing.status() == SessionStatus.IN_PROGRESS) {
+                    return Promise.of(existing);
+                }
+                if (existing.status() != SessionStatus.SCHEDULED) {
+                    return Promise.<TeleSession>ofException(new IllegalStateException(
+                        "Cannot start session in status: " + existing.status()));
+                }
+                TeleSession updated = new TeleSession(
+                    existing.id(), existing.patientId(), existing.providerId(),
+                    existing.scheduledAt(), existing.durationMinutes(),
+                    existing.platform(), existing.joinUrl(),
+                    SessionStatus.IN_PROGRESS, Instant.now(), null, null
+                );
+                return writeSession(updated, "START_SESSION", "Session started");
+            });
     }
 
-    /**
-     * Completes a session after the call ends.
-     *
-     * @param sessionId the session identifier
-     * @param notes     optional clinical notes
-     * @return Promise containing the completed session
-     */
     public Promise<TeleSession> completeSession(String sessionId, String notes) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return getSession(sessionId)
-                .then(opt -> requireFound(opt, sessionId))
-                .then(existing -> {
-                    if (existing.status() == SessionStatus.COMPLETED) {
-                        return Promise.of(existing);
-                    }
-                    if (existing.status() != SessionStatus.IN_PROGRESS) {
-                        return Promise.<TeleSession>ofException(new IllegalStateException(
-                                "Cannot complete session in status: " + existing.status()));
-                    }
-                    Duration actual = existing.startedAt() != null
-                            ? Duration.between(existing.startedAt(), Instant.now())
-                            : null;
-                    TeleSession updated = new TeleSession(
-                            existing.id(), existing.patientId(), existing.providerId(),
-                            existing.scheduledAt(), existing.durationMinutes(),
-                            existing.platform(), existing.joinUrl(),
-                            SessionStatus.COMPLETED, existing.startedAt(), Instant.now(), notes
-                    );
-                    return writeSession(updated, "COMPLETE_SESSION",
-                            "Session completed" + (actual != null ? " after " + actual.toMinutes() + "m" : ""));
-                });
+            .then(opt -> requireFound(opt, sessionId))
+            .then(existing -> {
+                if (existing.status() == SessionStatus.COMPLETED) {
+                    return Promise.of(existing);
+                }
+                if (existing.status() != SessionStatus.IN_PROGRESS) {
+                    return Promise.<TeleSession>ofException(new IllegalStateException(
+                        "Cannot complete session in status: " + existing.status()));
+                }
+                Duration actual = existing.startedAt() != null
+                    ? Duration.between(existing.startedAt(), Instant.now())
+                    : null;
+                TeleSession updated = new TeleSession(
+                    existing.id(), existing.patientId(), existing.providerId(),
+                    existing.scheduledAt(), existing.durationMinutes(),
+                    existing.platform(), existing.joinUrl(),
+                    SessionStatus.COMPLETED, existing.startedAt(), Instant.now(), notes
+                );
+                return writeSession(updated, "COMPLETE_SESSION",
+                    "Session completed" + (actual != null ? " after " + actual.toMinutes() + "m" : ""));
+            });
     }
 
-    /**
-     * Cancels a scheduled session.
-     *
-     * @param sessionId the session identifier
-     * @param reason    reason for cancellation
-     * @return Promise containing the cancelled session
-     */
     public Promise<TeleSession> cancelSession(String sessionId, String reason) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return getSession(sessionId)
-                .then(opt -> requireFound(opt, sessionId))
-                .then(existing -> {
-                    if (existing.status() == SessionStatus.COMPLETED
-                            || existing.status() == SessionStatus.CANCELLED) {
-                        return Promise.<TeleSession>ofException(new IllegalStateException(
-                                "Cannot cancel session in status: " + existing.status()));
-                    }
-                    TeleSession updated = new TeleSession(
-                            existing.id(), existing.patientId(), existing.providerId(),
-                            existing.scheduledAt(), existing.durationMinutes(),
-                            existing.platform(), existing.joinUrl(),
-                            SessionStatus.CANCELLED, existing.startedAt(), null, reason
-                    );
-                    return writeSession(updated, "CANCEL_SESSION", "Session cancelled: " + reason);
-                });
+            .then(opt -> requireFound(opt, sessionId))
+            .then(existing -> {
+                if (existing.status() == SessionStatus.COMPLETED
+                    || existing.status() == SessionStatus.CANCELLED) {
+                    return Promise.<TeleSession>ofException(new IllegalStateException(
+                        "Cannot cancel session in status: " + existing.status()));
+                }
+                TeleSession updated = new TeleSession(
+                    existing.id(), existing.patientId(), existing.providerId(),
+                    existing.scheduledAt(), existing.durationMinutes(),
+                    existing.platform(), existing.joinUrl(),
+                    SessionStatus.CANCELLED, existing.startedAt(), null, reason
+                );
+                return writeSession(updated, "CANCEL_SESSION", "Session cancelled: " + reason);
+            });
     }
 
-    /**
-     * Retrieves a session by ID.
-     *
-     * @param sessionId the session identifier
-     * @return Promise containing the session if found
-     */
     public Promise<Optional<TeleSession>> getSession(String sessionId) {
-        if (!running) {
-            return Promise.of(Optional.empty());
-        }
-
-        return dataCloud.readData(new DataReadRequest(SESSION_DATASET, sessionId, Map.of()))
-                .map(result -> {
-                    if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable((TeleSession) TypedDataSerializer.fromBytes(result.getData(), TeleSession.class));
-                })
-                ;
+        ensureRunning();
+        return readRecord(SESSION_DATASET, sessionId, TeleSession.class);
     }
 
-    /**
-     * Returns all sessions for a patient, sorted newest-first.
-     *
-     * @param patientId the patient identifier
-     * @return Promise containing the list of sessions
-     */
     public Promise<List<TeleSession>> getPatientSessions(String patientId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        return dataCloud.queryData(new DataQueryRequest(
-                SESSION_DATASET,
-                "patientId = :patientId",
-                Map.of("patientId", patientId),
-                500,
-                0
-        )).map(QueryResult::getResults)
-                .map(results -> results.stream()
-                        .map(r -> TypedDataSerializer.fromBytes(r.getData(), TeleSession.class))
-                        .filter(Objects::nonNull)
-                        .sorted((a, b) -> b.scheduledAt().compareTo(a.scheduledAt()))
-                        .toList());
+        return queryRecords(
+            SESSION_DATASET,
+            "patientId = :patientId",
+            Map.of("patientId", patientId),
+            500,
+            0,
+            TeleSession.class
+        ).map(sessions -> sessions.stream()
+            .sorted((a, b) -> b.scheduledAt().compareTo(a.scheduledAt()))
+            .toList());
     }
 
     // ==================== Private Helpers ====================
 
     private Promise<TeleSession> writeSession(TeleSession session, String action, String detail) {
-        DataWriteRequest req = new DataWriteRequest(
-                SESSION_DATASET,
-                session.id(),
-                TypedDataSerializer.toBytes(session, "TeleSession", 1),
-                Map.of("patientId", session.patientId(), "status", session.status().name())
-        );
-        return dataCloud.writeData(req)
-                .then($ -> audit(action, session.patientId(), detail + " [" + session.id() + "]"))
-                .map($ -> session);
+        return createRecord(
+            SESSION_DATASET,
+            session.id(),
+            session,
+            Map.of("patientId", session.patientId(), "status", session.status().name()),
+            "TeleSession",
+            1
+        ).then(stored -> audit(action, stored.patientId(), detail + " [" + stored.id() + "]")
+            .map($ -> stored));
     }
 
     private <T> Promise<T> requireFound(Optional<T> opt, String id) {
         return opt.<Promise<T>>map(Promise::of).orElseGet(() ->
-                Promise.ofException(new IllegalStateException("Session not found: " + id)));
-    }
-
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> sessions = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                SESSION_DATASET,
-                Map.of("id", "string", "patientId", "string", "status", "string",
-                        "scheduledAt", "timestamp"),
-                Map.of("retention", "10years")
-        ));
-
-        Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                AUDIT_DATASET,
-                Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
-                Map.of("retention", "10years")
-        ));
-
-        return Promises.all(sessions, audit).map($ -> null);
-    }
-
-    private Promise<Void> audit(String action, String patientId, String details) {
-        String auditId = generateId("aud");
-        record AuditEntry(String id, Instant ts, String action, String patient, String details) {}
-        return dataCloud.writeData(new DataWriteRequest(
-                AUDIT_DATASET, auditId,
-                TypedDataSerializer.toBytes(
-                        new AuditEntry(auditId, Instant.now(), action, patientId, details),
-                        "TelemedicineAuditEntry", 1),
-                Map.of("timestamp", Instant.now().toString())
-        ));
-    }
-
-    private String generateId(String prefix) {
-        return prefix + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+            Promise.ofException(new IllegalStateException("Session not found: " + id)));
     }
 
     // ==================== Inner Types ====================

@@ -7,6 +7,11 @@ import java.util.Map;
 
 /**
  * Shared observability helpers to keep service telemetry and audit payloads consistent.
+ *
+ * @doc.type class
+ * @doc.purpose Shared telemetry helpers for YAPPC service observability
+ * @doc.layer product
+ * @doc.pattern Utility
  */
 public final class ServiceObservability {
 

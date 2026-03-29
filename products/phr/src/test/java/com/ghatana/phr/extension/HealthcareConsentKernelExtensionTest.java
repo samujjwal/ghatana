@@ -364,8 +364,8 @@ class HealthcareConsentKernelExtensionTest extends EventloopTestBase {
             @Override public void initialize(com.ghatana.kernel.context.KernelContext ctx) {}
             @Override public Promise<Void> start() { return Promise.complete(); }
             @Override public Promise<Void> stop() { return Promise.complete(); }
-            @Override public com.ghatana.kernel.health.HealthStatus getHealthStatus() {
-                return com.ghatana.kernel.health.HealthStatus.healthy();
+            @Override public com.ghatana.platform.health.HealthStatus getHealthStatus() {
+                return com.ghatana.platform.health.HealthStatus.healthy();
             }
         };
     }

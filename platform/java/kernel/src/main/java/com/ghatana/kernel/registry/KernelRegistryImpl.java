@@ -2,9 +2,9 @@ package com.ghatana.kernel.registry;
 
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
-import com.ghatana.kernel.health.HealthStatus;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.plugin.KernelPlugin;
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 

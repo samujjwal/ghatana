@@ -14,7 +14,15 @@ import java.util.function.Supplier;
  * A result type that represents either a successful value or an error.
  * 
  * This is a functional alternative to throwing exceptions for expected error cases.
- * Use this for operations that can fail in expected ways (validation, parsing, etc.).
+ * Use this for operations that can fail in expected ways (validation, parsing, business-rule
+ * rejection, policy decisions) where callers are expected to branch on the outcome.
+ *
+ * <p>Shared-module guidance:
+ * <ul>
+ *   <li>Use {@code Result} for expected domain failures.</li>
+ *   <li>Use exceptions or rejected Promises for infrastructure/runtime failures.</li>
+ *   <li>Keep the error payload typed and actionable for callers.</li>
+ * </ul></p>
  *
  * @param <T> the type of the success value
  * @param <E> the type of the error

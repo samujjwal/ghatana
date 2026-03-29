@@ -81,6 +81,36 @@ public class CrossScopeAuditService {
     }
 
     /**
+     * Compatibility bridge for legacy kernel services that still emit local audit events.
+     *
+     * @param action the action name
+     * @param serviceName the service emitting the event
+     * @param entityId the related entity identifier
+     * @param details event details
+     * @param metadata additional metadata
+     * @return Promise completing when the audit is stored
+     */
+    public Promise<Void> recordAuditEvent(String action, String serviceName, String entityId,
+                                          String details, Map<String, String> metadata) {
+        Map<String, Object> eventMetadata = new LinkedHashMap<>();
+        if (metadata != null) {
+            eventMetadata.putAll(metadata);
+        }
+        eventMetadata.putIfAbsent("entityId", entityId);
+        eventMetadata.putIfAbsent("details", details);
+
+        return auditCrossScopeAction(CrossScopeAuditEvent.builder()
+            .sourceScope(ScopeDescriptor.product(serviceName))
+            .targetScope(ScopeDescriptor.product(serviceName))
+            .action(action)
+            .tenantId(metadata != null ? metadata.get("tenantId") : null)
+            .capabilityId(serviceName)
+            .classification(ClassificationDescriptor.of("general", ClassificationDescriptor.SensitivityLevel.INTERNAL))
+            .metadata(eventMetadata)
+            .build());
+    }
+
+    /**
      * Queries audit records by scope and time range.
      *
      * @param startDate   query start

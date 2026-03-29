@@ -34,6 +34,13 @@ export interface ServiceClientConfig {
   retries: number;
   enableLogging: boolean;
   apiKey?: string;
+  logger?: Pick<Console, 'info' | 'warn' | 'error'>;
+  circuitBreaker?: Partial<CircuitBreakerConfig>;
+}
+
+export interface CircuitBreakerConfig {
+  failureThreshold: number;
+  resetTimeoutMs: number;
 }
 
 /**
@@ -64,6 +71,7 @@ class CircuitBreaker {
   private state: CircuitState = 'CLOSED';
   private failureCount = 0;
   private lastFailureTime = 0;
+  private halfOpenProbeInFlight = false;
 
   constructor(
     private readonly failureThreshold: number = 5,
@@ -76,11 +84,15 @@ class CircuitBreaker {
     if (this.state === 'OPEN') {
       if (Date.now() - this.lastFailureTime >= this.resetTimeoutMs) {
         this.state = 'HALF_OPEN';
+        this.halfOpenProbeInFlight = false;
         return true;
       }
       return false;
     }
-    // HALF_OPEN: allow exactly one probe
+    if (this.halfOpenProbeInFlight) {
+      return false;
+    }
+    this.halfOpenProbeInFlight = true;
     return true;
   }
 
@@ -88,12 +100,14 @@ class CircuitBreaker {
   recordSuccess(): void {
     this.failureCount = 0;
     this.state = 'CLOSED';
+    this.halfOpenProbeInFlight = false;
   }
 
   /** Must be called on every failed response. */
   recordFailure(): void {
     this.failureCount++;
     this.lastFailureTime = Date.now();
+    this.halfOpenProbeInFlight = false;
     if (this.state === 'HALF_OPEN' || this.failureCount >= this.failureThreshold) {
       this.state = 'OPEN';
     }
@@ -119,7 +133,14 @@ export class AudioVideoClient {
     this.configs = new Map(Object.entries(configs) as [ServiceType, ServiceClientConfig][]);
     // Pre-create a circuit breaker for each configured service
     for (const service of Object.keys(configs) as ServiceType[]) {
-      this.circuitBreakers.set(service, new CircuitBreaker());
+      const breakerConfig = configs[service].circuitBreaker;
+      this.circuitBreakers.set(
+        service,
+        new CircuitBreaker(
+          breakerConfig?.failureThreshold ?? 5,
+          breakerConfig?.resetTimeoutMs ?? 30_000,
+        ),
+      );
     }
   }
 
@@ -324,9 +345,10 @@ export class AudioVideoClient {
   private emitEvent(event: string, data: unknown): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
+      const logger = this.configs.get((event.split(':', 1)[0] || 'stt') as ServiceType)?.logger ?? console;
       listeners.forEach(callback => {
         try { callback(data); } catch (error) {
-          console.error(`Error in event listener for ${event}:`, error);
+          logger.error(`Error in event listener for ${event}:`, error);
         }
       });
     }
@@ -349,6 +371,7 @@ export class AudioVideoClient {
     const { method, path, body, config, serviceLabel } = opts;
     const serviceType = serviceLabel as ServiceType;
     const cb = this.circuitBreakers.get(serviceType) ?? new CircuitBreaker();
+    const logger = config.logger ?? console;
 
     if (!cb.allowRequest()) {
       throw new Error(`[${serviceLabel}] circuit breaker is OPEN — service temporarily unavailable`);
@@ -362,11 +385,6 @@ export class AudioVideoClient {
     const maxAttempts = config.retries + 1;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      if (attempt > 0) {
-        // exponential back-off: 200ms, 400ms, 800ms, …
-        await new Promise(r => setTimeout(r, 200 * Math.pow(2, attempt - 1)));
-      }
-
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), config.timeout);
 
@@ -391,10 +409,14 @@ export class AudioVideoClient {
         clearTimeout(timeoutId);
         lastError = err instanceof Error ? err : new Error(String(err));
         if (config.enableLogging) {
-          console.warn(`[${serviceLabel}] attempt ${attempt + 1}/${maxAttempts} failed:`, lastError.message);
+          logger.warn(`[${serviceLabel}] attempt ${attempt + 1}/${maxAttempts} failed:`, lastError.message);
         }
-        // Don't retry on client errors (4xx)
-        if (lastError.message.includes('HTTP 4')) break;
+        if (!this.shouldRetry(lastError) || attempt + 1 >= maxAttempts) {
+          break;
+        }
+
+        const backoffMs = this.calculateBackoffDelay(attempt);
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
       }
     }
 
@@ -403,12 +425,34 @@ export class AudioVideoClient {
   }
 
   private toError(error: unknown, code: string, service: ServiceType): AudioVideoError {
+    const normalizedError = error instanceof Error ? error : new Error(String(error));
+    const statusCode = this.extractStatusCode(normalizedError);
     return {
       code,
-      message: error instanceof Error ? error.message : 'Unknown error',
+      message: normalizedError.message,
       service,
+      retryable: statusCode === undefined || statusCode >= 500 || statusCode === 429,
       timestamp: new Date(),
     };
+  }
+
+  private shouldRetry(error: Error): boolean {
+    const statusCode = this.extractStatusCode(error);
+    if (statusCode !== undefined) {
+      return statusCode >= 500 || statusCode === 429;
+    }
+    return error.name === 'AbortError' || /timeout|temporarily unavailable|network/i.test(error.message);
+  }
+
+  private extractStatusCode(error: Error): number | undefined {
+    const match = error.message.match(/HTTP\s+(\d{3})/i);
+    return match ? Number(match[1]) : undefined;
+  }
+
+  private calculateBackoffDelay(attempt: number): number {
+    const baseDelay = 200 * Math.pow(2, attempt);
+    const jitter = Math.floor(Math.random() * Math.min(250, baseDelay / 4));
+    return baseDelay + jitter;
   }
 }
 

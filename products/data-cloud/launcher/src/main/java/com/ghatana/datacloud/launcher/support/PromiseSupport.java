@@ -64,7 +64,7 @@ public final class PromiseSupport {
     public static HttpResponse toHttpResponse(Exception e, HttpHandlerSupport http,
                                                String correlationId) {
         if (e instanceof BaseException base) {
-            int statusCode = base.getHttpStatus();
+            int statusCode = base.getErrorCode().getHttpStatus();
             // Treat all client errors as-is; log server errors at WARN
             if (statusCode >= 500) {
                 log.warn("[{}] Internal server error: {}", correlationId, base.getMessage(), base);

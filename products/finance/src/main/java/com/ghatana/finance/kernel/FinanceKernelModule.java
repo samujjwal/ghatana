@@ -1,7 +1,10 @@
 package com.ghatana.finance.kernel;
 
 import com.ghatana.finance.kernel.service.ComplianceService;
+import com.ghatana.finance.kernel.service.LedgerManagementService;
+import com.ghatana.finance.kernel.service.MarketDataService;
 import com.ghatana.finance.kernel.service.OrderManagementService;
+import com.ghatana.finance.kernel.service.PortfolioManagementService;
 import com.ghatana.finance.kernel.service.RiskManagementService;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.contracts.ContractRegistry;
@@ -12,7 +15,7 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.module.AbstractKernelModule;
 import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.products.finance.FinanceCapabilities;
+import com.ghatana.finance.kernel.FinanceCapabilities;
 
 import java.util.List;
 import java.util.Map;
@@ -95,9 +98,12 @@ public class FinanceKernelModule extends AbstractKernelModule {
 
     @Override
     protected void registerServices(List<KernelLifecycleAware> services, KernelContext context) {
-        services.add((KernelLifecycleAware) new OrderManagementService(context));
-        services.add((KernelLifecycleAware) new RiskManagementService(context));
-        services.add((KernelLifecycleAware) new ComplianceService(context));
+        services.add(new OrderManagementService(context));
+        services.add(new RiskManagementService(context));
+        services.add(new ComplianceService(context));
+        services.add(new PortfolioManagementService(context));
+        services.add(new LedgerManagementService(context));
+        services.add(new MarketDataService(context));
     }
 
     @Override

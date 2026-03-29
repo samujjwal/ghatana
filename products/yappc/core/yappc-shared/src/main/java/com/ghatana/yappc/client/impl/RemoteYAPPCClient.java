@@ -1,5 +1,6 @@
 package com.ghatana.yappc.client.impl;
 
+import com.ghatana.platform.core.client.ManagedAsyncClient;
 import com.ghatana.yappc.client.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -25,7 +26,7 @@ import java.util.Map;
  * @doc.layer core
  * @doc.pattern Implementation
 */
-public final class RemoteYAPPCClient implements YAPPCClient {
+public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPCClient {
     
     private static final Logger logger = LoggerFactory.getLogger(RemoteYAPPCClient.class);
     
@@ -33,7 +34,6 @@ public final class RemoteYAPPCClient implements YAPPCClient {
     private final YAPPCConfig config;
     private final ClientOptions options;
     private final HttpClient httpClient;
-    private volatile boolean started = false;
     
     public RemoteYAPPCClient(String serverUrl, YAPPCConfig config, ClientOptions options) {
         this.serverUrl = serverUrl.endsWith("/") ? serverUrl.substring(0, serverUrl.length() - 1) : serverUrl;
@@ -47,7 +47,7 @@ public final class RemoteYAPPCClient implements YAPPCClient {
     @Override
     public Promise<Void> start() {
         return Promise.ofCallback(cb -> {
-            if (started) {
+            if (isRunning()) {
                 cb.set(null);
                 return;
             }
@@ -64,7 +64,7 @@ public final class RemoteYAPPCClient implements YAPPCClient {
                 httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenAccept(response -> {
                         if (response.statusCode() == 200) {
-                            started = true;
+                            markStarted();
                             logger.info("Remote YAPPC client connected successfully");
                             cb.set(null);
                         } else {
@@ -87,13 +87,13 @@ public final class RemoteYAPPCClient implements YAPPCClient {
     @Override
     public Promise<Void> stop() {
         return Promise.ofCallback(cb -> {
-            if (!started) {
+            if (!isRunning()) {
                 cb.set(null);
                 return;
             }
             
             logger.info("Stopping remote YAPPC client");
-            started = false;
+            markStopped();
             cb.set(null);
         });
     }
@@ -202,11 +202,23 @@ public final class RemoteYAPPCClient implements YAPPCClient {
     
     @Override
     public Promise<HealthStatus> checkHealth() {
+        if (!isRunning()) {
+            return Promise.of(HealthStatus.builder()
+                .healthy(false)
+                .status("DOWN")
+                .build());
+        }
+
         return executeRequest(
             "/health",
             null,
             HealthStatus.class
         );
+    }
+
+    @Override
+    public Promise<Boolean> healthCheck() {
+        return checkHealth().map(HealthStatus::isHealthy);
     }
     
     @Override
@@ -222,14 +234,6 @@ public final class RemoteYAPPCClient implements YAPPCClient {
             null,
             Map.class
         );
-    }
-    
-    @Override
-    public void close() {
-        if (started) {
-            logger.info("Stopping remote YAPPC client");
-            started = false;
-        }
     }
     
     private <T> Promise<T> executeRequest(String path, Object body, Class<T> responseType) {

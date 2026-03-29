@@ -365,3 +365,385 @@ Code is not done until all of the following are true:
 - Errors and important flows are observable.
 - Inputs are validated at the correct boundaries.
 - The change does not introduce repo drift in architecture, naming, or dependency choices.
+
+## 16. Test File Placement and Conventions
+
+### Java (Maven Standard Layout)
+
+All Java tests live in the **mirror directory** to their source file.
+
+```
+platform/java/<module>/src/
+  main/java/com/ghatana/...   ← production code
+  test/java/com/ghatana/...   ← tests (same package, same relative path)
+```
+
+**Naming convention:** `<ClassName>Test.java` for unit tests; `<ClassName>IT.java` for integration tests.
+
+**Async tests MUST** extend `EventloopTestBase` from `libs:activej-test-utils`.
+
+### TypeScript / React (Co-located `__tests__/`)
+
+TypeScript tests live in **`__tests__/` subdirectories co-located with the source they test**:
+
+```
+platform/typescript/design-system/src/
+  atoms/
+    Button.tsx
+    __tests__/
+      Button.test.tsx
+  molecules/
+    Alert.tsx
+    __tests__/
+      Alert.test.tsx
+```
+
+**Naming convention:** `<ComponentName>.test.tsx` (or `.test.ts` for non-JSX).
+
+### React Native
+
+Follow the same co-located pattern as TypeScript. **Mock individual screens, not the Navigator**.
+
+## 17. Package Naming Standards
+
+### TypeScript Packages
+
+All TypeScript modules use the `@ghatana/` scope with canonical names only:
+
+| Canonical Name | Purpose |
+|----------------|---------|
+| `@ghatana/design-system` | UI components and design tokens |
+| `@ghatana/platform-utils` | Shared utility functions |
+| `@ghatana/canvas` | Canvas and visualization components |
+| `@ghatana/api` | API client utilities |
+| `@ghatana/charts` | Chart components |
+| `@ghatana/realtime` | Real-time communication |
+| `@ghatana/theme` | Theme and styling |
+| `@ghatana/tokens` | Design tokens |
+| `@ghatana/i18n` | Internationalization |
+| `@ghatana/sso-client` | SSO authentication |
+| `@ghatana/platform-shell` | Platform shell components |
+| `@ghatana/ui-integration` | UI integration utilities |
+| `@ghatana/accessibility-audit` | Accessibility testing |
+
+**Rules:**
+- Use kebab-case: `design-system`, `sso-client`
+- Be descriptive and avoid abbreviations
+- No product prefixes in package names
+- **No deprecated package names** - use canonical names only
+
+### Java Utility Classes
+
+All utility classes must:
+1. **Suffix with "Utils"** - `JsonUtils`, `StringUtils`
+2. **Use descriptive prefixes** - `DateTimeUtils`, `ValidationUtils`
+3. **Domain-specific prefixes** - `HttpTestUtils`, `DatabaseTestUtils`
+
+**Package organization:**
+```
+platform/java/core/util/           # Core utilities
+platform/java/http/util/           # HTTP-specific utilities
+platform/java/security/util/       # Security utilities
+platform/java/testing/utils/       # Test utilities
+```
+
+## 18. Agent Framework Guidelines
+
+### Agent Types (9 Canonical Types)
+
+Use the canonical agent taxonomy:
+
+| Type | Determinism | Use Case |
+|------|------------|----------|
+| DETERMINISTIC | 100% | Rules, thresholds, FSMs, pattern matching |
+| PROBABILISTIC | 0% | ML model inference, Bayesian, LLM |
+| HYBRID | Partial | Fast-path deterministic + probabilistic fallback |
+| ADAPTIVE | 0% | Multi-armed bandits, Thompson Sampling |
+| COMPOSITE | Varies | Ensemble voting, fan-out/fan-in, sub-agent DAGs |
+| REACTIVE | 100% | Low-latency triggers, circuit breakers |
+| STREAM_PROCESSOR | Varies | Event-driven stateful stream processing |
+| PLANNING | Varies | Goal-directed, HTN, ReAct, workflow orchestration |
+| CUSTOM | Varies | Extensible domain-specific types |
+
+### Agent Implementation
+
+All agents must implement `TypedAgent<I, O>`:
+```java
+public class MyAgent extends AbstractTypedAgent<Input, Output> {
+    @Override
+    public Promise<AgentResult<Output>> process(AgentContext ctx, Input input) {
+        // Implementation
+    }
+}
+```
+
+### Agent Registry Migration
+
+**Use AEP Central Registry** - Products no longer expose their own registry endpoints:
+
+| Old Path | New Path |
+|----------|----------|
+| `/api/agents` | `/api/v1/agents` (AEP) |
+| `/api/agents/execute` | `/api/v1/agents/:agentId/execute` |
+
+## 19. Observability Implementation
+
+### Required Metrics
+
+All services must expose:
+- `/metrics` endpoint (Prometheus format)
+- Business KPIs for critical flows
+- Error rates and latency metrics
+
+### OpenTelemetry Tracing
+
+```java
+// Standard tracing configuration
+Resource resource = Resource.getDefault()
+    .merge(Resource.create(Attributes.builder()
+        .put("service.name", SERVICE_NAME)
+        .put("service.version", config.version())
+        .build()));
+
+SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
+    .setResource(resource)
+    .addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build())
+    .setSampler(Sampler.traceIdRatioBased(0.01))  // 1% in prod
+    .build();
+```
+
+### Correlation IDs
+
+Propagate correlation IDs across service boundaries:
+```java
+// Extract or generate correlation ID
+String correlationId = request.getHeader("X-Correlation-ID");
+if (correlationId == null) {
+    correlationId = UUID.randomUUID().toString();
+}
+MDC.put("correlationId", correlationId);
+```
+
+### Monitoring Stack
+
+Use the centralized monitoring infrastructure:
+- **Grafana**: http://localhost:3001 (admin/admin)
+- **Prometheus**: http://localhost:9090
+- **Jaeger**: http://localhost:16686
+- **Loki**: http://localhost:3100
+
+## 20. API Design Patterns
+
+### Platform APIs
+
+```java
+// Validation API example
+ValidationService validation = ValidationService.builder()
+    .addValidator(new EmailValidator())
+    .addValidator(new NotNullValidator())
+    .build();
+Promise<ValidationResult> result = validation.validateEvent(event, context);
+
+// Auth API example
+AuthService auth = new DefaultAuthService();
+Promise<UserPrincipal> user = auth.authenticate(token);
+boolean canAccess = auth.checkPermission(user, "collection:read");
+```
+
+### Product APIs
+
+```java
+// Agent execution (AEP)
+Agent agent = new CodeGenerationAgent(llmGateway);
+Promise<GeneratedCode> result = agent.execute(task, context);
+
+// Pipeline of agents
+Agent pipeline = AgentPipeline.builder()
+    .add(new AnalysisAgent())
+    .add(new CodeGenAgent())
+    .add(new ValidationAgent())
+    .build();
+
+// Collection CRUD (Data Cloud)
+CollectionService collections = new DefaultCollectionService();
+Promise<Collection> created = collections.create(tenantId, collection);
+```
+
+## 21. Product-Specific Conventions
+
+### AEP Engine Conventions
+
+- Use `Aep` as the product prefix in Java types
+- Package engine runtime in `com.ghatana.aep` subpackages
+- Builder methods should use direct, fluent names
+- Duration-based settings accepted as `Duration` in builder APIs
+
+### YAPPC Architecture
+
+YAPPC core has 18 Gradle submodules in 5 domain clusters:
+1. **Foundation**: `domain`, `spi`, `yappc-shared`, `framework`
+2. **AI & Knowledge**: `ai`, `knowledge-graph`
+3. **Agent Execution**: `agents/*` (runtime, workflow, specialists)
+4. **Scaffolding**: `scaffold/*` (api, core, packs)
+5. **Refactoring**: `refactorer/*`
+
+**Dependency rules:**
+- Agent modules must NOT import from `scaffold` or `refactorer`
+- Scaffold must NOT import from `agents`
+- Follow the documented dependency topology
+
+### Data Cloud Conventions
+
+- Use `DataCloud` prefix for Java types
+- Tenant isolation via `TenantContext` at repository level
+- Event streaming to AEP for cross-product integration
+
+## 22. Build and Dependency Management
+
+### Gradle Organization
+
+- **Single source of truth**: `gradle/libs.versions.toml`
+- **Convention plugins**: `gradle/conventions/`
+- **Utility files**: `gradle/*.gradle` (common-build, observability, etc.)
+
+### Version Catalog Usage
+
+Always use version catalog instead of hardcoded versions:
+```kotlin
+// build.gradle.kts
+dependencies {
+    implementation(libs.bundles.activej)
+    implementation(libs.bundles.platform.security)
+}
+```
+
+## 23. Security Implementation
+
+### Authentication Patterns
+
+```java
+// API Key authentication (Lifecycle Service)
+Set<String> allowedKeys = new HashSet<>(Arrays.asList(apiKeyEnv.split(",")));
+ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(allowedKeys);
+
+// JWT authentication (Refactorer)
+public final class JwtAuthFilter implements AsyncServlet {
+    private final JwtTokenProvider tokenProvider;  // Platform provider
+    
+    private TenantContext verifyAndResolve(String token) {
+        if (!tokenProvider.validateToken(token)) {
+            throw new SecurityException("Token validation failed");
+        }
+        // Extract tenant from claims
+    }
+}
+```
+
+### Authorization (RBAC)
+
+```java
+// Role-Based Access Control example
+public enum PredefinedRole {
+    ADMIN(createRole("admin", Permission.ALL_PERMISSIONS)),
+    USER(createRole("user", EnumSet.of(Permission.JOB_CREATE, ...))),
+    VIEWER(createRole("viewer", EnumSet.of(Permission.JOB_READ, ...)));
+}
+
+public boolean canPerform(String userId, Resource resource, Action action) {
+    Permission requiredPermission = mapToPermission(resource, action);
+    return requiredPermission != null && hasPermission(userId, requiredPermission);
+}
+```
+
+### Tenant Isolation
+
+```java
+// TenantContextFilter pattern
+public final class TenantContextFilter implements AsyncServlet {
+    @Override
+    public Promise<HttpResponse> serve(HttpRequest request) {
+        Optional<String> tenantId = extractTenantId(request);
+        tenantId.ifPresentOrElse(
+            tid -> TenantContext.setCurrentTenantId(tid),
+            () -> TenantContext.setCurrentTenantId("default-tenant")
+        );
+        return delegate.serve(request)
+            .whenComplete((response, exception) -> TenantContext.clear());
+    }
+}
+```
+
+## 24. Documentation Requirements
+
+### Java Documentation Tags
+
+Every public Java class must include all four `@doc.*` Javadoc tags:
+
+```java
+/**
+ * @doc.type class
+ * @doc.purpose Processes incoming events for tenant-scoped workflows.
+ * @doc.layer product
+ * @doc.pattern Service
+ */
+```
+
+### README Requirements
+
+Every package must have:
+1. **README.md** with canonical package name
+2. **package.json** with correct name
+3. Clear usage examples
+4. API documentation for public interfaces
+
+## 25. Forward-Fix Migration Approach
+
+### No Backward Compatibility Policy
+
+Ghatana follows a **fix-forward** approach - we replace legacy usage rather than maintain backward compatibility.
+
+**Migration Strategy:**
+- **Replace in-place**: Update all references to canonical names immediately
+- **Delete deprecated code**: Remove old implementations after migration
+- **No aliases**: Do not create package aliases or compatibility shims
+- **Atomic migrations**: Complete entire domain migration in single PR
+
+**Examples:**
+```typescript
+// Before (legacy)
+import { Button } from '@ghatana/ui';
+import { cn } from '@ghatana/utils';
+
+// After (fixed forward)
+import { Button } from '@ghatana/design-system';
+import { cn } from '@ghatana/platform-utils';
+```
+
+**Java Migration:**
+```java
+// Before (legacy)
+public class Agent implements com.ghatana.agent.Agent { ... }
+
+// After (fixed forward)
+public class Agent extends AbstractTypedAgent<Input, Output> { ... }
+```
+
+**Registry Migration:**
+```java
+// Before (legacy)
+GET /api/agents
+
+// After (fixed forward)
+GET /api/v1/agents (via AEP Central Registry)
+```
+
+### Enforcement
+
+- CI/CD checks prevent legacy imports
+- ESLint rules block deprecated package names
+- Gradle tasks fail on deprecated API usage
+- No deprecation warnings - direct failures
+
+---
+
+**Last Updated:** 2026-03-29

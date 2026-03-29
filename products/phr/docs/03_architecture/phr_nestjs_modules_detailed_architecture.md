@@ -218,7 +218,7 @@ The following platform libraries are reused across PHR modules:
 | `@ghatana/theme`               | `platform/typescript/theme/`               | Theme provider, dark mode                  | Wrap with healthcare-specific theme overrides    |
 | `@ghatana/charts`              | `platform/typescript/charts/`              | Recharts-based chart primitives            | Use for vitals trends, lab results, analytics    |
 | `@ghatana/i18n`                | `platform/typescript/i18n/`                | Internationalization (i18next)             | Add medical terminology localization (Nepali)    |
-| `@ghatana/utils`               | `platform/typescript/utils/`               | Shared utilities, type helpers             | Use for form validation helpers, date formatting |
+| `@ghatana/platform-utils`      | `platform/typescript/foundation/platform-utils/` | Shared utilities, type helpers             | Use for form validation helpers, date formatting |
 | `@ghatana/sso-client`          | `platform/typescript/sso-client/`          | Cross-product SSO client                   | JWT parsing, auth state, login/logout flows      |
 | `@ghatana/realtime`            | `platform/typescript/realtime/`            | WebSocket and SSE helpers                  | Use for live notifications, telemedicine events  |
 | `@ghatana/audio-video-types`   | `platform/typescript/audio-video-types/`   | Shared types for STT, TTS, Vision          | Type definitions for ASR/transcription features  |

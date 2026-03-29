@@ -1,13 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.kernel.util.TypedDataSerializer;
+import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -17,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Billing and Insurance Baseline Service for PHR.
@@ -35,44 +28,37 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class BillingService implements KernelLifecycleAware {
+public class BillingService extends AbstractDataService {
 
     private static final String ENCOUNTER_DATASET = "phr.billing.encounters";
     private static final String CLAIM_DATASET = "phr.billing.claims";
-    private static final String AUDIT_DATASET = "phr.billing.audit";
 
-    private final DataCloudKernelAdapter dataCloud;
-    private volatile boolean running = false;
-
-    /**
-     * Constructs a BillingService.
-     *
-     * @param context kernel context providing DataCloudKernelAdapter
-     */
     public BillingService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    /** Starts the service and initializes backing datasets. */
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    /** Stops the service. */
-    public Promise<Void> stop() {
-        running = false;
-        return Promise.complete();
-    }
-
-    /** Returns {@code true} when the service is running. */
-    public boolean isHealthy() {
-        return running;
-    }
-
-    /** Returns the logical service name. */
+    @Override
     public String getName() {
         return "billing";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        Promise<Void> encounters = createSchema(
+            ENCOUNTER_DATASET,
+            Map.of("id", "string", "patientId", "string", "status", "string",
+                "createdAt", "timestamp"),
+            Map.of("retention", "10years")
+        );
+
+        Promise<Void> claims = createSchema(
+            CLAIM_DATASET,
+            Map.of("id", "string", "patientId", "string", "status", "string",
+                "submittedAt", "timestamp"),
+            Map.of("retention", "10years")
+        );
+
+        return encounters.then($ -> claims);
     }
 
     // ==================== Core Operations ====================
@@ -84,263 +70,157 @@ public class BillingService implements KernelLifecycleAware {
      * @return Promise containing the stored encounter
      */
     public Promise<BillingEncounter> createEncounter(BillingEncounter encounter) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
-        Objects.requireNonNull(encounter.patientId(), "patientId");
-        Objects.requireNonNull(encounter.providerId(), "providerId");
+        validateRequired(encounter.patientId(), "patientId");
+        validateRequired(encounter.providerId(), "providerId");
 
         String id = encounter.id() != null ? encounter.id() : generateId("enc");
         BillingEncounter toStore = new BillingEncounter(
-                id,
-                encounter.patientId(),
-                encounter.providerId(),
-                encounter.facilityId(),
-                encounter.serviceLines(),
-                encounter.totalAmount(),
-                encounter.currency(),
-                EncounterStatus.OPEN,
-                Instant.now(),
-                null
+            id,
+            encounter.patientId(),
+            encounter.providerId(),
+            encounter.facilityId(),
+            encounter.serviceLines(),
+            encounter.totalAmount(),
+            encounter.currency(),
+            EncounterStatus.OPEN,
+            Instant.now(),
+            null
         );
 
-        DataWriteRequest request = new DataWriteRequest(
-                ENCOUNTER_DATASET,
-                id,
-                TypedDataSerializer.toBytes(toStore, "BillingEncounter", 1),
-                Map.of("patientId", toStore.patientId(), "status", "OPEN")
-        );
-
-        return dataCloud.writeData(request)
-                .then($ -> audit("CREATE_ENCOUNTER", toStore.patientId(),
-                        "Billing encounter created: " + id))
-                .map($ -> toStore);
+        return createRecord(
+            ENCOUNTER_DATASET,
+            id,
+            toStore,
+            Map.of("patientId", toStore.patientId(), "status", "OPEN"),
+            "BillingEncounter",
+            1
+        ).then(stored -> audit("CREATE_ENCOUNTER", stored.patientId(),
+            "Billing encounter created: " + id)
+            .map($ -> stored));
     }
 
-    /**
-     * Closes (finalizes) a billing encounter so it can be submitted for payment.
-     *
-     * @param encounterId the encounter identifier
-     * @return Promise containing the finalized encounter
-     */
     public Promise<BillingEncounter> closeEncounter(String encounterId) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return getEncounter(encounterId)
-                .then(opt -> {
-                    if (opt.isEmpty()) {
-                        return Promise.<BillingEncounter>ofException(
-                                new IllegalStateException("Encounter not found: " + encounterId));
-                    }
-                    BillingEncounter existing = opt.get();
-                    BillingEncounter closed = new BillingEncounter(
-                            existing.id(), existing.patientId(), existing.providerId(),
-                            existing.facilityId(), existing.serviceLines(), existing.totalAmount(),
-                            existing.currency(), EncounterStatus.CLOSED,
-                            existing.createdAt(), Instant.now()
-                    );
-                    DataWriteRequest req = new DataWriteRequest(
-                            ENCOUNTER_DATASET, encounterId,
-                            TypedDataSerializer.toBytes(closed, "BillingEncounter", 1),
-                            Map.of("status", "CLOSED")
-                    );
-                    return dataCloud.writeData(req)
-                            .then($ -> audit("CLOSE_ENCOUNTER", closed.patientId(),
-                                    "Encounter closed: " + encounterId))
-                            .map($ -> closed);
-                });
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.<BillingEncounter>ofException(
+                        new IllegalStateException("Encounter not found: " + encounterId));
+                }
+                BillingEncounter existing = opt.get();
+                BillingEncounter closed = new BillingEncounter(
+                    existing.id(), existing.patientId(), existing.providerId(),
+                    existing.facilityId(), existing.serviceLines(), existing.totalAmount(),
+                    existing.currency(), EncounterStatus.CLOSED,
+                    existing.createdAt(), Instant.now()
+                );
+                return updateRecord(
+                    ENCOUNTER_DATASET,
+                    encounterId,
+                    closed,
+                    Map.of("status", "CLOSED"),
+                    "BillingEncounter",
+                    1
+                ).then(updated -> audit("CLOSE_ENCOUNTER", updated.patientId(),
+                    "Encounter closed: " + encounterId)
+                    .map($ -> updated));
+            });
     }
 
-    /**
-     * Submits an insurance claim for a closed encounter.
-     *
-     * @param claim the insurance claim
-     * @return Promise containing the stored claim
-     */
     public Promise<InsuranceClaim> submitClaim(InsuranceClaim claim) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
-        Objects.requireNonNull(claim.patientId(), "patientId");
-        Objects.requireNonNull(claim.encounterId(), "encounterId");
+        validateRequired(claim.patientId(), "patientId");
+        validateRequired(claim.encounterId(), "encounterId");
 
         String id = claim.id() != null ? claim.id() : generateId("clm");
         InsuranceClaim toStore = new InsuranceClaim(
-                id,
-                claim.patientId(),
-                claim.encounterId(),
-                claim.insurerId(),
-                claim.policyNumber(),
-                claim.claimedAmount(),
-                claim.currency(),
-                ClaimStatus.SUBMITTED,
-                Instant.now(),
-                null,
-                null
+            id,
+            claim.patientId(),
+            claim.encounterId(),
+            claim.insurerId(),
+            claim.policyNumber(),
+            claim.claimedAmount(),
+            claim.currency(),
+            ClaimStatus.SUBMITTED,
+            Instant.now(),
+            null,
+            null
         );
 
-        DataWriteRequest request = new DataWriteRequest(
-                CLAIM_DATASET,
-                id,
-                TypedDataSerializer.toBytes(toStore, "InsuranceClaim", 1),
-                Map.of("patientId", toStore.patientId(), "status", "SUBMITTED")
-        );
-
-        return dataCloud.writeData(request)
-                .then($ -> audit("SUBMIT_CLAIM", toStore.patientId(),
-                        "Claim submitted to insurer: " + toStore.insurerId()))
-                .map($ -> toStore);
+        return createRecord(
+            CLAIM_DATASET,
+            id,
+            toStore,
+            Map.of("patientId", toStore.patientId(), "status", "SUBMITTED"),
+            "InsuranceClaim",
+            1
+        ).then(stored -> audit("SUBMIT_CLAIM", stored.patientId(),
+            "Claim submitted to insurer: " + stored.insurerId())
+            .map($ -> stored));
     }
 
-    /**
-     * Updates the status of an insurance claim (e.g. after adjudication).
-     *
-     * @param claimId    the claim identifier
-     * @param newStatus  the updated claim status
-     * @param adjNote    optional adjudication note
-     * @return Promise containing the updated claim
-     */
     public Promise<InsuranceClaim> updateClaimStatus(String claimId, ClaimStatus newStatus, String adjNote) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return getClaim(claimId)
-                .then(opt -> {
-                    if (opt.isEmpty()) {
-                        return Promise.<InsuranceClaim>ofException(
-                                new IllegalStateException("Claim not found: " + claimId));
-                    }
-                    InsuranceClaim existing = opt.get();
-                    InsuranceClaim updated = new InsuranceClaim(
-                            existing.id(), existing.patientId(), existing.encounterId(),
-                            existing.insurerId(), existing.policyNumber(),
-                            existing.claimedAmount(), existing.currency(),
-                            newStatus, existing.submittedAt(),
-                            newStatus == ClaimStatus.APPROVED || newStatus == ClaimStatus.DENIED
-                                    ? Instant.now() : existing.adjudicatedAt(),
-                            adjNote
-                    );
-                    DataWriteRequest req = new DataWriteRequest(
-                            CLAIM_DATASET, claimId,
-                            TypedDataSerializer.toBytes(updated, "InsuranceClaim", 1),
-                            Map.of("status", newStatus.name())
-                    );
-                    return dataCloud.writeData(req)
-                            .then($ -> audit("UPDATE_CLAIM_STATUS", updated.patientId(),
-                                    "Claim status: " + newStatus))
-                            .map($ -> updated);
-                });
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.<InsuranceClaim>ofException(
+                        new IllegalStateException("Claim not found: " + claimId));
+                }
+                InsuranceClaim existing = opt.get();
+                InsuranceClaim updated = new InsuranceClaim(
+                    existing.id(), existing.patientId(), existing.encounterId(),
+                    existing.insurerId(), existing.policyNumber(),
+                    existing.claimedAmount(), existing.currency(),
+                    newStatus, existing.submittedAt(),
+                    newStatus == ClaimStatus.APPROVED || newStatus == ClaimStatus.DENIED
+                        ? Instant.now() : existing.adjudicatedAt(),
+                    adjNote
+                );
+                return updateRecord(
+                    CLAIM_DATASET,
+                    claimId,
+                    updated,
+                    Map.of("status", newStatus.name()),
+                    "InsuranceClaim",
+                    1
+                ).then(saved -> audit("UPDATE_CLAIM_STATUS", saved.patientId(),
+                    "Claim status: " + newStatus)
+                    .map($ -> saved));
+            });
     }
 
-    /**
-     * Retrieves a billing encounter by ID.
-     *
-     * @param encounterId the encounter identifier
-     * @return Promise containing the encounter if found
-     */
     public Promise<Optional<BillingEncounter>> getEncounter(String encounterId) {
-        if (!running) {
-            return Promise.of(Optional.empty());
-        }
-
-        return dataCloud.readData(new DataReadRequest(ENCOUNTER_DATASET, encounterId, Map.of()))
-                .map(result -> {
-                    if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable((BillingEncounter) TypedDataSerializer.fromBytes(result.getData(), BillingEncounter.class));
-                })
-                ;
+        ensureRunning();
+        return readRecord(ENCOUNTER_DATASET, encounterId, BillingEncounter.class);
     }
 
-    /**
-     * Retrieves an insurance claim by ID.
-     *
-     * @param claimId the claim identifier
-     * @return Promise containing the claim if found
-     */
     public Promise<Optional<InsuranceClaim>> getClaim(String claimId) {
-        if (!running) {
-            return Promise.of(Optional.empty());
-        }
-
-        return dataCloud.readData(new DataReadRequest(CLAIM_DATASET, claimId, Map.of()))
-                .map(result -> {
-                    if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable((InsuranceClaim) TypedDataSerializer.fromBytes(result.getData(), InsuranceClaim.class));
-                })
-                ;
+        ensureRunning();
+        return readRecord(CLAIM_DATASET, claimId, InsuranceClaim.class);
     }
 
-    /**
-     * Returns billing history for a patient.
-     *
-     * @param patientId the patient identifier
-     * @return Promise containing all billing encounters
-     */
     public Promise<List<BillingEncounter>> getPatientBillingHistory(String patientId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        return dataCloud.queryData(new DataQueryRequest(
-                ENCOUNTER_DATASET,
-                "patientId = :patientId",
-                Map.of("patientId", patientId),
-                1000,
-                0
-        )).map(QueryResult::getResults)
-                .map(results -> results.stream()
-                        .map(r -> TypedDataSerializer.fromBytes(r.getData(), BillingEncounter.class))
-                        .filter(Objects::nonNull)
-                        .sorted((a, b) -> b.createdAt().compareTo(a.createdAt()))
-                        .toList());
+        return queryRecords(
+            ENCOUNTER_DATASET,
+            "patientId = :patientId",
+            Map.of("patientId", patientId),
+            1000,
+            0,
+            BillingEncounter.class
+        ).map(encounters -> encounters.stream()
+            .sorted((a, b) -> b.createdAt().compareTo(a.createdAt()))
+            .toList());
     }
 
     // ==================== Private Helpers ====================
-
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> encounters = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                ENCOUNTER_DATASET,
-                Map.of("id", "string", "patientId", "string", "status", "string",
-                        "createdAt", "timestamp"),
-                Map.of("retention", "10years")
-        ));
-
-        Promise<Void> claims = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                CLAIM_DATASET,
-                Map.of("id", "string", "patientId", "string", "status", "string",
-                        "submittedAt", "timestamp"),
-                Map.of("retention", "10years")
-        ));
-
-        Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                AUDIT_DATASET,
-                Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
-                Map.of("retention", "25years")
-        ));
-
-        return Promises.all(encounters, claims, audit).map($ -> null);
-    }
-
-    private Promise<Void> audit(String action, String patientId, String details) {
-        String auditId = generateId("aud");
-        record AuditEntry(String id, Instant ts, String action, String patient, String details) {}
-        return dataCloud.writeData(new DataWriteRequest(
-                AUDIT_DATASET, auditId,
-                TypedDataSerializer.toBytes(
-                        new AuditEntry(auditId, Instant.now(), action, patientId, details),
-                        "BillingAuditEntry", 1),
-                Map.of("timestamp", Instant.now().toString())
-        ));
-    }
-
-    private String generateId(String prefix) {
-        return prefix + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
 
     // ==================== Inner Types ====================
 

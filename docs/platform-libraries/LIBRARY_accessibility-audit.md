@@ -28,7 +28,7 @@ From `package.json`:
 
 **Non-responsibilities:**
 
-- Generic runtime accessibility helpers for contrast, ARIA, motion, etc. (those live in `@ghatana/utils/accessibility`).
+- Generic runtime accessibility helpers for contrast, ARIA, motion, etc. (those live in `@ghatana/platform-utils/accessibility`).
 - UI styling or tokens.
 
 ---
@@ -49,17 +49,17 @@ Conceptual usage examples:
 
 - Uses axe-core APIs, tightly coupled to DOM/React environments.
 - Imported by `@ghatana/design-system` to integrate a11y into the design system story surface.
-- Complements, but does not replace, `@ghatana/utils/accessibility`.
+- Complements, but does not replace, `@ghatana/platform-utils/accessibility`.
 
 ---
 
 ## 5. Gaps, Duplicates, Reuse Misses
 
-- **Overlap with utils accessibility helpers:**
+- **Overlap with utility accessibility helpers:**
 
-  - Both `@ghatana/utils/accessibility` and this library deal with WCAG concerns.  
+  - Both `@ghatana/platform-utils/accessibility` and this library deal with WCAG concerns.  
     Contract should be:
-    - `utils`: lower-level helpers (contrast calculations, prefers-reduced-motion, ARIA labels).
+    - `platform-utils`: lower-level helpers (contrast calculations, prefers-reduced-motion, ARIA labels).
     - `accessibility-audit`: axe-core integration and audit/report orchestration.
 
 - **Missing standardized report shape:**
@@ -84,5 +84,5 @@ Conceptual usage examples:
 
 ## 7. Usage Guidelines
 
-- Use this library for **formal audits**; use `@ghatana/utils/accessibility` for everyday runtime checks and calculations in components.
+- Use this library for **formal audits**; use `@ghatana/platform-utils/accessibility` for everyday runtime checks and calculations in components.
 - When adding new audit capabilities, consider how their results will be consumed (local dev vs CI vs dashboards).

@@ -44,7 +44,11 @@ public final class RequestContext implements Closeable {
     static final String KEY_REQUEST_ID = "requestId";
     static final String KEY_TENANT_ID  = "tenantId";
 
-    private RequestContext() {}
+    private final boolean clearTenantId;
+
+    private RequestContext(boolean clearTenantId) {
+        this.clearTenantId = clearTenantId;
+    }
 
     /**
      * Binds {@code requestId} and {@code tenantId} to the current thread's MDC
@@ -54,10 +58,10 @@ public final class RequestContext implements Closeable {
      * @param tenantId   tenant identifier (must not be null or blank)
      * @return closeable scope that clears MDC keys on close
      */
-    public static Closeable bind(String requestId, String tenantId) {
+    public static RequestContext bind(String requestId, String tenantId) {
         MDC.put(KEY_REQUEST_ID, requestId);
         MDC.put(KEY_TENANT_ID, tenantId);
-        return new RequestContext();
+        return new RequestContext(true);
     }
 
     /**
@@ -67,19 +71,16 @@ public final class RequestContext implements Closeable {
      * @param requestId  correlation / request ID (must not be null or blank)
      * @return closeable scope
      */
-    public static Closeable bindRequestId(String requestId) {
+    public static RequestContext bindRequestId(String requestId) {
         MDC.put(KEY_REQUEST_ID, requestId);
-        return new RequestContext() {
-            @Override
-            public void close() {
-                MDC.remove(KEY_REQUEST_ID);
-            }
-        };
+        return new RequestContext(false);
     }
 
     @Override
     public void close() {
         MDC.remove(KEY_REQUEST_ID);
-        MDC.remove(KEY_TENANT_ID);
+        if (clearTenantId) {
+            MDC.remove(KEY_TENANT_ID);
+        }
     }
 }

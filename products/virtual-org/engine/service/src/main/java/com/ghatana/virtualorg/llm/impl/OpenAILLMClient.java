@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
  * @doc.layer product
  * @doc.pattern Adapter
  */
-public class OpenAILLMClient implements LLMClient {
+public class OpenAILLMClient extends ManagedLLMClient implements LLMClient {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAILLMClient.class);
 
@@ -103,6 +103,11 @@ public class OpenAILLMClient implements LLMClient {
             @NotNull TaskProto task,
             @NotNull String context,
             @NotNull List<ToolProto> tools) {
+
+        Promise<LLMResponse> stopped = rejectIfStopped("reason");
+        if (stopped != null) {
+            return stopped;
+        }
 
         log.debug("OpenAI reasoning: taskId={}", task.getTaskId());
 
@@ -155,6 +160,11 @@ public class OpenAILLMClient implements LLMClient {
             float temperature,
             int maxTokens) {
 
+        Promise<String> stopped = rejectIfStopped("generate");
+        if (stopped != null) {
+            return stopped;
+        }
+
         return Promise.ofBlocking(eventloop, () -> {
             log.debug("OpenAI generation: systemPromptLength={}, userPromptLength={}",
                     systemPrompt.length(), userPrompt.length());
@@ -172,6 +182,11 @@ public class OpenAILLMClient implements LLMClient {
     @Override
     @NotNull
     public Promise<float[]> embed(@NotNull String text) {
+        Promise<float[]> stopped = rejectIfStopped("embed");
+        if (stopped != null) {
+            return stopped;
+        }
+
         return Promise.ofBlocking(eventloop, () -> {
             log.debug("OpenAI embedding: textLength={}", text.length());
 

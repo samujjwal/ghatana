@@ -4,7 +4,7 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelCapability.CapabilityType;
 import com.ghatana.kernel.descriptor.KernelDependency;
-import com.ghatana.kernel.health.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.registry.KernelRegistryImpl;
 import io.activej.promise.Promise;

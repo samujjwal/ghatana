@@ -10,6 +10,7 @@ Libraries:
 - `@ghatana/charts`
 - `@ghatana/design-system`
 - `@ghatana/org-events`
+- `@ghatana/platform-utils`
 - `@ghatana/realtime`
 - `@ghatana/state`
 - `@ghatana/storybook`
@@ -17,7 +18,6 @@ Libraries:
 - `@ghatana/theme`
 - `@ghatana/tokens`
 - `@ghatana/ui`
-- `@ghatana/utils`
 
 Each library has a dedicated spec file:
 
@@ -26,6 +26,7 @@ Each library has a dedicated spec file:
 - `LIBRARY_ui.md`
 - `LIBRARY_design-system.md`
 - `LIBRARY_accessibility-audit.md`
+- `LIBRARY_platform-utils.md`
 - `LIBRARY_utils.md`
 - `LIBRARY_api.md`
 - `LIBRARY_realtime.md`
@@ -47,14 +48,14 @@ Intended layering (from low-level to high-level):
 2. **Theme** – `@ghatana/theme`  
    Theme objects, providers, hooks, brand presets built on tokens.
 
-3. **Utils** – `@ghatana/utils`  
+3. **Platform Utils** – `@ghatana/platform-utils`  
    Cross-cutting utilities (formatters, platform/responsive, classnames, accessibility helpers).
 
 4. **UI Components** – `@ghatana/ui`  
    Atomic Design-based React components using tokens, theme, utils.
 
 5. **Design System Facade** – `@ghatana/design-system`  
-   Opinionated facade combining tokens, theme, UI, utils, a11y audit, and AI hooks.
+  Opinionated facade combining tokens, theme, UI, platform-utils, a11y audit, and AI hooks.
 
 6. **Visualization** – `@ghatana/charts`  
    Chart primitives built on top of `recharts` + theme + UI.
@@ -74,9 +75,9 @@ Intended layering (from low-level to high-level):
 
 - **Accessibility spread across libs:**
 
-  - `@ghatana/utils` exposes generic accessibility helpers (contrast, reduced motion, ARIA label helpers).
+  - `@ghatana/platform-utils` exposes generic accessibility helpers (contrast, reduced motion, ARIA label helpers).
   - `@yappc/accessibility-audit` focuses on axe-core based auditing and CI/test integration.
-  - **Contract:** keep runtime component-level a11y helpers in `utils`, and deep auditing/reporting in `accessibility-audit`.
+  - **Contract:** keep runtime component-level a11y helpers in `platform-utils`, and deep auditing/reporting in `accessibility-audit`.
 
 - **Design system layering:**
 
@@ -101,8 +102,8 @@ Intended layering (from low-level to high-level):
 
 - **Accessibility duplication risk:**
 
-  - Some a11y helpers (contrast, focus styles, ARIA) live in `@ghatana/utils`.  
-    Specs recommend keeping `utils` as the **canonical** home for generic a11y helpers and using `@yappc/accessibility-audit` only for axe/CI-specific features.
+  - Some a11y helpers (contrast, focus styles, ARIA) live in `@ghatana/platform-utils`.  
+    Specs recommend keeping `platform-utils` as the canonical home for generic a11y helpers and using `@yappc/accessibility-audit` only for axe/CI-specific features.
 
 - **Design tokens & theme leakage:**
 

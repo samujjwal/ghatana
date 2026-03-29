@@ -260,8 +260,9 @@ public class VirtualOrgLauncher {
 
         logger.info("Agent created: {}", agentId);
 
-        // Start agent
-        return agent.start()
+        // Start shared dependencies before agent lifecycle begins
+        return llmClient.start()
+            .then(() -> agent.start())
             .then(() -> {
                 logger.info("Agent started successfully\n");
 
@@ -304,6 +305,10 @@ public class VirtualOrgLauncher {
             })
             .then(() -> {
                 logger.info("Agent stopped\n");
+                return llmClient.stop();
+            })
+            .then(() -> {
+                logger.info("LLM client stopped\n");
                 return Promise.complete();
             });
     }
@@ -357,8 +362,9 @@ public class VirtualOrgLauncher {
 
         logger.info("Registered agents");
 
-        // Start agents
-        return Promises.all(agent1.start(), agent2.start())
+        // Start shared dependencies and agents
+        return llmClient.start()
+            .then(() -> Promises.all(agent1.start(), agent2.start()))
             .then(() -> {
                 logger.info("All agents started\n");
 
@@ -396,6 +402,9 @@ public class VirtualOrgLauncher {
 
                 // Stop agents
                 return Promises.all(agent1.stop(), agent2.stop());
+            })
+            .then(() -> {
+                return llmClient.stop();
             })
             .then(() -> {
                 logger.info("All agents stopped");

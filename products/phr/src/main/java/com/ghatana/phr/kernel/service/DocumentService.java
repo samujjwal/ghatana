@@ -1,23 +1,15 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.kernel.util.TypedDataSerializer;
+import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Document Service with FHIR R4 integration.
@@ -37,35 +29,47 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class DocumentService implements KernelLifecycleAware {
+public class DocumentService extends AbstractDataService {
 
     private static final String DOCUMENT_DATASET = "phr.documents";
     private static final String CONTENT_DATASET = "phr.document.content";
-    private static final String AUDIT_DATASET = "phr.document.audit";
-
-    private final DataCloudKernelAdapter dataCloud;
-    private volatile boolean running = false;
 
     public DocumentService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    public Promise<Void> stop() {
-        running = false;
-        return Promise.complete();
-    }
-
-    public boolean isHealthy() {
-        return running;
-    }
-
+    @Override
     public String getName() {
         return "document";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        Promise<Void> documents = createSchema(
+            DOCUMENT_DATASET,
+            Map.of(
+                "documentId", "string",
+                "patientId", "string",
+                "documentType", "string",
+                "title", "string",
+                "createdAt", "timestamp",
+                "consent", "json"
+            ),
+            Map.of("retention", "25years")
+        );
+
+        Promise<Void> content = createSchema(
+            CONTENT_DATASET,
+            Map.of(
+                "contentId", "string",
+                "documentId", "string",
+                "contentType", "string",
+                "size", "integer"
+            ),
+            Map.of("retention", "25years")
+        );
+
+        return documents.then($ -> content);
     }
 
     // ==================== Core Document Operations ====================
@@ -77,15 +81,12 @@ public class DocumentService implements KernelLifecycleAware {
      * @return Promise containing the created document
      */
     public Promise<PatientDocument> uploadDocument(DocumentUploadRequest request) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
-        String documentId = generateId();
-        String contentId = generateId();
+        String documentId = generateId("doc");
+        String contentId = generateId("cnt");
         Instant now = Instant.now();
 
-        // Store content separately
         DocumentContent content = new DocumentContent(
             contentId,
             documentId,
@@ -94,7 +95,6 @@ public class DocumentService implements KernelLifecycleAware {
             request.getContentHash()
         );
 
-        // Store metadata
         PatientDocument document = new PatientDocument(
             documentId,
             request.getPatientId(),
@@ -111,8 +111,8 @@ public class DocumentService implements KernelLifecycleAware {
             false
         );
 
-        Promise<Void> contentWrite = storeContent(content);
-        Promise<Void> metadataWrite = storeDocument(document);
+        Promise<DocumentContent> contentWrite = storeContent(content);
+        Promise<PatientDocument> metadataWrite = storeDocument(document);
 
         return Promises.all(List.of(contentWrite, metadataWrite))
             .then($ -> audit("DOCUMENT_UPLOAD", request.getPatientId(),
@@ -128,9 +128,7 @@ public class DocumentService implements KernelLifecycleAware {
      * @return Promise containing the document metadata if accessible
      */
     public Promise<Optional<PatientDocument>> getDocument(String documentId, String accessorId) {
-        if (!running) {
-            return Promise.of(Optional.empty());
-        }
+        ensureRunning();
 
         return fetchDocument(documentId)
             .then(opt -> {
@@ -139,12 +137,10 @@ public class DocumentService implements KernelLifecycleAware {
                 }
                 PatientDocument doc = opt.get();
 
-                // Check document-level consent
                 if (!isDocumentVisible(doc, accessorId)) {
                     return Promise.of(Optional.empty());
                 }
 
-                // Log access
                 return audit("DOCUMENT_ACCESS", doc.getPatientId(),
                     "Document accessed by " + accessorId)
                     .map($ -> Optional.of(doc));
@@ -159,9 +155,7 @@ public class DocumentService implements KernelLifecycleAware {
      * @return Promise containing the content if accessible
      */
     public Promise<Optional<DocumentContent>> getDocumentContent(String documentId, String accessorId) {
-        if (!running) {
-            return Promise.of(Optional.empty());
-        }
+        ensureRunning();
 
         return fetchDocument(documentId)
             .then(opt -> {
@@ -170,7 +164,6 @@ public class DocumentService implements KernelLifecycleAware {
                 }
                 PatientDocument doc = opt.get();
 
-                // Check if content is accessible (stricter than metadata)
                 if (!isContentAccessible(doc, accessorId)) {
                     return Promise.of(Optional.empty());
                 }
@@ -196,9 +189,7 @@ public class DocumentService implements KernelLifecycleAware {
      * @return Promise completing when updated
      */
     public Promise<Void> updateDocumentConsent(String documentId, String newVisibility, String patientId) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return fetchDocument(documentId)
             .then(opt -> {
@@ -230,28 +221,21 @@ public class DocumentService implements KernelLifecycleAware {
      * @return Promise containing accessible documents
      */
     public Promise<List<PatientDocument>> getPatientDocuments(String patientId, String accessorId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
         boolean isOwner = patientId.equals(accessorId);
 
-        DataQueryRequest request = new DataQueryRequest(
+        return queryRecords(
             DOCUMENT_DATASET,
             "patientId = :patientId",
             Map.of("patientId", patientId),
             100,
-            0
-        );
-
-        return dataCloud.queryData(request)
-            .map(QueryResult::getResults)
-            .map(results -> results.stream()
-                .map(r -> deserialize(r.getData()))
-                .filter(Objects::nonNull)
-                .filter(doc -> isOwner || isDocumentVisible(doc, accessorId))
-                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                .toList());
+            0,
+            PatientDocument.class
+        ).map(documents -> documents.stream()
+            .filter(doc -> isOwner || isDocumentVisible(doc, accessorId))
+            .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+            .toList());
     }
 
     /**
@@ -262,9 +246,7 @@ public class DocumentService implements KernelLifecycleAware {
      * @return Promise completing when deleted
      */
     public Promise<Void> deleteDocument(String documentId, String patientId) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return fetchDocument(documentId)
             .then(opt -> {
@@ -291,9 +273,7 @@ public class DocumentService implements KernelLifecycleAware {
      * @return Promise containing FHIR JSON
      */
     public Promise<String> toFhirDocumentReference(String documentId) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return fetchDocument(documentId)
             .then(opt -> {
@@ -309,78 +289,42 @@ public class DocumentService implements KernelLifecycleAware {
 
     // ==================== Private Methods ====================
 
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> documents = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            DOCUMENT_DATASET,
-            Map.of(
-                "documentId", "string",
-                "patientId", "string",
-                "documentType", "string",
-                "title", "string",
-                "createdAt", "timestamp",
-                "consent", "json"
-            ),
-            Map.of("retention", "25years")
-        ));
-
-        Promise<Void> content = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            CONTENT_DATASET,
-            Map.of(
-                "contentId", "string",
-                "documentId", "string",
-                "contentType", "string",
-                "size", "integer"
-            ),
-            Map.of("retention", "25years")
-        ));
-
-        return Promises.all(List.of(documents, content));
-    }
-
     private Promise<Optional<PatientDocument>> fetchDocument(String documentId) {
-        DataReadRequest request = new DataReadRequest(DOCUMENT_DATASET, documentId, Map.of());
-
-        return dataCloud.readData(request)
-            .map(result -> Optional.ofNullable(deserialize(result.getData())))
-            ;
+        return readRecord(DOCUMENT_DATASET, documentId, PatientDocument.class);
     }
 
     private Promise<Optional<DocumentContent>> fetchContent(String contentId) {
-        DataReadRequest request = new DataReadRequest(CONTENT_DATASET, contentId, Map.of());
-
-        return dataCloud.readData(request)
-            .map(result -> Optional.ofNullable(deserializeContent(result.getData())))
-            ;
+        return readRecord(CONTENT_DATASET, contentId, DocumentContent.class);
     }
 
-    private Promise<Void> storeDocument(PatientDocument document) {
-        DataWriteRequest request = new DataWriteRequest(
+    private Promise<PatientDocument> storeDocument(PatientDocument document) {
+        return updateRecord(
             DOCUMENT_DATASET,
             document.getId(),
-            serialize(document),
+            document,
             Map.of(
                 "patientId", document.getPatientId(),
                 "documentType", document.getDocumentType(),
                 "createdAt", document.getCreatedAt().toString()
-            )
+            ),
+            "PatientDocument",
+            1
         );
-
-        return dataCloud.writeData(request);
     }
 
-    private Promise<Void> storeContent(DocumentContent content) {
-        DataWriteRequest request = new DataWriteRequest(
+    private Promise<DocumentContent> storeContent(DocumentContent content) {
+        return createRecord(
             CONTENT_DATASET,
             content.getContentId(),
-            serializeContent(content),
+            content,
             Map.of(
                 "documentId", content.getDocumentId(),
                 "contentType", content.getContentType(),
                 "size", String.valueOf(content.getContent().length)
-            )
+            ),
+            "DocumentContent",
+            1
         );
-
-        return dataCloud.writeData(request);
     }
 
     private boolean isDocumentVisible(PatientDocument doc, String accessorId) {
@@ -390,42 +334,26 @@ public class DocumentService implements KernelLifecycleAware {
         DocumentConsent consent = doc.getConsent();
         return switch (consent.getVisibility()) {
             case "private" -> false;
-            case "shared-with-all-granted" -> true; // Assumes caller validated grant
-            case "shared-with-provider" -> true; // Provider access
+            case "shared-with-all-granted" -> true;
+            case "shared-with-provider" -> true;
             default -> false;
         };
     }
 
     private boolean isContentAccessible(PatientDocument doc, String accessorId) {
-        // Content access is stricter than metadata visibility
         if (doc.isDeleted()) return false;
         if (doc.getPatientId().equals(accessorId)) return true;
 
         DocumentConsent consent = doc.getConsent();
-        // Only specific visibility levels allow content access
         return "shared-with-all-granted".equals(consent.getVisibility()) ||
                "shared-with-provider".equals(consent.getVisibility());
     }
 
     private Promise<Void> invalidateConsentCache(String patientId) {
-        // Invalidate consent cache for all grantees of this patient
         return Promise.complete();
     }
 
-    private Promise<Void> audit(String action, String patientId, String details) {
-        String auditId = generateId();
-        DataWriteRequest request = new DataWriteRequest(
-            AUDIT_DATASET,
-            auditId,
-            (action + ":" + patientId + ":" + details).getBytes(StandardCharsets.UTF_8),
-            Map.of("timestamp", Instant.now().toString())
-        );
-
-        return dataCloud.writeData(request);
-    }
-
     private String generateFhirDocumentReference(PatientDocument doc) {
-        // Generate FHIR R4 DocumentReference JSON
         return "{" +
             "\"resourceType\":\"DocumentReference\"," +
             "\"id\":\"" + doc.getId() + "\"," +
@@ -434,28 +362,6 @@ public class DocumentService implements KernelLifecycleAware {
             "\"subject\":{\"reference\":\"Patient/" + doc.getPatientId() + "\"}," +
             "\"content\":[{\"attachment\":{\"contentType\":\"" + doc.getContentType() + "\"," +
             "\"size\":" + doc.getSizeBytes() + "}}]}";
-    }
-
-    private byte[] serialize(PatientDocument document) {
-        return TypedDataSerializer.toBytes(document, "PatientDocument", 1);
-    }
-
-    private PatientDocument deserialize(byte[] data) {
-        if (data == null) return null;
-        return TypedDataSerializer.fromBytes(data, PatientDocument.class);
-    }
-
-    private byte[] serializeContent(DocumentContent content) {
-        return TypedDataSerializer.toBytes(content, "DocumentContent", 1);
-    }
-
-    private DocumentContent deserializeContent(byte[] data) {
-        if (data == null) return null;
-        return TypedDataSerializer.fromBytes(data, DocumentContent.class);
-    }
-
-    private String generateId() {
-        return "doc-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
     // ==================== Inner Types ====================

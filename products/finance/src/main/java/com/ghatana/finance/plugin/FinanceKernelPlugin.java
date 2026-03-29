@@ -8,7 +8,7 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.plugin.PluginManifest;
-import com.ghatana.products.finance.FinanceCapabilities;
+import com.ghatana.finance.kernel.FinanceCapabilities;
 import io.activej.promise.Promise;
 
 import java.util.Set;

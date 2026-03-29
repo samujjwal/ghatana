@@ -7,7 +7,7 @@ package com.ghatana.products.finance.domains.corporateactions;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
-import com.ghatana.kernel.health.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.kernel.module.KernelModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

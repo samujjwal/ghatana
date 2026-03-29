@@ -21,7 +21,7 @@ export default defineConfig({
       "@ghatana/design-system": path.resolve(__dirname, "../../../../platform/typescript/capabilities/design-system/dist/index.js"),
       "@ghatana/theme": path.resolve(__dirname, "../../../../platform/typescript/theme/dist/index.js"),
       "@ghatana/tokens": path.resolve(__dirname, "../../../../platform/typescript/tokens/dist/index.js"),
-      "@ghatana/utils": path.resolve(__dirname, "../../../../platform/typescript/foundation/platform-utils/dist/index.js"),
+      "@ghatana/platform-utils": path.resolve(__dirname, "../../../../platform/typescript/foundation/platform-utils/dist/index.js"),
     },
     preserveSymlinks: true
   },

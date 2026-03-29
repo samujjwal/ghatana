@@ -4,6 +4,7 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.plugin.PluginManifest;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.phr.fhir.FhirResourceService;
 import com.ghatana.phr.fhir.FhirTransformer;
 import com.ghatana.phr.fhir.FhirValidator;
@@ -131,12 +132,12 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
     }
 
     @Override
-    public com.ghatana.kernel.health.HealthStatus getHealthStatus() {
+    public HealthStatus getHealthStatus() {
         if (!started.get()) {
-            return com.ghatana.kernel.health.HealthStatus.unhealthy("Plugin not started");
+            return HealthStatus.unhealthy("Plugin not started");
         }
 
-        return com.ghatana.kernel.health.HealthStatus.healthy("FHIR R4 interop operational");
+        return HealthStatus.healthy("FHIR R4 interop operational");
     }
 
     // ==================== FHIR Resource Processing ====================

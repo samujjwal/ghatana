@@ -2,6 +2,7 @@ package com.ghatana.kernel.adapter.datacloud;
 
 import com.ghatana.kernel.audit.CrossScopeAuditService;
 import com.ghatana.kernel.communication.KernelInterScopeBus;
+import com.ghatana.platform.core.client.AsyncClient;
 import com.ghatana.platform.core.util.JsonUtils;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -186,6 +187,14 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
     }
 
     @Override
+    public Promise<DataStream> openStream(DataStreamRequest request) {
+        String mode = request.getOptions().getOrDefault("mode", "read");
+        if ("write".equalsIgnoreCase(mode)) {
+            return openWriteStream(request);
+        }
+        return openReadStream(request);
+    }
+
     public Promise<DataStream> openReadStream(DataStreamRequest request) {
         Objects.requireNonNull(request, "request cannot be null");
 
@@ -203,7 +212,6 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
         return wrapFuture(future).cast();
     }
 
-    @Override
     public Promise<DataStream> openWriteStream(DataStreamRequest request) {
         Objects.requireNonNull(request, "request cannot be null");
 
@@ -301,7 +309,27 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
     /**
      * Data-Cloud client interface (to be implemented by data-cloud platform).
      */
-    public interface DataCloudClient {
+    public interface DataCloudClient extends AsyncClient {
+        @Override
+        default Promise<Void> start() {
+            return Promise.complete();
+        }
+
+        @Override
+        default Promise<Void> stop() {
+            return Promise.complete();
+        }
+
+        @Override
+        default Promise<Boolean> healthCheck() {
+            return Promise.of(true);
+        }
+
+        @Override
+        default boolean isRunning() {
+            return true;
+        }
+
         CompletableFuture<DataResult> read(String datasetId, String recordId, Map<String, String> options);
         CompletableFuture<Void> write(String datasetId, String recordId, byte[] data, Map<String, String> metadata);
         CompletableFuture<Void> delete(String datasetId, String recordId);

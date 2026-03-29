@@ -6,7 +6,8 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
-import com.ghatana.kernel.health.HealthStatus;
+import com.ghatana.kernel.service.KernelLifecycleAware;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.registry.KernelRegistryImpl;
 import io.activej.eventloop.Eventloop;
@@ -46,14 +47,7 @@ class KernelLifecycleIntegrationTest {
         registry = new KernelRegistryImpl();
         eventloop = Eventloop.create();
 
-        KernelConfigResolver configResolver = new KernelConfigResolver() {
-            @Override public <T> T resolve(String key, Class<T> type, KernelTenantContext tenantContext) { throw new IllegalArgumentException("not found: " + key); }
-            @Override public <T> T resolveWithDefault(String key, Class<T> type, T def, KernelTenantContext ctx) { return def; }
-            @Override public <T> java.util.Optional<T> resolveOptional(String key, Class<T> type, KernelTenantContext tenantContext) { return java.util.Optional.empty(); }
-            @Override public void addConfigProvider(com.ghatana.kernel.config.KernelConfigResolver.ConfigProvider p) {}
-            @Override public io.activej.promise.Promise<Void> reloadConfig(String tenantId) { return io.activej.promise.Promise.complete(); }
-            @Override public java.util.List<String> getAvailableKeys(KernelTenantContext ctx) { return java.util.List.of(); }
-        };
+        KernelConfigResolver configResolver = new TestConfigResolverAdapter();
 
         context = new DefaultKernelContext(registry, configResolver, eventloop, "1.0.0", "test");
         context.registerService(KernelConfigResolver.class, configResolver);
@@ -399,5 +393,18 @@ class KernelLifecycleIntegrationTest {
             @Override public Promise<Void> stop() { return Promise.complete(); }
             @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); }
         };
+    }
+
+    static class TestConfigResolverAdapter implements KernelConfigResolver, KernelLifecycleAware {
+        @Override public <T> T resolve(String key, Class<T> type, KernelTenantContext ctx) { throw new IllegalArgumentException("not found: " + key); }
+        @Override public <T> T resolveWithDefault(String key, Class<T> type, T def, KernelTenantContext ctx) { return def; }
+        @Override public <T> java.util.Optional<T> resolveOptional(String key, Class<T> type, KernelTenantContext ctx) { return java.util.Optional.empty(); }
+        @Override public void addConfigProvider(KernelConfigResolver.ConfigProvider p) {}
+        @Override public Promise<Void> reloadConfig(String tenantId) { return Promise.complete(); }
+        @Override public java.util.List<String> getAvailableKeys(KernelTenantContext ctx) { return java.util.List.of(); }
+        @Override public Promise<Void> start() { return Promise.complete(); }
+        @Override public Promise<Void> stop() { return Promise.complete(); }
+        @Override public boolean isHealthy() { return true; }
+        @Override public String getName() { return "test-config-resolver"; }
     }
 }

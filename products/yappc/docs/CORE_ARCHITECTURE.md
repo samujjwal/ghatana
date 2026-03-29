@@ -20,19 +20,21 @@ This document serves to:
 
 ## Module Map
 
-### 1. Foundation Layer (`domain`, `spi`, `framework`)
+### 1. Foundation Layer (`domain`, `spi`, `yappc-shared`, `framework`)
 
 These modules form the dependency base — everything else can depend on them, but they must not depend on each other circularly.
 
 | Module | Gradle Path | Main Files | Purpose |
 |--------|-------------|-----------|---------|
 | `domain` | `:products:yappc:core:domain` | 74 | Value objects, domain events, core abstractions |
-| `spi` | `:products:yappc:core:spi` | 55 | Unified Plugin SPI + Client API (merged from yappc-plugin-spi + yappc-client-api) |
+| `spi` | `:products:yappc:core:spi` | compatibility | Deprecated compatibility wrapper that re-exports `yappc-shared` |
+| `yappc-shared` | `:products:yappc:core:yappc-shared` | shared API | Canonical shared YAPPC client and plugin API |
 | `framework` | `:products:yappc:core:framework` | 25 | Framework entry points (merged from framework-api + framework-core) |
 
 **Dependency rules:**
 - `domain` → platform only (`platform:java:domain`, `platform:java:core`)
-- `spi` → `framework` (compileOnly), `platform:java:plugin`
+- `spi` → `yappc-shared` only (deprecated compatibility path)
+- `yappc-shared` → platform modules
 - `framework` → `domain`, platform modules
 
 ---

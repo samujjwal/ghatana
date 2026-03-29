@@ -1,8 +1,8 @@
 package com.ghatana.kernel.plugin;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.health.HealthStatus;
 import com.ghatana.kernel.module.KernelModule;
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 
 import java.util.Set;

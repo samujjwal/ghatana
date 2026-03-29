@@ -15,7 +15,7 @@ All TypeScript modules use the `@ghatana/` scope with consistent naming:
 | Design System | `@ghatana/design-system` | ✅ Standard |
 | Charts | `@ghatana/charts` | ✅ Standard |
 | Canvas | `@ghatana/canvas` | ✅ Standard |
-| Foundation | `@ghatana/foundation` | ✅ Standard |
+| Platform Utils | `@ghatana/platform-utils` | ✅ Standard |
 | Realtime | `@ghatana/realtime` | ✅ Standard |
 | Theme | `@ghatana/theme` | ✅ Standard |
 | Tokens | `@ghatana/tokens` | ✅ Standard |
@@ -35,7 +35,7 @@ The following package names are **DEPRECATED** and should not be used:
 | Deprecated Name | Use Instead | Removal Date |
 |----------------|-------------|--------------|
 | `@ghatana/ui` | `@ghatana/design-system` | v3.0.0 |
-| `@ghatana/utils` | `@ghatana/foundation` | v3.0.0 |
+| `@ghatana/utils` | `@ghatana/platform-utils` | v3.0.0 |
 | `@ghatana/dcmaar-*` | Canonical names above | v3.0.0 |
 | `@ghatana/yappc-*` | Canonical names above | v3.0.0 |
 
@@ -58,7 +58,7 @@ The following package names are **DEPRECATED** and should not be used:
    {
      "dependencies": {
        "@ghatana/design-system": "^1.0.0",
-       "@ghatana/foundation": "^1.0.0"
+       "@ghatana/platform-utils": "^1.0.0"
      }
    }
    ```
@@ -71,7 +71,7 @@ The following package names are **DEPRECATED** and should not be used:
    
    // After
    import { Button } from '@ghatana/design-system';
-   import { cn } from '@ghatana/foundation';
+  import { cn } from '@ghatana/platform-utils';
    ```
 
 ---

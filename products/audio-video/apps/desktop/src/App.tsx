@@ -22,11 +22,13 @@ import AdvancedMonitoringDashboard from './components/AdvancedMonitoringDashboar
 import TestSuite from './components/TestSuite';
 import { useAudioVideoStore } from './hooks/useAudioVideoStore';
 
+type DesktopTabId = ServiceType | 'dashboard' | 'workflows' | 'monitoring' | 'tests' | 'settings';
+
 /**
  * Main application component
  */
 function App() {
-  const [activeService, setActiveService] = useState<ServiceType>('stt');
+  const [activeService, setActiveService] = useState<DesktopTabId>('dashboard');
   const [servicesStatus, setServicesStatus] = useState<Record<ServiceType, ServiceStatus>>({} as Record<ServiceType, ServiceStatus>);
   const [isLoading, setIsLoading] = useState(true);
   const { settings, updateSettings } = useAudioVideoStore();
@@ -123,13 +125,9 @@ function App() {
         <Card className="min-h-[600px]">
           <Tabs
             tabs={serviceTabs}
-            activeTab={activeService === 'dashboard' ? 'dashboard' : activeService}
+            activeTab={activeService}
             onChange={(tabId) => {
-              if (tabId === 'dashboard') {
-                setActiveService('stt');
-              } else {
-                setActiveService(tabId as ServiceType);
-              }
+              setActiveService(tabId as DesktopTabId);
             }}
             variant="default"
           />

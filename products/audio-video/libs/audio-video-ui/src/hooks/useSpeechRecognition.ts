@@ -13,11 +13,12 @@ import {
   AudioVideoRuntimeMetricsSnapshot,
   AudioVideoSpeechHookConfig,
   createPlatformError,
+  FallbackRecordingSession,
   getAudioVideoPlatformMetrics,
   incrementAudioVideoPlatformMetric,
   isPlatformSpeechRecognitionAvailable,
   normalizeAudioVideoRuntimeConfig,
-  transcribeWithPlatformFallback,
+  startFallbackRecording,
 } from './audioVideoPlatform';
 
 interface BrowserSpeechRecognitionAlternative {
@@ -166,9 +167,7 @@ export function useSpeechRecognition(
     getAudioVideoPlatformMetrics(),
   );
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const fallbackChunksRef = useRef<Blob[]>([]);
+  const recordingSessionRef = useRef<FallbackRecordingSession | null>(null);
   const fallbackCallbacksRef = useRef<SpeechRecognitionCallbacks | undefined>(undefined);
   const fallbackOptionsRef = useRef<SpeechRecognitionOptions | undefined>(undefined);
 
@@ -176,34 +175,32 @@ export function useSpeechRecognition(
     setMetrics(getAudioVideoPlatformMetrics());
   }, []);
 
-  const cleanupFallbackRecording = useCallback(() => {
-    mediaRecorderRef.current = null;
-    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
-    mediaStreamRef.current = null;
-    fallbackChunksRef.current = [];
+  const stopFallbackSession = useCallback(() => {
+    recordingSessionRef.current?.discard();
+    recordingSessionRef.current = null;
   }, []);
 
   const stop = useCallback(() => {
     recognitionRef.current?.stop();
     recognitionRef.current = null;
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-    }
+    stopFallbackSession();
     setIsListening(false);
-  }, []);
+  }, [stopFallbackSession]);
 
   const runPlatformFallback = useCallback(async () => {
     const callbacks = fallbackCallbacksRef.current;
     const options = fallbackOptionsRef.current;
     const fallbackConfig = hookConfigRef.current?.fallback;
+
     if (!fallbackConfig?.sttEndpoint || !isPlatformSpeechRecognitionAvailable()) {
-      const error = createPlatformError(
-        'media.platform_unavailable',
-        'runtime',
-        false,
-        'Platform speech recognition fallback is not available.',
+      callbacks?.onPlatformError?.(
+        createPlatformError(
+          'media.platform_unavailable',
+          'runtime',
+          false,
+          'Platform speech recognition fallback is not available.',
+        ),
       );
-      callbacks?.onPlatformError?.(error);
       setIsListening(false);
       refreshMetrics();
       return;
@@ -216,77 +213,48 @@ export function useSpeechRecognition(
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType =
-        runtimeConfigRef.current.recognitionMimeType && MediaRecorder.isTypeSupported(runtimeConfigRef.current.recognitionMimeType)
-          ? runtimeConfigRef.current.recognitionMimeType
-          : undefined;
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-      mediaRecorderRef.current = recorder;
-      mediaStreamRef.current = stream;
-      fallbackChunksRef.current = [];
+      const session = startFallbackRecording(
+        stream,
+        runtimeConfigRef.current.recognitionMimeType,
+        fallbackConfig,
+        options?.lang ?? runtimeConfigRef.current.languageTag,
+      );
+      recordingSessionRef.current = session;
+      setIsListening(true);
 
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          fallbackChunksRef.current.push(event.data);
-        }
-      };
-
-      recorder.onerror = () => {
+      try {
+        const { transcript } = await session.stopAndTranscribe();
+        callbacks?.onTranscript?.(transcript, true);
+        callbacks?.onEnd?.();
+      } catch (err) {
         incrementAudioVideoPlatformMetric('fallbackFailures');
-        const error = createPlatformError(
-          'media.recording_failed',
+        callbacks?.onPlatformError?.(
+          err instanceof Error
+            ? createPlatformError('media.processing_failed', 'runtime', true, err.message)
+            : createPlatformError(
+                'media.processing_failed',
+                'runtime',
+                true,
+                'Platform speech recognition failed.',
+              ),
+        );
+      }
+    } catch (err) {
+      incrementAudioVideoPlatformMetric('fallbackFailures');
+      callbacks?.onPlatformError?.(
+        createPlatformError(
+          'media.input_unavailable',
           'runtime',
           true,
-          'Failed to capture audio for platform speech recognition.',
-        );
-        callbacks?.onPlatformError?.(error);
-        cleanupFallbackRecording();
-        setIsListening(false);
-        refreshMetrics();
-      };
-
-      recorder.onstop = async () => {
-        const audioBlob = new Blob(fallbackChunksRef.current, {
-          type: mimeType ?? 'audio/webm',
-        });
-        cleanupFallbackRecording();
-        try {
-          const response = await transcribeWithPlatformFallback(
-            audioBlob,
-            fallbackConfig,
-            options?.lang ?? runtimeConfigRef.current.languageTag,
-          );
-          callbacks?.onTranscript?.(response.transcript, true);
-          callbacks?.onEnd?.();
-        } catch (error) {
-          incrementAudioVideoPlatformMetric('fallbackFailures');
-          callbacks?.onPlatformError?.(
-            error instanceof Error
-              ? createPlatformError('media.processing_failed', 'runtime', true, error.message)
-              : createPlatformError('media.processing_failed', 'runtime', true, 'Platform speech recognition failed.'),
-          );
-        } finally {
-          setIsListening(false);
-          refreshMetrics();
-        }
-      };
-
-      recorder.start();
-      setIsListening(true);
-    } catch (error) {
-      incrementAudioVideoPlatformMetric('fallbackFailures');
-      const platformError = createPlatformError(
-        'media.input_unavailable',
-        'runtime',
-        true,
-        error instanceof Error ? error.message : 'Unable to access the microphone.',
+          err instanceof Error ? err.message : 'Unable to access the microphone.',
+        ),
       );
-      callbacks?.onPlatformError?.(platformError);
-      cleanupFallbackRecording();
+    } finally {
+      recordingSessionRef.current = null;
       setIsListening(false);
       refreshMetrics();
     }
-  }, [cleanupFallbackRecording, refreshMetrics]);
+  }, [refreshMetrics]);
 
   const start = useCallback(
     (
@@ -354,9 +322,9 @@ export function useSpeechRecognition(
   useEffect(() => {
     return () => {
       recognitionRef.current?.stop();
-      cleanupFallbackRecording();
+      stopFallbackSession();
     };
-  }, [cleanupFallbackRecording]);
+  }, [stopFallbackSession]);
 
   return {
     start,

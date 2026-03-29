@@ -8,6 +8,7 @@ import {
   getAudioVideoPlatformMetrics,
   incrementAudioVideoPlatformMetric,
   normalizeAudioVideoRuntimeConfig,
+  transcribeWithPlatformFallback,
 } from './audioVideoPlatform';
 
 function readFixture(): {
@@ -91,5 +92,25 @@ describe('audioVideoPlatform', () => {
     expect(config.ttsVoiceId).toBe('piper-en-gb');
     expect(error.code).toBe('media.temporarily_unavailable');
     expect(error.retryable).toBe(true);
+  });
+
+  it('surfaces typed fallback errors when no transcript is returned', async () => {
+    await expect(
+      transcribeWithPlatformFallback(
+        new Blob(['abc']),
+        {
+          sttEndpoint: 'https://example.test/stt',
+          fetchImpl: async () =>
+            new Response(JSON.stringify({ confidence: 0.9 }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+        },
+        'en-US',
+      ),
+    ).rejects.toMatchObject({
+      code: 'media.processing_failed',
+      retryable: true,
+    });
   });
 });

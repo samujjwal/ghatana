@@ -14,3 +14,7 @@ pub mod vision {
 pub mod multimodal {
     tonic::include_proto!("multimodal");
 }
+
+pub mod ai_voice {
+    tonic::include_proto!("ai_voice");
+}

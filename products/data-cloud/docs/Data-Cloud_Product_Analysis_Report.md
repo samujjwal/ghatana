@@ -474,7 +474,7 @@ The Data-Cloud UI is a production-quality React 19 single-page application built
 | Unit/Contract Testing | Vitest + React Testing Library | 4.x / 16.x |
 | E2E Testing | Playwright | 1.49 |
 
-**Internal Workspace Dependencies**: `@ghatana/ui`, `@ghatana/theme`, `@ghatana/utils`, `@ghatana/canvas`, `@ghatana/realtime`, `@ghatana/flow-canvas`, `@ghatana/yappc-code-editor`
+**Internal Workspace Dependencies**: `@ghatana/ui`, `@ghatana/theme`, `@ghatana/platform-utils`, `@ghatana/canvas`, `@ghatana/realtime`, `@ghatana/flow-canvas`, `@ghatana/yappc-code-editor`
 
 ---
 

@@ -160,7 +160,7 @@ public class FeatureFlagsBenchmark {
      */
     @Benchmark
     public boolean defaultLookupOnFlag(NoGlobalState state) {
-        return DataCloudFeatureFlags.isEnabled(DataCloudFeature.ADVANCED_ANALYTICS);
+        return DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_ADVANCED_ANALYTICS);
     }
 
     // =========================================================================
@@ -175,7 +175,7 @@ public class FeatureFlagsBenchmark {
      */
     @Benchmark
     public boolean globalInstanceLookup(GlobalInstanceState state) {
-        return DataCloudFeatureFlags.isEnabled(DataCloudFeature.ADVANCED_ANALYTICS);
+        return DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_ADVANCED_ANALYTICS);
     }
 
     // =========================================================================
@@ -190,7 +190,7 @@ public class FeatureFlagsBenchmark {
      */
     @Benchmark
     public boolean instanceDirectLookup(GlobalInstanceState state) {
-        return state.flags.enabled(DataCloudFeature.REAL_TIME_STREAMING);
+        return state.flags.enabled(DataCloudFeature.DATA_CLOUD_REAL_TIME_STREAMING);
     }
 
     // =========================================================================
@@ -214,7 +214,7 @@ public class FeatureFlagsBenchmark {
      */
     @Benchmark
     public boolean overrideLookupMiss(OverrideState state) {
-        return DataCloudFeatureFlags.isEnabled(DataCloudFeature.ADVANCED_ANALYTICS);
+        return DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_ADVANCED_ANALYTICS);
     }
 
     // =========================================================================

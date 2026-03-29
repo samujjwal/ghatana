@@ -1,13 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.kernel.util.TypedDataSerializer;
+import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -16,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Referral Management Service for PHR.
@@ -33,43 +26,27 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class ReferralService implements KernelLifecycleAware {
+public class ReferralService extends AbstractDataService {
 
     private static final String REFERRAL_DATASET = "phr.referrals";
-    private static final String AUDIT_DATASET = "phr.referral.audit";
 
-    private final DataCloudKernelAdapter dataCloud;
-    private volatile boolean running = false;
-
-    /**
-     * Constructs a ReferralService.
-     *
-     * @param context kernel context providing DataCloudKernelAdapter
-     */
     public ReferralService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    /** Starts the service and initializes backing datasets. */
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    /** Stops the service. */
-    public Promise<Void> stop() {
-        running = false;
-        return Promise.complete();
-    }
-
-    /** Returns {@code true} when the service is running. */
-    public boolean isHealthy() {
-        return running;
-    }
-
-    /** Returns the logical service name. */
+    @Override
     public String getName() {
         return "referral";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        return createSchema(
+            REFERRAL_DATASET,
+            Map.of("id", "string", "patientId", "string", "status", "string",
+                "specialtyCode", "string", "createdAt", "timestamp"),
+            Map.of("retention", "10years")
+        );
     }
 
     // ==================== Core Operations ====================
@@ -81,203 +58,126 @@ public class ReferralService implements KernelLifecycleAware {
      * @return Promise containing the stored referral with generated ID
      */
     public Promise<Referral> createReferral(Referral referral) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
-        Objects.requireNonNull(referral.patientId(), "patientId");
-        Objects.requireNonNull(referral.referringProviderId(), "referringProviderId");
-        Objects.requireNonNull(referral.specialtyCode(), "specialtyCode");
+        validateRequired(referral.patientId(), "patientId");
+        validateRequired(referral.referringProviderId(), "referringProviderId");
+        validateRequired(referral.specialtyCode(), "specialtyCode");
 
         String id = referral.id() != null ? referral.id() : generateId("ref");
         Referral toStore = new Referral(
-                id,
-                referral.patientId(),
-                referral.encounterId(),
-                referral.referringProviderId(),
-                referral.receivingProviderId(),
-                referral.specialtyCode(),
-                referral.clinicalReason(),
-                referral.urgency(),
-                ReferralStatus.PENDING,
-                Instant.now(),
-                null,
-                null
+            id,
+            referral.patientId(),
+            referral.encounterId(),
+            referral.referringProviderId(),
+            referral.receivingProviderId(),
+            referral.specialtyCode(),
+            referral.clinicalReason(),
+            referral.urgency(),
+            ReferralStatus.PENDING,
+            Instant.now(),
+            null,
+            null
         );
 
-        DataWriteRequest request = new DataWriteRequest(
-                REFERRAL_DATASET,
-                id,
-                TypedDataSerializer.toBytes(toStore, "Referral", 1),
-                Map.of(
-                        "patientId", toStore.patientId(),
-                        "status", toStore.status().name(),
-                        "urgency", toStore.urgency().name()
-                )
-        );
-
-        return dataCloud.writeData(request)
-                .then($ -> audit("CREATE_REFERRAL", toStore.patientId(),
-                        "Referral created to specialty: " + toStore.specialtyCode()
-                                + " [" + toStore.urgency() + "]"))
-                .map($ -> toStore);
+        return createRecord(
+            REFERRAL_DATASET,
+            id,
+            toStore,
+            Map.of(
+                "patientId", toStore.patientId(),
+                "status", toStore.status().name(),
+                "urgency", toStore.urgency().name()
+            ),
+            "Referral",
+            1
+        ).then(stored -> audit("CREATE_REFERRAL", stored.patientId(),
+            "Referral created to specialty: " + stored.specialtyCode() + " [" + stored.urgency() + "]")
+            .map($ -> stored));
     }
 
-    /**
-     * Accepts a referral (confirms the receiving provider will see the patient).
-     *
-     * @param referralId         the referral identifier
-     * @param acceptingProviderId the provider accepting the referral
-     * @return Promise containing the updated referral
-     */
     public Promise<Referral> acceptReferral(String referralId, String acceptingProviderId) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return getReferral(referralId)
-                .then(opt -> {
-                    if (opt.isEmpty()) {
-                        return Promise.<Referral>ofException(
-                                new IllegalStateException("Referral not found: " + referralId));
-                    }
-                    Referral existing = opt.get();
-                    if (existing.status() != ReferralStatus.PENDING) {
-                        return Promise.<Referral>ofException(
-                                new IllegalStateException("Cannot accept referral in status: " + existing.status()));
-                    }
-                    Referral accepted = new Referral(
-                            existing.id(), existing.patientId(), existing.encounterId(),
-                            existing.referringProviderId(), acceptingProviderId, existing.specialtyCode(),
-                            existing.clinicalReason(), existing.urgency(),
-                            ReferralStatus.ACCEPTED, existing.createdAt(), Instant.now(), null
-                    );
-                    DataWriteRequest req = new DataWriteRequest(
-                            REFERRAL_DATASET, referralId,
-                            TypedDataSerializer.toBytes(accepted, "Referral", 1),
-                            Map.of("status", "ACCEPTED")
-                    );
-                    return dataCloud.writeData(req)
-                            .then($ -> audit("ACCEPT_REFERRAL", accepted.patientId(),
-                                    "Referral accepted by: " + acceptingProviderId))
-                            .map($ -> accepted);
-                });
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.<Referral>ofException(
+                        new IllegalStateException("Referral not found: " + referralId));
+                }
+                Referral existing = opt.get();
+                if (existing.status() != ReferralStatus.PENDING) {
+                    return Promise.<Referral>ofException(
+                        new IllegalStateException("Cannot accept referral in status: " + existing.status()));
+                }
+                Referral accepted = new Referral(
+                    existing.id(), existing.patientId(), existing.encounterId(),
+                    existing.referringProviderId(), acceptingProviderId, existing.specialtyCode(),
+                    existing.clinicalReason(), existing.urgency(),
+                    ReferralStatus.ACCEPTED, existing.createdAt(), Instant.now(), null
+                );
+                return updateRecord(
+                    REFERRAL_DATASET,
+                    referralId,
+                    accepted,
+                    Map.of("status", "ACCEPTED"),
+                    "Referral",
+                    1
+                ).then(updated -> audit("ACCEPT_REFERRAL", updated.patientId(),
+                    "Referral accepted by: " + acceptingProviderId)
+                    .map($ -> updated));
+            });
     }
 
-    /**
-     * Closes a referral after the consultation is complete.
-     *
-     * @param referralId   the referral identifier
-     * @param closureNotes summary of the consultation outcome
-     * @return Promise containing the closed referral
-     */
     public Promise<Referral> closeReferral(String referralId, String closureNotes) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return getReferral(referralId)
-                .then(opt -> {
-                    if (opt.isEmpty()) {
-                        return Promise.<Referral>ofException(
-                                new IllegalStateException("Referral not found: " + referralId));
-                    }
-                    Referral existing = opt.get();
-                    Referral closed = new Referral(
-                            existing.id(), existing.patientId(), existing.encounterId(),
-                            existing.referringProviderId(), existing.receivingProviderId(), existing.specialtyCode(),
-                            existing.clinicalReason(), existing.urgency(),
-                            ReferralStatus.COMPLETED, existing.createdAt(), existing.acceptedAt(), Instant.now()
-                    );
-                    DataWriteRequest req = new DataWriteRequest(
-                            REFERRAL_DATASET, referralId,
-                            TypedDataSerializer.toBytes(closed, "Referral", 1),
-                            Map.of("status", "COMPLETED")
-                    );
-                    return dataCloud.writeData(req)
-                            .then($ -> audit("CLOSE_REFERRAL", closed.patientId(), "Referral closed"))
-                            .map($ -> closed);
-                });
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.<Referral>ofException(
+                        new IllegalStateException("Referral not found: " + referralId));
+                }
+                Referral existing = opt.get();
+                Referral closed = new Referral(
+                    existing.id(), existing.patientId(), existing.encounterId(),
+                    existing.referringProviderId(), existing.receivingProviderId(), existing.specialtyCode(),
+                    existing.clinicalReason(), existing.urgency(),
+                    ReferralStatus.COMPLETED, existing.createdAt(), existing.acceptedAt(), Instant.now()
+                );
+                return updateRecord(
+                    REFERRAL_DATASET,
+                    referralId,
+                    closed,
+                    Map.of("status", "COMPLETED"),
+                    "Referral",
+                    1
+                ).then(updated -> audit("CLOSE_REFERRAL", updated.patientId(), "Referral closed")
+                    .map($ -> updated));
+            });
     }
 
-    /**
-     * Retrieves a referral by ID.
-     *
-     * @param referralId the referral identifier
-     * @return Promise containing the referral if found
-     */
     public Promise<Optional<Referral>> getReferral(String referralId) {
-        if (!running) {
-            return Promise.of(Optional.empty());
-        }
-
-        return dataCloud.readData(new DataReadRequest(REFERRAL_DATASET, referralId, Map.of()))
-                .map(result -> {
-                    if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable((Referral) TypedDataSerializer.fromBytes(result.getData(), Referral.class));
-                })
-                ;
+        ensureRunning();
+        return readRecord(REFERRAL_DATASET, referralId, Referral.class);
     }
 
-    /**
-     * Returns all referrals for a patient.
-     *
-     * @param patientId the patient identifier
-     * @return Promise containing all referrals in reverse chronological order
-     */
     public Promise<List<Referral>> getPatientReferrals(String patientId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        return dataCloud.queryData(new DataQueryRequest(
-                REFERRAL_DATASET,
-                "patientId = :patientId",
-                Map.of("patientId", patientId),
-                500,
-                0
-        )).map(QueryResult::getResults)
-                .map(results -> results.stream()
-                        .map(r -> TypedDataSerializer.fromBytes(r.getData(), Referral.class))
-                        .filter(Objects::nonNull)
-                        .sorted((a, b) -> b.createdAt().compareTo(a.createdAt()))
-                        .toList());
+        return queryRecords(
+            REFERRAL_DATASET,
+            "patientId = :patientId",
+            Map.of("patientId", patientId),
+            500,
+            0,
+            Referral.class
+        ).map(referrals -> referrals.stream()
+            .sorted((a, b) -> b.createdAt().compareTo(a.createdAt()))
+            .toList());
     }
 
     // ==================== Private Helpers ====================
-
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> referrals = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                REFERRAL_DATASET,
-                Map.of("id", "string", "patientId", "string", "status", "string",
-                        "specialtyCode", "string", "createdAt", "timestamp"),
-                Map.of("retention", "10years")
-        ));
-
-        Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                AUDIT_DATASET,
-                Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
-                Map.of("retention", "25years")
-        ));
-
-        return Promises.all(referrals, audit).map($ -> null);
-    }
-
-    private Promise<Void> audit(String action, String patientId, String details) {
-        String auditId = generateId("aud");
-        record AuditEntry(String id, Instant ts, String action, String patient, String details) {}
-        return dataCloud.writeData(new DataWriteRequest(
-                AUDIT_DATASET, auditId,
-                TypedDataSerializer.toBytes(
-                        new AuditEntry(auditId, Instant.now(), action, patientId, details),
-                        "ReferralAuditEntry", 1),
-                Map.of("timestamp", Instant.now().toString())
-        ));
-    }
-
-    private String generateId(String prefix) {
-        return prefix + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
 
     // ==================== Inner Types ====================
 

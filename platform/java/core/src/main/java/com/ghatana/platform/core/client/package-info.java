@@ -30,25 +30,19 @@
  * 
  * <h2>Example Implementation</h2>
  * <pre>{@code
- * public class MyDatabaseClient implements AsyncClient {
+ * public class MyDatabaseClient extends ManagedAsyncClient {
  *     private final ConnectionManager<Connection> connectionManager;
- *     private volatile boolean running = false;
  *     
  *     @Override
  *     public Promise<Void> start() {
- *         running = true;
+ *         markStarted();
  *         return Promise.complete();
  *     }
  *     
  *     @Override
  *     public Promise<Void> stop() {
- *         running = false;
+ *         markStopped();
  *         return connectionManager.shutdown();
- *     }
- *     
- *     @Override
- *     public boolean isRunning() {
- *         return running;
  *     }
  *     
  *     public Promise<Result> query(String sql) {

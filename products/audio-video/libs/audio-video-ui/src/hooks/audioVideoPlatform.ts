@@ -193,3 +193,103 @@ export async function synthesizeWithPlatformFallback(
 
   return response.blob();
 }
+
+/**
+ * Result returned by {@link startFallbackRecording}.
+ */
+export interface FallbackRecordingSession {
+  /**
+   * Call this to stop the recording and trigger transcription.  The returned
+   * promise resolves with the transcript text when the server responds.
+   */
+  stopAndTranscribe(): Promise<{ transcript: string; confidence: number }>;
+  /** Release all media tracks without transcribing (e.g. on error or unmount). */
+  discard(): void;
+}
+
+/**
+ * Opens a {@link MediaRecorder} session on the supplied stream and returns a
+ * handle that can be used to stop recording and retrieve a transcript from the
+ * configured platform STT endpoint.
+ *
+ * <p>Failure behaviour:
+ * <ul>
+ *   <li>If the recorder fires an {@code onerror} event the recording stops
+ *       automatically and the next call to {@link FallbackRecordingSession.stopAndTranscribe}
+ *       rejects with a {@code media.recording_failed} error.</li>
+ *   <li>If the server request fails, the error propagates as a typed
+ *       {@link AudioVideoPlatformError} so callers can decide whether to retry.</li>
+ * </ul>
+ *
+ * @param stream        Active {@link MediaStream} from {@code getUserMedia}.
+ * @param mimeType      MIME type to pass to {@link MediaRecorder}; uses the
+ *                      browser default when undefined or unsupported.
+ * @param fallbackConfig Platform fallback configuration (must include {@code sttEndpoint}).
+ * @param languageTag   BCP-47 language hint forwarded to the STT service.
+ */
+export function startFallbackRecording(
+  stream: MediaStream,
+  mimeType: string | undefined,
+  fallbackConfig: AudioVideoPlatformFallbackConfig,
+  languageTag: string,
+): FallbackRecordingSession {
+  const resolvedMime =
+    mimeType && MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined;
+  const recorder = new MediaRecorder(stream, resolvedMime ? { mimeType: resolvedMime } : undefined);
+  const chunks: Blob[] = [];
+  let recorderError: AudioVideoPlatformError | null = null;
+
+  recorder.ondataavailable = (event) => {
+    if (event.data.size > 0) {
+      chunks.push(event.data);
+    }
+  };
+
+  recorder.onerror = () => {
+    recorderError = createPlatformError(
+      'media.recording_failed',
+      'runtime',
+      true,
+      'Failed to capture audio for platform speech recognition.',
+    );
+    stream.getTracks().forEach((t) => t.stop());
+  };
+
+  recorder.start();
+
+  const stopAndTranscribe = (): Promise<{ transcript: string; confidence: number }> =>
+    new Promise((resolve, reject) => {
+      if (recorderError) {
+        reject(recorderError);
+        return;
+      }
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        if (recorderError) {
+          reject(recorderError);
+          return;
+        }
+        const blob = new Blob(chunks, { type: resolvedMime ?? 'audio/webm' });
+        try {
+          const result = await transcribeWithPlatformFallback(blob, fallbackConfig, languageTag);
+          resolve(result);
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      if (recorder.state !== 'inactive') {
+        recorder.stop();
+      }
+    });
+
+  const discard = () => {
+    if (recorder.state !== 'inactive') {
+      recorder.stop();
+    }
+    stream.getTracks().forEach((t) => t.stop());
+  };
+
+  return { stopAndTranscribe, discard };
+}

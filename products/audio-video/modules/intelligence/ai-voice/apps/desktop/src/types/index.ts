@@ -7,17 +7,6 @@
  * @doc.pattern ValueObject
  */
 
-// Re-export shared types
-export type {
-  ProfileSettings,
-  AdaptationMode,
-  PrivacyLevel,
-  AudioChunk,
-  AudioData,
-  SessionState,
-  EngineState,
-} from '@ghatana/speech-ui-react';
-
 /** Application views */
 export type View =
   | 'studio'

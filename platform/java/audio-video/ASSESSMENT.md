@@ -59,8 +59,8 @@ public class InferenceError extends ProcessingError {
 | **AV-007**: Package duplication | High | ✅ **FIXED** | Single `common/` package with records, no `model/` duplication |
 | **AV-008**: Double-nested package | High | ✅ **FIXED** | Clean `com.ghatana.media.stt.api` structure |
 | **AV-009**: Detector interface | High | ✅ **FIXED** | `VisionEngine` interface with `YoloOnnxEngine` implementation |
-| **AV-010**: Missing tests | High | ⚠️ **PARTIAL** | Unit tests present, need integration tests |
-| **AV-011**: gRPC/HTTP mismatch | High | ⚠️ **PARTIAL** | gRPC adapters provided, HTTP gateway still needed |
+| **AV-010**: Missing tests | High | ⚠️ **PARTIAL** | Platform unit/integration tests exist; product-level end-to-end container workflows still need broader coverage |
+| **AV-011**: gRPC/HTTP mismatch | High | ✅ **FIXED** | `service/grpc/*` and `service/http/*` adapters are both present |
 
 **Platform Library Implementation:**
 ```java
@@ -84,7 +84,7 @@ private float[] applyProsody(float[] samples, SynthesisOptions options) {
 
 | Finding | Severity | Status in Platform Library |
 |---------|----------|---------------------------|
-| **AV-012**: Encryption documentation | Medium | ⚠️ Not yet documented |
+| **AV-012**: Encryption documentation | Medium | ✅ **FIXED** | See `docs/SECURITY.md` for encryption-at-rest, transport security, and compliance guidance |
 | **AV-013**: JSON regex parsing | Medium | ✅ Not applicable - uses proper ONNX inference |
 | **AV-014**: AI Voice TODOs | Medium | N/A - Java library, not Rust |
 | **AV-015**: Permission recovery | Medium | N/A - Server-side library |
@@ -203,20 +203,21 @@ void testYoloOnnxEngineWithRealModel() { ... }
 
 **Recommendation**: Add `src/test/resources/` with sample images and model files for integration tests.
 
-### 2. gRPC-Web/HTTP Gateway (AV-011)
+### 2. HTTP Adapter Deployment Guidance
 
-**Status**: gRPC adapters present, HTTP gateway not included
+**Status**: HTTP adapters are present in the platform library; deployment wiring still belongs to the consuming service or gateway layer.
 
 ```java
 // Present: SttGrpcAdapter, TtsGrpcAdapter, VisionGrpcAdapter
+// Present: SttHttpAdapter, TtsHttpAdapter, VisionHttpAdapter
 
-// Needed: HTTP REST endpoints or gRPC-Web proxy configuration
+// Product deployment still chooses direct REST exposure vs dedicated gateway/proxy.
 ```
 
 **Recommendation**: 
-- Option A: Add `service/http/` package with REST controllers
-- Option B: Provide Envoy/NGINX configuration for gRPC-Web proxy
-- Option C: Document requirement for separate API gateway
+- Option A: Wire the existing `service/http/` adapters into the product's HTTP server.
+- Option B: Provide Envoy/NGINX configuration when gRPC-Web is preferred at the edge.
+- Option C: Keep the adapters library-only and document the expected gateway composition per product.
 
 ### 3. Encryption Documentation (AV-012)
 

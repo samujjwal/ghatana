@@ -93,7 +93,7 @@ another module, or pending removal.
 | `:products:yappc:core:knowledge-graph` | `core/knowledge-graph/` | **capability** | Knowledge graph engine. ⚠️ `TODO(ADAPTER-SEAM)`: direct data-cloud dep. |
 | `:products:yappc:core:refactorer:api` | `core/refactorer/api/` | **capability** | Refactoring request/response contracts. |
 | `:products:yappc:core:refactorer:engine` | `core/refactorer/engine/` | **capability** | Code analysis and transformation engine. |
-| `:products:yappc:core:spi` | `core/spi/` | **capability** | Extension SPI — pluggable capability points. |
+| `:products:yappc:core:spi` | `core/spi/` | **compatibility** | Deprecated compatibility wrapper that re-exports `:products:yappc:core:yappc-shared`. |
 | `:products:yappc:core:cli-tools` | `core/cli-tools/` | **capability** | CLI tooling utilities. |
 
 ---

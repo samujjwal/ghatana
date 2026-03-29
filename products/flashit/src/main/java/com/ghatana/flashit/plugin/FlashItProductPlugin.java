@@ -2,9 +2,9 @@ package com.ghatana.flashit.plugin;
 
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
-import com.ghatana.kernel.health.HealthStatus;
 import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.plugin.PluginManifest;
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 
 import java.util.Set;

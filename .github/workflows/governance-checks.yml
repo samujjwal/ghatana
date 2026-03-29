@@ -8,6 +8,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  platform-typescript-package-governance:
+    name: Platform TypeScript Package Governance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate package README contracts and dependency direction
+        run: node ./scripts/check-platform-package-governance.js
+
   # ─────────────────────────────────────────────
   # SBOM Generation
   # ─────────────────────────────────────────────
@@ -247,7 +262,7 @@ jobs:
   # ─────────────────────────────────────────────
   governance-summary:
     name: Generate Governance Summary
-    needs: [sbom-generation, license-compliance, dependency-convergence, naming-convention, security-audit]
+    needs: [platform-typescript-package-governance, sbom-generation, license-compliance, dependency-convergence, naming-convention, security-audit]
     runs-on: ubuntu-latest
     if: always()
     steps:

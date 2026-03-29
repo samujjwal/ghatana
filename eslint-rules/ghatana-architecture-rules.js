@@ -42,7 +42,7 @@ const BANNED_LIBRARIES = [
   'jquery',
   'request',
   'uuid',           // Use crypto.randomUUID() instead
-  'classnames',     // Use clsx or @ghatana/utils/cn
+  'classnames',     // Use clsx or @ghatana/platform-utils/cn
 ];
 
 module.exports = {
@@ -193,7 +193,7 @@ module.exports = {
           'jquery': 'Use native DOM APIs or React refs',
           'request': 'Use native fetch or @ghatana/http-client',
           'uuid': 'Use crypto.randomUUID() or nanoid',
-          'classnames': 'Use clsx or @ghatana/utils/cn',
+          'classnames': 'Use clsx or @ghatana/platform-utils/cn',
         };
 
         function checkImport(node, importPath) {

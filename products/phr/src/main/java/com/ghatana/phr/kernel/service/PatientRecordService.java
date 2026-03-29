@@ -1,24 +1,13 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataResult;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.kernel.util.TypedDataSerializer;
+import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * Patient Record Service with Data-Cloud persistence.
@@ -33,34 +22,32 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class PatientRecordService implements KernelLifecycleAware {
+public class PatientRecordService extends AbstractDataService {
 
     private static final String DATASET_ID = "phr.patient.records";
-    private static final String AUDIT_DATASET = "phr.audit";
-
-    private final DataCloudKernelAdapter dataCloud;
-    private volatile boolean running = false;
 
     public PatientRecordService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    public Promise<Void> start() {
-        running = true;
-        return initializeDataset();
-    }
-
-    public Promise<Void> stop() {
-        running = false;
-        return Promise.complete();
-    }
-
-    public boolean isHealthy() {
-        return running;
-    }
-
+    @Override
     public String getName() {
         return "patient-record";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        return createSchema(
+            DATASET_ID,
+            Map.of(
+                "patientId", "string",
+                "demographics", "json",
+                "medicalHistory", "json",
+                "createdAt", "timestamp",
+                "updatedAt", "timestamp"
+            ),
+            Map.of("retention", "25years", "encryption", "required")
+        );
     }
 
     /**
@@ -70,28 +57,24 @@ public class PatientRecordService implements KernelLifecycleAware {
      * @return Promise containing the created patient
      */
     public Promise<Patient> createPatient(Patient patient) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
-        String patientId = patient.getId() != null ? patient.getId() : generateId();
+        String patientId = patient.getId() != null ? patient.getId() : generateId("pat");
         Patient toStore = patient.withId(patientId).withCreatedAt(Instant.now());
 
-        byte[] data = serialize(toStore);
-        DataWriteRequest request = new DataWriteRequest(
+        return createRecord(
             DATASET_ID,
             patientId,
-            data,
+            toStore,
             Map.of(
                 "type", "patient",
                 "version", "1.0",
                 "createdAt", Instant.now().toString()
-            )
-        );
-
-        return dataCloud.writeData(request)
-            .then($ -> audit("PATIENT_CREATE", patientId, "Patient record created"))
-            .map($ -> toStore);
+            ),
+            "Patient",
+            1
+        ).then(created -> audit("PATIENT_CREATE", patientId, "Patient record created")
+            .map($ -> created));
     }
 
     /**
@@ -101,20 +84,8 @@ public class PatientRecordService implements KernelLifecycleAware {
      * @return Promise containing the patient if found
      */
     public Promise<Optional<Patient>> getPatient(String patientId) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
-
-        Objects.requireNonNull(patientId, "patientId cannot be null");
-
-        DataReadRequest request = new DataReadRequest(
-            DATASET_ID,
-            patientId,
-            Map.of()
-        );
-
-        return dataCloud.readData(request)
-            .map(result -> Optional.ofNullable(deserialize(result.getData())));
+        validateRequired(patientId, "patientId");
+        return readRecord(DATASET_ID, patientId, Patient.class);
     }
 
     /**
@@ -124,29 +95,23 @@ public class PatientRecordService implements KernelLifecycleAware {
      * @return Promise containing the updated patient
      */
     public Promise<Patient> updatePatient(Patient patient) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
-
-        Objects.requireNonNull(patient.getId(), "patient.id cannot be null");
+        validateRequired(patient.getId(), "patient.id");
 
         Patient toStore = patient.withUpdatedAt(Instant.now());
 
-        byte[] data = serialize(toStore);
-        DataWriteRequest request = new DataWriteRequest(
+        return updateRecord(
             DATASET_ID,
             patient.getId(),
-            data,
+            toStore,
             Map.of(
                 "type", "patient",
                 "version", "1.0",
                 "updatedAt", Instant.now().toString()
-            )
-        );
-
-        return dataCloud.writeData(request)
-            .then($ -> audit("PATIENT_UPDATE", patient.getId(), "Patient record updated"))
-            .map($ -> toStore);
+            ),
+            "Patient",
+            1
+        ).then(updated -> audit("PATIENT_UPDATE", patient.getId(), "Patient record updated")
+            .map($ -> updated));
     }
 
     /**
@@ -159,24 +124,7 @@ public class PatientRecordService implements KernelLifecycleAware {
      * @return Promise containing search results
      */
     public Promise<List<Patient>> searchPatients(String query, Map<String, Object> params, int limit, int offset) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
-
-        DataQueryRequest request = new DataQueryRequest(
-            DATASET_ID,
-            query,
-            params,
-            limit,
-            offset
-        );
-
-        return dataCloud.queryData(request)
-            .map(QueryResult::getResults)
-            .map(results -> results.stream()
-                .map(r -> deserialize(r.getData()))
-                .filter(Objects::nonNull)
-                .toList());
+        return queryRecords(DATASET_ID, query, params, limit, offset, Patient.class);
     }
 
     /**
@@ -186,13 +134,8 @@ public class PatientRecordService implements KernelLifecycleAware {
      * @return Promise completing when deleted
      */
     public Promise<Void> deletePatient(String patientId) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        validateRequired(patientId, "patientId");
 
-        Objects.requireNonNull(patientId, "patientId cannot be null");
-
-        // Soft delete - mark as deleted rather than removing
         return getPatient(patientId)
             .then(opt -> {
                 if (opt.isEmpty()) {
@@ -201,61 +144,9 @@ public class PatientRecordService implements KernelLifecycleAware {
                 Patient patient = opt.get().asDeleted();
                 return updatePatient(patient);
             })
-            .then($ -> audit("PATIENT_DELETE", patientId, "Patient record soft-deleted"))
-            .map($ -> null);
+            .then($ -> audit("PATIENT_DELETE", patientId, "Patient record soft-deleted"));
     }
 
-    // ==================== Private Methods ====================
-
-    private Promise<Void> initializeDataset() {
-        // Ensure dataset exists
-        return dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            DATASET_ID,
-            Map.of(
-                "patientId", "string",
-                "demographics", "json",
-                "medicalHistory", "json",
-                "createdAt", "timestamp",
-                "updatedAt", "timestamp"
-            ),
-            Map.of("retention", "25years", "encryption", "required")
-        )).whenException(e -> {
-            // Dataset may already exist
-        });
-    }
-
-    private Promise<Void> audit(String action, String patientId, String details) {
-        String auditId = generateId();
-        byte[] data = (action + ":" + patientId + ":" + details).getBytes(StandardCharsets.UTF_8);
-
-        DataWriteRequest request = new DataWriteRequest(
-            AUDIT_DATASET,
-            auditId,
-            data,
-            Map.of(
-                "action", action,
-                "patientId", patientId,
-                "timestamp", Instant.now().toString()
-            )
-        );
-
-        return dataCloud.writeData(request).whenException(e -> {
-            // Audit failure should not fail the operation
-        });
-    }
-
-    private byte[] serialize(Patient patient) {
-        return TypedDataSerializer.toBytes(patient, "Patient", 1);
-    }
-
-    private Patient deserialize(byte[] data) {
-        if (data == null) return null;
-        return TypedDataSerializer.fromBytes(data, Patient.class);
-    }
-
-    private String generateId() {
-        return "pat-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
 
     // ==================== Inner Types ====================
 

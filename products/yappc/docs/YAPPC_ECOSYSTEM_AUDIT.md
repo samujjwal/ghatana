@@ -326,7 +326,7 @@ Platform Layer (shared across all products):
   @ghatana/tokens      ← canonical design tokens
   @ghatana/canvas      ← canonical canvas engine
   @ghatana/charts      ← canonical charts
-  @ghatana/utils       ← canonical utilities
+  @ghatana/platform-utils ← canonical utilities
   @ghatana/realtime    ← canonical WebSocket/CRDT
   @ghatana/i18n        ← canonical i18n
 

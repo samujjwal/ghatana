@@ -1,5 +1,6 @@
 package com.ghatana.yappc.client.impl;
 
+import com.ghatana.platform.core.client.ManagedAsyncClient;
 import com.ghatana.yappc.client.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.layer core
  * @doc.pattern Implementation
 */
-public final class EmbeddedYAPPCClient implements YAPPCClient {
+public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAPPCClient {
     
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedYAPPCClient.class);
     
@@ -33,7 +34,6 @@ public final class EmbeddedYAPPCClient implements YAPPCClient {
     private final EmbeddedCanvasService canvasService;
     private final EmbeddedKnowledgeService knowledgeService;
     private final EmbeddedLifecycleService lifecycleService;
-    private volatile boolean started = false;
     
     public EmbeddedYAPPCClient(YAPPCConfig config) {
         this.config = config;
@@ -48,7 +48,7 @@ public final class EmbeddedYAPPCClient implements YAPPCClient {
     @Override
     public Promise<Void> start() {
         return Promise.ofCallback(cb -> {
-            if (started) {
+            if (isRunning()) {
                 cb.set(null);
                 return;
             }
@@ -62,7 +62,7 @@ public final class EmbeddedYAPPCClient implements YAPPCClient {
                 knowledgeService.initialize();
                 lifecycleService.initialize();
                 
-                started = true;
+                markStarted();
                 logger.info("Embedded YAPPC client started successfully");
                 cb.set(null);
             } catch (Exception e) {
@@ -75,7 +75,7 @@ public final class EmbeddedYAPPCClient implements YAPPCClient {
     @Override
     public Promise<Void> stop() {
         return Promise.ofCallback(cb -> {
-            if (!started) {
+            if (!isRunning()) {
                 cb.set(null);
                 return;
             }
@@ -89,7 +89,7 @@ public final class EmbeddedYAPPCClient implements YAPPCClient {
                 agentExecutor.shutdown();
                 taskExecutor.shutdown();
                 
-                started = false;
+                markStopped();
                 logger.info("Embedded YAPPC client stopped successfully");
                 cb.set(null);
             } catch (Exception e) {
@@ -324,6 +324,14 @@ public final class EmbeddedYAPPCClient implements YAPPCClient {
     public Promise<HealthStatus> checkHealth() {
         return Promise.ofCallback(cb -> {
             try {
+                if (!isRunning()) {
+                    cb.set(HealthStatus.builder()
+                        .healthy(false)
+                        .status("DOWN")
+                        .build());
+                    return;
+                }
+
                 boolean allHealthy = taskExecutor.isHealthy() 
                     && agentExecutor.isHealthy()
                     && canvasService.isHealthy()
@@ -361,26 +369,16 @@ public final class EmbeddedYAPPCClient implements YAPPCClient {
     }
     
     @Override
-    public Promise<HealthStatus> healthCheck() {
-        return Promise.of(HealthStatus.builder()
-            .healthy(started)
-            .status(started ? "UP" : "DOWN")
-            .build());
+    public Promise<Boolean> healthCheck() {
+        return checkHealth().map(HealthStatus::isHealthy);
     }
     
     @Override
     public Promise<Map<String, Object>> getMetrics() {
         return Promise.of(Map.of(
             "registeredTasks", registeredTasks.size(),
-            "started", started,
+            "started", isRunning(),
             "uptime", System.currentTimeMillis()
         ));
-    }
-    
-    @Override
-    public void close() throws Exception {
-        // Cleanup resources
-        started = false;
-        // Additional cleanup can be added here as needed
     }
 }

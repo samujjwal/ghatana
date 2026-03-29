@@ -2,7 +2,7 @@ package com.ghatana.kernel;
 
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
-import com.ghatana.kernel.health.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.registry.KernelRegistryImpl;

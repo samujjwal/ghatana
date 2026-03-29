@@ -1,22 +1,14 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.kernel.util.TypedDataSerializer;
+import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Clinical Notes Service for PHR.
@@ -33,43 +25,27 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class ClinicalNoteService implements KernelLifecycleAware {
+public class ClinicalNoteService extends AbstractDataService {
 
     private static final String NOTE_DATASET = "phr.clinical.notes";
-    private static final String AUDIT_DATASET = "phr.clinical.audit";
 
-    private final DataCloudKernelAdapter dataCloud;
-    private volatile boolean running = false;
-
-    /**
-     * Constructs a ClinicalNoteService.
-     *
-     * @param context kernel context providing DataCloudKernelAdapter
-     */
     public ClinicalNoteService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    /** Starts the service and initializes backing datasets. */
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    /** Stops the service. */
-    public Promise<Void> stop() {
-        running = false;
-        return Promise.complete();
-    }
-
-    /** Returns {@code true} when the service is running. */
-    public boolean isHealthy() {
-        return running;
-    }
-
-    /** Returns the logical service name. */
+    @Override
     public String getName() {
         return "clinical-notes";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        return createSchema(
+            NOTE_DATASET,
+            Map.of("id", "string", "patientId", "string", "type", "string",
+                "status", "string", "createdAt", "timestamp"),
+            Map.of("retention", "25years")
+        );
     }
 
     // ==================== Core Operations ====================
@@ -81,44 +57,41 @@ public class ClinicalNoteService implements KernelLifecycleAware {
      * @return Promise containing the stored note with generated ID
      */
     public Promise<SoapNote> createSoapNote(SoapNote note) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
-        Objects.requireNonNull(note.patientId(), "patientId");
-        Objects.requireNonNull(note.authorId(), "authorId");
+        validateRequired(note.patientId(), "patientId");
+        validateRequired(note.authorId(), "authorId");
 
         String id = note.id() != null ? note.id() : generateId("note");
         SoapNote toStore = new SoapNote(
-                id,
-                note.patientId(),
-                note.encounterId(),
-                note.authorId(),
-                note.subjective(),
-                note.objective(),
-                note.assessment(),
-                note.plan(),
-                NoteStatus.DRAFT,
-                null,
-                null,
-                Instant.now()
+            id,
+            note.patientId(),
+            note.encounterId(),
+            note.authorId(),
+            note.subjective(),
+            note.objective(),
+            note.assessment(),
+            note.plan(),
+            NoteStatus.DRAFT,
+            null,
+            null,
+            Instant.now()
         );
 
-        DataWriteRequest request = new DataWriteRequest(
-                NOTE_DATASET,
-                id,
-                TypedDataSerializer.toBytes(toStore, "SoapNote", 1),
-                Map.of(
-                        "patientId", toStore.patientId(),
-                        "type", "SOAP",
-                        "status", toStore.status().name()
-                )
-        );
-
-        return dataCloud.writeData(request)
-                .then($ -> audit("CREATE_SOAP_NOTE", toStore.patientId(),
-                        "SOAP note created by " + toStore.authorId()))
-                .map($ -> toStore);
+        return createRecord(
+            NOTE_DATASET,
+            id,
+            toStore,
+            Map.of(
+                "patientId", toStore.patientId(),
+                "type", "SOAP",
+                "status", toStore.status().name()
+            ),
+            "SoapNote",
+            1
+        ).then(stored -> audit("CREATE_SOAP_NOTE", stored.patientId(),
+            "SOAP note created by " + stored.authorId())
+            .map($ -> stored));
     }
 
     /**
@@ -129,36 +102,35 @@ public class ClinicalNoteService implements KernelLifecycleAware {
      * @return Promise containing the finalized note
      */
     public Promise<SoapNote> signNote(String noteId, String signedBy) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return getSoapNote(noteId)
-                .then(opt -> {
-                    if (opt.isEmpty()) {
-                        return Promise.<SoapNote>ofException(
-                                new IllegalStateException("Note not found: " + noteId));
-                    }
-                    SoapNote existing = opt.get();
-                    if (existing.status() == NoteStatus.FINAL) {
-                        return Promise.of(existing); // Idempotent
-                    }
-                    SoapNote signed = new SoapNote(
-                            existing.id(), existing.patientId(), existing.encounterId(),
-                            existing.authorId(), existing.subjective(), existing.objective(),
-                            existing.assessment(), existing.plan(),
-                            NoteStatus.FINAL, signedBy, Instant.now(), existing.createdAt()
-                    );
-                    DataWriteRequest req = new DataWriteRequest(
-                            NOTE_DATASET, noteId,
-                            TypedDataSerializer.toBytes(signed, "SoapNote", 1),
-                            Map.of("status", "FINAL", "signedBy", signedBy)
-                    );
-                    return dataCloud.writeData(req)
-                            .then($ -> audit("SIGN_NOTE", signed.patientId(),
-                                    "SOAP note signed by " + signedBy))
-                            .map($ -> signed);
-                });
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.<SoapNote>ofException(
+                        new IllegalStateException("Note not found: " + noteId));
+                }
+                SoapNote existing = opt.get();
+                if (existing.status() == NoteStatus.FINAL) {
+                    return Promise.of(existing); // Idempotent
+                }
+                SoapNote signed = new SoapNote(
+                    existing.id(), existing.patientId(), existing.encounterId(),
+                    existing.authorId(), existing.subjective(), existing.objective(),
+                    existing.assessment(), existing.plan(),
+                    NoteStatus.FINAL, signedBy, Instant.now(), existing.createdAt()
+                );
+                return updateRecord(
+                    NOTE_DATASET,
+                    noteId,
+                    signed,
+                    Map.of("status", "FINAL", "signedBy", signedBy),
+                    "SoapNote",
+                    1
+                ).then(updated -> audit("SIGN_NOTE", updated.patientId(),
+                    "SOAP note signed by " + signedBy)
+                    .map($ -> updated));
+            });
     }
 
     /**
@@ -168,16 +140,8 @@ public class ClinicalNoteService implements KernelLifecycleAware {
      * @return Promise containing the note if found
      */
     public Promise<Optional<SoapNote>> getSoapNote(String noteId) {
-        if (!running) {
-            return Promise.of(Optional.empty());
-        }
-
-        return dataCloud.readData(new DataReadRequest(NOTE_DATASET, noteId, Map.of()))
-                .map(result -> {
-                    if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable((SoapNote) TypedDataSerializer.fromBytes(result.getData(), SoapNote.class));
-                })
-                ;
+        ensureRunning();
+        return readRecord(NOTE_DATASET, noteId, SoapNote.class);
     }
 
     /**
@@ -187,22 +151,18 @@ public class ClinicalNoteService implements KernelLifecycleAware {
      * @return Promise containing all notes in reverse chronological order
      */
     public Promise<List<SoapNote>> getPatientNotes(String patientId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        return dataCloud.queryData(new DataQueryRequest(
-                NOTE_DATASET,
-                "patientId = :patientId",
-                Map.of("patientId", patientId),
-                1000,
-                0
-        )).map(QueryResult::getResults)
-                .map(results -> results.stream()
-                        .map(r -> TypedDataSerializer.fromBytes(r.getData(), SoapNote.class))
-                        .filter(Objects::nonNull)
-                        .sorted((a, b) -> b.createdAt().compareTo(a.createdAt()))
-                        .toList());
+        return queryRecords(
+            NOTE_DATASET,
+            "patientId = :patientId",
+            Map.of("patientId", patientId),
+            1000,
+            0,
+            SoapNote.class
+        ).map(notes -> notes.stream()
+            .sorted((a, b) -> b.createdAt().compareTo(a.createdAt()))
+            .toList());
     }
 
     /**
@@ -212,56 +172,16 @@ public class ClinicalNoteService implements KernelLifecycleAware {
      * @return Promise containing notes for the encounter
      */
     public Promise<List<SoapNote>> getEncounterNotes(String encounterId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        return dataCloud.queryData(new DataQueryRequest(
-                NOTE_DATASET,
-                "encounterId = :encounterId",
-                Map.of("encounterId", encounterId),
-                100,
-                0
-        )).map(QueryResult::getResults)
-                .map(results -> results.stream()
-                        .map(r -> TypedDataSerializer.fromBytes(r.getData(), SoapNote.class))
-                        .filter(Objects::nonNull)
-                        .toList());
-    }
-
-    // ==================== Private Helpers ====================
-
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> notes = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                NOTE_DATASET,
-                Map.of("id", "string", "patientId", "string", "type", "string",
-                        "status", "string", "createdAt", "timestamp"),
-                Map.of("retention", "25years")
-        ));
-
-        Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                AUDIT_DATASET,
-                Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
-                Map.of("retention", "25years")
-        ));
-
-        return Promises.all(notes, audit).map($ -> null);
-    }
-
-    private Promise<Void> audit(String action, String patientId, String details) {
-        String auditId = generateId("aud");
-        record AuditEntry(String id, Instant ts, String action, String patient, String details) {}
-        return dataCloud.writeData(new DataWriteRequest(
-                AUDIT_DATASET, auditId,
-                TypedDataSerializer.toBytes(
-                        new AuditEntry(auditId, Instant.now(), action, patientId, details),
-                        "ClinicalNoteAuditEntry", 1),
-                Map.of("timestamp", Instant.now().toString())
-        ));
-    }
-
-    private String generateId(String prefix) {
-        return prefix + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        return queryRecords(
+            NOTE_DATASET,
+            "encounterId = :encounterId",
+            Map.of("encounterId", encounterId),
+            100,
+            0,
+            SoapNote.class
+        );
     }
 
     // ==================== Inner Types ====================

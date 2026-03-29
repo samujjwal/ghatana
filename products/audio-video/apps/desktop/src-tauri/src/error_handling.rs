@@ -1,6 +1,7 @@
 use std::time::Duration;
 use tonic::transport::Channel;
 use serde::{Deserialize, Serialize};
+use std::sync::{Mutex, MutexGuard};
 
 /// User-friendly error types for UI display
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -12,24 +13,6 @@ pub struct UserError {
 }
 
 impl UserError {
-    pub fn service_unavailable(service: &str) -> Self {
-        Self {
-            code: "SERVICE_UNAVAILABLE".to_string(),
-            message: format!("{} service is currently unavailable. Please check if the service is running.", service),
-            recovery_action: Some("Try starting the service or check your network connection.".to_string()),
-            is_retryable: true,
-        }
-    }
-
-    pub fn network_timeout(service: &str) -> Self {
-        Self {
-            code: "NETWORK_TIMEOUT".to_string(),
-            message: format!("Connection to {} service timed out.", service),
-            recovery_action: Some("Check your network connection and try again.".to_string()),
-            is_retryable: true,
-        }
-    }
-
     pub fn file_too_large(max_size_mb: u64) -> Self {
         Self {
             code: "FILE_TOO_LARGE".to_string(),
@@ -57,6 +40,15 @@ impl UserError {
         }
     }
 
+    pub fn unavailable_with_context(service: &str, details: &str) -> Self {
+        Self {
+            code: "SERVICE_UNAVAILABLE".to_string(),
+            message: format!("{} service is unavailable: {}", service, details),
+            recovery_action: Some("Please wait a moment and retry the operation.".to_string()),
+            is_retryable: true,
+        }
+    }
+
     pub fn processing_error(details: &str) -> Self {
         Self {
             code: "PROCESSING_ERROR".to_string(),
@@ -69,6 +61,10 @@ impl UserError {
     pub fn to_json(&self) -> String {
         serde_json::to_string(self).unwrap_or_else(|_| self.message.clone())
     }
+}
+
+fn lock_or_recover<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
+    mutex.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 /// Retry configuration for gRPC calls
@@ -144,6 +140,7 @@ pub async fn create_channel_with_retry(addr: String) -> Result<Channel, String> 
 }
 
 /// Circuit breaker state
+#[derive(Debug, Clone)]
 pub struct CircuitBreaker {
     failure_threshold: u32,
     success_threshold: u32,
@@ -180,84 +177,46 @@ impl CircuitBreaker {
         }
     }
 
-    pub fn get_state(&self) -> CircuitState {
-        self.state.lock().unwrap().clone()
-    }
-    
-    pub fn call<F, T>(&self, operation: F) -> Result<T, String>
-    where
-        F: FnOnce() -> Result<T, String>,
-    {
-        let state = self.state.lock().unwrap().clone();
-        
-        match state {
-            CircuitState::Open => {
-                let last_failure = self.last_failure_time.lock().unwrap();
-                if let Some(time) = *last_failure {
-                    if time.elapsed().as_millis() > self.timeout_ms as u128 {
-                        drop(last_failure);
-                        *self.state.lock().unwrap() = CircuitState::HalfOpen;
-                        *self.success_count.lock().unwrap() = 0;
-                    } else {
-                        return Err("Circuit breaker is OPEN".to_string());
-                    }
-                }
-            }
-            _ => {}
-        }
-        
-        match operation() {
-            Ok(result) => {
-                self.on_success();
-                Ok(result)
-            }
-            Err(e) => {
-                self.on_failure();
-                Err(e)
-            }
-        }
-    }
-    
     fn on_success(&self) {
-        let mut success_count = self.success_count.lock().unwrap();
+        let mut success_count = lock_or_recover(&self.success_count);
         *success_count += 1;
         
-        let state = self.state.lock().unwrap().clone();
+        let state = lock_or_recover(&self.state).clone();
         if state == CircuitState::HalfOpen && *success_count >= self.success_threshold {
-            *self.state.lock().unwrap() = CircuitState::Closed;
-            *self.failure_count.lock().unwrap() = 0;
+            *lock_or_recover(&self.state) = CircuitState::Closed;
+            *lock_or_recover(&self.failure_count) = 0;
             log::info!("Circuit breaker transitioned to CLOSED");
         }
     }
     
     fn on_failure(&self) {
-        let mut failure_count = self.failure_count.lock().unwrap();
+        let mut failure_count = lock_or_recover(&self.failure_count);
         *failure_count += 1;
         
         if *failure_count >= self.failure_threshold {
-            *self.state.lock().unwrap() = CircuitState::Open;
-            *self.last_failure_time.lock().unwrap() = Some(std::time::Instant::now());
+            *lock_or_recover(&self.state) = CircuitState::Open;
+            *lock_or_recover(&self.last_failure_time) = Some(std::time::Instant::now());
             log::warn!("Circuit breaker transitioned to OPEN");
         }
     }
 
-    pub async fn call_async<F, Fut, T>(&self, operation: F) -> Result<T, UserError>
+    pub async fn call_async_for<F, Fut, T>(&self, service: &str, operation: F) -> Result<T, UserError>
     where
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = Result<T, String>>,
     {
-        let state = self.state.lock().unwrap().clone();
+        let state = lock_or_recover(&self.state).clone();
         
         match state {
             CircuitState::Open => {
-                let last_failure = self.last_failure_time.lock().unwrap();
+                let last_failure = lock_or_recover(&self.last_failure_time);
                 if let Some(time) = *last_failure {
                     if time.elapsed().as_millis() > self.timeout_ms as u128 {
                         drop(last_failure);
-                        *self.state.lock().unwrap() = CircuitState::HalfOpen;
-                        *self.success_count.lock().unwrap() = 0;
+                        *lock_or_recover(&self.state) = CircuitState::HalfOpen;
+                        *lock_or_recover(&self.success_count) = 0;
                     } else {
-                        return Err(UserError::circuit_breaker_open("Service"));
+                        return Err(UserError::circuit_breaker_open(service));
                     }
                 }
             }
@@ -271,7 +230,7 @@ impl CircuitBreaker {
             }
             Err(e) => {
                 self.on_failure();
-                Err(UserError::processing_error(&e))
+                Err(UserError::unavailable_with_context(service, &e))
             }
         }
     }

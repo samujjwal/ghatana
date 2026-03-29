@@ -1,23 +1,18 @@
 package com.ghatana.finance.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
+import com.ghatana.kernel.service.AbstractDataService;
+import com.ghatana.kernel.util.TypedDataSerializer;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
-import com.ghatana.kernel.util.TypedDataSerializer;
-
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class ComplianceService implements KernelLifecycleAware {
+public class ComplianceService extends AbstractDataService {
 
     private static final String COMPLIANCE_DATASET = "finance.compliance";
     private static final String ALERT_DATASET = "finance.compliance.alerts";
@@ -50,31 +45,59 @@ public class ComplianceService implements KernelLifecycleAware {
     // Pattern detection threshold (5 trades in 1 minute)
     private static final int WASH_TRADE_THRESHOLD = 5;
 
-    private final DataCloudKernelAdapter dataCloud;
     private final Map<String, TradePattern> tradePatterns = new ConcurrentHashMap<>();
-    private volatile boolean running = false;
 
     public ComplianceService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    public Promise<Void> stop() {
-        running = false;
-        tradePatterns.clear();
-        return Promise.complete();
-    }
-
-    public boolean isHealthy() {
-        return running;
-    }
-
+    @Override
     public String getName() {
         return "compliance";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        Promise<Void> compliance = createSchema(
+            COMPLIANCE_DATASET,
+            Map.of(
+                "recordId", "string",
+                "traderId", "string",
+                "type", "string",
+                "timestamp", "timestamp"
+            ),
+            Map.of("retention", "10years")
+        ).whenException(e -> {});
+
+        Promise<Void> alerts = createSchema(
+            ALERT_DATASET,
+            Map.of(
+                "alertId", "string",
+                "traderId", "string",
+                "alertType", "string",
+                "status", "string"
+            ),
+            Map.of("retention", "10years")
+        ).whenException(e -> {});
+
+        Promise<Void> suspicious = createSchema(
+            SUSPICIOUS_DATASET,
+            Map.of(
+                "recordId", "string",
+                "tradeId", "string",
+                "traderId", "string",
+                "status", "string"
+            ),
+            Map.of("retention", "10years")
+        ).whenException(e -> {});
+
+        return compliance.then($ -> alerts).then($ -> suspicious);
+    }
+
+    @Override
+    public Promise<Void> stop() {
+        tradePatterns.clear();
+        return Promise.complete();
     }
 
     // ==================== Compliance Monitoring ====================
@@ -86,9 +109,7 @@ public class ComplianceService implements KernelLifecycleAware {
      * @return Promise containing compliance result
      */
     public Promise<ComplianceCheckResult> checkTradeCompliance(TradeRecord trade) {
-        if (!running) {
-            return Promise.of(ComplianceCheckResult.error("Service not running"));
-        }
+        ensureRunning();
 
         // Check for large trade reporting requirement
         boolean needsImmediateReport = trade.getNotionalValue().compareTo(LARGE_TRADE_THRESHOLD) >= 0;
@@ -118,16 +139,8 @@ public class ComplianceService implements KernelLifecycleAware {
             });
     }
 
-    /**
-     * Generates SEBON daily trade report.
-     *
-     * @param date the report date
-     * @return Promise containing report data
-     */
     public Promise<SebonReport> generateDailyReport(LocalDate date) {
-        if (!running) {
-            return Promise.of(SebonReport.empty());
-        }
+        ensureRunning();
 
         // Query all trades for the date
         Instant start = date.atStartOfDay(ZoneId.of("Asia/Kathmandu")).toInstant();
@@ -138,13 +151,13 @@ public class ComplianceService implements KernelLifecycleAware {
                 // Aggregate by symbol
                 Map<String, SymbolStats> stats = new ConcurrentHashMap<>();
 
-                for (TradeRecord trade : trades) {
-                    stats.computeIfAbsent(trade.getSymbol(), k -> new SymbolStats())
-                        .addTrade(trade);
+                for (TradeRecord tr : trades) {
+                    stats.computeIfAbsent(tr.getSymbol(), k -> new SymbolStats())
+                        .addTrade(tr);
                 }
 
                 SebonReport report = new SebonReport(
-                    generateId(),
+                    generateId("sebon"),
                     date,
                     trades.size(),
                     trades.stream().map(TradeRecord::getNotionalValue).reduce(BigDecimal.ZERO, BigDecimal::add),
@@ -156,20 +169,11 @@ public class ComplianceService implements KernelLifecycleAware {
             });
     }
 
-    /**
-     * Records suspicious activity for investigation.
-     *
-     * @param trade the suspicious trade
-     * @param reason the reason for flagging
-     * @return Promise completing when recorded
-     */
     public Promise<Void> flagSuspiciousActivity(TradeRecord trade, String reason) {
-        if (!running) {
-            return Promise.complete();
-        }
+        ensureRunning();
 
         SuspiciousActivityRecord record = new SuspiciousActivityRecord(
-            generateId(),
+            generateId("susp"),
             trade.getTradeId(),
             trade.getTraderId(),
             trade.getSymbol(),
@@ -178,31 +182,22 @@ public class ComplianceService implements KernelLifecycleAware {
             "PENDING_REVIEW"
         );
 
-        DataWriteRequest request = new DataWriteRequest(
+        return createRecord(
             SUSPICIOUS_DATASET,
             record.getId(),
-            serialize(record),
+            record,
             Map.of(
                 "traderId", trade.getTraderId(),
                 "symbol", trade.getSymbol(),
                 "status", "PENDING_REVIEW"
-            )
-        );
-
-        return dataCloud.writeData(request)
-            .then($ -> notifyComplianceOfficer(record));
+            ),
+            "SuspiciousActivityRecord",
+            1
+        ).then($ -> notifyComplianceOfficer(record));
     }
 
-    /**
-     * Gets compliance status for a trader.
-     *
-     * @param traderId the trader identifier
-     * @return Promise containing compliance status
-     */
     public Promise<TraderComplianceStatus> getTraderComplianceStatus(String traderId) {
-        if (!running) {
-            return Promise.of(TraderComplianceStatus.unknown());
-        }
+        ensureRunning();
 
         // Check for active alerts
         return getActiveAlertsForTrader(traderId)
@@ -226,80 +221,28 @@ public class ComplianceService implements KernelLifecycleAware {
 
     // ==================== Private Methods ====================
 
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> compliance = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            COMPLIANCE_DATASET,
-            Map.of(
-                "recordId", "string",
-                "traderId", "string",
-                "type", "string",
-                "timestamp", "timestamp"
-            ),
-            Map.of("retention", "10years")
-        )).whenException(e -> {});
-
-        Promise<Void> alerts = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            ALERT_DATASET,
-            Map.of(
-                "alertId", "string",
-                "traderId", "string",
-                "alertType", "string",
-                "status", "string"
-            ),
-            Map.of("retention", "10years")
-        )).whenException(e -> {});
-
-        Promise<Void> suspicious = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            SUSPICIOUS_DATASET,
-            Map.of(
-                "recordId", "string",
-                "tradeId", "string",
-                "traderId", "string",
-                "status", "string"
-            ),
-            Map.of("retention", "10years")
-        )).whenException(e -> {});
-
-        return Promises.all(compliance, alerts, suspicious).map($ -> null);
-    }
-
     private Promise<Boolean> detectWashTrade(TradeRecord trade) {
-        // Track trade pattern for this symbol
         String key = trade.getSymbol() + ":" + trade.getTraderId();
         TradePattern pattern = tradePatterns.computeIfAbsent(key, k -> new TradePattern());
-
         pattern.addTrade(trade);
-
-        // Check for rapid buy/sell pattern (same quantity, offsetting direction)
         boolean washTrade = pattern.hasWashTradePattern(WASH_TRADE_THRESHOLD);
-
-        // Clean old entries
-        pattern.cleanOld(60); // Keep last 60 seconds
-
+        pattern.cleanOld(60);
         return Promise.of(washTrade);
     }
 
     private Promise<Boolean> detectInsiderTrading(TradeRecord trade) {
-        // Check for trading just before major price movements
-        // This would integrate with market data and news feed
-
-        // Simplified check: large trade in thinly traded stock
         if (trade.getNotionalValue().compareTo(LARGE_TRADE_THRESHOLD.multiply(new BigDecimal("2"))) > 0) {
-            // Check if unusual for this trader
             return isUnusualTradeSize(trade).map(unusual -> unusual && trade.getNotionalValue().compareTo(LARGE_TRADE_THRESHOLD.multiply(new BigDecimal("5"))) > 0);
         }
-
         return Promise.of(false);
     }
 
     private Promise<Boolean> isUnusualTradeSize(TradeRecord trade) {
-        // Compare to trader's historical average
-        // Query average trade size for this trader
-        return Promise.of(false); // Placeholder
+        return Promise.of(false);
     }
 
     private Promise<Void> logForSebonReporting(TradeRecord trade, boolean immediate) {
-        String recordId = generateId();
+        String recordId = generateId("sebon");
         ComplianceRecord record = new ComplianceRecord(
             recordId,
             trade.getTradeId(),
@@ -310,22 +253,22 @@ public class ComplianceService implements KernelLifecycleAware {
             immediate ? "IMMEDIATE" : "DAILY"
         );
 
-        DataWriteRequest request = new DataWriteRequest(
+        return createRecord(
             COMPLIANCE_DATASET,
             recordId,
-            serialize(record),
+            record,
             Map.of(
                 "traderId", trade.getTraderId(),
                 "type", "TRADE_REPORT",
                 "timestamp", Instant.now().toString()
-            )
-        );
-
-        return dataCloud.writeData(request);
+            ),
+            "ComplianceRecord",
+            1
+        ).map($ -> null);
     }
 
     private Promise<Void> createSuspiciousActivityAlert(TradeRecord trade, String alertType) {
-        String alertId = generateId();
+        String alertId = generateId("alert");
         ComplianceAlert alert = new ComplianceAlert(
             alertId,
             trade.getTraderId(),
@@ -335,59 +278,41 @@ public class ComplianceService implements KernelLifecycleAware {
             "ACTIVE"
         );
 
-        DataWriteRequest request = new DataWriteRequest(
+        return createRecord(
             ALERT_DATASET,
             alertId,
-            serializeAlert(alert),
-            Map.of(
-                "traderId", trade.getTraderId(),
-                "alertType", alertType,
-                "status", "ACTIVE"
-            )
-        );
-
-        return dataCloud.writeData(request);
+            alert,
+            Map.of("traderId", trade.getTraderId(), "alertType", alertType, "status", "ACTIVE"),
+            "ComplianceAlert",
+            1
+        ).map($ -> null);
     }
 
     private Promise<List<TradeRecord>> queryTradesForPeriod(Instant start, Instant end) {
-        // Query trades from data cloud
-        return Promise.of(List.of()); // Placeholder
+        return Promise.of(List.of());
     }
 
     private Promise<Void> storeReport(SebonReport report) {
-        // Store generated report
         return Promise.complete();
     }
 
     private Promise<List<ComplianceAlert>> getActiveAlertsForTrader(String traderId) {
-        // Query active alerts
-        return Promise.of(List.of()); // Placeholder
+        return queryRecords(
+            ALERT_DATASET,
+            "traderId = :traderId AND status = :status",
+            Map.of("traderId", traderId, "status", "ACTIVE"),
+            100,
+            0,
+            ComplianceAlert.class
+        );
     }
 
     private Promise<BigDecimal> getTraderVolumeToday(String traderId) {
-        // Query today's volume
-        return Promise.of(BigDecimal.ZERO); // Placeholder
+        return Promise.of(BigDecimal.ZERO);
     }
 
     private Promise<Void> notifyComplianceOfficer(SuspiciousActivityRecord record) {
-        // Send notification to compliance team
         return Promise.complete();
-    }
-
-    private byte[] serialize(ComplianceRecord record) {
-        return TypedDataSerializer.toBytes(record, "ComplianceRecord", 1);
-    }
-
-    private byte[] serializeAlert(ComplianceAlert alert) {
-        return TypedDataSerializer.toBytes(alert, "ComplianceAlert", 1);
-    }
-
-    private byte[] serialize(SuspiciousActivityRecord record) {
-        return TypedDataSerializer.toBytes(record, "SuspiciousActivityRecord", 1);
-    }
-
-    private String generateId() {
-        return "comp-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
     // ==================== Inner Types ====================

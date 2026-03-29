@@ -8,13 +8,23 @@
 // Core service types
 export type ServiceType = 'stt' | 'tts' | 'ai-voice' | 'vision' | 'multimodal';
 
+export type AudioFormat = 'pcm' | 'wav' | 'mp3' | 'flac' | 'ogg' | 'aac';
+
+export interface CanonicalAudioFormat {
+  sampleRate: number;
+  channels: number;
+  bitsPerSample: number;
+  format: AudioFormat;
+}
+
 // Audio/Video data types
 export interface AudioData {
   data: ArrayBuffer;
   sampleRate: number;
   channels: number;
+  bitsPerSample: number;
   durationMs: number;
-  format: 'wav' | 'mp3' | 'flac' | 'pcm';
+  format: AudioFormat;
 }
 
 export interface VideoData {
@@ -84,7 +94,7 @@ export interface TTSOptions {
   pitch?: number;
   volume?: number;
   emotion?: string;
-  format?: 'wav' | 'mp3' | 'flac';
+  format?: Exclude<AudioFormat, 'pcm'>;
 }
 
 export interface TTSResult {
@@ -307,6 +317,7 @@ export interface AudioVideoError {
   service?: ServiceType;
   details?: Record<string, unknown>;
   timestamp: Date;
+  retryable?: boolean;
 }
 
 export interface APIError extends AudioVideoError {
@@ -346,3 +357,28 @@ export type ServiceResponse<T = any> = {
 export type ProgressCallback = (progress: number, message?: string) => void;
 export type ErrorCallback = (error: AudioVideoError) => void;
 export type SuccessCallback<T = any> = (result: T) => void;
+
+export const DEFAULT_AUDIO_FORMAT: CanonicalAudioFormat = {
+  sampleRate: 16000,
+  channels: 1,
+  bitsPerSample: 16,
+  format: 'pcm',
+};
+
+export function createAudioData(
+  data: ArrayBuffer,
+  overrides: Partial<Omit<AudioData, 'data'>> = {},
+): AudioData {
+  return {
+    data,
+    sampleRate: overrides.sampleRate ?? DEFAULT_AUDIO_FORMAT.sampleRate,
+    channels: overrides.channels ?? DEFAULT_AUDIO_FORMAT.channels,
+    bitsPerSample: overrides.bitsPerSample ?? DEFAULT_AUDIO_FORMAT.bitsPerSample,
+    durationMs: overrides.durationMs ?? 0,
+    format: overrides.format ?? DEFAULT_AUDIO_FORMAT.format,
+  };
+}
+
+export function isSupportedAudioFormat(format: string): format is AudioFormat {
+  return ['pcm', 'wav', 'mp3', 'flac', 'ogg', 'aac'].includes(format);
+}

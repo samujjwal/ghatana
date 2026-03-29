@@ -39,9 +39,6 @@
       "@ghatana/platform-utils": [
         "../../../platform/typescript/foundation/platform-utils"
       ],
-      "@ghatana/utils": [
-        "../../../platform/typescript/foundation/platform-utils"
-      ],
       "@ghatana/canvas": ["../../../platform/typescript/capabilities/canvas-core"],
       "@ghatana/canvas/*": ["../../../platform/typescript/capabilities/canvas-core/dist/*"]
     },

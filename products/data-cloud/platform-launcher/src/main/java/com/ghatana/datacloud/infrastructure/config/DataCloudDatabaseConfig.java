@@ -192,6 +192,7 @@ public final class DataCloudDatabaseConfig {
         hikariConfig.setConnectionTestQuery(CONNECTION_TEST_QUERY);
         hikariConfig.setValidationTimeout(validationTimeoutMs);
         hikariConfig.setLeakDetectionThreshold(leakDetectionThresholdMs);
+        hikariConfig.setInitializationFailTimeout(-1L);
 
         // Performance properties
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");

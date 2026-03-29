@@ -80,10 +80,18 @@ public class DataCloudStorageModule extends AbstractModule {
     DataSource warmTierDataSource() {
         // DC-014: standardised via DataCloudDatabaseConfig — consistent pool sizing,
         // keep-alive, leak detection, and validation across all data-cloud modules.
-        // Reads DATACLOUD_PG_URL / DATACLOUD_PG_USER / DATACLOUD_PG_PASSWORD
-        // plus optional DATACLOUD_PG_POOL_* tuning variables.
+        // Preserve the module's self-contained local defaults while delegating the
+        // actual Hikari wiring to the shared DataCloudDatabaseConfig abstraction.
         DataCloudEnvConfig env = DataCloudEnvConfig.fromSystem();
-        DataSource dataSource = DataCloudDatabaseConfig.fromEnvironment("DATACLOUD_PG")
+        DataSource dataSource = DataCloudDatabaseConfig.builder()
+            .jdbcUrl(env.pgUrl())
+            .username(env.pgUser())
+            .password(env.pgPassword())
+            .minIdle(DataCloudDatabaseConfig.DEFAULT_MIN_IDLE)
+            .maxPoolSize(env.pgPoolSize())
+            .validationTimeoutMs(env.pgValidationTimeoutMillis())
+            .leakDetectionThresholdMs(env.pgLeakDetectionThresholdMillis())
+            .build()
                 .createDataSource();
         log.info("Warm-tier DataSource → {}", env.pgUrl());
         return dataSource;

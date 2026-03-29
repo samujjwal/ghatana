@@ -14,7 +14,7 @@ From `package.json`:
 - Entry: `@ghatana/ui`.
 - Description: "Global UI component library for Ghatana platform - WCAG AA compliant, Atomic Design".
 - Exports: main index plus `./atoms/*`, `./molecules/*`, `./organisms/*`, `./hooks`.
-- Peer deps: `@ghatana/theme`, `@ghatana/tokens`, `@ghatana/utils`, React, React DOM, React Router DOM.
+- Peer deps: `@ghatana/theme`, `@ghatana/tokens`, `@ghatana/platform-utils`, React, React DOM, React Router DOM.
 
 ---
 
@@ -24,7 +24,7 @@ From `package.json`:
 
 - Implement **reusable UI components** (buttons, inputs, modals, layouts, etc.)
 - Respect **tokens** and **theme** for colors, spacing, and typography.
-- Use `@ghatana/utils` for classnames (`cn`) and accessibility helpers where needed.
+- Use `@ghatana/platform-utils` for classnames (`cn`) and accessibility helpers where needed.
 
 **Non-responsibilities:**
 
@@ -53,7 +53,7 @@ import { Button } from "@ghatana/ui/atoms/Button";
 
 ## 4. Dependencies & Relationships
 
-- Depends on `@ghatana/theme`, `@ghatana/tokens`, `@ghatana/utils`.
+- Depends on `@ghatana/theme`, `@ghatana/tokens`, `@ghatana/platform-utils`.
 - Used by Storybook (`@ghatana/storybook`) for component docs.
 - Should not depend directly on `@ghatana/design-system` (design-system sits above it).
 
@@ -63,12 +63,12 @@ import { Button } from "@ghatana/ui/atoms/Button";
 
 - **Classname utility duplication (historical):**
 
-  - `cn` was migrated from `@yappc/ui/utils/cn` into `@ghatana/utils`.
-  - Ensure all UI components now import `cn` from `@ghatana/utils`, not re-implementing it.
+  - `cn` was migrated from `@yappc/ui/utils/cn` into `@ghatana/platform-utils`.
+  - Ensure all UI components now import `cn` from `@ghatana/platform-utils`, not re-implementing it.
 
 - **Accessibility helpers split:**
 
-  - Some runtime a11y helpers live in `@ghatana/utils/accessibility`.
+  - Some runtime a11y helpers live in `@ghatana/platform-utils/accessibility`.
   - UI components should **reuse** those helpers instead of custom calculations.
 
 - **React version mismatch:**
@@ -85,7 +85,7 @@ import { Button } from "@ghatana/ui/atoms/Button";
 
 2. **A11y contracts:**
 
-   - Define and document guarantees per component type (e.g., focus traps, ARIA patterns) using helpers from `@ghatana/utils` and `@yappc/accessibility-audit`.
+  - Define and document guarantees per component type (e.g., focus traps, ARIA patterns) using helpers from `@ghatana/platform-utils` and `@yappc/accessibility-audit`.
 
 3. **Themed variants:**
    - Provide standardized sizing, density, and tone variants driven by `@ghatana/theme`.

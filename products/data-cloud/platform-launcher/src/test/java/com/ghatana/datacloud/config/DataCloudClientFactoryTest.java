@@ -93,6 +93,9 @@ class DataCloudClientFactoryTest {
             env.put(DataCloudEnvConfig.APP_ENV, "development");
             DataCloudClient client = DataCloudClientFactory.fromEnvironment(env);
             assertThat(client).isNotNull();
+            assertThat(client.isRunning()).isTrue();
+            client.close();
+            assertThat(client.isRunning()).isFalse();
         }
 
         @Test
@@ -114,6 +117,9 @@ class DataCloudClientFactoryTest {
             env.put(DataCloudEnvConfig.DATACLOUD_HTTP_AUTH_TOKEN, AUTH_TOKEN);
             DataCloudClient client = DataCloudClientFactory.fromEnvironment(env);
             assertThat(client).isNotNull();
+            assertThat(client.isRunning()).isTrue();
+            client.close();
+            assertThat(client.isRunning()).isFalse();
         }
     }
 
@@ -154,6 +160,9 @@ class DataCloudClientFactoryTest {
             env.put(DataCloudEnvConfig.APP_ENV, "development");
             DataCloudClient client = DataCloudClientFactory.fromEnvironment(env);
             assertThat(client).isNotNull();
+            assertThat(client.isRunning()).isTrue();
+            client.close();
+            assertThat(client.isRunning()).isFalse();
         }
 
         @Test
@@ -178,6 +187,9 @@ class DataCloudClientFactoryTest {
             env.put(DataCloudEnvConfig.DATACLOUD_HTTP_AUTH_TOKEN, AUTH_TOKEN);
             DataCloudClient client = DataCloudClientFactory.fromEnvironment(env);
             assertThat(client).isNotNull();
+            assertThat(client.isRunning()).isTrue();
+            client.close();
+            assertThat(client.isRunning()).isFalse();
         }
     }
 

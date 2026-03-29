@@ -103,7 +103,7 @@ import java.util.*;
  * @doc.layer core
  * @doc.pattern Client, Facade, Mini-Distributed
  */
-public class EmbeddedDataCloudClient implements DataCloudClient {
+ public class EmbeddedDataCloudClient extends ManagedDataCloudClient {
     private static final Logger log = LoggerFactory.getLogger(EmbeddedDataCloudClient.class);
 
     // Configuration
@@ -123,8 +123,6 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
     // Event offsets: tenant -> stream -> offset
     private final Map<String, Map<String, java.util.concurrent.atomic.AtomicLong>> eventOffsets = new java.util.concurrent.ConcurrentHashMap<>();
     
-    // State
-    private volatile boolean closed = false;
     private final Instant startTime;
 
     /**
@@ -317,9 +315,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
         try {
             List<EntityInterface> results = Optional.ofNullable(entityStore.get(tenantId))
                 .map(collections -> collections.get(collectionName))
-                .map(entities -> new ArrayList<>(entities.values()))
-                .map(list -> (List<EntityInterface>) (List<?>) list)
-                .orElse(List.of());
+                .map(entities -> entities.values().stream()
+                    .map(entity -> (EntityInterface) entity)
+                    .toList())
+                .orElseGet(List::of);
             
             // Apply limit if specified
             int limit = query.getLimit() > 0 ? query.getLimit() : results.size();
@@ -933,21 +932,32 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
 
     @Override
     public Promise<HealthStatus> healthCheck() {
-        if (closed) {
-            return Promise.of(new SimpleHealthStatus(false, Map.of(), "Client closed"));
+        if (!isRunning()) {
+            return Promise.of(closedHealthStatus());
         }
         
         // Check plugin health
         Map<String, ComponentStatus> components = new HashMap<>();
-        components.put("storage_plugin", new SimpleComponentStatus("storage_plugin", storagePlugin != null, "OK"));
+        components.put("storage_plugin", componentStatus("storage_plugin", storagePlugin != null, "OK"));
         
         boolean allHealthy = components.values().stream().allMatch(ComponentStatus::isHealthy);
         
-        return Promise.of(new SimpleHealthStatus(
-            allHealthy,
-            components,
-            allHealthy ? "All components healthy" : "Some components unhealthy"
-        ));
+        return Promise.of(new HealthStatus() {
+            @Override
+            public boolean isHealthy() {
+                return allHealthy;
+            }
+
+            @Override
+            public Map<String, ComponentStatus> getComponents() {
+                return components;
+            }
+
+            @Override
+            public String getMessage() {
+                return allHealthy ? "All components healthy" : "Some components unhealthy";
+            }
+        });
     }
 
     @Override
@@ -972,17 +982,17 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
             double errorRate = 0.0; // No errors tracked yet
             
             Map<String, Long> operationMetrics = new HashMap<>();
-            operationMetrics.put("entity_count", (long) entityStore.values().stream()
+            operationMetrics.put("entity_count", entityStore.values().stream()
                 .flatMap(c -> c.values().stream())
                 .mapToLong(Map::size)
                 .sum());
-            operationMetrics.put("event_count", (long) eventStore.values().stream()
+            operationMetrics.put("event_count", eventStore.values().stream()
                 .flatMap(s -> s.values().stream())
                 .mapToLong(List::size)
                 .sum());
             operationMetrics.put("uptime_seconds", uptimeSeconds);
             
-            return Promise.of(new SimpleSystemMetrics(
+            return Promise.of(systemMetrics(
                 totalOperations,
                 avgLatencyMs,
                 errorRate,
@@ -996,12 +1006,10 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
 
     @Override
     public void close() {
-        if (closed) {
+        if (!markClosed()) {
             return;
         }
-        
-        closed = true;
-        
+
         // Shutdown storage plugin
         if (storagePlugin != null) {
             try {
@@ -1031,9 +1039,7 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
     }
     
     private void requireOpen() {
-        if (closed) {
-            throw new IllegalStateException("Client is closed");
-        }
+        requireRunning();
     }
     
     // ==================== Configuration ====================
@@ -1337,57 +1343,6 @@ public class EmbeddedDataCloudClient implements DataCloudClient {
             return new com.ghatana.platform.plugin.impl.DefaultPluginContext(
                     new com.ghatana.platform.plugin.PluginRegistry(), java.util.Map.of());
         }
-    }
-    
-    // ==================== Simple Implementation Records ====================
-    
-    private record SimpleHealthStatus(
-        boolean healthy,
-        Map<String, ComponentStatus> components,
-        String message
-    ) implements HealthStatus {
-        @Override
-        public boolean isHealthy() { return healthy; }
-        
-        @Override
-        public Map<String, ComponentStatus> getComponents() { return components; }
-        
-        @Override
-        public String getMessage() { return message; }
-    }
-    
-    private record SimpleComponentStatus(
-        String name,
-        boolean healthy,
-        String status
-    ) implements ComponentStatus {
-        @Override
-        public String getName() { return name; }
-        
-        @Override
-        public boolean isHealthy() { return healthy; }
-        
-        @Override
-        public String getStatus() { return status; }
-    }
-    
-    private record SimpleSystemMetrics(
-        long requestCount,
-        double averageLatencyMs,
-        double errorRate,
-        Map<String, Long> metricsByOperation
-    ) implements SystemMetrics {
-        @Override
-        public long getRequestCount() { return requestCount; }
-        
-        @Override
-        public double getAverageLatencyMs() { return averageLatencyMs; }
-        
-        @Override
-        public double getErrorRate() { return errorRate; }
-        
-        @Override
-        public Map<String, Long> getMetricsByOperation() { return metricsByOperation; }
     }
     
     // Simple entity record for in-memory storage

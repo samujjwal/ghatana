@@ -10,13 +10,13 @@ name = "ai_voice_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "=2.0.0", features = [] }
 
 [dependencies]
 # Tauri
-tauri = { version = "2.0.0", features = ["protocol-asset"] }
-tauri-plugin-shell = "2.0.0"
-tauri-plugin-dialog = "2.0.0"
+tauri = { version = "=2.0.0", features = ["protocol-asset"] }
+tauri-plugin-shell = "=2.0.0"
+tauri-plugin-dialog = "=2.0.0"
 
 # Shared audio utilities
 speech-audio-rust = { path = "../../../../speech/libs/speech-audio-rust" }

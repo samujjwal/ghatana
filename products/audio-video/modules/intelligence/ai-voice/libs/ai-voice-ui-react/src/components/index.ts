@@ -15,18 +15,3 @@ export type { PhraseTimelineProps } from './PhraseTimeline';
 
 export { TrainingProgress } from './TrainingProgress';
 export type { TrainingProgressProps } from './TrainingProgress';
-
-// Re-export shared components
-export {
-  ProfileSettingsEditor,
-  PrivacyConsentBlock,
-  ProfileSelector,
-  DashboardCard,
-} from '@ghatana/speech-ui-react';
-
-export type {
-  ProfileSettingsEditorProps,
-  PrivacyConsentBlockProps,
-  ProfileSelectorProps,
-  DashboardCardProps,
-} from '@ghatana/speech-ui-react';

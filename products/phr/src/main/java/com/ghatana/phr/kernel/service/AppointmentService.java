@@ -1,18 +1,13 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataResult;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
+import com.ghatana.kernel.adapter.datacloud.DataQueryRequest;
+import com.ghatana.kernel.adapter.datacloud.DataReadRequest;
+import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
+import com.ghatana.kernel.adapter.datacloud.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
+import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
-
-import com.ghatana.kernel.util.TypedDataSerializer;
-
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.time.Instant;
@@ -44,38 +39,55 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class AppointmentService implements KernelLifecycleAware {
+public class AppointmentService extends AbstractDataService {
 
     private static final String APPOINTMENT_DATASET = "phr.appointments";
     private static final String SLOT_DATASET = "phr.appointment.slots";
-    private static final String AUDIT_DATASET = "phr.appointment.audit";
     private static final ZoneId NEPAL_ZONE = ZoneId.of("Asia/Kathmandu");
 
-    private final DataCloudKernelAdapter dataCloud;
     private final Map<String, SlotCacheEntry> slotCache = new ConcurrentHashMap<>();
-    private volatile boolean running = false;
 
     public AppointmentService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    public Promise<Void> stop() {
-        running = false;
-        slotCache.clear();
-        return Promise.complete();
-    }
-
-    public boolean isHealthy() {
-        return running;
-    }
-
+    @Override
     public String getName() {
         return "appointment";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        Promise<Void> appointmentSchema = createSchema(
+            APPOINTMENT_DATASET,
+            Map.of(
+                "appointmentId", "string",
+                "patientId", "string",
+                "providerId", "string",
+                "scheduledAt", "timestamp",
+                "status", "string"
+            ),
+            Map.of("retention", "7years")
+        );
+
+        Promise<Void> slotSchema = createSchema(
+            SLOT_DATASET,
+            Map.of(
+                "slotId", "string",
+                "providerId", "string",
+                "startTime", "timestamp",
+                "available", "boolean"
+            ),
+            Map.of("retention", "1year")
+        );
+
+        return appointmentSchema.then($ -> slotSchema);
+    }
+
+    @Override
+    protected Promise<Void> onStop() {
+        slotCache.clear();
+        return Promise.complete();
     }
 
     // ==================== Core Appointment Operations ====================
@@ -87,9 +99,7 @@ public class AppointmentService implements KernelLifecycleAware {
      * @return Promise containing the created appointment
      */
     public Promise<Appointment> createAppointment(AppointmentRequest request) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         // Check slot availability with optimistic locking
         return checkSlotAvailability(request.getSlotId())
@@ -121,7 +131,7 @@ public class AppointmentService implements KernelLifecycleAware {
                 DataWriteRequest writeRequest = new DataWriteRequest(
                     APPOINTMENT_DATASET,
                     appointmentId,
-                    serialize(appointment),
+                    serialize(appointment, "Appointment", appointment.getVersion()),
                     Map.of(
                         "patientId", appointment.getPatientId(),
                         "providerId", appointment.getProviderId(),
@@ -178,7 +188,7 @@ public class AppointmentService implements KernelLifecycleAware {
         return dataCloud.queryData(request)
             .map(QueryResult::getResults)
             .map(results -> results.stream()
-                .map(r -> deserialize(r.getData()))
+                .map(r -> deserialize(r.getData(), Appointment.class))
                 .filter(Objects::nonNull)
                 .sorted((a, b) -> b.getScheduledTime().compareTo(a.getScheduledTime()))
                 .toList());
@@ -252,35 +262,6 @@ public class AppointmentService implements KernelLifecycleAware {
 
     // ==================== Private Methods ====================
 
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> appointments = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            APPOINTMENT_DATASET,
-            Map.of(
-                "appointmentId", "string",
-                "patientId", "string",
-                "providerId", "string",
-                "scheduledTime", "timestamp",
-                "status", "string",
-                "version", "integer"
-            ),
-            Map.of("retention", "7years")
-        ));
-
-        Promise<Void> slots = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            SLOT_DATASET,
-            Map.of(
-                "slotId", "string",
-                "providerId", "string",
-                "date", "string",
-                "startTime", "timestamp",
-                "status", "string"
-            ),
-            Map.of("retention", "1year")
-        ));
-
-        return Promises.all(List.of(appointments, slots));
-    }
-
     private Promise<Boolean> checkSlotAvailability(String slotId) {
         // Check cache first
         SlotCacheEntry cached = slotCache.get(slotId);
@@ -350,19 +331,26 @@ public class AppointmentService implements KernelLifecycleAware {
         DataReadRequest request = new DataReadRequest(APPOINTMENT_DATASET, appointmentId, Map.of());
 
         return dataCloud.readData(request)
-            .map(result -> Optional.ofNullable(deserialize(result.getData())))
-            ;
+            .map(result -> Optional.ofNullable(deserialize(result.getData(), Appointment.class)));
     }
 
     private Promise<Void> updateAppointment(Appointment appointment) {
         DataWriteRequest request = new DataWriteRequest(
             APPOINTMENT_DATASET,
             appointment.getId(),
-            serialize(appointment),
+            serialize(appointment, "Appointment", appointment.getVersion()),
             Map.of("version", String.valueOf(appointment.getVersion() + 1))
         );
 
         return dataCloud.writeData(request);
+    }
+
+    private byte[] serializeSlot(TimeSlot slot) {
+        return serialize(slot, "TimeSlot", 1);
+    }
+
+    private TimeSlot deserializeSlot(byte[] data) {
+        return deserialize(data, TimeSlot.class);
     }
 
     private Promise<Void> createReminderPlan(Appointment appointment) {
@@ -375,38 +363,9 @@ public class AppointmentService implements KernelLifecycleAware {
         return Promise.complete();
     }
 
-    private Promise<Void> audit(String action, String patientId, String details) {
-        String auditId = generateId();
-        DataWriteRequest request = new DataWriteRequest(
-            AUDIT_DATASET,
-            auditId,
-            (action + ":" + patientId + ":" + details).getBytes(StandardCharsets.UTF_8),
-            Map.of("timestamp", Instant.now().toString())
-        );
-
-        return dataCloud.writeData(request);
-    }
-
-    private byte[] serialize(Appointment appointment) {
-        return TypedDataSerializer.toBytes(appointment, "Appointment", 1);
-    }
-
-    private Appointment deserialize(byte[] data) {
-        if (data == null) return null;
-        return TypedDataSerializer.fromBytes(data, Appointment.class);
-    }
-
-    private byte[] serializeSlot(TimeSlot slot) {
-        return TypedDataSerializer.toBytes(slot, "TimeSlot", 1);
-    }
-
-    private TimeSlot deserializeSlot(byte[] data) {
-        if (data == null) return null;
-        return TypedDataSerializer.fromBytes(data, TimeSlot.class);
-    }
-
-    private String generateId() {
-        return "apt-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+    @Override
+    protected Promise<Void> audit(String action, String entityId, String details) {
+        return super.audit(action, entityId, details);
     }
 
     // ==================== Inner Types ====================

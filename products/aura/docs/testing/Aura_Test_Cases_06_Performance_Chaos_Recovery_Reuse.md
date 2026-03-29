@@ -305,7 +305,7 @@ Expected:
 - Failing accessibility score or critical violations block merge.
 - Audit artifacts are stored for review.
 
-### AURA-OPS-057 `@ghatana/api`, `@ghatana/utils`, and `@ghatana/realtime` wrappers preserve Aura client-state contracts
+### AURA-OPS-057 `@ghatana/api`, `@ghatana/platform-utils`, and `@ghatana/realtime` shared packages preserve Aura client-state contracts
 Level: Integration
 Priority: P1
 Source Docs: `Aura_API_Contracts.md`, `Aura_Monorepo_Structure.md`

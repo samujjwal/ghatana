@@ -51,7 +51,7 @@ import java.util.List;
  * @doc.layer product
  * @doc.pattern Adapter
  */
-public class AnthropicLLMClient implements LLMClient {
+public class AnthropicLLMClient extends ManagedLLMClient implements LLMClient {
 
     private static final Logger log = LoggerFactory.getLogger(AnthropicLLMClient.class);
 
@@ -90,6 +90,11 @@ public class AnthropicLLMClient implements LLMClient {
             @NotNull TaskProto task,
             @NotNull String context,
             @NotNull List<ToolProto> tools) {
+
+        Promise<LLMResponse> stopped = rejectIfStopped("reason");
+        if (stopped != null) {
+            return stopped;
+        }
 
         return Promise.ofBlocking(eventloop, () -> {
             log.debug("Anthropic reasoning: taskId={}", task.getTaskId());
@@ -130,6 +135,11 @@ public class AnthropicLLMClient implements LLMClient {
             float temperature,
             int maxTokens) {
 
+        Promise<String> stopped = rejectIfStopped("generate");
+        if (stopped != null) {
+            return stopped;
+        }
+
         return Promise.ofBlocking(eventloop, () -> {
             List<ChatMessage> messages = List.of(
                     SystemMessage.from(systemPrompt),
@@ -144,6 +154,11 @@ public class AnthropicLLMClient implements LLMClient {
     @Override
     @NotNull
     public Promise<float[]> embed(@NotNull String text) {
+        Promise<float[]> stopped = rejectIfStopped("embed");
+        if (stopped != null) {
+            return stopped;
+        }
+
         // Anthropic doesn't provide embeddings, delegate to a separate embedding model
         // For now, throw UnsupportedOperationException
         return Promise.ofException(

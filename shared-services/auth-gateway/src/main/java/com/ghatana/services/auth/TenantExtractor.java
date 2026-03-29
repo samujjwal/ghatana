@@ -7,11 +7,13 @@ import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.model.User;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
+import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Extracts tenant context from HTTP requests.
@@ -167,6 +169,7 @@ public class TenantExtractor {
 
     /**
      * Extracts tenant ID from subdomain: tenant.example.com → "tenant".
+     * Also supports development URLs like tenant.localhost.
      *
      * GIVEN: HTTP request with subdomain WHEN: extractFromSubdomain() is called
      * THEN: Subdomain returned as tenant ID
@@ -180,13 +183,29 @@ public class TenantExtractor {
         String host = request.getHeader(HttpHeaders.HOST);
 
         if (host == null) {
-            LOGGER.debug("No Host header in request");
+            // Fall back to URL host for programmatically built requests
+            String hostAndPort = request.getHostAndPort();
+            if (hostAndPort != null && !hostAndPort.isBlank()) {
+                host = hostAndPort;
+            }
+        }
+
+        if (host == null) {
+            LOGGER.debug("No Host header or URL host in request");
             return null;
         }
 
-        // Extract subdomain from host (e.g., tenant.example.com → tenant)
+        // Remove port if present
+        int colonIdx = host.indexOf(':');
+        if (colonIdx > 0) {
+            host = host.substring(0, colonIdx);
+        }
+
+        // Extract subdomain from host (e.g., tenant.example.com → tenant).
+        // Also support development hosts like tenant.localhost (2 parts).
         String[] parts = host.split("\\.");
-        if (parts.length >= 3) {
+        if (parts.length >= 3
+                || (parts.length == 2 && "localhost".equals(parts[parts.length - 1]))) {
             String subdomain = parts[0];
             LOGGER.debug("Extracted tenant ID from subdomain: {}", subdomain);
             return subdomain;
@@ -194,6 +213,61 @@ public class TenantExtractor {
 
         LOGGER.debug("No subdomain in Host header");
         return null;
+    }
+
+    /**
+     * Extracts tenant ID using fallback strategy: header → path → subdomain.
+     * Returns a Promise wrapping an Optional with the first resolved tenant ID.
+     *
+     * @param request HTTP request
+     * @return promise of optional tenant ID; never null
+     */
+    public Promise<Optional<String>> extractTenant(HttpRequest request) {
+        Objects.requireNonNull(request, "request must not be null");
+
+        // Header strategy (highest priority)
+        String tenantId = extractFromHeader(request);
+        if (tenantId != null && isValidTenantId(tenantId)) {
+            return Promise.of(Optional.of(sanitizeTenantId(tenantId)));
+        }
+
+        // Path strategy
+        tenantId = extractFromPath(request);
+        if (tenantId != null && isValidTenantId(tenantId)) {
+            return Promise.of(Optional.of(sanitizeTenantId(tenantId)));
+        }
+
+        // Subdomain strategy
+        tenantId = extractFromSubdomain(request);
+        if (tenantId != null && isValidTenantId(tenantId)) {
+            return Promise.of(Optional.of(sanitizeTenantId(tenantId)));
+        }
+
+        return Promise.of(Optional.empty());
+    }
+
+    /**
+     * Validates that the given tenant ID conforms to the allowed format:
+     * non-null, non-blank, only alphanumeric characters, hyphens, and underscores.
+     *
+     * @param tenantId the tenant ID string to validate
+     * @return {@code true} if valid, {@code false} otherwise
+     */
+    public static boolean isValidTenantId(String tenantId) {
+        if (tenantId == null || tenantId.isBlank()) {
+            return false;
+        }
+        return tenantId.matches("[A-Za-z0-9_-]+");
+    }
+
+    /**
+     * Sanitizes a tenant ID by trimming whitespace and converting to lowercase.
+     *
+     * @param tenantId the raw tenant ID
+     * @return sanitized tenant ID
+     */
+    public static String sanitizeTenantId(String tenantId) {
+        return tenantId.trim().toLowerCase();
     }
 
     /**

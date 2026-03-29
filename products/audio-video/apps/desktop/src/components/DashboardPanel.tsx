@@ -10,12 +10,14 @@ import { Card } from '@audio-video/ui';
 import { useMemoryPressure, MemoryPressureLevel, MemoryInfo } from '@audio-video/ui/hooks';
 
 const DashboardPanel: React.FC = () => {
+  const [memoryNotice, setMemoryNotice] = React.useState<string | null>(null);
+
   const { memoryInfo, isSupported } = useMemoryPressure({
     onPressureChange: (level: MemoryPressureLevel, info: MemoryInfo) => {
-      console.log(`Memory pressure changed to ${level}: ${(info.utilisation * 100).toFixed(1)}%`);
+      setMemoryNotice(`Memory pressure ${level}: ${(info.utilisation * 100).toFixed(1)}% utilised.`);
     },
     onCritical: (info: MemoryInfo) => {
-      console.warn('Critical memory pressure - consider clearing caches');
+      setMemoryNotice(`Critical memory pressure detected at ${(info.utilisation * 100).toFixed(1)}%. Consider clearing caches.`);
     },
   });
 
@@ -36,6 +38,11 @@ const DashboardPanel: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {memoryNotice && (
+        <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+          {memoryNotice}
+        </div>
+      )}
       {isSupported && memoryInfo.level !== 'normal' && (
         <div className={`p-4 rounded-lg border ${
           memoryInfo.level === 'critical' 

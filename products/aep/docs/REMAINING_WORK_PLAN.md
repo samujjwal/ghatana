@@ -31,7 +31,7 @@ This document outlines all remaining work items for the AEP platform after the m
 ### **Issue: UI TypeScript Errors** ✅
 - **Final State:** 0 TypeScript compilation errors (verified with `npx tsc --noEmit`)
 - **Root Causes Fixed:**
-  - Missing `@ghatana/utils` path alias in tsconfig, vite.config, vitest.config
+  - Missing canonical `@ghatana/platform-utils` workspace alias wiring in tsconfig, vite.config, and vitest.config
   - Token property mismatches (transitions.duration, fontWeight.normal, componentRadius.md) — added backward-compatible aliases
   - Wrong color palette indices (`neutral[0]` → `neutral[50]`) in 5 design-system components
   - TS 5.9 truthy narrowing issues (`A || B` where A is always truthy)

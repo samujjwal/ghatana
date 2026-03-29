@@ -329,9 +329,6 @@ public final class KernelCapability {
     public Set<String> getSupportedProducts() { return Collections.unmodifiableSet(supportedProducts); }
     public boolean isShared() { return isShared; }
 
-    // Product-specific capability constants were removed from canonical kernel code.
-    // Products must declare capabilities in product-owned modules.
-
     // ==================== Business Methods ====================
 
     /**

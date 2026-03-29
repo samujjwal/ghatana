@@ -23,6 +23,7 @@
     "typecheck": "pnpm -r --parallel --filter './platform/typescript/**' --filter './products/*/ui' exec tsc --noEmit",
     "check:deprecated-ui": "./scripts/check-deprecated-ui.sh",
     "check:duplicate-packages": "./scripts/check-duplicate-package-names.sh",
+    "check:platform-package-governance": "node ./scripts/check-platform-package-governance.js",
     "check:jwt-policy": "./scripts/check-jwt-dependency-policy.sh",
     "check:license-policy": "./scripts/check-license-policy.sh"
   },

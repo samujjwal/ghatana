@@ -100,7 +100,7 @@ export const FORBIDDEN_LIBRARIES = [
   'jquery',
   'underscore',
   'moment', // Use date-fns
-  'lodash', // Use native or @ghatana/utils
+  'lodash', // Use native or @ghatana/platform-utils
 
   // Security concerns
   'eval',

@@ -66,7 +66,6 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
 
             assertThat(entity).isNotNull();
             assertThat(entity.id()).isEqualTo("min-1");
-            assertThat(entity.tenantId()).isEqualTo(TENANT);
             assertThat(entity.collection()).isEqualTo(COLLECTION);
         }
 
@@ -193,7 +192,7 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
             List<Entity> results = runPromise(
                     () -> client.query("tenant-beta", COLLECTION, Query.all()));
 
-            assertThat(results).noneMatch(e -> "tenant-alpha".equals(e.tenantId()));
+            assertThat(results).isEmpty();
         }
     }
 

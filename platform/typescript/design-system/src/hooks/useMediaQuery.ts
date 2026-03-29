@@ -1,5 +1,5 @@
 /**
- * Re-export useMediaQuery and Breakpoint from @ghatana/utils.
+ * Re-export useMediaQuery and Breakpoint from @ghatana/platform-utils.
  *
  * Migrated from @ghatana/design-system to consolidate all UI hooks
  * under the canonical @ghatana/ui package.

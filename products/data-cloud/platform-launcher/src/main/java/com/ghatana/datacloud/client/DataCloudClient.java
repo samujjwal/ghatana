@@ -322,6 +322,15 @@ public interface DataCloudClient {
     Promise<HealthStatus> healthCheck();
 
     /**
+     * Checks whether the client is ready for traffic.
+     *
+     * @return promise of readiness state
+     */
+    default Promise<Boolean> checkReadiness() {
+        return healthCheck().map(status -> status != null && status.isHealthy());
+    }
+
+    /**
      * Gets system metrics.
      * 
      * @return promise of metrics
@@ -332,6 +341,15 @@ public interface DataCloudClient {
      * Closes the client and releases resources.
      */
     void close();
+
+    /**
+     * Returns whether the client is still running.
+     *
+     * @return {@code true} when the client is active
+     */
+    default boolean isRunning() {
+        return true;
+    }
 
     // ============ Data Types ============
 

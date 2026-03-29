@@ -1,16 +1,10 @@
 package com.ghatana.finance.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
+import com.ghatana.kernel.service.AbstractDataService;
+import com.ghatana.kernel.util.TypedDataSerializer;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
-
-import com.ghatana.kernel.util.TypedDataSerializer;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -19,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -40,50 +33,41 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class OrderManagementService implements KernelLifecycleAware {
+public class OrderManagementService extends AbstractDataService {
 
     private static final String ORDER_DATASET = "finance.orders";
-    private static final String AUDIT_DATASET = "finance.order.audit";
 
-    private final DataCloudKernelAdapter dataCloud;
     private final Map<String, Order> orderCache = new ConcurrentHashMap<>();
-    private volatile boolean running = false;
 
     public OrderManagementService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    public Promise<Void> stop() {
-        running = false;
-        orderCache.clear();
-        return Promise.complete();
-    }
-
-    public boolean isHealthy() {
-        return running;
-    }
-
+    @Override
     public String getName() {
         return "order-management";
     }
 
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        return createSchema(
+            ORDER_DATASET,
+            Map.of(
+                "orderId", "string",
+                "traderId", "string",
+                "symbol", "string",
+                "side", "string",
+                "status", "string",
+                "createdAt", "timestamp"
+            ),
+            Map.of("retention", "10years") // SEBON requirement
+        ).whenException(e -> {});
+    }
+
     // ==================== Core Order Operations ====================
 
-    /**
-     * Submits a new order with validation and risk checks.
-     *
-     * @param request the order request
-     * @return Promise containing the created order
-     */
     public Promise<Order> submitOrder(OrderRequest request) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         // Validate order
         ValidationResult validation = validateOrder(request);
@@ -91,7 +75,7 @@ public class OrderManagementService implements KernelLifecycleAware {
             return Promise.ofException(new IllegalStateException(validation.getError()));
         }
 
-        String orderId = generateId();
+        String orderId = generateId("ord");
         Instant now = Instant.now();
 
         Order order = new Order(
@@ -110,35 +94,26 @@ public class OrderManagementService implements KernelLifecycleAware {
             request.getAccountId()
         );
 
-        DataWriteRequest writeRequest = new DataWriteRequest(
+        return createRecord(
             ORDER_DATASET,
             orderId,
-            serialize(order),
+            order,
             Map.of(
                 "traderId", order.getTraderId(),
                 "symbol", order.getSymbol(),
                 "status", order.getStatus(),
                 "createdAt", now.toString()
-            )
-        );
-
-        return dataCloud.writeData(writeRequest)
-            .then($ -> updateOrderStatus(orderId, "PENDING"))
-            .then($ -> audit("ORDER_SUBMIT", order.getTraderId(),
-                "Order " + orderId + " submitted for " + order.getSymbol()))
-            .map($ -> order);
+            ),
+            "Order",
+            1
+        ).then(stored -> updateOrderStatus(orderId, "PENDING")
+            .then($ -> audit("ORDER_SUBMIT", stored.getTraderId(),
+                "Order " + orderId + " submitted for " + stored.getSymbol()))
+            .map($ -> stored));
     }
 
-    /**
-     * Gets an order by ID.
-     *
-     * @param orderId the order identifier
-     * @return Promise containing the order if found
-     */
     public Promise<Optional<Order>> getOrder(String orderId) {
-        if (!running) {
-            return Promise.of(Optional.empty());
-        }
+        ensureRunning();
 
         // Check cache first
         Order cached = orderCache.get(orderId);
@@ -146,24 +121,12 @@ public class OrderManagementService implements KernelLifecycleAware {
             return Promise.of(Optional.of(cached));
         }
 
-        DataReadRequest request = new DataReadRequest(ORDER_DATASET, orderId, Map.of());
-
-        return dataCloud.readData(request)
-            .map(result -> Optional.ofNullable(deserialize(result.getData())))
+        return readRecord(ORDER_DATASET, orderId, Order.class)
             .whenException(e -> Promise.of(Optional.empty()));
     }
 
-    /**
-     * Cancels an open order.
-     *
-     * @param orderId the order identifier
-     * @param traderId the trader requesting cancellation
-     * @return Promise completing when cancelled
-     */
     public Promise<Void> cancelOrder(String orderId, String traderId) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return getOrder(orderId)
             .then(opt -> {
@@ -190,13 +153,6 @@ public class OrderManagementService implements KernelLifecycleAware {
             });
     }
 
-    /**
-     * Updates order status (called by execution engine).
-     *
-     * @param orderId the order identifier
-     * @param newStatus the new status
-     * @return Promise completing when updated
-     */
     public Promise<Void> updateOrderStatus(String orderId, String newStatus) {
         return getOrder(orderId)
             .then(opt -> {
@@ -211,32 +167,22 @@ public class OrderManagementService implements KernelLifecycleAware {
                     updated = updated.withFilledAt(Instant.now());
                 }
 
-                DataWriteRequest request = new DataWriteRequest(
-                    ORDER_DATASET,
-                    orderId,
-                    serialize(updated),
-                    Map.of("status", newStatus, "updatedAt", Instant.now().toString())
-                );
-
                 orderCache.put(orderId, updated);
 
-                return dataCloud.writeData(request)
-                    .then($ -> audit("ORDER_STATUS", order.getTraderId(),
-                        "Order " + orderId + " status changed to " + newStatus));
+                return updateRecord(
+                    ORDER_DATASET,
+                    orderId,
+                    updated,
+                    Map.of("status", newStatus, "updatedAt", Instant.now().toString()),
+                    "Order",
+                    1
+                ).then($ -> audit("ORDER_STATUS", order.getTraderId(),
+                    "Order " + orderId + " status changed to " + newStatus));
             });
     }
 
-    /**
-     * Gets orders for a trader.
-     *
-     * @param traderId the trader identifier
-     * @param status optional status filter
-     * @return Promise containing orders
-     */
     public Promise<List<Order>> getTraderOrders(String traderId, String status) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
         StringBuilder query = new StringBuilder("traderId = :traderId");
         Map<String, Object> params = new ConcurrentHashMap<>();
@@ -247,65 +193,32 @@ public class OrderManagementService implements KernelLifecycleAware {
             params.put("status", status);
         }
 
-        DataQueryRequest request = new DataQueryRequest(
+        return queryRecords(
             ORDER_DATASET,
             query.toString(),
             params,
             1000,
-            0
-        );
-
-        return dataCloud.queryData(request)
-            .map(QueryResult::getResults)
-            .map(results -> results.stream()
-                .map(r -> deserialize(r.getData()))
-                .filter(Objects::nonNull)
-                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                .toList());
+            0,
+            Order.class
+        ).map(orders -> orders.stream()
+            .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+            .toList());
     }
 
-    /**
-     * Gets open orders for risk monitoring.
-     *
-     * @return Promise containing all open orders
-     */
     public Promise<List<Order>> getOpenOrders() {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        DataQueryRequest request = new DataQueryRequest(
+        return queryRecords(
             ORDER_DATASET,
             "status IN ('NEW', 'PENDING', 'PARTIALLY_FILLED')",
             Map.of(),
             10000,
-            0
+            0,
+            Order.class
         );
-
-        return dataCloud.queryData(request)
-            .map(QueryResult::getResults)
-            .map(results -> results.stream()
-                .map(r -> deserialize(r.getData()))
-                .filter(Objects::nonNull)
-                .toList());
     }
 
     // ==================== Private Methods ====================
-
-    private Promise<Void> initializeDatasets() {
-        return dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            ORDER_DATASET,
-            Map.of(
-                "orderId", "string",
-                "traderId", "string",
-                "symbol", "string",
-                "side", "string",
-                "status", "string",
-                "createdAt", "timestamp"
-            ),
-            Map.of("retention", "10years") // SEBON requirement
-        )).whenException(e -> {});
-    }
 
     private ValidationResult validateOrder(OrderRequest request) {
         if (request.getSymbol() == null || request.getSymbol().isBlank()) {
@@ -323,32 +236,9 @@ public class OrderManagementService implements KernelLifecycleAware {
         return ValidationResult.success();
     }
 
-    private Promise<Void> audit(String action, String traderId, String details) {
-        String auditId = generateId();
-        DataWriteRequest request = new DataWriteRequest(
-            AUDIT_DATASET,
-            auditId,
-            (action + ":" + traderId + ":" + details).getBytes(StandardCharsets.UTF_8),
-            Map.of(
-                "timestamp", Instant.now().toString(),
-                "action", action,
-                "traderId", traderId
-            )
-        );
-
-        return dataCloud.writeData(request).whenException(e -> {});
-    }
-
-    private byte[] serialize(Order order) {
-        return TypedDataSerializer.toBytes(order, "Order", 1);
-    }
-
-    private Order deserialize(byte[] data) {
-        return TypedDataSerializer.fromBytes(data, Order.class);
-    }
-
-    private String generateId() {
-        return "ord-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+    @Override
+    protected Promise<Void> audit(String action, String traderId, String details) {
+        return super.audit(action, traderId, details, Map.of("dataset", "finance.orders"));
     }
 
     // ==================== Inner Types ====================

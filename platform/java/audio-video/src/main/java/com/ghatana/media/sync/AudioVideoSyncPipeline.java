@@ -82,10 +82,45 @@ public class AudioVideoSyncPipeline implements AutoCloseable {
         POOR        // > 100ms drift
     }
     
+    /**
+     * Creates a pipeline with default buffer and tolerance settings.
+     *
+     * <p>Defaults: audio buffer 500 ms, video buffer 200 ms, sync tolerance ±40 ms.
+     */
     public AudioVideoSyncPipeline(SyncCallback callback) {
         this(callback, DEFAULT_AUDIO_BUFFER_MS, DEFAULT_VIDEO_BUFFER_MS, DEFAULT_SYNC_TOLERANCE_MS);
     }
-    
+
+    /**
+     * Creates a pipeline with custom buffer sizes and sync tolerance.
+     *
+     * <p>Recovery behaviour on sync errors:
+     * <ol>
+     *   <li>The pipeline attempts self-correction up to {@value MAX_RECOVERY_ATTEMPTS} times
+     *       using exponential back-off starting at {@value INITIAL_BACKOFF_MS} ms (capped at
+     *       {@value MAX_BACKOFF_MS} ms).  Each attempt is reported via
+     *       {@link SyncCallback#onRecoveryAttempt}.</li>
+     *   <li>If all recovery attempts fail the pipeline transitions to
+     *       {@link SyncState#ASYNC} mode, signalling this via
+     *       {@link SyncCallback#onAsyncModeActivated}.  In async mode frames are still
+     *       delivered to {@link SyncCallback#onSyncedFrame} but without timing guarantees.</li>
+     *   <li>Unrecoverable errors (e.g. callback throws repeatedly) transition the state to
+     *       {@link SyncState#ERROR} and the callback receives
+     *       {@link SyncCallback#onError} with a descriptive message.  The pipeline is still
+     *       safe to {@link #close()} after an error state.</li>
+     * </ol>
+     *
+     * <p>Clock assumptions: timestamps passed to {@link #feedAudio} and {@link #feedVideo}
+     * must share the same time base (microseconds since an arbitrary epoch).  The pipeline
+     * does not attempt cross-domain clock synchronisation; callers mixing hardware clocks
+     * (e.g. ALSA vs. V4L2) are responsible for aligning them before feeding frames.
+     *
+     * @param callback       receiver for sync events; must not be null
+     * @param audioBufferMs  maximum audio buffer depth in milliseconds (\u2265 20)
+     * @param videoBufferMs  maximum video buffer depth in milliseconds (\u2265 16)
+     * @param syncToleranceMs acceptable A/V offset in milliseconds before drift correction
+     *                        kicks in; values below 20 ms are clamped to 20 ms
+     */
     public AudioVideoSyncPipeline(SyncCallback callback, int audioBufferMs, int videoBufferMs, int syncToleranceMs) {
         this.callback = callback;
         this.audioBufferMs = audioBufferMs;
@@ -108,9 +143,15 @@ public class AudioVideoSyncPipeline implements AutoCloseable {
     /**
      * Feed audio data into the pipeline.
      *
-     * @param audio audio data
-     * @param presentationTimeUs presentation timestamp in microseconds
-     * @return true if accepted, false if buffer full
+     * <p>When the caller receives {@code false}, it should apply back-pressure: slow down
+     * the producer or drop the frame.  The pipeline will never block the calling thread.
+     * Frames whose presentation timestamps are more than {@code audioBufferMs} behind the
+     * most recent video timestamp may be silently discarded during drift correction.
+     *
+     * @param audio              audio data; must not be null
+     * @param presentationTimeUs presentation timestamp in microseconds (shared time base
+     *                           with video frames)
+     * @return {@code true} if the frame was accepted, {@code false} if the buffer is full
      */
     public boolean feedAudio(AudioData audio, long presentationTimeUs) {
         if (audioBuffer.size() >= audioBufferMs / 10) { // Rough estimate: 10ms chunks
@@ -122,11 +163,16 @@ public class AudioVideoSyncPipeline implements AutoCloseable {
     }
     
     /**
-     * Feed video frame into the pipeline.
+     * Feed a video frame into the pipeline.
      *
-     * @param frame image data
-     * @param presentationTimeUs presentation timestamp in microseconds
-     * @return true if accepted, false if buffer full
+     * <p>When the caller receives {@code false}, the frame is dropped without queuing or
+     * processing.  Callers should monitor this return value and reduce frame rate or
+     * resolution when sustained frame dropping occurs.
+     *
+     * @param frame              image data; must not be null
+     * @param presentationTimeUs presentation timestamp in microseconds (shared time base
+     *                           with audio frames)
+     * @return {@code true} if the frame was accepted, {@code false} if the buffer is full
      */
     public boolean feedVideo(ImageData frame, long presentationTimeUs) {
         if (videoBuffer.size() >= videoBufferMs / 16) { // ~16ms per frame at 60fps

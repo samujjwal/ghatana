@@ -33,6 +33,8 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+export type { ClassValue };
+
 /**
  * Merge class names with Tailwind CSS conflict resolution
  */

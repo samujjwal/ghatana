@@ -23,9 +23,6 @@
       ],
       "@ghatana/theme": ["../../../platform/typescript/theme/src"],
       "@ghatana/tokens": ["../../../platform/typescript/tokens/src"],
-      "@ghatana/utils": [
-        "../../../platform/typescript/foundation/platform-utils/src/index.ts"
-      ],
       "@ghatana/platform-utils": [
         "../../../platform/typescript/foundation/platform-utils/src/index.ts"
       ],

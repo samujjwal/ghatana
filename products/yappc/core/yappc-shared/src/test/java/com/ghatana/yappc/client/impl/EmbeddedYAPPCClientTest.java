@@ -43,13 +43,19 @@ class EmbeddedYAPPCClientTest extends EventloopTestBase {
     
     @Test
     void testStartAndStop() {
+        assertFalse(client.isRunning());
+
         runPromise(() -> client.start());
+        assertTrue(client.isRunning());
+        assertTrue(runPromise(() -> client.healthCheck()));
         
         HealthStatus health = runPromise(() -> client.checkHealth());
         assertTrue(health.isHealthy());
         assertEquals("UP", health.getStatus());
         
         runPromise(() -> client.stop());
+        assertFalse(client.isRunning());
+        assertFalse(runPromise(() -> client.healthCheck()));
     }
     
     @Test

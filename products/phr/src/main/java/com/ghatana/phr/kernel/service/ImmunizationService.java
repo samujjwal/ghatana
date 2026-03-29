@@ -1,13 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.kernel.util.TypedDataSerializer;
+import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -17,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Immunization Records Service for PHR.
@@ -33,44 +26,36 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class ImmunizationService implements KernelLifecycleAware {
+public class ImmunizationService extends AbstractDataService {
 
     private static final String IMMUNIZATION_DATASET = "phr.immunizations";
     private static final String SCHEDULE_DATASET = "phr.immunization.schedules";
-    private static final String AUDIT_DATASET = "phr.immunization.audit";
 
-    private final DataCloudKernelAdapter dataCloud;
-    private volatile boolean running = false;
-
-    /**
-     * Constructs an ImmunizationService.
-     *
-     * @param context kernel context providing DataCloudKernelAdapter
-     */
     public ImmunizationService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    /** Starts the service and initializes backing datasets. */
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    /** Stops the service. */
-    public Promise<Void> stop() {
-        running = false;
-        return Promise.complete();
-    }
-
-    /** Returns {@code true} when the service is running. */
-    public boolean isHealthy() {
-        return running;
-    }
-
-    /** Returns the logical service name. */
+    @Override
     public String getName() {
         return "immunization";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        Promise<Void> imm = createSchema(
+            IMMUNIZATION_DATASET,
+            Map.of("id", "string", "patientId", "string", "cvxCode", "string",
+                "administeredAt", "timestamp", "status", "string"),
+            Map.of("retention", "permanent")
+        );
+
+        Promise<Void> sched = createSchema(
+            SCHEDULE_DATASET,
+            Map.of("id", "string", "patientId", "string", "dueDate", "date"),
+            Map.of("retention", "10years")
+        );
+
+        return imm.then($ -> sched);
     }
 
     // ==================== Core Operations ====================
@@ -82,48 +67,45 @@ public class ImmunizationService implements KernelLifecycleAware {
      * @return Promise containing the stored record with generated ID
      */
     public Promise<ImmunizationRecord> recordImmunization(ImmunizationRecord immunization) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
-        Objects.requireNonNull(immunization.patientId(), "patientId");
-        Objects.requireNonNull(immunization.cvxCode(), "cvxCode");
+        validateRequired(immunization.patientId(), "patientId");
+        validateRequired(immunization.cvxCode(), "cvxCode");
 
         String id = immunization.id() != null ? immunization.id() : generateId("imm");
         ImmunizationRecord toStore = new ImmunizationRecord(
-                id,
-                immunization.patientId(),
-                immunization.encounterId(),
-                immunization.cvxCode(),
-                immunization.vaccineName(),
-                immunization.administeredBy(),
-                immunization.administeredAt() != null ? immunization.administeredAt() : Instant.now(),
-                Instant.now(),
-                immunization.lotNumber(),
-                immunization.expiresAt(),
-                immunization.route(),
-                immunization.seriesName(),
-                immunization.doseNumber(),
-                immunization.adverseEvent(),
-                immunization.notes(),
-                ImmunizationStatus.ADMINISTERED
+            id,
+            immunization.patientId(),
+            immunization.encounterId(),
+            immunization.cvxCode(),
+            immunization.vaccineName(),
+            immunization.administeredBy(),
+            immunization.administeredAt() != null ? immunization.administeredAt() : Instant.now(),
+            Instant.now(),
+            immunization.lotNumber(),
+            immunization.expiresAt(),
+            immunization.route(),
+            immunization.seriesName(),
+            immunization.doseNumber(),
+            immunization.adverseEvent(),
+            immunization.notes(),
+            ImmunizationStatus.ADMINISTERED
         );
 
-        DataWriteRequest request = new DataWriteRequest(
-                IMMUNIZATION_DATASET,
-                id,
-                TypedDataSerializer.toBytes(toStore, "ImmunizationRecord", 1),
-                Map.of(
-                        "patientId", toStore.patientId(),
-                        "cvxCode", toStore.cvxCode(),
-                        "status", toStore.status().name()
-                )
-        );
-
-        return dataCloud.writeData(request)
-                .then($ -> audit("ADMINISTER", toStore.patientId(),
-                        "Vaccine administered: " + toStore.vaccineName()))
-                .map($ -> toStore);
+        return createRecord(
+            IMMUNIZATION_DATASET,
+            id,
+            toStore,
+            Map.of(
+                "patientId", toStore.patientId(),
+                "cvxCode", toStore.cvxCode(),
+                "status", toStore.status().name()
+            ),
+            "ImmunizationRecord",
+            1
+        ).then(stored -> audit("ADMINISTER", stored.patientId(),
+            "Vaccine administered: " + stored.vaccineName())
+            .map($ -> stored));
     }
 
     /**
@@ -133,142 +115,66 @@ public class ImmunizationService implements KernelLifecycleAware {
      * @return Promise containing the full immunization history
      */
     public Promise<List<ImmunizationRecord>> getImmunizationHistory(String patientId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        return dataCloud.queryData(new DataQueryRequest(
-                IMMUNIZATION_DATASET,
-                "patientId = :patientId",
-                Map.of("patientId", patientId),
-                1000,
-                0
-        )).map(QueryResult::getResults)
-                .map(results -> results.stream()
-                        .map(r -> TypedDataSerializer.fromBytes(r.getData(), ImmunizationRecord.class))
-                        .filter(Objects::nonNull)
-                        .toList());
+        return queryRecords(
+            IMMUNIZATION_DATASET,
+            "patientId = :patientId",
+            Map.of("patientId", patientId),
+            1000,
+            0,
+            ImmunizationRecord.class
+        );
     }
 
-    /**
-     * Retrieves a specific immunization record.
-     *
-     * @param immunizationId the immunization record identifier
-     * @return Promise containing the record if found
-     */
     public Promise<Optional<ImmunizationRecord>> getImmunization(String immunizationId) {
-        if (!running) {
-            return Promise.of(Optional.empty());
-        }
-
-        return dataCloud.readData(new DataReadRequest(IMMUNIZATION_DATASET, immunizationId, Map.of()))
-                .map(result -> {
-                    if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable((ImmunizationRecord) TypedDataSerializer.fromBytes(result.getData(), ImmunizationRecord.class));
-                })
-                ;
+        ensureRunning();
+        return readRecord(IMMUNIZATION_DATASET, immunizationId, ImmunizationRecord.class);
     }
 
-    /**
-     * Creates a vaccination schedule entry (due date for an upcoming dose).
-     *
-     * @param schedule the vaccination schedule to persist
-     * @return Promise containing the stored schedule
-     */
     public Promise<VaccinationSchedule> createSchedule(VaccinationSchedule schedule) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         String id = schedule.id() != null ? schedule.id() : generateId("schd");
         VaccinationSchedule toStore = new VaccinationSchedule(
-                id,
-                schedule.patientId(),
-                schedule.cvxCode(),
-                schedule.vaccineName(),
-                schedule.seriesName(),
-                schedule.doseNumber(),
-                schedule.dueDate(),
-                ScheduleStatus.PENDING,
-                schedule.notes()
+            id,
+            schedule.patientId(),
+            schedule.cvxCode(),
+            schedule.vaccineName(),
+            schedule.seriesName(),
+            schedule.doseNumber(),
+            schedule.dueDate(),
+            ScheduleStatus.PENDING,
+            schedule.notes()
         );
 
-        DataWriteRequest request = new DataWriteRequest(
-                SCHEDULE_DATASET,
-                id,
-                TypedDataSerializer.toBytes(toStore, "VaccinationSchedule", 1),
-                Map.of("patientId", toStore.patientId(), "dueDate", toStore.dueDate().toString(), "status", toStore.status().name())
-        );
-
-        return dataCloud.writeData(request).map($ -> toStore);
+        return createRecord(
+            SCHEDULE_DATASET,
+            id,
+            toStore,
+            Map.of("patientId", toStore.patientId(), "dueDate", toStore.dueDate().toString(), "status", toStore.status().name()),
+            "VaccinationSchedule",
+            1
+        ).map($ -> toStore);
     }
 
-    /**
-     * Returns due vaccination schedules for a patient.
-     *
-     * @param patientId the patient identifier
-     * @return Promise containing schedules ordered by due date
-     */
     public Promise<List<VaccinationSchedule>> getDueSchedules(String patientId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        return dataCloud.queryData(new DataQueryRequest(
-                SCHEDULE_DATASET,
-                "patientId = :patientId AND status = :status",
-                Map.of("patientId", patientId, "status", "PENDING"),
-                500,
-                0
-        )).map(QueryResult::getResults)
-                .map(results -> results.stream()
-                        .map(r -> TypedDataSerializer.fromBytes(r.getData(), VaccinationSchedule.class))
-                        .filter(Objects::nonNull)
-                        .filter(s -> s.status() == ScheduleStatus.PENDING)
-                        .sorted((a, b) -> a.dueDate().compareTo(b.dueDate()))
-                        .toList());
+        return queryRecords(
+            SCHEDULE_DATASET,
+            "patientId = :patientId AND status = :status",
+            Map.of("patientId", patientId, "status", "PENDING"),
+            500,
+            0,
+            VaccinationSchedule.class
+        ).map(schedules -> schedules.stream()
+            .filter(s -> s.status() == ScheduleStatus.PENDING)
+            .sorted((a, b) -> a.dueDate().compareTo(b.dueDate()))
+            .toList());
     }
 
     // ==================== Private Helpers ====================
-
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> imm = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                IMMUNIZATION_DATASET,
-                Map.of("id", "string", "patientId", "string", "cvxCode", "string",
-                        "administeredAt", "timestamp", "status", "string"),
-                Map.of("retention", "permanent")
-        ));
-
-        Promise<Void> sched = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                SCHEDULE_DATASET,
-                Map.of("id", "string", "patientId", "string", "dueDate", "date"),
-                Map.of("retention", "10years")
-        ));
-
-        Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                AUDIT_DATASET,
-                Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
-                Map.of("retention", "25years")
-        ));
-
-        return Promises.all(imm, sched, audit).map($ -> null);
-    }
-
-    private Promise<Void> audit(String action, String patientId, String details) {
-        String auditId = generateId("aud");
-        record AuditEntry(String id, Instant ts, String action, String patient, String details) {}
-        return dataCloud.writeData(new DataWriteRequest(
-                AUDIT_DATASET, auditId,
-                TypedDataSerializer.toBytes(
-                        new AuditEntry(auditId, Instant.now(), action, patientId, details),
-                        "ImmunizationAuditEntry", 1),
-                Map.of("timestamp", Instant.now().toString())
-        ));
-    }
-
-    private String generateId(String prefix) {
-        return prefix + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
 
     // ==================== Inner Types ====================
 

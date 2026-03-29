@@ -75,7 +75,17 @@ public final class InfrastructureDomainService {
 
     public Promise<Void> logAction(String tenantId, String userId, AuditAction action,
                                    String resourceType, String resourceId, String details) {
-        return auditingService.logAction(tenantId, userId, action, resourceType, resourceId, details);
+        return auditingService.logAction(
+            tenantId,
+            userId,
+            action,
+            resourceType,
+            resourceId,
+            null,
+            Map.of(),
+            details,
+            null,
+            null);
     }
 
     public Promise<List<AuditLog>> getUserActivity(String tenantId, String userId) {
@@ -99,7 +109,16 @@ public final class InfrastructureDomainService {
     // ── Webhooks ──────────────────────────────────────────────────────────────
 
     public Promise<Webhook> registerWebhook(String tenantId, Webhook webhook, String userId) {
-        return webhookService.registerWebhook(tenantId, webhook, userId);
+        Objects.requireNonNull(webhook, "webhook");
+
+        return webhookService.registerWebhook(
+                tenantId,
+                webhook.getEventType(),
+                webhook.getUrl(),
+                webhook.getEnvironment(),
+                webhook.getMaxRetries(),
+                webhook.getRetryDelayMs(),
+                webhook.getDeliveryTimeoutSeconds());
     }
 
     public Promise<List<Webhook>> listWebhooks(String tenantId) {

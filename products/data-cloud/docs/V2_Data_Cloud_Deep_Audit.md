@@ -286,8 +286,8 @@ Findings:
 - UI depends heavily on shared TypeScript libraries.
 - UI imports `axios` from multiple files, but `products/data-cloud/ui/package.json` does not declare `axios` directly.
 - Path aliasing is inconsistent:
-  - `vite.config.ts` defines `@ghatana/utils`, not `@ghatana/platform-utils`.
-  - `tsconfig.json` maps `@ghatana/platform-utils` to `platform/typescript/utils/src/index.ts`, but that file does not exist.
+  - Historical configs used `@ghatana/utils`; active configs now standardize on `@ghatana/platform-utils`.
+  - Historical tsconfig mapping drift around the old wrapper has been removed; canonical resolution now points at `platform/typescript/foundation/platform-utils`.
   - `@ghatana/canvas/topology` imports point into a canvas package that does not expose that structure here.
 - This is a library governance problem, not just a local UI bug.
 

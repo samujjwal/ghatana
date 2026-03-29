@@ -1,6 +1,5 @@
 package com.ghatana.kernel.adapter.datacloud;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.AbstractKernelService;
 import io.activej.promise.Promise;

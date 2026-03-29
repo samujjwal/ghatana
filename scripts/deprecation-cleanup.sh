@@ -79,7 +79,7 @@ echo ""
 
 # Deprecated package imports
 search_deprecated "@ghatana/ui" "@ghatana/ui (use @ghatana/design-system)" "HIGH"
-search_deprecated "@ghatana/utils" "@ghatana/utils (use @ghatana/foundation)" "HIGH"
+search_deprecated "@ghatana/utils" "@ghatana/utils (use @ghatana/platform-utils)" "HIGH"
 search_deprecated "@ghatana/dcmaar" "@ghatana/dcmaar-* packages" "CRITICAL"
 search_deprecated "@ghatana/yappc" "@ghatana/yappc-* packages" "CRITICAL"
 

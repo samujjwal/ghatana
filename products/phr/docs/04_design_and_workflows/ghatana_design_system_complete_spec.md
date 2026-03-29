@@ -69,7 +69,7 @@ The Ghatana Design System builds upon and extends existing platform libraries. *
 | `@ghatana/design-system` | `platform/typescript/design-system/` | Base components, patterns, layouts         | Extend for healthcare domain components          |
 | `@ghatana/charts`        | `platform/typescript/charts/`        | Chart primitives, visualization patterns   | Use for vitals trends, lab results, analytics    |
 | `@ghatana/i18n`          | `platform/typescript/i18n/`          | Internationalization, RTL support          | Add medical terminology localization             |
-| `@ghatana/utils`         | `platform/typescript/utils/`         | Shared utilities, type helpers             | Use for form validation helpers, date formatting |
+| `@ghatana/platform-utils` | `platform/typescript/foundation/platform-utils/` | Shared utilities, type helpers             | Use for form validation helpers, date formatting |
 
 **Reuse Rules:**
 

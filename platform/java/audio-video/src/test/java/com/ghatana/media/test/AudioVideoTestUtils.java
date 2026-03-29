@@ -9,6 +9,7 @@ package com.ghatana.media.test;
 import com.ghatana.media.common.*;
 import com.ghatana.media.stt.api.*;
 import com.ghatana.media.tts.api.*;
+import com.ghatana.media.validation.ValidationFramework;
 
 import java.time.Duration;
 import java.util.List;
@@ -111,6 +112,7 @@ public final class AudioVideoTestUtils {
         @Override
         public TranscriptionResult transcribe(AudioData audio, TranscriptionOptions options) {
             ensureOpen();
+            ValidationFramework.validateAudio(audio);
             int call = callCount.incrementAndGet();
             if (shouldFail(call)) {
                 throw new RuntimeException("Simulated failure", createException());

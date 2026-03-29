@@ -48,10 +48,17 @@ public class CircuitBreakerServerInterceptor implements ServerInterceptor {
     private final ConcurrentHashMap<String, Breaker> breakers = new ConcurrentHashMap<>();
 
     public CircuitBreakerServerInterceptor() {
-        this.failureThreshold = (int) parseEnvLong("AV_CB_FAILURE_THRESHOLD", 5L);
-        this.resetTimeoutMs   = parseEnvLong("AV_CB_RESET_TIMEOUT_MS", 30_000L);
+        this(
+            (int) parseEnvLong(5L, "AV_CB_FAILURE_THRESHOLD", "CIRCUIT_BREAKER_FAILURE_THRESHOLD"),
+            parseEnvLong(30_000L, "AV_CB_RESET_TIMEOUT_MS", "CIRCUIT_BREAKER_RESET_TIMEOUT_MS")
+        );
+        }
+
+        CircuitBreakerServerInterceptor(int failureThreshold, long resetTimeoutMs) {
+        this.failureThreshold = Math.max(1, failureThreshold);
+        this.resetTimeoutMs = Math.max(0L, resetTimeoutMs);
         LOG.info("Circuit breaker initialised: failureThreshold={} resetTimeoutMs={}",
-                failureThreshold, resetTimeoutMs);
+            this.failureThreshold, this.resetTimeoutMs);
     }
 
     @Override
@@ -138,9 +145,18 @@ public class CircuitBreakerServerInterceptor implements ServerInterceptor {
         }
     }
 
-    private static long parseEnvLong(String name, long def) {
-        String val = System.getenv(name);
-        if (val == null) return def;
-        try { return Long.parseLong(val); } catch (NumberFormatException e) { return def; }
+    private static long parseEnvLong(long def, String... names) {
+        for (String name : names) {
+            String val = System.getenv(name);
+            if (val == null) {
+                continue;
+            }
+            try {
+                return Long.parseLong(val);
+            } catch (NumberFormatException ignored) {
+                // Keep looking so a malformed legacy variable does not mask a valid canonical one.
+            }
+        }
+        return def;
     }
 }

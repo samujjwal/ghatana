@@ -5,6 +5,18 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
+import com.ghatana.kernel.adapter.datacloud.DataDeleteRequest;
+import com.ghatana.kernel.adapter.datacloud.DataQueryRequest;
+import com.ghatana.kernel.adapter.datacloud.DataReadRequest;
+import com.ghatana.kernel.adapter.datacloud.DataResult;
+import com.ghatana.kernel.adapter.datacloud.DatasetInfo;
+import com.ghatana.kernel.adapter.datacloud.DataStream;
+import com.ghatana.kernel.adapter.datacloud.DataStreamRequest;
+import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
+import com.ghatana.kernel.adapter.datacloud.QueryResult;
+import com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest;
+import com.ghatana.kernel.adapter.datacloud.SchemaInfo;
+import com.ghatana.kernel.adapter.datacloud.TransactionHandle;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.phr.kernel.consent.ConsentService;
 import com.ghatana.phr.kernel.consent.ConsentService.*;
@@ -339,9 +351,9 @@ class ConsentManagementServiceTest extends EventloopTestBase {
         }
 
         @Override
-        public Promise<DataCloudKernelAdapter.QueryResult> queryData(DataQueryRequest request) {
+        public Promise<QueryResult> queryData(DataQueryRequest request) {
             // Return empty results — consent grant queries return no active grants
-            return Promise.of(new DataCloudKernelAdapter.QueryResult(List.of(), 0, false));
+            return Promise.of(new QueryResult(List.of(), 0, false));
         }
 
         @Override
@@ -375,12 +387,7 @@ class ConsentManagementServiceTest extends EventloopTestBase {
         }
 
         @Override
-        public Promise<DataStream> openReadStream(DataStreamRequest request) {
-            return Promise.of(null);
-        }
-
-        @Override
-        public Promise<DataStream> openWriteStream(DataStreamRequest request) {
+        public Promise<DataStream> openStream(DataStreamRequest request) {
             return Promise.of(null);
         }
     }

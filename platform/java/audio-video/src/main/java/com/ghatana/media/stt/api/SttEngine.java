@@ -52,9 +52,33 @@ public interface SttEngine extends AutoCloseable {
     /**
      * Transcribe audio with options.
      *
-     * @param audio the audio data
-     * @param options transcription options
-     * @return transcription result
+     * <p>Failure scenarios:
+     * <ul>
+     *   <li><b>Empty or too-short audio</b> — throws {@code ValidationError} if the payload
+     *       is null, zero-length, or shorter than the minimum frame size supported by the
+     *       active model.</li>
+     *   <li><b>Unsupported sample rate</b> — throws {@code ValidationError} when the
+     *       {@link AudioData} sample rate does not match the model's expected input.
+     *       Use {@code AudioConverter} to resample before calling this method.</li>
+     *   <li><b>No model loaded</b> — throws {@code ModelLoadingError} if no model has been
+     *       initialised yet.  Call {@link #warmup()} or {@link #loadModel(String)} first.</li>
+     *   <li><b>Inference failure</b> — throws {@code InferenceError} when the ONNX runtime
+     *       returns an error.  {@link InferenceError#isRetryable()} indicates whether a
+     *       retry with the same input is safe.</li>
+     *   <li><b>Resource exhaustion</b> — throws {@code ResourceExhaustedError} when the
+     *       engine's concurrency limiter or the engine pool is saturated.  Always retryable.</li>
+     *   <li><b>Timeout</b> — throws {@code InferenceError} (retryable) when inference
+     *       exceeds {@link TranscriptionOptions#timeout()}.</li>
+     * </ul>
+     *
+     * @param audio   the audio data; must not be null or empty
+     * @param options transcription options; use {@link TranscriptionOptions#defaults()} when
+     *                no customisation is needed
+     * @return transcription result; never null, but {@link TranscriptionResult#text()} may be
+     *         empty for silent audio
+     * @throws com.ghatana.media.error.ValidationError       if the audio payload is invalid
+     * @throws com.ghatana.media.error.InferenceError        if transcription fails at runtime
+     * @throws com.ghatana.media.error.ResourceExhaustedError if the engine is at capacity
      */
     TranscriptionResult transcribe(AudioData audio, TranscriptionOptions options);
 

@@ -1,13 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.kernel.util.TypedDataSerializer;
+import com.ghatana.kernel.service.AbstractDataService;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.InMemoryCacheAdapter;
 import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
@@ -17,7 +11,6 @@ import com.ghatana.phr.kernel.consent.ConsentService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,7 +19,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Consent Management Service with Nepal Directive 2081 compliance.
@@ -50,10 +42,9 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class ConsentManagementService implements ConsentService, KernelLifecycleAware {
+public class ConsentManagementService extends AbstractDataService implements ConsentService {
 
     private static final String CONSENT_DATASET = "phr.consent.grants";
-    private static final String AUDIT_DATASET = "phr.consent.audit";
     private static final String EMERGENCY_DATASET = "phr.emergency.access";
 
     /** Maximum grant creation requests per actor per window. */
@@ -63,12 +54,10 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
     /** Sliding window duration for rate limiting. */
     private static final Duration RATE_LIMIT_WINDOW = Duration.ofMinutes(1);
 
-    private final DataCloudKernelAdapter dataCloud;
     /** Distributed cache for consent decisions — multi-node safe (ISSUE-X02). */
     private final DistributedCachePort<String, ConsentCacheEntry> consentCache;
     private final RateLimiter createGrantLimiter;
     private final RateLimiter checkAccessLimiter;
-    private volatile boolean running = false;
 
     /**
      * Constructs a ConsentManagementService with a supplied distributed cache.
@@ -78,7 +67,7 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
      */
     public ConsentManagementService(KernelContext context,
                                      DistributedCachePort<String, ConsentCacheEntry> consentCache) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
         this.consentCache = Objects.requireNonNull(consentCache, "consentCache must not be null");
         this.createGrantLimiter = DefaultRateLimiter.create(
             RateLimiterConfig.builder()
@@ -104,22 +93,46 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
         this(context, new InMemoryCacheAdapter<>(50_000, Duration.ofMinutes(5)));
     }
 
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    public Promise<Void> stop() {
-        running = false;
-        return consentCache.invalidateAll();
-    }
-
-    public boolean isHealthy() {
-        return running;
-    }
-
+    @Override
     public String getName() {
         return "consent-management";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        Promise<Void> consent = createSchema(
+            CONSENT_DATASET,
+            Map.of(
+                "grantId", "string",
+                "patientId", "string",
+                "recipientId", "string",
+                "scope", "json",
+                "status", "string",
+                "createdAt", "timestamp",
+                "expiresAt", "timestamp"
+            ),
+            Map.of("retention", "25years")
+        );
+
+        Promise<Void> emergency = createSchema(
+            EMERGENCY_DATASET,
+            Map.of(
+                "grantId", "string",
+                "patientId", "string",
+                "providerId", "string",
+                "justification", "string",
+                "status", "string",
+                "expiresAt", "timestamp"
+            ),
+            Map.of("retention", "25years")
+        );
+
+        return consent.then($ -> emergency);
+    }
+
+    @Override
+    protected Promise<Void> onStop() {
+        return consentCache.invalidateAll();
     }
 
     // ==================== Core Consent Operations ====================
@@ -131,9 +144,7 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
      * @return Promise containing the created grant
      */
     public Promise<ConsentGrant> createGrant(ConsentGrant grant) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         String rateLimitKey = grant.getRecipientId();
         if (!tryAcquire(createGrantLimiter, rateLimitKey)) {
@@ -149,27 +160,25 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
                         new IllegalStateException("Conflicting active grant exists"));
                 }
 
-                String grantId = grant.getId() != null ? grant.getId() : generateId();
+                String grantId = grant.getId() != null ? grant.getId() : generateId("cns");
                 ConsentGrant toStore = grant.withId(grantId).withCreatedAt(Instant.now());
 
-                DataWriteRequest request = new DataWriteRequest(
+                return createRecord(
                     CONSENT_DATASET,
                     grantId,
-                    serialize(toStore),
+                    toStore,
                     Map.of(
                         "patientId", toStore.getPatientId(),
                         "recipientId", toStore.getRecipientId(),
                         "status", toStore.getStatus(),
                         "expiresAt", toStore.getExpiresAt().toString()
-                    )
-                );
-
-                ConsentGrant stored = toStore;
-                Promise<Void> writeChain = dataCloud.writeData(request)
-                    .then($ -> invalidateConsentCache(stored.getRecipientId(), stored.getPatientId()))
+                    ),
+                    "ConsentGrant",
+                    1
+                ).then(stored -> invalidateConsentCache(stored.getRecipientId(), stored.getPatientId())
                     .then($ -> audit("GRANT_CREATE", stored.getPatientId(),
-                        "Grant created for " + stored.getRecipientId()));
-                return writeChain.map($ -> stored);
+                        "Grant created for " + stored.getRecipientId()))
+                    .map($ -> stored));
             });
     }
 
@@ -180,9 +189,7 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
      * @return Promise completing when revoked
      */
     public Promise<Void> revokeGrant(String grantId) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         return getGrant(grantId)
             .then(opt -> {
@@ -195,11 +202,7 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
                 }
 
                 ConsentGrant revoked = grant.withStatus("REVOKED").withRevokedAt(Instant.now());
-                Promise<ConsentGrant> updated = updateGrant(revoked);
-                // ENH-P01: Invalidate ALL cached decisions for this patient, not just
-                // the specific recipient-patient pair. Other actors' cached allow-decisions
-                // may reference grants that are affected by cascading revocation policies.
-                return updated
+                return updateGrantInternal(revoked)
                     .then($ -> invalidatePatientAccessCache(
                             new CacheInvalidationRequest(null, grant.getPatientId(),
                                     CacheInvalidationReason.GRANT_REVOKED)))
@@ -217,9 +220,7 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
      */
     public Promise<ConsentValidationResult> validateAccess(String patientId, String accessorId,
                                                             String resourceType) {
-        if (!running) {
-            return Promise.of(new ConsentValidationResult(false, "Service not running", null));
-        }
+        ensureRunning();
 
         // Check cache first
         String cacheKey = accessorId + ":" + patientId + ":" + resourceType;
@@ -261,7 +262,7 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
         if (!running) {
             return Promise.of(new ConsentAccessDecision(
                     false, ReasonCode.SYSTEM_DENY, null, CacheStatus.BYPASS,
-                    true, null, List.of()));
+                    false, null, List.of()));
         }
 
         String rateLimitKey = request.actor().actorId();
@@ -354,24 +355,16 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
      * @return Promise containing list of grants
      */
     public Promise<List<ConsentGrant>> getPatientGrants(String patientId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        DataQueryRequest request = new DataQueryRequest(
+        return queryRecords(
             CONSENT_DATASET,
             "patientId = :patientId",
             Map.of("patientId", patientId),
             1000,
-            0
+            0,
+            ConsentGrant.class
         );
-
-        return dataCloud.queryData(request)
-            .map(QueryResult::getResults)
-            .map(results -> results.stream()
-                .map(r -> deserialize(r.getData()))
-                .filter(Objects::nonNull)
-                .toList());
     }
 
     // ==================== Emergency Break-the-Glass ====================
@@ -383,20 +376,17 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
      * @return Promise containing emergency grant
      */
     public Promise<EmergencyGrant> createEmergencyAccess(EmergencyAccessRequest request) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
         // Validate emergency request
         if (request.getJustification() == null || request.getJustification().isBlank()) {
             return Promise.ofException(new IllegalStateException("Emergency access requires justification"));
         }
 
-        String grantId = generateId();
         Instant expiresAt = Instant.now().plus(Duration.ofHours(4)); // Default 4 hours
 
         EmergencyGrant grant = new EmergencyGrant(
-            grantId,
+            generateId("emg"),
             request.getPatientId(),
             request.getProviderId(),
             request.getJustification(),
@@ -407,23 +397,22 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
             false
         );
 
-        DataWriteRequest writeRequest = new DataWriteRequest(
+        return createRecord(
             EMERGENCY_DATASET,
-            grantId,
-            serializeEmergency(grant),
+            grant.getId(),
+            grant,
             Map.of(
                 "patientId", grant.getPatientId(),
                 "providerId", grant.getProviderId(),
                 "status", "ACTIVE",
                 "expiresAt", expiresAt.toString()
-            )
-        );
-
-        return dataCloud.writeData(writeRequest)
-            .then($ -> notifyPatientOfEmergencyAccess(grant))
+            ),
+            "EmergencyGrant",
+            1
+        ).then(stored -> notifyPatientOfEmergencyAccess(stored)
             .then($ -> audit("EMERGENCY_ACCESS", request.getPatientId(),
                 "Emergency access granted to " + request.getProviderId()))
-            .map($ -> grant);
+            .map($ -> stored));
     }
 
     /**
@@ -433,83 +422,35 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
      * @return Promise containing audit entries
      */
     public Promise<List<PatientAuditEntry>> getPatientAuditTrail(String patientId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        DataQueryRequest request = new DataQueryRequest(
+        return queryRecords(
             AUDIT_DATASET,
             "patientId = :patientId",
             Map.of("patientId", patientId),
             1000,
-            0
+            0,
+            PatientAuditEntry.class
         );
-
-        return dataCloud.queryData(request)
-            .map(QueryResult::getResults)
-            .map(results -> results.stream()
-                .map(r -> deserializeAudit(r.getData()))
-                .filter(Objects::nonNull)
-                .toList());
     }
+
+    private static final String AUDIT_DATASET = "phr.consent.audit";
 
     // ==================== Private Methods ====================
 
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> consent = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            CONSENT_DATASET,
-            Map.of(
-                "grantId", "string",
-                "patientId", "string",
-                "recipientId", "string",
-                "scope", "json",
-                "status", "string",
-                "createdAt", "timestamp",
-                "expiresAt", "timestamp"
-            ),
-            Map.of("retention", "25years")
-        ));
-
-        Promise<Void> emergency = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-            EMERGENCY_DATASET,
-            Map.of(
-                "grantId", "string",
-                "patientId", "string",
-                "providerId", "string",
-                "justification", "string",
-                "status", "string",
-                "expiresAt", "timestamp"
-            ),
-            Map.of("retention", "25years")
-        ));
-
-        return Promises.all(consent, emergency).map($ -> null);
-    }
-
     private Promise<Optional<ConsentGrant>> getGrant(String grantId) {
-        DataReadRequest request = new DataReadRequest(
-            CONSENT_DATASET,
-            grantId,
-            Map.of()
-        );
-
-        return dataCloud.readData(request)
-            .map(result -> Optional.ofNullable(deserialize(result.getData())))
-            ;
+        return readRecord(CONSENT_DATASET, grantId, ConsentGrant.class);
     }
 
-    private Promise<ConsentGrant> updateGrant(ConsentGrant grant) {
-        DataWriteRequest request = new DataWriteRequest(
+    private Promise<ConsentGrant> updateGrantInternal(ConsentGrant grant) {
+        return updateRecord(
             CONSENT_DATASET,
             grant.getId(),
-            serialize(grant),
-            Map.of("updatedAt", Instant.now().toString())
+            grant,
+            Map.of("status", grant.getStatus()),
+            "ConsentGrant",
+            1
         );
-
-        return dataCloud.writeData(request)
-            .then($ -> invalidateConsentCache(grant.getRecipientId(), grant.getPatientId()))
-            .then($ -> audit("GRANT_REVOKE", grant.getPatientId(), "Grant revoked"))
-            .map($ -> grant);
     }
 
     private Promise<Boolean> checkConflictingGrants(String patientId, String recipientId, ConsentScope scope) {
@@ -526,10 +467,16 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
     }
 
     private Promise<List<ConsentGrant>> getActiveGrantsForPatient(String patientId) {
-        return getPatientGrants(patientId)
-            .map(grants -> grants.stream()
-                .filter(g -> "ACTIVE".equals(g.getStatus()) && !g.isExpired())
-                .toList());
+        return queryRecords(
+            CONSENT_DATASET,
+            "patientId = :patientId",
+            Map.of("patientId", patientId),
+            1000,
+            0,
+            ConsentGrant.class
+        ).map(grants -> grants.stream()
+            .filter(g -> "ACTIVE".equals(g.getStatus()) && !g.isExpired())
+            .toList());
     }
 
     private Promise<Void> invalidateConsentCache(String recipientId, String patientId) {
@@ -546,51 +493,6 @@ public class ConsentManagementService implements ConsentService, KernelLifecycle
         // Send push + SMS notification
         // Implementation would integrate with notification service
         return Promise.complete();
-    }
-
-    private Promise<Void> audit(String action, String patientId, String details) {
-        String auditId = generateId();
-        PatientAuditEntry entry = new PatientAuditEntry(
-            auditId,
-            Instant.now(),
-            action,
-            patientId,
-            details,
-            Map.of()
-        );
-
-        DataWriteRequest request = new DataWriteRequest(
-            AUDIT_DATASET,
-            auditId,
-            serializeAudit(entry),
-            Map.of("timestamp", Instant.now().toString())
-        );
-
-        return dataCloud.writeData(request);
-    }
-
-    private byte[] serialize(ConsentGrant grant) {
-        return TypedDataSerializer.toBytes(grant, "ConsentGrant", 1);
-    }
-
-    private ConsentGrant deserialize(byte[] data) {
-        return TypedDataSerializer.fromBytes(data, ConsentGrant.class);
-    }
-
-    private byte[] serializeEmergency(EmergencyGrant grant) {
-        return TypedDataSerializer.toBytes(grant, "EmergencyGrant", 1);
-    }
-
-    private byte[] serializeAudit(PatientAuditEntry entry) {
-        return TypedDataSerializer.toBytes(entry, "PatientAuditEntry", 1);
-    }
-
-    private PatientAuditEntry deserializeAudit(byte[] data) {
-        return TypedDataSerializer.fromBytes(data, PatientAuditEntry.class);
-    }
-
-    private String generateId() {
-        return "cns-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
     // ==================== Inner Types ====================

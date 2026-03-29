@@ -1,13 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.kernel.util.TypedDataSerializer;
+import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -17,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Lab Result Service for PHR.
@@ -34,44 +27,36 @@ import java.util.UUID;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class LabResultService implements KernelLifecycleAware {
+public class LabResultService extends AbstractDataService {
 
     private static final String RESULT_DATASET = "phr.lab.results";
     private static final String PANEL_DATASET = "phr.lab.panels";
-    private static final String AUDIT_DATASET = "phr.lab.audit";
 
-    private final DataCloudKernelAdapter dataCloud;
-    private volatile boolean running = false;
-
-    /**
-     * Constructs a LabResultService.
-     *
-     * @param context kernel context providing DataCloudKernelAdapter
-     */
     public LabResultService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        super(context);
     }
 
-    /** Starts the service and initializes backing datasets. */
-    public Promise<Void> start() {
-        running = true;
-        return initializeDatasets();
-    }
-
-    /** Stops the service. */
-    public Promise<Void> stop() {
-        running = false;
-        return Promise.complete();
-    }
-
-    /** Returns {@code true} when the service is running. */
-    public boolean isHealthy() {
-        return running;
-    }
-
-    /** Returns the logical service name. */
+    @Override
     public String getName() {
         return "lab-results";
+    }
+
+    @Override
+    protected Promise<Void> initializeDatasets() {
+        Promise<Void> results = createSchema(
+            RESULT_DATASET,
+            Map.of("id", "string", "patientId", "string", "loincCode", "string",
+                "resultedAt", "timestamp", "status", "string"),
+            Map.of("retention", "25years")
+        );
+
+        Promise<Void> panels = createSchema(
+            PANEL_DATASET,
+            Map.of("id", "string", "patientId", "string", "panelName", "string"),
+            Map.of("retention", "25years")
+        );
+
+        return results.then($ -> panels);
     }
 
     // ==================== Core Operations ====================
@@ -83,49 +68,46 @@ public class LabResultService implements KernelLifecycleAware {
      * @return Promise containing the stored observation with generated ID
      */
     public Promise<LabObservation> recordObservation(LabObservation observation) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
-        Objects.requireNonNull(observation.patientId(), "patientId");
-        Objects.requireNonNull(observation.loincCode(), "loincCode");
+        validateRequired(observation.patientId(), "patientId");
+        validateRequired(observation.loincCode(), "loincCode");
 
         String id = observation.id() != null ? observation.id() : generateId("obs");
         LabObservation toStore = new LabObservation(
-                id,
-                observation.patientId(),
-                observation.encounterId(),
-                observation.orderId(),
-                observation.loincCode(),
-                observation.loincDisplay(),
-                observation.testName(),
-                observation.value(),
-                observation.referenceRangeLow(),
-                observation.unit(),
-                observation.referenceRange(),
-                observation.performingLabId(),
-                observation.orderedAt() != null ? observation.orderedAt() : Instant.now(),
-                observation.resultedAt() != null ? observation.resultedAt() : Instant.now(),
-                observation.status(),
-                observation.notes(),
-                observation.interpretation()
+            id,
+            observation.patientId(),
+            observation.encounterId(),
+            observation.orderId(),
+            observation.loincCode(),
+            observation.loincDisplay(),
+            observation.testName(),
+            observation.value(),
+            observation.referenceRangeLow(),
+            observation.unit(),
+            observation.referenceRange(),
+            observation.performingLabId(),
+            observation.orderedAt() != null ? observation.orderedAt() : Instant.now(),
+            observation.resultedAt() != null ? observation.resultedAt() : Instant.now(),
+            observation.status(),
+            observation.notes(),
+            observation.interpretation()
         );
 
-        DataWriteRequest request = new DataWriteRequest(
-                RESULT_DATASET,
-                id,
-                TypedDataSerializer.toBytes(toStore, "LabObservation", 1),
-                Map.of(
-                        "patientId", toStore.patientId(),
-                        "loincCode", toStore.loincCode(),
-                        "status", toStore.status().name()
-                )
-        );
-
-        return dataCloud.writeData(request)
-                .then($ -> audit("RECORD_OBSERVATION", toStore.patientId(),
-                        "Lab result recorded: " + toStore.loincDisplay()))
-                .map($ -> toStore);
+        return createRecord(
+            RESULT_DATASET,
+            id,
+            toStore,
+            Map.of(
+                "patientId", toStore.patientId(),
+                "loincCode", toStore.loincCode(),
+                "status", toStore.status().name()
+            ),
+            "LabObservation",
+            1
+        ).then(stored -> audit("RECORD_OBSERVATION", stored.patientId(),
+            "Lab result recorded: " + stored.loincDisplay())
+            .map($ -> stored));
     }
 
     /**
@@ -135,57 +117,60 @@ public class LabResultService implements KernelLifecycleAware {
      * @return Promise containing the stored panel
      */
     public Promise<LabPanel> recordPanel(LabPanel panel) {
-        if (!running) {
-            return Promise.ofException(new IllegalStateException("Service not running"));
-        }
+        ensureRunning();
 
-        Objects.requireNonNull(panel.patientId(), "patientId");
+        validateRequired(panel.patientId(), "patientId");
 
         String panelId = panel.id() != null ? panel.id() : generateId("pnl");
         LabPanel toStore = new LabPanel(
-                panelId,
-                panel.patientId(),
-                panel.performingLabId(),
-                panel.orderingProviderId(),
-                panel.panelName(),
-                panel.observations(),
-                Instant.now(),
-                panel.status()
+            panelId,
+            panel.patientId(),
+            panel.performingLabId(),
+            panel.orderingProviderId(),
+            panel.panelName(),
+            panel.observations(),
+            Instant.now(),
+            panel.status()
         );
 
         // Persist the panel header
-        DataWriteRequest panelReq = new DataWriteRequest(
-                PANEL_DATASET,
-                panelId,
-                TypedDataSerializer.toBytes(toStore, "LabPanel", 1),
-                Map.of("patientId", toStore.patientId(), "panelName", toStore.panelName())
+        Promise<LabPanel> panelWrite = createRecord(
+            PANEL_DATASET,
+            panelId,
+            toStore,
+            Map.of("patientId", toStore.patientId(), "panelName", toStore.panelName()),
+            "LabPanel",
+            1
         );
 
         // Persist each individual observation
-        List<Promise<Void>> obsPersist = toStore.observations().stream()
-                .map(obs -> {
-                    String obsId = obs.id() != null ? obs.id() : generateId("obs");
-                    LabObservation withId = new LabObservation(
-                            obsId, obs.patientId(), obs.encounterId(), obs.orderId(),
-                            obs.loincCode(), obs.loincDisplay(), obs.testName(), obs.value(),
-                            obs.referenceRangeLow(), obs.unit(), obs.referenceRange(),
-                            obs.performingLabId(),
-                            obs.orderedAt() != null ? obs.orderedAt() : Instant.now(),
-                            Instant.now(), obs.status(), obs.notes(), obs.interpretation()
-                    );
-                    return dataCloud.writeData(new DataWriteRequest(
-                            RESULT_DATASET, obsId,
-                            TypedDataSerializer.toBytes(withId, "LabObservation", 1),
-                            Map.of("patientId", withId.patientId(), "panelId", panelId)
-                    ));
-                })
-                .toList();
+        List<Promise<LabObservation>> obsPersist = toStore.observations().stream()
+            .map(obs -> {
+                String obsId = obs.id() != null ? obs.id() : generateId("obs");
+                LabObservation withId = new LabObservation(
+                    obsId, obs.patientId(), obs.encounterId(), obs.orderId(),
+                    obs.loincCode(), obs.loincDisplay(), obs.testName(), obs.value(),
+                    obs.referenceRangeLow(), obs.unit(), obs.referenceRange(),
+                    obs.performingLabId(),
+                    obs.orderedAt() != null ? obs.orderedAt() : Instant.now(),
+                    Instant.now(), obs.status(), obs.notes(), obs.interpretation()
+                );
+                return createRecord(
+                    RESULT_DATASET,
+                    obsId,
+                    withId,
+                    Map.of("patientId", withId.patientId(), "panelId", panelId),
+                    "LabObservation",
+                    1
+                );
+            })
+            .toList();
 
-        return dataCloud.writeData(panelReq)
-                .then($ -> Promises.all(obsPersist))
-                .then($ -> audit("RECORD_PANEL", toStore.patientId(),
-                        "Panel recorded: " + toStore.panelName()))
-                .map($ -> toStore);
+        return panelWrite
+            .then($ -> Promises.all(obsPersist))
+            .then($ -> audit("RECORD_PANEL", toStore.patientId(),
+                "Panel recorded: " + toStore.panelName()))
+            .map($ -> toStore);
     }
 
     /**
@@ -195,98 +180,32 @@ public class LabResultService implements KernelLifecycleAware {
      * @return Promise containing the observation if found
      */
     public Promise<Optional<LabObservation>> getObservation(String observationId) {
-        if (!running) {
-            return Promise.of(Optional.empty());
-        }
-
-        return dataCloud.readData(new DataReadRequest(RESULT_DATASET, observationId, Map.of()))
-                .map(result -> {
-                    if (result == null || result.getData() == null) return Optional.empty();
-                    return Optional.ofNullable((LabObservation) TypedDataSerializer.fromBytes(result.getData(), LabObservation.class));
-                })
-                ;
+        ensureRunning();
+        return readRecord(RESULT_DATASET, observationId, LabObservation.class);
     }
 
-    /**
-     * Returns all lab observations for a patient.
-     *
-     * @param patientId the patient identifier
-     * @return Promise containing the list of observations
-     */
     public Promise<List<LabObservation>> getPatientObservations(String patientId) {
-        if (!running) {
-            return Promise.of(List.of());
-        }
+        ensureRunning();
 
-        return dataCloud.queryData(new DataQueryRequest(
-                RESULT_DATASET,
-                "patientId = :patientId",
-                Map.of("patientId", patientId),
-                5000,
-                0
-        )).map(QueryResult::getResults)
-                .map(results -> results.stream()
-                        .map(r -> TypedDataSerializer.fromBytes(r.getData(), LabObservation.class))
-                        .filter(Objects::nonNull)
-                        .toList());
+        return queryRecords(
+            RESULT_DATASET,
+            "patientId = :patientId",
+            Map.of("patientId", patientId),
+            5000,
+            0,
+            LabObservation.class
+        );
     }
 
-    /**
-     * Returns observations for a specific LOINC code, useful for trending a single analyte.
-     *
-     * @param patientId  the patient identifier
-     * @param loincCode  the LOINC code to trend
-     * @return Promise containing observations ordered by result time (earliest first)
-     */
     public Promise<List<LabObservation>> getTrend(String patientId, String loincCode) {
         return getPatientObservations(patientId)
-                .map(obs -> obs.stream()
-                        .filter(o -> loincCode.equals(o.loincCode()))
-                        .sorted((a, b) -> a.resultedAt().compareTo(b.resultedAt()))
-                        .toList());
+            .map(obs -> obs.stream()
+                .filter(o -> loincCode.equals(o.loincCode()))
+                .sorted((a, b) -> a.resultedAt().compareTo(b.resultedAt()))
+                .toList());
     }
 
     // ==================== Private Helpers ====================
-
-    private Promise<Void> initializeDatasets() {
-        Promise<Void> results = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                RESULT_DATASET,
-                Map.of("id", "string", "patientId", "string", "loincCode", "string",
-                        "resultedAt", "timestamp", "status", "string"),
-                Map.of("retention", "25years")
-        ));
-
-        Promise<Void> panels = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                PANEL_DATASET,
-                Map.of("id", "string", "patientId", "string", "panelName", "string"),
-                Map.of("retention", "25years")
-        ));
-
-        Promise<Void> audit = dataCloud.createSchema(new DataCloudKernelAdapter.SchemaCreateRequest(
-                AUDIT_DATASET,
-                Map.of("action", "string", "patientId", "string", "timestamp", "timestamp"),
-                Map.of("retention", "25years")
-        ));
-
-        return Promises.all(results, panels, audit).map($ -> null);
-    }
-
-    private Promise<Void> audit(String action, String patientId, String details) {
-        String auditId = generateId("aud");
-        record AuditEntry(String id, Instant ts, String action, String patient, String details) {}
-        DataWriteRequest req = new DataWriteRequest(
-                AUDIT_DATASET, auditId,
-                TypedDataSerializer.toBytes(
-                        new AuditEntry(auditId, Instant.now(), action, patientId, details),
-                        "LabAuditEntry", 1),
-                Map.of("timestamp", Instant.now().toString())
-        );
-        return dataCloud.writeData(req);
-    }
-
-    private String generateId(String prefix) {
-        return prefix + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
 
     // ==================== Inner Types ====================
 

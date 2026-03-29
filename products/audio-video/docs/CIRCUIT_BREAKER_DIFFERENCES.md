@@ -19,8 +19,9 @@ The audio-video codebase contains circuit breaker implementations in three diffe
 - Per-method circuit breakers (each gRPC method has its own state)
 - States: CLOSED (normal), OPEN (failing fast), HALF_OPEN (testing recovery)
 - Configuration via environment variables:
-  - `CIRCUIT_BREAKER_FAILURE_THRESHOLD` (default: 5)
-  - `CIRCUIT_BREAKER_RESET_TIMEOUT_MS` (default: 30000)
+  - `AV_CB_FAILURE_THRESHOLD` (default: 5)
+  - `AV_CB_RESET_TIMEOUT_MS` (default: 30000)
+  - Legacy aliases `CIRCUIT_BREAKER_FAILURE_THRESHOLD` and `CIRCUIT_BREAKER_RESET_TIMEOUT_MS` are also accepted for compatibility during migration.
 - Only counts non-business errors (INTERNAL, UNAVAILABLE, etc.) toward failure threshold
 - Business errors (INVALID_ARGUMENT, NOT_FOUND, etc.) do NOT trip the breaker
 
@@ -44,7 +45,7 @@ Server server = ServerBuilder.forPort(port)
 **Behavior**:
 - Per-service circuit breakers (STT, TTS, Vision, etc.)
 - Same states as Java: CLOSED, OPEN, HALF_OPEN
-- Hardcoded thresholds (failureThreshold=5, resetTimeout=30s)
+- Defaults to `failureThreshold=5` and `resetTimeoutMs=30000`, but allows per-service overrides via `ServiceClientConfig.circuitBreaker`
 - Works with HTTP status codes (5xx → failure, 4xx → no retry)
 - Fails fast with descriptive error message when open
 
@@ -52,7 +53,15 @@ Server server = ServerBuilder.forPort(port)
 
 **Integration** (automatic via AudioVideoClient):
 ```typescript
-const client = new AudioVideoClient(defaultConfigs);
+const client = new AudioVideoClient({
+  stt: {
+    endpoint: 'http://localhost:8081',
+    timeout: 30000,
+    retries: 3,
+    enableLogging: true,
+    circuitBreaker: { failureThreshold: 5, resetTimeoutMs: 30_000 }
+  }
+} as const);
 // Circuit breakers pre-configured for all services
 ```
 
@@ -75,7 +84,9 @@ const client = new AudioVideoClient(defaultConfigs);
 **Integration**:
 ```rust
 let cb = CircuitBreaker::new(5, Duration::from_secs(30));
-let result = cb.call(|| retry_with_backoff(operation, config)).await;
+let result = cb.call_async_for("STT", || async {
+  create_channel_with_retry(addr.clone()).await
+}).await;
 ```
 
 ---
@@ -87,7 +98,7 @@ let result = cb.call(|| retry_with_backoff(operation, config)).await;
 | **Granularity** | Per-method | Per-service | Per-operation |
 | **Trigger Errors** | gRPC status codes | HTTP status codes | Any error |
 | **Business Errors Ignored** | Yes (INVALID_ARGUMENT, etc.) | Yes (4xx) | Configurable |
-| **Configuration** | Environment variables | Hardcoded | Constructor params |
+| **Configuration** | Environment variables | Per-service config with defaults | Constructor params |
 | **Reset Timeout** | 30s default | 30s default | Configurable |
 | **State Storage** | ConcurrentHashMap | Map | Atomic state |
 
@@ -110,16 +121,22 @@ let result = cb.call(|| retry_with_backoff(operation, config)).await;
 
 ```bash
 # Java server - in service startup script
-export CIRCUIT_BREAKER_FAILURE_THRESHOLD=5
-export CIRCUIT_BREAKER_RESET_TIMEOUT_MS=30000
+export AV_CB_FAILURE_THRESHOLD=5
+export AV_CB_RESET_TIMEOUT_MS=30000
 
 # TypeScript client - configure in defaultConfigs
 const client = new AudioVideoClient({
-  stt: { endpoint: 'http://localhost:8081', timeout: 30000, retries: 3 }
+  stt: {
+    endpoint: 'http://localhost:8081',
+    timeout: 30000,
+    retries: 3,
+    enableLogging: true,
+    circuitBreaker: { failureThreshold: 5, resetTimeoutMs: 30000 }
+  }
 });
 
 # Rust client - in Tauri command
-let cb = CircuitBreaker::new(5, Duration::from_secs(30));
+let cb = CircuitBreaker::new(5, 2, 30000);
 ```
 
 ## Testing Circuit Breakers
@@ -143,14 +160,22 @@ void circuitBreaker_opensAfterThreshold() {
 
 TypeScript:
 ```typescript
-test('circuit breaker opens after threshold', async () => {
-  const cb = new CircuitBreaker(3, 1000);
-  
-  for (let i = 0; i < 3; i++) {
-    try { await cb.call(async () => { throw new Error('fail'); }); } catch {}
-  }
-  
-  expect(cb.getState()).toBe('OPEN');
+test('audio-video client fails fast once the service breaker is open', async () => {
+  const client = new AudioVideoClient({
+    stt: {
+      endpoint: 'http://localhost:8081',
+      timeout: 1000,
+      retries: 0,
+      enableLogging: false,
+      circuitBreaker: { failureThreshold: 1, resetTimeoutMs: 30_000 }
+    }
+  } as const);
+
+  await client.transcribe({ audio: mockAudio }).catch(() => undefined);
+  const result = await client.transcribe({ audio: mockAudio });
+
+  expect(result.success).toBe(false);
+  expect(result.error?.code).toBe('STT_ERROR');
 });
 ```
 
@@ -161,3 +186,29 @@ When consolidating circuit breaker code (future task):
 - Standardize on configuration approach (environment vs code)
 - Unify metrics and monitoring hooks
 - Maintain async compatibility for Rust/TypeScript
+
+## Short-Term Migration Plan
+
+The repo is not ready for a single cross-language circuit-breaker implementation, but the remaining drift should be removed in small steps:
+
+1. Standardize thresholds and reset windows across Java, Rust, and TypeScript.
+  - Target baseline: failure threshold `5`, success threshold `2`, reset timeout `30s`.
+  - Product-specific overrides should be explicit in config rather than hardcoded in call sites.
+
+2. Keep circuit-breaker ownership service-local.
+  - Desktop Rust must use one breaker per backend service.
+  - UI TypeScript must keep one breaker per HTTP service endpoint.
+  - Java server interceptors stay per gRPC method.
+
+3. Align failure classification.
+  - Retryable transport failures: timeouts, `UNAVAILABLE`, `5xx`, `429`.
+  - Non-retryable request failures: invalid input, malformed payloads, `4xx` business errors.
+
+4. Add consistency tests at the contract level.
+  - Verify `OPEN -> HALF_OPEN -> CLOSED` transitions.
+  - Verify non-retryable failures do not increment the same counters as transport failures.
+  - Verify per-service breakers do not cross-contaminate each other.
+
+5. Consolidate telemetry naming before code extraction.
+  - Emit common state names: `closed`, `open`, `half_open`.
+  - Record the service/method label in all breaker transition logs.

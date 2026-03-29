@@ -3,8 +3,7 @@
  * 
  * React components and hooks for AI Voice Production Studio.
  * 
- * This library provides AI Voice-specific UI components while re-exporting
- * shared types and components from @ghatana/speech-ui-react and @ghatana/tts-ui-react.
+ * This library provides AI Voice-specific UI components and types.
  * 
  * @example
  * ```tsx
@@ -46,17 +45,6 @@ export type {
   Effect,
   Project,
   ModelDownloadInfo,
-  // Re-exported shared types
-  ProfileSettings,
-  AdaptationMode,
-  PrivacyLevel,
-  AudioChunk,
-  AudioData,
-  SessionState,
-  EngineState,
-  VoiceInfo,
-  SynthesisOptions,
-  SynthesisResult,
 } from './types';
 
 // Components
@@ -66,11 +54,6 @@ export {
   StemTrack,
   PhraseTimeline,
   TrainingProgress,
-  // Re-exported shared components
-  ProfileSettingsEditor,
-  PrivacyConsentBlock,
-  ProfileSelector,
-  DashboardCard,
 } from './components';
 
 export type {
@@ -78,14 +61,10 @@ export type {
   StemTrackProps,
   PhraseTimelineProps,
   TrainingProgressProps,
-  ProfileSettingsEditorProps,
-  PrivacyConsentBlockProps,
-  ProfileSelectorProps,
-  DashboardCardProps,
 } from './components';
 
 // Hooks
-export { useAudioPlayer, useStemMixer, useSpeechClientBase } from './hooks';
+export { useAudioPlayer, useStemMixer } from './hooks';
 export type {
   UseAudioPlayerOptions,
   UseAudioPlayerResult,

@@ -2,30 +2,13 @@
  * @ghatana/ai-voice-ui-react - Types
  * 
  * AI Voice Production Studio type definitions.
- * Re-exports shared types from speech-ui-react and tts-ui-react.
+ * Declares AI Voice UI types.
  * 
  * @doc.type module
  * @doc.purpose AI Voice UI types
  * @doc.layer product
  * @doc.pattern ValueObject
  */
-
-// Re-export shared types
-export type {
-  ProfileSettings,
-  AdaptationMode,
-  PrivacyLevel,
-  AudioChunk,
-  AudioData,
-  SessionState,
-  EngineState,
-} from '@ghatana/speech-ui-react';
-
-export type {
-  VoiceInfo,
-  SynthesisOptions,
-  SynthesisResult,
-} from '@ghatana/tts-ui-react';
 
 /** Stem types */
 export type StemType = 'vocals' | 'drums' | 'bass' | 'other';

@@ -5,7 +5,7 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
-import com.ghatana.kernel.health.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -241,18 +241,17 @@ class PhrKernelModuleTest extends EventloopTestBase {
                 }
                 if (type == com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.class) {
                     return type.cast(new com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter() {
-                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataResult> readData(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataReadRequest r) { return Promise.of(null); }
-                        @Override public Promise<Void> writeData(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataWriteRequest r) { return Promise.complete(); }
-                        @Override public Promise<Void> deleteData(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataDeleteRequest r) { return Promise.complete(); }
-                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult> queryData(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataQueryRequest r) { return Promise.of(new com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.QueryResult(java.util.List.of(), 0, false)); }
-                        @Override public Promise<Void> createSchema(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.SchemaCreateRequest r) { return Promise.complete(); }
-                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.SchemaInfo> getSchema(String datasetId) { return Promise.of(null); }
-                        @Override public Promise<java.util.List<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DatasetInfo>> listDatasets() { return Promise.of(java.util.List.of()); }
-                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.TransactionHandle> beginTransaction() { return Promise.of(null); }
-                        @Override public Promise<Void> commitTransaction(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.TransactionHandle h) { return Promise.complete(); }
-                        @Override public Promise<Void> rollbackTransaction(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.TransactionHandle h) { return Promise.complete(); }
-                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataStream> openReadStream(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataStreamRequest r) { return Promise.of(null); }
-                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataStream> openWriteStream(com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.DataStreamRequest r) { return Promise.of(null); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataResult> readData(com.ghatana.kernel.adapter.datacloud.DataReadRequest r) { return Promise.of(null); }
+                        @Override public Promise<Void> writeData(com.ghatana.kernel.adapter.datacloud.DataWriteRequest r) { return Promise.complete(); }
+                        @Override public Promise<Void> deleteData(com.ghatana.kernel.adapter.datacloud.DataDeleteRequest r) { return Promise.complete(); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.QueryResult> queryData(com.ghatana.kernel.adapter.datacloud.DataQueryRequest r) { return Promise.of(new com.ghatana.kernel.adapter.datacloud.QueryResult(java.util.List.of(), 0, false)); }
+                        @Override public Promise<Void> createSchema(com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest r) { return Promise.complete(); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.SchemaInfo> getSchema(String datasetId) { return Promise.of(null); }
+                        @Override public Promise<java.util.List<com.ghatana.kernel.adapter.datacloud.DatasetInfo>> listDatasets() { return Promise.of(java.util.List.of()); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.TransactionHandle> beginTransaction() { return Promise.of(null); }
+                        @Override public Promise<Void> commitTransaction(com.ghatana.kernel.adapter.datacloud.TransactionHandle h) { return Promise.complete(); }
+                        @Override public Promise<Void> rollbackTransaction(com.ghatana.kernel.adapter.datacloud.TransactionHandle h) { return Promise.complete(); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataStream> openStream(com.ghatana.kernel.adapter.datacloud.DataStreamRequest r) { return Promise.of(null); }
                     });
                 }
                 throw new IllegalStateException("Dependency not found: " + type);

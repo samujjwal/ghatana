@@ -15,7 +15,7 @@ From `package.json`:
 - Entry: `@ghatana/design-system`.
 - Description: "Unified design system facade for Ghatana platform (tokens, theme, components, hooks, a11y)".
 - Exports: `.`, `./tokens`, `./components`, `./hooks`, `./ai`.
-- Depends on `@ghatana/tokens`, `@ghatana/theme`, `@ghatana/ui`, `@ghatana/utils`, `@yappc/accessibility-audit`, `@yappc/ai`.
+- Depends on `@ghatana/tokens`, `@ghatana/theme`, `@ghatana/ui`, `@ghatana/platform-utils`, `@yappc/accessibility-audit`, `@yappc/ai`.
 
 ---
 
@@ -55,7 +55,7 @@ import {
 
 ## 4. Dependencies & Relationships
 
-- Directly aggregates `tokens`, `theme`, `ui`, `utils`, and a11y/AI helpers.
+- Directly aggregates `tokens`, `theme`, `ui`, `platform-utils`, and a11y/AI helpers.
 - Intended to sit **above** other libraries; avoid using it from within those dependencies.
 
 ---

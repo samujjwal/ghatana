@@ -337,7 +337,7 @@ Testing:
 | **@ghatana/realtime** | Real-time features | 🟡 Medium | ✅ Essential |
 | **@ghatana/testing** | Test utilities | 🟢 Low | ✅ Essential |
 | **@ghatana/config** | Configuration | 🟢 Low | ✅ Essential |
-| **@ghatana/utils** | Utilities | 🟢 Low | ✅ Essential |
+| **@ghatana/platform-utils** | Utilities | 🟢 Low | ✅ Essential |
 | **@ghatana/chat** | Chat functionality | 🟡 Medium | ❓ Questionable |
 | **@ghatana/code-editor** | Code editing | 🔴 High | ❓ Questionable |
 | **@ghatana/ide** | IDE features | 🔴 High | ❓ Questionable |
@@ -724,7 +724,7 @@ Frontend Packages:
 | **@ghatana/realtime** | 7.0 | 6.5 | 6.0 | 6.5 | 6.50 |
 | **@ghatana/testing** | 8.0 | 8.0 | 8.5 | 8.0 | 8.13 |
 | **@ghatana/config** | 8.5 | 8.5 | 8.0 | 8.5 | 8.38 |
-| **@ghatana/utils** | 8.0 | 8.0 | 8.0 | 8.0 | 8.00 |
+| **@ghatana/platform-utils** | 8.0 | 8.0 | 8.0 | 8.0 | 8.00 |
 
 ### 33. Package Scores
 

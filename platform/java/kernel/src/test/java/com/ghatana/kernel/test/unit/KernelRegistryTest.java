@@ -3,6 +3,7 @@ package com.ghatana.kernel.test.unit;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.registry.KernelRegistry;
 import com.ghatana.kernel.registry.KernelRegistryImpl;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -184,10 +185,10 @@ class KernelRegistryTest extends EventloopTestBase {
         }
 
         @Override
-        public com.ghatana.kernel.health.HealthStatus getHealthStatus() {
+        public HealthStatus getHealthStatus() {
             return started
-                ? com.ghatana.kernel.health.HealthStatus.healthy("Test module healthy")
-                : com.ghatana.kernel.health.HealthStatus.unhealthy("Test module not started");
+            ? HealthStatus.healthy("Test module healthy")
+            : HealthStatus.unhealthy("Test module not started");
         }
 
         boolean isStarted() { return started; }

@@ -54,6 +54,7 @@ public class EnginePool<T> implements AutoCloseable {
     
     private final AtomicInteger totalCreated = new AtomicInteger(0);
     private final AtomicInteger totalDestroyed = new AtomicInteger(0);
+    private final AtomicInteger activeEngines = new AtomicInteger(0);
     private final AtomicLong totalBorrowed = new AtomicLong(0);
     private final AtomicLong totalReturned = new AtomicLong(0);
     private final AtomicLong failedHealthChecks = new AtomicLong(0);
@@ -100,7 +101,7 @@ public class EnginePool<T> implements AutoCloseable {
         
         // Pre-populate minimum size
         for (int i = 0; i < minSize; i++) {
-            T engine = createEngine();
+            T engine = createEngineIfCapacity();
             if (engine != null) {
                 available.offer(new PooledEngine<>(engine, Instant.now()));
             }
@@ -161,8 +162,8 @@ public class EnginePool<T> implements AutoCloseable {
         PooledEngine<T> pooled = available.poll();
         
         // If none available and under max, create new
-        if (pooled == null && inUse.size() < maxSize) {
-            T engine = createEngine();
+        if (pooled == null) {
+            T engine = createEngineIfCapacity();
             if (engine != null) {
                 pooled = new PooledEngine<>(engine, Instant.now());
             }
@@ -189,7 +190,7 @@ public class EnginePool<T> implements AutoCloseable {
         if (!isHealthy(pooled.engine)) {
             // Replace unhealthy engine
             destroyEngine(pooled.engine);
-            T replacement = createEngine();
+            T replacement = createEngineIfCapacity();
             if (replacement == null) {
                 throw new PoolExhaustedException("Failed to create replacement engine");
             }
@@ -365,11 +366,32 @@ public class EnginePool<T> implements AutoCloseable {
             return null;
         }
     }
+
+    private T createEngineIfCapacity() {
+        while (true) {
+            int current = activeEngines.get();
+            if (current >= maxSize) {
+                return null;
+            }
+            if (activeEngines.compareAndSet(current, current + 1)) {
+                break;
+            }
+        }
+
+        T engine = createEngine();
+        if (engine != null) {
+            return engine;
+        }
+
+        activeEngines.decrementAndGet();
+        return null;
+    }
     
     private void destroyEngine(T engine) {
         try {
             destroyer.apply(engine);
             totalDestroyed.incrementAndGet();
+            activeEngines.updateAndGet(current -> Math.max(0, current - 1));
         } catch (Exception e) {
             LOG.warning("Error destroying engine: " + e.getMessage());
         }

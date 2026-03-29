@@ -318,8 +318,8 @@ class RiskManagementKernelExtensionTest extends EventloopTestBase {
             @Override public void initialize(com.ghatana.kernel.context.KernelContext ctx) {}
             @Override public io.activej.promise.Promise<Void> start() { return io.activej.promise.Promise.complete(); }
             @Override public io.activej.promise.Promise<Void> stop() { return io.activej.promise.Promise.complete(); }
-            @Override public com.ghatana.kernel.health.HealthStatus getHealthStatus() {
-                return com.ghatana.kernel.health.HealthStatus.healthy();
+            @Override public com.ghatana.platform.health.HealthStatus getHealthStatus() {
+                return com.ghatana.platform.health.HealthStatus.healthy();
             }
         };
     }

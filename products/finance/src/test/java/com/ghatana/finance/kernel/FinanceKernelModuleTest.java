@@ -1,13 +1,25 @@
 package com.ghatana.finance.kernel;
 
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
+import com.ghatana.kernel.adapter.datacloud.DataDeleteRequest;
+import com.ghatana.kernel.adapter.datacloud.DataQueryRequest;
+import com.ghatana.kernel.adapter.datacloud.DataReadRequest;
+import com.ghatana.kernel.adapter.datacloud.DataResult;
+import com.ghatana.kernel.adapter.datacloud.DatasetInfo;
+import com.ghatana.kernel.adapter.datacloud.DataStream;
+import com.ghatana.kernel.adapter.datacloud.DataStreamRequest;
+import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
+import com.ghatana.kernel.adapter.datacloud.QueryResult;
+import com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest;
+import com.ghatana.kernel.adapter.datacloud.SchemaInfo;
+import com.ghatana.kernel.adapter.datacloud.TransactionHandle;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
-import com.ghatana.kernel.health.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.products.finance.FinanceCapabilities;
+import com.ghatana.finance.kernel.FinanceCapabilities;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -139,7 +151,7 @@ class FinanceKernelModuleTest extends EventloopTestBase {
 
         assertEquals(HealthStatus.Status.HEALTHY, status.getStatus());
         assertTrue(status.getMessage().contains("operational"));
-        assertEquals(3, status.getChecks().size());
+        assertEquals(6, status.getChecks().size());
     }
 
     @Test
@@ -317,11 +329,7 @@ class FinanceKernelModuleTest extends EventloopTestBase {
             return Promise.complete();
         }
 
-        @Override public Promise<DataStream> openReadStream(DataStreamRequest request) {
-            return Promise.ofException(new UnsupportedOperationException("Not needed for tests"));
-        }
-
-        @Override public Promise<DataStream> openWriteStream(DataStreamRequest request) {
+        @Override public Promise<DataStream> openStream(DataStreamRequest request) {
             return Promise.ofException(new UnsupportedOperationException("Not needed for tests"));
         }
     }

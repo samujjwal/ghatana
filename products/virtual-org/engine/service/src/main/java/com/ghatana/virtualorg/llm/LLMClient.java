@@ -1,5 +1,6 @@
 package com.ghatana.virtualorg.llm;
 
+import com.ghatana.platform.core.client.AsyncClient;
 import com.ghatana.virtualorg.v1.TaskProto;
 import com.ghatana.virtualorg.v1.ToolProto;
 import io.activej.promise.Promise;
@@ -30,7 +31,7 @@ import java.util.Map;
  * @doc.layer product
  * @doc.pattern Port
  */
-public interface LLMClient {
+public interface LLMClient extends AsyncClient {
 
     /**
      * Generates a response for the given task and context.

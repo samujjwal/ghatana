@@ -16,11 +16,7 @@ import java.util.ServiceLoader;
 /**
  * Bootstraps all YAPPC plugins into the platform {@link PluginRegistry}.
  *
- * <p>Discovery order:
- * <ol>
- *   <li>Native {@link YAPPCPlugin} implementations via {@link ServiceLoader}</li>
- *   <li>Legacy {@code YappcPlugin} implementations via {@link PluginMigrationUtil}</li>
- * </ol>
+ * <p>Discovery loads native {@link YAPPCPlugin} implementations via {@link ServiceLoader}.
  *
  * <p>All discovered plugins are wrapped in a {@link PlatformPluginBridge} and
  * registered with the platform-wide {@link PluginRegistry}.</p>
@@ -65,10 +61,10 @@ public final class UnifiedPluginBootstrap {
 
         List<Plugin> bridgedPlugins = new ArrayList<>();
 
-        // 1. Discover native YAPPCPlugin implementations
+        // Discover native YAPPCPlugin implementations
         int nativeCount = discoverNativePlugins(bridgedPlugins);
 
-        // 2. Register all with platform registry
+        // Register all with platform registry
         int registered = 0;
         int skipped = 0;
         for (Plugin plugin : bridgedPlugins) {

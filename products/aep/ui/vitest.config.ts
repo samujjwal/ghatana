@@ -18,10 +18,6 @@ const workspaceAliases = {
     __dirname,
     "../../../platform/typescript/tokens/src/index.ts",
   ),
-  "@ghatana/utils": resolve(
-    __dirname,
-    "../../../platform/typescript/foundation/platform-utils/src/index.ts",
-  ),
   "@ghatana/platform-utils": resolve(
     __dirname,
     "../../../platform/typescript/foundation/platform-utils/src/index.ts",

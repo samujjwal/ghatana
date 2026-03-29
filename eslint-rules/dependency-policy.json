@@ -124,7 +124,7 @@
       "severity": "error"
     },
     "classnames": {
-      "reason": "Use clsx or @ghatana/utils/cn",
+      "reason": "Use clsx or @ghatana/platform-utils/cn",
       "alternative": "clsx",
       "severity": "error"
     },
