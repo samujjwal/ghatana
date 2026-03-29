@@ -532,3 +532,74 @@ describe("AI Routes - Error Boundaries", () => {
     await app.close();
   });
 });
+
+describe("AI Routes - Tenant Rate Limit", () => {
+  it("returns 429 when tenant AI quota is exceeded", async () => {
+    const app = Fastify({ logger: false });
+
+    const counters = new Map<string, number>();
+    app.decorate("redis", {
+      async incr(key: string) {
+        const next = (counters.get(key) ?? 0) + 1;
+        counters.set(key, next);
+        return next;
+      },
+      async expire() {
+        return 1;
+      },
+    });
+
+    const previousMax = process.env.AI_RATE_LIMIT_MAX_PER_WINDOW;
+    const previousWindow = process.env.AI_RATE_LIMIT_WINDOW_SECONDS;
+    process.env.AI_RATE_LIMIT_MAX_PER_WINDOW = "1";
+    process.env.AI_RATE_LIMIT_WINDOW_SECONDS = "60";
+
+    try {
+      mockAIProxyService.handleTutorQuery.mockResolvedValue({
+        answer: "ok",
+        safety: { blocked: false },
+      });
+
+      await registerAIRoutes(app, { aiProxyService: mockAIProxyService });
+      await app.ready();
+
+      const first = await app.inject({
+        method: "POST",
+        url: "/tutor/query",
+        headers: {
+          "x-tenant-id": "tenant-a",
+          "x-user-id": "user-a",
+        },
+        payload: { question: "hello" },
+      });
+      expect(first.statusCode).toBe(200);
+
+      const second = await app.inject({
+        method: "POST",
+        url: "/tutor/query",
+        headers: {
+          "x-tenant-id": "tenant-a",
+          "x-user-id": "user-a",
+        },
+        payload: { question: "hello again" },
+      });
+
+      expect(second.statusCode).toBe(429);
+      expect(second.json()).toMatchObject({
+        code: "AI_RATE_LIMIT_EXCEEDED",
+      });
+    } finally {
+      if (previousMax === undefined) {
+        delete process.env.AI_RATE_LIMIT_MAX_PER_WINDOW;
+      } else {
+        process.env.AI_RATE_LIMIT_MAX_PER_WINDOW = previousMax;
+      }
+      if (previousWindow === undefined) {
+        delete process.env.AI_RATE_LIMIT_WINDOW_SECONDS;
+      } else {
+        process.env.AI_RATE_LIMIT_WINDOW_SECONDS = previousWindow;
+      }
+      await app.close();
+    }
+  });
+});

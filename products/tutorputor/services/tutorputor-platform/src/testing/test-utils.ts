@@ -1,13 +1,13 @@
 /**
  * Test Coverage Improvement Plan
- * 
+ *
  * Implements testing best practices and coverage improvements to reach 60% threshold.
- * 
+ *
  * @module @tutorputor/platform/testing
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { Mock } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import type { Mock } from "vitest";
 
 /**
  * Test Utilities for consistent testing across modules
@@ -16,11 +16,13 @@ export class TestUtils {
   /**
    * Create a mock tenant context for testing
    */
-  static createMockTenant(overrides: Partial<TenantContext> = {}): TenantContext {
+  static createMockTenant(
+    overrides: Partial<TenantContext> = {},
+  ): TenantContext {
     return {
-      tenantId: 'test-tenant-123',
-      userId: 'test-user-456',
-      permissions: ['read', 'write'],
+      tenantId: "test-tenant-123",
+      userId: "test-user-456",
+      permissions: ["read", "write"],
       ...overrides,
     };
   }
@@ -28,7 +30,9 @@ export class TestUtils {
   /**
    * Create a mock request object for API testing
    */
-  static createMockRequest(overrides: Partial<FastifyRequest> = {}): FastifyRequest {
+  static createMockRequest(
+    overrides: Partial<FastifyRequest> = {},
+  ): FastifyRequest {
     return {
       body: {},
       params: {},
@@ -57,7 +61,7 @@ export class TestUtils {
    * Wait for a specified duration (useful for async testing)
    */
   static async wait(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -66,7 +70,7 @@ export class TestUtils {
   static async retryAssertion(
     assertion: () => void | Promise<void>,
     maxRetries: number = 3,
-    delayMs: number = 100
+    delayMs: number = 100,
   ): Promise<void> {
     for (let i = 0; i < maxRetries; i++) {
       try {
@@ -119,12 +123,12 @@ export class MockFactories {
    */
   static createMockRedis(): MockRedisClient {
     const storage = new Map<string, string>();
-    
+
     return {
       get: vi.fn((key: string) => Promise.resolve(storage.get(key) || null)),
       set: vi.fn((key: string, value: string) => {
         storage.set(key, value);
-        return Promise.resolve('OK');
+        return Promise.resolve("OK");
       }),
       del: vi.fn((key: string) => {
         storage.delete(key);
@@ -134,13 +138,15 @@ export class MockFactories {
       expire: vi.fn(() => Promise.resolve(1)),
       ttl: vi.fn(() => Promise.resolve(-1)),
       keys: vi.fn((pattern: string) => {
-        const regex = new RegExp(pattern.replace('*', '.*'));
-        const matching = Array.from(storage.keys()).filter(k => regex.test(k));
+        const regex = new RegExp(pattern.replace("*", ".*"));
+        const matching = Array.from(storage.keys()).filter((k) =>
+          regex.test(k),
+        );
         return Promise.resolve(matching);
       }),
       flushall: vi.fn(() => {
         storage.clear();
-        return Promise.resolve('OK');
+        return Promise.resolve("OK");
       }),
     } as MockRedisClient;
   }
@@ -151,7 +157,7 @@ export class MockFactories {
   static createMockAIProvider(): MockAIProvider {
     return {
       generateContent: vi.fn().mockResolvedValue({
-        content: 'Generated content',
+        content: "Generated content",
         tokensUsed: { input: 100, output: 50, total: 150 },
         cost: 0.002,
         latency: 500,
@@ -161,7 +167,7 @@ export class MockFactories {
         confidence: 0.95,
       }),
       getModelInfo: vi.fn().mockReturnValue({
-        name: 'gpt-4',
+        name: "gpt-4",
         maxTokens: 8192,
         costPer1K: { input: 0.03, output: 0.06 },
       }),
@@ -246,15 +252,16 @@ export class CoverageAnalyzer {
     gaps: Array<{ file: string; lines: number[]; functions: string[] }>;
     recommendations: string[];
   } {
-    const gaps: Array<{ file: string; lines: number[]; functions: string[] }> = [];
+    const gaps: Array<{ file: string; lines: number[]; functions: string[] }> =
+      [];
     const recommendations: string[] = [];
-    
+
     let total = 0;
     let covered = 0;
 
     for (const [file, data] of Object.entries(coverageData)) {
-      if (typeof data !== 'object' || !data) continue;
-      
+      if (typeof data !== "object" || !data) continue;
+
       const fileData = data as any;
       total += fileData.lines?.total || 0;
       covered += fileData.lines?.covered || 0;
@@ -272,16 +279,18 @@ export class CoverageAnalyzer {
 
     // Generate recommendations
     if (gaps.length > 5) {
-      recommendations.push('Focus on high-impact modules with <40% coverage');
+      recommendations.push("Focus on high-impact modules with <40% coverage");
     }
-    
-    const criticalFiles = gaps.filter(g => g.functions.length > 10);
+
+    const criticalFiles = gaps.filter((g) => g.functions.length > 10);
     if (criticalFiles.length > 0) {
-      recommendations.push(`Add unit tests for ${criticalFiles.length} files with many uncovered functions`);
+      recommendations.push(
+        `Add unit tests for ${criticalFiles.length} files with many uncovered functions`,
+      );
     }
 
     if ((covered / total) * 100 < 60) {
-      recommendations.push('Priority: Reach 60% coverage threshold for CI/CD');
+      recommendations.push("Priority: Reach 60% coverage threshold for CI/CD");
     }
 
     return {
@@ -295,9 +304,11 @@ export class CoverageAnalyzer {
   /**
    * Generate test plan for low-coverage files
    */
-  static generateTestPlan(gaps: Array<{ file: string; lines: number[]; functions: string[] }>): string {
-    let plan = '# Test Coverage Improvement Plan\n\n';
-    
+  static generateTestPlan(
+    gaps: Array<{ file: string; lines: number[]; functions: string[] }>,
+  ): string {
+    let plan = "# Test Coverage Improvement Plan\n\n";
+
     const priorityFiles = gaps
       .sort((a, b) => b.functions.length - a.functions.length)
       .slice(0, 10);
@@ -305,7 +316,7 @@ export class CoverageAnalyzer {
     priorityFiles.forEach((gap, index) => {
       plan += `## ${index + 1}. ${gap.file}\n\n`;
       plan += `- **Uncovered Functions:** ${gap.functions.length}\n`;
-      plan += `- **Priority:** ${gap.functions.length > 20 ? 'High' : 'Medium'}\n`;
+      plan += `- **Priority:** ${gap.functions.length > 20 ? "High" : "Medium"}\n`;
       plan += `- **Test Strategy:**\n`;
       plan += `  1. Unit tests for core business logic\n`;
       plan += `  2. Integration tests for API endpoints\n`;
@@ -324,10 +335,10 @@ export const TestPatterns = {
    * Test multi-tenant isolation
    */
   tenantIsolation: (testFn: (tenantId: string) => Promise<void>) => {
-    it('should isolate data between tenants', async () => {
-      const tenant1 = 'tenant-1';
-      const tenant2 = 'tenant-2';
-      
+    it("should isolate data between tenants", async () => {
+      const tenant1 = "tenant-1";
+      const tenant2 = "tenant-2";
+
       // Ensure tenant1 can't access tenant2 data
       await testFn(tenant1);
       await testFn(tenant2);
@@ -346,11 +357,13 @@ export const TestPatterns = {
   /**
    * Test pagination
    */
-  pagination: (testFn: (params: { page: number; limit: number }) => Promise<any>) => {
-    it('should support pagination', async () => {
+  pagination: (
+    testFn: (params: { page: number; limit: number }) => Promise<any>,
+  ) => {
+    it("should support pagination", async () => {
       const page1 = await testFn({ page: 1, limit: 10 });
       const page2 = await testFn({ page: 2, limit: 10 });
-      
+
       expect(page1.data).toHaveLength(10);
       expect(page2.data).toHaveLength(10);
       expect(page1.data[0].id).not.toBe(page2.data[0].id);
@@ -361,10 +374,10 @@ export const TestPatterns = {
    * Test caching behavior
    */
   caching: (testFn: () => Promise<any>, cacheKey: string) => {
-    it('should cache results', async () => {
+    it("should cache results", async () => {
       const result1 = await testFn();
       const result2 = await testFn();
-      
+
       expect(result1).toEqual(result2);
     });
   },
@@ -377,20 +390,26 @@ export class PerformanceTestUtils {
   /**
    * Measure execution time
    */
-  static async measureTime<T>(fn: () => Promise<T>): Promise<{ result: T; duration: number }> {
+  static async measureTime<T>(
+    fn: () => Promise<T>,
+  ): Promise<{ result: T; duration: number }> {
     const start = performance.now();
     const result = await fn();
     const duration = performance.now() - start;
-    
+
     return { result, duration };
   }
 
   /**
    * Assert performance requirement
    */
-  static assertPerformance(duration: number, maxMs: number, operation: string): void {
+  static assertPerformance(
+    duration: number,
+    maxMs: number,
+    operation: string,
+  ): void {
     expect(duration).toBeLessThan(maxMs);
-    console.log(`${operation}: ${duration.toFixed(2)}ms (max: ${maxMs}ms)`);
+    console.warn(`${operation}: ${duration.toFixed(2)}ms (max: ${maxMs}ms)`);
   }
 
   /**
@@ -399,28 +418,31 @@ export class PerformanceTestUtils {
   static async concurrentLoad<T>(
     fn: () => Promise<T>,
     concurrency: number,
-    iterations: number
+    iterations: number,
   ): Promise<{ success: number; failure: number; avgDuration: number }> {
     const results: { success: boolean; duration: number }[] = [];
 
     for (let i = 0; i < iterations; i++) {
-      const batch = Array(concurrency).fill(null).map(async () => {
-        const { duration } = await this.measureTime(fn);
-        return { success: true, duration };
-      });
+      const batch = Array(concurrency)
+        .fill(null)
+        .map(async () => {
+          const { duration } = await this.measureTime(fn);
+          return { success: true, duration };
+        });
 
       const batchResults = await Promise.allSettled(batch);
       results.push(
-        ...batchResults.map(r => ({
-          success: r.status === 'fulfilled',
-          duration: r.status === 'fulfilled' ? (r.value as any).duration : 0,
-        }))
+        ...batchResults.map((r) => ({
+          success: r.status === "fulfilled",
+          duration: r.status === "fulfilled" ? (r.value as any).duration : 0,
+        })),
       );
     }
 
-    const success = results.filter(r => r.success).length;
-    const failure = results.filter(r => !r.success).length;
-    const avgDuration = results.reduce((sum, r) => sum + r.duration, 0) / results.length;
+    const success = results.filter((r) => r.success).length;
+    const failure = results.filter((r) => !r.success).length;
+    const avgDuration =
+      results.reduce((sum, r) => sum + r.duration, 0) / results.length;
 
     return { success, failure, avgDuration };
   }

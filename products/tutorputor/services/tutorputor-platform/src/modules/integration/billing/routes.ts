@@ -155,9 +155,19 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
 
       let event: { type: string; data: { object: any } };
       try {
+        const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+        if (!stripeSecretKey) {
+          app.log.error(
+            "STRIPE_SECRET_KEY is not set; cannot validate Stripe webhook event",
+          );
+          return reply
+            .code(500)
+            .send({ error: "Stripe webhook is not configured" });
+        }
+
         // Dynamic require avoids a hard Stripe SDK dependency if the key is absent.
         const Stripe = (await import("stripe")).default;
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+        const stripe = new Stripe(stripeSecretKey, {
           apiVersion: "2023-10-16" as any,
         });
         event = stripe.webhooks.constructEvent(

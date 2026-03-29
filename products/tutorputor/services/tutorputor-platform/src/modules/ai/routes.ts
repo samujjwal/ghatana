@@ -6,7 +6,7 @@
  * @doc.layer platform
  * @doc.pattern Routes
  */
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { AIProxyService } from "@tutorputor/contracts/v1/services";
 import type {
   ModuleId,
@@ -42,6 +42,79 @@ interface AIRouteDeps {
   aiRegistryClient?: AiRegistryClient | null;
 }
 
+const DEFAULT_AI_RATE_LIMIT_MAX = 30;
+const DEFAULT_AI_RATE_LIMIT_WINDOW_SECONDS = 60;
+
+async function enforceAiTenantRateLimit(
+  app: FastifyInstance,
+  req: FastifyRequest,
+  reply: FastifyReply,
+  routeKey: string,
+): Promise<boolean> {
+  const redis = (
+    app as FastifyInstance & {
+      redis?: {
+        incr: (key: string) => Promise<number>;
+        expire: (key: string, seconds: number) => Promise<number>;
+      };
+    }
+  ).redis;
+  if (!redis) {
+    return true;
+  }
+
+  const tenantId = String(getTenantId(req));
+  const maxPerWindow = Math.max(
+    1,
+    Number.parseInt(
+      process.env.AI_RATE_LIMIT_MAX_PER_WINDOW ??
+        String(DEFAULT_AI_RATE_LIMIT_MAX),
+      10,
+    ),
+  );
+  const windowSeconds = Math.max(
+    1,
+    Number.parseInt(
+      process.env.AI_RATE_LIMIT_WINDOW_SECONDS ??
+        String(DEFAULT_AI_RATE_LIMIT_WINDOW_SECONDS),
+      10,
+    ),
+  );
+
+  const now = Date.now();
+  const windowBucket = Math.floor(now / (windowSeconds * 1000));
+  const key = `tutorputor:ai-rate-limit:${tenantId}:${routeKey}:${windowBucket}`;
+
+  try {
+    const count = await redis.incr(key);
+    if (count === 1) {
+      await redis.expire(key, windowSeconds);
+    }
+
+    reply.header("X-AI-RateLimit-Limit", maxPerWindow);
+    reply.header("X-AI-RateLimit-Remaining", Math.max(0, maxPerWindow - count));
+
+    if (count > maxPerWindow) {
+      reply.header("Retry-After", windowSeconds);
+      reply.code(429).send({
+        error: "Too Many Requests",
+        code: "AI_RATE_LIMIT_EXCEEDED",
+        message: `AI request quota exceeded for tenant ${tenantId}.`,
+        retryAfterSeconds: windowSeconds,
+      });
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    app.log.warn(
+      { err: error, routeKey, tenantId },
+      "AI tenant rate-limit guard failed open",
+    );
+    return true;
+  }
+}
+
 export async function registerAIRoutes(
   app: FastifyInstance,
   deps: AIRouteDeps,
@@ -50,6 +123,10 @@ export async function registerAIRoutes(
 
   // AI Tutor query endpoint
   app.post("/tutor/query", async (req, reply) => {
+    if (!(await enforceAiTenantRateLimit(app, req, reply, "tutor-query"))) {
+      return;
+    }
+
     const tenantId = getTenantId(req) as TenantId;
     const userId = getUserId(req) as UserId;
     const { moduleId, question, locale } = req.body as {
@@ -101,6 +178,12 @@ export async function registerAIRoutes(
 
   // AI-generated questions from module content
   app.post("/generate-questions", async (req, reply) => {
+    if (
+      !(await enforceAiTenantRateLimit(app, req, reply, "generate-questions"))
+    ) {
+      return;
+    }
+
     const tenantId = getTenantId(req) as TenantId;
     const {
       moduleId,
@@ -175,6 +258,12 @@ export async function registerAIRoutes(
   // AI-powered concept generation from name
   app.post("/generate-concept", async (req, reply) => {
     try {
+      if (
+        !(await enforceAiTenantRateLimit(app, req, reply, "generate-concept"))
+      ) {
+        return;
+      }
+
       requireRole(req, ["admin"]);
       const tenantId = getTenantId(req) as TenantId;
       const { conceptName, domain } = req.body as {
@@ -213,6 +302,17 @@ export async function registerAIRoutes(
   // AI-powered simulation manifest generation
   app.post("/generate-simulation", async (req, reply) => {
     try {
+      if (
+        !(await enforceAiTenantRateLimit(
+          app,
+          req,
+          reply,
+          "generate-simulation",
+        ))
+      ) {
+        return;
+      }
+
       requireRole(req, ["admin"]);
       const tenantId = getTenantId(req) as TenantId;
       const { description, conceptName, domain } = req.body as {

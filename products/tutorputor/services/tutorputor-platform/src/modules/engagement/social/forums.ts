@@ -115,7 +115,7 @@ export class ForumServiceImpl implements ForumService {
     scopeId?: string;
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<Forum>> {
-    const where: any = {
+    const where: Record<string, unknown> = {
       tenantId: args.tenantId,
       status: "ACTIVE",
     };
@@ -139,7 +139,7 @@ export class ForumServiceImpl implements ForumService {
     ]);
 
     return {
-      items: items.map((f: any) => this.mapForumFromDb(f)),
+      items: items.map((f: Record<string, unknown>) => this.mapForumFromDb(f)),
       totalCount: total,
       total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
@@ -233,7 +233,7 @@ export class ForumServiceImpl implements ForumService {
   }): Promise<PaginatedResult<ForumTopic>> {
     await this.requireForum(args.tenantId, args.forumId);
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       forumId: args.forumId,
       status: "PUBLISHED",
     };
@@ -257,7 +257,7 @@ export class ForumServiceImpl implements ForumService {
       ];
     }
 
-    const orderBy: any = {};
+    const orderBy: Record<string, unknown> = {};
     switch (args.sortBy) {
       case "active":
         orderBy.lastReplyAt = "desc";
@@ -284,7 +284,7 @@ export class ForumServiceImpl implements ForumService {
     ]);
 
     return {
-      items: items.map((t: any) => this.mapTopicFromDb(t)),
+      items: items.map((t: Record<string, unknown>) => this.mapTopicFromDb(t)),
       totalCount: total,
       total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
@@ -303,7 +303,7 @@ export class ForumServiceImpl implements ForumService {
       throw new Error("Only the author can edit this topic");
     }
 
-    const data: any = { updatedAt: new Date() };
+    const data: Record<string, unknown> = { updatedAt: new Date() };
     if (args.patch.title !== undefined) {
       data.title = args.patch.title;
     }
@@ -474,7 +474,7 @@ export class ForumServiceImpl implements ForumService {
   }): Promise<PaginatedResult<ForumPost>> {
     await this.requireTopic(args.tenantId, args.topicId, true);
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       topicId: args.topicId,
       status: "PUBLISHED",
     };
@@ -497,7 +497,7 @@ export class ForumServiceImpl implements ForumService {
     ]);
 
     return {
-      items: items.map((p: any) => this.mapPostFromDb(p)),
+      items: items.map((p: Record<string, unknown>) => this.mapPostFromDb(p)),
       totalCount: total,
       total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
@@ -964,7 +964,7 @@ export class ForumServiceImpl implements ForumService {
     return map[reaction] ?? "like";
   }
 
-  private mapForumFromDb(forum: any): Forum {
+  private mapForumFromDb(forum: Record<string, unknown>): Forum {
     return {
       id: forum.id,
       tenantId: forum.tenantId,
@@ -987,7 +987,7 @@ export class ForumServiceImpl implements ForumService {
     };
   }
 
-  private mapTopicFromDb(topic: any): ForumTopic {
+  private mapTopicFromDb(topic: Record<string, unknown>): ForumTopic {
     return {
       id: topic.id,
       forumId: topic.forumId,
@@ -1019,7 +1019,7 @@ export class ForumServiceImpl implements ForumService {
     };
   }
 
-  private mapPostFromDb(post: any): ForumPost {
+  private mapPostFromDb(post: Record<string, unknown>): ForumPost {
     return {
       id: post.id,
       topicId: post.topicId,

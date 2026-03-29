@@ -55,6 +55,27 @@ function validateStripeKey(key: string): void {
   }
 }
 
+function isPublicLtiRoute(method: string, url: string): boolean {
+  const routePath = url.split("?")[0];
+
+  if (method === "GET") {
+    return (
+      routePath === "/api/v1/integration/lti/jwks" ||
+      routePath.startsWith("/api/v1/integration/lti/config/")
+    );
+  }
+
+  if (method === "POST") {
+    return (
+      routePath === "/api/v1/integration/lti/launch" ||
+      routePath === "/api/v1/integration/lti/deep-linking" ||
+      routePath === "/api/v1/integration/lti/grade-passback"
+    );
+  }
+
+  return false;
+}
+
 export interface PlatformOptions {
   redisUrl?: string;
   jwtSecret?: string;
@@ -150,13 +171,8 @@ export async function setupPlatform(
     if (url.startsWith("/api/v1/auth/sso/") || url === "/api/v1/auth/health")
       return;
     // Public LTI interoperability routes are invoked by external LMS platforms.
-    if (
-      url === "/api/v1/integration/lti/launch" ||
-      url === "/api/v1/integration/lti/jwks" ||
-      url.startsWith("/api/v1/integration/lti/config/") ||
-      url === "/api/v1/integration/lti/deep-linking" ||
-      url === "/api/v1/integration/lti/grade-passback"
-    ) {
+    // Restrict the public surface to expected method + route pairs.
+    if (isPublicLtiRoute(req.method, url)) {
       return;
     }
     // Stripe webhook endpoint – authentication is via Stripe-Signature header.
@@ -227,7 +243,7 @@ export async function setupPlatform(
   app.log.info("✅ Notification routes registered");
 
   // Subscription payments: /api/v1/payments/...
-  const stripeKey = requireEnv('STRIPE_SECRET_KEY', 'sk_test_placeholder_key');
+  const stripeKey = requireEnv("STRIPE_SECRET_KEY");
   validateStripeKey(stripeKey);
   const stripe = new Stripe(stripeKey, {
     apiVersion: "2023-10-16" as any,

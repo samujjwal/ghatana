@@ -22,6 +22,7 @@ import type {
   UserId,
 } from "@tutorputor/contracts/v1/types";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
+import { NotFoundError } from "../../core/errors";
 
 // =============================================================================
 // Types
@@ -43,7 +44,18 @@ export type HealthAwareLearningService = Omit<
 
 type ModuleTag = {
   label: string;
-  [key: string]: any;
+  [key: string]: unknown;
+};
+
+type EnrollmentRecord = {
+  id: string;
+  userId: string;
+  moduleId: string;
+  status: Enrollment["status"];
+  progressPercent: number;
+  startedAt: Date | null;
+  completedAt: Date | null;
+  timeSpentSeconds: number;
 };
 
 type ModuleWithSummaries = {
@@ -56,7 +68,7 @@ type ModuleWithSummaries = {
   status: string;
   tenantId: string;
   tags: ModuleTag[];
-  enrollments: any[];
+  enrollments: Array<{ progressPercent: number }>;
 };
 
 // =============================================================================
@@ -91,7 +103,7 @@ export function createLearningService(
       ]);
 
       if (!user) {
-        throw new Error(`User ${userId} not found in tenant ${tenantId}`);
+        throw new NotFoundError("User", userId);
       }
 
       return {
@@ -102,9 +114,7 @@ export function createLearningService(
           role: user.role,
         },
         currentEnrollments: enrollments.map(mapEnrollment),
-        recommendedModules: modules.map((module: any) =>
-          mapModuleSummary(module),
-        ),
+        recommendedModules: modules.map((module) => mapModuleSummary(module)),
       };
     },
 
@@ -148,9 +158,7 @@ export function createLearningService(
       });
 
       if (!enrollment) {
-        throw new Error(
-          `Enrollment ${enrollmentId} not found for tenant ${tenantId} and user ${userId}`,
-        );
+        throw new NotFoundError("Enrollment", enrollmentId);
       }
 
       const nextProgress = clampProgress(
@@ -201,7 +209,7 @@ async function assertModuleExists(
     where: { tenantId, id: moduleId },
   });
   if (!module) {
-    throw new Error(`Module ${moduleId} not found for tenant ${tenantId}`);
+    throw new NotFoundError("Module", moduleId);
   }
 }
 
@@ -209,7 +217,7 @@ export function clampProgress(current: number, requested: number) {
   return Math.max(current, Math.min(requested, 100));
 }
 
-function mapEnrollment(record: any): Enrollment {
+function mapEnrollment(record: EnrollmentRecord): Enrollment {
   return {
     id: record.id as Enrollment["id"],
     userId: record.userId as UserId,

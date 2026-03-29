@@ -5,15 +5,13 @@
  * @doc.pattern Service
  */
 
-import { PrismaClient } from '@tutorputor/core/db';
-import Stripe from 'stripe';
-import { createStandaloneLogger } from '@tutorputor/core/logger';
+import type { Prisma, PrismaClient } from "@tutorputor/core/db";
+import type Stripe from "stripe";
 import type {
   TenantId,
   SubscriptionId,
   PaymentMethodId,
   InvoiceId,
-  TransactionId,
   Subscription,
   SubscriptionPlan,
   SubscriptionStatus,
@@ -23,36 +21,39 @@ import type {
   PaymentMethodType,
   BillingAddress,
   Invoice,
-  InvoiceLineItem,
-  PaymentTransaction,
   SubscriptionUsage,
   SubscriptionChangePreview,
   PaymentWebhookEvent,
   PaginationArgs,
   PaginatedResult,
-} from '@tutorputor/contracts/v1/types';
+} from "@tutorputor/contracts/v1/types";
 
 import type {
   SubscriptionService,
   PaymentMethodService,
   InvoiceService,
-  PaymentTransactionService,
   PaymentWebhookService,
-} from '@tutorputor/contracts/v1/services';
+} from "@tutorputor/contracts/v1/services";
 
-import type { PlanConfig, ProrationResult, UsageSnapshot, NotificationService } from './types';
+import type { PlanConfig, NotificationService } from "./types";
+import {
+  NotFoundError,
+  ValidationError,
+  PaymentError,
+  SubscriptionError,
+} from "../../core/errors";
 
 // Default plan configurations
 const DEFAULT_PLANS: PlanConfig[] = [
   {
-    id: 'plan_free',
-    name: 'Free',
-    tier: 'free',
-    description: 'Perfect for individual learners',
+    id: "plan_free",
+    name: "Free",
+    tier: "free",
+    description: "Perfect for individual learners",
     features: [
-      'Access to free modules',
-      'Basic progress tracking',
-      'Community support',
+      "Access to free modules",
+      "Basic progress tracking",
+      "Community support",
     ],
     limits: {
       maxUsers: 1,
@@ -61,30 +62,30 @@ const DEFAULT_PLANS: PlanConfig[] = [
       maxClassrooms: 0,
       maxVrSessions: 5,
       analyticsRetentionDays: 7,
-      supportLevel: 'community',
+      supportLevel: "community",
       customBranding: false,
       ssoEnabled: false,
       apiAccess: false,
     },
     pricing: {
-      monthly: { amountCents: 0, stripePriceId: '' },
-      quarterly: { amountCents: 0, stripePriceId: '' },
-      annual: { amountCents: 0, stripePriceId: '' },
+      monthly: { amountCents: 0, stripePriceId: "" },
+      quarterly: { amountCents: 0, stripePriceId: "" },
+      annual: { amountCents: 0, stripePriceId: "" },
     },
     trialDays: 0,
     isActive: true,
   },
   {
-    id: 'plan_starter',
-    name: 'Starter',
-    tier: 'starter',
-    description: 'For small teams and tutors',
+    id: "plan_starter",
+    name: "Starter",
+    tier: "starter",
+    description: "For small teams and tutors",
     features: [
-      'Up to 25 users',
-      'Unlimited modules',
-      '10GB storage',
-      'Email support',
-      'Basic analytics',
+      "Up to 25 users",
+      "Unlimited modules",
+      "10GB storage",
+      "Email support",
+      "Basic analytics",
     ],
     limits: {
       maxUsers: 25,
@@ -93,32 +94,35 @@ const DEFAULT_PLANS: PlanConfig[] = [
       maxClassrooms: 5,
       maxVrSessions: 100,
       analyticsRetentionDays: 30,
-      supportLevel: 'email',
+      supportLevel: "email",
       customBranding: false,
       ssoEnabled: false,
       apiAccess: false,
     },
     pricing: {
-      monthly: { amountCents: 2900, stripePriceId: 'price_starter_monthly' },
-      quarterly: { amountCents: 7900, stripePriceId: 'price_starter_quarterly' },
-      annual: { amountCents: 29000, stripePriceId: 'price_starter_annual' },
+      monthly: { amountCents: 2900, stripePriceId: "price_starter_monthly" },
+      quarterly: {
+        amountCents: 7900,
+        stripePriceId: "price_starter_quarterly",
+      },
+      annual: { amountCents: 29000, stripePriceId: "price_starter_annual" },
     },
     trialDays: 14,
     isActive: true,
   },
   {
-    id: 'plan_professional',
-    name: 'Professional',
-    tier: 'professional',
-    description: 'For growing institutions',
+    id: "plan_professional",
+    name: "Professional",
+    tier: "professional",
+    description: "For growing institutions",
     features: [
-      'Up to 100 users',
-      'Unlimited modules',
-      '50GB storage',
-      'Priority support',
-      'Advanced analytics',
-      'Custom branding',
-      'API access',
+      "Up to 100 users",
+      "Unlimited modules",
+      "50GB storage",
+      "Priority support",
+      "Advanced analytics",
+      "Custom branding",
+      "API access",
     ],
     limits: {
       maxUsers: 100,
@@ -127,34 +131,34 @@ const DEFAULT_PLANS: PlanConfig[] = [
       maxClassrooms: 25,
       maxVrSessions: 500,
       analyticsRetentionDays: 90,
-      supportLevel: 'priority',
+      supportLevel: "priority",
       customBranding: true,
       ssoEnabled: false,
       apiAccess: true,
     },
     pricing: {
-      monthly: { amountCents: 9900, stripePriceId: 'price_pro_monthly' },
-      quarterly: { amountCents: 26900, stripePriceId: 'price_pro_quarterly' },
-      annual: { amountCents: 99000, stripePriceId: 'price_pro_annual' },
+      monthly: { amountCents: 9900, stripePriceId: "price_pro_monthly" },
+      quarterly: { amountCents: 26900, stripePriceId: "price_pro_quarterly" },
+      annual: { amountCents: 99000, stripePriceId: "price_pro_annual" },
     },
     trialDays: 14,
     isActive: true,
   },
   {
-    id: 'plan_institution',
-    name: 'Institution',
-    tier: 'institution',
-    description: 'For schools and universities',
+    id: "plan_institution",
+    name: "Institution",
+    tier: "institution",
+    description: "For schools and universities",
     features: [
-      'Up to 500 users',
-      'Unlimited everything',
-      '200GB storage',
-      'Dedicated support',
-      'Full analytics',
-      'Custom branding',
-      'SSO integration',
-      'API access',
-      'LTI integration',
+      "Up to 500 users",
+      "Unlimited everything",
+      "200GB storage",
+      "Dedicated support",
+      "Full analytics",
+      "Custom branding",
+      "SSO integration",
+      "API access",
+      "LTI integration",
     ],
     limits: {
       maxUsers: 500,
@@ -163,35 +167,35 @@ const DEFAULT_PLANS: PlanConfig[] = [
       maxClassrooms: -1,
       maxVrSessions: -1,
       analyticsRetentionDays: 365,
-      supportLevel: 'dedicated',
+      supportLevel: "dedicated",
       customBranding: true,
       ssoEnabled: true,
       apiAccess: true,
     },
     pricing: {
-      monthly: { amountCents: 29900, stripePriceId: 'price_inst_monthly' },
-      quarterly: { amountCents: 80900, stripePriceId: 'price_inst_quarterly' },
-      annual: { amountCents: 299000, stripePriceId: 'price_inst_annual' },
+      monthly: { amountCents: 29900, stripePriceId: "price_inst_monthly" },
+      quarterly: { amountCents: 80900, stripePriceId: "price_inst_quarterly" },
+      annual: { amountCents: 299000, stripePriceId: "price_inst_annual" },
     },
     trialDays: 30,
     isActive: true,
   },
   {
-    id: 'plan_enterprise',
-    name: 'Enterprise',
-    tier: 'enterprise',
-    description: 'Custom solutions for large organizations',
+    id: "plan_enterprise",
+    name: "Enterprise",
+    tier: "enterprise",
+    description: "Custom solutions for large organizations",
     features: [
-      'Unlimited users',
-      'Unlimited everything',
-      'Custom storage',
-      'Dedicated account manager',
-      'Custom analytics',
-      'White-label solution',
-      'Advanced SSO',
-      'Full API access',
-      'On-premise options',
-      'SLA guarantee',
+      "Unlimited users",
+      "Unlimited everything",
+      "Custom storage",
+      "Dedicated account manager",
+      "Custom analytics",
+      "White-label solution",
+      "Advanced SSO",
+      "Full API access",
+      "On-premise options",
+      "SLA guarantee",
     ],
     limits: {
       maxUsers: -1,
@@ -200,20 +204,105 @@ const DEFAULT_PLANS: PlanConfig[] = [
       maxClassrooms: -1,
       maxVrSessions: -1,
       analyticsRetentionDays: -1,
-      supportLevel: 'dedicated',
+      supportLevel: "dedicated",
       customBranding: true,
       ssoEnabled: true,
       apiAccess: true,
     },
     pricing: {
-      monthly: { amountCents: 0, stripePriceId: '' }, // Custom pricing
-      quarterly: { amountCents: 0, stripePriceId: '' },
-      annual: { amountCents: 0, stripePriceId: '' },
+      monthly: { amountCents: 0, stripePriceId: "" }, // Custom pricing
+      quarterly: { amountCents: 0, stripePriceId: "" },
+      annual: { amountCents: 0, stripePriceId: "" },
     },
     trialDays: 30,
     isActive: true,
   },
 ];
+
+type SubscriptionRecord = {
+  id: string;
+  tenantId: string;
+  planId: string;
+  tier: string;
+  status: string;
+  billingInterval: string;
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  cancelAtPeriodEnd: boolean;
+  canceledAt: Date | null;
+  trialStart: Date | null;
+  trialEnd: Date | null;
+  stripeSubscriptionId: string | null;
+  stripeCustomerId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type PaymentMethodRecord = {
+  id: string;
+  tenantId: string;
+  type: string;
+  isDefault: boolean;
+  brand: string | null;
+  lastFour: string | null;
+  expMonth: number | null;
+  expYear: number | null;
+  bankName: string | null;
+  billingName: string | null;
+  billingLine1: string | null;
+  billingLine2: string | null;
+  billingCity: string | null;
+  billingState: string | null;
+  billingPostalCode: string | null;
+  billingCountry: string | null;
+  stripePaymentMethodId: string | null;
+  createdAt: Date;
+};
+
+type InvoiceLineItemRecord = {
+  description: string;
+  quantity: number;
+  unitAmountCents: number;
+  amountCents: number;
+  periodStart: Date | null;
+  periodEnd: Date | null;
+};
+
+type InvoiceRecord = {
+  id: string;
+  tenantId: string;
+  subscriptionId: string;
+  number: string;
+  status: Invoice["status"];
+  currency: string;
+  subtotalCents: number;
+  taxCents: number;
+  totalCents: number;
+  amountPaidCents: number;
+  amountDueCents: number;
+  dueDate: Date;
+  paidAt: Date | null;
+  lineItems?: InvoiceLineItemRecord[];
+  stripeInvoiceId: string | null;
+  hostedInvoiceUrl: string | null;
+  invoicePdfUrl: string | null;
+  createdAt: Date;
+};
+
+function mapCardBrand(
+  brand: string | null,
+): "visa" | "mastercard" | "amex" | "discover" | "other" {
+  if (
+    brand === "visa" ||
+    brand === "mastercard" ||
+    brand === "amex" ||
+    brand === "discover"
+  ) {
+    return brand;
+  }
+
+  return "other";
+}
 
 /**
  * Subscription service implementation.
@@ -240,9 +329,24 @@ export class SubscriptionServiceImpl implements SubscriptionService {
       features: p.features,
       limits: p.limits,
       pricing: [
-        { interval: 'monthly' as const, amountCents: p.pricing.monthly.amountCents, currency: 'usd', stripePriceId: p.pricing.monthly.stripePriceId },
-        { interval: 'quarterly' as const, amountCents: p.pricing.quarterly.amountCents, currency: 'usd', stripePriceId: p.pricing.quarterly.stripePriceId },
-        { interval: 'annual' as const, amountCents: p.pricing.annual.amountCents, currency: 'usd', stripePriceId: p.pricing.annual.stripePriceId },
+        {
+          interval: "monthly" as const,
+          amountCents: p.pricing.monthly.amountCents,
+          currency: "usd",
+          stripePriceId: p.pricing.monthly.stripePriceId,
+        },
+        {
+          interval: "quarterly" as const,
+          amountCents: p.pricing.quarterly.amountCents,
+          currency: "usd",
+          stripePriceId: p.pricing.quarterly.stripePriceId,
+        },
+        {
+          interval: "annual" as const,
+          amountCents: p.pricing.annual.amountCents,
+          currency: "usd",
+          stripePriceId: p.pricing.annual.stripePriceId,
+        },
       ],
       isActive: p.isActive,
       trialDays: p.trialDays,
@@ -261,9 +365,24 @@ export class SubscriptionServiceImpl implements SubscriptionService {
       features: plan.features,
       limits: plan.limits,
       pricing: [
-        { interval: 'monthly', amountCents: plan.pricing.monthly.amountCents, currency: 'usd', stripePriceId: plan.pricing.monthly.stripePriceId },
-        { interval: 'quarterly', amountCents: plan.pricing.quarterly.amountCents, currency: 'usd', stripePriceId: plan.pricing.quarterly.stripePriceId },
-        { interval: 'annual', amountCents: plan.pricing.annual.amountCents, currency: 'usd', stripePriceId: plan.pricing.annual.stripePriceId },
+        {
+          interval: "monthly",
+          amountCents: plan.pricing.monthly.amountCents,
+          currency: "usd",
+          stripePriceId: plan.pricing.monthly.stripePriceId,
+        },
+        {
+          interval: "quarterly",
+          amountCents: plan.pricing.quarterly.amountCents,
+          currency: "usd",
+          stripePriceId: plan.pricing.quarterly.stripePriceId,
+        },
+        {
+          interval: "annual",
+          amountCents: plan.pricing.annual.amountCents,
+          currency: "usd",
+          stripePriceId: plan.pricing.annual.stripePriceId,
+        },
       ],
       isActive: plan.isActive,
       trialDays: plan.trialDays,
@@ -276,9 +395,9 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     const sub = await this.prisma.subscription.findFirst({
       where: {
         tenantId: args.tenantId,
-        status: { notIn: ['canceled', 'incomplete_expired'] },
+        status: { notIn: ["canceled", "incomplete_expired"] },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     if (!sub) return null;
@@ -295,7 +414,7 @@ export class SubscriptionServiceImpl implements SubscriptionService {
   }): Promise<Subscription> {
     const plan = DEFAULT_PLANS.find((p) => p.id === args.planId);
     if (!plan) {
-      throw new Error(`Plan not found: ${args.planId}`);
+      throw new NotFoundError("Plan", args.planId);
     }
 
     // Get or create Stripe customer
@@ -318,25 +437,28 @@ export class SubscriptionServiceImpl implements SubscriptionService {
         data: {
           tenantId: args.tenantId,
           stripeCustomerId: stripeCustomer.id,
-          email: tenant?.adminEmail ?? '',
+          email: tenant?.adminEmail ?? "",
         },
       });
     }
 
     // Get price ID for interval
     const priceId = plan.pricing[args.billingInterval].stripePriceId;
-    if (!priceId && plan.tier !== 'free') {
-      throw new Error(`No price configured for ${plan.name} ${args.billingInterval}`);
+    if (!priceId && plan.tier !== "free") {
+      throw new ValidationError(
+        `No price configured for ${plan.name} ${args.billingInterval}`,
+        "MISSING_PRICE_CONFIG",
+      );
     }
 
     // Handle free tier
-    if (plan.tier === 'free') {
+    if (plan.tier === "free") {
       const sub = await this.prisma.subscription.create({
         data: {
           tenantId: args.tenantId,
           planId: plan.id,
           tier: plan.tier,
-          status: 'active',
+          status: "active",
           billingInterval: args.billingInterval,
           currentPeriodStart: new Date(),
           currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
@@ -355,7 +477,9 @@ export class SubscriptionServiceImpl implements SubscriptionService {
           customer: customer.stripeCustomerId,
         });
         await this.stripe.customers.update(customer.stripeCustomerId, {
-          invoice_settings: { default_payment_method: pm.stripePaymentMethodId },
+          invoice_settings: {
+            default_payment_method: pm.stripePaymentMethodId,
+          },
         });
       }
     }
@@ -373,6 +497,12 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     });
 
     // Create local subscription record
+    const stripeSubscriptionWithPeriods =
+      stripeSubscription as Stripe.Subscription & {
+        current_period_start: number;
+        current_period_end: number;
+      };
+
     const sub = await this.prisma.subscription.create({
       data: {
         tenantId: args.tenantId,
@@ -382,8 +512,12 @@ export class SubscriptionServiceImpl implements SubscriptionService {
         billingInterval: args.billingInterval,
         stripeSubscriptionId: stripeSubscription.id,
         stripeCustomerId: customer.stripeCustomerId,
-        currentPeriodStart: new Date((stripeSubscription as any).current_period_start * 1000),
-        currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000),
+        currentPeriodStart: new Date(
+          stripeSubscriptionWithPeriods.current_period_start * 1000,
+        ),
+        currentPeriodEnd: new Date(
+          stripeSubscriptionWithPeriods.current_period_end * 1000,
+        ),
         trialStart: stripeSubscription.trial_start
           ? new Date(stripeSubscription.trial_start * 1000)
           : null,
@@ -407,29 +541,41 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     });
 
     if (!currentSub) {
-      throw new Error('Subscription not found');
+      throw new NotFoundError("Subscription", args.subscriptionId);
     }
 
     const currentPlan = DEFAULT_PLANS.find((p) => p.id === currentSub.planId);
     const newPlan = DEFAULT_PLANS.find((p) => p.id === args.newPlanId);
 
     if (!currentPlan || !newPlan) {
-      throw new Error('Plan not found');
+      throw new NotFoundError("Plan", args.newPlanId);
     }
 
     const interval = args.newBillingInterval ?? currentSub.billingInterval;
-    const newPriceId = newPlan.pricing[interval as keyof typeof newPlan.pricing].stripePriceId;
+    const newPriceId =
+      newPlan.pricing[interval as keyof typeof newPlan.pricing].stripePriceId;
 
     // Preview proration with Stripe
     let proratedAmount = 0;
     if (currentSub.stripeSubscriptionId && newPriceId) {
-      const invoice = await (this.stripe.invoices as any).retrieveUpcoming({
+      const retrieveUpcoming = this.stripe.invoices as unknown as {
+        retrieveUpcoming: (params: {
+          customer: string;
+          subscription: string;
+          subscription_items: Array<{ id: string; price: string }>;
+        }) => Promise<Stripe.Invoice>;
+      };
+
+      const invoice = await retrieveUpcoming.retrieveUpcoming({
         customer: currentSub.stripeCustomerId!,
         subscription: currentSub.stripeSubscriptionId,
         subscription_items: [
           {
-            id: (await this.stripe.subscriptions.retrieve(currentSub.stripeSubscriptionId))
-              .items.data[0]!.id,
+            id: (
+              await this.stripe.subscriptions.retrieve(
+                currentSub.stripeSubscriptionId,
+              )
+            ).items.data[0]!.id,
             price: newPriceId,
           },
         ],
@@ -438,8 +584,12 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     return {
-      currentPlan: await this.getPlan({ planId: currentSub.planId }) as SubscriptionPlan,
-      newPlan: await this.getPlan({ planId: args.newPlanId }) as SubscriptionPlan,
+      currentPlan: (await this.getPlan({
+        planId: currentSub.planId,
+      })) as SubscriptionPlan,
+      newPlan: (await this.getPlan({
+        planId: args.newPlanId,
+      })) as SubscriptionPlan,
       proratedAmountCents: proratedAmount,
       effectiveDate: new Date().toISOString(),
       immediateCharge: proratedAmount > 0,
@@ -451,27 +601,30 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     subscriptionId: SubscriptionId;
     newPlanId: string;
     newBillingInterval?: BillingInterval;
-    prorationBehavior?: 'create_prorations' | 'none' | 'always_invoice';
+    prorationBehavior?: "create_prorations" | "none" | "always_invoice";
   }): Promise<Subscription> {
     const currentSub = await this.prisma.subscription.findUnique({
       where: { id: args.subscriptionId },
     });
 
     if (!currentSub || currentSub.tenantId !== args.tenantId) {
-      throw new Error('Subscription not found');
+      throw new NotFoundError("Subscription", args.subscriptionId);
     }
 
     const newPlan = DEFAULT_PLANS.find((p) => p.id === args.newPlanId);
     if (!newPlan) {
-      throw new Error('Plan not found');
+      throw new NotFoundError("Plan", args.newPlanId);
     }
 
     const interval = args.newBillingInterval ?? currentSub.billingInterval;
-    const newPriceId = newPlan.pricing[interval as keyof typeof newPlan.pricing].stripePriceId;
+    const newPriceId =
+      newPlan.pricing[interval as keyof typeof newPlan.pricing].stripePriceId;
 
     if (currentSub.stripeSubscriptionId && newPriceId) {
-      const stripeSub = await this.stripe.subscriptions.retrieve(currentSub.stripeSubscriptionId);
-      
+      const stripeSub = await this.stripe.subscriptions.retrieve(
+        currentSub.stripeSubscriptionId,
+      );
+
       await this.stripe.subscriptions.update(currentSub.stripeSubscriptionId, {
         items: [
           {
@@ -479,7 +632,7 @@ export class SubscriptionServiceImpl implements SubscriptionService {
             price: newPriceId,
           },
         ],
-        proration_behavior: args.prorationBehavior ?? 'create_prorations',
+        proration_behavior: args.prorationBehavior ?? "create_prorations",
         metadata: {
           tenantId: args.tenantId,
           planId: args.newPlanId,
@@ -511,7 +664,7 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     });
 
     if (!sub || sub.tenantId !== args.tenantId) {
-      throw new Error('Subscription not found');
+      throw new NotFoundError("Subscription", args.subscriptionId);
     }
 
     if (sub.stripeSubscriptionId) {
@@ -530,7 +683,7 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     const updated = await this.prisma.subscription.update({
       where: { id: args.subscriptionId },
       data: {
-        status: args.cancelImmediately ? 'canceled' : sub.status,
+        status: args.cancelImmediately ? "canceled" : sub.status,
         cancelAtPeriodEnd: !args.cancelImmediately,
         canceledAt: new Date(),
         updatedAt: new Date(),
@@ -549,11 +702,14 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     });
 
     if (!sub || sub.tenantId !== args.tenantId) {
-      throw new Error('Subscription not found');
+      throw new NotFoundError("Subscription", args.subscriptionId);
     }
 
     if (!sub.cancelAtPeriodEnd) {
-      throw new Error('Subscription is not scheduled for cancellation');
+      throw new SubscriptionError(
+        "Subscription is not scheduled for cancellation",
+        "NOT_SCHEDULED_FOR_CANCELLATION",
+      );
     }
 
     if (sub.stripeSubscriptionId) {
@@ -584,14 +740,16 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     });
 
     if (!sub || sub.tenantId !== args.tenantId) {
-      throw new Error('Subscription not found');
+      throw new NotFoundError("Subscription", args.subscriptionId);
     }
 
     if (sub.stripeSubscriptionId) {
       await this.stripe.subscriptions.update(sub.stripeSubscriptionId, {
         pause_collection: {
-          behavior: 'mark_uncollectible',
-          resumes_at: args.resumeAt ? Math.floor(new Date(args.resumeAt).getTime() / 1000) : undefined,
+          behavior: "mark_uncollectible",
+          resumes_at: args.resumeAt
+            ? Math.floor(new Date(args.resumeAt).getTime() / 1000)
+            : undefined,
         },
       });
     }
@@ -599,7 +757,7 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     const updated = await this.prisma.subscription.update({
       where: { id: args.subscriptionId },
       data: {
-        status: 'paused',
+        status: "paused",
         updatedAt: new Date(),
       },
     });
@@ -616,12 +774,12 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     });
 
     if (!sub || sub.tenantId !== args.tenantId) {
-      throw new Error('Subscription not found');
+      throw new NotFoundError("Subscription", args.subscriptionId);
     }
 
     const plan = DEFAULT_PLANS.find((p) => p.id === sub.planId);
     if (!plan) {
-      throw new Error('Plan not found');
+      throw new NotFoundError("Plan", sub.planId);
     }
 
     // Get actual usage counts
@@ -635,19 +793,26 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     // These tables are populated by the content-studio and xr-experience services.
     // Falls back to 0 if the tables do not yet exist in the current deployment.
     const [storageGB, vrSessions] = await Promise.all([
-      this.prisma.$queryRawUnsafe(
-        `SELECT COALESCE(SUM(size_bytes), 0) AS total_bytes FROM media_assets WHERE tenant_id = $1`,
-        args.tenantId,
-      )
-        .then(([row]: any) => Number(row?.total_bytes ?? 0) / (1024 ** 3))
+      this.prisma
+        .$queryRawUnsafe(
+          `SELECT COALESCE(SUM(size_bytes), 0) AS total_bytes FROM media_assets WHERE tenant_id = $1`,
+          args.tenantId,
+        )
+        .then(
+          (rows: Array<{ total_bytes: number | bigint | null }>) =>
+            Number(rows[0]?.total_bytes ?? 0) / 1024 ** 3,
+        )
         .catch(() => 0),
-      this.prisma.$queryRawUnsafe(
-        `SELECT COUNT(*) AS session_count FROM vr_sessions WHERE tenant_id = $1 AND started_at >= $2 AND started_at < $3`,
-        args.tenantId,
-        sub.currentPeriodStart,
-        sub.currentPeriodEnd,
-      )
-        .then(([row]: any) => Number(row?.session_count ?? 0))
+      this.prisma
+        .$queryRawUnsafe(
+          `SELECT COUNT(*) AS session_count FROM vr_sessions WHERE tenant_id = $1 AND started_at >= $2 AND started_at < $3`,
+          args.tenantId,
+          sub.currentPeriodStart,
+          sub.currentPeriodEnd,
+        )
+        .then((rows: Array<{ session_count: number | bigint | null }>) =>
+          Number(rows[0]?.session_count ?? 0),
+        )
         .catch(() => 0),
     ]);
 
@@ -667,13 +832,23 @@ export class SubscriptionServiceImpl implements SubscriptionService {
 
   async checkLimit(args: {
     tenantId: TenantId;
-    resource: 'users' | 'modules' | 'classrooms' | 'storage' | 'vrSessions';
+    resource: "users" | "modules" | "classrooms" | "storage" | "vrSessions";
     increment?: number;
-  }): Promise<{ allowed: boolean; current: number; limit: number; message?: string }> {
+  }): Promise<{
+    allowed: boolean;
+    current: number;
+    limit: number;
+    message?: string;
+  }> {
     const sub = await this.getCurrentSubscription({ tenantId: args.tenantId });
-    
+
     if (!sub) {
-      return { allowed: false, current: 0, limit: 0, message: 'No active subscription' };
+      return {
+        allowed: false,
+        current: 0,
+        limit: 0,
+        message: "No active subscription",
+      };
     }
 
     const usage = await this.getUsage({
@@ -701,11 +876,13 @@ export class SubscriptionServiceImpl implements SubscriptionService {
       allowed,
       current,
       limit,
-      message: allowed ? undefined : `${args.resource} limit reached (${current}/${limit})`,
+      message: allowed
+        ? undefined
+        : `${args.resource} limit reached (${current}/${limit})`,
     };
   }
 
-  private mapToSubscription(record: any): Subscription {
+  private mapToSubscription(record: SubscriptionRecord): Subscription {
     return {
       id: record.id as SubscriptionId,
       tenantId: record.tenantId as TenantId,
@@ -726,18 +903,20 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     };
   }
 
-  private mapStripeStatus(stripeStatus: Stripe.Subscription.Status): SubscriptionStatus {
+  private mapStripeStatus(
+    stripeStatus: Stripe.Subscription.Status,
+  ): SubscriptionStatus {
     const statusMap: Record<string, SubscriptionStatus> = {
-      active: 'active',
-      trialing: 'trialing',
-      past_due: 'past_due',
-      canceled: 'canceled',
-      paused: 'paused',
-      incomplete: 'incomplete',
-      incomplete_expired: 'incomplete_expired',
-      unpaid: 'past_due',
+      active: "active",
+      trialing: "trialing",
+      past_due: "past_due",
+      canceled: "canceled",
+      paused: "paused",
+      incomplete: "incomplete",
+      incomplete_expired: "incomplete_expired",
+      unpaid: "past_due",
     };
-    return statusMap[stripeStatus] ?? 'incomplete';
+    return statusMap[stripeStatus] ?? "incomplete";
   }
 }
 
@@ -750,13 +929,15 @@ export class PaymentMethodServiceImpl implements PaymentMethodService {
     private readonly stripe: Stripe,
   ) {}
 
-  async listPaymentMethods(args: { tenantId: TenantId }): Promise<PaymentMethod[]> {
+  async listPaymentMethods(args: {
+    tenantId: TenantId;
+  }): Promise<PaymentMethod[]> {
     const methods = await this.prisma.paymentMethod.findMany({
       where: { tenantId: args.tenantId },
-      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
     });
 
-    return methods.map((m: any) => this.mapToPaymentMethod(m));
+    return methods.map((m) => this.mapToPaymentMethod(m));
   }
 
   async getPaymentMethod(args: {
@@ -782,12 +963,14 @@ export class PaymentMethodServiceImpl implements PaymentMethodService {
     });
 
     if (!customer) {
-      throw new Error('Stripe customer not found');
+      throw new NotFoundError("Stripe customer", args.tenantId);
     }
 
     const setupIntent = await this.stripe.setupIntents.create({
       customer: customer.stripeCustomerId,
-      payment_method_types: [args.paymentMethodType === 'card' ? 'card' : 'us_bank_account'],
+      payment_method_types: [
+        args.paymentMethodType === "card" ? "card" : "us_bank_account",
+      ],
       metadata: { tenantId: args.tenantId },
     });
 
@@ -803,42 +986,54 @@ export class PaymentMethodServiceImpl implements PaymentMethodService {
     billingAddress?: BillingAddress;
     setAsDefault?: boolean;
   }): Promise<PaymentMethod> {
-    const setupIntent = await this.stripe.setupIntents.retrieve(args.setupIntentId);
+    const setupIntent = await this.stripe.setupIntents.retrieve(
+      args.setupIntentId,
+    );
 
-    if (!setupIntent.payment_method || typeof setupIntent.payment_method !== 'string') {
-      throw new Error('Payment method not found in setup intent');
+    if (
+      !setupIntent.payment_method ||
+      typeof setupIntent.payment_method !== "string"
+    ) {
+      throw new PaymentError(
+        "Payment method not found in setup intent",
+        "SETUP_INTENT_INVALID",
+      );
     }
 
     const stripePaymentMethod = await this.stripe.paymentMethods.retrieve(
       setupIntent.payment_method,
     );
 
-    // If setting as default, unset other defaults
-    if (args.setAsDefault) {
-      await this.prisma.paymentMethod.updateMany({
-        where: { tenantId: args.tenantId, isDefault: true },
-        data: { isDefault: false },
-      });
-    }
+    const method = await this.prisma.$transaction(async (tx) => {
+      // If setting as default, unset other defaults in the same transaction.
+      if (args.setAsDefault) {
+        await tx.paymentMethod.updateMany({
+          where: { tenantId: args.tenantId, isDefault: true },
+          data: { isDefault: false },
+        });
+      }
 
-    const method = await this.prisma.paymentMethod.create({
-      data: {
-        tenantId: args.tenantId,
-        stripePaymentMethodId: stripePaymentMethod.id,
-        type: stripePaymentMethod.type === 'card' ? 'card' : 'bank_account',
-        isDefault: args.setAsDefault ?? false,
-        lastFour: stripePaymentMethod.card?.last4 ?? stripePaymentMethod.us_bank_account?.last4,
-        brand: stripePaymentMethod.card?.brand,
-        expMonth: stripePaymentMethod.card?.exp_month,
-        expYear: stripePaymentMethod.card?.exp_year,
-        billingName: args.billingAddress?.name,
-        billingLine1: args.billingAddress?.line1,
-        billingLine2: args.billingAddress?.line2,
-        billingCity: args.billingAddress?.city,
-        billingState: args.billingAddress?.state,
-        billingPostalCode: args.billingAddress?.postalCode,
-        billingCountry: args.billingAddress?.country,
-      },
+      return tx.paymentMethod.create({
+        data: {
+          tenantId: args.tenantId,
+          stripePaymentMethodId: stripePaymentMethod.id,
+          type: stripePaymentMethod.type === "card" ? "card" : "bank_account",
+          isDefault: args.setAsDefault ?? false,
+          lastFour:
+            stripePaymentMethod.card?.last4 ??
+            stripePaymentMethod.us_bank_account?.last4,
+          brand: stripePaymentMethod.card?.brand,
+          expMonth: stripePaymentMethod.card?.exp_month,
+          expYear: stripePaymentMethod.card?.exp_year,
+          billingName: args.billingAddress?.name,
+          billingLine1: args.billingAddress?.line1,
+          billingLine2: args.billingAddress?.line2,
+          billingCity: args.billingAddress?.city,
+          billingState: args.billingAddress?.state,
+          billingPostalCode: args.billingAddress?.postalCode,
+          billingCountry: args.billingAddress?.country,
+        },
+      });
     });
 
     return this.mapToPaymentMethod(method);
@@ -870,7 +1065,9 @@ export class PaymentMethodServiceImpl implements PaymentMethodService {
 
       if (customer) {
         await this.stripe.customers.update(customer.stripeCustomerId, {
-          invoice_settings: { default_payment_method: method.stripePaymentMethodId },
+          invoice_settings: {
+            default_payment_method: method.stripePaymentMethodId,
+          },
         });
       }
     }
@@ -885,11 +1082,14 @@ export class PaymentMethodServiceImpl implements PaymentMethodService {
     });
 
     if (!method) {
-      throw new Error('Payment method not found');
+      throw new NotFoundError("Payment method", args.paymentMethodId);
     }
 
     if (method.isDefault) {
-      throw new Error('Cannot remove default payment method');
+      throw new ValidationError(
+        "Cannot remove default payment method",
+        "DEFAULT_PAYMENT_METHOD",
+      );
     }
 
     if (method.stripePaymentMethodId) {
@@ -922,43 +1122,46 @@ export class PaymentMethodServiceImpl implements PaymentMethodService {
     return this.mapToPaymentMethod(method);
   }
 
-  private mapToPaymentMethod(record: any): PaymentMethod {
+  private mapToPaymentMethod(record: PaymentMethodRecord): PaymentMethod {
     return {
       id: record.id as PaymentMethodId,
       tenantId: record.tenantId as TenantId,
       type: record.type as PaymentMethodType,
       isDefault: record.isDefault,
-      card: record.type === 'card'
-        ? {
-            brand: record.brand as any,
-            last4: record.lastFour ?? '',
-            expMonth: record.expMonth ?? 0,
-            expYear: record.expYear ?? 0,
-          }
-        : undefined,
-      bankAccount: record.type === 'bank_account'
-        ? {
-            bankName: record.bankName ?? '',
-            last4: record.lastFour ?? '',
-            accountType: 'checking',
-          }
-        : undefined,
+      card:
+        record.type === "card"
+          ? {
+              brand: mapCardBrand(record.brand),
+              last4: record.lastFour ?? "",
+              expMonth: record.expMonth ?? 0,
+              expYear: record.expYear ?? 0,
+            }
+          : undefined,
+      bankAccount:
+        record.type === "bank_account"
+          ? {
+              bankName: record.bankName ?? "",
+              last4: record.lastFour ?? "",
+              accountType: "checking",
+            }
+          : undefined,
       billingAddress: record.billingLine1
         ? {
-            name: record.billingName ?? '',
+            name: record.billingName ?? "",
             line1: record.billingLine1,
             line2: record.billingLine2 ?? undefined,
-            city: record.billingCity ?? '',
+            city: record.billingCity ?? "",
             state: record.billingState ?? undefined,
-            postalCode: record.billingPostalCode ?? '',
-            country: record.billingCountry ?? '',
+            postalCode: record.billingPostalCode ?? "",
+            country: record.billingCountry ?? "",
           }
         : undefined,
       stripePaymentMethodId: record.stripePaymentMethodId ?? undefined,
       createdAt: record.createdAt.toISOString(),
-      expiresAt: record.expYear && record.expMonth
-        ? new Date(record.expYear, record.expMonth, 0).toISOString()
-        : undefined,
+      expiresAt:
+        record.expYear && record.expMonth
+          ? new Date(record.expYear, record.expMonth, 0).toISOString()
+          : undefined,
     };
   }
 }
@@ -974,10 +1177,10 @@ export class InvoiceServiceImpl implements InvoiceService {
 
   async listInvoices(args: {
     tenantId: TenantId;
-    status?: Invoice['status'];
+    status?: Invoice["status"];
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<Invoice>> {
-    const where: any = { tenantId: args.tenantId };
+    const where: Prisma.InvoiceWhereInput = { tenantId: args.tenantId };
     if (args.status) {
       where.status = args.status;
     }
@@ -985,20 +1188,23 @@ export class InvoiceServiceImpl implements InvoiceService {
     const [invoices, total] = await Promise.all([
       this.prisma.invoice.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: args.pagination.limit,
         skip: args.pagination.cursor ? 1 : 0,
-        cursor: args.pagination.cursor ? { id: args.pagination.cursor } : undefined,
+        cursor: args.pagination.cursor
+          ? { id: args.pagination.cursor }
+          : undefined,
         include: { lineItems: true },
       }),
       this.prisma.invoice.count({ where }),
     ]);
 
     return {
-      items: invoices.map((i: any) => this.mapToInvoice(i)),
-      nextCursor: invoices.length === args.pagination.limit
-        ? invoices[invoices.length - 1].id
-        : undefined,
+      items: invoices.map((i) => this.mapToInvoice(i)),
+      nextCursor:
+        invoices.length === args.pagination.limit
+          ? invoices[invoices.length - 1].id
+          : undefined,
       totalCount: total,
       hasMore: invoices.length === args.pagination.limit,
     };
@@ -1027,16 +1233,21 @@ export class InvoiceServiceImpl implements InvoiceService {
     if (!sub?.stripeSubscriptionId) return null;
 
     try {
-      const upcoming = await (this.stripe.invoices as any).retrieveUpcoming({
+      const retrieveUpcoming = this.stripe.invoices as unknown as {
+        retrieveUpcoming: (params: {
+          subscription: string;
+        }) => Promise<Stripe.Invoice>;
+      };
+      const upcoming = await retrieveUpcoming.retrieveUpcoming({
         subscription: sub.stripeSubscriptionId,
       });
 
       return {
-        id: 'upcoming' as InvoiceId,
+        id: "upcoming" as InvoiceId,
         tenantId: args.tenantId,
         subscriptionId: args.subscriptionId,
-        number: 'UPCOMING',
-        status: 'draft',
+        number: "UPCOMING",
+        status: "draft",
         currency: upcoming.currency,
         subtotalCents: upcoming.subtotal,
         taxCents: upcoming.tax ?? 0,
@@ -1046,8 +1257,8 @@ export class InvoiceServiceImpl implements InvoiceService {
         dueDate: upcoming.due_date
           ? new Date(upcoming.due_date * 1000).toISOString()
           : new Date().toISOString(),
-        lineItems: upcoming.lines.data.map((line: any) => ({
-          description: line.description ?? '',
+        lineItems: upcoming.lines.data.map((line: Stripe.InvoiceLineItem) => ({
+          description: line.description ?? "",
           quantity: line.quantity ?? 1,
           unitAmountCents: line.price?.unit_amount ?? 0,
           amountCents: line.amount,
@@ -1076,7 +1287,7 @@ export class InvoiceServiceImpl implements InvoiceService {
     });
 
     if (!invoice) {
-      throw new Error('Invoice not found');
+      throw new NotFoundError("Invoice", args.invoiceId);
     }
 
     if (invoice.stripeInvoiceId) {
@@ -1096,7 +1307,7 @@ export class InvoiceServiceImpl implements InvoiceService {
     const updated = await this.prisma.invoice.update({
       where: { id: args.invoiceId },
       data: {
-        status: 'paid',
+        status: "paid",
         paidAt: new Date(),
       },
       include: { lineItems: true },
@@ -1114,7 +1325,7 @@ export class InvoiceServiceImpl implements InvoiceService {
     });
 
     if (!invoice?.invoicePdfUrl) {
-      throw new Error('Invoice PDF not available');
+      throw new NotFoundError("Invoice PDF", args.invoiceId);
     }
 
     return {
@@ -1133,13 +1344,13 @@ export class InvoiceServiceImpl implements InvoiceService {
     });
 
     if (!invoice?.stripeInvoiceId) {
-      throw new Error('Invoice not found');
+      throw new NotFoundError("Invoice", args.invoiceId);
     }
 
     await this.stripe.invoices.sendInvoice(invoice.stripeInvoiceId);
   }
 
-  private mapToInvoice(record: any): Invoice {
+  private mapToInvoice(record: InvoiceRecord): Invoice {
     return {
       id: record.id as InvoiceId,
       tenantId: record.tenantId as TenantId,
@@ -1154,14 +1365,15 @@ export class InvoiceServiceImpl implements InvoiceService {
       amountDueCents: record.amountDueCents,
       dueDate: record.dueDate.toISOString(),
       paidAt: record.paidAt?.toISOString(),
-      lineItems: record.lineItems?.map((li: any) => ({
-        description: li.description,
-        quantity: li.quantity,
-        unitAmountCents: li.unitAmountCents,
-        amountCents: li.amountCents,
-        periodStart: li.periodStart?.toISOString(),
-        periodEnd: li.periodEnd?.toISOString(),
-      })) ?? [],
+      lineItems:
+        record.lineItems?.map((li) => ({
+          description: li.description,
+          quantity: li.quantity,
+          unitAmountCents: li.unitAmountCents,
+          amountCents: li.amountCents,
+          periodStart: li.periodStart?.toISOString(),
+          periodEnd: li.periodEnd?.toISOString(),
+        })) ?? [],
       stripeInvoiceId: record.stripeInvoiceId ?? undefined,
       hostedInvoiceUrl: record.hostedInvoiceUrl ?? undefined,
       invoicePdfUrl: record.invoicePdfUrl ?? undefined,
@@ -1184,7 +1396,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
   async processWebhook(args: {
     payload: string;
     signature: string;
-    provider: 'stripe';
+    provider: "stripe";
   }): Promise<{ processed: boolean; eventType: string; error?: string }> {
     let event: Stripe.Event;
 
@@ -1197,7 +1409,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     } catch (err) {
       return {
         processed: false,
-        eventType: 'unknown',
+        eventType: "unknown",
         error: `Webhook signature verification failed: ${err}`,
       };
     }
@@ -1207,7 +1419,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
       data: {
         stripeEventId: event.id,
         type: event.type,
-        data: event.data.object as any,
+        data: event.data.object as unknown as Prisma.InputJsonValue,
         processed: false,
       },
     });
@@ -1240,7 +1452,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     eventType?: string;
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<PaymentWebhookEvent>> {
-    const where: any = {};
+    const where: Prisma.WebhookEventWhereInput = {};
     if (args.eventType) {
       where.type = args.eventType;
     }
@@ -1248,26 +1460,29 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     const [events, total] = await Promise.all([
       this.prisma.webhookEvent.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: args.pagination.limit,
         skip: args.pagination.cursor ? 1 : 0,
-        cursor: args.pagination.cursor ? { id: args.pagination.cursor } : undefined,
+        cursor: args.pagination.cursor
+          ? { id: args.pagination.cursor }
+          : undefined,
       }),
       this.prisma.webhookEvent.count({ where }),
     ]);
 
     return {
-      items: events.map((e: any) => ({
+      items: events.map((e) => ({
         id: e.id,
-        type: e.type as any,
+        type: e.type as PaymentWebhookEvent["type"],
         data: e.data as Record<string, unknown>,
         stripeEventId: e.stripeEventId,
         processedAt: e.processedAt?.toISOString(),
         createdAt: e.createdAt.toISOString(),
       })),
-      nextCursor: events.length === args.pagination.limit
-        ? events[events.length - 1].id
-        : undefined,
+      nextCursor:
+        events.length === args.pagination.limit
+          ? events[events.length - 1].id
+          : undefined,
       totalCount: total,
       hasMore: events.length === args.pagination.limit,
     };
@@ -1281,11 +1496,13 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     });
 
     if (!event) {
-      return { success: false, error: 'Event not found' };
+      return { success: false, error: "Event not found" };
     }
 
     try {
-      const stripeEvent = await this.stripe.events.retrieve(event.stripeEventId);
+      const stripeEvent = await this.stripe.events.retrieve(
+        event.stripeEventId,
+      );
       await this.handleStripeEvent(stripeEvent);
 
       await this.prisma.webhookEvent.update({
@@ -1301,63 +1518,84 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
 
   private async handleStripeEvent(event: Stripe.Event): Promise<void> {
     switch (event.type) {
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated':
-        await this.handleSubscriptionChange(event.data.object as Stripe.Subscription);
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+        await this.handleSubscriptionChange(
+          event.data.object as Stripe.Subscription,
+        );
         break;
 
-      case 'customer.subscription.deleted':
-        await this.handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+      case "customer.subscription.deleted":
+        await this.handleSubscriptionDeleted(
+          event.data.object as Stripe.Subscription,
+        );
         break;
 
-      case 'invoice.created':
-      case 'invoice.finalized':
+      case "invoice.created":
+      case "invoice.finalized":
         await this.handleInvoiceCreated(event.data.object as Stripe.Invoice);
         break;
 
-      case 'invoice.paid':
+      case "invoice.paid":
         await this.handleInvoicePaid(event.data.object as Stripe.Invoice);
         break;
 
-      case 'invoice.payment_failed':
-        await this.handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+      case "invoice.payment_failed":
+        await this.handleInvoicePaymentFailed(
+          event.data.object as Stripe.Invoice,
+        );
         break;
 
-      case 'payment_method.attached':
-        await this.handlePaymentMethodAttached(event.data.object as Stripe.PaymentMethod);
+      case "payment_method.attached":
+        await this.handlePaymentMethodAttached(
+          event.data.object as Stripe.PaymentMethod,
+        );
         break;
 
-      case 'payment_method.detached':
-        await this.handlePaymentMethodDetached(event.data.object as Stripe.PaymentMethod);
+      case "payment_method.detached":
+        await this.handlePaymentMethodDetached(
+          event.data.object as Stripe.PaymentMethod,
+        );
         break;
 
-      case 'customer.subscription.trial_will_end':
+      case "customer.subscription.trial_will_end":
         await this.handleTrialWillEnd(event.data.object as Stripe.Subscription);
         break;
     }
   }
 
-  private async handleSubscriptionChange(stripeSub: Stripe.Subscription): Promise<void> {
+  private async handleSubscriptionChange(
+    stripeSub: Stripe.Subscription,
+  ): Promise<void> {
     const tenantId = stripeSub.metadata.tenantId as TenantId;
     if (!tenantId) return;
 
     const statusMap: Record<string, string> = {
-      active: 'active',
-      trialing: 'trialing',
-      past_due: 'past_due',
-      canceled: 'canceled',
-      incomplete: 'incomplete',
-      incomplete_expired: 'incomplete_expired',
-      paused: 'paused',
-      unpaid: 'past_due',
+      active: "active",
+      trialing: "trialing",
+      past_due: "past_due",
+      canceled: "canceled",
+      incomplete: "incomplete",
+      incomplete_expired: "incomplete_expired",
+      paused: "paused",
+      unpaid: "past_due",
+    };
+
+    const stripeSubWithPeriods = stripeSub as Stripe.Subscription & {
+      current_period_start: number;
+      current_period_end: number;
     };
 
     await this.prisma.subscription.updateMany({
       where: { stripeSubscriptionId: stripeSub.id },
       data: {
-        status: statusMap[stripeSub.status] ?? 'incomplete',
-        currentPeriodStart: new Date((stripeSub as any).current_period_start * 1000),
-        currentPeriodEnd: new Date((stripeSub as any).current_period_end * 1000),
+        status: statusMap[stripeSub.status] ?? "incomplete",
+        currentPeriodStart: new Date(
+          stripeSubWithPeriods.current_period_start * 1000,
+        ),
+        currentPeriodEnd: new Date(
+          stripeSubWithPeriods.current_period_end * 1000,
+        ),
         cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
         canceledAt: stripeSub.canceled_at
           ? new Date(stripeSub.canceled_at * 1000)
@@ -1367,20 +1605,32 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     });
   }
 
-  private async handleSubscriptionDeleted(stripeSub: Stripe.Subscription): Promise<void> {
+  private async handleSubscriptionDeleted(
+    stripeSub: Stripe.Subscription,
+  ): Promise<void> {
     await this.prisma.subscription.updateMany({
       where: { stripeSubscriptionId: stripeSub.id },
       data: {
-        status: 'canceled',
+        status: "canceled",
         canceledAt: new Date(),
         updatedAt: new Date(),
       },
     });
   }
 
-  private async handleInvoiceCreated(stripeInvoice: Stripe.Invoice): Promise<void> {
+  private async handleInvoiceCreated(
+    stripeInvoice: Stripe.Invoice,
+  ): Promise<void> {
+    const stripeSubscriptionId =
+      typeof stripeInvoice.subscription === "string"
+        ? stripeInvoice.subscription
+        : null;
+    if (!stripeSubscriptionId) return;
+
     const sub = await this.prisma.subscription.findFirst({
-      where: { stripeSubscriptionId: (stripeInvoice as any).subscription as string },
+      where: {
+        stripeSubscriptionId,
+      },
     });
 
     if (!sub) return;
@@ -1392,10 +1642,10 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
         subscriptionId: sub.id,
         stripeInvoiceId: stripeInvoice.id,
         number: stripeInvoice.number ?? `INV-${Date.now()}`,
-        status: stripeInvoice.status ?? 'draft',
+        status: stripeInvoice.status ?? "draft",
         currency: stripeInvoice.currency,
         subtotalCents: stripeInvoice.subtotal,
-        taxCents: (stripeInvoice as any).tax ?? 0,
+        taxCents: stripeInvoice.tax ?? 0,
         totalCents: stripeInvoice.total,
         amountPaidCents: stripeInvoice.amount_paid,
         amountDueCents: stripeInvoice.amount_due,
@@ -1406,7 +1656,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
         invoicePdfUrl: stripeInvoice.invoice_pdf ?? null,
       },
       update: {
-        status: stripeInvoice.status ?? 'draft',
+        status: stripeInvoice.status ?? "draft",
         amountPaidCents: stripeInvoice.amount_paid,
         amountDueCents: stripeInvoice.amount_due,
         hostedInvoiceUrl: stripeInvoice.hosted_invoice_url ?? null,
@@ -1415,11 +1665,13 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     });
   }
 
-  private async handleInvoicePaid(stripeInvoice: Stripe.Invoice): Promise<void> {
+  private async handleInvoicePaid(
+    stripeInvoice: Stripe.Invoice,
+  ): Promise<void> {
     await this.prisma.invoice.updateMany({
       where: { stripeInvoiceId: stripeInvoice.id },
       data: {
-        status: 'paid',
+        status: "paid",
         paidAt: new Date(),
         amountPaidCents: stripeInvoice.amount_paid,
         amountDueCents: stripeInvoice.amount_due,
@@ -1427,28 +1679,39 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     });
   }
 
-  private async handleInvoicePaymentFailed(stripeInvoice: Stripe.Invoice): Promise<void> {
-    await this.prisma.invoice.updateMany({
-      where: { stripeInvoiceId: stripeInvoice.id },
-      data: {
-        status: 'open',
-      },
-    });
+  private async handleInvoicePaymentFailed(
+    stripeInvoice: Stripe.Invoice,
+  ): Promise<void> {
+    const stripeSubscriptionId =
+      typeof stripeInvoice.subscription === "string"
+        ? stripeInvoice.subscription
+        : null;
 
-    // Mark subscription as past_due if not already
-    if ((stripeInvoice as any).subscription) {
-      await this.prisma.subscription.updateMany({
-        where: {
-          stripeSubscriptionId: (stripeInvoice as any).subscription as string,
-          status: 'active',
+    await this.prisma.$transaction(async (tx) => {
+      await tx.invoice.updateMany({
+        where: { stripeInvoiceId: stripeInvoice.id },
+        data: {
+          status: "open",
         },
-        data: { status: 'past_due' },
       });
-    }
+
+      // Mark subscription as past_due if not already.
+      if (stripeSubscriptionId) {
+        await tx.subscription.updateMany({
+          where: {
+            stripeSubscriptionId,
+            status: "active",
+          },
+          data: { status: "past_due" },
+        });
+      }
+    });
   }
 
-  private async handlePaymentMethodAttached(pm: Stripe.PaymentMethod): Promise<void> {
-    if (!pm.customer || typeof pm.customer !== 'string') return;
+  private async handlePaymentMethodAttached(
+    pm: Stripe.PaymentMethod,
+  ): Promise<void> {
+    if (!pm.customer || typeof pm.customer !== "string") return;
 
     const customer = await this.prisma.stripeCustomer.findFirst({
       where: { stripeCustomerId: pm.customer },
@@ -1461,7 +1724,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
       create: {
         tenantId: customer.tenantId,
         stripePaymentMethodId: pm.id,
-        type: pm.type === 'card' ? 'card' : 'bank_account',
+        type: pm.type === "card" ? "card" : "bank_account",
         isDefault: false,
         lastFour: pm.card?.last4 ?? pm.us_bank_account?.last4,
         brand: pm.card?.brand,
@@ -1472,13 +1735,17 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     });
   }
 
-  private async handlePaymentMethodDetached(pm: Stripe.PaymentMethod): Promise<void> {
+  private async handlePaymentMethodDetached(
+    pm: Stripe.PaymentMethod,
+  ): Promise<void> {
     await this.prisma.paymentMethod.deleteMany({
       where: { stripePaymentMethodId: pm.id },
     });
   }
 
-  private async handleTrialWillEnd(stripeSub: Stripe.Subscription): Promise<void> {
+  private async handleTrialWillEnd(
+    stripeSub: Stripe.Subscription,
+  ): Promise<void> {
     const trialEndDate = stripeSub.trial_end
       ? new Date(stripeSub.trial_end * 1000).toISOString()
       : new Date().toISOString();
@@ -1490,7 +1757,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
 
     if (!customer) {
       this.logger.warn({
-        message: 'handleTrialWillEnd: no local customer found',
+        message: "handleTrialWillEnd: no local customer found",
         stripeSubscriptionId: stripeSub.id,
         stripeCustomerId: String(stripeSub.customer),
       });
@@ -1498,14 +1765,14 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     }
 
     // Look up the plan name from the first subscription item
-    const priceId = stripeSub.items.data[0]?.price.id ?? '';
+    const priceId = stripeSub.items.data[0]?.price.id ?? "";
     const plan = DEFAULT_PLANS.find(
       (p) =>
         p.pricing.monthly.stripePriceId === priceId ||
         p.pricing.quarterly.stripePriceId === priceId ||
         p.pricing.annual.stripePriceId === priceId,
     );
-    const planName = plan?.name ?? 'your current plan';
+    const planName = plan?.name ?? "your current plan";
 
     if (this.notificationService) {
       await this.notificationService.sendTrialEndingEmail({
@@ -1517,7 +1784,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     } else {
       // Fallback: structured log so downstream observability can pick it up
       this.logger.info({
-        event: 'trial.will_end',
+        event: "trial.will_end",
         tenantId: customer.tenantId,
         email: customer.email,
         trialEndDate,

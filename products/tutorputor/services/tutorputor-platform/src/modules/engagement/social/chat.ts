@@ -92,7 +92,11 @@ export class ChatServiceImpl implements ChatService {
       );
     }
 
-    if (args.type !== "direct" && !args.studyGroupId && !args.tutoringSessionId) {
+    if (
+      args.type !== "direct" &&
+      !args.studyGroupId &&
+      !args.tutoringSessionId
+    ) {
       throw new Error(
         "Only direct, study-group, and tutoring chat room creation is currently supported",
       );
@@ -239,7 +243,7 @@ export class ChatServiceImpl implements ChatService {
     });
 
     // Filter rooms where user is a participant
-    const userRooms = allRooms.filter((room: any) => {
+    const userRooms = allRooms.filter((room: Record<string, unknown>) => {
       const participants: string[] = JSON.parse(room.participants);
       return participants.includes(args.userId);
     });
@@ -249,7 +253,9 @@ export class ChatServiceImpl implements ChatService {
     const paginatedRooms = userRooms.slice(offset, offset + limit);
 
     return {
-      items: paginatedRooms.map((r: any) => this.mapRoomFromDb(r)),
+      items: paginatedRooms.map((r: Record<string, unknown>) =>
+        this.mapRoomFromDb(r),
+      ),
       totalCount: userRooms.length,
       total: userRooms.length,
       hasMore: offset + paginatedRooms.length < userRooms.length,
@@ -341,7 +347,7 @@ export class ChatServiceImpl implements ChatService {
     await this.requireRoom(args.tenantId, args.roomId, args.userId);
 
     const limit = args.limit ?? 50;
-    const where: any = {
+    const where: Record<string, unknown> = {
       roomId: args.roomId,
       status: { not: "deleted" },
     };
@@ -388,7 +394,9 @@ export class ChatServiceImpl implements ChatService {
     }
 
     return {
-      messages: resultMessages.map((m: any) => this.mapMessageFromDb(m)),
+      messages: resultMessages.map((m: Record<string, unknown>) =>
+        this.mapMessageFromDb(m),
+      ),
       hasMore,
     };
   }
@@ -548,7 +556,10 @@ export class ChatServiceImpl implements ChatService {
     tenantId: TenantId,
     messageId: string,
     userId?: UserId,
-  ): Promise<{ message: any; room: any }> {
+  ): Promise<{
+    message: Record<string, unknown>;
+    room: Record<string, unknown>;
+  }> {
     const message = await this.prisma.chatMessage.findUnique({
       where: { id: messageId },
     });
@@ -702,7 +713,7 @@ export class ChatServiceImpl implements ChatService {
     return map[type] ?? "text";
   }
 
-  private mapRoomFromDb(room: any): ChatRoom {
+  private mapRoomFromDb(room: Record<string, unknown>): ChatRoom {
     return {
       id: room.id,
       tenantId: room.tenantId,
@@ -722,7 +733,7 @@ export class ChatServiceImpl implements ChatService {
     };
   }
 
-  private mapMessageFromDb(message: any): ChatMessage {
+  private mapMessageFromDb(message: Record<string, unknown>): ChatMessage {
     return {
       id: message.id,
       roomId: message.roomId,

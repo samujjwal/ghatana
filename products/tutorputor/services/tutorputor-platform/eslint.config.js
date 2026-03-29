@@ -31,6 +31,7 @@ export default [
     },
     rules: {
       "@typescript-eslint/consistent-type-imports": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -39,6 +40,7 @@ export default [
           varsIgnorePattern: "^_",
         },
       ],
+      "no-console": ["error", { allow: ["warn", "error"] }],
     },
   },
 ];

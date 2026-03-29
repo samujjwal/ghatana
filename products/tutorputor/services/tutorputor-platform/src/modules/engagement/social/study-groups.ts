@@ -169,7 +169,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     ]);
 
     return {
-      items: items.map((g: any) => this.mapGroupFromDb(g)),
+      items: items.map((g: Record<string, unknown>) => this.mapGroupFromDb(g)),
       totalCount: total,
       total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
@@ -412,7 +412,9 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     ]);
 
     return {
-      items: items.map((r: any) => this.mapJoinRequestFromDb(r)),
+      items: items.map((r: Record<string, unknown>) =>
+        this.mapJoinRequestFromDb(r),
+      ),
       totalCount: total,
       total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
@@ -518,7 +520,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     ]);
 
     return {
-      items: items.map((m: any) => this.mapMemberFromDb(m)),
+      items: items.map((m: Record<string, unknown>) => this.mapMemberFromDb(m)),
       totalCount: total,
       total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
@@ -700,7 +702,9 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     ]);
 
     return {
-      items: items.map((s: any) => this.mapSessionFromDb(s)),
+      items: items.map((s: Record<string, unknown>) =>
+        this.mapSessionFromDb(s),
+      ),
       totalCount: total,
       total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
@@ -1133,7 +1137,9 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     };
   }
 
-  private mapJoinRequestFromDb(request: Record<string, any>): StudyGroupJoinRequest {
+  private mapJoinRequestFromDb(
+    request: Record<string, any>,
+  ): StudyGroupJoinRequest {
     return {
       id: request.id,
       groupId: request.groupId,
