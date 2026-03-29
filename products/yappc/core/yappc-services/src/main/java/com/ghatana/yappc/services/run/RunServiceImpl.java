@@ -2,6 +2,7 @@ package com.ghatana.yappc.services.run;
 
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.run.*;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -60,16 +61,20 @@ public class RunServiceImpl implements RunService {
                                     "environment", spec.environment()))
                             .build();
                     
-                    metrics.recordTimer("yappc.run.execute", duration,
-                        Map.of("environment", spec.environment(), "status", status.name()));
+                    Map<String, String> tags = Map.of("environment", spec.environment(), "status", status.name());
+                    metrics.recordTimer("yappc.run.execute", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.run.execute", tags);
                     
-                    return auditLogger.log(createAuditEvent("run.execute", spec, result))
+                    return auditLogger.log(ServiceObservability.auditEvent("run.execute", spec, result))
                             .map(v -> result);
                 })
                 .whenException(e -> {
                     log.error("Run execution failed", e);
-                    metrics.incrementCounter("yappc.run.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.run.execute",
+                        e,
+                        Map.of("environment", spec.environment()));
                 });
     }
     
@@ -80,18 +85,22 @@ public class RunServiceImpl implements RunService {
         return performRollback(deploymentId, targetVersion)
                 .then(result -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.run.rollback", duration,
-                        Map.of("deployment", deploymentId));
+                    Map<String, String> tags = Map.of("deployment", deploymentId);
+                    metrics.recordTimer("yappc.run.rollback", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.run.rollback", tags);
                     
-                    return auditLogger.log(createAuditEvent("run.rollback", 
+                    return auditLogger.log(ServiceObservability.auditEvent("run.rollback",
                             Map.of("deploymentId", deploymentId, "targetVersion", targetVersion), 
                             result))
                             .map(v -> result);
                 })
                 .whenException(e -> {
                     log.error("Rollback failed", e);
-                    metrics.incrementCounter("yappc.run.rollback.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.run.rollback",
+                        e,
+                        Map.of("deployment", deploymentId));
                 });
     }
     
@@ -102,18 +111,22 @@ public class RunServiceImpl implements RunService {
         return performPromotion(deploymentId, targetEnvironment)
                 .then(result -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.run.promote", duration,
-                        Map.of("deployment", deploymentId, "target", targetEnvironment));
+                    Map<String, String> tags = Map.of("deployment", deploymentId, "target", targetEnvironment);
+                    metrics.recordTimer("yappc.run.promote", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.run.promote", tags);
                     
-                    return auditLogger.log(createAuditEvent("run.promote",
+                    return auditLogger.log(ServiceObservability.auditEvent("run.promote",
                             Map.of("deploymentId", deploymentId, "targetEnvironment", targetEnvironment),
                             result))
                             .map(v -> result);
                 })
                 .whenException(e -> {
                     log.error("Promotion failed", e);
-                    metrics.incrementCounter("yappc.run.promote.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.run.promote",
+                        e,
+                        Map.of("deployment", deploymentId, "target", targetEnvironment));
                 });
     }
     
@@ -229,12 +242,4 @@ public class RunServiceImpl implements RunService {
         }
     }
     
-    private Map<String, Object> createAuditEvent(String action, Object input, Object output) {
-        return Map.of(
-            "action", action,
-            "timestamp", Instant.now().toEpochMilli(),
-            "input", input.toString(),
-            "output", output.toString()
-        );
-    }
 }

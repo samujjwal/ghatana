@@ -27,6 +27,31 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 class ValidationServiceTest extends EventloopTestBase {
+
+    @Test
+    void shouldNotThrowWhenDomainModelMissing() {
+        PolicyEngine policyEngine = mock(PolicyEngine.class);
+        AuditLogger auditLogger = mock(AuditLogger.class);
+        MetricsCollector metrics = mock(MetricsCollector.class);
+
+        when(auditLogger.log(any(Map.class)))
+                .thenReturn(Promise.complete());
+
+        ValidationService service = new ValidationServiceImpl(
+                policyEngine, auditLogger, metrics);
+
+        ShapeSpec spec = ShapeSpec.builder()
+                .id("shape-null-model")
+                .intentRef("intent-123")
+                .domainModel(null)
+                .build();
+
+        LifecycleValidationResult result = runPromise(() -> service.validate(spec));
+
+        assertNotNull(result);
+        assertFalse(result.passed());
+        assertTrue(result.issues().stream().anyMatch(issue -> issue.id().equals("schema-001")));
+    }
     
     @Test
     void shouldValidateValidShapeSpec() {

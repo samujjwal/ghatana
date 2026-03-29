@@ -1,5 +1,5 @@
 /**
- * Config submodule - Re-export from @ghatana/yappc-config
+ * Config submodule - Re-export from consolidated @yappc/config
  */
 
-export * from '@ghatana/yappc-config';
+export * from '@yappc/config';

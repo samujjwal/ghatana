@@ -5,13 +5,13 @@ import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.ai.StructuredOutputParser;
 import com.ghatana.yappc.domain.intent.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -46,16 +46,20 @@ public class IntentServiceImpl implements IntentService {
         return parseIntentWithAI(input)
                 .then(spec -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.intent.capture", duration, 
-                        Map.of("tenant", input.tenantId() != null ? input.tenantId() : "unknown"));
+                    Map<String, String> tags = ServiceObservability.tenantTag(input.tenantId());
+                    metrics.recordTimer("yappc.intent.capture", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.intent.capture", tags);
                     
-                    return auditLogger.log(createAuditEvent("intent.capture", input, spec))
+                    return auditLogger.log(ServiceObservability.auditEvent("intent.capture", input, spec))
                             .map(v -> spec);
                 })
                 .whenException(e -> {
                     log.error("Failed to capture intent", e);
-                    metrics.incrementCounter("yappc.intent.capture.error", 
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.intent.capture",
+                        e,
+                        ServiceObservability.tenantTag(input.tenantId()));
                 });
     }
     
@@ -66,16 +70,20 @@ public class IntentServiceImpl implements IntentService {
         return analyzeIntentWithAI(spec)
                 .then(analysis -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.intent.analyze", duration,
-                        Map.of("tenant", spec.tenantId() != null ? spec.tenantId() : "unknown"));
+                    Map<String, String> tags = ServiceObservability.tenantTag(spec.tenantId());
+                    metrics.recordTimer("yappc.intent.analyze", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.intent.analyze", tags);
                     
-                    return auditLogger.log(createAuditEvent("intent.analyze", spec, analysis))
+                    return auditLogger.log(ServiceObservability.auditEvent("intent.analyze", spec, analysis))
                             .map(v -> analysis);
                 })
                 .whenException(e -> {
                     log.error("Failed to analyze intent", e);
-                    metrics.incrementCounter("yappc.intent.analyze.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.intent.analyze",
+                        e,
+                        ServiceObservability.tenantTag(spec.tenantId()));
                 });
     }
     
@@ -152,12 +160,4 @@ public class IntentServiceImpl implements IntentService {
         return StructuredOutputParser.parseIntentAnalysis(result.text(), spec.id());
     }
     
-    private Map<String, Object> createAuditEvent(String action, Object input, Object output) {
-        return Map.of(
-            "action", action,
-            "timestamp", Instant.now().toEpochMilli(),
-            "input", input.toString(),
-            "output", output.toString()
-        );
-    }
 }

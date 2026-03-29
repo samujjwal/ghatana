@@ -3,6 +3,9 @@ package com.ghatana.yappc.services.validate;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.yappc.common.ServiceObservability;
+import com.ghatana.yappc.domain.shape.DomainModel;
+import com.ghatana.yappc.domain.shape.EntitySpec;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.validate.*;
 import io.activej.promise.Promise;
@@ -12,8 +15,10 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @doc.type class
@@ -45,22 +50,29 @@ public class ValidationServiceImpl implements ValidationService {
     
     @Override
     public Promise<LifecycleValidationResult> validate(ShapeSpec spec, ValidationConfig config) {
+        Objects.requireNonNull(spec, "spec must not be null");
+        ValidationConfig effectiveConfig = config == null ? ValidationConfig.defaultConfig() : config;
         long startTime = System.currentTimeMillis();
         
-        return runValidators(spec, config)
+        return runValidators(spec, effectiveConfig)
                 .then(result -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.validate.execute", duration,
-                        Map.of("tenant", spec.tenantId() != null ? spec.tenantId() : "unknown",
-                               "passed", String.valueOf(result.passed())));
+                    Map<String, String> tags = Map.of(
+                        "tenant", spec.tenantId() != null ? spec.tenantId() : "unknown",
+                        "passed", String.valueOf(result.passed()));
+                    metrics.recordTimer("yappc.validate.execute", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.validate.execute", tags);
                     
-                    return auditLogger.log(createAuditEvent("validate.execute", spec, result))
+                    return auditLogger.log(ServiceObservability.auditEvent("validate.execute", spec, result))
                             .map(v -> result);
                 })
                 .whenException(e -> {
                     log.error("Validation failed", e);
-                    metrics.incrementCounter("yappc.validate.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.validate.execute",
+                        e,
+                        ServiceObservability.tenantTag(spec.tenantId()));
                 });
     }
     
@@ -71,17 +83,23 @@ public class ValidationServiceImpl implements ValidationService {
         return runPolicyValidation(spec, policy)
                 .then(result -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.validate.policy", duration,
-                        Map.of("tenant", spec.tenantId() != null ? spec.tenantId() : "unknown",
-                               "policy", policy.id()));
+                    Map<String, String> tags = Map.of(
+                        "tenant", spec.tenantId() != null ? spec.tenantId() : "unknown",
+                        "policy", policy.id());
+                    metrics.recordTimer("yappc.validate.policy", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.validate.policy", tags);
                     
-                    return auditLogger.log(createAuditEvent("validate.policy", spec, result))
+                    return auditLogger.log(ServiceObservability.auditEvent("validate.policy", spec, result))
                             .map(v -> result);
                 })
                 .whenException(e -> {
                     log.error("Policy validation failed", e);
-                    metrics.incrementCounter("yappc.validate.policy.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.validate.policy",
+                        e,
+                        Map.of("tenant", spec.tenantId() != null ? spec.tenantId() : "unknown",
+                               "policy", policy.id()));
                 });
     }
     
@@ -158,9 +176,10 @@ public class ValidationServiceImpl implements ValidationService {
     
     private Promise<List<ValidationIssue>> validateSchema(ShapeSpec spec) {
         List<ValidationIssue> issues = new ArrayList<>();
+        DomainModel model = spec.domainModel();
         
         // Validate domain model structure
-        if (spec.domainModel() == null || spec.domainModel().entities().isEmpty()) {
+        if (model == null || entities(model).isEmpty()) {
             issues.add(ValidationIssue.builder()
                     .id("schema-001")
                     .severity("error")
@@ -170,10 +189,11 @@ public class ValidationServiceImpl implements ValidationService {
                     .suggestions(List.of("Add at least one entity to the domain model"))
                     .blocking(true)
                     .build());
+            return Promise.of(issues);
         }
         
         // Validate entity fields
-        spec.domainModel().entities().forEach(entity -> {
+        entities(model).forEach(entity -> {
             if (entity.fields().isEmpty()) {
                 issues.add(ValidationIssue.builder()
                         .id("schema-002")
@@ -194,7 +214,7 @@ public class ValidationServiceImpl implements ValidationService {
         List<ValidationIssue> issues = new ArrayList<>();
         
         // Check for authentication in workflows
-        boolean hasAuthWorkflow = spec.workflows().stream()
+        boolean hasAuthWorkflow = workflows(spec).stream()
                 .anyMatch(w -> w.name().toLowerCase().contains("auth") || 
                               w.name().toLowerCase().contains("login"));
         
@@ -215,12 +235,16 @@ public class ValidationServiceImpl implements ValidationService {
     
     private Promise<List<ValidationIssue>> validateConsistency(ShapeSpec spec) {
         List<ValidationIssue> issues = new ArrayList<>();
+        DomainModel model = spec.domainModel();
+        if (model == null) {
+            return Promise.of(issues);
+        }
         
         // Validate relationship consistency
-        spec.domainModel().relationships().forEach(rel -> {
-            boolean fromExists = spec.domainModel().entities().stream()
+        model.relationships().forEach(rel -> {
+            boolean fromExists = entities(model).stream()
                     .anyMatch(e -> e.name().equals(rel.fromEntity()));
-            boolean toExists = spec.domainModel().entities().stream()
+            boolean toExists = entities(model).stream()
                     .anyMatch(e -> e.name().equals(rel.toEntity()));
             
             if (!fromExists || !toExists) {
@@ -243,7 +267,7 @@ public class ValidationServiceImpl implements ValidationService {
         List<ValidationIssue> issues = new ArrayList<>();
         
         // Check for reasonable entity count
-        int entityCount = spec.domainModel().entities().size();
+        int entityCount = spec.domainModel() == null ? 0 : entities(spec.domainModel()).size();
         if (entityCount > 50) {
             issues.add(ValidationIssue.builder()
                     .id("feasibility-001")
@@ -258,13 +282,12 @@ public class ValidationServiceImpl implements ValidationService {
         
         return Promise.of(issues);
     }
-    
-    private Map<String, Object> createAuditEvent(String action, Object input, Object output) {
-        return Map.of(
-            "action", action,
-            "timestamp", Instant.now().toEpochMilli(),
-            "input", input.toString(),
-            "output", output.toString()
-        );
+
+    private static List<EntitySpec> entities(DomainModel model) {
+        return model.entities() == null ? Collections.emptyList() : model.entities();
+    }
+
+    private static List<com.ghatana.yappc.domain.shape.WorkflowSpec> workflows(ShapeSpec spec) {
+        return spec.workflows() == null ? Collections.emptyList() : spec.workflows();
     }
 }

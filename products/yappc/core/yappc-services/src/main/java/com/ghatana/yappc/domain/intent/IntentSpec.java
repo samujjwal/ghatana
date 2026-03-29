@@ -3,6 +3,7 @@ package com.ghatana.yappc.domain.intent;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @doc.type record
@@ -21,8 +22,30 @@ public record IntentSpec(
     Instant createdAt,
     String tenantId
 ) {
+    public IntentSpec {
+        if (isBlank(id)) {
+            throw new IllegalArgumentException("id must not be blank");
+        }
+        if (isBlank(productName)) {
+            throw new IllegalArgumentException("productName must not be blank");
+        }
+        if (isBlank(description)) {
+            throw new IllegalArgumentException("description must not be blank");
+        }
+
+        goals = goals == null ? List.of() : List.copyOf(goals);
+        personas = personas == null ? List.of() : List.copyOf(personas);
+        constraints = constraints == null ? List.of() : List.copyOf(constraints);
+        metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
+        createdAt = Objects.requireNonNullElseGet(createdAt, Instant::now);
+    }
+
     public static Builder builder() {
         return new Builder();
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
     
     public static class Builder {

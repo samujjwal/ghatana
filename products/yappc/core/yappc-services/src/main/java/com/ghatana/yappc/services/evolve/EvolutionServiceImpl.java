@@ -5,6 +5,7 @@ import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.domain.evolve.EvolutionTask;
 import com.ghatana.yappc.domain.intent.ConstraintSpec;
@@ -53,16 +54,20 @@ public class EvolutionServiceImpl implements EvolutionService {
         return proposeWithAI(insights, constraints)
                 .then(plan -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.evolve.propose", duration,
-                        Map.of("has_constraints", String.valueOf(constraints != null)));
+                    Map<String, String> tags = Map.of("has_constraints", String.valueOf(constraints != null));
+                    metrics.recordTimer("yappc.evolve.propose", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.evolve.propose", tags);
                     
-                    return auditLogger.log(createAuditEvent("evolve.propose", insights, plan))
+                    return auditLogger.log(ServiceObservability.auditEvent("evolve.propose", insights, plan))
                             .map(v -> plan);
                 })
                 .whenException(e -> {
                     log.error("Evolution planning failed", e);
-                    metrics.incrementCounter("yappc.evolve.propose.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.evolve.propose",
+                        e,
+                        Map.of("has_constraints", String.valueOf(constraints != null)));
                 });
     }
     
@@ -173,12 +178,4 @@ public class EvolutionServiceImpl implements EvolutionService {
         return "intent-" + UUID.randomUUID().toString();
     }
     
-    private Map<String, Object> createAuditEvent(String action, Object input, Object output) {
-        return Map.of(
-            "action", action,
-            "timestamp", Instant.now().toEpochMilli(),
-            "input", input.toString(),
-            "output", output.toString()
-        );
-    }
 }

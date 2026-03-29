@@ -17,6 +17,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -40,7 +41,7 @@ class ShapeServiceTest extends EventloopTestBase {
                         .modelUsed("gpt-4")
                         .build()));
         
-        when(auditLogger.log(any(Map.class)))
+        when(auditLogger.log(org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
                 .thenReturn(Promise.complete());
         
         ShapeService service = new ShapeServiceImpl(aiService, auditLogger, metrics);
@@ -65,7 +66,7 @@ class ShapeServiceTest extends EventloopTestBase {
         assertNotNull(result.domainModel());
         
         verify(aiService, times(1)).complete(any(CompletionRequest.class));
-        verify(auditLogger, times(1)).log(any(Map.class));
+        verify(auditLogger, times(1)).log(org.mockito.ArgumentMatchers.<Map<String, Object>>any());
     }
     
     @Test
@@ -81,7 +82,7 @@ class ShapeServiceTest extends EventloopTestBase {
                         .modelUsed("gpt-4")
                         .build()));
         
-        when(auditLogger.log(any(Map.class)))
+        when(auditLogger.log(org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
                 .thenReturn(Promise.complete());
         
         ShapeService service = new ShapeServiceImpl(aiService, auditLogger, metrics);
@@ -118,6 +119,7 @@ class ShapeServiceTest extends EventloopTestBase {
         IntentSpec intent = IntentSpec.builder()
                 .id("intent-123")
                 .productName("Test")
+                .description("Test intent description")
                 .build();
         
         // WHEN/THEN
@@ -128,6 +130,8 @@ class ShapeServiceTest extends EventloopTestBase {
             assertTrue(e.getMessage().contains("AI service unavailable"));
         }
         
-        verify(metrics, times(1)).incrementCounter(eq("yappc.shape.derive.error"), any(Map.class));
+        verify(metrics, times(1)).incrementCounter(
+                eq("yappc.shape.derive.error"),
+                org.mockito.ArgumentMatchers.<Map<String, String>>any());
     }
 }

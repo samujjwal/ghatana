@@ -5,6 +5,7 @@ import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.learn.*;
 import com.ghatana.yappc.domain.observe.Observation;
 import io.activej.promise.Promise;
@@ -51,16 +52,20 @@ public class LearningServiceImpl implements LearningService {
         return analyzeWithAI(observation, context)
                 .then(insights -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.learn.analyze", duration,
-                        Map.of("has_context", String.valueOf(context != null)));
+                    Map<String, String> tags = Map.of("has_context", String.valueOf(context != null));
+                    metrics.recordTimer("yappc.learn.analyze", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.learn.analyze", tags);
                     
-                    return auditLogger.log(createAuditEvent("learn.analyze", observation, insights))
+                    return auditLogger.log(ServiceObservability.auditEvent("learn.analyze", observation, insights))
                             .map(v -> insights);
                 })
                 .whenException(e -> {
                     log.error("Learning analysis failed", e);
-                    metrics.incrementCounter("yappc.learn.analyze.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.learn.analyze",
+                        e,
+                        Map.of("has_context", String.valueOf(context != null)));
                 });
     }
     
@@ -178,12 +183,4 @@ public class LearningServiceImpl implements LearningService {
         );
     }
     
-    private Map<String, Object> createAuditEvent(String action, Object input, Object output) {
-        return Map.of(
-            "action", action,
-            "timestamp", Instant.now().toEpochMilli(),
-            "input", input.toString(),
-            "output", output.toString()
-        );
-    }
 }

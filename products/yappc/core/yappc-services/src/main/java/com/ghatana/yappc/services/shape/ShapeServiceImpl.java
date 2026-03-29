@@ -6,13 +6,13 @@ import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.yappc.ai.StructuredOutputParser;
+import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.intent.IntentSpec;
 import com.ghatana.yappc.domain.shape.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -47,16 +47,20 @@ public class ShapeServiceImpl implements ShapeService {
         return deriveShapeWithAI(intent)
                 .then(spec -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.shape.derive", duration,
-                        Map.of("tenant", intent.tenantId() != null ? intent.tenantId() : "unknown"));
+                    Map<String, String> tags = ServiceObservability.tenantTag(intent.tenantId());
+                    metrics.recordTimer("yappc.shape.derive", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.shape.derive", tags);
                     
-                    return auditLogger.log(createAuditEvent("shape.derive", intent, spec))
+                    return auditLogger.log(ServiceObservability.auditEvent("shape.derive", intent, spec))
                             .map(v -> spec);
                 })
                 .whenException(e -> {
                     log.error("Failed to derive shape", e);
-                    metrics.incrementCounter("yappc.shape.derive.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.shape.derive",
+                        e,
+                        ServiceObservability.tenantTag(intent.tenantId()));
                 });
     }
     
@@ -67,16 +71,20 @@ public class ShapeServiceImpl implements ShapeService {
         return generateSystemModelWithAI(spec)
                 .then(model -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.shape.generateModel", duration,
-                        Map.of("tenant", spec.tenantId() != null ? spec.tenantId() : "unknown"));
+                    Map<String, String> tags = ServiceObservability.tenantTag(spec.tenantId());
+                    metrics.recordTimer("yappc.shape.generateModel", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.shape.generateModel", tags);
                     
-                    return auditLogger.log(createAuditEvent("shape.generateModel", spec, model))
+                    return auditLogger.log(ServiceObservability.auditEvent("shape.generateModel", spec, model))
                             .map(v -> model);
                 })
                 .whenException(e -> {
                     log.error("Failed to generate system model", e);
-                    metrics.incrementCounter("yappc.shape.generateModel.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.shape.generateModel",
+                        e,
+                        ServiceObservability.tenantTag(spec.tenantId()));
                 });
     }
     
@@ -270,12 +278,4 @@ public class ShapeServiceImpl implements ShapeService {
         );
     }
     
-    private Map<String, Object> createAuditEvent(String action, Object input, Object output) {
-        return Map.of(
-            "action", action,
-            "timestamp", Instant.now().toEpochMilli(),
-            "input", input.toString(),
-            "output", output.toString()
-        );
-    }
 }

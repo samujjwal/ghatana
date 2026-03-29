@@ -14,7 +14,7 @@ import {
   createAepClient,
   getGlobalAepClient,
   type AepClient,
-} from '@ghatana/yappc-aep-config';
+} from './index';
 
 // =============================================================================
 // EXAMPLE 1: Automatic Mode Detection (Recommended)
@@ -265,7 +265,7 @@ export async function handleAepErrors(): Promise<void> {
 // EXAMPLE 10: Testing
 // =============================================================================
 
-import { resetGlobalAepClient } from '@ghatana/yappc-aep-config';
+import { resetGlobalAepClient } from './index';
 
 export async function testWithAep(): Promise<void> {
   // Each test gets a fresh AEP client

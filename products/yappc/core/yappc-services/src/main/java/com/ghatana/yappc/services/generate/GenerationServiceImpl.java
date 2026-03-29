@@ -5,6 +5,7 @@ import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.generate.*;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -47,17 +48,20 @@ public class GenerationServiceImpl implements GenerationService {
         return generateArtifactsWithAI(spec)
                 .then(artifacts -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.generate.execute", duration,
-                        Map.of("tenant", spec.shapeSpec().tenantId() != null ? 
-                            spec.shapeSpec().tenantId() : "unknown"));
+                    Map<String, String> tags = ServiceObservability.tenantTag(spec.shapeSpec().tenantId());
+                    metrics.recordTimer("yappc.generate.execute", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.generate.execute", tags);
                     
-                    return auditLogger.log(createAuditEvent("generate.execute", spec, artifacts))
+                    return auditLogger.log(ServiceObservability.auditEvent("generate.execute", spec, artifacts))
                             .map(v -> artifacts);
                 })
                 .whenException(e -> {
                     log.error("Generation failed", e);
-                    metrics.incrementCounter("yappc.generate.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.generate.execute",
+                        e,
+                        ServiceObservability.tenantTag(spec.shapeSpec().tenantId()));
                 });
     }
     
@@ -70,17 +74,20 @@ public class GenerationServiceImpl implements GenerationService {
                     DiffResult diff = computeDiff(existing, newArtifacts);
                     
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.generate.diff", duration,
-                        Map.of("tenant", spec.shapeSpec().tenantId() != null ? 
-                            spec.shapeSpec().tenantId() : "unknown"));
+                    Map<String, String> tags = ServiceObservability.tenantTag(spec.shapeSpec().tenantId());
+                    metrics.recordTimer("yappc.generate.diff", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.generate.diff", tags);
                     
-                    return auditLogger.log(createAuditEvent("generate.diff", spec, diff))
+                    return auditLogger.log(ServiceObservability.auditEvent("generate.diff", spec, diff))
                             .map(v -> diff);
                 })
                 .whenException(e -> {
                     log.error("Diff generation failed", e);
-                    metrics.incrementCounter("yappc.generate.diff.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.generate.diff",
+                        e,
+                        ServiceObservability.tenantTag(spec.shapeSpec().tenantId()));
                 });
     }
     
@@ -295,12 +302,4 @@ public class GenerationServiceImpl implements GenerationService {
                 .build();
     }
     
-    private Map<String, Object> createAuditEvent(String action, Object input, Object output) {
-        return Map.of(
-            "action", action,
-            "timestamp", Instant.now().toEpochMilli(),
-            "input", input.toString(),
-            "output", output.toString()
-        );
-    }
 }

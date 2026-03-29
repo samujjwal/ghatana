@@ -1,9 +1,9 @@
 package com.ghatana.yappc.domain.shape;
 
-import com.ghatana.yappc.domain.intent.IntentSpec;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @doc.type record
@@ -22,8 +22,23 @@ public record ShapeSpec(
     Instant createdAt,
     String tenantId
 ) {
+    public ShapeSpec {
+        if (isBlank(id)) {
+            throw new IllegalArgumentException("id must not be blank");
+        }
+
+        workflows = workflows == null ? List.of() : List.copyOf(workflows);
+        integrations = integrations == null ? List.of() : List.copyOf(integrations);
+        metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
+        createdAt = Objects.requireNonNullElseGet(createdAt, Instant::now);
+    }
+
     public static Builder builder() {
         return new Builder();
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
     
     public static class Builder {

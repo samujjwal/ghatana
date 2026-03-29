@@ -29,17 +29,17 @@ const config: Linter.LegacyConfig = {
       {
         paths: [
           {
-            name: '@yappc/ui',
+            name: '@ghatana/yappc-ui',
             message:
               'Deprecated: use @yappc/ui instead. See LIBRARY_CONSOLIDATION_PLAN.md.',
           },
           {
-            name: '@yappc/canvas',
+            name: '@ghatana/yappc-canvas',
             message:
               'Deprecated: use @yappc/canvas instead. See LIBRARY_CONSOLIDATION_PLAN.md.',
           },
           {
-            name: '@yappc/ai',
+            name: '@ghatana/yappc-ai',
             message:
               'Deprecated: use @yappc/ai instead. See LIBRARY_CONSOLIDATION_PLAN.md.',
           },
@@ -51,16 +51,21 @@ const config: Linter.LegacyConfig = {
         ],
         patterns: [
           {
-            group: ['@yappc/ui/*'],
+            group: ['@ghatana/yappc-ui/*'],
             message: 'Deprecated: use @yappc/ui/* instead.',
           },
           {
-            group: ['@yappc/canvas/*'],
+            group: ['@ghatana/yappc-canvas/*'],
             message: 'Deprecated: use @yappc/canvas/* instead.',
           },
           {
-            group: ['@yappc/ai/*'],
+            group: ['@ghatana/yappc-ai/*'],
             message: 'Deprecated: use @yappc/ai/* instead.',
+          },
+          {
+            group: ['@ghatana/yappc-*'],
+            message:
+              'Deprecated namespace: migrate to @yappc/* equivalents per LIBRARY_CONSOLIDATION_PLAN.md.',
           },
         ],
       },

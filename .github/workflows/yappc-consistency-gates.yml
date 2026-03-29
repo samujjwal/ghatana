@@ -1,0 +1,70 @@
+name: YAPPC Consistency Gates
+
+on:
+    pull_request:
+        branches: [main, develop]
+        paths:
+            - "products/yappc/frontend/**"
+            - "products/yappc/core/yappc-services/**"
+            - ".github/workflows/yappc-consistency-gates.yml"
+    push:
+        branches: [main, develop]
+        paths:
+            - "products/yappc/frontend/**"
+            - "products/yappc/core/yappc-services/**"
+            - ".github/workflows/yappc-consistency-gates.yml"
+    workflow_dispatch:
+
+jobs:
+    frontend-consistency:
+        name: Frontend Consistency
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: products/yappc/frontend
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+
+            - name: Enable pnpm via corepack
+              run: |
+                  corepack enable
+                  corepack prepare pnpm@10.28.2 --activate
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Namespace consistency
+              run: pnpm check:namespaces
+
+            - name: Manifest namespace consistency
+              run: pnpm check:manifests
+
+            - name: Workspace dependency verification
+              run: pnpm check:workspace-deps
+
+            - name: Lint active code paths
+              run: pnpm lint
+
+    backend-consistency:
+        name: Backend Consistency
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "21"
+
+            - name: Verify yappc-services module
+              run: ./gradlew :products:yappc:core:yappc-services:test --no-daemon --console=plain

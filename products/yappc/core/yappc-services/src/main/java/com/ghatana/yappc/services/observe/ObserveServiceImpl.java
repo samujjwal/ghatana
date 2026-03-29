@@ -3,6 +3,7 @@ package com.ghatana.yappc.services.observe;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.products.yappc.domain.observe.Metric;
+import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.observe.LogEntry;
 import com.ghatana.yappc.domain.observe.Observation;
 import com.ghatana.yappc.domain.observe.TraceSpan;
@@ -44,16 +45,20 @@ public class ObserveServiceImpl implements ObserveService {
         return collectObservationData(run)
                 .then(observation -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.recordTimer("yappc.observe.collect", duration,
-                        Map.of("run_status", run.status().name()));
+                    Map<String, String> tags = Map.of("run_status", run.status().name());
+                    metrics.recordTimer("yappc.observe.collect", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.observe.collect", tags);
                     
-                    return auditLogger.log(createAuditEvent("observe.collect", run, observation))
+                    return auditLogger.log(ServiceObservability.auditEvent("observe.collect", run, observation))
                             .map(v -> observation);
                 })
                 .whenException(e -> {
                     log.error("Observation collection failed", e);
-                    metrics.incrementCounter("yappc.observe.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.observe.collect",
+                        e,
+                        Map.of("run_status", run.status().name()));
                 });
     }
     
@@ -62,12 +67,19 @@ public class ObserveServiceImpl implements ObserveService {
         return collect(run)
                 .then(observation -> {
                     consumer.accept(observation);
+                    ServiceObservability.incrementSuccess(
+                        metrics,
+                        "yappc.observe.stream",
+                        Map.of("run_status", run.status().name()));
                     return Promise.complete();
                 })
                 .whenException(e -> {
                     log.error("Observation streaming failed", e);
-                    metrics.incrementCounter("yappc.observe.stream.error",
-                        Map.of("error", e.getClass().getSimpleName()));
+                    ServiceObservability.incrementFailure(
+                        metrics,
+                        "yappc.observe.stream",
+                        e,
+                        Map.of("run_status", run.status().name()));
                 });
     }
     
@@ -158,12 +170,4 @@ public class ObserveServiceImpl implements ObserveService {
         return (double) successCount / run.taskResults().size() * 100.0;
     }
     
-    private Map<String, Object> createAuditEvent(String action, Object input, Object output) {
-        return Map.of(
-            "action", action,
-            "timestamp", Instant.now().toEpochMilli(),
-            "input", input.toString(),
-            "output", output.toString()
-        );
-    }
 }

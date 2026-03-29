@@ -37,6 +37,7 @@ class PhaseOperatorTest extends EventloopTestBase {
         IntentSpec expectedSpec = IntentSpec.builder()
                 .id("intent-123")
                 .productName("Test Product")
+                .description("Test product intent")
                 .goals(List.of())
                 .personas(List.of())
                 .constraints(List.of())
