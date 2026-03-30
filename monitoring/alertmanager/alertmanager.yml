@@ -108,6 +108,41 @@ route:
       repeat_interval: 4h
       continue: false
 
+    # ------------------------------------------------------------------
+    # 7. PHR and Finance critical alerts — immediate page (< 1 min)
+    # ------------------------------------------------------------------
+    - matchers:
+        - product =~ "phr|finance"
+        - severity = "critical"
+      receiver: phr-finance-critical
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 30m
+      continue: false
+
+    # ------------------------------------------------------------------
+    # 8. PHR and Finance warning alerts — batched Slack notification
+    # ------------------------------------------------------------------
+    - matchers:
+        - product =~ "phr|finance"
+        - severity = "warning"
+      receiver: phr-finance-warning
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 2h
+      continue: false
+
+    # ------------------------------------------------------------------
+    # 9. PHR and Finance catch-all
+    # ------------------------------------------------------------------
+    - matchers:
+        - product =~ "phr|finance"
+      receiver: phr-finance-warning
+      group_wait: 2m
+      group_interval: 10m
+      repeat_interval: 4h
+      continue: false
+
 # ---------------------------------------------------------------------------
 # Inhibition rules — suppress lower-severity alerts when critical fires
 # ---------------------------------------------------------------------------
@@ -128,6 +163,14 @@ inhibit_rules:
       - product = "aep"
     equal: ["alertname", "product"]
 
+  - source_matchers:
+      - severity = "critical"
+      - product =~ "phr|finance"
+    target_matchers:
+      - severity = "warning"
+      - product =~ "phr|finance"
+    equal: ["alertname", "product"]
+
 # ---------------------------------------------------------------------------
 # Receivers
 # ---------------------------------------------------------------------------
@@ -138,7 +181,7 @@ receivers:
       - channel: "#data-cloud-oncall"
         send_resolved: true
         color: '{{ if eq .Status "firing" }}#cc0000{{ else }}#36a64f{{ end }}'
-        title: '🔴 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — data-cloud'
+        title: "🔴 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — data-cloud"
         text: |
           *Alert:* {{ .CommonLabels.alertname }}
           *Severity:* {{ .CommonLabels.severity }}
@@ -154,12 +197,12 @@ receivers:
 
     pagerduty_configs:
       - routing_key_file: "/etc/alertmanager/pagerduty_integration_key"
-        description: '{{ .CommonLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        description: "{{ .CommonLabels.alertname }}: {{ .CommonAnnotations.summary }}"
         severity: critical
         details:
-          product: '{{ .CommonLabels.product }}'
-          alert_name: '{{ .CommonLabels.alertname }}'
-          description: '{{ .CommonAnnotations.description }}'
+          product: "{{ .CommonLabels.product }}"
+          alert_name: "{{ .CommonLabels.alertname }}"
+          description: "{{ .CommonAnnotations.description }}"
 
   # ---- Data-Cloud: warning (Slack alerts channel) ----
   - name: data-cloud-warning
@@ -167,7 +210,7 @@ receivers:
       - channel: "#data-cloud-alerts"
         send_resolved: true
         color: '{{ if eq .Status "firing" }}#ff9900{{ else }}#36a64f{{ end }}'
-        title: '⚠️ [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — data-cloud'
+        title: "⚠️ [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — data-cloud"
         text: |
           *Alert:* {{ .CommonLabels.alertname }}
           *Severity:* {{ .CommonLabels.severity }}
@@ -182,10 +225,11 @@ receivers:
     slack_configs:
       - channel: "#platform-alerts"
         send_resolved: true
-        title: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+        title: "[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}"
         text: |
           {{ range .Alerts }}
           *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
           {{ end }}
 
   # ---- AEP: critical (Slack oncall + PagerDuty) ----
@@ -194,7 +238,7 @@ receivers:
       - channel: "#aep-oncall"
         send_resolved: true
         color: '{{ if eq .Status "firing" }}#cc0000{{ else }}#36a64f{{ end }}'
-        title: '🔴 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — aep'
+        title: "🔴 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — aep"
         text: |
           *Alert:* {{ .CommonLabels.alertname }}
           *Severity:* {{ .CommonLabels.severity }}
@@ -210,12 +254,12 @@ receivers:
             url: "http://grafana.monitoring.svc.cluster.local:3000/d/aep-platform-001"
     pagerduty_configs:
       - routing_key_file: "/etc/alertmanager/pagerduty_integration_key"
-        description: '{{ .CommonLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        description: "{{ .CommonLabels.alertname }}: {{ .CommonAnnotations.summary }}"
         severity: critical
         details:
-          product: '{{ .CommonLabels.product }}'
-          alert_name: '{{ .CommonLabels.alertname }}'
-          description: '{{ .CommonAnnotations.description }}'
+          product: "{{ .CommonLabels.product }}"
+          alert_name: "{{ .CommonLabels.alertname }}"
+          description: "{{ .CommonAnnotations.description }}"
 
   # ---- AEP: warning (Slack alerts channel) ----
   - name: aep-warning
@@ -223,13 +267,55 @@ receivers:
       - channel: "#aep-alerts"
         send_resolved: true
         color: '{{ if eq .Status "firing" }}#ff9900{{ else }}#36a64f{{ end }}'
-        title: '⚠️ [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — aep'
+        title: "⚠️ [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — aep"
         text: |
           *Alert:* {{ .CommonLabels.alertname }}
           *Severity:* {{ .CommonLabels.severity }}
           *Product:* {{ .CommonLabels.product }}
           {{ range .Alerts }}
           *Description:* {{ .Annotations.description }}
+          *Started:* {{ .StartsAt | since }}
+          {{ end }}
+
+  # ---- PHR + Finance: critical (Slack oncall + PagerDuty) ----
+  - name: phr-finance-critical
+    slack_configs:
+      - channel: "#phr-finance-oncall"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}#cc0000{{ else }}#36a64f{{ end }}'
+        title: "🔴 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — {{ .CommonLabels.product }}"
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Product:* {{ .CommonLabels.product }}
+          {{ range .Alerts }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          *Started:* {{ .StartsAt | since }}
+          {{ end }}
+    pagerduty_configs:
+      - routing_key_file: "/etc/alertmanager/pagerduty_integration_key"
+        description: "{{ .CommonLabels.alertname }}: {{ .CommonAnnotations.summary }}"
+        severity: critical
+        details:
+          product: "{{ .CommonLabels.product }}"
+          alert_name: "{{ .CommonLabels.alertname }}"
+          description: "{{ .CommonAnnotations.description }}"
+
+  # ---- PHR + Finance: warning (Slack alerts channel) ----
+  - name: phr-finance-warning
+    slack_configs:
+      - channel: "#phr-finance-alerts"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}#ff9900{{ else }}#36a64f{{ end }}'
+        title: "⚠️ [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — {{ .CommonLabels.product }}"
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Product:* {{ .CommonLabels.product }}
+          {{ range .Alerts }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
           *Started:* {{ .StartsAt | since }}
           {{ end }}
 

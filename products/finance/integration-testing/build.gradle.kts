@@ -5,6 +5,7 @@
 
 plugins {
     id("java-library")
+    alias(libs.plugins.openapi.generator)
 }
 
 dependencies {
@@ -18,6 +19,7 @@ dependencies {
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:plugin"))
     implementation(project(":platform:java:audit"))
+    implementation(project(":platform:java:billing"))
 
     // Kernel modules
 
@@ -58,4 +60,37 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testImplementation(libs.activej.test)
+    testImplementation(libs.h2)
+    testImplementation(libs.jmh.core)
+    testAnnotationProcessor(libs.jmh.generator.annprocess)
+}
+
+val financeOpenApiSpec = rootProject.layout.projectDirectory.file("products/finance/docs/openapi.yaml").asFile
+
+tasks.register<org.openapitools.generator.gradle.plugin.tasks.ValidateTask>("validateFinanceSpec") {
+    group = "contracts"
+    description = "Validates products/finance/docs/openapi.yaml"
+    inputSpec.set(financeOpenApiSpec.absolutePath)
+    recommend.set(true)
+}
+
+tasks.named("check") {
+    dependsOn("validateFinanceSpec")
+}
+
+tasks.register<JavaExec>("benchmarkHealthcareBillingScenario") {
+    group = "verification"
+    description = "Runs the cross-domain PHR-to-Finance billing JMH benchmark"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("org.openjdk.jmh.Main")
+    args(
+        "com.ghatana.finance.integration.performance.HealthcareBillingToLedgerScenarioBenchmark",
+        "-wi", "1",
+        "-i", "2",
+        "-f", "1",
+        "-tu", "ms",
+        "-rf", "json",
+        "-rff", layout.buildDirectory.file("reports/benchmarks/healthcare-billing-ledger-benchmark.json").get().asFile.absolutePath
+    )
 }

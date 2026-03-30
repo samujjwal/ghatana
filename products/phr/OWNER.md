@@ -4,27 +4,35 @@
 **Slack:** #product-phr  
 **On-call:** PHR on-call rotation  
 **Architecture lead:** PHR Tech Lead  
-**Boundary audit score:** 4/10 (2026-03-22) — planning phase, no production code
+**Boundary audit score:** 8/10 (2026-03-29) — core Java implementation active, integration hardening in progress
 
 ## Responsibility
 
 PHR Nepal is a **personal health records application** for the Nepal market, providing:
+
 - Secure, interoperable medical record management
 - Prescription and lab result access
 - Appointment history tracking
 - Healthcare provider integration
 
-**Domain boundary:** PHR owns the health records domain for Nepal. It should consume `platform:java:security` for data encryption, `platform:java:database` for persistence, and `platform:java:kernel-capabilities` for core domain abstractions. No other products should depend on PHR's internal modules.
+**Domain boundary:** PHR owns the health records domain for Nepal. It consumes `platform:java:security` for auth/privacy controls, `platform:java:database` for persistence, `platform:java:kernel` for runtime abstractions, and `platform:java:billing` for shared billing contracts. No other products should depend on PHR's internal modules.
 
 ## Architecture
 
-**Current status:** Planning phase. No production code exists yet. All current content consists of research, requirements, and feature documentation.
+**Current status:** Alpha — core production-oriented Java services are implemented and wired through `PhrKernelModule`.
+
+Implemented surface includes:
+
+- Kernel-integrated PHR services (clinical, administrative, and emergency)
+- Security/privacy managers with consent delegation
+- Immutable audit trail and telemetry hooks
+- FHIR R4 transformation and validation support
+- Healthcare billing bridge via shared `LedgerPostingService` contract
 
 Reference [the product README](README.md) for status details.
 
 ## Known Issues
 
-- `OWNER.md` was missing as of the 2026-03-22 boundary audit (score 4/10, accountability gap)
-- No production implementation exists — product must leave planning phase to receive meaningful audit score
-- Stack (`TBD`) should be committed before implementation begins
-- When implementation begins: no duplication with `shared-services/user-profile-service` for user identity
+- Documentation drift may still exist in older planning docs under `docs/`.
+- Frontend and mobile delivery remain planned and are not part of the current Java backend implementation.
+- No duplication with `shared-services/user-profile-service` for user identity.

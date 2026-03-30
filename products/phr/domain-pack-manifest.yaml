@@ -125,9 +125,11 @@ pack:
     type: domain-pack
     dependencies:
       - platform:java:kernel
-      - platform:java:kernel:modules:authentication
-      - platform:java:kernel:modules:audit
-      - platform:java:kernel:modules:event-store
+      - platform:java:security
+      - platform:java:audit
+      - platform:java:observability
+      - platform:java:database
+      - platform:java:workflow
 
   # Metadata
   metadata:

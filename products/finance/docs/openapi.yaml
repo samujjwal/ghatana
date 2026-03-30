@@ -1,0 +1,78 @@
+openapi: 3.0.3
+info:
+  title: Ghatana Finance API
+  version: 1.0.0
+  description: Contract-first API surface for finance ledger posting and reconciliation checks.
+servers:
+  - url: /api/v1
+paths:
+  /finance/ledger/postings:
+    post:
+      operationId: postLedgerTransaction
+      summary: Post a billing transaction into finance ledger
+      tags: [Ledger]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LedgerPostingRequest"
+      responses:
+        "201":
+          description: Ledger entry created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LedgerPostingResponse"
+  /finance/ledger/postings/{entryId}:
+    get:
+      operationId: getLedgerPosting
+      summary: Fetch posting status for a ledger entry
+      tags: [Ledger]
+      parameters:
+        - in: path
+          name: entryId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Posting status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LedgerPostingResponse"
+components:
+  schemas:
+    LedgerPostingRequest:
+      type: object
+      required:
+        [transactionId, debitAccount, creditAccount, amount, currency, tenantId]
+      properties:
+        transactionId:
+          type: string
+        debitAccount:
+          type: string
+        creditAccount:
+          type: string
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+        tenantId:
+          type: string
+        description:
+          type: string
+    LedgerPostingResponse:
+      type: object
+      required: [entryId, status]
+      properties:
+        entryId:
+          type: string
+        status:
+          type: string
+          enum: [POSTED, REVERSED, PENDING, FAILED, NOT_FOUND]
+        postedAt:
+          type: string
+          format: date-time

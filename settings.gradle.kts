@@ -54,6 +54,7 @@ include(":platform:java:agent-core")
 include(":platform:java:connectors")
 include(":platform:java:audit")
 include(":platform:java:kernel")
+include(":platform:java:kernel-persistence")    // Durable adapters: PostgresAuditTrailPersistence, RedisKernelConfigResolver, JdbcModuleRegistry
 include(":platform:java:audio-video")   // STT, TTS, Vision engine library (com.ghatana.media.*)
 // kernel-capabilities DELETED (zero consumers, capabilities merged into kernel/observability — Sprint 5, 2026-03-25)
 include(":platform:java:distributed-cache")    // KRQ-05: Generic Redis-backed distributed cache abstraction
@@ -63,6 +64,7 @@ include(":platform:java:tool-runtime")          // Phase 3 — Tool sandboxing, 
 include(":platform:java:policy-as-code")        // Phase 4 — OPA integration, policy-as-code engine, risk scoring
 include(":platform:java:security-analytics")    // Phase 5 — Egress monitoring, prompt-injection detection
 include(":platform:java:incident-response")     // Phase 6 — Kill-switch, taxonomy, graceful degradation
+include(":platform:java:billing")               // Shared billing contracts: BillingTransaction, LedgerPostingService, HealthcareBillingExtension
 
 // =============================================================================
 // Product: AEP — Autonomous Event Processing
@@ -286,6 +288,12 @@ include(":products:finance:integration-testing")
 
 // Finance Client Onboarding with AML (migrated from app-platform)
 include(":products:finance:client-onboarding")
+
+// =============================================================================
+// Cross-Product Integration Tests
+// =============================================================================
+
+include(":integration-tests:phr-finance-integration")
 
 // =============================================================================
 // Shared Services — Cross-product microservices

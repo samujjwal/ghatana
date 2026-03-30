@@ -5,6 +5,7 @@
 
 plugins {
     id("java-library")
+    alias(libs.plugins.openapi.generator)
 }
 
 group = "com.ghatana.products"
@@ -35,6 +36,9 @@ dependencies {
     api(project(":platform:java:security"))
     api(project(":platform:java:database"))
     api(project(":platform:java:audit"))
+
+    // Shared billing contracts — integrates PHR encounter closing with Finance ledger
+    api(project(":platform:java:billing"))
 
     // Distributed cache (ISSUE-X02 / KRQ-05)
     implementation(project(":platform:java:distributed-cache"))
@@ -68,6 +72,38 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(libs.jmh.core)
+    testAnnotationProcessor(libs.jmh.generator.annprocess)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+val phrOpenApiSpec = file("docs/openapi.yaml")
+
+tasks.register<org.openapitools.generator.gradle.plugin.tasks.ValidateTask>("validatePhrSpec") {
+    group = "contracts"
+    description = "Validates products/phr/docs/openapi.yaml"
+    inputSpec.set(phrOpenApiSpec.absolutePath)
+    recommend.set(true)
+}
+
+tasks.named("check") {
+    dependsOn("validatePhrSpec")
+}
+
+tasks.register<JavaExec>("benchmarkBillingFlow") {
+    group = "verification"
+    description = "Runs the PHR billing critical-path JMH benchmark"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("org.openjdk.jmh.Main")
+    args(
+        "com.ghatana.phr.kernel.service.BillingServiceBenchmark",
+        "-wi", "1",
+        "-i", "2",
+        "-f", "1",
+        "-tu", "ms",
+        "-rf", "json",
+        "-rff", layout.buildDirectory.file("reports/benchmarks/phr-billing-benchmark.json").get().asFile.absolutePath
+    )
 }

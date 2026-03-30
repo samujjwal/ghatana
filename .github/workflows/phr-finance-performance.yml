@@ -1,0 +1,92 @@
+name: PHR Finance Performance
+
+on:
+    pull_request:
+        branches: [main]
+        paths:
+            - "products/phr/**"
+            - "products/finance/**"
+            - "platform/java/billing/**"
+            - "platform/java/kernel/**"
+            - ".github/workflows/phr-finance-performance.yml"
+    workflow_dispatch:
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    benchmarks:
+        name: Run PHR Finance Benchmarks
+        runs-on: ubuntu-latest
+        env:
+            PHR_BENCHMARK_MAX_MS: "750"
+            FINANCE_BENCHMARK_MAX_MS: "1200"
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up JDK 21
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "21"
+                  cache: gradle
+
+            - name: Execute PHR Billing benchmark
+              run: ./gradlew :products:phr:benchmarkBillingFlow --no-daemon --stacktrace
+
+            - name: Execute Finance integration benchmark
+              run: ./gradlew :products:finance:integration-testing:benchmarkHealthcareBillingScenario --no-daemon --stacktrace
+
+            - name: Enforce benchmark thresholds
+              run: |
+                  python3 - <<'PY'
+                  import json
+                  from pathlib import Path
+
+                  phr_path = Path("products/phr/build/reports/benchmarks/phr-billing-benchmark.json")
+                  fin_path = Path("products/finance/integration-testing/build/reports/benchmarks/healthcare-billing-ledger-benchmark.json")
+
+                  if not phr_path.exists():
+                    raise SystemExit(f"Missing benchmark report: {phr_path}")
+                  if not fin_path.exists():
+                    raise SystemExit(f"Missing benchmark report: {fin_path}")
+
+                  def extract_score(path, benchmark_suffix):
+                    payload = json.loads(path.read_text())
+                    rows = payload if isinstance(payload, list) else [payload]
+                    for row in rows:
+                      name = row.get("benchmark", "")
+                      if name.endswith(benchmark_suffix):
+                        metric = row.get("primaryMetric", {})
+                        return float(metric.get("score", 0.0))
+                    raise SystemExit(f"Benchmark '{benchmark_suffix}' not found in {path}")
+
+                  phr_score = extract_score(phr_path, "BillingServiceBenchmark.createAndCloseEncounter")
+                  fin_score = extract_score(fin_path, "HealthcareBillingToLedgerScenarioBenchmark.runScenario")
+
+                  phr_max = float("${{ env.PHR_BENCHMARK_MAX_MS }}")
+                  fin_max = float("${{ env.FINANCE_BENCHMARK_MAX_MS }}")
+
+                  print(f"PHR benchmark score: {phr_score:.3f} ms (max {phr_max:.3f} ms)")
+                  print(f"Finance benchmark score: {fin_score:.3f} ms (max {fin_max:.3f} ms)")
+
+                  failures = []
+                  if phr_score > phr_max:
+                    failures.append(f"PHR benchmark exceeded threshold: {phr_score:.3f} > {phr_max:.3f} ms")
+                  if fin_score > fin_max:
+                    failures.append(f"Finance benchmark exceeded threshold: {fin_score:.3f} > {fin_max:.3f} ms")
+
+                  if failures:
+                    raise SystemExit("\n".join(failures))
+                  PY
+
+            - name: Upload benchmark reports
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: phr-finance-benchmark-reports
+                  path: |
+                      products/phr/build/reports/benchmarks/*.json
+                      products/finance/integration-testing/build/reports/benchmarks/*.json

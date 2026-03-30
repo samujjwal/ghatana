@@ -23,6 +23,9 @@ dependencies {
     // Kernel modules
     implementation(project(":platform:java:kernel"))
 
+    // Shared billing contracts (PHR-Finance ledger integration)
+    api(project(":platform:java:billing"))
+
     // AI-specific dependencies
     implementation("dev.langchain4j:langchain4j:0.34.0")
     implementation("com.openai:openai-java:0.12.0")

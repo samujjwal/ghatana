@@ -11,6 +11,7 @@ import io.activej.promise.Promise;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -50,8 +51,32 @@ public class FinanceAgentOrchestratorImpl implements AgentOrchestrator {
 
     @Override
     public WorkflowResult executeAgentWorkflow(List<KernelAgent> agents, AgentRequest request) {
-        // TODO: Implement workflow execution
-        return new WorkflowResult(true, new ArrayList<>(), null);
+        Objects.requireNonNull(agents,  "agents must not be null");
+        Objects.requireNonNull(request, "request must not be null");
+
+        List<AgentResponse> responses = new ArrayList<>();
+        Throwable firstFailure = null;
+
+        for (KernelAgent agent : agents) {
+            try {
+                AgentResponse response = agent.execute(request);
+                responses.add(response);
+                if (!response.isSuccess()) {
+                    log.warn("Agent '{}' reported failure in workflow", agent.getAgentId());
+                }
+            } catch (Exception ex) {
+                log.error("Agent '{}' threw exception during workflow execution", agent.getAgentId(), ex);
+                if (firstFailure == null) firstFailure = ex;
+            }
+        }
+
+        boolean overallSuccess = firstFailure == null
+            && responses.stream().allMatch(AgentResponse::isSuccess);
+        return new WorkflowResult(
+            overallSuccess,
+            responses,
+            firstFailure == null ? null : firstFailure.getMessage()
+        );
     }
 
     @Override
@@ -61,7 +86,17 @@ public class FinanceAgentOrchestratorImpl implements AgentOrchestrator {
 
     @Override
     public Promise<AgentResponse> executeAgentAsync(KernelAgent agent, AgentRequest request) {
-        // TODO: Implement async execution
-        return Promise.of(agent.execute(request));
+        Objects.requireNonNull(agent,   "agent must not be null");
+        Objects.requireNonNull(request, "request must not be null");
+
+        return Promise.ofBlocking(Runnable::run, () -> agent.execute(request))
+            .whenException(ex -> log.error("Async execution failed for agent '{}'", agent.getAgentId(), ex));
     }
+
+    // =========================================================================
+    // Private
+    // =========================================================================
+
+    private static final org.slf4j.Logger log =
+        org.slf4j.LoggerFactory.getLogger(FinanceAgentOrchestratorImpl.class);
 }

@@ -1,13 +1,18 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.phr.kernel.service.BillingService.*;
+import com.ghatana.platform.billing.BillingTransaction;
+import com.ghatana.platform.billing.BillingTransactionCoordinator;
+import com.ghatana.platform.billing.LedgerPostingService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,12 +32,30 @@ class BillingServiceTest extends EventloopTestBase {
 
     private BillingService service;
 
+    /** Service wired with the capturing ledger stub. */
+    private BillingService serviceWithLedger;
+    private BillingService serviceWithCoordinator;
+    private CapturingLedgerPostingService capturingLedger;
+    private CapturingCoordinator capturingCoordinator;
+
     @BeforeEach
     void setUp() {
         PhrTestInfrastructure.StubDataCloudAdapter dataCloud =
                 new PhrTestInfrastructure.StubDataCloudAdapter();
         service = new BillingService(PhrTestInfrastructure.createTestContext(dataCloud));
         runPromise(service::start);
+        capturingLedger = new CapturingLedgerPostingService();
+        serviceWithLedger = new BillingService(
+            PhrTestInfrastructure.createTestContext(dataCloud), capturingLedger);
+        runPromise(serviceWithLedger::start);
+
+        capturingCoordinator = new CapturingCoordinator();
+        serviceWithCoordinator = new BillingService(
+            PhrTestInfrastructure.createTestContext(dataCloud),
+            capturingLedger,
+            capturingCoordinator
+        );
+        runPromise(serviceWithCoordinator::start);
     }
 
     @Nested
@@ -168,6 +191,67 @@ class BillingServiceTest extends EventloopTestBase {
 
     // ─────────────────────── Helpers ──────────────────────────────────────────
 
+    @Nested
+    @DisplayName("Finance ledger integration")
+    class LedgerIntegration {
+
+        @Test
+        @DisplayName("closing an encounter posts a CHARGE BillingTransaction to the ledger")
+        void closingEncounterPostsToLedger() {
+            BillingEncounter enc = runPromise(() ->
+                serviceWithLedger.createEncounter(buildEncounter("p-L1", "dr-L1", null)));
+
+            runPromise(() -> serviceWithLedger.closeEncounter(enc.id()));
+
+            assertEquals(1, capturingLedger.posted.size());
+            BillingTransaction tx = capturingLedger.posted.get(0);
+            assertEquals("enc:" + enc.id(), tx.getTransactionId());
+            assertEquals("phr", tx.getSourceProductId());
+            assertEquals("PHR:AR:p-L1", tx.getDebitAccount());
+            assertEquals("PHR:REVENUE:dr-L1", tx.getCreditAccount());
+            assertEquals(0, new BigDecimal("1200.00").compareTo(tx.getAmount()));
+            assertEquals("NPR", tx.getCurrency());
+            assertEquals(BillingTransaction.TransactionType.CHARGE, tx.getType());
+        }
+
+        @Test
+        @DisplayName("no ledger post when LedgerPostingService is not wired")
+        void noLedgerPostWhenNotWired() {
+            BillingEncounter enc = runPromise(() ->
+                service.createEncounter(buildEncounter("p-L2", "dr-L2", null)));
+
+            runPromise(() -> service.closeEncounter(enc.id()));
+
+            assertTrue(capturingLedger.posted.isEmpty(),
+                "Ledger must not be called when service has no LedgerPostingService");
+        }
+
+        @Test
+        @DisplayName("the transaction ID uses the encounter ID for idempotency")
+        void transactionIdContainsEncounterId() {
+            BillingEncounter enc = runPromise(() ->
+                serviceWithLedger.createEncounter(buildEncounter("p-L3", "dr-L3", null)));
+
+            runPromise(() -> serviceWithLedger.closeEncounter(enc.id()));
+
+            BillingTransaction tx = capturingLedger.posted.get(0);
+            assertTrue(tx.getTransactionId().contains(enc.id()),
+                "Transaction ID must contain encounter ID for ledger idempotency");
+        }
+
+        @Test
+        @DisplayName("coordinator path is used when BillingTransactionCoordinator is wired")
+        void coordinatorPathUsedWhenConfigured() {
+            BillingEncounter enc = runPromise(() ->
+                serviceWithCoordinator.createEncounter(buildEncounter("p-L4", "dr-L4", null)));
+
+            runPromise(() -> serviceWithCoordinator.closeEncounter(enc.id()));
+
+            assertEquals(1, capturingCoordinator.invocations.size());
+            assertEquals("phr-encounter-close:" + enc.id(), capturingCoordinator.invocations.get(0));
+        }
+    }
+
     private static BillingEncounter buildEncounter(String patientId, String providerId, String id) {
         List<ServiceLine> lines = List.of(
                 new ServiceLine("99213", "Office visit", 1, new BigDecimal("1200.00"), "NPR")
@@ -182,5 +266,50 @@ class BillingServiceTest extends EventloopTestBase {
         return new InsuranceClaim(null, patientId, encounterId, insurerId,
                 "POLICY-12345", new BigDecimal("1200.00"), "NPR",
                 ClaimStatus.SUBMITTED, null, null, null);
+    }
+
+    // ─────────────────────── Stubs ────────────────────────────────────────────
+
+    /**
+     * Captures every posted {@link BillingTransaction} for assertion in tests.
+     *
+     * @doc.type class
+     * @doc.purpose Stub LedgerPostingService for PHR billing integration tests
+     * @doc.layer product
+     * @doc.pattern TestDouble
+     */
+    static final class CapturingLedgerPostingService implements LedgerPostingService {
+
+        final List<BillingTransaction> posted = new ArrayList<>();
+        private int counter = 0;
+
+        @Override
+        public Promise<String> postTransaction(BillingTransaction transaction) {
+            posted.add(transaction);
+            return Promise.of("entry-" + (++counter));
+        }
+
+        @Override
+        public Promise<String> reverseTransaction(String originalTransactionId, String reversalReason) {
+            return Promise.of("reversal-" + (++counter));
+        }
+
+        @Override
+        public Promise<PostingStatus> getPostingStatus(String transactionId) {
+            boolean found = posted.stream()
+                .anyMatch(t -> t.getTransactionId().equals(transactionId));
+            return Promise.of(found ? PostingStatus.POSTED : PostingStatus.NOT_FOUND);
+        }
+    }
+
+    static final class CapturingCoordinator implements BillingTransactionCoordinator {
+        final List<String> invocations = new ArrayList<>();
+
+        @Override
+        public Promise<CoordinationResult> coordinate(String workflowId, List<BillingTransaction> transactions) {
+            invocations.add(workflowId);
+            List<String> txIds = transactions.stream().map(BillingTransaction::getTransactionId).toList();
+            return Promise.of(new CoordinationResult(workflowId, true, txIds, List.of(), null));
+        }
     }
 }

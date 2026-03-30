@@ -14,42 +14,44 @@
 
 This folder contains the active planning, requirements, architecture, design, workflow, and testing documents for the PHR product.
 
+> Runtime status note (2026-03-29): The live backend implementation for PHR is Java 21 + ActiveJ under `products/phr/src/main/java`. Planning-era references to NestJS or HAPI in this docs set should be treated as historical design context unless explicitly marked as current in product-level runtime docs.
+
 ## Reader's Table of Contents
 
 Use this index if you want to read the active PHR documentation from first principles through implementation readiness instead of jumping file to file.
 
-| Step | Read this first | Why it comes here |
-| --- | --- | --- |
-| 1 | [01_governance/phr_core_mvp_release_definition.md](01_governance/phr_core_mvp_release_definition.md) | establishes the current MVP boundary, committed capabilities, and release gates |
-| 2 | [01_governance/phr_phase2_release_definition.md](01_governance/phr_phase2_release_definition.md) | shows what is intentionally deferred so MVP and Phase 2 do not blur together |
-| 3 | [02_strategy_and_requirements/phr-e2e-requirements.md](02_strategy_and_requirements/phr-e2e-requirements.md) | defines the end-to-end requirement inventory and phase assignment |
-| 4 | [01_governance/phr_requirements_traceability_matrix.md](01_governance/phr_requirements_traceability_matrix.md) | connects requirements to APIs, screens, data, tests, and compliance anchors |
-| 5 | [01_governance/phr_retention_and_deletion_policy.md](01_governance/phr_retention_and_deletion_policy.md) | explains how deletion, anonymization, retention, and legal hold are actually interpreted |
-| 6 | [03_architecture/phr_mvp_activation_plan.md](03_architecture/phr_mvp_activation_plan.md) | translates scope into the modules and platform capabilities that must be activated |
-| 7 | [03_architecture/phr_runtime_architecture.md](03_architecture/phr_runtime_architecture.md) | gives the system shape: services, tenancy, storage, integrations, resilience, and deployment model |
-| 8 | [03_architecture/phr_core_sequence_diagrams.md](03_architecture/phr_core_sequence_diagrams.md) | shows the main runtime flows and failure paths after you understand the architecture |
-| 9 | [03_architecture/phr_error_model_and_idempotency_spec.md](03_architecture/phr_error_model_and_idempotency_spec.md) | defines cross-cutting runtime behavior for errors, retries, and safe mutations |
-| 10 | [03_architecture/phr_consent_service_interface_spec.md](03_architecture/phr_consent_service_interface_spec.md) | formalizes the patient-data access control point used across the platform |
-| 11 | [03_architecture/phr_multi_tenancy_enforcement_spec.md](03_architecture/phr_multi_tenancy_enforcement_spec.md) | formalizes tenant isolation and should be read before schema or API implementation |
-| 12 | [03_architecture/phr_core_schema_delta_spec.md](03_architecture/phr_core_schema_delta_spec.md) | identifies the operational data model gaps required for MVP |
-| 13 | [03_architecture/phr_core_mvp_draft_schema.prisma](03_architecture/phr_core_mvp_draft_schema.prisma) | shows the draft implementation shape of those schema additions |
-| 14 | [04_design_and_workflows/phr_mvp_route_contract_pack.md](04_design_and_workflows/phr_mvp_route_contract_pack.md) | freezes the main MVP API routes and request-response behavior |
-| 15 | [04_design_and_workflows/phr_core_openapi_dto_drafts.md](04_design_and_workflows/phr_core_openapi_dto_drafts.md) | turns route contracts into named DTOs that backend and frontend can implement against |
-| 16 | [04_design_and_workflows/phr_core_openapi_backlog.md](04_design_and_workflows/phr_core_openapi_backlog.md) | shows which contracts are frozen and which still need validation/examples/schema completion |
-| 17 | [04_design_and_workflows/phr_screen_by_screen_mvp_implementation_matrix.md](04_design_and_workflows/phr_screen_by_screen_mvp_implementation_matrix.md) | maps each user-facing screen to modules, endpoints, data, and tests |
-| 18 | [04_design_and_workflows/phr_frontend_route_and_component_map.md](04_design_and_workflows/phr_frontend_route_and_component_map.md) | explains how the application is navigated and assembled on the client side |
-| 19 | [04_design_and_workflows/README.md](04_design_and_workflows/README.md) | provides the design-folder index before you drop into workflow-specific interaction packs |
-| 20 | [04_design_and_workflows/phr_workflow_caregiver_dependents.md](04_design_and_workflows/phr_workflow_caregiver_dependents.md) | defines dependent discovery, delegated summary rules, and caregiver-scoped actions |
-| 21 | [04_design_and_workflows/phr_workflow_payments.md](04_design_and_workflows/phr_workflow_payments.md) | defines bill presentation, wallet payment initiation, settlement confirmation, and receipt behavior |
-| 22 | [04_design_and_workflows/phr_workflow_referrals.md](04_design_and_workflows/phr_workflow_referrals.md) | defines provider referral authoring, summary attachment rules, and patient tracking behavior |
-| 23 | [04_design_and_workflows/phr_workflow_imaging.md](04_design_and_workflows/phr_workflow_imaging.md) | defines imaging metadata access, embedded viewer launch, and secure study download behavior |
-| 24 | [01_governance/phr_backend_delivery_plan.md](01_governance/phr_backend_delivery_plan.md) | turns the source-of-truth set into backend execution order |
-| 25 | [01_governance/phr_frontend_delivery_plan.md](01_governance/phr_frontend_delivery_plan.md) | turns the same source-of-truth set into frontend execution order |
-| 26 | [01_governance/phr_qa_delivery_plan.md](01_governance/phr_qa_delivery_plan.md) | shows how testing, environments, and release gates are meant to operate |
-| 27 | [01_governance/phr_implementation_status_board.md](01_governance/phr_implementation_status_board.md) | gives the fastest current-status view across all MVP capabilities |
-| 28 | Test packs in [05_testing](05_testing/README.md) | contain the detailed API, service, UI, and NFR cases used to verify the product |
-| 29 | [05_testing/phr_test_automation_mapping.md](05_testing/phr_test_automation_mapping.md) | tells you where those tests are intended to live in the codebase |
-| 30 | [05_testing/phr_seed_data_and_test_fixture_plan.md](05_testing/phr_seed_data_and_test_fixture_plan.md) | defines the tenants, actors, and scenarios used to make test execution deterministic |
+| Step | Read this first                                                                                                                                        | Why it comes here                                                                                   |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| 1    | [01_governance/phr_core_mvp_release_definition.md](01_governance/phr_core_mvp_release_definition.md)                                                   | establishes the current MVP boundary, committed capabilities, and release gates                     |
+| 2    | [01_governance/phr_phase2_release_definition.md](01_governance/phr_phase2_release_definition.md)                                                       | shows what is intentionally deferred so MVP and Phase 2 do not blur together                        |
+| 3    | [02_strategy_and_requirements/phr-e2e-requirements.md](02_strategy_and_requirements/phr-e2e-requirements.md)                                           | defines the end-to-end requirement inventory and phase assignment                                   |
+| 4    | [01_governance/phr_requirements_traceability_matrix.md](01_governance/phr_requirements_traceability_matrix.md)                                         | connects requirements to APIs, screens, data, tests, and compliance anchors                         |
+| 5    | [01_governance/phr_retention_and_deletion_policy.md](01_governance/phr_retention_and_deletion_policy.md)                                               | explains how deletion, anonymization, retention, and legal hold are actually interpreted            |
+| 6    | [03_architecture/phr_mvp_activation_plan.md](03_architecture/phr_mvp_activation_plan.md)                                                               | translates scope into the modules and platform capabilities that must be activated                  |
+| 7    | [03_architecture/phr_runtime_architecture.md](03_architecture/phr_runtime_architecture.md)                                                             | gives the system shape: services, tenancy, storage, integrations, resilience, and deployment model  |
+| 8    | [03_architecture/phr_core_sequence_diagrams.md](03_architecture/phr_core_sequence_diagrams.md)                                                         | shows the main runtime flows and failure paths after you understand the architecture                |
+| 9    | [03_architecture/phr_error_model_and_idempotency_spec.md](03_architecture/phr_error_model_and_idempotency_spec.md)                                     | defines cross-cutting runtime behavior for errors, retries, and safe mutations                      |
+| 10   | [03_architecture/phr_consent_service_interface_spec.md](03_architecture/phr_consent_service_interface_spec.md)                                         | formalizes the patient-data access control point used across the platform                           |
+| 11   | [03_architecture/phr_multi_tenancy_enforcement_spec.md](03_architecture/phr_multi_tenancy_enforcement_spec.md)                                         | formalizes tenant isolation and should be read before schema or API implementation                  |
+| 12   | [03_architecture/phr_core_schema_delta_spec.md](03_architecture/phr_core_schema_delta_spec.md)                                                         | identifies the operational data model gaps required for MVP                                         |
+| 13   | [03_architecture/phr_core_mvp_draft_schema.prisma](03_architecture/phr_core_mvp_draft_schema.prisma)                                                   | shows the draft implementation shape of those schema additions                                      |
+| 14   | [04_design_and_workflows/phr_mvp_route_contract_pack.md](04_design_and_workflows/phr_mvp_route_contract_pack.md)                                       | freezes the main MVP API routes and request-response behavior                                       |
+| 15   | [04_design_and_workflows/phr_core_openapi_dto_drafts.md](04_design_and_workflows/phr_core_openapi_dto_drafts.md)                                       | turns route contracts into named DTOs that backend and frontend can implement against               |
+| 16   | [04_design_and_workflows/phr_core_openapi_backlog.md](04_design_and_workflows/phr_core_openapi_backlog.md)                                             | shows which contracts are frozen and which still need validation/examples/schema completion         |
+| 17   | [04_design_and_workflows/phr_screen_by_screen_mvp_implementation_matrix.md](04_design_and_workflows/phr_screen_by_screen_mvp_implementation_matrix.md) | maps each user-facing screen to modules, endpoints, data, and tests                                 |
+| 18   | [04_design_and_workflows/phr_frontend_route_and_component_map.md](04_design_and_workflows/phr_frontend_route_and_component_map.md)                     | explains how the application is navigated and assembled on the client side                          |
+| 19   | [04_design_and_workflows/README.md](04_design_and_workflows/README.md)                                                                                 | provides the design-folder index before you drop into workflow-specific interaction packs           |
+| 20   | [04_design_and_workflows/phr_workflow_caregiver_dependents.md](04_design_and_workflows/phr_workflow_caregiver_dependents.md)                           | defines dependent discovery, delegated summary rules, and caregiver-scoped actions                  |
+| 21   | [04_design_and_workflows/phr_workflow_payments.md](04_design_and_workflows/phr_workflow_payments.md)                                                   | defines bill presentation, wallet payment initiation, settlement confirmation, and receipt behavior |
+| 22   | [04_design_and_workflows/phr_workflow_referrals.md](04_design_and_workflows/phr_workflow_referrals.md)                                                 | defines provider referral authoring, summary attachment rules, and patient tracking behavior        |
+| 23   | [04_design_and_workflows/phr_workflow_imaging.md](04_design_and_workflows/phr_workflow_imaging.md)                                                     | defines imaging metadata access, embedded viewer launch, and secure study download behavior         |
+| 24   | [01_governance/phr_backend_delivery_plan.md](01_governance/phr_backend_delivery_plan.md)                                                               | turns the source-of-truth set into backend execution order                                          |
+| 25   | [01_governance/phr_frontend_delivery_plan.md](01_governance/phr_frontend_delivery_plan.md)                                                             | turns the same source-of-truth set into frontend execution order                                    |
+| 26   | [01_governance/phr_qa_delivery_plan.md](01_governance/phr_qa_delivery_plan.md)                                                                         | shows how testing, environments, and release gates are meant to operate                             |
+| 27   | [01_governance/phr_implementation_status_board.md](01_governance/phr_implementation_status_board.md)                                                   | gives the fastest current-status view across all MVP capabilities                                   |
+| 28   | Test packs in [05_testing](05_testing/README.md)                                                                                                       | contain the detailed API, service, UI, and NFR cases used to verify the product                     |
+| 29   | [05_testing/phr_test_automation_mapping.md](05_testing/phr_test_automation_mapping.md)                                                                 | tells you where those tests are intended to live in the codebase                                    |
+| 30   | [05_testing/phr_seed_data_and_test_fixture_plan.md](05_testing/phr_seed_data_and_test_fixture_plan.md)                                                 | defines the tenants, actors, and scenarios used to make test execution deterministic                |
 
 ## Recommended Reading Paths
 
@@ -166,19 +168,19 @@ Historical or superseded documents.
 
 These concerns span all documents and must be maintained consistently:
 
-| Concern                 | Description                                                                                    | Key Documents                                            |
-| ----------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| **Data Classification** | C1 (Public), C2 (Internal), C3 (Confidential), C4 (Restricted) with encryption/retention rules | Requirements traceability, Activation plan, Schema delta |
-| **Multi-Tenancy**       | Application-layer + RLS defense-in-depth, X-Tenant-Id header, AsyncLocalStorage context        | Runtime architecture, NestJS modules, Route contracts    |
-| **ConsentService**      | Mandatory consent check before any data access, cache invalidation, break-the-glass            | NestJS modules, Consent workflow, Sequence diagrams      |
-| **Emergency QR**        | Auto-generated health card (blood type, allergies, meds, contacts), privacy-safe               | Registration workflow, Frontend routes, API contracts    |
-| **FCHV Integration**    | Icon-based mobile UI for community health volunteers with scoped offline capture                | Registration workflow, Screen matrix, Frontend routes    |
-| **Export Portability**  | Patient-managed export jobs, time-limited artifacts, and audit evidence                         | Route contracts, DTO drafts, QA plan                     |
-| **Retention Policy**    | Configurable deletion, anonymization, tombstones, and legal hold with legal minimum floors      | Governance policy, DPIA, classification, compliance tests |
-| **Execution Readiness** | Delivery plans, status board, DTO drafts, Prisma drafts, and mapped test suites                 | Governance, OpenAPI backlog, Testing mapping             |
-| **OWASP Compliance**    | Top 10 security controls, security-sensitive error handling, pen test                          | Error model, API contracts, NFR test cases               |
-| **Nepal Compliance**    | Directive 2081 (21 modules), Privacy Act 2075, HIB/openIMIS, data sovereignty                  | Consolidated report, Requirements, Traceability matrix   |
-| **Accessibility**       | WCAG 2.2 AA, bilingual (Nepali + English), Bikram Sambat calendar                              | Design system, Frontend routes, UI E2E tests             |
+| Concern                 | Description                                                                                    | Key Documents                                             |
+| ----------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| **Data Classification** | C1 (Public), C2 (Internal), C3 (Confidential), C4 (Restricted) with encryption/retention rules | Requirements traceability, Activation plan, Schema delta  |
+| **Multi-Tenancy**       | Application-layer + RLS defense-in-depth, X-Tenant-Id header, AsyncLocalStorage context        | Runtime architecture, NestJS modules, Route contracts     |
+| **ConsentService**      | Mandatory consent check before any data access, cache invalidation, break-the-glass            | NestJS modules, Consent workflow, Sequence diagrams       |
+| **Emergency QR**        | Auto-generated health card (blood type, allergies, meds, contacts), privacy-safe               | Registration workflow, Frontend routes, API contracts     |
+| **FCHV Integration**    | Icon-based mobile UI for community health volunteers with scoped offline capture               | Registration workflow, Screen matrix, Frontend routes     |
+| **Export Portability**  | Patient-managed export jobs, time-limited artifacts, and audit evidence                        | Route contracts, DTO drafts, QA plan                      |
+| **Retention Policy**    | Configurable deletion, anonymization, tombstones, and legal hold with legal minimum floors     | Governance policy, DPIA, classification, compliance tests |
+| **Execution Readiness** | Delivery plans, status board, DTO drafts, Prisma drafts, and mapped test suites                | Governance, OpenAPI backlog, Testing mapping              |
+| **OWASP Compliance**    | Top 10 security controls, security-sensitive error handling, pen test                          | Error model, API contracts, NFR test cases                |
+| **Nepal Compliance**    | Directive 2081 (21 modules), Privacy Act 2075, HIB/openIMIS, data sovereignty                  | Consolidated report, Requirements, Traceability matrix    |
+| **Accessibility**       | WCAG 2.2 AA, bilingual (Nepali + English), Bikram Sambat calendar                              | Design system, Frontend routes, UI E2E tests              |
 
 ## Source-of-truth hierarchy
 
@@ -203,7 +205,7 @@ Use the documents in this order when resolving conflicts:
 9. [03_architecture/phr_error_model_and_idempotency_spec.md](03_architecture/phr_error_model_and_idempotency_spec.md)
    Cross-platform error, security-sensitive error handling, and retry/idempotency policy.
 10. [03_architecture/phr_core_schema_delta_spec.md](03_architecture/phr_core_schema_delta_spec.md)
-   Implementation-ready schema gap specification.
+    Implementation-ready schema gap specification.
 11. [04_design_and_workflows/phr_mvp_route_contract_pack.md](04_design_and_workflows/phr_mvp_route_contract_pack.md)
     API contracts including Emergency QR, export portability, rate limiting, circuit breaker, and tenant headers.
 12. [04_design_and_workflows/phr_screen_by_screen_mvp_implementation_matrix.md](04_design_and_workflows/phr_screen_by_screen_mvp_implementation_matrix.md)

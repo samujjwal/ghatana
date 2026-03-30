@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info:
+  title: Ghatana PHR API
+  version: 1.0.0
+  description: Contract-first API surface for PHR billing and encounter workflows.
+servers:
+  - url: /api/v1
+paths:
+  /phr/billing/encounters:
+    post:
+      operationId: createBillingEncounter
+      summary: Create a healthcare billing encounter
+      tags: [PHR Billing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEncounterRequest"
+      responses:
+        "201":
+          description: Encounter created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingEncounter"
+  /phr/billing/encounters/{encounterId}/close:
+    post:
+      operationId: closeBillingEncounter
+      summary: Close an encounter and trigger ledger posting
+      tags: [PHR Billing]
+      parameters:
+        - in: path
+          name: encounterId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Encounter closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingEncounter"
+components:
+  schemas:
+    CreateEncounterRequest:
+      type: object
+      required: [patientId, providerId, currency, totalAmount]
+      properties:
+        patientId:
+          type: string
+        providerId:
+          type: string
+        facilityId:
+          type: string
+        currency:
+          type: string
+          example: NPR
+        totalAmount:
+          type: number
+          format: double
+    BillingEncounter:
+      type: object
+      required: [id, patientId, providerId, totalAmount, currency, status]
+      properties:
+        id:
+          type: string
+        patientId:
+          type: string
+        providerId:
+          type: string
+        totalAmount:
+          type: number
+          format: double
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [OPEN, CLOSED]
+        closedAt:
+          type: string
+          format: date-time

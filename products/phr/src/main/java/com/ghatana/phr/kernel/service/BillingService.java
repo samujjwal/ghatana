@@ -2,6 +2,9 @@ package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.AbstractDataService;
+import com.ghatana.platform.billing.BillingTransaction;
+import com.ghatana.platform.billing.BillingTransactionCoordinator;
+import com.ghatana.platform.billing.LedgerPostingService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -11,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Billing and Insurance Baseline Service for PHR.
@@ -30,11 +35,51 @@ import java.util.Optional;
  */
 public class BillingService extends AbstractDataService {
 
+    private static final Logger log = LoggerFactory.getLogger(BillingService.class);
+
     private static final String ENCOUNTER_DATASET = "phr.billing.encounters";
     private static final String CLAIM_DATASET = "phr.billing.claims";
 
+    /** Retained for tenant-context lookup in async callbacks. */
+    private final KernelContext kernelContext;
+    private final LedgerPostingService ledgerPostingService;
+    private final BillingTransactionCoordinator billingTransactionCoordinator;
+
     public BillingService(KernelContext context) {
+        this(context, null);
+    }
+
+    /**
+     * Creates a BillingService with Finance ledger integration enabled.
+     *
+     * @param context              kernel context providing DataCloudKernelAdapter
+     * @param ledgerPostingService ledger service for cross-domain billing integration;
+     *                             may be {@code null} to disable ledger posting
+     */
+    public BillingService(KernelContext context, LedgerPostingService ledgerPostingService) {
+        this(context, ledgerPostingService, null);
+    }
+
+    /**
+     * Creates a BillingService with optional coordinated saga posting support.
+     */
+    public BillingService(KernelContext context,
+                          LedgerPostingService ledgerPostingService,
+                          BillingTransactionCoordinator billingTransactionCoordinator) {
         super(context);
+        this.kernelContext = context;
+        this.ledgerPostingService = ledgerPostingService;
+        this.billingTransactionCoordinator = billingTransactionCoordinator;
+    }
+
+    @Override
+    public Promise<Void> start() {
+        return super.start();
+    }
+
+    @Override
+    public Promise<Void> stop() {
+        return super.stop();
     }
 
     @Override
@@ -126,7 +171,55 @@ public class BillingService extends AbstractDataService {
                     1
                 ).then(updated -> audit("CLOSE_ENCOUNTER", updated.patientId(),
                     "Encounter closed: " + encounterId)
+                    .then($ -> postEncounterToLedger(updated))
                     .map($ -> updated));
+            });
+    }
+
+    /**
+     * Posts a closed encounter as a {@link BillingTransaction} to the Finance ledger.
+     * A no-op when no {@link LedgerPostingService} was injected.
+     */
+    private Promise<Void> postEncounterToLedger(BillingEncounter encounter) {
+        if (ledgerPostingService == null) {
+            return Promise.complete();
+        }
+        String tenantId = Optional.ofNullable(kernelContext.getTenantContext())
+            .map(com.ghatana.kernel.context.KernelTenantContext::getTenantId)
+            .orElse("default");
+        BillingTransaction tx = BillingTransaction.builder()
+            .transactionId("enc:" + encounter.id())
+            .sourceProductId("phr")
+            .debitAccount("PHR:AR:" + encounter.patientId())
+            .creditAccount("PHR:REVENUE:" + encounter.providerId())
+            .amount(encounter.totalAmount())
+            .currency(encounter.currency())
+            .type(BillingTransaction.TransactionType.CHARGE)
+            .description("Healthcare encounter closed: " + encounter.id())
+            .externalReferenceId(encounter.id())
+            .tenantId(tenantId)
+            .occurredAt(encounter.closedAt())
+            .build();
+
+        if (billingTransactionCoordinator != null) {
+            return billingTransactionCoordinator.coordinate(
+                    "phr-encounter-close:" + encounter.id(),
+                    List.of(tx)
+                )
+                .map(result -> {
+                    if (!result.succeeded()) {
+                        throw new IllegalStateException("Billing coordination failed: " + result.failureReason());
+                    }
+                    log.info("Encounter '{}' coordinated to ledger workflow='{}'",
+                        encounter.id(), result.workflowId());
+                    return (Void) null;
+                });
+        }
+
+        return ledgerPostingService.postTransaction(tx)
+            .map(entryId -> {
+                log.info("Encounter '{}' posted to ledger as entry '{}'", encounter.id(), entryId);
+                return (Void) null;
             });
     }
 
