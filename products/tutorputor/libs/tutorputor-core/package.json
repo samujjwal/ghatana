@@ -52,7 +52,7 @@
   "dependencies": {
     "@libsql/client": "^0.17.0",
     "@prisma/adapter-libsql": "^7.3.0",
-    "@prisma/client": "^7.3.0",
+    "@prisma/client": "^7.6.0",
     "@tutorputor/contracts": "workspace:*",
     "ioredis": "^5.10.1",
     "prisma-redis-cache": "^1.0.0",
