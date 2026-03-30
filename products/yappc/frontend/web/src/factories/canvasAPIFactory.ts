@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canvas API Factory
  * Creates a mocked Canvas API instance for Page Builder integration

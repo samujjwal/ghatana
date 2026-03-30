@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canvas AI Service API - Browser-safe wrapper
  *

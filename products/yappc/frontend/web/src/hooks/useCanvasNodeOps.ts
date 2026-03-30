@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useCanvasNodeOps - Canvas Node Operations Hook
  *

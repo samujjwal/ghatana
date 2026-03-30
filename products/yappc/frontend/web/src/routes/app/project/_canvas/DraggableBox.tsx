@@ -11,10 +11,11 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import { Box } from '@ghatana/design-system';
 
 interface DraggableBoxProps {
-  children: React.ReactNode;
+  children: ReactNode;
   initialX?: number;
   initialY?: number;
   sx?: Record<string, unknown>;
@@ -35,7 +36,7 @@ export const DraggableBox = ({
   });
 
   const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
+    (e: ReactMouseEvent) => {
       if (e.button !== 0) return;
 
       const target = e.target as HTMLElement;
@@ -56,7 +57,7 @@ export const DraggableBox = ({
   );
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
       if (!isDragging || !dragStartRef.current) return;
 
       const dx = e.clientX - dragStartRef.current.x;

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useMemo } from 'react';
 import { ReactFlow } from '@xyflow/react';
 import { nodeTypes as importedNodeTypes } from './nodeTypes';

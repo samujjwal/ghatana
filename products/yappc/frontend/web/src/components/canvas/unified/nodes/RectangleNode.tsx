@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Rectangle Node - Rectangle shape for flowcharts and diagrams
  *

@@ -12,14 +12,14 @@
  */
 
 import React, { memo } from 'react';
-import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
+import { Handle, Position, NodeResizer, type Node, type NodeProps } from '@xyflow/react';
 import { useAtomValue } from 'jotai';
 import { MermaidDiagram } from '../diagram/MermaidDiagram';
 import { CanvasErrorBoundary } from '../CanvasErrorBoundary';
 import { CanvasContentWrapper } from '../CanvasContentWrapper';
 import { canvasInteractionModeAtom, cameraZoomAtom } from '../workspace';
 
-export type DiagramNodeData = {
+export type DiagramNodeData = Record<string, unknown> & {
     label?: string;
     /** Per-node diagram content — avoids shared global state */
     diagramContent?: string;
@@ -29,9 +29,10 @@ export type DiagramNodeData = {
 
 const DEFAULT_CONTENT = 'graph TD\n  A[Start] --> B[End]';
 
-const DiagramNodeInner = ({ id, data, selected }: NodeProps<DiagramNodeData>) => {
+type DiagramCanvasNode = Node<DiagramNodeData, 'diagram'>;
+
+const DiagramNodeInner = ({ data, selected }: NodeProps<DiagramCanvasNode>) => {
     const content = data.diagramContent ?? DEFAULT_CONTENT;
-    const diagramZoom = data.diagramZoom ?? 1;
     const interactionMode = useAtomValue(canvasInteractionModeAtom);
     const canvasZoom = useAtomValue(cameraZoomAtom);
 
@@ -56,7 +57,7 @@ const DiagramNodeInner = ({ id, data, selected }: NodeProps<DiagramNodeData>) =>
                 </div>
                 <CanvasContentWrapper className="p-4 relative">
                     <CanvasErrorBoundary label="Diagram">
-                        <MermaidDiagram content={content} zoom={diagramZoom} />
+                        <MermaidDiagram content={content} />
                     </CanvasErrorBoundary>
                 </CanvasContentWrapper>
                 <Handle type="target" position={Position.Top} className="w-3 h-3" style={{ background: 'var(--color-primary, #1976d2)' }} />

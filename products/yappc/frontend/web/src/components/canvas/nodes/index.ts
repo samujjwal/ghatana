@@ -3,7 +3,7 @@ export { default as ApiNode } from './ApiNode';
 export { default as DataNode } from './DataNode';
 export { default as FlowNode } from './FlowNode';
 export { default as PageNode } from './PageNode';
-export { ArtifactNode, type ArtifactNodeData, type ArtifactNodeProps } from './ArtifactNode';
+export { ArtifactNode, type ArtifactNodeData } from './ArtifactNode';
 
 // Bootstrap Phase Nodes
 export * from './bootstrap';

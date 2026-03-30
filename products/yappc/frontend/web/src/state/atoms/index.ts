@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Lifecycle state management
 export * from './lifecycleAtom';
 

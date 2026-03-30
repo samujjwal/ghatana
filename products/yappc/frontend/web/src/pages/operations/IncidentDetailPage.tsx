@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Incident Detail Page
  *

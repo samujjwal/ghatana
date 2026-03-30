@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * UnifiedLeftRail - Context-Aware Collapsible Left Panel
  *

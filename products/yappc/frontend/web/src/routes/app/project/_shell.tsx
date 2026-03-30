@@ -84,7 +84,7 @@ export function Layout() {
   const isCanvasView = location.pathname.endsWith('/canvas');
 
   const { setLastOpenedProject } = useLastOpenedProject();
-  const { currentWorkspace, ownedWorkspaces, ownedProjects, includedProjects } = useWorkspaceContext();
+  const { currentWorkspace, workspaces, ownedProjects, includedProjects } = useWorkspaceContext();
 
   // Fetch project data
   const { data: project, isLoading } = useQuery({
@@ -98,12 +98,19 @@ export function Layout() {
   });
 
   const currentUser = useAtomValue(currentUserAtom);
+  const currentUserProfile = currentUser as
+    | { firstName?: string; lastName?: string; email?: string }
+    | null;
   const user = currentUser
     ? {
         id: currentUser.id,
-        name: `${(currentUser as unknown).firstName ?? ''} ${(currentUser as unknown).lastName ?? ''}`.trim() || currentUser.id,
-        email: (currentUser as unknown).email ?? '',
-        initials: ((currentUser as unknown).firstName?.[0] ?? '') + ((currentUser as unknown).lastName?.[0] ?? ''),
+        name:
+          `${currentUserProfile?.firstName ?? ''} ${currentUserProfile?.lastName ?? ''}`.trim() ||
+          currentUser.id,
+        email: currentUserProfile?.email ?? '',
+        initials:
+          (currentUserProfile?.firstName?.[0] ?? '') +
+          (currentUserProfile?.lastName?.[0] ?? ''),
       }
     : { id: 'guest', name: 'Guest', email: '', initials: 'G' };
 
@@ -114,7 +121,7 @@ export function Layout() {
     isOwner: true,
   } : undefined;
 
-  const workspacesList = ownedWorkspaces.map(ws => ({
+  const workspacesList = workspaces.map(ws => ({
     id: ws.id,
     name: ws.name,
     isOwner: true,

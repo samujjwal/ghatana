@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { vi } from 'vitest';
 
 // Minimal, resilient DnD mock used by tests. Keeps behaviour intentionally

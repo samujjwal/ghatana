@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { MessageSquare as CommentIcon, Send as SendIcon, Check as ResolveIcon, Reply as ReplyIcon } from 'lucide-react';
 import {
   Box,

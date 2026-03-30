@@ -338,4 +338,82 @@ class YamlToManifestConverterTest {
         assertThat(manifest.getMetadata().getVersion()).isEqualTo("1.0.0");
         assertThat(manifest.getSpec().getRuntime().getVersion()).isEqualTo("1.0.0");
     }
+
+    @Test
+    @DisplayName("should use explicit event_processing config for input/output event types")
+    void shouldUseExplicitEventProcessingConfig() {
+        // GIVEN
+        YamlAgentConfig.EventProcessingConfig epConfig = new YamlAgentConfig.EventProcessingConfig(
+                List.of("code.analysis.requested", "java.review.requested"),
+                List.of("code.analysis.completed", "java.review.completed"),
+                "yappc.dlq.java-expert",
+                "per_tenant",
+                5
+        );
+        YamlAgentConfig config = YamlAgentConfig.builder()
+                .id("expert.java")
+                .name("Java Expert")
+                .description("Expert Java agent")
+                .tags(Set.of("java"))
+                .capabilities(Set.of("code-analysis"))
+                .eventProcessing(epConfig)
+                .build();
+
+        // WHEN
+        AgentManifestProto manifest = converter.convert(config);
+
+        // THEN — explicit event types are used, not derived from tags
+        assertThat(manifest.getSpec().getInputEventTypesList())
+                .contains("code.analysis.requested", "java.review.requested")
+                .doesNotContain("tag:java"); // explicit overrides tag-derived types
+        assertThat(manifest.getSpec().getOutputEventTypesList())
+                .contains("code.analysis.completed", "java.review.completed");
+    }
+
+    @Test
+    @DisplayName("should store event processing metadata in manifest labels")
+    void shouldStoreEventProcessingMetadataInLabels() {
+        // GIVEN
+        YamlAgentConfig.EventProcessingConfig epConfig = new YamlAgentConfig.EventProcessingConfig(
+                List.of("code.review.requested"),
+                List.of("code.review.completed"),
+                "yappc.dlq.code-reviewer",
+                "per_tenant",
+                10
+        );
+        YamlAgentConfig config = YamlAgentConfig.builder()
+                .id("code.reviewer")
+                .name("Code Reviewer")
+                .description("Automated code reviewer")
+                .eventProcessing(epConfig)
+                .build();
+
+        // WHEN
+        AgentManifestProto manifest = converter.convert(config);
+
+        // THEN
+        assertThat(manifest.getMetadata().getLabelsMap())
+                .containsEntry("event.ordering", "per_tenant")
+                .containsEntry("event.max_in_flight", "10")
+                .containsEntry("event.dlq", "yappc.dlq.code-reviewer");
+    }
+
+    @Test
+    @DisplayName("should fall back to tag-derived event types when event_processing is absent")
+    void shouldFallBackToTagDerivedEventTypesWhenEventProcessingAbsent() {
+        // GIVEN — no event_processing config
+        YamlAgentConfig config = YamlAgentConfig.builder()
+                .id("cloud.pilot")
+                .name("Cloud Pilot")
+                .description("Cloud architecture agent")
+                .tags(Set.of("cloud", "aws"))
+                .build();
+
+        // WHEN
+        AgentManifestProto manifest = converter.convert(config);
+
+        // THEN — tags are used as input event type prefixes
+        assertThat(manifest.getSpec().getInputEventTypesList())
+                .contains("tag:cloud", "tag:aws");
+    }
 }

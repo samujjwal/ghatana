@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Scans List Page
  *

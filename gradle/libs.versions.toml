@@ -162,6 +162,7 @@ docker-java = "3.3.6"
 graphql-java-tools = "13.1.0"
 picocli = "4.7.6"
 jline = "3.24.1"
+fabric8-kubernetes-client = "6.9.2"
 jna = "5.13.0"
 javaparser = "3.25.5"
 lmdbjava = "0.8.1"
@@ -496,6 +497,7 @@ jline-terminal-jna = { module = "org.jline:jline-terminal-jna", version.ref = "j
 jline-reader = { module = "org.jline:jline-reader", version.ref = "jline" }
 jline-style = { module = "org.jline:jline-style", version.ref = "jline" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
+fabric8-kubernetes-client = { module = "io.fabric8:kubernetes-client", version.ref = "fabric8-kubernetes-client" }
 
 # Parsing / AST
 javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaparser" }

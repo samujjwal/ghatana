@@ -23,7 +23,7 @@ import { Request, Response, NextFunction } from 'express';
 import { RateLimitingService } from '../../services/ratelimit/RateLimitingService';
 
 // Mock the service
-jest.mock('../../services/ratelimit/RateLimitingService');
+vi.mock('../../services/ratelimit/RateLimitingService');
 
 describe('RateLimitMiddleware', () => {
   let middleware: RateLimitMiddleware;

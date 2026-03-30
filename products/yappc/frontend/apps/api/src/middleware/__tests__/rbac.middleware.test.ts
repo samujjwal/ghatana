@@ -87,13 +87,14 @@ describe('requirePermission - workspace', () => {
   });
 
   it('allows ADMIN to delete workspace', async () => {
+    // workspace/delete is OWNER-only per the permission matrix
     const handler = requirePermission('workspace', 'delete');
     const request = createUserRequest('ADMIN');
     const reply = createMockReply();
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock).mock.calls).toHaveLength(0);
+    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
   });
 });
 

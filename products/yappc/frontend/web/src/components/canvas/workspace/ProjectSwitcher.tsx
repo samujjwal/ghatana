@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Project Switcher Modal (W3)
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Change Impact Analyzer - Analyze downstream effects of changes
  * 

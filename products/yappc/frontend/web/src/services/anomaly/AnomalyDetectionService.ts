@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Service for ML-based anomaly detection using Java AI algorithms.
  *

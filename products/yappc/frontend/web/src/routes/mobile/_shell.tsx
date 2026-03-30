@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { NavLink } from "react-router";
 
 import { RouteErrorBoundary } from "../../components/route/ErrorBoundary";
@@ -20,7 +21,7 @@ const mobileNavItems = [
 /**
  *
  */
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: ReactNode }) {
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   return (
     <div

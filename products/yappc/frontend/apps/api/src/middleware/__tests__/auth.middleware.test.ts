@@ -4,6 +4,8 @@
  * Tests JWT authentication middleware for token validation and user context.
  */
 
+/// <reference types="vitest/globals" />
+
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { authMiddleware, type JWTUserPayload } from '../auth.middleware';
 import jwt from 'jsonwebtoken';
@@ -26,14 +28,14 @@ function createMockRequest(overrides: Partial<FastifyRequest> = {}): FastifyRequ
 
 function createMockReply(): FastifyReply {
   return {
-    status: jest.fn().mockReturnThis(),
-    send: jest.fn().mockReturnThis(),
+    status: vi.fn().mockReturnThis(),
+    send: vi.fn().mockReturnThis(),
   } as unknown as FastifyReply;
 }
 
 function createMockFastify(): FastifyInstance {
   return {
-    addHook: jest.fn(),
+    addHook: vi.fn(),
   } as unknown as FastifyInstance;
 }
 
@@ -54,7 +56,7 @@ function createToken(payload: Partial<JWTUserPayload> = {}): string {
 describe('authMiddleware Plugin Registration', () => {
   it('registers onRequest hook with Fastify', async () => {
     const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as jest.Mock;
+    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
 
     await authMiddleware(fastifyMock);
 
@@ -71,7 +73,7 @@ describe('Public Paths - No Authentication', () => {
 
   beforeAll(async () => {
     const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as jest.Mock;
+    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
     await authMiddleware(fastifyMock);
     onRequestHook = addHookMock.mock.calls[0][1];
   });
@@ -82,7 +84,7 @@ describe('Public Paths - No Authentication', () => {
 
     await onRequestHook(request, reply);
 
-    expect((reply.status as jest.Mock).mock.calls).toHaveLength(0);
+    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
   });
 
   it('allows access to /metrics without token', async () => {
@@ -91,7 +93,7 @@ describe('Public Paths - No Authentication', () => {
 
     await onRequestHook(request, reply);
 
-    expect((reply.status as jest.Mock).mock.calls).toHaveLength(0);
+    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
   });
 
   it('allows access to auth routes', async () => {
@@ -100,7 +102,25 @@ describe('Public Paths - No Authentication', () => {
 
     await onRequestHook(request, reply);
 
-    expect((reply.status as jest.Mock).mock.calls).toHaveLength(0);
+    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
+  });
+
+  it('allows access to versioned auth routes', async () => {
+    const request = createMockRequest({ url: '/v1/auth/login', routeOptions: { url: '/v1/auth/login' } });
+    const reply = createMockReply();
+
+    await onRequestHook(request, reply);
+
+    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
+  });
+
+  it('allows access to forgot-password route', async () => {
+    const request = createMockRequest({ url: '/api/auth/forgot-password', routeOptions: { url: '/api/auth/forgot-password' } });
+    const reply = createMockReply();
+
+    await onRequestHook(request, reply);
+
+    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
   });
 
   it('allows access to GraphQL without token', async () => {
@@ -109,7 +129,7 @@ describe('Public Paths - No Authentication', () => {
 
     await onRequestHook(request, reply);
 
-    expect((reply.status as jest.Mock).mock.calls).toHaveLength(0);
+    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
   });
 });
 
@@ -122,7 +142,7 @@ describe('Missing Bearer Token', () => {
 
   beforeAll(async () => {
     const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as jest.Mock;
+    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
     await authMiddleware(fastifyMock);
     onRequestHook = addHookMock.mock.calls[0][1];
   });
@@ -171,13 +191,15 @@ describe('Missing Bearer Token', () => {
 
 describe('Valid JWT Token', () => {
   let onRequestHook: any;
+  let originalVerify: typeof jwt.verify;
 
   beforeAll(async () => {
     const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as jest.Mock;
-    // Patch jwt.verify to use test secret
-    jest.spyOn(require('jsonwebtoken'), 'verify').mockImplementation((token, secret) => {
-      return jwt.verify(token, JWT_SECRET);
+    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
+    // Capture original BEFORE spying to avoid circular mock
+    originalVerify = jwt.verify.bind(jwt);
+    vi.spyOn(jwt, 'verify').mockImplementation((token: string) => {
+      return originalVerify(token, JWT_SECRET) as ReturnType<typeof jwt.verify>;
     });
     await authMiddleware(fastifyMock);
     onRequestHook = addHookMock.mock.calls[0][1];
@@ -190,8 +212,8 @@ describe('Valid JWT Token', () => {
     });
     const reply = createMockReply();
 
-    // Manually decode since we're mocking jwt.verify
-    const payload = jwt.verify(token, JWT_SECRET) as any;
+    // Manually decode using original verify with test secret
+    const payload = originalVerify(token, JWT_SECRET) as any;
     request.user = {
       userId: payload.userId,
       email: payload.email,
@@ -210,7 +232,7 @@ describe('Valid JWT Token', () => {
       workspaceId: 'workspace-456',
     });
 
-    const payload = jwt.verify(token, JWT_SECRET) as any;
+    const payload = originalVerify(token, JWT_SECRET) as any;
     expect(payload.workspaceId).toBe('workspace-456');
   });
 });
@@ -224,36 +246,22 @@ describe('Invalid Token', () => {
 
   beforeAll(async () => {
     const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as jest.Mock;
-    jest.spyOn(require('jsonwebtoken'), 'verify').mockImplementation((token, secret) => {
-      return jwt.verify(token, JWT_SECRET);
+    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
+    const _verify = jwt.verify.bind(jwt);
+    vi.spyOn(jwt, 'verify').mockImplementation((token: string) => {
+      return _verify(token, JWT_SECRET) as ReturnType<typeof jwt.verify>;
     });
     await authMiddleware(fastifyMock);
     onRequestHook = addHookMock.mock.calls[0][1];
   });
 
   it('rejects malformed token', async () => {
-    const request = createMockRequest({
-      headers: { authorization: 'Bearer invalid.token.format' },
-    });
-    const reply = createMockReply();
-
-    try {
-      jwt.verify('invalid.token.format', JWT_SECRET);
-    } catch (err) {
-      expect((err as any).message).toContain('invalid');
-    }
+    expect(() => jwt.verify('invalid.token.format', JWT_SECRET)).toThrow();
   });
 
   it('rejects token signed with different secret', async () => {
     const wrongToken = jwt.sign({ userId: 'user-1' }, 'different-secret');
-
-    try {
-      jwt.verify(wrongToken, JWT_SECRET);
-      fail('Should have thrown');
-    } catch (err) {
-      expect((err as any).message).toContain('invalid signature');
-    }
+    expect(() => jwt.verify(wrongToken, JWT_SECRET)).toThrow(/invalid signature/);
   });
 });
 
@@ -266,7 +274,7 @@ describe('Already Authenticated Request', () => {
 
   beforeAll(async () => {
     const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as jest.Mock;
+    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
     await authMiddleware(fastifyMock);
     onRequestHook = addHookMock.mock.calls[0][1];
   });
@@ -286,7 +294,7 @@ describe('Already Authenticated Request', () => {
 
     await onRequestHook(request, reply);
 
-    expect((reply.status as jest.Mock).mock.calls).toHaveLength(0);
+    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
     expect(request.user.userId).toBe('existing-user');
   });
 });
@@ -296,12 +304,12 @@ describe('Already Authenticated Request', () => {
 // ---------------------------------------------------------------------------
 
 describe('Role Extraction from Token', () => {
-  it('extracts all role types from token', async () => {
+  it('extracts all role types from token', () => {
     const roles = ['VIEWER', 'EDITOR', 'ADMIN', 'OWNER'];
 
     roles.forEach((role) => {
       const token = createToken({ role: role as any });
-      const payload = jwt.verify(token, JWT_SECRET) as any;
+      const payload = jwt.decode(token) as any;
       expect(payload.role).toBe(role);
     });
   });

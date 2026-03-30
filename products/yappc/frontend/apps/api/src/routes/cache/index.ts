@@ -11,6 +11,7 @@
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { semanticCacheService, CacheInvalidationPattern } from '../../services/cache/SemanticCacheService';
+import { requireRole } from '../../middleware/rbac.middleware';
 
 // ============================================================================
 // Request Types
@@ -279,6 +280,7 @@ export async function semanticCacheRoutes(fastify: FastifyInstance): Promise<voi
     fastify.post<{ Body: InvalidateRequest }>(
         '/invalidate',
         {
+            preHandler: requireRole('ADMIN'),
             schema: {
                 body: {
                     type: 'object',
@@ -320,15 +322,7 @@ export async function semanticCacheRoutes(fastify: FastifyInstance): Promise<voi
      * Clear all cache entries
      * DELETE /api/cache/all
      */
-    fastify.delete('/all', async (request, reply) => {
-        // Require admin role
-        if (!(request as unknown).user?.roles?.includes('admin')) {
-            return reply.status(403).send({
-                success: false,
-                error: 'Admin access required',
-            });
-        }
-
+    fastify.delete('/all', { preHandler: requireRole('ADMIN') }, async (request, reply) => {
         const removed = await semanticCacheService.clear();
 
         return reply.send({

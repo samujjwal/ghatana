@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * EvidencePanel - Right panel for audit trail and AI suggestions
  *

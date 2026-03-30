@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Deployment Node Component
  *

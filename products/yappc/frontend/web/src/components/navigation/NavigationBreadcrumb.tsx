@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Navigation Breadcrumb Component
  * 

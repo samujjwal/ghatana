@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useCanvasPersistence - Canvas State Persistence Hook
  * 

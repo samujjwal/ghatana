@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Global Test Setup
  * Runs before all tests

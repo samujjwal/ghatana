@@ -46,7 +46,6 @@
   "dependencies": {
     "@yappc/core": "workspace:*",
     "@yappc/ui": "workspace:*",
-    "@yappc/theme": "workspace:*",
     "openai": "^4.20.0",
     "ai": "^2.2.0",
     "nanostores": "^0.9.0",

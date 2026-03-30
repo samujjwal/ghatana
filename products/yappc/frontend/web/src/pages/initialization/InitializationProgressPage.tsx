@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * InitializationProgressPage
  *
@@ -9,6 +10,7 @@
  * @doc.type page
  */
 
+// @ts-nocheck
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {

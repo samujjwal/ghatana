@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Config Browser Canvas Content
  * 

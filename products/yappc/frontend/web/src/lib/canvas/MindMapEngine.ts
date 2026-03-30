@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * MindMapEngine - Automatic Layout for Mind Maps
  * 

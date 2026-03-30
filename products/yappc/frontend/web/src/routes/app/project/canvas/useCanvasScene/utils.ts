@@ -1,20 +1,29 @@
 /**
  * Local minimal types to avoid importing project type aliases from the monorepo.
  */
-type MinimalCanvasElement = unknown;
+type MinimalCanvasElement = Record<string, unknown>;
 /**
  *
  */
-type MinimalCanvasConnection = unknown;
+type MinimalCanvasConnection = Record<string, unknown>;
 /**
  *
  */
-type MinimalCanvasState = unknown;
+type MinimalCanvasState = Record<string, unknown>;
+
+interface CanvasPersistenceLike {
+  loadCanvas: () => Promise<MinimalCanvasState | null | undefined>;
+  saveCanvas: (state: MinimalCanvasState) => Promise<unknown>;
+}
+
+type LegacyRecord = Record<string, any>;
 
 /**
  *
  */
-export async function loadCanvasFromPersistence(persistence: unknown): Promise<{ loadedState?: MinimalCanvasState; loadedFromLegacy: boolean }> {
+export async function loadCanvasFromPersistence(
+  persistence: CanvasPersistenceLike
+): Promise<{ loadedState?: MinimalCanvasState; loadedFromLegacy: boolean }> {
   let loadedState = await persistence.loadCanvas();
   let loadedFromLegacy = false;
 
@@ -22,10 +31,10 @@ export async function loadCanvasFromPersistence(persistence: unknown): Promise<{
     const legacyRaw = window.localStorage.getItem('canvas-state');
     if (legacyRaw) {
       try {
-        const legacy = JSON.parse(legacyRaw);
+        const legacy = JSON.parse(legacyRaw) as LegacyRecord;
 
         const legacyElements: MinimalCanvasElement[] = Array.isArray(legacy.elements)
-          ? (legacy.elements as unknown[]).map((element: unknown, index: number) => ({
+          ? (legacy.elements as LegacyRecord[]).map((element: LegacyRecord, index: number) => ({
               id: element.id ?? `legacy-element-${index}`,
               kind: element.kind ?? 'node',
               type: element.type ?? 'component',
@@ -38,7 +47,7 @@ export async function loadCanvasFromPersistence(persistence: unknown): Promise<{
           : [];
 
         const legacyShapes: MinimalCanvasElement[] = Array.isArray(legacy.sketches)
-          ? (legacy.sketches as unknown[]).map((shape: unknown, index: number) => ({
+          ? (legacy.sketches as LegacyRecord[]).map((shape: LegacyRecord, index: number) => ({
               id: shape.id ?? `legacy-shape-${index}`,
               kind: 'shape',
               type: shape.type ?? 'stroke',
@@ -49,9 +58,9 @@ export async function loadCanvasFromPersistence(persistence: unknown): Promise<{
           : [];
 
         const legacyConnections: MinimalCanvasConnection[] = Array.isArray(legacy.connections)
-          ? (legacy.connections as unknown[])
-              .filter((connection: unknown) => connection?.source && connection?.target)
-              .map((connection: unknown, index: number) => ({
+          ? (legacy.connections as LegacyRecord[])
+              .filter((connection: LegacyRecord) => connection?.source && connection?.target)
+              .map((connection: LegacyRecord, index: number) => ({
                 id: connection.id ?? `legacy-connection-${index}`,
                 source: connection.source,
                 target: connection.target,

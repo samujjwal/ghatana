@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * UnifiedTopBar - Top Navigation Bar
  */

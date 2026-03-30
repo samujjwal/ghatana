@@ -142,7 +142,7 @@ export class RealTimeService {
     // Basic Auth Check (Placeholder - should validate token)
     // For Week 0/1, we allow connection but expect 'auth' message or 'join'
 
-    ws.on('message', (data: Buffer) => {
+    ws.on('message', async (data: Buffer) => {
       try {
         const message = JSON.parse(data.toString()) as ClientMessage;
 

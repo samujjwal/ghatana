@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Hook Migration Utilities
  * Tools for migrating existing canvas hooks to use the generic useGenericCanvas

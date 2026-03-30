@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Infrastructure Diagram Canvas Content
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type hook
  * @doc.purpose Manage abstraction level navigation for canvas

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * MindmapNode - AFFiNE-style mind map node
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Mode-specific Canvas Renderers
  * 

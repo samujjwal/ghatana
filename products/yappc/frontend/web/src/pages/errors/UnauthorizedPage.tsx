@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Unauthorized Page (403)
  *

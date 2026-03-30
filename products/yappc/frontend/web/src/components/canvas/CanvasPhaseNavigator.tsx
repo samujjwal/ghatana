@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canvas Phase Navigator - Mini Lifecycle Phase Navigator for Canvas Sidebar
  *

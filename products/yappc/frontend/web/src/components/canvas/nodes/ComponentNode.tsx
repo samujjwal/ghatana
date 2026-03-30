@@ -1,9 +1,17 @@
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import { Box, Surface as Paper } from '@ghatana/design-system';
 import React from 'react';
 
-export const ComponentNode: React.FC<NodeProps> = ({ data, selected }) => (
+type ComponentNodeData = {
+  icon?: React.ReactNode;
+  label?: React.ReactNode;
+  description?: React.ReactNode;
+};
+
+type ComponentCanvasNode = Node<ComponentNodeData, 'component'>;
+
+export const ComponentNode: React.FC<NodeProps<ComponentCanvasNode>> = ({ data, selected }) => (
   <Paper
     elevation={selected ? 4 : 2}
     className="p-4 min-w-[140px] text-center rounded-lg transition-all duration-200" style={{ backgroundColor: selected ? '#e3f2fd' : '#f5f5f5', border: selected ? '2px solid #1976d2' : '1px solid #ddd' }}

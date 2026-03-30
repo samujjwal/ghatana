@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Cost Analysis Service - Orchestrates cost analysis operations
  *

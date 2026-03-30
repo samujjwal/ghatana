@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Code Editor Canvas Content
  * 

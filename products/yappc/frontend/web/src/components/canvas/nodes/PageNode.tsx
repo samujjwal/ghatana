@@ -2,9 +2,17 @@ import { Handle, Position } from '@xyflow/react';
 import { Box, Typography, Surface as Paper } from '@ghatana/design-system';
 import React from 'react';
 
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 
-export const PageNode: React.FC<NodeProps> = ({ data, selected }) => (
+type PageNodeData = Record<string, unknown> & {
+  icon?: React.ReactNode;
+  label?: React.ReactNode;
+  description?: React.ReactNode;
+};
+
+type PageCanvasNode = Node<PageNodeData, 'page'>;
+
+export const PageNode: React.FC<NodeProps<PageCanvasNode>> = ({ data, selected }) => (
   <Paper
     elevation={selected ? 4 : 2}
     className="p-4 min-w-[160px] text-center rounded-lg transition-all duration-200" style={{ backgroundColor: selected ? '#fff3e0' : '#f5f5f5', border: selected ? '2px solid #ff9800' : '1px solid #ddd' }}

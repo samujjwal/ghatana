@@ -371,6 +371,24 @@ const STEP_LABELS: Record<WorkflowStep, string> = {
     INSTITUTIONALIZE: 'Institutionalize',
 };
 
+function normalizeStepRailStatus(
+    status: string | undefined
+): StepRailItem['status'] {
+    switch (status) {
+        case 'COMPLETED':
+        case 'REVISITED':
+        case 'BLOCKED':
+        case 'NOT_STARTED':
+            return status;
+        case 'ACTIVE':
+        case 'PENDING':
+        case 'IN_PROGRESS':
+            return 'IN_PROGRESS';
+        default:
+            return 'NOT_STARTED';
+    }
+}
+
 export const stepRailItemsAtom = atom<StepRailItem[]>((get) => {
     const workflow = get(currentWorkflowAtom);
     const currentStep = get(currentStepAtom);
@@ -382,8 +400,11 @@ export const stepRailItemsAtom = atom<StepRailItem[]>((get) => {
         return {
             step,
             label: STEP_LABELS[step],
-            status: stepState?.status ?? 'NOT_STARTED',
-            aiConfidence: stepState?.aiConfidence,
+            status: normalizeStepRailStatus(stepState?.status),
+            aiConfidence:
+                stepState && 'aiConfidence' in stepState
+                    ? (stepState.aiConfidence as number | undefined)
+                    : undefined,
             isBlocked: stepState?.status === 'BLOCKED',
             isCurrent: step === currentStep,
         };

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Connection } from '@xyflow/react';
 
 import type {

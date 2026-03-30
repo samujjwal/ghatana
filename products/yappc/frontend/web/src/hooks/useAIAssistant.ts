@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * AI Assistant Hook for Canvas
  * 

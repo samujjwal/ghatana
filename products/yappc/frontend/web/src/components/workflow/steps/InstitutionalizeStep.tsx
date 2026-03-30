@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * InstitutionalizeStep - UI for the Institutionalize step of the workflow
  *

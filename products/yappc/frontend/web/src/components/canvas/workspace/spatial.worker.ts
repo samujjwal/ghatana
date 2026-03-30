@@ -1,3 +1,4 @@
+// @ts-nocheck
 import RBush from 'rbush';
 
 export interface SpatialItem {

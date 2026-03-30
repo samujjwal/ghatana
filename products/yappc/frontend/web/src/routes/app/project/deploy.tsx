@@ -15,32 +15,17 @@ import { useParams } from "react-router";
 import { useCallback } from "react";
 import { useAtomValue } from 'jotai';
 import { currentUserAtom } from '../../../stores/user.store';
-import { useGetProjectsQuery } from '@yappc/api';
 
 import { RouteErrorBoundary } from "../../../components/route/ErrorBoundary";
 import { DeployPanelHost } from "../../../components/deploy";
 import { useLifecycleArtifacts, usePhaseGates } from "../../../services/canvas/lifecycle";
-import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
+import { LifecyclePhase } from '@/types/lifecycle';
 
 /**
  * Project Deploy Component
  */
 export default function Component() {
-    const { workspaceId, projectId } = useParams();
-
-    // Fetch project data for deployment context
-    const {
-        data: projectsData,
-        loading: projectsLoading,
-        error: projectsError
-    } = useGetProjectsQuery({
-        variables: { workspaceId: workspaceId! },
-        skip: !workspaceId,
-        errorPolicy: 'all'
-    });
-
-    // Get current project
-    const currentProject = projectsData?.projects?.find(p => p.id === projectId);
+    const { projectId } = useParams();
 
     // Initialize lifecycle services
     const { createArtifact, updateArtifact, artifacts } = useLifecycleArtifacts(projectId || '');
@@ -49,16 +34,21 @@ export default function Component() {
     const currentUser = useAtomValue(currentUserAtom);
     const userId = currentUser?.id ?? 'anonymous';
 
+    type ArtifactKindValue = Parameters<typeof createArtifact>[0];
+    const DELIVERY_PLAN_KIND = 'delivery_plan' as ArtifactKindValue;
+    const RELEASE_STRATEGY_KIND = 'release_strategy' as ArtifactKindValue;
+    const INCIDENT_REPORT_KIND = 'incident_report' as ArtifactKindValue;
+
     // Handler: Save delivery plan
     const handleSaveDeliveryPlan = useCallback(async (data: unknown) => {
         if (!projectId) return;
 
-        const existingArtifact = artifacts.find(a => a.kind === LifecycleArtifactKind.DELIVERY_PLAN);
+        const existingArtifact = artifacts.find(a => a.kind === DELIVERY_PLAN_KIND);
 
         if (existingArtifact) {
             await updateArtifact(existingArtifact.id, { payload: data as Record<string, unknown> }, userId);
         } else {
-            await createArtifact(LifecycleArtifactKind.DELIVERY_PLAN, userId);
+            await createArtifact(DELIVERY_PLAN_KIND, userId);
         }
     }, [projectId, artifacts, createArtifact, updateArtifact]);
 
@@ -66,12 +56,12 @@ export default function Component() {
     const handleSaveReleaseStrategy = useCallback(async (data: unknown) => {
         if (!projectId) return;
 
-        const existingArtifact = artifacts.find(a => a.kind === LifecycleArtifactKind.RELEASE_STRATEGY);
+        const existingArtifact = artifacts.find(a => a.kind === RELEASE_STRATEGY_KIND);
 
         if (existingArtifact) {
             await updateArtifact(existingArtifact.id, { payload: data as Record<string, unknown> }, userId);
         } else {
-            await createArtifact(LifecycleArtifactKind.RELEASE_STRATEGY, userId);
+            await createArtifact(RELEASE_STRATEGY_KIND, userId);
         }
     }, [projectId, artifacts, createArtifact, updateArtifact]);
 
@@ -82,13 +72,19 @@ export default function Component() {
         const state = await phaseGateService.getProjectState(projectId);
         if (!state) return;
 
-        const nextPhase = state.currentPhase === 'INTENT' ? 'SHAPE' :
-            state.currentPhase === 'SHAPE' ? 'VALIDATE' :
-                state.currentPhase === 'VALIDATE' ? 'GENERATE' :
-                    state.currentPhase === 'GENERATE' ? 'RUN' :
-                        state.currentPhase === 'RUN' ? 'OBSERVE' : 'IMPROVE';
+        const nextPhaseMap: Record<LifecyclePhase, LifecyclePhase> = {
+            [LifecyclePhase.INTENT]: LifecyclePhase.SHAPE,
+            [LifecyclePhase.SHAPE]: LifecyclePhase.VALIDATE,
+            [LifecyclePhase.VALIDATE]: LifecyclePhase.GENERATE,
+            [LifecyclePhase.GENERATE]: LifecyclePhase.RUN,
+            [LifecyclePhase.RUN]: LifecyclePhase.OBSERVE,
+            [LifecyclePhase.OBSERVE]: LifecyclePhase.IMPROVE,
+            [LifecyclePhase.IMPROVE]: LifecyclePhase.IMPROVE,
+        };
 
-        await transition(nextPhase as unknown, userId, {
+        const nextPhase = nextPhaseMap[state.currentPhase as LifecyclePhase] ?? LifecyclePhase.IMPROVE;
+
+        await transition(nextPhase, userId, {
             bypass: false,
             bypassReason: comments,
         });
@@ -103,7 +99,7 @@ export default function Component() {
     // Handler: Create incident (creates artifact)
     const handleCreateIncident = useCallback(async () => {
         if (!projectId) return;
-        await createArtifact(LifecycleArtifactKind.INCIDENT_REPORT, userId);
+        await createArtifact(INCIDENT_REPORT_KIND, userId);
     }, [projectId, createArtifact]);
 
     // Handler: Update incident status
@@ -123,29 +119,6 @@ export default function Component() {
         }, userId);
     }, [updateArtifact]);
 
-    // Loading state
-    if (projectsLoading) {
-        return (
-            <div className="flex justify-center items-center min-h-[400px]">
-                <div className="text-text-secondary">Loading deployment pipeline...</div>
-            </div>
-        );
-    }
-
-    // Error state
-    if (projectsError && !projectsData) {
-        return (
-            <div className="p-8 text-center bg-bg-paper border border-error-color rounded-xl">
-                <div className="text-error-color text-lg font-semibold mb-2">
-                    Error Loading Deployment Pipeline
-                </div>
-                <div className="text-text-secondary mb-4">
-                    Unable to load deployment data. Please refresh the page.
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="h-full flex flex-col">
             {/* Header */}
@@ -155,7 +128,7 @@ export default function Component() {
                         Deployment Pipeline
                     </h1>
                     <p className="text-sm text-text-secondary mt-0.5">
-                        {currentProject ? `${currentProject.name} - ` : ''}Multi-environment deployment management
+                        Multi-environment deployment management
                     </p>
                 </div>
             </div>

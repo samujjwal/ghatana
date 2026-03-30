@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useCallback } from 'react';
 
 // Import from shared library

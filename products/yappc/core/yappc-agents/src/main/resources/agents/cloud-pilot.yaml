@@ -24,6 +24,18 @@ agent:
   cache:
     enabled: false
   
+  # AEP Event Processing Integration
+  event_processing:
+    input_event_types:
+      - "architecture.review.requested"
+      - "infrastructure.assessment.requested"
+    output_event_types:
+      - "architecture.review.completed"
+      - "infrastructure.assessment.completed"
+    dead_letter_queue: "yappc.dlq.cloud-pilot"
+    ordering: per_tenant
+    max_in_flight: 3
+
   metadata:
     cost_per_request: 0.05
     category: architecture

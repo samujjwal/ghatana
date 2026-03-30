@@ -32,8 +32,8 @@ import java.util.stream.Stream;
  * @see YamlAgentConfig
  * @doc.type class
  * @doc.pattern Loader
- * @doc.purpose Load YAML agent configurations
- * @doc.layer config
+ * @doc.purpose Load YAML agent configurations from classpath
+ * @doc.layer product
  */
 public class YamlAgentLoader {
     private static final Logger log = LoggerFactory.getLogger(YamlAgentLoader.class);
@@ -147,7 +147,7 @@ public class YamlAgentLoader {
             .id(dto.agent.id)
             .name(dto.agent.name)
             .description(dto.agent.description)
-            .version(dto.agent.version != null ? dto.agent.version : "1.0.0")
+            .version(dto.agent.version)
             .tags(Set.copyOf(dto.agent.tags))
             .capabilities(Set.copyOf(dto.agent.capabilities))
             .metadata(dto.agent.metadata != null ? dto.agent.metadata : Map.of());
@@ -185,6 +185,18 @@ public class YamlAgentLoader {
             );
             builder.cache(cacheConfig);
         }
+
+        // Event processing config
+        if (dto.agent.event_processing != null) {
+            YamlAgentConfig.EventProcessingConfig epConfig = new YamlAgentConfig.EventProcessingConfig(
+                dto.agent.event_processing.input_event_types,
+                dto.agent.event_processing.output_event_types,
+                dto.agent.event_processing.dead_letter_queue,
+                dto.agent.event_processing.ordering,
+                dto.agent.event_processing.max_in_flight != null ? dto.agent.event_processing.max_in_flight : 10
+            );
+            builder.eventProcessing(epConfig);
+        }
         
         return builder.build();
     }
@@ -206,6 +218,7 @@ public class YamlAgentLoader {
         public GeneratorDto generator;
         public ValidationDto validation;
         public CacheDto cache;
+        public EventProcessingDto event_processing;
         public Map<String, Object> metadata = Map.of();
     }
     
@@ -229,5 +242,13 @@ public class YamlAgentLoader {
         public Boolean enabled;
         public Long ttl;
         public List<String> key_fields;
+    }
+
+    private static class EventProcessingDto {
+        public List<String> input_event_types;
+        public List<String> output_event_types;
+        public String dead_letter_queue;
+        public String ordering;
+        public Integer max_in_flight;
     }
 }

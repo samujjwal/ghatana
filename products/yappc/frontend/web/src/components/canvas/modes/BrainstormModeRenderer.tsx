@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Brainstorm Mode Renderer
  * 

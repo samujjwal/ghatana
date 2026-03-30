@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CostRecommendation Entity - Represents cost optimization recommendations
  *

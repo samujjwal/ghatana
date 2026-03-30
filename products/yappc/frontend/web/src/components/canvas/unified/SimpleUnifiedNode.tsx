@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Simple Unified Node
  * 

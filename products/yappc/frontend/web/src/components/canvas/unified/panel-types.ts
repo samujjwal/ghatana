@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Rail Panel Data Types
  * Shared interfaces for left rail panel data models

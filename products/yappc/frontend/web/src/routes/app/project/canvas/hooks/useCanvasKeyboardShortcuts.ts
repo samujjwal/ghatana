@@ -10,9 +10,24 @@ import type { Node, Edge } from '@xyflow/react';
 import type { SketchTool } from '@yappc/canvas/sketch';
 import type { CanvasElement, CanvasState } from '@/components/canvas/workspace/canvasAtoms';
 
+interface CopiedNode {
+  id: string;
+  position: { x: number; y: number };
+  [key: string]: unknown;
+}
+
+type CanvasGraphNode = Pick<Node, 'id'> & {
+  selected?: boolean;
+  type?: string;
+};
+
+type CanvasGraphEdge = Pick<Edge, 'id'> & {
+  selected?: boolean;
+};
+
 interface UseCanvasKeyboardShortcutsOptions {
-  nodes: Node[];
-  edges: Edge[];
+  nodes: CanvasGraphNode[];
+  edges: CanvasGraphEdge[];
   setGlobalCanvas: (updater: (prev: CanvasState) => CanvasState) => void;
   setCommandPaletteOpen: (open: boolean) => void;
   setActiveSketchTool: (tool: SketchTool) => void;
@@ -30,7 +45,7 @@ export function useCanvasKeyboardShortcuts({
   setActiveSketchTool,
 }: UseCanvasKeyboardShortcutsOptions) {
   // Keyboard handlers for canvas element manipulation
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
 
     // Command palette shortcut
@@ -43,13 +58,13 @@ export function useCanvasKeyboardShortcuts({
     // Delete selected elements
     if (key === 'delete' || key === 'backspace') {
       event.preventDefault();
-      const selectedNodes = nodes.filter(node => node.selected);
-      const selectedEdges = edges.filter(edge => edge.selected);
+      const selectedNodes = nodes.filter((node) => node.selected);
+      const selectedEdges = edges.filter((edge) => edge.selected);
 
       if (selectedNodes.length > 0 || selectedEdges.length > 0) {
         setGlobalCanvas((prev: CanvasState) => {
-          const selectedNodeIds = selectedNodes.map(n => n.id);
-          const selectedEdgeIds = selectedEdges.map(e => e.id);
+          const selectedNodeIds = selectedNodes.map((n) => n.id);
+          const selectedEdgeIds = selectedEdges.map((e) => e.id);
 
           return {
             ...prev,
@@ -66,7 +81,7 @@ export function useCanvasKeyboardShortcuts({
     // Select all elements
     if ((event.metaKey || event.ctrlKey) && key === 'a') {
       event.preventDefault();
-      const allElementIds = [...nodes.map(n => n.id), ...edges.map(e => e.id)];
+      const allElementIds = [...nodes.map((n) => n.id), ...edges.map((e) => e.id)];
       setGlobalCanvas((prev: CanvasState) => ({
         ...prev,
         selectedElements: allElementIds,

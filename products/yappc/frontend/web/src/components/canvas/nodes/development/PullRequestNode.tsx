@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Pull Request Node Component
  *

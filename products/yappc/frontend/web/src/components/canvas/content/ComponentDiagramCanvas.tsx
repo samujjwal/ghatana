@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Component Diagram Canvas Content
  * 

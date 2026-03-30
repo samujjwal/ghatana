@@ -19,8 +19,7 @@ dependencies {
     // YAPPC framework modules
     implementation(project(":products:yappc:core:yappc-infrastructure"))
     implementation(project(":products:yappc:core:ai"))
-    // TODO: Register :products:yappc:core:agents in settings.gradle.kts before enabling
-    // implementation(project(":products:yappc:core:agents"))
+    implementation(project(":products:yappc:core:yappc-agents"))
 
     // ActiveJ Framework - Use version catalog for consistency
     implementation(libs.activej.common)
@@ -42,21 +41,21 @@ dependencies {
     implementation(libs.graphql.java)
 
     // Database
-    implementation("com.zaxxer:HikariCP:5.1.0")
+    implementation(libs.hikaricp)
     implementation(libs.postgresql)
-    implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
+    implementation(libs.jakarta.persistence.api)
 
     // AI/ML
-    implementation("dev.langchain4j:langchain4j:0.25.0")
+    implementation(libs.langchain4j)
 
     // Kubernetes
-    implementation("io.fabric8:kubernetes-client:6.9.2")
+    implementation(libs.fabric8.kubernetes.client)
 
     // CLI Framework
-    implementation("info.picocli:picocli:4.7.5")
-    
+    implementation(libs.picocli)
+
     // Terminal / readline
-    implementation("org.jline:jline:3.25.1")
+    implementation(libs.jline)
     
     // JSON Schema Validation
     implementation(libs.networknt.validator)
@@ -71,8 +70,8 @@ dependencies {
     implementation(libs.grpc.netty)
 
     // Lombok
-    compileOnly("org.projectlombok:lombok:1.18.30")
-    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
 
     // Testing
     testImplementation(project(":platform:java:testing"))

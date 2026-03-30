@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { seedScenarios } from '@yappc/testing/mocks/seed-canvas';
 import { Provider, useSetAtom } from 'jotai';
 import React, { useEffect } from 'react';

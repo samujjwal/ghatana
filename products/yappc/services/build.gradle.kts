@@ -54,7 +54,7 @@ dependencies {
     
     // YAPPC Core modules
     implementation(project(":products:yappc:core:ai"))
-    implementation(project(":products:yappc:core:agents"))
+    implementation(project(":products:yappc:core:yappc-agents"))
     implementation(project(":products:yappc:core:yappc-services"))
     implementation(project(":products:yappc:core:yappc-shared"))
     implementation(project(":products:yappc:core:yappc-infrastructure"))

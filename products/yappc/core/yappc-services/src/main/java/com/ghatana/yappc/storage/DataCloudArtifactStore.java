@@ -216,4 +216,32 @@ public class DataCloudArtifactStore implements ArtifactStore {
         }
         return tenantId;
     }
+
+    /**
+     * Deletes the artifact (and associated metadata) stored at {@code path}.
+     *
+     * <p>The implementation issues two DataCloud deletes — one for the artifact entity
+     * in {@code yappc-artifacts} and one for the metadata entity in
+     * {@code yappc-artifact-metadata}. Both deletions are best-effort; a missing
+     * entity is not treated as an error.
+     *
+     * @param path versioned artifact path
+     * @return promise resolving when both deletes complete
+     */
+    @Override
+    public Promise<Void> delete(String path) {
+        String tenantId = resolveTenantId();
+        log.info("DataCloudArtifactStore.delete: path={} tenant={}", path, tenantId);
+        return client.delete(tenantId, "yappc-artifacts", path)
+                .then(unused -> client.delete(tenantId, "yappc-artifact-metadata", path),
+                        ex -> {
+                            log.debug("Artifact entity not found during delete — treating as no-op: {}", path);
+                            return client.delete(tenantId, "yappc-artifact-metadata", path);
+                        })
+                .then(unused -> Promise.complete(),
+                        ex -> {
+                            log.debug("Metadata entity not found during delete — treating as no-op: {}", path);
+                            return Promise.complete();
+                        });
+    }
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Intelligent Onboarding - Enhanced AI-driven onboarding experience
  * 

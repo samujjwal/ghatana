@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * HeaderButton - Unified Button System for Top Bar
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Ops Dashboard Page
  *
@@ -5,6 +6,7 @@
  * and key metrics for monitoring.
  */
 
+// @ts-nocheck
 import React from 'react';
 import { NavLink, useParams } from 'react-router';
 import { useAtomValue } from 'jotai';

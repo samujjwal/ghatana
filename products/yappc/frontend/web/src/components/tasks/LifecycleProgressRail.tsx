@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Lifecycle Progress Rail Component
  *

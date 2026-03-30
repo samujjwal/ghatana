@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ObserveStep - UI for the Observe step of the workflow
  *

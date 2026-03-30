@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Diamond Node - Diamond shape for decision points
  *

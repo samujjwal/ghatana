@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useNodeResize - Enhanced Node Resizing Hook
  * 

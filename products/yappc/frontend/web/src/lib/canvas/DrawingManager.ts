@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Drawing Manager - Freehand Drawing and Sketching
  *

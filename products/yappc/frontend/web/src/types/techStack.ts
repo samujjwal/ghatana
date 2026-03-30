@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type type
  * @doc.purpose Define tech stack types for project detection

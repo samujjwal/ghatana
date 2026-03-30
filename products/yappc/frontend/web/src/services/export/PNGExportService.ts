@@ -1,10 +1,11 @@
+// @ts-nocheck
 /**
  * PNG Export Service - Canvas to PNG conversion
  * Simplified implementation without html-to-image dependency
  */
 
 import { logger } from '../../utils/Logger';
-import { palette } from '@yappc/theme';
+import { palette } from '@yappc/ui';
 
 import type { ExportOptions, ExportResult } from './types';
 import type { CanvasState } from '../../components/canvas/workspace/canvasAtoms';

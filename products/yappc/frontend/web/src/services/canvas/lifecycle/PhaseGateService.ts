@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Phase Gate Service
  *

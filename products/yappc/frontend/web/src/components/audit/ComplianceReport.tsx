@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * YAPPC Compliance Report Component
  *

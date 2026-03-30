@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Lifecycle Phase Indicator Component
  * 

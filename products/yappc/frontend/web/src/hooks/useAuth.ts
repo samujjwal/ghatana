@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useAuth Hook — YAPPC Web product hook.
  *

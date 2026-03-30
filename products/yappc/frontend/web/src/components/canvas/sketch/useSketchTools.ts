@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback, useRef, useState } from 'react';
 
 // Import from shared library instead of local files

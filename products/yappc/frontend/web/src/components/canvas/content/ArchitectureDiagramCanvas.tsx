@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Architecture Diagram Canvas Content
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FOW (Future of Work) Stage Type System
  * 

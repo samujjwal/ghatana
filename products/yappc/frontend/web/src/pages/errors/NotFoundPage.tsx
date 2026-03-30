@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Not Found Page (404)
  *

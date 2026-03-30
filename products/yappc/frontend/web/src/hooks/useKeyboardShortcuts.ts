@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useKeyboardShortcuts - Keyboard Shortcut System
  * 

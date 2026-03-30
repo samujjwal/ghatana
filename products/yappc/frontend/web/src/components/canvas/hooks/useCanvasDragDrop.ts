@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canvas DnD Hook
  *

@@ -2,9 +2,17 @@ import { Handle, Position } from '@xyflow/react';
 import { Box, Surface as Paper } from '@ghatana/design-system';
 import React from 'react';
 
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 
-export const ApiNode: React.FC<NodeProps> = ({ data, selected }) => (
+type ApiNodeData = Record<string, unknown> & {
+  icon?: React.ReactNode;
+  label?: React.ReactNode;
+  method?: React.ReactNode;
+};
+
+type ApiCanvasNode = Node<ApiNodeData, 'api'>;
+
+export const ApiNode: React.FC<NodeProps<ApiCanvasNode>> = ({ data, selected }) => (
   <Paper
     elevation={selected ? 4 : 2}
     className="p-4 min-w-[140px] text-center rounded-lg transition-all duration-200" style={{ backgroundColor: selected ? '#f3e5f5' : '#fafafa', border: selected ? '2px solid #9c27b0' : '1px solid #ddd' }}

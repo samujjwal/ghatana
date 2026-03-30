@@ -13,34 +13,87 @@
 import { useEffect } from 'react';
 import { useSetAtom, useAtomValue } from 'jotai';
 import { currentUserAtom } from '../stores/user.store';
+import type { User } from '@/types/dashboard';
 
-const AUTH_SESSION_ENDPOINT = '/api/auth/session';
+const AUTH_ME_ENDPOINT = '/api/auth/me';
 
-/**
- * Fetch the authenticated user from the backend auth session endpoint.
- * Returns null if the user is not authenticated or the endpoint is unavailable.
- */
-async function fetchAuthSession(): Promise<{
+type StoredSession = {
+  token?: string;
+};
+
+type AuthSessionUser = {
   id: string;
   firstName?: string;
   lastName?: string;
   email?: string;
   avatarUrl?: string;
-} | null> {
+  role?: 'ADMIN' | 'USER' | 'VIEWER';
+  tenantId?: string;
+  workspaceIds?: string[];
+};
+
+const VALID_ROLES = new Set<string>(['ADMIN', 'USER', 'VIEWER']);
+
+function mapAuthSessionToUser(user: AuthSessionUser): User {
+  const first = user.firstName?.trim() ?? '';
+  const last = user.lastName?.trim() ?? '';
+  const name = `${first} ${last}`.trim() || user.id;
+
+  const role: User['role'] =
+    user.role && VALID_ROLES.has(user.role) ? user.role : 'USER';
+
+  return {
+    id: user.id,
+    email: user.email ?? '',
+    name,
+    role,
+    tenantId: user.tenantId && user.tenantId.trim().length > 0 ? user.tenantId : 'default-tenant',
+    workspaceIds: user.workspaceIds ?? [],
+  };
+}
+
+function getStoredAccessToken(): string | null {
   try {
-    const response = await fetch(AUTH_SESSION_ENDPOINT, {
-      credentials: 'include',
-      headers: { Accept: 'application/json' },
+    const raw = localStorage.getItem('auth-session');
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as StoredSession;
+    return typeof parsed.token === 'string' && parsed.token.length > 0
+      ? parsed.token
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch the authenticated user from the backend auth session endpoint.
+ * Returns null if the user is not authenticated or the endpoint is unavailable.
+ */
+async function fetchAuthSession(): Promise<AuthSessionUser | null> {
+  const token = getStoredAccessToken();
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(AUTH_ME_ENDPOINT, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!response.ok) {
       return null;
     }
 
-    const data = await response.json();
-    return data?.user ?? null;
+    const user = (await response.json()) as AuthSessionUser;
+    return user?.id ? user : null;
   } catch {
-    // Auth gateway unavailable (local dev without backend)
+    // Auth API unavailable (local dev without backend)
     return null;
   }
 }
@@ -61,10 +114,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (import.meta.env.VITE_MOCK_AUTH === 'true') {
       setCurrentUser({
         id: 'dev-user-1',
-        firstName: 'Dev',
-        lastName: 'User',
         email: 'dev@localhost',
-      } as unknown);
+        name: 'Dev User',
+        role: 'USER',
+        tenantId: 'local-dev',
+        workspaceIds: [],
+      });
       return;
     }
 
@@ -73,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fetchAuthSession().then((user) => {
       if (cancelled) return;
       if (user) {
-        setCurrentUser(user as unknown);
+        setCurrentUser(mapAuthSessionToUser(user));
       }
     });
 
@@ -102,15 +157,16 @@ export function useCurrentUser() {
     };
   }
 
-  const first = (currentUser as unknown).firstName ?? '';
-  const last = (currentUser as unknown).lastName ?? '';
-  const name = `${first} ${last}`.trim() || currentUser.id;
+  const name = currentUser.name || currentUser.id;
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0] ?? '';
+  const last = parts[1] ?? '';
   const initials = (first[0] ?? '') + (last[0] ?? '') || name[0] || 'U';
 
   return {
     id: currentUser.id,
     name,
-    email: (currentUser as unknown).email ?? '',
+    email: currentUser.email ?? '',
     initials: initials.toUpperCase(),
     isAuthenticated: true,
   };

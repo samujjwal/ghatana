@@ -9,11 +9,12 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.StepResult;
 import com.ghatana.yappc.agent.YAPPCAgentBase;
-import com.ghatana.yappc.agent.YAPPCAgentRegistry;
+import com.ghatana.yappc.agent.YappcAgentRegistryAdapter;
 import com.ghatana.yappc.agent.StepContext;
 import com.ghatana.yappc.agent.StepBudget;
 import com.ghatana.yappc.agent.StepContract;
 import com.ghatana.yappc.agent.ValidationResult;
+import com.ghatana.agent.registry.InMemoryAgentRegistry;
 import com.ghatana.agent.framework.memory.EventLogMemoryStore;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import io.activej.promise.Promise;
@@ -38,13 +39,13 @@ import org.junit.jupiter.api.Test;
 @DisplayName("DeliveryCoordinatorGenerator Tests")
 class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
 
-  private YAPPCAgentRegistry agentRegistry;
+  private YappcAgentRegistryAdapter agentRegistry;
   private DeliveryCoordinatorGenerator generator;
   private EventLogMemoryStore memoryStore;
 
   @BeforeEach
   void setUp() {
-    agentRegistry = new YAPPCAgentRegistry();
+    agentRegistry = new YappcAgentRegistryAdapter(new InMemoryAgentRegistry());
     generator = new DeliveryCoordinatorGenerator(agentRegistry);
     memoryStore = new EventLogMemoryStore();
     YAPPCAgentBase.setGlobalAepEventPublisher(

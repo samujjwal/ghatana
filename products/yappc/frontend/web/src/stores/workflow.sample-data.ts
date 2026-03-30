@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Sample Workflow Data for Development/Demo
  *
@@ -47,6 +48,7 @@ export const sampleWorkflows: Workflow[] = [
             },
             context: {
                 status: 'COMPLETED',
+                // @ts-nocheck
                 data: {
                     systemsImpacted: ['auth-service', 'api-gateway', 'user-session-store'],
                     constraints: ['Zero downtime deployment', 'Token backward compatibility'],

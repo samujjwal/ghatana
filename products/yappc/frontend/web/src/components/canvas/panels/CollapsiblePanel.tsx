@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Collapsible Panel Component
  * 

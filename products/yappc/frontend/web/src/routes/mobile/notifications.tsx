@@ -6,7 +6,6 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { logger } from '../../utils/Logger';
 
@@ -35,7 +34,6 @@ export interface NotificationFilter {
  * Mobile Notifications Component
  */
 export default function Component() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [filter, setFilter] = useState<NotificationFilter>({
@@ -228,7 +226,12 @@ export default function Component() {
               <label className="block text-sm font-medium text-text-primary mb-2">Status</label>
               <select
                 value={filter.readStatus}
-                onChange={(e) => setFilter(prev => ({ ...prev, readStatus: e.target.value as unknown }))}
+                onChange={(e) =>
+                  setFilter((prev) => ({
+                    ...prev,
+                    readStatus: e.target.value as NotificationFilter['readStatus'],
+                  }))
+                }
                 className="w-full p-2 rounded-lg border border-divider bg-bg-paper text-text-primary"
               >
                 <option value="all">All</option>

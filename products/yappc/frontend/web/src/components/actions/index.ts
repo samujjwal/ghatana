@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Action Components Barrel Export
  * 

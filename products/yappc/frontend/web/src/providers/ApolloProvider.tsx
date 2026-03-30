@@ -1,5 +1,5 @@
-import { ApolloProvider as BaseApolloProvider } from '@apollo/client/react/context';
-import { apolloClient } from '@yappc/api';
+import { ApolloProvider as BaseApolloProvider } from '@apollo/client/react';
+import { graphqlClient } from '../lib/api-client';
 import React from 'react';
 
 /**
@@ -14,7 +14,7 @@ interface ApolloProviderProps {
  */
 export function ApolloProvider({ children }: ApolloProviderProps) {
   return (
-    <BaseApolloProvider client={apolloClient}>
+    <BaseApolloProvider client={graphqlClient}>
       {children}
     </BaseApolloProvider>
   );

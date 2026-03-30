@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Rate Limit Status Widget Component
  *

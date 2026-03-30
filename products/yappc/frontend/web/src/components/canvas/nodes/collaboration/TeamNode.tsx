@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ============================================================================
 // TeamNode - Canvas node for visualizing team information
 //

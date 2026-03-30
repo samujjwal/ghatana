@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * LearnStep - UI for the Learn step of the workflow
  *

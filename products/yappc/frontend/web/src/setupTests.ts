@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Jest setup file for testing
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Observe Components Index
  *

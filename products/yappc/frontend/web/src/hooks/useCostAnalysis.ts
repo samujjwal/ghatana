@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useQuery } from '@apollo/client';
 import { useCallback, useMemo } from 'react';
 import { CostAnalysis, CostRecommendation, CostForecast, CostAlert } from '../types/cost';

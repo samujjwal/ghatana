@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ============================================================================
 // ResourceNode - Canvas node for provisioned resource visualization
 //

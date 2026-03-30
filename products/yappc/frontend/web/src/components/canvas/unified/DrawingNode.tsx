@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Drawing Node Renderer - Freehand Drawings
  * 

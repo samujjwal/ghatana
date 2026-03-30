@@ -10,9 +10,15 @@ dependencies {
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:distributed-cache"))
     implementation(project(":platform:java:observability"))
-    
-    // YAPPC shared utilities
+
+    // YAPPC shared utilities (includes AgentRegistryPort)
     implementation(project(":products:yappc:core:yappc-shared"))
+
+    // AEP Agent Registry — for AepAgentRegistryAdapter only
+    implementation(project(":products:aep:aep-registry"))
+
+    // AEP Agent Runtime — for AepAgentRuntimeAdapter only
+    implementation(project(":products:aep:aep-agent-runtime"))
     
     // Database
     implementation(libs.postgresql)

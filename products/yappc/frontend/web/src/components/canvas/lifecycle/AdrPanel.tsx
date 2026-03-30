@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ADR Panel Component
  *

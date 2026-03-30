@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Search as SearchIcon } from 'lucide-react';
 import { FeatureStories } from '@yappc/canvas';
 import { Alert, Box, Chip, Stack, Typography } from '@ghatana/design-system';

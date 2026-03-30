@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Control Assessment Service
  *

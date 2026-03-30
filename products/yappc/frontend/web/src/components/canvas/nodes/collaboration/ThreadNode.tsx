@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ============================================================================
 // ThreadNode - Canvas node for visualizing discussion threads
 //

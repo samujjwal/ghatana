@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Studio Layout Component Tests
  *

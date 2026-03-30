@@ -15,10 +15,13 @@ java {
 }
 
 dependencies {
-    // AEP Agent Services (PRIMARY - use AEP instead of custom implementation)
-    // TODO(ADAPTER-SEAM): These direct AEP deps violate the boundary rule. Introduce
-    //   AgentRegistryPort and AgentRuntimePort in YAPPC; move impl to infrastructure:aep
-    implementation(project(":products:aep:aep-registry"))
+    // YAPPC Agent Registry Port — decouples from AEP at compile-time
+    // (AEP impl is wired at runtime via AepAgentRegistryAdapter in yappc-infrastructure)
+    implementation(project(":products:yappc:core:yappc-shared"))
+
+    // DataCloud Agent Registry — DataCloudAgentRegistry implements AgentRegistry SPI for
+    // durable, cross-instance agent discovery.  Wired via YappcAgentSystem.Builder#platformRegistry().
+    implementation(project(":products:data-cloud:agent-registry"))
     
     // Platform Agent Framework (SECONDARY - for base interfaces)
     implementation(project(":platform:java:agent-core"))
@@ -42,8 +45,8 @@ dependencies {
 
     // Direct platform deps used by learning/ and eval/ (not exposed by sub-modules as api)
     // backend:persistence removed (2026-03-23) — functionality consolidated into core modules
-    // TODO(ADAPTER-SEAM): aep-agent-runtime should be accessed via AgentRuntimePort once adapter seam is in place
-    implementation(project(":products:aep:aep-agent-runtime"))  // Migrated from agent-memory + agent-dispatch
+    // aep-agent-runtime adapter seam resolved: AgentEvalRunner now uses AgentRuntimePort
+    // (AEP impl wired at runtime via AepAgentRuntimeAdapter in yappc-infrastructure)
 
     // ActiveJ (generators / examples use async directly)
     implementation(libs.activej.promise)

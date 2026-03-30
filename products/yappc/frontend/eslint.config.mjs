@@ -292,6 +292,57 @@ export default tseslint.config(
               message:
                 'CanvasAIClient.ts (gRPC) is deprecated. Use getCanvasAIService() from services/canvas/api/CanvasAIService instead.',
             },
+
+            // -----------------------------------------------------------------------
+            // Deleted compat/* packages — guard against re-introduction
+            // All compat packages have been fully removed (2026-03-29).
+            // These rules prevent accidental re-creation or imports of deleted packages.
+            // -----------------------------------------------------------------------
+            {
+              group: ['@yappc/base-ui', '@yappc/base-ui/*'],
+              message:
+                '@yappc/base-ui has been deleted. Use components from @yappc/ui (libs/yappc-ui) directly.',
+            },
+            {
+              group: ['@yappc/config-hooks', '@yappc/config-hooks/*'],
+              message:
+                '@yappc/config-hooks has been deleted. Use useConfigData from libs/config.',
+            },
+            {
+              group: ['@yappc/development-ui', '@yappc/development-ui/*'],
+              message:
+                '@yappc/development-ui has been deleted. Use BurndownChart / StoryCard / VelocityChart from @yappc/ui.',
+            },
+            {
+              group: ['@yappc/initialization-ui', '@yappc/initialization-ui/*'],
+              message:
+                '@yappc/initialization-ui has been deleted. Use PresetCard / ResourcesList from @yappc/ui.',
+            },
+            {
+              group: ['@yappc/messaging', '@yappc/messaging/*'],
+              message:
+                '@yappc/messaging has been deleted. Use @yappc/chat for real-time chat and notification utilities.',
+            },
+            {
+              group: ['@yappc/navigation-ui', '@yappc/navigation-ui/*'],
+              message:
+                '@yappc/navigation-ui has been deleted. Use Breadcrumb / LifecycleStage / StageNavigation from @yappc/ui.',
+            },
+            {
+              group: ['@yappc/realtime', '@yappc/realtime/*'],
+              message:
+                '@yappc/realtime has been deleted. Use WebSocketClient from @yappc/collab or @yappc/api.',
+            },
+            {
+              group: ['@yappc/theme', '@yappc/theme/*'],
+              message:
+                '@yappc/theme has been deleted. Import theme tokens and providers from @yappc/ui or use Tailwind CSS classes directly.',
+            },
+            {
+              group: ['@yappc/utils', '@yappc/utils/*'],
+              message:
+                '@yappc/utils has been deleted. Import featureFlags / performance helpers from libs/core or libs/config.',
+            },
           ],
         },
       ],

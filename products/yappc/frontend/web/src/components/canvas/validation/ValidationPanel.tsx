@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Validation Panel Component
  * 

@@ -5,10 +5,9 @@ import java.util.Map;
 /**
  * Read-only health view over any YAPPC agent registry implementation.
  *
- * <p>Allows {@link AgentHeartbeatService} to accept both
- * {@link YAPPCAgentRegistry} (in-memory, test-friendly) and
- * {@link YappcAgentRegistryAdapter} (platform-backed, production) without
- * tying the monitoring service to a concrete registry class.
+ * <p>Allows {@link AgentHeartbeatService} to accept a production
+ * {@link YappcAgentRegistryAdapter} instance or lightweight test doubles
+ * without tying the monitoring service to a concrete registry class.
  *
  * @doc.type interface
  * @doc.purpose Unified health-status contract for YAPPC agent registries
@@ -22,7 +21,7 @@ public interface AgentHealthProvider {
      *
      * @return unmodifiable map from agent ID to status
      */
-    Map<String, YAPPCAgentRegistry.AgentStatus> getHealthStatus();
+    Map<String, AgentLifecycleStatus> getHealthStatus();
 
     /**
      * Returns the number of registered agents.

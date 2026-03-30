@@ -23,8 +23,8 @@ import { PrismaClient } from '@prisma/client';
 import { RateLimitingService } from '../../services/ratelimit/RateLimitingService';
 
 // Mock dependencies
-jest.mock('@prisma/client');
-jest.mock('../../services/ratelimit/RateLimitingService');
+vi.mock('@prisma/client');
+vi.mock('../../services/ratelimit/RateLimitingService');
 
 describe('RateLimitResolver', () => {
   let resolver: RateLimitResolver;

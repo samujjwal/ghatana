@@ -13,14 +13,11 @@
 
 import { useCallback } from 'react';
 import {
-  Menu,
+  Button,
   Divider,
   Typography,
   Box,
-  ListItemIcon,
-  ListItemText,
 } from '@ghatana/design-system';
-import { MenuItem } from '@ghatana/design-system';
 import {
   Copy as ContentCopy,
   Trash2 as Delete,
@@ -52,91 +49,90 @@ export function CanvasNodeContextMenu({
   codePanelVisible,
   toggleCodePanel,
 }: CanvasNodeContextMenuProps) {
-  return (
-    <Menu
-      open={!!nodeContextMenu}
-      onClose={onClose}
-      anchorReference="anchorPosition"
-      anchorPosition={
-        nodeContextMenu
-          ? { top: nodeContextMenu.y, left: nodeContextMenu.x }
-          : undefined
+  const withNode = useCallback(
+    (action: (nodeId: string) => void) => {
+      if (nodeContextMenu?.nodeId) {
+        action(nodeContextMenu.nodeId);
       }
+      onClose();
+    },
+    [nodeContextMenu, onClose]
+  );
+
+  if (!nodeContextMenu) return null;
+
+  return (
+    <Box
+      className="absolute z-50 min-w-[220px] rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+      style={{ top: nodeContextMenu.y, left: nodeContextMenu.x }}
     >
-      <MenuItem
-        onClick={() => {
-          if (nodeContextMenu?.nodeId)
-            canvas.duplicateNode(nodeContextMenu.nodeId);
-          onClose();
-        }}
+      <Button
+        variant="ghost"
+        className="flex w-full items-center justify-between"
+        onClick={() => withNode((id) => canvas.duplicateNode(id))}
       >
-        <ListItemIcon>
+        <Box className="flex items-center gap-2">
           <ContentCopy size={16} />
-        </ListItemIcon>
-        <ListItemText>Duplicate</ListItemText>
-        <Typography variant="caption" color="text.secondary" className="ml-4">
+          <span>Duplicate</span>
+        </Box>
+        <Typography variant="caption" color="text.secondary">
           ⌘⇧D
         </Typography>
-      </MenuItem>
-      <MenuItem
-        onClick={() => {
-          if (nodeContextMenu?.nodeId)
-            canvas.removeNode(nodeContextMenu.nodeId);
-          onClose();
-        }}
-        className="text-red-600"
+      </Button>
+      <Button
+        variant="ghost"
+        className="flex w-full items-center justify-between text-red-600"
+        onClick={() => withNode((id) => canvas.removeNode(id))}
       >
-        <ListItemIcon>
+        <Box className="flex items-center gap-2">
           <Delete size={16} className="text-red-500" />
-        </ListItemIcon>
-        <ListItemText>Delete</ListItemText>
-        <Typography variant="caption" color="text.secondary" className="ml-4">
+          <span>Delete</span>
+        </Box>
+        <Typography variant="caption" color="text.secondary">
           Del
         </Typography>
-      </MenuItem>
+      </Button>
 
       <Divider />
 
       {/* Designer Persona Actions */}
       {currentMode === 'design' && (
         <Box>
-          <MenuItem
-            onClick={() => {
-              if (nodeContextMenu?.nodeId)
-                canvas.bringForward(nodeContextMenu.nodeId);
-              onClose();
-            }}
+          <Button
+            variant="ghost"
+            className="flex w-full items-center justify-between"
+            onClick={() => withNode((id) => canvas.bringForward(id))}
           >
-            <ListItemIcon>
+            <Box className="flex items-center gap-2">
               <ArrowUpward size={16} />
-            </ListItemIcon>
-            <ListItemText>Bring Forward</ListItemText>
-            <Typography variant="caption" color="text.secondary" className="ml-4">
+              <span>Bring Forward</span>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
               ]
             </Typography>
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
-              if (nodeContextMenu?.nodeId)
-                canvas.sendBackward(nodeContextMenu.nodeId);
-              onClose();
-            }}
+          </Button>
+          <Button
+            variant="ghost"
+            className="flex w-full items-center justify-between"
+            onClick={() => withNode((id) => canvas.sendBackward(id))}
           >
-            <ListItemIcon>
+            <Box className="flex items-center gap-2">
               <ArrowDownward size={16} />
-            </ListItemIcon>
-            <ListItemText>Send Backward</ListItemText>
-            <Typography variant="caption" color="text.secondary" className="ml-4">
+              <span>Send Backward</span>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
               [
             </Typography>
-          </MenuItem>
+          </Button>
         </Box>
       )}
 
       {/* Developer Persona Actions */}
       {currentMode === 'code' && (
         <Box>
-          <MenuItem
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
             onClick={() => {
               if (nodeContextMenu?.nodeId)
                 canvas.selectNodes([nodeContextMenu.nodeId]);
@@ -145,15 +141,19 @@ export function CanvasNodeContextMenu({
             }}
           >
             Edit Code
-          </MenuItem>
-          <MenuItem onClick={onClose}>Validate Logic</MenuItem>
+          </Button>
+          <Button variant="ghost" className="w-full justify-start" onClick={onClose}>
+            Validate Logic
+          </Button>
         </Box>
       )}
 
       {/* PM Persona Actions */}
       {currentMode === 'plan' && (
-        <MenuItem onClick={onClose}>Add Comment</MenuItem>
+        <Button variant="ghost" className="w-full justify-start" onClick={onClose}>
+          Add Comment
+        </Button>
       )}
-    </Menu>
+    </Box>
   );
 }

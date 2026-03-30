@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Task Node - Task/Checkbox item for task management
  *

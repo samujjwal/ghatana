@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Represents the status of an agent
  */

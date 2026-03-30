@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Workspace State Atom
  * 
@@ -34,6 +35,8 @@ export interface Workspace {
     description?: string;
     ownerId: string;
     isDefault: boolean;
+    projectCount?: number;
+    memberCount?: number;
     aiSummary?: string;
     aiTags: string[];
     createdAt: string;

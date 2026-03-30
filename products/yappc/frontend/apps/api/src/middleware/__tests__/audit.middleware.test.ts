@@ -8,7 +8,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { auditMiddleware } from '../audit.middleware';
 
 // Mock the audit service
-jest.mock('../../services/audit/audit.service', () => ({
+vi.mock('../../services/audit/audit.service', () => ({
   getAuditService: jest.fn(),
 }));
 

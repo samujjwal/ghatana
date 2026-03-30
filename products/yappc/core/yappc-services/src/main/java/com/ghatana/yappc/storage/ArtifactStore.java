@@ -62,4 +62,13 @@ public interface ArtifactStore {
      * @return key-value metadata map
      */
     Promise<Map<String, String>> getMetadata(String path);
+
+    /**
+     * Deletes all data stored at {@code path} (content and any associated metadata).
+     *
+     * <p>No-op if the path does not exist.
+     *
+     * @param path versioned artifact path to delete
+     */
+    Promise<Void> delete(String path);
 }

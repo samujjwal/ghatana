@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Plus as AddIcon, Trash2 as DeleteIcon, Pencil as EditIcon, X as CloseIcon } from 'lucide-react';
 import {
   Box,

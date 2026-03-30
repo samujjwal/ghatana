@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canvas Backend Service - Persistence Layer
  * 

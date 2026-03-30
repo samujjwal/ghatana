@@ -1,5 +1,6 @@
 import { Component, ErrorInfo } from 'react';
 import type { ReactNode } from 'react';
+import { reportFrontendError } from './observability/errorReporter';
 
 interface Props {
     children: ReactNode;
@@ -26,8 +27,13 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     componentDidCatch(error: Error, info: ErrorInfo): void {
-        // Log to console in development; replace with observability integration when available
         console.error('[ErrorBoundary] Unhandled render error:', error, info.componentStack);
+        reportFrontendError({
+            source: 'react-error-boundary',
+            message: error.message,
+            stack: error.stack,
+            componentStack: info.componentStack,
+        });
     }
 
     render() {

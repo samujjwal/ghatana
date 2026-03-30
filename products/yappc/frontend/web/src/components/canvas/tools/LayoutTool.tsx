@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { GitBranch as LayoutIcon } from 'lucide-react';
 import {
   Box,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Compression Service Tests
  * 

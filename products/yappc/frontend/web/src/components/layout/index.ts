@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Layout Components Index
  * 

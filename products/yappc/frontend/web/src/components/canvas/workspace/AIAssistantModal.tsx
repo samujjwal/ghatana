@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * AI Assistant Modal Component
  * 

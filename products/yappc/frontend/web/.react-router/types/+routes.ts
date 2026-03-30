@@ -17,6 +17,12 @@ type Pages = {
   "/login": {
     params: {};
   };
+  "/register": {
+    params: {};
+  };
+  "/forgot-password": {
+    params: {};
+  };
   "/onboarding": {
     params: {};
   };
@@ -24,6 +30,12 @@ type Pages = {
     params: {};
   };
   "/projects": {
+    params: {};
+  };
+  "/profile": {
+    params: {};
+  };
+  "/settings": {
     params: {};
   };
   "/p/:projectId": {
@@ -61,16 +73,21 @@ type Pages = {
       "projectId": string;
     };
   };
+  "/*": {
+    params: {
+      "*": string;
+    };
+  };
 };
 
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle";
+    page: "/" | "/login" | "/register" | "/forgot-password" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
   };
   "routes/_root.tsx": {
     id: "routes/_root";
-    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle";
+    page: "/" | "/login" | "/register" | "/forgot-password" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
   };
   "routes/dashboard.tsx": {
     id: "routes/dashboard";
@@ -80,13 +97,21 @@ type RouteFiles = {
     id: "routes/login";
     page: "/login";
   };
+  "routes/register.tsx": {
+    id: "routes/register";
+    page: "/register";
+  };
+  "routes/forgot-password.tsx": {
+    id: "routes/forgot-password";
+    page: "/forgot-password";
+  };
   "routes/onboarding.tsx": {
     id: "routes/onboarding";
     page: "/onboarding";
   };
   "routes/_shell.tsx": {
     id: "routes/_shell";
-    page: "/workspaces" | "/projects" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle";
+    page: "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle";
   };
   "routes/app/workspaces.tsx": {
     id: "routes/app/workspaces";
@@ -95,6 +120,14 @@ type RouteFiles = {
   "routes/app/projects.tsx": {
     id: "routes/app/projects";
     page: "/projects";
+  };
+  "routes/profile.tsx": {
+    id: "routes/profile";
+    page: "/profile";
+  };
+  "routes/settings.tsx": {
+    id: "routes/settings";
+    page: "/settings";
   };
   "routes/app/project/_shell.tsx": {
     id: "routes/app/project/_shell";
@@ -128,6 +161,10 @@ type RouteFiles = {
     id: "routes/app/project/lifecycle";
     page: "/p/:projectId/lifecycle";
   };
+  "routes/not-found.tsx": {
+    id: "routes/not-found";
+    page: "/*";
+  };
 };
 
 type RouteModules = {
@@ -135,10 +172,14 @@ type RouteModules = {
   "routes/_root": typeof import("./src/routes/_root.tsx");
   "routes/dashboard": typeof import("./src/routes/dashboard.tsx");
   "routes/login": typeof import("./src/routes/login.tsx");
+  "routes/register": typeof import("./src/routes/register.tsx");
+  "routes/forgot-password": typeof import("./src/routes/forgot-password.tsx");
   "routes/onboarding": typeof import("./src/routes/onboarding.tsx");
   "routes/_shell": typeof import("./src/routes/_shell.tsx");
   "routes/app/workspaces": typeof import("./src/routes/app/workspaces.tsx");
   "routes/app/projects": typeof import("./src/routes/app/projects.tsx");
+  "routes/profile": typeof import("./src/routes/profile.tsx");
+  "routes/settings": typeof import("./src/routes/settings.tsx");
   "routes/app/project/_shell": typeof import("./src/routes/app/project/_shell.tsx");
   "routes/app/project/index": typeof import("./src/routes/app/project/index.tsx");
   "routes/app/project/canvas": typeof import("./src/routes/app/project/canvas.tsx");
@@ -147,4 +188,5 @@ type RouteModules = {
   "routes/app/project/deploy": typeof import("./src/routes/app/project/deploy.tsx");
   "routes/app/project/settings": typeof import("./src/routes/app/project/settings.tsx");
   "routes/app/project/lifecycle": typeof import("./src/routes/app/project/lifecycle.tsx");
+  "routes/not-found": typeof import("./src/routes/not-found.tsx");
 };

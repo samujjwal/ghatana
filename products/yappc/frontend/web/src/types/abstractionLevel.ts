@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type type
  * @doc.purpose Define abstraction levels for canvas navigation

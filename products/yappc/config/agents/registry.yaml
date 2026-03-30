@@ -62,6 +62,7 @@ domains:
   micro_agents_ai: definitions/micro-agents/ai/
   micro_agents_operations: definitions/micro-agents/operations/
   micro_agents_product_intelligence: definitions/micro-agents/product-intelligence/
+  task_agents_backlog: definitions/tasks/
 hierarchy:
   level_1_strategic:
   - id: agent.yappc.products-officer
@@ -174,7 +175,47 @@ hierarchy:
     domain: deployment
     reports_to:
     - agent.yappc.head-of-devops
+  - id: agent.yappc.code-review-orchestrator
+    definition: definitions/code-review-orchestrator.yaml
+    domain: quality-assurance
+    reports_to:
+    - agent.yappc.systems-architect
+  - id: agent.yappc.documentation-orchestrator
+    definition: definitions/documentation-orchestrator.yaml
+    domain: documentation
+    reports_to:
+    - agent.yappc.systems-architect
+  - id: agent.yappc.incident-management-orchestrator
+    definition: definitions/incident-management-orchestrator.yaml
+    domain: operations
+    reports_to:
+    - agent.yappc.head-of-devops
+  - id: agent.yappc.migration-planner
+    definition: definitions/migration-planner.yaml
+    domain: data
+    reports_to:
+    - agent.yappc.db-guardian
   level_3_workers:
+  - id: agent.yappc.api-doc-generator
+    definition: definitions/api-doc-generator.yaml
+    category: documentation
+    reports_to:
+    - agent.yappc.documentation-orchestrator
+  - id: agent.yappc.architecture-diagram-agent
+    definition: definitions/architecture-diagram-agent.yaml
+    category: architecture
+    reports_to:
+    - agent.yappc.systems-architect
+  - id: agent.yappc.changelog-generator
+    definition: definitions/changelog-generator.yaml
+    category: documentation
+    reports_to:
+    - agent.yappc.documentation-orchestrator
+  - id: agent.yappc.runbook-generator
+    definition: definitions/runbook-generator.yaml
+    category: operations
+    reports_to:
+    - agent.yappc.documentation-orchestrator
   - id: agent.yappc.java-class-writer
     definition: definitions/java-class-writer.yaml
     category: code-generation

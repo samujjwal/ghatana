@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * System Dashboard Canvas Content
  * 

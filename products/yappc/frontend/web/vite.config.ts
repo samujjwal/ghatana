@@ -211,24 +211,6 @@ export default defineConfig({
       '@yappc/ui': path.resolve(__dirname, '../libs/ui/src'),
       '@yappc/state': path.resolve(__dirname, '../libs/state/src'),
       '@yappc/shortcuts': path.resolve(__dirname, '../libs/shortcuts/src'),
-      '@yappc/base-ui': path.resolve(__dirname, '../compat/base-ui/src'),
-      '@yappc/config-hooks': path.resolve(
-        __dirname,
-        '../compat/config-hooks/src'
-      ),
-      '@yappc/development-ui': path.resolve(
-        __dirname,
-        '../compat/development-ui/src'
-      ),
-      '@yappc/initialization-ui': path.resolve(
-        __dirname,
-        '../compat/initialization-ui/src'
-      ),
-      '@yappc/navigation-ui': path.resolve(
-        __dirname,
-        '../compat/navigation-ui/src'
-      ),
-      '@yappc/theme': path.resolve(__dirname, '../compat/theme/src'),
       '@ghatana/yappc-storage': path.resolve(__dirname, '../libs/storage/src'),
       '@yappc/ai': path.resolve(__dirname, '../libs/ai/src'),
       '@ghatana/yappc-ai-requirements-service': path.resolve(

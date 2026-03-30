@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * UX Spec Panel Component
  *

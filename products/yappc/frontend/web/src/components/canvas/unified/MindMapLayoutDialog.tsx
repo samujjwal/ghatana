@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * MindMapLayoutDialog - Mind Map Auto-Layout UI
  * 

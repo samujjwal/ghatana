@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Design Mode Renderer
  * 

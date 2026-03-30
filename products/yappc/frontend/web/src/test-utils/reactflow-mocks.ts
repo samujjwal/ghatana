@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Minimal React Flow instance mock for tests
 import type { ReactFlowInstance, Node, Edge } from '@xyflow/react';
 

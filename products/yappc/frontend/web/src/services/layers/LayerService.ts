@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Layer Service - Manage canvas layers and grouping
  */

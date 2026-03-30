@@ -16,6 +16,8 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Map;
+
 /**
  * Gradle TestKit integration tests for the {@code validateAgentCatalog} task defined in
  * {@code gradle/yappc-validations.gradle.kts}.
@@ -130,6 +132,13 @@ class ValidateAgentCatalogTest {
                 .withProjectDir(projectDir.toFile())
                 .forwardOutput();
     }
+
+        private GradleRunner gradleRunnerWithEnv(Map<String, String> env) {
+                return GradleRunner.create()
+                                .withProjectDir(projectDir.toFile())
+                                .withEnvironment(env)
+                                .forwardOutput();
+        }
 
     // -------------------------------------------------------------------------
     // Tests
@@ -311,5 +320,35 @@ class ValidateAgentCatalogTest {
 
         assertTrue(result.getOutput().contains("invalid metadata.level=99"),
                 "Output should report the invalid metadata level");
+    }
+
+    @Test
+    @DisplayName("fails in strict mode when unregistered definitions exist")
+    void shouldFailOnUnregisteredDefinitionsWhenStrictModeEnabled() throws IOException {
+        writeBuildFile();
+        writeValidBaselineConfig();
+
+        // This file is not referenced by registry.yaml and no phase/domain directory
+        // mappings are declared in this minimal fixture.
+        writeAgentDefinition("orphan-agent.yaml", """
+                id: orphan-agent
+                name: Orphan Agent
+                version: "1.0"
+                metadata:
+                  level: 2
+                delegation:
+                  can_delegate_to: []
+                  escalates_to: []
+                """);
+
+        BuildResult result = gradleRunnerWithEnv(Map.of(
+                        "YAPPC_FAIL_ON_UNREGISTERED_AGENT_DEFS", "true"
+                ))
+                .withArguments("validateAgentCatalog")
+                .buildAndFail();
+
+        assertTrue(result.getOutput().contains("Unregistered agent definitions detected"),
+                "Output should report unregistered definition files in strict mode");
+        assertEquals(TaskOutcome.FAILED, result.task(":validateAgentCatalog").getOutcome());
     }
 }

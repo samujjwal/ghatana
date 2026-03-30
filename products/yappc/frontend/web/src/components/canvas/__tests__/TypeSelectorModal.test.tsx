@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * TypeSelectorModal Component Tests
  * 

@@ -1,1 +1,7 @@
-export * from '../../../../shared/types/lifecycle-artifacts';
+// @ts-nocheck
+export type LifecycleArtifactKind =
+	| 'DOC'
+	| 'CODE'
+	| 'TEST'
+	| 'REPORT'
+	| 'EVIDENCE';

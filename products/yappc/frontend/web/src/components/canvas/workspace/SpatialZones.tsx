@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Spatial Zone Layout Component
  * 

@@ -5,6 +5,8 @@
  * This file is separate from components to prevent HMR from recreating the object.
  */
 
+import type { NodeTypes } from '@xyflow/react';
+
 import {
     ComponentNode,
     ApiNode,
@@ -18,25 +20,29 @@ import { SimpleTextNode } from './SimpleTextNode';
 import { SimpleShapeNode } from './SimpleShapeNode';
 import { SimpleImageNode } from './SimpleImageNode';
 
-export const nodeTypes = {
+const asNodeComponent = (component: unknown): NonNullable<NodeTypes[string]> => {
+    return component as NonNullable<NodeTypes[string]>;
+};
+
+export const nodeTypes: NodeTypes = {
     // Basic drawing nodes (using simple working components)
-    'sticky-note': SimpleStickyNode,
-    sticky: SimpleStickyNode,
-    frame: SimpleFrameNode,
-    text: SimpleTextNode,
-    'rectangle': SimpleShapeNode,
-    'circle': SimpleShapeNode,
-    'diamond': SimpleShapeNode,
-    image: SimpleImageNode,
+    'sticky-note': asNodeComponent(SimpleStickyNode),
+    sticky: asNodeComponent(SimpleStickyNode),
+    frame: asNodeComponent(SimpleFrameNode),
+    text: asNodeComponent(SimpleTextNode),
+    'rectangle': asNodeComponent(SimpleShapeNode),
+    'circle': asNodeComponent(SimpleShapeNode),
+    'diamond': asNodeComponent(SimpleShapeNode),
+    image: asNodeComponent(SimpleImageNode),
 
     // Component nodes
-    component: ComponentNode,
-    api: ApiNode,
-    data: DataNode,
-    flow: FlowNode,
-    page: PageNode,
+    component: asNodeComponent(ComponentNode),
+    api: asNodeComponent(ApiNode),
+    data: asNodeComponent(DataNode),
+    flow: asNodeComponent(FlowNode),
+    page: asNodeComponent(PageNode),
 
     // Fallbacks
-    infrastructure: ComponentNode,
-    'backend-api': ApiNode,
-} as const;
+    infrastructure: asNodeComponent(ComponentNode),
+    'backend-api': asNodeComponent(ApiNode),
+};

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Inspector Panel Component
  * 

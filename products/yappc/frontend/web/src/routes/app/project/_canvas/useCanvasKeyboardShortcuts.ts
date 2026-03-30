@@ -15,9 +15,16 @@ import { useCallback, useEffect } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import type { DrawingTool } from './types';
 
+interface CanvasNodeLike {
+  id: string;
+  type?: string;
+  position?: { x: number; y: number };
+  [key: string]: unknown;
+}
+
 interface UseCanvasKeyboardShortcutsOptions {
   canvas: {
-    nodes: unknown[];
+    nodes: CanvasNodeLike[];
     selectedNodeIds: string[];
     activeTool: string;
     canUndo: boolean;
@@ -29,7 +36,7 @@ interface UseCanvasKeyboardShortcutsOptions {
     zoomOut: () => void;
     selectNodes: (ids: string[]) => void;
     removeNode: (id: string) => void;
-    duplicateNode: (id: string) => any;
+    duplicateNode: (id: string) => CanvasNodeLike;
     createGroup: (ids: string[], name: string) => void;
     ungroup: (id: string) => void;
     bringForward: (id: string) => void;
@@ -39,7 +46,7 @@ interface UseCanvasKeyboardShortcutsOptions {
     downloadJSON: (filename: string) => void;
     downloadSVG: (filename: string) => void;
     setActiveTool: (tool: string) => void;
-    addNode: (data: unknown) => any;
+    addNode: (data: CanvasNodeLike) => CanvasNodeLike;
     alignNodes: (type: string) => void;
   };
   projectId: string | undefined;
@@ -51,9 +58,9 @@ interface UseCanvasKeyboardShortcutsOptions {
   setMinimapVisible: (v: boolean) => void;
   propertiesPanelOpen: boolean;
   setPropertiesPanelOpen: (v: boolean) => void;
-  copiedNodes: unknown[];
+  copiedNodes: CanvasNodeLike[];
   setCopiedNodeIds: (ids: string[]) => void;
-  setCopiedNodes: (nodes: unknown[]) => void;
+  setCopiedNodes: (nodes: CanvasNodeLike[]) => void;
   hasMultipleSelection: boolean;
   setDrawingTool: (tool: DrawingTool) => void;
   setContextMenu: (v: null) => void;
@@ -172,7 +179,7 @@ export function useCanvasKeyboardShortcuts({
       // === SELECTION ===
       if (isMeta && e.key === 'a') {
         e.preventDefault();
-        const allNodeIds = canvas.nodes.map((node) => node.id);
+        const allNodeIds = canvas.nodes.map((node: CanvasNodeLike) => node.id);
         canvas.selectNodes(allNodeIds);
         return;
       }
@@ -185,24 +192,24 @@ export function useCanvasKeyboardShortcuts({
       // === CLIPBOARD ===
       if (isMeta && e.key === 'c') {
         e.preventDefault();
-        const nodesToCopy = canvas.nodes.filter((n) =>
+        const nodesToCopy = canvas.nodes.filter((n: CanvasNodeLike) =>
           canvas.selectedNodeIds.includes(n.id)
         );
         setCopiedNodeIds([...canvas.selectedNodeIds]);
-        setCopiedNodes(nodesToCopy.map((n) => ({ ...n })));
+        setCopiedNodes(nodesToCopy.map((n: CanvasNodeLike) => ({ ...n })));
         return;
       }
       if (isMeta && e.key === 'v') {
         e.preventDefault();
         if (copiedNodes.length > 0) {
           const newNodeIds: string[] = [];
-          copiedNodes.forEach((node) => {
+          copiedNodes.forEach((node: CanvasNodeLike) => {
             const newNode = canvas.addNode({
               ...node,
               id: `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               position: {
-                x: node.position.x + 20,
-                y: node.position.y + 20,
+                x: (node.position?.x ?? 0) + 20,
+                y: (node.position?.y ?? 0) + 20,
               },
             });
             newNodeIds.push(newNode.id);
@@ -213,11 +220,11 @@ export function useCanvasKeyboardShortcuts({
       }
       if (isMeta && e.key === 'x') {
         e.preventDefault();
-        const nodesToCut = canvas.nodes.filter((n) =>
+        const nodesToCut = canvas.nodes.filter((n: CanvasNodeLike) =>
           canvas.selectedNodeIds.includes(n.id)
         );
         setCopiedNodeIds([...canvas.selectedNodeIds]);
-        setCopiedNodes(nodesToCut.map((n) => ({ ...n })));
+        setCopiedNodes(nodesToCut.map((n: CanvasNodeLike) => ({ ...n })));
         canvas.selectedNodeIds.forEach((id) => canvas.removeNode(id));
         return;
       }
@@ -252,9 +259,9 @@ export function useCanvasKeyboardShortcuts({
       if (isMeta && e.key === 'g' && isShift) {
         e.preventDefault();
         const groupNodes = canvas.nodes.filter(
-          (n) => canvas.selectedNodeIds.includes(n.id) && n.type === 'group'
+          (n: CanvasNodeLike) => canvas.selectedNodeIds.includes(n.id) && n.type === 'group'
         );
-        groupNodes.forEach((g) => canvas.ungroup(g.id));
+        groupNodes.forEach((g: CanvasNodeLike) => canvas.ungroup(g.id));
         return;
       }
 

@@ -1,7 +1,23 @@
 /**
- * @yappc/ai notifications — redirected to @yappc/messaging
- *
- * The canonical notifications implementation lives in `@yappc/messaging`.
- * This re-export exists for compatibility only.
+ * @yappc/ai notifications — real-time notification functionality
  */
-export * from '@yappc/messaging';
+export { useNotificationBackend } from './hooks/useNotificationBackend';
+export type {
+  UseNotificationBackendConfig,
+  Notification,
+  NotificationType,
+  NotificationPriority,
+  NotificationSendPayload,
+  NotificationReadPayload,
+  NotificationDismissPayload,
+  NotificationState,
+} from './hooks/useNotificationBackend';
+
+export { NotificationBell } from './components/NotificationBell';
+export type { NotificationBellProps } from './components/NotificationBell';
+
+export { NotificationPanel } from './components/NotificationPanel';
+export type { NotificationPanelProps } from './components/NotificationPanel';
+
+export { NotificationItem } from './components/NotificationItem';
+export type { NotificationItemProps } from './components/NotificationItem';

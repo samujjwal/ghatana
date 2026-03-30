@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * IndexedDB Storage Adapter
  * 

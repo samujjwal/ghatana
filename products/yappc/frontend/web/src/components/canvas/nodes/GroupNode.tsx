@@ -39,7 +39,7 @@
  */
 
 import React, { useState, useCallback, useRef } from 'react';
-import { type NodeProps } from '@xyflow/react';
+import { type Node, type NodeProps } from '@xyflow/react';
 import { NodeResizer } from '@xyflow/react';
 import { useAtomValue } from 'jotai';
 import { cameraZoomAtom } from '../workspace';
@@ -71,7 +71,9 @@ export interface GroupNodeData {
  * style: { width: 400, height: 300 }
  * ```
  */
-export function GroupNode({ data, selected }: NodeProps<GroupNodeData>) {
+type GroupCanvasNode = Node<GroupNodeData, 'group'>;
+
+export function GroupNode({ data, selected }: NodeProps<GroupCanvasNode>) {
     const zoom = useAtomValue(cameraZoomAtom);
 
     const [label, setLabel] = useState(data.label ?? 'Group');

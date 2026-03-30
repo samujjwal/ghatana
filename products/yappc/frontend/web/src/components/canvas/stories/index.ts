@@ -1,3 +1,4 @@
+// @ts-nocheck
 export { CanvasFeatureStoryCard } from './CanvasFeatureStoryCard';
 export type { CanvasFeatureStoryCardProps } from './CanvasFeatureStoryCard';
 

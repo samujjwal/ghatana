@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * on top of the AEP central catalog and registry, replacing the
  * product-local registry ownership that existed before v2.4.
  *
- * <p>YAPPC code that previously called {@code YAPPCAgentRegistry} or
+ * <p>YAPPC code that previously called product-local agent registries or
  * {@code YappcAgentCatalog} directly should migrate to this bridge, which
  * delegates all catalog/registry operations to AEP while preserving the
  * YAPPC-specific query patterns (phase-based lookup, step-name resolution).

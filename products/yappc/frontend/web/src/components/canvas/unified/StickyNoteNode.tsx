@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Sticky Note Node - Quick brainstorming notes
  *

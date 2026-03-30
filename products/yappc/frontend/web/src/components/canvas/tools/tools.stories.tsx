@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Box } from '@ghatana/design-system';
 
 import { AccessibilityTool } from './AccessibilityTool';

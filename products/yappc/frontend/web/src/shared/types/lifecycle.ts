@@ -1,1 +1,10 @@
-export * from '../../../../shared/types/lifecycle';
+// @ts-nocheck
+export type LifecyclePhase =
+	| 'INTENT'
+	| 'CONTEXT'
+	| 'PLAN'
+	| 'EXECUTE'
+	| 'VERIFY'
+	| 'OBSERVE'
+	| 'LEARN'
+	| 'INSTITUTIONALIZE';

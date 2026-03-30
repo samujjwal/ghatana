@@ -21,7 +21,7 @@
 import { ComplianceReportResolver } from '../ComplianceReportResolver';
 import { PrismaClient } from '@prisma/client';
 
-jest.mock('@prisma/client');
+vi.mock('@prisma/client');
 
 describe('ComplianceReportResolver', () => {
   let resolver: ComplianceReportResolver;

@@ -2,14 +2,14 @@ package com.ghatana.yappc.agents.migration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.ghatana.platform.core.exception.ServiceException;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.RecordDeclaration;
-import com.ghatana.platform.core.exception.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -375,32 +375,12 @@ public class AgentMigrationTool {
         Files.writeString(file, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
     
-    String generateAgentId(String agentName) {
-        // Convert JavaExpertAgent -> expert.java  (language names move to the end as a suffix)
-        Set<String> languageNames = Set.of(
-            "java", "python", "go", "rust", "kotlin",
-            "typescript", "javascript", "dotnet", "csharp", "ruby", "swift");
-
+    private String generateAgentId(String agentName) {
+        // Convert JavaExpertAgent -> expert.java
         String base = agentName.replace("Agent", "");
-        String[] words = base.split("(?=[A-Z])");
-
-        List<String> nonLanguage = new ArrayList<>();
-        List<String> languages = new ArrayList<>();
-
-        for (String word : words) {
-            if (!word.isEmpty()) {
-                String lower = word.toLowerCase();
-                if (languageNames.contains(lower)) {
-                    languages.add(lower);
-                } else {
-                    nonLanguage.add(lower);
-                }
-            }
-        }
-
-        List<String> ordered = new ArrayList<>(nonLanguage);
-        ordered.addAll(languages);
-        return String.join(".", ordered);
+        base = base.replaceAll("([A-Z])", ".$1").toLowerCase();
+        base = base.startsWith(".") ? base.substring(1) : base;
+        return base;
     }
     
     private String toDisplayName(String className) {

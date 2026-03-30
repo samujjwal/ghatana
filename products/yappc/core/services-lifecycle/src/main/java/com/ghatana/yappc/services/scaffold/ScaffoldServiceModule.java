@@ -8,6 +8,8 @@ import com.ghatana.yappc.core.orchestrator.PolyglotBuildOrchestrator;
 import com.ghatana.yappc.core.services.ProjectAnalysisService;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +45,11 @@ public class ScaffoldServiceModule extends AbstractModule {
      * <p>Detects languages, frameworks, build tools, and CI/CD patterns
      * for intelligent scaffold generation.</p>
      */
+    @Provides
+    PrometheusMeterRegistry prometheusMeterRegistry() {
+        return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+    }
+
     @Provides
     ProjectAnalysisService projectAnalysisService() {
         logger.info("Creating ProjectAnalysisService");

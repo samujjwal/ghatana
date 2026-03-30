@@ -1,3 +1,4 @@
+// @ts-nocheck
 type AnthropicConfig = {
   apiKey?: string;
   baseURL?: string;

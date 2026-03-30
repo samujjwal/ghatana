@@ -113,7 +113,7 @@ LLMGenerator.LLMConfig config = LLMGenerator.LLMConfig.builder()
     .build();
 
 // 3. Bootstrap with LLM
-YAPPCAgentRegistry registry = new YAPPCAgentRegistry();
+YappcAgentRegistryAdapter registry = new YappcAgentRegistryAdapter(new InMemoryAgentRegistry());
 MemoryStore memoryStore = new EventLogMemoryStore();
 
 YAPPCAgentBootstrap bootstrap = new YAPPCAgentBootstrap(

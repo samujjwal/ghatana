@@ -6,16 +6,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
-export interface SimpleTextData {
+export interface SimpleTextData extends Record<string, unknown> {
     text: string;
     fontSize?: number;
     color?: string;
 }
 
-export const SimpleTextNode = React.memo(({ data, selected, id }: NodeProps<SimpleTextData>) => {
-    const { text = 'Text', fontSize = 16, color = '#333' } = data as SimpleTextData;
+type SimpleTextCanvasNode = Node<SimpleTextData, 'text'>;
+
+export const SimpleTextNode = React.memo(({ data, selected, id }: NodeProps<SimpleTextCanvasNode>) => {
+    const { text = 'Text', fontSize = 16, color = '#333' } = data;
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(text);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -71,7 +73,7 @@ export const SimpleTextNode = React.memo(({ data, selected, id }: NodeProps<Simp
                 <TextField
                     inputRef={inputRef}
                     value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
+                    onChange={(event) => setEditText(event.target.value)}
                     onKeyDown={handleKeyDown}
                     onBlur={handleBlur}
                     variant="standard"

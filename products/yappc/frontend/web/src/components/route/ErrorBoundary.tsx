@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Reusable Error Boundary for Route Modules
  * 

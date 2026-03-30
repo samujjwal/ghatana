@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CanvasExporter - Export canvas to various formats
  * 

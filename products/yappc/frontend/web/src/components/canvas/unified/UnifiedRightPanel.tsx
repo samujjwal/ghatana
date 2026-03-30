@@ -12,23 +12,31 @@ import {
   Button,
 } from '@ghatana/design-system';
 import { Drawer } from '@ghatana/design-system';
-import { Sparkles as AutoAwesome, Zap as Bolt, X as Close, Lightbulb, Palette, Bot as SmartToy } from 'lucide-react';
+import { Zap as Bolt, X as Close, Lightbulb, Palette, Bot as SmartToy } from 'lucide-react';
 import { useAtom } from 'jotai';
-import { rightPanelOpenAtom, uiAtom } from '../../../state/atoms/unifiedCanvasAtom';
+import { rightPanelOpenAtom, uiAtom, type UIState } from '../../../state/atoms/unifiedCanvasAtom';
 import { ShapeStylePicker } from './ShapeStylePicker';
+
+type CanvasPanelNode = {
+    id: string;
+    type: string;
+    data: Record<string, unknown>;
+};
+
+type RightPanelTab = UIState['rightPanelTab'];
 
 interface UnifiedRightPanelProps {
     selectedNodeIds?: string[];
-    nodes?: Array<{ id: string; type: string; data: Record<string, unknown> }>;
+    nodes?: CanvasPanelNode[];
     onUpdateNode?: (nodeId: string, updates: Record<string, unknown>) => void;
 }
 
 export function UnifiedRightPanel({ selectedNodeIds = [], nodes = [], onUpdateNode }: UnifiedRightPanelProps) {
     const [panelOpen, setPanelOpen] = useAtom(rightPanelOpenAtom);
     const [ui, setUI] = useAtom(uiAtom);
-    const [activeTab, setActiveTab] = useState(ui.rightPanelTab);
+    const [activeTab, setActiveTab] = useState<RightPanelTab>(ui.rightPanelTab);
 
-    const handleTabChange = (_event: React.SyntheticEvent, newValue: typeof activeTab) => {
+    const handleTabChange = (_event: React.SyntheticEvent, newValue: RightPanelTab) => {
         setActiveTab(newValue);
         setUI({ ...ui, rightPanelTab: newValue });
     };
@@ -45,11 +53,11 @@ export function UnifiedRightPanel({ selectedNodeIds = [], nodes = [], onUpdateNo
 
     return (
         <Drawer
-            variant="persistent"
             anchor="right"
             open={panelOpen}
+            onClose={() => setPanelOpen(false)}
             className="relative h-full w-[360px] shrink-0 border-l"
-            style={{ borderColor: 'divider' }}
+            PaperProps={{ style: { borderColor: 'divider' } }}
         >
             <Box className="flex flex-col h-full">
                 {/* Header */}
@@ -62,7 +70,7 @@ export function UnifiedRightPanel({ selectedNodeIds = [], nodes = [], onUpdateNo
                 </Box>
 
                 {/* Tabs */}
-                <Tabs value={activeTab} onChange={handleTabChange} variant="fullWidth">
+                <Tabs value={activeTab} onChange={handleTabChange} variant="underline" fullWidth>
                     <Tab icon={<Palette size={16} />} label="Style" value="style" />
                     <Tab icon={<Lightbulb size={16} />} label="Guide" value="guidance" />
                     <Tab icon={<SmartToy size={16} />} label="AI" value="ai" />
@@ -75,7 +83,7 @@ export function UnifiedRightPanel({ selectedNodeIds = [], nodes = [], onUpdateNo
                         <ShapeStylePicker
                             selectedNodeIds={selectedNodeIds}
                             nodes={nodes}
-                            onUpdateNode={onUpdateNode || (() => { })}
+                            onUpdateNode={onUpdateNode ?? (() => {})}
                         />
                     )}
                     {activeTab === 'guidance' && (

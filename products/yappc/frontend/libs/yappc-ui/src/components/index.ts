@@ -219,14 +219,14 @@ export type {
 export * as DevSecOps from './components/DevSecOps';
 
 // YAPPC-specific theme extensions
-export { ThemeProvider, ThemeContext, useThemeContext } from '@yappc/theme';
-export { ThemeProvider as defaultThemeProvider } from '@yappc/theme';
-export { theme, lightTheme, darkTheme } from '@yappc/theme';
+export { ThemeProvider, ThemeContext, useThemeContext } from './theme';
+export { ThemeProvider as defaultThemeProvider } from './theme';
+export { theme, lightTheme, darkTheme } from './theme';
 export type {
   ThemeContextType,
   ThemeMode,
   ThemeProviderProps,
-} from '@yappc/theme';
+} from './theme';
 
 // Command Palette
 export {
@@ -408,8 +408,8 @@ export {
   useWorkspaceTheme,
   useAppTheme,
   LayerPriority,
-} from '@yappc/theme';
-export type { ThemeLayer, MultiLayerThemeContextValue } from '@yappc/theme';
+} from './theme';
+export type { ThemeLayer, MultiLayerThemeContextValue } from './theme';
 
 // YAPPC-specific utilities
 export { PlatformWrapper } from './utils/PlatformWrapper';
@@ -423,7 +423,7 @@ export {
 } from './utils/responsive';
 
 // YAPPC design tokens (extends root tokens)
-export * from '@yappc/theme';
+export * from './theme';
 
 // YAPPC-specific hooks
 export * from './hooks';
@@ -455,7 +455,7 @@ export { cn } from './utils/cn';
 // PREVIOUSLY MUI-SOURCED COMPONENTS — now re-exported from @mui/material at top of file
 // Consumers should import from @ghatana/yappc-ui directly.
 // ============================================================================
-export { useTheme as useMuiTheme } from '@yappc/theme';
+export { useTheme as useMuiTheme } from './theme';
 
 // ============================================================================
 // LEGACY MUI TYPES — consumers should remove these
@@ -468,7 +468,7 @@ export type SxProps<T = unknown> = Record<string, unknown>;
 export type SystemSxProps = Record<string, unknown>;
 
 // Theme-related types (local replacements)
-export type { PaletteMode, ThemeOptions, PaletteOptions } from '@yappc/theme';
+export type { PaletteMode, ThemeOptions, PaletteOptions } from './theme';
 
 /**
  * @deprecated — Color alpha utility. Use Tailwind opacity utilities instead.
@@ -494,7 +494,7 @@ export function alpha(color: string, opacity: number): string {
 // ============================================================================
 
 // Safe palette color resolution utilities
-export { resolveMuiColor, getPaletteMain } from '@yappc/theme';
+export { resolveMuiColor, getPaletteMain } from './theme';
 
 // ============================================================================
 // CONFIGURATION SYSTEM

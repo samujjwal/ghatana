@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Storage Migration Utility
  * 

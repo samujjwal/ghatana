@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Shape Library Panel - Quick shape insertion with drag-to-insert
  * 

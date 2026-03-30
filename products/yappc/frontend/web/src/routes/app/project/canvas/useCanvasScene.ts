@@ -117,8 +117,6 @@ export const useCanvasScene = ({
     useCanvasLifecycle(canvasState);
   // Canvas history: use Jotai canvasHistoryAtom + pushHistoryAtom + undoAtom + redoAtom
   const history = { undo: () => {}, redo: () => {} }; // NOTE: wire to canvasHistoryAtom
-  // Canvas history: use Jotai canvasHistoryAtom + pushHistoryAtom + undoAtom + redoAtom
-  const history = { undo: () => {}, redo: () => {} }; // NOTE: wire to canvasHistoryAtom
   // Selection state: managed via Jotai selectedNodesAtom (replaces deprecated useCanvasSelection)
   const selection = useMemo(() => ({
     selectedIds: canvasState.selectedElements || [],

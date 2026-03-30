@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>Runs on the ActiveJ event loop to remain non-blocking. Every
  * {@code heartbeatIntervalMs} milliseconds the service:
  * <ol>
- *   <li>Snapshots the current {@link YAPPCAgentRegistry.AgentStatus} of every agent.</li>
+ *   <li>Snapshots the current {@link AgentLifecycleStatus} of every agent.</li>
  *   <li>Records each agent's last-seen timestamp.</li>
  *   <li>Logs a warning for any agent that has not transitioned out of
  *       {@code FAILED} after three consecutive cycles.</li>
@@ -147,7 +147,7 @@ public class AgentHeartbeatService {
     }
 
     private void performHeartbeat() {
-        Map<String, YAPPCAgentRegistry.AgentStatus> statuses = registry.getHealthStatus();
+        Map<String, AgentLifecycleStatus> statuses = registry.getHealthStatus();
         lastHeartbeat = Instant.now();
 
         if (statuses.isEmpty()) {
@@ -158,12 +158,12 @@ public class AgentHeartbeatService {
         int healthy = 0;
         int failed = 0;
 
-        for (Map.Entry<String, YAPPCAgentRegistry.AgentStatus> entry : statuses.entrySet()) {
+        for (Map.Entry<String, AgentLifecycleStatus> entry : statuses.entrySet()) {
             String agentId = entry.getKey();
-            YAPPCAgentRegistry.AgentStatus status = entry.getValue();
+            AgentLifecycleStatus status = entry.getValue();
 
-            if (status == YAPPCAgentRegistry.AgentStatus.FAILED
-                || status == YAPPCAgentRegistry.AgentStatus.STOPPED) {
+            if (status == AgentLifecycleStatus.FAILED
+                || status == AgentLifecycleStatus.STOPPED) {
                 int count = consecutiveFailures.merge(agentId, 1, Integer::sum);
                 failed++;
 
@@ -173,7 +173,7 @@ public class AgentHeartbeatService {
                 }
             } else {
                 consecutiveFailures.remove(agentId);
-                if (status == YAPPCAgentRegistry.AgentStatus.READY) {
+                if (status == AgentLifecycleStatus.READY) {
                     healthy++;
                 }
             }

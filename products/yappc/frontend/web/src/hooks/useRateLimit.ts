@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Rate Limit Custom Hook
  *

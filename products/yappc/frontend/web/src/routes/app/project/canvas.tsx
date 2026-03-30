@@ -3,11 +3,11 @@
  * Override per-node via node.data.width / node.data.height if set.
  */
 export const NODE_DEFAULT_SIZES: Record<string, { width: number; height: number }> = {
-  frame:        { width: 400, height: 300 },
+  frame: { width: 400, height: 300 },
   'sticky-note': { width: 200, height: 200 },
-  text:         { width: 300, height: 150 },
-  task:         { width: 250, height: 70  },
-  default:      { width: 150, height: 150 },
+  text: { width: 300, height: 150 },
+  task: { width: 250, height: 70 },
+  default: { width: 150, height: 150 },
 };
 
 /** Resolve width/height for a given node type. */
@@ -39,113 +39,86 @@ function getNodeSize(type: string | undefined): { width: number; height: number 
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Box, Alert } from '@ghatana/design-system';
+import { Alert, Box, Snackbar } from '@ghatana/design-system';
 import {
+  Background,
+  Controls,
+  MiniMap,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
-  Background,
-  MiniMap,
-  type NodeChange,
-  type EdgeChange,
   type Connection as RFConnection,
-  Controls,
+  type Edge,
+  type EdgeChange,
+  type EdgeTypes,
+  type Node,
+  type NodeChange,
+  type NodeTypes,
 } from '@xyflow/react';
 import { useAtom, useSetAtom } from 'jotai';
+import { useQuery } from '@tanstack/react-query';
 import {
-  headerActionContextAtom,
-  headerContextActionsAtom,
-  headerCanvasModeAtom,
-  headerShowCanvasModeAtom,
-  headerOnCanvasModeChangeAtom,
-  headerPhaseInfoAtom,
-  headerRoleInfoAtom,
-} from '../../../state/atoms/layoutAtom';
-import '@xyflow/react/dist/style.css';
-import { getPhaseTheme, type LifecyclePhase } from '../../../theme/phaseTheme';
-import {
+  Download as FileDownload,
+  Redo2 as Redo,
   Settings,
   Share2 as Share,
   Undo2 as Undo,
-  Redo2 as Redo,
   ZoomIn,
   ZoomOut,
-  Download as FileDownload,
 } from 'lucide-react';
 
-// Import custom node/edge types
-import { nodeTypes } from '../../../components/canvas/nodeTypes';
+import {
+  CanvasChromeLayout,
+  chromeCalmModeAtom,
+  chromeInspectorVisibleAtom,
+  chromeLeftRailVisibleAtom,
+  chromeMinimapVisibleAtom,
+  chromeZoomLevelAtom,
+  useCanvasCommands,
+  useCanvasTelemetry,
+} from '@yappc/canvas';
+import { headerActionContextAtom, headerCanvasModeAtom, headerContextActionsAtom, headerOnCanvasModeChangeAtom, headerPhaseInfoAtom, headerRoleInfoAtom, headerShowCanvasModeAtom } from '../../../state/atoms/layoutAtom';
+import '@xyflow/react/dist/style.css';
 import { DependencyEdge } from '../../../components/canvas/edges';
+import { KeyboardShortcutLegend } from '../../../components/canvas/KeyboardShortcutLegend';
+import { useInlineCodePanel } from '../../../components/canvas/InlineCodePanel';
+import { nodeTypes } from '../../../components/canvas/nodeTypes';
+import { useLifecycleZones } from '../../../components/canvas/ZoomableLifecycleZones';
+import { CanvasErrorBoundary } from '../../../components/canvas/unified/CanvasErrorBoundary';
+import { UnifiedLeftRail } from '../../../components/canvas/unified/UnifiedLeftRail';
+import { UnifiedRightPanel } from '../../../components/canvas/unified/UnifiedRightPanel';
+import { UnifiedToolbar } from '../../../components/canvas/unified/UnifiedToolbar';
+import { type CanvasMode as NavCanvasMode } from '../../../components/navigation';
+import { useKeyboardShortcuts } from '../../../components/keyboard/KeyboardShortcutsManager';
+import { useStudioMode } from '../../../components/studio/StudioLayout';
+import { useAIStatusBar } from '../../../components/ai/AIStatusBar';
+import { useCanvasMode } from '../../../hooks/useCanvasMode';
+import { useUnifiedCanvas, type UseUnifiedCanvasReturn } from '../../../hooks/useUnifiedCanvas';
+import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
+import type { AlignmentType, DistributionAxis } from '../../../lib/canvas/AlignmentEngine';
+import { getPhaseTheme, type LifecyclePhase } from '../../../theme/phaseTheme';
+import type { CanvasMode } from '../../../types/canvasMode';
+import { LifecyclePhase as RailLifecyclePhase } from '../../../types/lifecycle';
+import {
+  CanvasNodeContextMenu,
+  CanvasOutlinePanel,
+  CanvasStatusBar,
+  DraggableBox,
+  type NodeContextMenuState,
+  useCanvasDrawing,
+  useCanvasExport,
+  useCanvasKeyboardShortcuts,
+  useCanvasRoleInfo,
+} from './_canvas';
 
 const edgeTypes = {
   dependency: DependencyEdge,
   flow: DependencyEdge,
-};
+} as unknown as EdgeTypes;
 
 type YAPPCCanvasNode = Parameters<UseUnifiedCanvasReturn['addNode']>[0];
-
-// Canvas library imports
-import {
-  CanvasCommandProvider,
-  useCanvasCommands,
-  useCanvasTelemetry,
-  CanvasChromeLayout,
-  chromeCalmModeAtom,
-  chromeLeftRailVisibleAtom,
-  chromeMinimapVisibleAtom,
-  chromeInspectorVisibleAtom,
-  chromeZoomLevelAtom,
-} from '@yappc/canvas';
-
-import { UnifiedToolbar } from '../../../components/canvas/unified/UnifiedToolbar';
-import { UnifiedLeftRail } from '../../../components/canvas/unified/UnifiedLeftRail';
-import { UnifiedRightPanel } from '../../../components/canvas/unified/UnifiedRightPanel';
-import {
-  type CanvasMode as NavCanvasMode,
-} from '../../../components/navigation';
-
-import { useCanvasMode } from '../../../hooks/useCanvasMode';
-import type { CanvasMode } from '../../../types/canvasMode';
-import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
-import { useQuery } from '@tanstack/react-query';
-import { CanvasErrorBoundary } from '../../../components/canvas/unified/CanvasErrorBoundary';
-import { useUnifiedCanvas, type UseUnifiedCanvasReturn } from '../../../hooks/useUnifiedCanvas';
-
-import {
-  AIStatusBar,
-  useAIStatusBar,
-} from '../../../components/ai/AIStatusBar';
-import {
-  useLifecycleZones,
-} from '../../../components/canvas/ZoomableLifecycleZones';
-import {
-  useInlineCodePanel,
-} from '../../../components/canvas/InlineCodePanel';
-import {
-  useStudioMode,
-} from '../../../components/studio/StudioLayout';
-import {
-  useKeyboardShortcuts,
-} from '../../../components/keyboard/KeyboardShortcutsManager';
-import { KeyboardShortcutLegend } from '../../../components/canvas/KeyboardShortcutLegend';
-
-// Decomposed modules
-import {
-  DraggableBox,
-  useCanvasKeyboardShortcuts,
-  useCanvasDrawing,
-  useCanvasExport,
-  useCanvasRoleInfo,
-  CanvasNodeContextMenu,
-  CanvasStatusBar,
-  CanvasOutlinePanel,
-  type NodeContextMenuState,
-} from './_canvas';
-import type { AlignmentType, DistributionAxis } from '../../../lib/canvas/AlignmentEngine';
-
-// ============================================================================
-// Main Canvas Component
-// ============================================================================
+type KeyboardShortcutCanvas = Parameters<typeof useCanvasKeyboardShortcuts>[0]['canvas'];
+type KeyboardShortcutNode = Parameters<typeof useCanvasKeyboardShortcuts>[0]['copiedNodes'][number];
 
 function UnifiedCanvasInner() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -163,8 +136,7 @@ function UnifiedCanvasInner() {
   const setHeaderRoleInfo = useSetAtom(headerRoleInfoAtom);
 
   // Workspace context
-  const { currentWorkspace, ownedWorkspaces, ownedProjects, includedProjects } =
-    useWorkspaceContext();
+  useWorkspaceContext();
 
   // Fetch project data
   const { data: project } = useQuery({
@@ -234,15 +206,20 @@ function UnifiedCanvasInner() {
 
   // Expose ReactFlow instance globally
   useEffect(() => {
-    (window as unknown).__reactFlowInstance = reactFlowInstance;
-    return () => { delete (window as unknown).__reactFlowInstance; };
+    const globalWindow = window as Window & { __reactFlowInstance?: unknown };
+    globalWindow.__reactFlowInstance = reactFlowInstance;
+    return () => {
+      delete globalWindow.__reactFlowInstance;
+    };
   }, [reactFlowInstance]);
 
   // Listen for YAPPC add-node events
   useEffect(() => {
-    const handleAddNode = (event: CustomEvent<YAPPCCanvasNode>) => {
-      canvas.addNode(event.detail);
+    const handleAddNode: EventListener = (event) => {
+      const customEvent = event as CustomEvent<YAPPCCanvasNode>;
+      canvas.addNode(customEvent.detail);
     };
+
     window.addEventListener('yappc:add-node', handleAddNode);
     return () => window.removeEventListener('yappc:add-node', handleAddNode);
   }, [canvas]);
@@ -262,7 +239,7 @@ function UnifiedCanvasInner() {
   const [layerMenuAnchor, setLayerMenuAnchor] = useState<HTMLElement | null>(null);
   const [propertiesPanelOpen, setPropertiesPanelOpen] = useState(false);
   const [copiedNodeIds, setCopiedNodeIds] = useState<string[]>([]);
-  const [copiedNodes, setCopiedNodes] = useState<unknown[]>([]);
+  const [copiedNodes, setCopiedNodes] = useState<KeyboardShortcutNode[]>([]);
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastSeverity, setToastSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('info');
@@ -367,21 +344,30 @@ function UnifiedCanvasInner() {
   // DRAWING (extracted hook)
   // =========================================================================
 
-  const drawing = useCanvasDrawing({ canvas, canvasRef, drawingCanvasRef });
+  const drawing = useCanvasDrawing({
+    canvas: canvas as Parameters<typeof useCanvasDrawing>[0]['canvas'],
+    canvasRef,
+    drawingCanvasRef,
+  });
 
   // =========================================================================
   // EXPORT (extracted hook)
   // =========================================================================
 
   const { handleExportJSON, handleExportSVG, handleExportPNG, handleImportJSON } =
-    useCanvasExport({ canvas, projectId, canvasRef, setExportMenuAnchor: () => setExportMenuAnchor(null) });
+    useCanvasExport({
+      canvas: canvas as Parameters<typeof useCanvasExport>[0]['canvas'],
+      projectId,
+      canvasRef,
+      setExportMenuAnchor: () => setExportMenuAnchor(null),
+    });
 
   // =========================================================================
   // KEYBOARD SHORTCUTS (extracted hook)
   // =========================================================================
 
   useCanvasKeyboardShortcuts({
-    canvas,
+    canvas: canvas as unknown as KeyboardShortcutCanvas,
     projectId,
     calmMode,
     setCalmMode,
@@ -417,7 +403,7 @@ function UnifiedCanvasInner() {
   // REACTFLOW CONVERSION
   // =========================================================================
 
-  const reactFlowNodes = useMemo(() => {
+  const reactFlowNodes = useMemo<Node[]>(() => {
     return canvas.nodes.map((node) => ({
       id: node.id,
       type: node.type,
@@ -438,13 +424,18 @@ function UnifiedCanvasInner() {
       draggable: true,
       deletable: true,
       style: getNodeSize(node.type),
-    }));
+    })) as Node[];
   }, [canvas.nodes, canvas.selectedNodeIds, canvas]);
 
-  const reactFlowEdges = useMemo(
-    () => canvas.connections.map((conn) => ({ id: conn.id, source: conn.source, target: conn.target, animated: conn.animated })),
-    [canvas.connections]
-  );
+  const reactFlowEdges = useMemo<Edge[]>(() => {
+    return canvas.connections.map((connection) => ({
+      id: connection.id,
+      source: connection.source,
+      target: connection.target,
+      type: 'dependency',
+      animated: Boolean((connection as unknown as Record<string, unknown>).animated),
+    })) as Edge[];
+  }, [canvas.connections]);
 
   // =========================================================================
   // REACTFLOW HANDLERS
@@ -491,7 +482,7 @@ function UnifiedCanvasInner() {
   // EVENT HANDLERS
   // =========================================================================
 
-  const handleCanvasRightClick = useCallback((event: React.MouseEvent) => {
+  const handleCanvasRightClick = useCallback((event: MouseEvent | React.MouseEvent<Element>) => {
     event.preventDefault();
     const bounds = canvasRef.current?.getBoundingClientRect();
     if (bounds) {
@@ -523,7 +514,7 @@ function UnifiedCanvasInner() {
       const creationTools = ['rectangle', 'ellipse', 'diamond', 'text', 'sticky', 'frame', 'image', 'code', 'circle'];
       if (creationTools.includes(canvas.activeTool)) {
         const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-        let finalType = canvas.activeTool;
+        let finalType: string = canvas.activeTool;
         if (finalType === 'sticky') finalType = 'sticky-note';
         if (finalType === 'ellipse') finalType = 'circle';
         addNodeAtPosition(finalType, position);
@@ -532,11 +523,11 @@ function UnifiedCanvasInner() {
     [canvas.activeTool, reactFlowInstance, addNodeAtPosition, canvas]
   );
 
-  const handleNodeClick = useCallback((_event: React.MouseEvent, _node: unknown) => {
+  const handleNodeClick = useCallback((_event: MouseEvent | React.MouseEvent<Element>, _node: Node) => {
     setShowShortcutHint(false);
   }, []);
 
-  const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: unknown) => {
+  const handleNodeContextMenu = useCallback((event: MouseEvent | React.MouseEvent<Element>, node: { id: string }) => {
     event.preventDefault();
     event.stopPropagation();
     setNodeContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
@@ -564,7 +555,11 @@ function UnifiedCanvasInner() {
 
   const leftRailContent = (
     <UnifiedLeftRail
-      context={{ mode: currentMode as unknown, role: roleInfo?.label, phase: phaseInfo?.label }}
+      context={{
+        mode: currentMode,
+        role: roleInfo?.label,
+        phase: phaseInfo?.phase as unknown as RailLifecyclePhase | undefined,
+      }}
       nodes={canvas.nodes}
       selectedNodeIds={canvas.selectedNodeIds}
       onInsertNode={(nodeData, position) => {
@@ -573,18 +568,35 @@ function UnifiedCanvasInner() {
           const center = reactFlowInstance.getViewport();
           pos = { x: -center.x / center.zoom + 100, y: -center.y / center.zoom + 100 };
         }
-        addNodeAtPosition(nodeData.type || 'rectangle', pos);
+        const typedNodeData = nodeData as { type?: string };
+        addNodeAtPosition(typedNodeData.type || 'rectangle', pos);
       }}
       onSelectNode={(nodeId) => canvas.selectNodes([nodeId])}
-      onUpdateNode={(nodeId, updates) => canvas.updateNodeData(nodeId, updates)}
-      onDeleteNode={(nodeId) => canvas.deleteNode(nodeId)}
+      onUpdateNode={(nodeId, updates) => {
+        const existingNode = canvas.nodes.find((node) => node.id === nodeId);
+        canvas.updateNode(nodeId, {
+          data: {
+            ...(existingNode?.data ?? {}),
+            ...(updates as Record<string, unknown>),
+          },
+        });
+      }}
+      onDeleteNode={(nodeId) => canvas.removeNode(nodeId)}
       onToggleVisibility={(nodeId) => {
         const node = canvas.nodes.find((n) => n.id === nodeId);
-        if (node) canvas.updateNodeData(nodeId, { hidden: !node.data.hidden });
+        if (node) {
+          canvas.updateNode(nodeId, {
+            data: { ...node.data, hidden: !node.data.hidden },
+          });
+        }
       }}
       onToggleLock={(nodeId) => {
         const node = canvas.nodes.find((n) => n.id === nodeId);
-        if (node) canvas.updateNodeData(nodeId, { locked: !node.data.locked });
+        if (node) {
+          canvas.updateNode(nodeId, {
+            data: { ...node.data, locked: !node.data.locked },
+          });
+        }
       }}
     />
   );
@@ -592,8 +604,16 @@ function UnifiedCanvasInner() {
   const inspectorPanel = (
     <UnifiedRightPanel
       selectedNodeIds={canvas.selectedNodeIds}
-      nodes={canvas.nodes}
-      onUpdateNode={(id, data) => canvas.updateNodeData(id, data)}
+      nodes={canvas.nodes as Array<{ id: string; type: string; data: Record<string, unknown> }>}
+      onUpdateNode={(id, data) => {
+        const existingNode = canvas.nodes.find((node) => node.id === id);
+        canvas.updateNode(id, {
+          data: {
+            ...(existingNode?.data ?? {}),
+            ...data,
+          },
+        });
+      }}
     />
   );
 
@@ -684,8 +704,8 @@ function UnifiedCanvasInner() {
             <Box className="flex-1 relative">
               <ReactFlow
                 ref={canvasRef}
-                nodes={canvas.nodes}
-                edges={canvas.connections}
+                nodes={reactFlowNodes}
+                edges={reactFlowEdges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
@@ -696,7 +716,7 @@ function UnifiedCanvasInner() {
                 onPointerDown={drawing.handlePointerDown}
                 onPointerMove={drawing.handlePointerMove}
                 onPointerUp={drawing.handlePointerUp}
-                nodeTypes={nodeTypes}
+                nodeTypes={nodeTypes as unknown as NodeTypes}
                 edgeTypes={edgeTypes}
                 fitView
                 attributionPosition="bottom-left"
@@ -737,7 +757,7 @@ function UnifiedCanvasInner() {
                   <Box
                     className="absolute bottom-[24px] w-full flex justify-center z-[1000] pointer-events-none transition-all duration-300" style={{ opacity: shouldShowToolbar ? 1 : 0, transform: shouldShowToolbar ? 'translateY(0)' : 'translateY(8px)' }}
                   >
-                    <DraggableBox className="pointer-events-auto w-fit">
+                    <DraggableBox sx={{ pointerEvents: 'auto', width: 'fit-content' }}>
                       <UnifiedToolbar
                         variant="floating"
                         activeTool={canvas.activeTool || 'select'}

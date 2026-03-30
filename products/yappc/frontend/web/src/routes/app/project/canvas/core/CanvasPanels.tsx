@@ -1,12 +1,24 @@
 import React from 'react';
-import { Alert, Box } from '@ghatana/design-system';
-import { Drawer, Snackbar } from '@ghatana/design-system';
+import { Alert, Box, Drawer, Snackbar, useMediaQuery, useTheme } from '@ghatana/design-system';
 
 import { CommentsPanel } from '@/components/canvas/collaboration/CommentsPanel';
-import { CanvasPerformancePanel, CanvasAccessibilityPanel, LayoutDialog, TemplateSaveDialog } from '../components';
+import {
+  CanvasPerformancePanel,
+  CanvasAccessibilityPanel,
+  LayoutDialog,
+  TemplateSaveDialog,
+} from '../components';
 import { VersionHistoryPanel } from '@/components/canvas/versioning/VersionHistoryPanel';
-import { SimplePageDesigner, type SimplePageComponent } from '@/components/canvas/SimplePageDesigner';
-import { UnifiedRightPanel, type GuidanceItem, type Suggestion as UnifiedSuggestion, type ValidationIssue } from '@/components/canvas/UnifiedRightPanel';
+import {
+  SimplePageDesigner,
+  type SimplePageComponent,
+} from '@/components/canvas/SimplePageDesigner';
+import {
+  UnifiedRightPanel,
+  type GuidanceItem,
+  type Suggestion as UnifiedSuggestion,
+  type ValidationIssue,
+} from '@/components/canvas/UnifiedRightPanel';
 import { TemplateGallery } from '@/components/canvas/templates/TemplateGallery';
 import { CanvasWelcomeDialog } from '@/components/canvas/onboarding/CanvasWelcomeDialog';
 import { AINotificationToast } from '@/components/canvas/ai/AINotificationToast';
@@ -14,95 +26,114 @@ import { ContextualHelpManager } from '@/components/canvas/help/ContextualHelpMa
 import type { LifecyclePhase } from '@yappc/core/types/lifecycle';
 import type { CanvasElement } from '@/components/canvas/workspace/canvasAtoms';
 
+interface CanvasPersistence {
+  restoreSnapshot: (snapshotId: string) => Promise<unknown>;
+  deleteSnapshot: (snapshotId: string) => Promise<void>;
+  save: (
+    projectId: string,
+    canvasId: string,
+    canvasData: { elements: unknown[]; connections: unknown[] },
+    metadata: { label: string; description?: string }
+  ) => Promise<void>;
+}
+
+interface GenerationArtifact {
+  path?: string;
+  name?: string;
+}
+
+interface GenerationResult {
+  artifacts?: GenerationArtifact[];
+}
+
 export interface CanvasPanelsProps {
-  // State from useCanvasPanels
   unifiedPanelOpen: boolean;
   setUnifiedPanelOpen: (open: boolean) => void;
   unifiedPanelTab?: number;
   setUnifiedPanelTab?: (tab: number) => void;
-  
+
   performancePanelOpen: boolean;
   setPerformancePanelOpen: (open: boolean) => void;
-  
+
   accessibilityPanelOpen: boolean;
   closeAccessibilityPanel: () => void;
-  
+
   commentsOpen: boolean;
   setCommentsOpen: (open: boolean) => void;
-  
+
   designerOpen: boolean;
   setDesignerOpen: (open: boolean) => void;
-  
+
   showVersionHistory: boolean;
   setShowVersionHistory: (open: boolean) => void;
 
-  // Dialog States
   layoutDialogOpen: boolean;
   setLayoutDialogOpen: (open: boolean) => void;
-  
+
   templateDialogOpen: boolean;
   setTemplateDialogOpen: (open: boolean) => void;
-  
+
   templateGalleryOpen: boolean;
   setTemplateGalleryOpen: (open: boolean) => void;
-  
+
   welcomeDialogOpen: boolean;
   setWelcomeDialogOpen: (open: boolean) => void;
-  
+
   notification: { type?: 'success' | 'info' | 'warning' | 'error'; message: string } | null;
   closeNotification: () => void;
-  
+
   showAINotification: boolean;
   setShowAINotification: (show: boolean) => void;
 
-  // Data
   currentPhase: LifecyclePhase;
   canvasState: { elements: CanvasElement[] };
-  
+
   performanceMetrics: unknown;
   performanceEnabled: boolean;
   handleEnablePerformance: () => void;
-  
+
   accessibilityIssues: unknown[];
-  
+
   selectedElementId?: string;
   currentUser: unknown;
-  
+
   designerNodeId: string | null;
   pageDesignerComponents: Record<string, SimplePageComponent[]>;
-  setPageDesignerComponents: React.Dispatch<React.SetStateAction<Record<string, SimplePageComponent[]>>>;
-  
+  setPageDesignerComponents: React.Dispatch<
+    React.SetStateAction<Record<string, SimplePageComponent[]>>
+  >;
+
   persistenceRef: React.MutableRefObject<unknown>;
   params: { projectId?: string; canvasId?: string };
   setGlobalCanvas: (state: unknown) => void;
   nodes: unknown[];
   edges: unknown[];
-  
+
   guidanceItems: GuidanceItem[];
   unifiedSuggestions: UnifiedSuggestion[];
   dismissSuggestion: (id: string) => void;
-  
+
   unifiedValidationIssues: ValidationIssue[];
   score?: number;
   validate?: () => void;
   isValidating?: boolean;
   errorCount: number;
   warningCount: number;
-  
+
   isGenerating: boolean;
-  generationResult: unknown;
+  generationResult: GenerationResult | null;
   generateCode: () => void;
-  
-  applyAutoLayout: unknown;
+
+  applyAutoLayout: () => void;
   templateName: string;
   setTemplateName: (name: string) => void;
   handleSaveTemplateConfirm: () => void;
-  handleSelectTemplate: unknown;
+  handleSelectTemplate: (templateId: string) => void;
   recentTemplateIds: string[];
-  
+
   suggestionsLength: number;
-  
-  handleAddComponent: (component: unknown) => void;
+
+  handleAddComponent: (_component: unknown) => void;
 }
 
 export function CanvasPanels({
@@ -117,7 +148,7 @@ export function CanvasPanels({
   accessibilityPanelOpen,
   closeAccessibilityPanel,
   accessibilityIssues,
-  handleAddComponent,
+  handleAddComponent: _handleAddComponent,
   commentsOpen,
   setCommentsOpen,
   selectedElementId,
@@ -223,18 +254,20 @@ export function CanvasPanels({
             open={showVersionHistory}
             onClose={() => setShowVersionHistory(false)}
             onRestore={async (snapshotId) => {
-              const snapshot = await persistenceRef.current?.restoreSnapshot(snapshotId);
+              const snapshot = await (
+                persistenceRef.current as CanvasPersistence | null
+              )?.restoreSnapshot(snapshotId);
               if (snapshot) {
                 setGlobalCanvas(snapshot);
                 setShowVersionHistory(false);
               }
             }}
             onDelete={async (snapshotId) => {
-              await persistenceRef.current?.deleteSnapshot(snapshotId);
+              await (persistenceRef.current as CanvasPersistence | null)?.deleteSnapshot(snapshotId);
             }}
             onCreateSnapshot={async (label, description) => {
               if (params.projectId && params.canvasId) {
-                await persistenceRef.current?.save(
+                await (persistenceRef.current as CanvasPersistence | null)?.save(
                   params.projectId,
                   params.canvasId,
                   { elements: nodes, connections: edges },
@@ -246,16 +279,16 @@ export function CanvasPanels({
         </Box>
       </Drawer>
 
-      <Drawer 
-        anchor={panelAnchor} 
-        open={unifiedPanelOpen} 
+      <Drawer
+        anchor={panelAnchor}
+        open={unifiedPanelOpen}
         onClose={() => setUnifiedPanelOpen(false)}
         PaperProps={{
-          sx: { width: panelWidth, height: isMobile ? '80vh' : '100%' }
+          sx: { width: panelWidth, height: isMobile ? '80vh' : '100%' },
         }}
       >
         <UnifiedRightPanel
-          open={true} // Always render content if drawer is open
+          open={true}
           onClose={() => setUnifiedPanelOpen(false)}
           initialTab={unifiedPanelTab}
           currentPhase={currentPhase}
@@ -269,10 +302,11 @@ export function CanvasPanels({
           generationStatus={{
             isGenerating,
             progress: isGenerating ? 50 : 0,
-            files: generationResult?.artifacts?.map((a: unknown) => ({
-              name: a.path || a.name || 'file',
-              status: 'complete' as const,
-            })) || [],
+            files:
+              generationResult?.artifacts?.map((artifact) => ({
+                name: artifact.path || artifact.name || 'file',
+                status: 'complete' as const,
+              })) || [],
           }}
           onGenerate={generateCode}
         />
@@ -298,11 +332,7 @@ export function CanvasPanels({
         onClose={closeNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert
-          onClose={closeNotification}
-          severity={notification?.type || 'info'}
-          className="w-full"
-        >
+        <Alert onClose={closeNotification} severity={notification?.type || 'info'} className="w-full">
           {notification?.message}
         </Alert>
       </Snackbar>
@@ -329,7 +359,9 @@ export function CanvasPanels({
         onView={() => {
           setShowAINotification(false);
           setUnifiedPanelOpen(true);
-          if (setUnifiedPanelTab) setUnifiedPanelTab(1);
+          if (setUnifiedPanelTab) {
+            setUnifiedPanelTab(1);
+          }
         }}
         onDismiss={() => setShowAINotification(false)}
         position="bottom-right"

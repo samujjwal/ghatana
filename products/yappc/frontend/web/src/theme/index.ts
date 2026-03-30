@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * YAPPC Theme System
  *

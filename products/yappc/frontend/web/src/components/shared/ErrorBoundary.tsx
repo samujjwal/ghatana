@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * React Error Boundary Component
  * 

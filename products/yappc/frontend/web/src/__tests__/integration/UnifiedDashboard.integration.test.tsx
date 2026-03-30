@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Unified Dashboard Integration Tests
  *

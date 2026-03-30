@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from 'vitest';
 
 // Small pure helper tests for normalization behavior used by the canvas

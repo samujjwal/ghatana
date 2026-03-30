@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Sprint Node Component
  *

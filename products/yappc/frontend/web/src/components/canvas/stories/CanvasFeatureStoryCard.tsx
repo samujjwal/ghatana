@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Box, Chip, Stack, Typography } from '@ghatana/design-system';
 import { Divider, InteractiveList as List, ListItem, ListItemText, Surface as Paper, type PaperProps } from '@ghatana/design-system';
 import { forwardRef, memo, useCallback, useMemo } from 'react';

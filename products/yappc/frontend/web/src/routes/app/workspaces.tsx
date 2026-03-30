@@ -17,6 +17,15 @@ import { setWorkspaceBreadcrumbAtom } from "../../state/atoms/breadcrumbAtom";
 import { ApiUnavailableFallback } from "../../components/route/ApiUnavailableFallback";
 import { useCallback } from "react";
 
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+        return error.message;
+    }
+    return String(error);
+}
+
 /**
  * Workspaces Page Component
  */
@@ -51,7 +60,7 @@ export default function Component() {
 
     // Check if error is a service unavailability error
     if (error) {
-        const errorMessage = typeof error === 'string' ? error : error.message || String(error);
+        const errorMessage = getErrorMessage(error);
         if (errorMessage.includes('unavailable') || errorMessage.includes('connection') || errorMessage.includes('database')) {
             return (
                 <ApiUnavailableFallback

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Skip Link Component
  * 

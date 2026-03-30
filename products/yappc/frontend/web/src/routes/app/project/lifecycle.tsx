@@ -39,7 +39,7 @@ export default function Component() {
             <LifecycleExplorer
                 projectId={projectId}
                 onPhaseSelect={(phase: LifecyclePhase) => {
-                    void navigate(`/p/${projectId}/lifecycle/${phase.id}`);
+                    void navigate(`/p/${projectId}/lifecycle/${phase.toLowerCase()}`);
                 }}
                 onArtifactSelect={(kind: LifecycleArtifactKind) => {
                     void navigate(`/p/${projectId}/lifecycle/artifacts/${kind}`);

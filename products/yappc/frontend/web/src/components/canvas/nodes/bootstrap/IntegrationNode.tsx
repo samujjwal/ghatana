@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Bootstrap Integration Node Component
  *

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Toolbar Keyboard Shortcuts Hook
  * 

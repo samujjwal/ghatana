@@ -5,7 +5,6 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -165,19 +164,27 @@ class YappcDependencyGovernanceTest {
     class DeprecationEnforcement {
 
         @Test
-        @Disabled("TODO: Migrate 91 legacy usages of YAPPCAgentRegistry to YappcAgentRegistryAdapter — tracked in AGENTIC_FRAMEWORK_HARDENING_PLAN.md")
-        @DisplayName("No new code should use deprecated YAPPCAgentRegistry")
-        void noDeprecatedAgentRegistry() {
+        @DisplayName("Legacy YAPPCAgentRegistry class must not exist")
+        void legacyAgentRegistryClassRemoved() {
             ArchRule rule = noClasses()
                 .that().resideInAPackage("com.ghatana.yappc..")
-                .and().doNotHaveSimpleName("YAPPCAgentRegistry")
+                .should().haveSimpleName("YAPPCAgentRegistry")
+                .because("YAPPCAgentRegistry has been removed; use YappcAgentRegistryAdapter")
+                .allowEmptyShould(true);
+
+            rule.check(yappcClasses);
+        }
+
+        @Test
+        @DisplayName("YAPPC code should not depend on YAPPCAgentRegistry")
+        void noDeprecatedAgentRegistryDependency() {
+            ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.yappc..")
                 .should().dependOnClassesThat()
                 .haveSimpleName("YAPPCAgentRegistry")
                 .because("Use YappcAgentRegistryAdapter which delegates to platform AgentRegistry")
                 .allowEmptyShould(true);
 
-            // Freeze known legacy violations so that the rule passes for existing code
-            // but fails if NEW code introduces new dependencies on the deprecated class.
             rule.check(yappcClasses);
         }
     }

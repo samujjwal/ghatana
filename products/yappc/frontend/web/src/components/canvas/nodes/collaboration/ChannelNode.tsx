@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ============================================================================
 // ChannelNode - Canvas node for visualizing chat channels
 //

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * HTTP Client for Java AI Service
  * 

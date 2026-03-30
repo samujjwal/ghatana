@@ -24,8 +24,8 @@ import { PrismaClient } from '@prisma/client';
 import Redis from 'ioredis';
 
 // Mock dependencies
-jest.mock('@prisma/client');
-jest.mock('ioredis');
+vi.mock('@prisma/client');
+vi.mock('ioredis');
 
 describe('RateLimitingService', () => {
   let service: RateLimitingService;

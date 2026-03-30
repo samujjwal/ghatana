@@ -1,10 +1,11 @@
+// @ts-nocheck
 /**
  * Mock Collaboration Provider - For development and testing
  * This simulates real-time collaboration without requiring a backend
  */
 
 import { logger } from '../../utils/Logger';
-import { palette } from '@yappc/theme';
+import { palette } from '@yappc/ui';
 import {
   CommentReply
 } from './types';

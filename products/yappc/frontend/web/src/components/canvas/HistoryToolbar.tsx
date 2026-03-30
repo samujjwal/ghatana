@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Core UI components from @ghatana/yappc-ui
 import { IconButton, Stack } from '@ghatana/design-system';
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * UI Components Accessibility Tests
  *

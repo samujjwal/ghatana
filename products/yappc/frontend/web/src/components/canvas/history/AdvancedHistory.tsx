@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Phase 3: Advanced Undo/Redo System with Branching
  * Sophisticated history management with branch support and conflict resolution

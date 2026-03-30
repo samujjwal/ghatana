@@ -114,4 +114,37 @@ public class YappcArtifactRepository {
         
         return store.putMetadata(path, metadata);
     }
+
+    /**
+     * Retrieves metadata for a specific artifact version.
+     *
+     * @param productId project identifier
+     * @param phase     lifecycle phase
+     * @param version   artifact version identifier
+     * @return promise of the metadata map (empty map if none stored)
+     */
+    public Promise<Map<String, String>> getMetadata(String productId, PhaseType phase, String version) {
+        String path = String.format("products/%s/phases/%s/%s/metadata",
+                productId, phase.name().toLowerCase(), version);
+        return store.getMetadata(path);
+    }
+
+    /**
+     * Deletes a specific artifact version and its associated metadata.
+     *
+     * @param productId project identifier
+     * @param phase     lifecycle phase
+     * @param version   artifact version identifier to delete
+     * @return promise that completes when deletion is done
+     */
+    public Promise<Void> deleteArtifactVersion(String productId, PhaseType phase, String version) {
+        String contentPath  = String.format("products/%s/phases/%s/%s",
+                productId, phase.name().toLowerCase(), version);
+        String metadataPath = contentPath + "/metadata";
+
+        log.info("YappcArtifactRepository.deleteArtifactVersion: {}", contentPath);
+
+        return store.delete(contentPath)
+                .then(unused -> store.delete(metadataPath));
+    }
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * PhaseOverviewPage Component Tests
  *

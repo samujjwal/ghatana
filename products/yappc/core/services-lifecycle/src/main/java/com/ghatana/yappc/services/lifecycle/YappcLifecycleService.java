@@ -9,8 +9,6 @@ import com.ghatana.ai.llm.ToolAwareOpenAICompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.core.activej.launcher.UnifiedApplicationLauncher;
 import com.ghatana.governance.PolicyEngine;
-import com.ghatana.platform.governance.security.ApiKeyAuthFilter;
-import com.ghatana.platform.governance.security.RateLimitFilter;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.SimpleMetricsCollector;
 import com.ghatana.yappc.api.GenerationApiController;
@@ -18,6 +16,7 @@ import com.ghatana.yappc.api.IntentApiController;
 import com.ghatana.yappc.api.ShapeApiController;
 import com.ghatana.yappc.api.ValidationApiController;
 import com.ghatana.yappc.agent.AepEventPublisher;
+import com.ghatana.yappc.services.security.YappcApiSecurity;
 import com.ghatana.yappc.services.intent.IntentService;
 import com.ghatana.yappc.services.shape.ShapeService;
 import com.ghatana.yappc.services.generate.GenerationService;
@@ -41,10 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import static io.activej.http.HttpMethod.GET;
 import static io.activej.http.HttpMethod.POST;
@@ -80,13 +76,6 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
 
     private static final Logger logger = LoggerFactory.getLogger(YappcLifecycleService.class);
     private static final int DEFAULT_PORT = 8082;
-
-    /**
-     * Environment variable containing comma-separated allowed API keys.
-     * In production, inject via secrets manager / Kubernetes secret.
-     * Falls back to {@code "dev-key"} when not set (development only).
-     */
-    private static final String API_KEYS_ENV = "YAPPC_API_KEYS";
 
     @Override
     protected String getServiceName() {
@@ -216,41 +205,31 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
             }
         }, "config-watch-shutdown"));
 
-        // ── Auth filter (Security 4.3) ────────────────────────────────────
-        // API keys are comma-separated in YAPPC_API_KEYS env var.
-        // Production deployments should bind an ApiKeyResolver to a database/secrets store.
-        String apiKeyEnv = System.getenv().getOrDefault(API_KEYS_ENV, "dev-key");
-        Set<String> allowedKeys = new HashSet<>(Arrays.asList(apiKeyEnv.split(",")));
-        ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(allowedKeys);
-
-        // ── Rate limiting (Security: 100 req/60 s per client IP) ─────────
-        // Configurable via YAPPC_RATE_LIMIT_MAX (requests) and YAPPC_RATE_LIMIT_WINDOW (seconds).
-        int rateLimitMax = Integer.parseInt(System.getenv().getOrDefault("YAPPC_RATE_LIMIT_MAX", "100"));
-        long rateLimitWindow = Long.parseLong(System.getenv().getOrDefault("YAPPC_RATE_LIMIT_WINDOW", "60"));
-        RateLimitFilter rateLimitFilter = new RateLimitFilter(rateLimitMax, rateLimitWindow);
-
-        // ── Build authenticated API servlet with all lifecycle routes ─────
+        // ── Build secured API servlet with auth + RBAC + rate limiting ───
         AsyncServlet apiServlet = buildApiServlet(eventloop,
                 intentController, shapeController, generationController,
                 validationController, advancePhaseUseCase, aepPublisher,
                 humanApprovalService, workflowService);
-        AsyncServlet securedApiServlet = authFilter.secure(rateLimitFilter.wrap(apiServlet));
+        YappcApiSecurity.SecurityRoutes securedApi =
+                YappcApiSecurity.secureApi(apiServlet, "yappc:lifecycle-api");
+        AsyncServlet securedMetrics = YappcApiSecurity.secureReadEndpoint(
+                request -> HttpResponse.ok200()
+                        .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE,
+                                io.activej.http.HttpHeaderValue.of(
+                                        "text/plain; version=0.0.4; charset=utf-8"))
+                        .withBody(prometheusRegistry.scrape().getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                        .toPromise(),
+                "yappc:lifecycle-metrics");
 
         // ── Outer router: /health public, everything else auth-gated ─────
         var router = RoutingServlet.builder(eventloop)
                 .with(GET, "/health",
                         request -> HttpResponse.ok200().withPlainText("OK").toPromise())
                 // Prometheus scrape endpoint (Observability 6.1)
-                .with(GET, "/metrics",
-                        request -> HttpResponse.ok200()
-                                .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE,
-                                        io.activej.http.HttpHeaderValue.of(
-                                                "text/plain; version=0.0.4; charset=utf-8"))
-                                .withBody(prometheusRegistry.scrape().getBytes(java.nio.charset.StandardCharsets.UTF_8))
-                                .toPromise())
-                // Secured API routes
-                .with(GET,  "/api/*", securedApiServlet)
-                .with(POST, "/api/*", securedApiServlet)
+                .with(GET, "/metrics", securedMetrics)
+                // Secured API routes (read/write permissions)
+                .with(GET,  "/api/*", securedApi.readApi())
+                .with(POST, "/api/*", securedApi.writeApi())
                 .build();
 
         // Wrap outer router with Correlation ID propagation (Observability 6.5)

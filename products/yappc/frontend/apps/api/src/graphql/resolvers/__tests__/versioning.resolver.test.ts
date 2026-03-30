@@ -8,7 +8,7 @@ import { versioningResolvers } from '../versioning.resolver';
 import type { VersioningService } from '../../../services/versioning/versioning.service';
 
 // Mock the versioning service
-jest.mock('../../../services/versioning/versioning.service', () => ({
+vi.mock('../../../services/versioning/versioning.service', () => ({
   getVersioningService: jest.fn(),
 }));
 

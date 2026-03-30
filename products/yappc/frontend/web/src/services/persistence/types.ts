@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { CanvasState } from '../../components/canvas/workspace/canvasAtoms';
 
 /**

@@ -21,6 +21,15 @@ import { Panel } from '@xyflow/react';
 import { Background } from '@reactflow/background';
 import { Controls } from '@reactflow/controls';
 import { MiniMap } from '@reactflow/minimap';
+import type {
+  Connection,
+  Edge,
+  EdgeChange,
+  Node,
+  NodeChange,
+  OnSelectionChangeParams,
+  ReactFlowInstance,
+} from '@xyflow/react';
 
 import { ReactFlowWrapper } from '@/components/canvas/ReactFlowWrapper';
 import { ModeContentRenderer } from '@/components/canvas/modes';
@@ -39,19 +48,19 @@ export interface CanvasManagerProps {
   stageSize: { width: number; height: number };
 
   // React Flow Props
-  nodes: unknown[];
-  edges: unknown[];
-  onInit: (reactFlowInstance: unknown) => void;
-  onNodesChange: (changes: unknown) => void;
-  onEdgesChange: (changes: unknown) => void;
-  onConnect: (connection: unknown) => void;
-  onSelectionChange: (params: unknown) => void;
-  onNodeDoubleClick: (event: React.MouseEvent, node: unknown) => void;
-  getNodeColor: (node: unknown) => string;
+  nodes: Node[];
+  edges: Edge[];
+  onInit: (reactFlowInstance: ReactFlowInstance) => void;
+  onNodesChange: (changes: NodeChange[]) => void;
+  onEdgesChange: (changes: EdgeChange[]) => void;
+  onConnect: (connection: Connection) => void;
+  onSelectionChange: (params: OnSelectionChangeParams) => void;
+  onNodeDoubleClick: (event: React.MouseEvent, node: Node) => void;
+  getNodeColor: (node: Node) => string;
 
   // Mode & Abstraction
-  currentMode: unknown;
-  abstractionLevel: unknown;
+  currentMode: string;
+  abstractionLevel: string;
   projectId: string;
   canvasId?: string;
   isReadOnlyPhase: boolean;
@@ -62,24 +71,27 @@ export interface CanvasManagerProps {
   onUseTemplate: () => void;
 
   // Toolbar Props (Pass-through to CanvasToolbar)
-  toolbarProps: unknown; // Using any to simplify passing the huge props object
+  toolbarProps: Record<string, unknown> & {
+    isAnalyzing?: boolean;
+    isGenerating?: boolean;
+  };
 
   // Status Bar Props
   statusBarProps: {
-    currentPhase: unknown;
+    currentPhase: string;
     phases: unknown[];
     technologies: unknown[];
     onPhaseClick: (phase: unknown) => void;
   };
 
   // AI & Ghost Nodes
-  ghostNodes: unknown[];
+  ghostNodes: Node[];
   onAcceptAISuggestion: (id: string) => void;
   onDismissSuggestion: (id: string) => void;
   onAISubmit?: (prompt: string, options?: unknown) => Promise<void>;
 
   // Sketch Tool
-  activeSketchTool: unknown;
+  activeSketchTool: string;
 
   children?: React.ReactNode; // For Performance/Accessibility types that overlay
 }

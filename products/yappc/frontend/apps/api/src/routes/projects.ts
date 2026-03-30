@@ -13,6 +13,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../db';
 import { markDeprecated } from '../middleware/deprecation';
+import { requirePermission } from '../middleware/rbac.middleware';
 
 // ============================================================================
 // Types
@@ -246,6 +247,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
      */
     fastify.post<{ Body: CreateProjectBody }>(
         '/projects',
+        { preHandler: requirePermission('project', 'create') },
         async (request, reply) => {
             markDeprecated(request, reply);
             if (!request.user?.userId) {
@@ -297,6 +299,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
      */
     fastify.patch<{ Params: ProjectParams; Body: UpdateProjectBody; Querystring: { workspaceId: string } }>(
         '/projects/:projectId',
+        { preHandler: requirePermission('project', 'update') },
         async (request, reply) => {
             markDeprecated(request, reply);
             const { projectId } = request.params;
@@ -351,6 +354,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
      */
     fastify.delete<{ Params: ProjectParams; Querystring: { workspaceId: string } }>(
         '/projects/:projectId',
+        { preHandler: requirePermission('project', 'delete') },
         async (request, reply) => {
             markDeprecated(request, reply);
             const { projectId } = request.params;
@@ -388,6 +392,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
      */
     fastify.post<{ Body: IncludeProjectBody }>(
         '/projects/include',
+        { preHandler: requirePermission('project', 'update') },
         async (request, reply) => {
             markDeprecated(request, reply);
             if (!request.user?.userId) {
@@ -448,6 +453,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
      */
     fastify.delete<{ Body: IncludeProjectBody }>(
         '/projects/include',
+        { preHandler: requirePermission('project', 'update') },
         async (request, reply) => {
             markDeprecated(request, reply);
             const { workspaceId, projectId } = request.body;
@@ -540,6 +546,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
      */
     fastify.post<{ Params: ProjectParams }>(
         '/projects/:projectId/refresh-ai',
+        { preHandler: requirePermission('ai', 'ai_generate') },
         async (request, reply) => {
             const { projectId } = request.params;
 

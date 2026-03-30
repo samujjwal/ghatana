@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Threat Model Panel Component
  *

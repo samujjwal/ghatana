@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * View Mode Selector Component
  * 

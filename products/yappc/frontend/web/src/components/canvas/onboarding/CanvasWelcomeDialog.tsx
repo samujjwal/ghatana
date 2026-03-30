@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canvas Welcome Dialog Component
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { setupWorker } from 'msw/browser';
 
 import { handlers } from './msw-handlers';

@@ -20,22 +20,22 @@ This document serves to:
 
 ## Module Map
 
-### 1. Foundation Layer (`domain`, `spi`, `yappc-shared`, `framework`)
+### 1. Foundation Layer (`yappc-domain-impl`, `spi`, `yappc-shared`)
 
 These modules form the dependency base — everything else can depend on them, but they must not depend on each other circularly.
 
 | Module | Gradle Path | Main Files | Purpose |
 |--------|-------------|-----------|---------|
-| `domain` | `:products:yappc:core:domain` | 74 | Value objects, domain events, core abstractions |
+| `yappc-domain-impl` | `:products:yappc:core:yappc-domain-impl` | — | Value objects, domain events, core abstractions |
 | `spi` | `:products:yappc:core:spi` | compatibility | Deprecated compatibility wrapper that re-exports `yappc-shared` |
-| `yappc-shared` | `:products:yappc:core:yappc-shared` | shared API | Canonical shared YAPPC client and plugin API |
-| `framework` | `:products:yappc:core:framework` | 25 | Framework entry points (merged from framework-api + framework-core) |
+| `yappc-shared` | `:products:yappc:core:yappc-shared` | shared API | Canonical shared YAPPC client and plugin API; defines `AgentRegistryPort` + `AgentRuntimePort` |
+
+> **Stale module removed:** `core/framework` no longer exists; its entry points were absorbed into `yappc-infrastructure`. `core/domain` was renamed to `yappc-domain-impl`.
 
 **Dependency rules:**
-- `domain` → platform only (`platform:java:domain`, `platform:java:core`)
-- `spi` → `yappc-shared` only (deprecated compatibility path)
+- `yappc-domain-impl` → platform only (`platform:java:domain`, `platform:java:core`)
+- `spi` → `yappc-shared` only (deprecated compatibility path; do not introduce new consumers)
 - `yappc-shared` → platform modules
-- `framework` → `domain`, platform modules
 
 ---
 
@@ -53,26 +53,31 @@ These modules form the dependency base — everything else can depend on them, b
 
 ---
 
-### 3. Agent Execution Layer (`agents/*`)
+### 3. Agent Execution Layer (`agents/*`, `yappc-agents`, `yappc-infrastructure`)
 
 | Module | Gradle Path | Main Files | Purpose |
 |--------|-------------|-----------|---------|
-| `agents` (parent) | `:products:yappc:core:agents` | 323 total | Aggregate of agents sub-tree |
+| `agents` (parent) | `:products:yappc:core:agents` | 323 total | Aggregate of agents sub-tree (consolidation in progress → `yappc-agents`) |
 | `agents/runtime` | `:products:yappc:core:agents:runtime` | 60 | Agent execution runtime, context management |
 | `agents/workflow` | `:products:yappc:core:agents:workflow` | 59 | Workflow orchestration for multi-agent pipelines |
 | `agents/common` | `:products:yappc:core:agents:common` | 0 | Shared Input/Output classes and interfaces |
 | `agents/code-specialists` | `:products:yappc:core:agents:code-specialists` | 195 | Code analysis, generation, refactoring agents |
 | `agents/architecture-specialists` | `:products:yappc:core:agents:architecture-specialists` | 59 | Design patterns, architecture, cloud, security agents |
 | `agents/testing-specialists` | `:products:yappc:core:agents:testing-specialists` | 69 | Test generation, validation, quality assurance agents |
+| `yappc-agents` | `:products:yappc:core:yappc-agents` | — | Consolidated agent module (migration target for `core/agents` top-level files) |
+| `yappc-infrastructure` | `:products:yappc:core:yappc-infrastructure` | — | AEP adapter implementations: `AepAgentRegistryAdapter`, `AepAgentRuntimeAdapter` |
 
 **Dependency rules:**
-- `agents/runtime` → `domain`, `spi`, `platform:java:agent-core`
-- `agents/common` → `domain`, `platform:java:agent-core` (shared base classes only)
-- `agents/code-specialists` → `agents/runtime`, `agents/common`, `ai`, `domain`
-- `agents/architecture-specialists` → `agents/runtime`, `agents/common`, `agents/code-specialists`, `ai`, `domain`
-- `agents/testing-specialists` → `agents/runtime`, `agents/common`, `agents/code-specialists`, `agents/architecture-specialists`, `ai`, `domain`
+- `agents/runtime` → `yappc-domain-impl`, `spi`, `platform:java:agent-core`
+- `agents/common` → `yappc-domain-impl`, `platform:java:agent-core` (shared base classes only)
+- `agents/code-specialists` → `agents/runtime`, `agents/common`, `ai`, `yappc-domain-impl`
+- `agents/architecture-specialists` → `agents/runtime`, `agents/common`, `agents/code-specialists`, `ai`, `yappc-domain-impl`
+- `agents/testing-specialists` → `agents/runtime`, `agents/common`, `agents/code-specialists`, `agents/architecture-specialists`, `ai`, `yappc-domain-impl`
 - `agents/workflow` → `agents/runtime`, `platform:java:workflow`
+- `yappc-agents` → `yappc-shared`, `ai`, platform (same as `agents` top-level; migration replaces `agents`)
+- `yappc-infrastructure` → `yappc-shared` (ports), `products:aep:aep-registry`, `products:aep:aep-agent-runtime` **only** (sole AEP dependency point)
 - **CRITICAL:** Agent modules must NOT import from `scaffold` or `refactorer`
+- **CRITICAL:** `core/agents` must NOT import `aep-registry` or `aep-agent-runtime` directly — use `AgentRegistryPort` / `AgentRuntimePort` from `yappc-shared`
 - **NOTE:** Dependency order: common → code → architecture → testing (to resolve circular dependencies)
 
 ---
@@ -127,13 +132,17 @@ These modules form the dependency base — everything else can depend on them, b
 platform/* ←────── all modules depend on platform (downward)
      ↑
  [foundation]
-  domain  spi  framework
+  yappc-domain-impl  spi(compat)  yappc-shared(ports)
      ↑
   [ai/knowledge]     
    ai  knowledge-graph
      ↑
   [agent execution]
    agents/runtime → agents/specialists → agents/workflow
+   yappc-agents (consolidation of agents top-level)
+     ↑
+  [infrastructure adapters]
+   yappc-infrastructure  ← ONLY module allowed to depend on aep-registry, aep-agent-runtime
      ↑
   [scaffolding]
    scaffold/api → scaffold/core → scaffold/packs

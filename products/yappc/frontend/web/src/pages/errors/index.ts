@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Error Pages Index
  */

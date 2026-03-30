@@ -12,6 +12,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../db';
 import { markDeprecated } from '../middleware/deprecation';
+import { requirePermission } from '../middleware/rbac.middleware';
 
 // ============================================================================
 // Types
@@ -244,6 +245,7 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
      */
     fastify.post<{ Body: CreateWorkspaceBody }>(
         '/workspaces',
+        { preHandler: requirePermission('workspace', 'create') },
         async (request, reply) => {
             markDeprecated(request, reply);
             if (!request.user?.userId) {
@@ -305,6 +307,7 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
      */
     fastify.patch<{ Params: WorkspaceParams; Body: UpdateWorkspaceBody }>(
         '/workspaces/:workspaceId',
+        { preHandler: requirePermission('workspace', 'update') },
         async (request, reply) => {
             markDeprecated(request, reply);
             const { workspaceId } = request.params;
@@ -329,6 +332,7 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
      */
     fastify.delete<{ Params: WorkspaceParams }>(
         '/workspaces/:workspaceId',
+        { preHandler: requirePermission('workspace', 'delete') },
         async (request, reply) => {
             markDeprecated(request, reply);
             const { workspaceId } = request.params;
@@ -384,6 +388,7 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
      */
     fastify.post<{ Params: WorkspaceParams }>(
         '/workspaces/:workspaceId/refresh-ai',
+        { preHandler: requirePermission('ai', 'ai_generate') },
         async (request, reply) => {
             markDeprecated(request, reply);
             const { workspaceId } = request.params;

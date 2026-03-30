@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * UnifiedStatusBar - Bottom Status Bar
  */

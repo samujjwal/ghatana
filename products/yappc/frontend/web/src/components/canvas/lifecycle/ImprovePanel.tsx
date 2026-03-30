@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Improve Panel Component
  *

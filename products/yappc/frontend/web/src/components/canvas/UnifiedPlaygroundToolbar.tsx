@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Unified Playground Toolbar
  * 

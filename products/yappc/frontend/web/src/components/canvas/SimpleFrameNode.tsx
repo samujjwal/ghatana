@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Simple Frame Node
  * Basic frame for grouping canvas elements

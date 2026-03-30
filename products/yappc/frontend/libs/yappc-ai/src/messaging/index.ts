@@ -1,11 +1,8 @@
 /**
- * Messaging module — use @yappc/messaging directly.
+ * Messaging module — use @yappc/chat directly.
  *
- * The canonical messaging implementation lives in `@yappc/messaging`.
- * This re-export exists for internal AI package compatibility only.
+ * @deprecated Use @yappc/chat for chat functionality. This re-export module is no longer functional.
  */
-export * from '@yappc/messaging';
-
 export type {
   UseChatBackendConfig,
   ChatMessage,

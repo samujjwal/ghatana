@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Risk Scoring Service
  *

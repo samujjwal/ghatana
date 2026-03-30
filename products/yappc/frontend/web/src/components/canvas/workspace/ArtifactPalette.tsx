@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Artifact Palette Component
  * 

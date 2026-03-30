@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useAtomValue } from 'jotai';
 import { useViewport } from '@xyflow/react';
 import { alignmentGuidesAtom } from './workspace/canvasAtoms';

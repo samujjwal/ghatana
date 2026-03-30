@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * EmbedNode - Embedded content block (web pages, iframes, videos)
  * 

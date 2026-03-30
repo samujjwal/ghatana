@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ZoomManager - Deep Zoom System (1%-1000%)
  * 

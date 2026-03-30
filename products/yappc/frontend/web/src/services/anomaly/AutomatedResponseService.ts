@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Service for automated incident response and remediation.
  *

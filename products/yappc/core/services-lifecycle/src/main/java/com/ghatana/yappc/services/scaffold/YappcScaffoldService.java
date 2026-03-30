@@ -9,10 +9,13 @@ import com.ghatana.yappc.core.model.ProjectSpec;
 import com.ghatana.yappc.core.orchestration.PolyglotBuildOrchestrator;
 import com.ghatana.yappc.core.services.ProjectAnalysisService;
 import com.ghatana.yappc.plugin.bridge.UnifiedPluginBootstrap;
+import com.ghatana.yappc.services.security.YappcApiSecurity;
+import io.activej.http.AsyncServlet;
 import io.activej.http.HttpServer;
 import io.activej.inject.Injector;
 import io.activej.inject.module.ModuleBuilder;
 import io.activej.promise.Promise;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,13 +96,12 @@ public class YappcScaffoldService extends UnifiedApplicationLauncher {
         ProjectAnalysisService analysisService = injector.getInstance(ProjectAnalysisService.class);
         // Makefile-generation orchestrator (orchestration package, not the build-execution one)
         PolyglotBuildOrchestrator makefileOrchestrator = new PolyglotBuildOrchestrator();
+        PrometheusMeterRegistry prometheusRegistry = injector.getInstance(PrometheusMeterRegistry.class);
 
         io.activej.eventloop.Eventloop eventloop = injector.getInstance(io.activej.eventloop.Eventloop.class);
 
-        var router = io.activej.http.RoutingServlet.builder(eventloop)
-                .with(GET, "/health", request ->
-                        io.activej.http.HttpResponse.ok200().withPlainText("OK").toPromise())
-                .with(GET, "/api/v1/scaffold/info", request ->
+        AsyncServlet apiServlet = io.activej.http.RoutingServlet.builder(eventloop)
+            .with(GET, "/api/v1/scaffold/info", request ->
                         io.activej.http.HttpResponse.ok200()
                                 .withPlainText("{\"service\":\"yappc-scaffold\",\"version\":\"2.0.0\"}")
                                 .toPromise())
@@ -157,6 +159,25 @@ public class YappcScaffoldService extends UnifiedApplicationLauncher {
                         io.activej.http.HttpResponse.ok200()
                                 .withPlainText("{\"plugins\":" + pluginRegistry.size() + "}")
                                 .toPromise())
+                .build();
+
+            YappcApiSecurity.SecurityRoutes securedApi =
+                YappcApiSecurity.secureApi(apiServlet, "yappc:scaffold-api");
+            AsyncServlet securedMetrics = YappcApiSecurity.secureReadEndpoint(
+                request -> io.activej.http.HttpResponse.ok200()
+                        .withHeader(io.activej.http.HttpHeaders.of("Content-Type"),
+                                "text/plain; version=0.0.4; charset=utf-8")
+                        .withBody(io.activej.bytebuf.ByteBuf.wrapForReading(
+                                prometheusRegistry.scrape().getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+                        .toPromise(),
+                "yappc:scaffold-metrics");
+
+            var router = io.activej.http.RoutingServlet.builder(eventloop)
+                .with(GET, "/health", request ->
+                    io.activej.http.HttpResponse.ok200().withPlainText("OK").toPromise())
+                .with(GET, "/metrics", securedMetrics)
+                .with(GET, "/api/*", securedApi.readApi())
+                .with(POST, "/api/*", securedApi.writeApi())
                 .build();
 
         logger.info("Creating YAPPC Scaffold HTTP server on port {}", port);

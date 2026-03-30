@@ -1,14 +1,11 @@
 /**
- * @yappc/chat — REMOVED
+ * @yappc/chat — Chat library
  *
- * This package has been consolidated into `@yappc/messaging`.
- * All chat functionality is now owned by `@yappc/messaging`.
+ * Provides real-time chat hooks and components.
  *
  * @module chat
  */
-export * from '@yappc/messaging';
-
-
+export { useChatBackend } from './hooks/useChatBackend';
 export type {
   UseChatBackendConfig,
   ChatMessage,

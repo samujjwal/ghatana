@@ -10,6 +10,7 @@
  */
 
 import { useEffect, Suspense } from "react";
+import type { ReactNode } from "react";
 import { useNavigation, useLocation } from "react-router";
 
 import { RouteErrorBoundary } from "../components/route/ErrorBoundary";
@@ -22,7 +23,7 @@ import { AppThemeProvider } from "../theme";
 /**
  * Root layout component
  */
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: ReactNode }) {
     const navigation = useNavigation();
     const isLoading = navigation.state === "loading";
 
@@ -68,7 +69,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <RouteProgressBar isLoading={isLoading} />
 
             <main id="main-content" role="main">
-                <AppThemeProvider defaultTheme="system">
+                <AppThemeProvider>
                     <PersonaProvider>
                         <ShortcutProvider>
                             <Suspense fallback={<HydrateFallback />}>

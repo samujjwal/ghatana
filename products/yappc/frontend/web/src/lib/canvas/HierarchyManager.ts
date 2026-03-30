@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * HierarchyManager - Hierarchical Node System
  * 

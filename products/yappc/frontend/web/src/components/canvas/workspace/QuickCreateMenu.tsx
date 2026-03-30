@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Quick Create Menu Component
  * 

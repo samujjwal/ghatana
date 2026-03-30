@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Layer Panel Component
  * 

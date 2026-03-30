@@ -14,13 +14,22 @@ import {
   Box,
   Button,
   Typography,
-  ListItem,
-  ListItemText,
-  InteractiveList as List,
 } from '@ghatana/design-system';
 
+interface CanvasNodeData {
+  title?: string;
+  label?: string;
+  text?: string;
+}
+
+interface CanvasNode {
+  id: string;
+  type: string;
+  data: CanvasNodeData;
+}
+
 interface CanvasOutlinePanelProps {
-  nodes: unknown[];
+  nodes: CanvasNode[];
   selectedNodeIds: string[];
   selectNodes: (ids: string[]) => void;
   addNodeAtPosition: (type: string, position: { x: number; y: number }) => void;
@@ -76,33 +85,28 @@ export function CanvasOutlinePanel({
       <Box className="font-semibold mb-4 mt-8">
         🗂️ Layers ({nodes.length})
       </Box>
-      <List dense className="overflow-auto max-h-[300px]">
+      <Box className="max-h-[300px] overflow-auto">
         {nodes
           .slice()
           .reverse()
           .map((node) => (
-            <ListItem
+            <Box
               key={node.id}
-              dense
-              button
-              selected={selectedNodeIds.includes(node.id)}
               onClick={() => selectNodes([node.id])}
-              className="rounded"
+              className={`mb-2 cursor-pointer rounded p-2 ${selectedNodeIds.includes(node.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
             >
-              <ListItemText
-                primary={
-                  node.data.label ||
+              <Typography variant="body2" className="truncate">
+                {node.data.label ||
                   node.data.title ||
                   node.data.text?.substring(0, 20) ||
-                  node.type
-                }
-                secondary={node.type}
-                primaryTypographyProps={{ noWrap: true, variant: 'body2' }}
-                secondaryTypographyProps={{ variant: 'caption' }}
-              />
-            </ListItem>
+                  node.type}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {node.type}
+              </Typography>
+            </Box>
           ))}
-      </List>
+      </Box>
     </Box>
   );
 }

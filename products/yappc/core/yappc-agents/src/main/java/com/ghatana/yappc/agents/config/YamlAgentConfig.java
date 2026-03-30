@@ -5,6 +5,7 @@ import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.api.OutputGenerator;
 import io.activej.promise.Promise;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,6 +54,7 @@ public class YamlAgentConfig {
     private final GeneratorConfig generator;
     private final ValidationConfig validation;
     private final CacheConfig cache;
+    private final EventProcessingConfig eventProcessing;
     private final Map<String, Object> metadata;
     
     private YamlAgentConfig(Builder builder) {
@@ -65,6 +67,7 @@ public class YamlAgentConfig {
         this.generator = builder.generator;
         this.validation = builder.validation;
         this.cache = builder.cache;
+        this.eventProcessing = builder.eventProcessing;
         this.metadata = Map.copyOf(builder.metadata);
     }
     
@@ -78,6 +81,7 @@ public class YamlAgentConfig {
     public GeneratorConfig getGenerator() { return generator; }
     public ValidationConfig getValidation() { return validation; }
     public CacheConfig getCache() { return cache; }
+    public EventProcessingConfig getEventProcessing() { return eventProcessing; }
     public Map<String, Object> getMetadata() { return metadata; }
     
     /**
@@ -128,6 +132,7 @@ public class YamlAgentConfig {
         private GeneratorConfig generator;
         private ValidationConfig validation;
         private CacheConfig cache;
+        private EventProcessingConfig eventProcessing;
         private Map<String, Object> metadata = Map.of();
         
         public Builder id(String id) {
@@ -172,6 +177,11 @@ public class YamlAgentConfig {
         
         public Builder cache(CacheConfig cache) {
             this.cache = cache;
+            return this;
+        }
+        
+        public Builder eventProcessing(EventProcessingConfig eventProcessing) {
+            this.eventProcessing = eventProcessing;
             return this;
         }
         
@@ -247,6 +257,37 @@ public class YamlAgentConfig {
         public String getInputSchema() { return inputSchema; }
         public String getOutputSchema() { return outputSchema; }
         public boolean isStrict() { return strict; }
+    }
+
+    /**
+     * AEP event processing configuration.
+     * Enables event-driven agent execution via the AEP event router.
+     */
+    public static class EventProcessingConfig {
+        private final List<String> inputEventTypes;
+        private final List<String> outputEventTypes;
+        private final String deadLetterQueue;
+        private final String ordering;
+        private final int maxInFlight;
+
+        public EventProcessingConfig(
+                List<String> inputEventTypes,
+                List<String> outputEventTypes,
+                String deadLetterQueue,
+                String ordering,
+                int maxInFlight) {
+            this.inputEventTypes = inputEventTypes != null ? List.copyOf(inputEventTypes) : List.of();
+            this.outputEventTypes = outputEventTypes != null ? List.copyOf(outputEventTypes) : List.of();
+            this.deadLetterQueue = deadLetterQueue;
+            this.ordering = ordering != null ? ordering : "unordered";
+            this.maxInFlight = maxInFlight > 0 ? maxInFlight : 10;
+        }
+
+        public List<String> getInputEventTypes() { return inputEventTypes; }
+        public List<String> getOutputEventTypes() { return outputEventTypes; }
+        public String getDeadLetterQueue() { return deadLetterQueue; }
+        public String getOrdering() { return ordering; }
+        public int getMaxInFlight() { return maxInFlight; }
     }
     
     /**

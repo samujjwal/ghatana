@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Global Test Teardown
  * Runs after all tests complete

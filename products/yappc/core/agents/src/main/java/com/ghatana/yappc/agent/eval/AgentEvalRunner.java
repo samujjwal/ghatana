@@ -10,8 +10,8 @@
 package com.ghatana.yappc.agent.eval;
 
 import com.ghatana.agent.AgentResult;
-import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.yappc.agent.spi.AgentRuntimePort;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.slf4j.Logger;
@@ -22,7 +22,7 @@ import java.time.Instant;
 import java.util.*;
 
 /**
- * Runs evaluation tasks against agents via the {@link AgentDispatcher}.
+ * Runs evaluation tasks against agents via the {@link AgentRuntimePort}.
  * Collects results into {@link AgentEvalReport} for CI reporting.
  *
  * <p>Supports filtering by category, tags, and agent ID.
@@ -39,9 +39,9 @@ public class AgentEvalRunner {
 
     private static final Logger log = LoggerFactory.getLogger(AgentEvalRunner.class);
 
-    private final AgentDispatcher dispatcher;
+    private final AgentRuntimePort dispatcher;
 
-    public AgentEvalRunner(AgentDispatcher dispatcher) {
+    public AgentEvalRunner(AgentRuntimePort dispatcher) {
         this.dispatcher = Objects.requireNonNull(dispatcher, "dispatcher");
     }
 

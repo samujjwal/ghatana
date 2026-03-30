@@ -51,6 +51,8 @@ import { GuidancePanel } from '../components/guidance';
 import { CommandPalette } from '../components/command/CommandPalette';
 import { CreateWorkspaceDialog } from '../components/workspace';
 import { UnifiedContextHeader } from '../components/navigation';
+import type { Action } from '../components/navigation/ActionsToolbar';
+import type { CanvasMode as BreadcrumbCanvasMode } from '../components/navigation/NavigationBreadcrumb';
 import {
   KeyboardShortcutsPanel,
   useKeyboardShortcutsPanel,
@@ -95,7 +97,7 @@ export function Layout() {
         isLoading,
         workspacesLength: workspaces.length,
         hasCurrentWorkspace: !!currentWorkspace,
-        error: error?.message,
+        error: error instanceof Error ? error.message : undefined,
         storedKeys: {
           onboardingComplete: localStorage.getItem('onboarding_complete'),
           currentWorkspaceId: localStorage.getItem('yappc:currentWorkspaceId'),
@@ -272,6 +274,12 @@ function ShellContent({
     isOwner: ownedProjects.some((op) => op.id === p.id),
   }));
 
+  const headerContextActions = contextActions as unknown as Action[];
+  const headerCanvasMode: BreadcrumbCanvasMode | undefined =
+    canvasMode === 'plan' ? 'design' : canvasMode;
+  const headerCanvasModeChange =
+    onCanvasModeChange as ((mode: BreadcrumbCanvasMode) => void) | undefined;
+
   // Set up global keyboard shortcuts
   useKeyboardNavigation({
     enableProjectSwitcher: true,
@@ -298,12 +306,12 @@ function ShellContent({
           workspaces={workspacesList}
           projects={projectsList}
           actionContext={actionContext}
-          contextActions={contextActions}
-          canvasMode={canvasMode}
+          contextActions={headerContextActions}
+          canvasMode={headerCanvasMode}
           showCanvasMode={showCanvasMode}
           phaseInfo={phaseInfo}
           roleInfo={roleInfo}
-          onCanvasModeChange={onCanvasModeChange}
+          onCanvasModeChange={headerCanvasModeChange}
           notificationCount={notificationCount}
           showAgentActivity={showAgentActivity}
           darkMode={isDarkMode}

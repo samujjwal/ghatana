@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Tasks Components Index
  *

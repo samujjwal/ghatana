@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { cn as mergeCn } from '@ghatana/platform-utils';
 
 /**

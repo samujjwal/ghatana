@@ -1,10 +1,10 @@
 package com.ghatana.yappc.agents.config;
 
-import com.ghatana.agent.registry.service.AgentRegistryService;
 import com.ghatana.contracts.agent.v1.AgentManifestProto;
 import com.ghatana.contracts.agent.v1.MetadataProto;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.yappc.agent.spi.AgentRegistryPort;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +40,7 @@ class AepIntegratedAgentLoaderTest extends EventloopTestBase {
     private static final TenantId TENANT = TenantId.of("test-tenant");
 
     @Mock
-    private AgentRegistryService aepRegistry;
+    private AgentRegistryPort agentRegistry;
 
     @Mock
     private YamlAgentLoader yamlLoader;
@@ -51,7 +51,7 @@ class AepIntegratedAgentLoaderTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         converter = new YamlToManifestConverter();
-        loader = new AepIntegratedAgentLoader(aepRegistry, yamlLoader, converter);
+        loader = new AepIntegratedAgentLoader(agentRegistry, yamlLoader, converter);
     }
 
     @Test
@@ -73,7 +73,7 @@ class AepIntegratedAgentLoaderTest extends EventloopTestBase {
                 .build()
         );
         when(yamlLoader.loadFromClasspath("agents/")).thenReturn(yamlConfigs);
-        when(aepRegistry.register(eq(TENANT), any())).thenAnswer(invocation ->
+        when(agentRegistry.register(eq(TENANT), any())).thenAnswer(invocation ->
             Promise.of(invocation.getArgument(1, AgentManifestProto.class))
         );
 
@@ -87,7 +87,7 @@ class AepIntegratedAgentLoaderTest extends EventloopTestBase {
         assertThat(registered)
             .extracting(m -> m.getMetadata().getId())
             .containsExactlyInAnyOrder("expert.java", "expert.sql");
-        verify(aepRegistry, times(2)).register(eq(TENANT), any());
+        verify(agentRegistry, times(2)).register(eq(TENANT), any());
     }
 
     @Test
@@ -103,7 +103,7 @@ class AepIntegratedAgentLoaderTest extends EventloopTestBase {
                 .build()
         );
         when(yamlLoader.loadFromClasspath(customPath)).thenReturn(yamlConfigs);
-        when(aepRegistry.register(eq(TENANT), any())).thenAnswer(invocation ->
+        when(agentRegistry.register(eq(TENANT), any())).thenAnswer(invocation ->
             Promise.of(invocation.getArgument(1, AgentManifestProto.class))
         );
 
@@ -131,7 +131,7 @@ class AepIntegratedAgentLoaderTest extends EventloopTestBase {
 
         // THEN
         assertThat(registered).isEmpty();
-        verify(aepRegistry, times(0)).register(any(), any());
+        verify(agentRegistry, times(0)).register(any(), any());
     }
 
     @Test
@@ -145,14 +145,14 @@ class AepIntegratedAgentLoaderTest extends EventloopTestBase {
                 .setDescription("Generates Java code")
                 .build())
             .build();
-        when(aepRegistry.getById(TENANT, "expert.java")).thenReturn(Promise.of(expected));
+        when(agentRegistry.getById(TENANT, "expert.java")).thenReturn(Promise.of(expected));
 
         // WHEN
         AgentManifestProto result = runPromise(() -> loader.getAgent(TENANT, "expert.java"));
 
         // THEN
         assertThat(result.getMetadata().getId()).isEqualTo("expert.java");
-        verify(aepRegistry).getById(TENANT, "expert.java");
+        verify(agentRegistry).getById(TENANT, "expert.java");
     }
 
     @Test
@@ -167,13 +167,13 @@ class AepIntegratedAgentLoaderTest extends EventloopTestBase {
                 .setMetadata(MetadataProto.newBuilder().setId("agent.two").build())
                 .build()
         );
-        when(aepRegistry.listAll(TENANT)).thenReturn(Promise.of(manifests));
+        when(agentRegistry.listAll(TENANT)).thenReturn(Promise.of(manifests));
 
         // WHEN
         List<AgentManifestProto> result = runPromise(() -> loader.listAgents(TENANT));
 
         // THEN
         assertThat(result).hasSize(2);
-        verify(aepRegistry).listAll(TENANT);
+        verify(agentRegistry).listAll(TENANT);
     }
 }

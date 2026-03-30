@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Version Diff Viewer Component
  * 

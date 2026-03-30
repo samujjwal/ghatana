@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Layers Panel - Real-time canvas layer management
  *

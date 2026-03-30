@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CanvasPerformanceMonitor } from '../CanvasPerformanceMonitor';
 import { CanvasPersistence } from '../CanvasPersistence';

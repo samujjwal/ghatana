@@ -24,7 +24,7 @@
  */
 
 import React, { lazy, Suspense, useCallback } from 'react';
-import { type NodeProps } from '@xyflow/react';
+import { type Node, type NodeProps } from '@xyflow/react';
 import { NodeResizer } from '@xyflow/react';
 import { useAtomValue } from 'jotai';
 import { cameraZoomAtom } from '../workspace';
@@ -68,8 +68,8 @@ const LANGUAGES = [
 
 let LazyMonaco: React.LazyExoticComponent<
     React.ComponentType<{
-        language: string;
-        value: string;
+        language?: string;
+        value?: string;
         onChange?: (value: string | undefined) => void;
         options?: Record<string, unknown>;
         theme?: string;
@@ -145,7 +145,9 @@ function NativeCodeEditor({ value, onChange, readOnly }: NativeCodeEditorProps) 
  * };
  * ```
  */
-export function MonacoNode({ data, selected }: NodeProps<MonacoNodeData>) {
+type MonacoCanvasNode = Node<MonacoNodeData, 'monaco'>;
+
+export function MonacoNode({ data, selected }: NodeProps<MonacoCanvasNode>) {
     const zoom = useAtomValue(cameraZoomAtom);
     const language = data.language ?? 'typescript';
     const value = data.value ?? '';

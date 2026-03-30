@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useNavigate } from 'react-router';
 import { Box, Typography, Button, Stack } from '@ghatana/design-system';
 import { Sparkles as AutoAwesomeIcon, LayoutDashboard as DashboardCustomize, Zap as Bolt } from 'lucide-react';

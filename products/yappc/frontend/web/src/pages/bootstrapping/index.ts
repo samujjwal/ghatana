@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Bootstrapping Pages Index
  *

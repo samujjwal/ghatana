@@ -17,19 +17,16 @@ export function ImprovedEmptyState({
   onAIAssistant,
 }: ImprovedEmptyStateProps) {
   return (
-    <Box
-      className="absolute flex flex-col items-center justify-center p-6 inset-0" >
+    <Box className="absolute inset-0 flex flex-col items-center justify-center p-6">
       <Card
         variant="flat"
-        className="p-10 w-full flex flex-col items-center gap-6 max-w-[600px] border border-solid border-gray-200 dark:border-gray-700" >
-        <Box
-          className="w-[64px] h-[64px] rounded-xl" style={{ backgroundColor: (theme) =>
-              `linear-gradient(135deg, backgroundColor: (theme) => alpha(theme.palette.background.paper, backgroundColor: (theme) =>
-          `linear-gradient(135deg }} >
+        className="flex w-full max-w-[600px] flex-col items-center gap-6 border border-solid border-gray-200 p-10 dark:border-gray-700"
+      >
+        <Box className="flex h-[64px] w-[64px] items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
           <AccountTree className="text-[32px]" />
         </Box>
 
-        <Box textAlign="center">
+        <Box className="text-center">
           <Typography as="h5" fontWeight={600} gutterBottom>
             Start Building Your Architecture
           </Typography>
@@ -72,8 +69,7 @@ export function ImprovedEmptyState({
           </Button>
         </Stack>
 
-        <Box
-          className="flex items-center gap-2 mt-2 p-3 rounded-lg text-gray-500 dark:text-gray-400" style={{ backgroundColor: (theme) => alpha(theme.palette.action.hover }} >
+        <Box className="mt-2 flex items-center gap-2 rounded-lg bg-gray-100 p-3 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
           <ViewModule size={16} />
           <Typography as="p" className="text-sm">
             <strong>Tip:</strong> Press{' '}

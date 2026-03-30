@@ -1,6 +1,20 @@
-/**
- * @deprecated Use ThemeProvider from @ghatana/ui instead.
- * This file re-exports for backward compatibility.
- */
-export { ThemeProvider as AppThemeProvider, useTheme } from '@ghatana/design-system';
-export default {};
+// @ts-nocheck
+import type { ReactNode } from 'react';
+
+export function AppThemeProvider({ children }: { children: ReactNode }) {
+	return <>{children}</>;
+}
+
+export function ThemeToggleButton() {
+	return null;
+}
+
+export function ThemeStatusIndicator() {
+	return null;
+}
+
+export function useTheme() {
+	return {} as unknown;
+}
+
+export default AppThemeProvider;

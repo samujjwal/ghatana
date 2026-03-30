@@ -12,6 +12,7 @@
 
 import { FastifyPluginAsync } from 'fastify';
 import { getPrismaClient } from '../database/client.js';
+import { requirePermission, requireRole } from '../middleware/rbac.middleware';
 
 // ============================================================================
 // Utilities
@@ -199,7 +200,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
    * POST /lifecycle/projects/:id/transition
    * Transition a project to the next lifecycle phase
    */
-  fastify.post('/projects/:id/transition', async (request, reply) => {
+  fastify.post('/projects/:id/transition', { preHandler: requirePermission('workflow', 'update') }, async (request, reply) => {
     const { id: projectId } = request.params as { id: string };
     const body = request.body as unknown;
 
@@ -211,11 +212,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const prisma = getPrismaClient();
-
-    // Get current project state
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-    });
+    const project = await prisma.project.findUnique({ where: { id: projectId } });
 
     if (!project) {
       return reply.status(404).send({ error: 'Project not found' });
@@ -223,17 +220,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
 
     const currentPhase = project.lifecyclePhase || 'INTENT';
     const targetPhase = body.targetPhase;
-
-    // Validate transition
-    const phaseOrder = [
-      'INTENT',
-      'SHAPE',
-      'VALIDATE',
-      'GENERATE',
-      'RUN',
-      'OBSERVE',
-      'IMPROVE',
-    ];
+    const phaseOrder = ['INTENT', 'SHAPE', 'VALIDATE', 'GENERATE', 'RUN', 'OBSERVE', 'IMPROVE'];
     const currentIndex = phaseOrder.indexOf(currentPhase);
     const targetIndex = phaseOrder.indexOf(targetPhase);
 
@@ -244,13 +231,11 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    // Update project phase
     const updatedProject = await prisma.project.update({
       where: { id: projectId },
       data: { lifecyclePhase: targetPhase },
     });
 
-    // Log the transition
     await prisma.lifecycleActivityLog.create({
       data: {
         projectId,
@@ -400,7 +385,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     return artifact;
   });
 
-  fastify.post('/artifacts', async (request, reply) => {
+  fastify.post('/artifacts', { preHandler: requirePermission('workflow', 'create') }, async (request, reply) => {
     const prisma = getPrismaClient();
     const body = request.body as unknown;
 
@@ -422,7 +407,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(201).send(artifact);
   });
 
-  fastify.patch('/artifacts/:artifactId', async (request, reply) => {
+  fastify.patch('/artifacts/:artifactId', { preHandler: requirePermission('workflow', 'update') }, async (request, reply) => {
     const { artifactId } = request.params as { artifactId: string };
     const body = request.body as unknown;
     const prisma = getPrismaClient();
@@ -439,7 +424,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     return artifact;
   });
 
-  fastify.delete('/artifacts/:artifactId', async (request, reply) => {
+  fastify.delete('/artifacts/:artifactId', { preHandler: requirePermission('workflow', 'delete') }, async (request, reply) => {
     const { artifactId } = request.params as { artifactId: string };
 
     const prisma = getPrismaClient();
@@ -555,6 +540,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post(
     '/projects/:projectId/stages/transition',
+    { preHandler: requirePermission('workflow', 'update') },
     async (request, reply) => {
       const { projectId } = request.params as { projectId: string };
       const body = request.body as unknown;
@@ -635,7 +621,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     };
   });
 
-  fastify.post('/tasks/:taskId/execute', async (request, reply) => {
+  fastify.post('/tasks/:taskId/execute', { preHandler: requirePermission('workflow', 'update') }, async (request, reply) => {
     const { taskId } = request.params as { taskId: string };
     const body = request.body as unknown;
 
@@ -737,7 +723,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     }));
   });
 
-  fastify.post('/projects/:projectId/audit', async (request, reply) => {
+  fastify.post('/projects/:projectId/audit', { preHandler: requireRole('ADMIN') }, async (request, reply) => {
     const { projectId } = request.params as { projectId: string };
     const body = request.body as unknown;
 

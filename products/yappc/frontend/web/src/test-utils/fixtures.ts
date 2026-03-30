@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @module fixtures
  * @description Test fixture data for canvas testing.

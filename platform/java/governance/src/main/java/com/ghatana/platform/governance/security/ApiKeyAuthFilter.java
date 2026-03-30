@@ -69,9 +69,12 @@ public class ApiKeyAuthFilter {
                     return Promise.of(unauthorized());
                 }
                 var principal = principalOpt.get();
-                try (var ignored = TenantContext.scope(principal)) {
-                    return delegate.serve(request);
-                }
+                // Attach principal to request so downstream filters (e.g., RBACFilter)
+                // can authorize without coupling to TenantContext internals.
+                request.attach(Principal.class, principal);
+                TenantContext.Scope scope = TenantContext.scope(principal);
+                return delegate.serve(request)
+                        .whenComplete((response, error) -> scope.close());
             }
 
             // Backward-compatible allowlist path

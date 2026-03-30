@@ -4,6 +4,7 @@ import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.agent.framework.planner.PlannerRegistry;
 import com.ghatana.agent.framework.planner.PlannerAgentFactory;
 import com.ghatana.agent.registry.InMemoryAgentRegistry;
+import com.ghatana.agent.spi.AgentRegistry;
 import com.ghatana.agent.framework.runtime.BaseAgent;
 import com.ghatana.agent.framework.runtime.generators.LLMGenerator;
 import com.ghatana.yappc.agent.tools.YappcToolRegistry;
@@ -693,6 +694,14 @@ public class YappcAgentSystem {
         private LLMGenerator.LLMConfig llmConfig;
         private String configBasePath = "products/yappc/config/agents";
         private AepEventPublisher aepEventPublisher;
+        /**
+         * Optional persistent AgentRegistry backing the SDLC registry adapter.
+         * When set, the supplied implementation (e.g. DataCloudAgentRegistry) is
+         * used instead of the default in-memory registry.  Callers that need
+         * durability across restarts or multi-instance discovery should supply a
+         * DataCloud-backed registry here.
+         */
+        private AgentRegistry platformRegistry;
 
         /**
          * Sets the eventloop for async operations.
@@ -761,6 +770,20 @@ public class YappcAgentSystem {
         }
 
         /**
+         * Overrides the backing {@link AgentRegistry} used by the SDLC registry
+         * adapter.  Provide a {@code DataCloudAgentRegistry} for durable,
+         * cross-instance agent discovery; omit for the default in-memory
+         * registry suitable for single-node and test deployments.
+         *
+         * @param platformRegistry agent registry implementation (non-null)
+         * @return this builder
+         */
+        public Builder platformRegistry(@NotNull AgentRegistry platformRegistry) {
+            this.platformRegistry = platformRegistry;
+            return this;
+        }
+
+        /**
          * Builds the unified agent system.
          *
          * @return configured YappcAgentSystem
@@ -782,9 +805,13 @@ public class YappcAgentSystem {
                             .maxTokens(4000)
                             .build();
 
+            AgentRegistry effectivePlatformRegistry = platformRegistry != null
+                    ? platformRegistry
+                    : new InMemoryAgentRegistry();
+
             return new YappcAgentSystem(
                     eventloop, configBasePath,
-                    new YappcAgentRegistryAdapter(new InMemoryAgentRegistry()), memoryStore,
+                    new YappcAgentRegistryAdapter(effectivePlatformRegistry), memoryStore,
                     llmGateway, effectiveConfig, aepEventPublisher);
         }
     }

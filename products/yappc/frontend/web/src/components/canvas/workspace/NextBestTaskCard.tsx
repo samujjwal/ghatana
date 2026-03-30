@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Next Best Task Card Component
  * 

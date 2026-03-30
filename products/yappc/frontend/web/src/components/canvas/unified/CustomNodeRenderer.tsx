@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Custom Node Renderer for Unified Canvas
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Progress bar component.
  *

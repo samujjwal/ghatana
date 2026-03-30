@@ -10,11 +10,11 @@ import type { AIService } from '../../../services/ai/ai.service';
 import type { PrismaClient } from '@prisma/client';
 
 // Mock the AI service and Prisma
-jest.mock('../../../services/ai/ai.service', () => ({
+vi.mock('../../../services/ai/ai.service', () => ({
   createAIService: jest.fn(),
 }));
 
-jest.mock('../../../database/client', () => ({
+vi.mock('../../../database/client', () => ({
   getPrismaClient: jest.fn(),
 }));
 

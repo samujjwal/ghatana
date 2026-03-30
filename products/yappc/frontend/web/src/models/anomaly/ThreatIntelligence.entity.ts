@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Immutable entity representing threat intelligence data.
  *

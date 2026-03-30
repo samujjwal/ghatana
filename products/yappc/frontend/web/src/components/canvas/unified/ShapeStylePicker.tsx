@@ -13,13 +13,22 @@ import {
   Button,
 } from '@ghatana/design-system';
 
+type ShapeNodeData = Record<string, unknown> & {
+    fill?: string;
+    fillOpacity?: number;
+    color?: string;
+    strokeWidth?: number;
+};
+
+type ShapeNode = {
+    id: string;
+    type: string;
+    data: ShapeNodeData;
+};
+
 interface ShapeStylePickerProps {
     selectedNodeIds: string[];
-    nodes: Array<{
-        id: string;
-        type: string;
-        data: Record<string, unknown>;
-    }>;
+    nodes: ShapeNode[];
     onUpdateNode: (nodeId: string, updates: Record<string, unknown>) => void;
 }
 
@@ -52,7 +61,7 @@ export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: Shape
         );
     }
 
-    const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
+    const selectedNodes = nodes.filter((node) => selectedNodeIds.includes(node.id));
     const shapeNodes = selectedNodes.filter(n => ['rectangle', 'ellipse', 'line', 'arrow'].includes(n.type));
 
     if (shapeNodes.length === 0) {
@@ -65,13 +74,13 @@ export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: Shape
 
     // Get current values from first selected node
     const firstNode = shapeNodes[0];
-    const currentFill = firstNode.data.fill || 'transparent';
-    const currentFillOpacity = firstNode.data.fillOpacity !== undefined ? firstNode.data.fillOpacity : 0;
-    const currentColor = firstNode.data.color || '#000000';
-    const currentStrokeWidth = firstNode.data.strokeWidth || 2;
+    const currentFill = firstNode.data.fill ?? 'transparent';
+    const currentFillOpacity = firstNode.data.fillOpacity ?? 0;
+    const currentColor = firstNode.data.color ?? '#000000';
+    const currentStrokeWidth = firstNode.data.strokeWidth ?? 2;
 
     const handleFillChange = (fill: string, opacity: number) => {
-        shapeNodes.forEach(node => {
+        shapeNodes.forEach((node) => {
             onUpdateNode(node.id, {
                 data: {
                     ...node.data,
@@ -83,7 +92,7 @@ export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: Shape
     };
 
     const handleStrokeColorChange = (color: string) => {
-        shapeNodes.forEach(node => {
+        shapeNodes.forEach((node) => {
             onUpdateNode(node.id, {
                 data: {
                     ...node.data,
@@ -94,7 +103,7 @@ export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: Shape
     };
 
     const handleStrokeWidthChange = (width: number) => {
-        shapeNodes.forEach(node => {
+        shapeNodes.forEach((node) => {
             onUpdateNode(node.id, {
                 data: {
                     ...node.data,
@@ -102,6 +111,14 @@ export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: Shape
                 }
             });
         });
+    };
+
+    const handleFillOpacityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        handleFillChange(currentFill, event.currentTarget.valueAsNumber);
+    };
+
+    const handleStrokeWidthInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        handleStrokeWidthChange(event.currentTarget.valueAsNumber);
     };
 
     return (
@@ -120,7 +137,7 @@ export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: Shape
                     </Typography>
                     <Box
                         className="grid gap-1 mb-4" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                        {FILL_PRESETS.map(preset => (
+                        {FILL_PRESETS.map((preset) => (
                             <Box
                                 key={preset.name}
                                 onClick={() => handleFillChange(preset.value, preset.opacity)}
@@ -141,12 +158,12 @@ export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: Shape
                                 Fill Opacity: {Math.round((currentFillOpacity || 0) * 100)}%
                             </Typography>
                             <Slider
-                                value={currentFillOpacity || 0}
-                                onChange={(_, value) => handleFillChange(currentFill, value as number)}
+                                value={currentFillOpacity}
+                                onChange={handleFillOpacityChange}
                                 min={0}
                                 max={1}
                                 step={0.1}
-                                size="small"
+                                size="sm"
                             />
                         </Box>
                     )}
@@ -161,7 +178,7 @@ export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: Shape
             </Typography>
             <Box
                 className="grid gap-1 mb-4" >
-                {PRESET_COLORS.map(color => (
+                {PRESET_COLORS.map((color) => (
                     <Box
                         key={color.name}
                         onClick={() => handleStrokeColorChange(color.value)}
@@ -180,12 +197,11 @@ export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: Shape
                 </Typography>
                 <Slider
                     value={currentStrokeWidth}
-                    onChange={(_, value) => handleStrokeWidthChange(value as number)}
+                    onChange={handleStrokeWidthInputChange}
                     min={1}
                     max={10}
                     step={1}
-                    marks
-                    size="small"
+                    size="sm"
                 />
             </Box>
 
@@ -200,7 +216,7 @@ export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: Shape
                     size="small"
                     variant="outlined"
                     onClick={() => {
-                        shapeNodes.forEach(node => {
+                        shapeNodes.forEach((node) => {
                             onUpdateNode(node.id, {
                                 data: {
                                     ...node.data,

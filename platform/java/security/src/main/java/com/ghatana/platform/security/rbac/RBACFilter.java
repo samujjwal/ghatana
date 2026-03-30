@@ -1,6 +1,7 @@
 package com.ghatana.platform.security.rbac;
 
 import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.platform.governance.security.TenantContext;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpResponse;
@@ -34,6 +35,9 @@ public class RBACFilter {
     public AsyncServlet secure(AsyncServlet delegate) {
         return request -> {
             Principal principal = request.getAttachment(Principal.class);
+            if (principal == null) {
+                principal = TenantContext.current().orElse(null);
+            }
             if (principal == null) {
                 log.warn("No principal found in request");
                 return Promise.of(unauthorized("Missing or invalid credentials"));

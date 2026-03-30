@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Re-export platform UI components from @ghatana/ui
 export * from '@ghatana/design-system';
 

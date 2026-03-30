@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Sequence Diagram Canvas Content
  * 

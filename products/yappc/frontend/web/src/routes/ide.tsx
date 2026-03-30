@@ -11,22 +11,16 @@
  */
 
 import React from 'react';
-import { Provider } from 'jotai';
-import { IDEShell } from '@yappc/canvas';
 
 /**
  * IDE Page Component
  */
 export default function IDEPage() {
   return (
-    <Provider>
       <div className="w-full h-screen">
-        <IDEShell>
-          <div className="ide-content-placeholder">
-            IDE Content migrated to CanvasChromeLayout
-          </div>
-        </IDEShell>
+        <div className="ide-content-placeholder">
+          IDE Content migrated to CanvasChromeLayout
+        </div>
       </div>
-    </Provider>
   );
 }

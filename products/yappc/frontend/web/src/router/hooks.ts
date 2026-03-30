@@ -8,6 +8,7 @@
 import { useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, useParams, useSearchParams } from 'react-router';
 import { useAtomValue, useSetAtom } from 'jotai';
+import type { Atom, PrimitiveAtom } from 'jotai';
 
 import {
   activeProjectAtom,
@@ -15,6 +16,22 @@ import {
   breadcrumbsAtom,
 } from '../state/atoms';
 import { ROUTES, generateBreadcrumbs, buildUrl, getPhaseFromPath } from './paths';
+
+type ActiveProject = { id: string; name?: string } | null;
+type NavigationHistoryEntry = { path: string; timestamp: number };
+type BreadcrumbStateItem = {
+  id: string;
+  label: string;
+  href: string;
+  path?: string;
+  icon?: string;
+};
+
+const activeProjectStateAtom = activeProjectAtom as Atom<ActiveProject>;
+const navigationHistoryStateAtom = navigationHistoryAtom as PrimitiveAtom<
+  NavigationHistoryEntry[]
+>;
+const breadcrumbsStateAtom = breadcrumbsAtom as PrimitiveAtom<BreadcrumbStateItem[]>;
 
 // =============================================================================
 // Core Navigation Hook
@@ -25,7 +42,7 @@ import { ROUTES, generateBreadcrumbs, buildUrl, getPhaseFromPath } from './paths
  */
 export function useProjectNavigation() {
   const navigate = useNavigate();
-  const activeProject = useAtomValue(activeProjectAtom);
+  const activeProject = useAtomValue(activeProjectStateAtom);
   const projectId = activeProject?.id || '';
 
   return useMemo(
@@ -210,8 +227,8 @@ export function useRouteState<
  */
 export function useBreadcrumbs() {
   const location = useLocation();
-  const activeProject = useAtomValue(activeProjectAtom);
-  const setBreadcrumbs = useSetAtom(breadcrumbsAtom);
+  const activeProject = useAtomValue(activeProjectStateAtom);
+  const setBreadcrumbs = useSetAtom(breadcrumbsStateAtom);
 
   const crumbs = useMemo(() => {
     const generated = generateBreadcrumbs(
@@ -246,8 +263,8 @@ export function useBreadcrumbs() {
 export function useNavigationHistory() {
   const location = useLocation();
   const navigate = useNavigate();
-  const setHistory = useSetAtom(navigationHistoryAtom);
-  const history = useAtomValue(navigationHistoryAtom);
+  const setHistory = useSetAtom(navigationHistoryStateAtom);
+  const history = useAtomValue(navigationHistoryStateAtom);
 
   // Add current location to history
   useMemo(() => {
@@ -299,7 +316,7 @@ export function useNavigationHistory() {
  * Build URLs with query params
  */
 export function useUrlBuilder() {
-  const activeProject = useAtomValue(activeProjectAtom);
+  const activeProject = useAtomValue(activeProjectStateAtom);
   const projectId = activeProject?.id || '';
 
   return useMemo(

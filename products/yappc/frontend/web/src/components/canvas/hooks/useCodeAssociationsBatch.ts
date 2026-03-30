@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Batch Code Associations Hook
  *

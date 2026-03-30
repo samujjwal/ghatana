@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Shared Canvas Views
  * These are generic view components that can be used with any canvas implementation

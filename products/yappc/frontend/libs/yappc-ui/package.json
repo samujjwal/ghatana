@@ -52,7 +52,6 @@
   },
   "dependencies": {
     "@yappc/core": "workspace:*",
-    "@yappc/theme": "workspace:*",
     "clsx": "^2.1.1",
     "tailwind-merge": "^3.4.0",
     "class-variance-authority": "^0.7.0",

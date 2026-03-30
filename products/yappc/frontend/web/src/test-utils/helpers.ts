@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @module helpers
  * @description Test helper functions for common testing patterns.

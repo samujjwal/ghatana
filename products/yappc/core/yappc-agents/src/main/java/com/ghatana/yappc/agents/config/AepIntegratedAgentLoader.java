@@ -1,8 +1,8 @@
 package com.ghatana.yappc.agents.config;
 
-import com.ghatana.agent.registry.service.AgentRegistryService;
 import com.ghatana.contracts.agent.v1.AgentManifestProto;
 import com.ghatana.platform.domain.auth.TenantId;
+import com.ghatana.yappc.agent.spi.AgentRegistryPort;
 import io.activej.inject.annotation.Inject;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -14,57 +14,58 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * YAPPC Agent Loader integrated with AEP AgentRegistryService.
- * 
- * This loader replaces the custom YappcAgentRegistry by leveraging AEP's
- * AgentRegistryService for all agent management operations. It loads YAML
- * agent configurations and registers them with AEP's registry.
- * 
+ * YAPPC Agent Loader integrated with the {@link AgentRegistryPort} adapter seam.
+ *
+ * <p>This loader loads YAML agent configurations from the classpath and registers
+ * them via the {@link AgentRegistryPort} port interface. The concrete registry
+ * implementation (e.g., AEP) is injected at wiring time by the infrastructure layer,
+ * keeping this class free of direct AEP dependencies.
+ *
  * <p><b>Key Features:</b>
  * <ul>
  *   <li>Loads YAML agent definitions from classpath</li>
  *   <li>Converts YAML to AEP AgentManifestProto format</li>
- *   <li>Registers agents with AEP AgentRegistryService</li>
+ *   <li>Registers agents via {@link AgentRegistryPort}</li>
  *   <li>Supports multi-tenant agent registration</li>
  *   <li>Provides batch registration capabilities</li>
  * </ul>
- * 
+ *
  * <p><b>Usage:</b>
  * <pre>{@code
  * AepIntegratedAgentLoader loader = new AepIntegratedAgentLoader(
- *     aepRegistry, yamlLoader, converter
+ *     agentRegistryPort, yamlLoader, converter
  * );
- * 
- * Promise<List<AgentManifestProto>> registered = 
+ *
+ * Promise<List<AgentManifestProto>> registered =
  *     loader.loadAndRegisterAgents(tenantId);
  * }</pre>
- * 
+ *
  * @doc.type class
  * @doc.pattern Loader, Adapter
- * @doc.purpose Load YAML agents into AEP registry
- * @doc.layer product
+ * @doc.purpose Load YAML agents into the agent registry via port interface
+ * @doc.layer config
  */
 public class AepIntegratedAgentLoader {
     private static final Logger log = LoggerFactory.getLogger(AepIntegratedAgentLoader.class);
-    
-    private final AgentRegistryService aepRegistry;
+
+    private final AgentRegistryPort agentRegistry;
     private final YamlAgentLoader yamlLoader;
     private final YamlToManifestConverter converter;
-    
+
     @Inject
     public AepIntegratedAgentLoader(
-        AgentRegistryService aepRegistry,
+        AgentRegistryPort agentRegistry,
         YamlAgentLoader yamlLoader,
         YamlToManifestConverter converter
     ) {
-        this.aepRegistry = aepRegistry;
+        this.agentRegistry = agentRegistry;
         this.yamlLoader = yamlLoader;
         this.converter = converter;
     }
-    
+
     /**
-     * Load all YAML agents from classpath and register with AEP.
-     * 
+     * Load all YAML agents from classpath and register with the agent registry.
+     *
      * @param tenantId Tenant that will own these agents
      * @return Promise of registered agent manifests
      */
@@ -117,7 +118,7 @@ public class AepIntegratedAgentLoader {
     private Promise<AgentManifestProto> registerAgent(TenantId tenantId, AgentManifestProto manifest) {
         String agentId = manifest.getMetadata().getName();
         
-        return aepRegistry.register(tenantId, manifest)
+        return agentRegistry.register(tenantId, manifest)
             .whenResult(registered -> 
                 log.info("Successfully registered agent {} with AEP for tenant {}", 
                     agentId, tenantId))
@@ -134,7 +135,7 @@ public class AepIntegratedAgentLoader {
      * @return Promise of agent manifest
      */
     public Promise<AgentManifestProto> getAgent(TenantId tenantId, String agentId) {
-        return aepRegistry.getById(tenantId, agentId);
+        return agentRegistry.getById(tenantId, agentId);
     }
     
     /**
@@ -144,7 +145,7 @@ public class AepIntegratedAgentLoader {
      * @return Promise of all agent manifests
      */
     public Promise<List<AgentManifestProto>> listAgents(TenantId tenantId) {
-        return aepRegistry.listAll(tenantId);
+        return agentRegistry.listAll(tenantId);
     }
     
     /**
@@ -155,7 +156,7 @@ public class AepIntegratedAgentLoader {
      * @return Promise of matching agent IDs
      */
     public Promise<List<String>> findAgentsByCapability(TenantId tenantId, String capability) {
-        return aepRegistry.findByCapabilities(tenantId, Set.of(capability))
+        return agentRegistry.findByCapabilities(tenantId, Set.of(capability))
             .map(manifests -> manifests.stream()
                 .map(m -> m.getMetadata().getId())
                 .collect(Collectors.toList()));
@@ -169,7 +170,7 @@ public class AepIntegratedAgentLoader {
      * @return Promise of matching agent IDs
      */
     public Promise<List<String>> findAgentsByEventType(TenantId tenantId, String eventType) {
-        return aepRegistry.findByEventType(tenantId, eventType)
+        return agentRegistry.findByEventType(tenantId, eventType)
             .map(manifests -> manifests.stream()
                 .map(m -> m.getMetadata().getId())
                 .collect(Collectors.toList()));
@@ -189,7 +190,7 @@ public class AepIntegratedAgentLoader {
         YamlAgentConfig yamlConfig
     ) {
         AgentManifestProto manifest = converter.convert(yamlConfig);
-        return aepRegistry.update(tenantId, agentId, manifest)
+        return agentRegistry.update(tenantId, agentId, manifest)
             .whenResult(updated -> 
                 log.info("Successfully updated agent {} in AEP for tenant {}", agentId, tenantId))
             .whenException(error -> 
@@ -208,11 +209,20 @@ public class AepIntegratedAgentLoader {
         return deleteAgent(tenantId, agentId, false);
     }
     
+    /**
+     * Delete an agent from AEP registry with hard delete option.
+     * 
+     * @param tenantId Tenant scope
+     * @param agentId Agent identifier
+     * @param hardDelete If true, permanently delete; otherwise soft-delete
+     * @return Promise of deletion confirmation
+     */
     public Promise<Void> deleteAgent(TenantId tenantId, String agentId, boolean hardDelete) {
-        return aepRegistry.delete(tenantId, agentId, hardDelete)
+        return agentRegistry.delete(tenantId, agentId, hardDelete)
             .map(deleted -> (Void) null)
-            .whenResult(() -> 
-                log.info("Successfully deleted agent {} from AEP for tenant {}", agentId, tenantId))
+            .whenResult(v -> 
+                log.info("Successfully deleted agent {} from AEP for tenant {} (hard={})", 
+                    agentId, tenantId, hardDelete))
             .whenException(error -> 
                 log.error("Failed to delete agent {} from AEP for tenant {}: {}", 
                     agentId, tenantId, error.getMessage(), error));

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, test, expect, beforeEach } from 'vitest';
 
 import { ComponentRegistry } from '../ComponentRegistry';

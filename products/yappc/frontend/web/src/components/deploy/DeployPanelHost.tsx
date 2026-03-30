@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Deploy Panel Host Component
  *

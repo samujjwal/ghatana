@@ -26,12 +26,33 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const PUBLIC_PATHS = new Set([
   '/health',
   '/metrics',
-  '/api/auth/login',
-  '/api/auth/register',
-  '/api/auth/refresh',
-  '/graphql', // GraphQL resolvers guard themselves
+  '/graphql',
   '/graphiql',
 ]);
+
+const PUBLIC_AUTH_PATH_SUFFIXES = new Set([
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/verify-email',
+]);
+
+function isPublicPath(rawPath: string): boolean {
+  const path = rawPath.split('?')[0];
+  if (PUBLIC_PATHS.has(path)) {
+    return true;
+  }
+
+  for (const suffix of PUBLIC_AUTH_PATH_SUFFIXES) {
+    if (path.endsWith(suffix)) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 // ============================================================================
 // Types
@@ -69,9 +90,7 @@ export async function authMiddleware(fastify: FastifyInstance): Promise<void> {
     'onRequest',
     async (request: FastifyRequest, reply: FastifyReply) => {
       // Skip public paths
-      if (
-        PUBLIC_PATHS.has(request.routeOptions?.url ?? request.url.split('?')[0])
-      ) {
+      if (isPublicPath(request.routeOptions?.url ?? request.url)) {
         return;
       }
 

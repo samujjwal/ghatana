@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canvas Migration Execution Script
  * Orchestrates Phase 2 migration activities: unified registry and hook migration

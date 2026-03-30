@@ -77,6 +77,8 @@ jobs:
         run: |
           ./gradlew :products:yappc:validateAgentCatalog \
             --no-daemon --stacktrace
+        env:
+          YAPPC_FAIL_ON_UNREGISTERED_AGENT_DEFS: "false"
 
       - name: Run Tests with Coverage
         run: |

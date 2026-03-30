@@ -18,12 +18,19 @@ import {
   RouteObject,
 } from 'react-router';
 import { useAtomValue } from 'jotai';
+import type { Atom } from 'jotai';
 
 import {
   userAtom,
   isAuthenticatedAtom,
   currentProjectAtom,
 } from '../state/atoms';
+
+type AuthUser = { role?: string } | null;
+
+const userStateAtom = userAtom as Atom<AuthUser>;
+const isAuthenticatedStateAtom = isAuthenticatedAtom as Atom<boolean>;
+const currentProjectStateAtom = currentProjectAtom as Atom<unknown | null>;
 
 // =============================================================================
 // Lazy-loaded Page Components
@@ -254,7 +261,7 @@ const PageLoader: React.FC = () => (
  * Protect routes requiring authentication.
  */
 const AuthGuard: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const isAuthenticated = useAtomValue(isAuthenticatedAtom);
+  const isAuthenticated = useAtomValue(isAuthenticatedStateAtom);
 
   if (!isAuthenticated) {
     return <Navigate to="/sso/callback" replace />;
@@ -269,7 +276,7 @@ const AuthGuard: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 const ProjectGuard: React.FC<{ children?: React.ReactNode }> = ({
   children,
 }) => {
-  const currentProject = useAtomValue(currentProjectAtom);
+  const currentProject = useAtomValue(currentProjectStateAtom);
 
   if (!currentProject) {
     return <Navigate to="/projects" replace />;
@@ -282,7 +289,7 @@ const ProjectGuard: React.FC<{ children?: React.ReactNode }> = ({
  * Protect admin routes.
  */
 const AdminGuard: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const user = useAtomValue(userAtom);
+  const user = useAtomValue(userStateAtom);
 
   if (user?.role !== 'admin') {
     return <Navigate to="/unauthorized" replace />;
@@ -295,7 +302,7 @@ const AdminGuard: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
  * Redirect authenticated users away from auth pages.
  */
 const GuestGuard: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const isAuthenticated = useAtomValue(isAuthenticatedAtom);
+  const isAuthenticated = useAtomValue(isAuthenticatedStateAtom);
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;

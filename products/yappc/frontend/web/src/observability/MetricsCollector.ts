@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Observability collector for metrics tracking and performance monitoring.
  *

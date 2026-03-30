@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
 /**
  * Integration tests for AgentHeartbeatService DI wiring in YAPPC lifecycle modules.
  *
- * <p>Validates that AgentHeartbeatService integrates correctly with YAPPCAgentRegistry,
+ * <p>Validates that AgentHeartbeatService integrates correctly with AgentHealthProvider,
  * Eventloop, and the broader service module architecture. Tests verify:
  * <ul>
  *   <li>Service instantiation via @Provides binding</li>
@@ -43,23 +43,23 @@ class AgentHeartbeatWiringTest {
     // ─────────────────────────────────────────────────────────────────────────────
 
     /**
-     * In-memory mock YAPPCAgentRegistry for isolated heartbeat testing.
-     * Simulates real registry behavior without JDBC.
+    * In-memory AgentHealthProvider test double for isolated heartbeat testing.
+    * Simulates registry health/status behavior without persistence dependencies.
      */
-    static class MapYAPPCAgentRegistry extends YAPPCAgentRegistry {
+    static class MapAgentHealthProvider implements AgentHealthProvider {
 
-        private final Map<String, YAPPCAgentRegistry.AgentStatus> statusMap = new ConcurrentHashMap<>();
+        private final Map<String, AgentLifecycleStatus> statusMap = new ConcurrentHashMap<>();
         private final Map<String, Instant> lastHeartbeatMap = new ConcurrentHashMap<>();
 
-        MapYAPPCAgentRegistry() {
+        MapAgentHealthProvider() {
             // Seed with 3 agents: 1 READY, 1 FAILED, 1 INITIALIZING
-            statusMap.put("agent-1", YAPPCAgentRegistry.AgentStatus.READY);
-            statusMap.put("agent-2", YAPPCAgentRegistry.AgentStatus.FAILED);
-            statusMap.put("agent-3", YAPPCAgentRegistry.AgentStatus.INITIALIZING);
+            statusMap.put("agent-1", AgentLifecycleStatus.READY);
+            statusMap.put("agent-2", AgentLifecycleStatus.FAILED);
+            statusMap.put("agent-3", AgentLifecycleStatus.INITIALIZING);
         }
 
         @Override
-        public Map<String, YAPPCAgentRegistry.AgentStatus> getHealthStatus() {
+        public Map<String, AgentLifecycleStatus> getHealthStatus() {
             return Map.copyOf(statusMap);
         }
 
@@ -91,7 +91,7 @@ class AgentHeartbeatWiringTest {
         void shouldInstantiateViaProvides() {
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build();
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
 
             // WHEN
             AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop);
@@ -106,7 +106,7 @@ class AgentHeartbeatWiringTest {
         void shouldAcceptCustomInterval() {
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build();
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
             long customIntervalMs = 5_000L;
 
             // WHEN
@@ -122,7 +122,7 @@ class AgentHeartbeatWiringTest {
         void shouldRejectInvalidInterval() {
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build();
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
 
             // WHEN / THEN
             assertThatThrownBy(() ->
@@ -145,7 +145,7 @@ class AgentHeartbeatWiringTest {
         void shouldTransitionToRunningOnStart() {
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build();
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
             AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop);
 
             // WHEN
@@ -160,7 +160,7 @@ class AgentHeartbeatWiringTest {
         void shouldTransitionToStoppedOnStop() {
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build();
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
             AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop);
 
             // WHEN
@@ -175,23 +175,23 @@ class AgentHeartbeatWiringTest {
         @DisplayName("Registry reports initial agent statuses")
         void shouldReportInitialAgentStatuses() {
             // GIVEN
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
 
             // WHEN
-            Map<String, YAPPCAgentRegistry.AgentStatus> statuses = registry.getHealthStatus();
+            Map<String, AgentLifecycleStatus> statuses = registry.getHealthStatus();
 
             // THEN
             assertThat(statuses).hasSize(3);
-            assertThat(statuses).containsEntry("agent-1", YAPPCAgentRegistry.AgentStatus.READY);
-            assertThat(statuses).containsEntry("agent-2", YAPPCAgentRegistry.AgentStatus.FAILED);
-            assertThat(statuses).containsEntry("agent-3", YAPPCAgentRegistry.AgentStatus.INITIALIZING);
+            assertThat(statuses).containsEntry("agent-1", AgentLifecycleStatus.READY);
+            assertThat(statuses).containsEntry("agent-2", AgentLifecycleStatus.FAILED);
+            assertThat(statuses).containsEntry("agent-3", AgentLifecycleStatus.INITIALIZING);
         }
 
         @Test
         @DisplayName("Registry records heartbeat timestamps")
         void shouldRecordHeartbeatTimestamps() {
             // GIVEN
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
             Instant now = Instant.now();
 
             // WHEN
@@ -214,8 +214,8 @@ class AgentHeartbeatWiringTest {
         @DisplayName("Service tracks consecutive failure cycles per agent")
         void shouldTrackConsecutiveFailures() {
             // GIVEN
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
-            assertThat(registry.getHealthStatus()).containsEntry("agent-2", YAPPCAgentRegistry.AgentStatus.FAILED);
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
+            assertThat(registry.getHealthStatus()).containsEntry("agent-2", AgentLifecycleStatus.FAILED);
 
             // WHEN
             // Simulate 3 heartbeat cycles where agent-2 remains FAILED
@@ -224,14 +224,14 @@ class AgentHeartbeatWiringTest {
             // THEN
             // Assert registry still reports it as FAILED
             assertThat(registry.getHealthStatus())
-                    .containsEntry("agent-2", YAPPCAgentRegistry.AgentStatus.FAILED);
+                    .containsEntry("agent-2", AgentLifecycleStatus.FAILED);
         }
 
         @Test
         @DisplayName("Registry reports agent count")
         void shouldReportAgentCount() {
             // GIVEN
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
 
             // WHEN
             int count = registry.getAgentCount();
@@ -244,7 +244,7 @@ class AgentHeartbeatWiringTest {
         @DisplayName("Multiple agents tracked independently")
         void shouldTrackMultipleAgentsIndependently() {
             // GIVEN
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
             Instant time1 = Instant.parse("2026-03-15T10:00:00Z");
             Instant time2 = Instant.parse("2026-03-15T10:00:01Z");
 
@@ -271,7 +271,7 @@ class AgentHeartbeatWiringTest {
         void shouldProvideable() {
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build();
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
 
             // WHEN
             // Simulate what the @Provides method does
@@ -291,7 +291,7 @@ class AgentHeartbeatWiringTest {
         void shouldIntegrateWithModuleBindings() {
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build();
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
 
             // WHEN
             // This simulates what happens when the module is instantiated
@@ -317,9 +317,9 @@ class AgentHeartbeatWiringTest {
         void shouldHandleEmptyRegistry() {
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build();
-            MapYAPPCAgentRegistry emptyRegistry = new MapYAPPCAgentRegistry() {
+            MapAgentHealthProvider emptyRegistry = new MapAgentHealthProvider() {
                 @Override
-                public Map<String, YAPPCAgentRegistry.AgentStatus> getHealthStatus() {
+                public Map<String, AgentLifecycleStatus> getHealthStatus() {
                     return Map.of(); // Empty
                 }
 
@@ -343,7 +343,7 @@ class AgentHeartbeatWiringTest {
         void shouldAllowMultipleLifecycles() {
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build();
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
             AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop);
 
             // WHEN / THEN
@@ -360,7 +360,7 @@ class AgentHeartbeatWiringTest {
         void shouldHandleConcurrentUpdates() {
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build();
-            MapYAPPCAgentRegistry registry = new MapYAPPCAgentRegistry();
+            MapAgentHealthProvider registry = new MapAgentHealthProvider();
             AtomicInteger updateCount = new AtomicInteger(0);
 
             // WHEN

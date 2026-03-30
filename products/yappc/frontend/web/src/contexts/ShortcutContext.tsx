@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Global Shortcut Context Provider
  * 

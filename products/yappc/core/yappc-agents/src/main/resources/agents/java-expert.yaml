@@ -82,6 +82,19 @@ agent:
         - name: projectMetadata
           type: hidden  # Auto-populated from context
   
+  # AEP Event Processing Integration
+  # Enables event-driven agent execution via the AEP event router.
+  event_processing:
+    input_event_types:
+      - "code.analysis.requested"
+      - "java.review.requested"
+    output_event_types:
+      - "code.analysis.completed"
+      - "java.review.completed"
+    dead_letter_queue: "yappc.dlq.java-expert"
+    ordering: per_tenant
+    max_in_flight: 5
+
   # Cost Tracking
   cost:
     estimated_tokens_per_request: 1500

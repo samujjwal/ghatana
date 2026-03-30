@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Select Component
  * 

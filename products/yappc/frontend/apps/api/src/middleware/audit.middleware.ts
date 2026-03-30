@@ -123,10 +123,12 @@ export async function auditMiddleware(fastify: FastifyInstance): Promise<void> {
           success: reply.statusCode < 400,
         })
         .catch((err) => {
-          fastify.log.warn(
-            '[AuditMiddleware] Failed to write audit entry:',
-            err
-          );
+          if (fastify.log?.warn) {
+            fastify.log.warn(
+              '[AuditMiddleware] Failed to write audit entry:',
+              err
+            );
+          }
         });
     }
   );

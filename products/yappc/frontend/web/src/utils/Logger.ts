@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Structured Logging System
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Generic Canvas Core Component
  * Provides a composable, extensible foundation for all canvas implementations

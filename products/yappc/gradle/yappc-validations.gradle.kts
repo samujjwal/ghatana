@@ -38,6 +38,10 @@ tasks.register("validateAgentCatalog") {
     val capabilitiesFile = layout.projectDirectory.file("config/agents/capabilities.yaml").asFile
     val mappingsFile = layout.projectDirectory.file("config/agents/mappings.yaml").asFile
     val eventRoutingFile = layout.projectDirectory.file("config/agents/event-routing.yaml").asFile
+    val failOnUnregisteredDefs = System.getenv("YAPPC_FAIL_ON_UNREGISTERED_AGENT_DEFS")
+        ?.trim()
+        ?.equals("true", ignoreCase = true)
+        ?: false
 
     doLast {
         val yaml = org.yaml.snakeyaml.Yaml()
@@ -119,12 +123,71 @@ tasks.register("validateAgentCatalog") {
             }
         }
 
+        val explicitDefinitionPaths = mutableSetOf<String>()
+        val coveredDefinitionDirectories = mutableSetOf<String>()
+
         if (registryFile.exists()) {
-            Regex("definition:\\s+(.+\\.yaml)").findAll(registryFile.readText()).forEach { match ->
-                val defPath = File(projectDir, "config/agents/${match.groupValues[1]}")
+            val registryText = registryFile.readText()
+            Regex("definition:\\s+(.+\\.yaml)").findAll(registryText).forEach { match ->
+                val definitionPath = match.groupValues[1].trim()
+                explicitDefinitionPaths.add(definitionPath)
+
+                val defPath = File(projectDir, "config/agents/$definitionPath")
                 if (!defPath.exists()) {
-                    println("ERROR: registry.yaml references non-existent definition: ${match.groupValues[1]}")
+                    println("ERROR: registry.yaml references non-existent definition: $definitionPath")
                     errors++
+                }
+            }
+
+            try {
+                @Suppress("UNCHECKED_CAST")
+                val registryDoc = yaml.load<Map<String, Any>>(registryText)
+
+                @Suppress("UNCHECKED_CAST")
+                val phases = registryDoc["phases"] as? Map<String, Any> ?: emptyMap()
+                phases.values
+                    .mapNotNull { it?.toString()?.trim() }
+                    .filter { it.endsWith("/") }
+                    .forEach { coveredDefinitionDirectories.add(it) }
+
+                @Suppress("UNCHECKED_CAST")
+                val domains = registryDoc["domains"] as? Map<String, Any> ?: emptyMap()
+                domains.values
+                    .mapNotNull { it?.toString()?.trim() }
+                    .filter { it.endsWith("/") }
+                    .forEach { coveredDefinitionDirectories.add(it) }
+            } catch (e: Exception) {
+                println("ERROR: Failed to parse registry.yaml for directory coverage: ${e.message}")
+                errors++
+            }
+
+            val agentConfigRoot = File(projectDir, "config/agents")
+            val unregisteredDefinitions = agentYamlFiles
+                .map { it.relativeTo(agentConfigRoot).invariantSeparatorsPath }
+                .filter { relativePath ->
+                    val coveredByExplicitEntry = relativePath in explicitDefinitionPaths
+                    val coveredByDirectory = coveredDefinitionDirectories.any { directory ->
+                        relativePath.startsWith(directory)
+                    }
+                    !coveredByExplicitEntry && !coveredByDirectory
+                }
+
+            if (unregisteredDefinitions.isNotEmpty()) {
+                val sample = unregisteredDefinitions.take(20)
+                val message = buildString {
+                    append("Unregistered agent definitions detected (")
+                    append(unregisteredDefinitions.size)
+                    append("). Sample: ")
+                    append(sample.joinToString(", "))
+                    append(". Add them to registry.yaml or phase/domain directories.")
+                }
+
+                if (failOnUnregisteredDefs) {
+                    println("ERROR: $message")
+                    errors++
+                } else {
+                    println("WARNING: $message")
+                    warnings++
                 }
             }
         } else {

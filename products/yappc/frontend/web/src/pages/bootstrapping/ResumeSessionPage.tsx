@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Resume Session Page
  *

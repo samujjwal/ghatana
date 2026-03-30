@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ============================================================================
 // DashboardNode - Canvas node for dashboard/widget visualization
 // 

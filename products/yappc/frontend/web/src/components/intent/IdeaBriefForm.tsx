@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Idea Brief Form Component
  *

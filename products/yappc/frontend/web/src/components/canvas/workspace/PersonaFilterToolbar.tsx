@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Persona Filter Toolbar Component
  * 

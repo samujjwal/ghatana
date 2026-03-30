@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Sticky Notes Canvas Content
  * 

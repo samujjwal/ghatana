@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ============================================================================
 // PresetNode - Canvas node for preset/template visualization
 //

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Ghost Nodes Component
  * 

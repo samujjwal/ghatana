@@ -12,6 +12,7 @@
  */
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../db';
+import { requirePermission } from '../middleware/rbac.middleware';
 
 interface GetCanvasParams {
     projectId: string;
@@ -131,6 +132,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
         Body: Omit<SaveCanvasBody, 'projectId' | 'canvasId'> & { data: Record<string, unknown> };
     }>(
         '/projects/:projectId/canvas',
+        { preHandler: requirePermission('canvas', 'update') },
         async (request, reply) => {
             if (!request.user?.userId) {
                 return reply.status(401).send({ error: 'Unauthorized' });
@@ -218,6 +220,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
      */
     fastify.post<{ Body: SaveCanvasBody }>(
         '/canvas',
+        { preHandler: requirePermission('canvas', 'update') },
         async (request, reply) => {
             if (!request.user?.userId) {
                 return reply.status(401).send({ error: 'Unauthorized' });
@@ -355,6 +358,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
         Body: RestoreVersionBody;
     }>(
         '/projects/:projectId/canvas/restore',
+        { preHandler: requirePermission('canvas', 'update') },
         async (request, reply) => {
             if (!request.user?.userId) {
                 return reply.status(401).send({ error: 'Unauthorized' });

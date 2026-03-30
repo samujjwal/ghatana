@@ -70,6 +70,16 @@ public class YamlToManifestConverter {
         for (Map.Entry<String, Object> entry : config.getMetadata().entrySet()) {
             labels.put("metadata." + entry.getKey(), String.valueOf(entry.getValue()));
         }
+
+        // Add event processing metadata as labels for observability / routing config
+        if (config.getEventProcessing() != null) {
+            YamlAgentConfig.EventProcessingConfig ep = config.getEventProcessing();
+            labels.put("event.ordering", ep.getOrdering());
+            labels.put("event.max_in_flight", String.valueOf(ep.getMaxInFlight()));
+            if (ep.getDeadLetterQueue() != null) {
+                labels.put("event.dlq", ep.getDeadLetterQueue());
+            }
+        }
         
         metadata.putAllLabels(labels);
         
@@ -89,15 +99,25 @@ public class YamlToManifestConverter {
         for (String capability : config.getCapabilities()) {
             spec.addCapabilities(capability);
         }
-        
-        // Add tags as input event types for filtering
-        for (String tag : config.getTags()) {
-            spec.addInputEventTypes("tag:" + tag);
-        }
-        
-        // Add generator-specific event types
-        if (config.getGenerator() != null) {
-            addGeneratorEventTypes(spec, config);
+
+        // Prefer explicit event_processing config; fall back to derived event types
+        if (config.getEventProcessing() != null) {
+            YamlAgentConfig.EventProcessingConfig ep = config.getEventProcessing();
+            for (String inputType : ep.getInputEventTypes()) {
+                spec.addInputEventTypes(inputType);
+            }
+            for (String outputType : ep.getOutputEventTypes()) {
+                spec.addOutputEventTypes(outputType);
+            }
+        } else {
+            // Add tags as input event types for filtering
+            for (String tag : config.getTags()) {
+                spec.addInputEventTypes("tag:" + tag);
+            }
+            // Add generator-specific event types
+            if (config.getGenerator() != null) {
+                addGeneratorEventTypes(spec, config);
+            }
         }
         
         // Add validation configuration

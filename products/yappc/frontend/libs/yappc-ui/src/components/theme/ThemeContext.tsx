@@ -1,6 +1,6 @@
 /**
- * @deprecated Use ThemeProvider.tsx instead. This was a duplicate context.
- * Re-exports for backward compatibility.
+ * @deprecated Use ThemeProvider.tsx directly.
+ * Re-exports from local ThemeProvider for backward compatibility.
  */
-export { ThemeProvider, ThemeContext, useTheme, type ThemeContextType, type ThemeMode, type ThemeProviderProps } from '@yappc/theme';
+export { ThemeProvider, ThemeContext, useTheme, type ThemeContextType, type ThemeMode, type ThemeProviderProps } from './ThemeProvider';
 

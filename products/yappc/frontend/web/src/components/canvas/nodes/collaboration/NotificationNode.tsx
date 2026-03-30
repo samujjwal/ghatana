@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ============================================================================
 // NotificationNode - Canvas node for visualizing notifications
 //

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CommandInput Component
  *

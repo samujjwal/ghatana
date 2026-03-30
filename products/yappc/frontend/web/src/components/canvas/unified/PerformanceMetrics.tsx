@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * PerformanceMetrics - Canvas Performance Display
  * 

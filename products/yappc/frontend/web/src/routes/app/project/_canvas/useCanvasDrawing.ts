@@ -12,24 +12,35 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import type { DrawingTool, Point } from './types';
 
+interface CanvasDrawingStroke {
+  tool: DrawingTool | 'eraser' | 'highlighter' | string;
+  color: string;
+  width: number;
+  opacity?: number;
+  points: Point[];
+}
+
+interface CanvasDrawingApi {
+  activeTool: string;
+  drawings?: CanvasDrawingStroke[];
+  startDrawing: (
+    point: Point,
+    tool: DrawingTool,
+    color: string,
+    width: number,
+    opacity: number
+  ) => void;
+  continueDrawing: (point: Point) => void;
+  endDrawing: () => CanvasDrawingStroke | undefined;
+}
+
 interface UseCanvasDrawingOptions {
-  canvas: {
-    activeTool: string;
-    drawings?: unknown[];
-    startDrawing: (
-      point: Point,
-      tool: DrawingTool,
-      color: string,
-      width: number,
-      opacity: number
-    ) => void;
-    continueDrawing: (point: Point) => void;
-    endDrawing: () => any;
-  };
-  canvasRef: React.RefObject<HTMLDivElement | null>;
-  drawingCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+  canvas: CanvasDrawingApi;
+  canvasRef: RefObject<HTMLDivElement | null>;
+  drawingCanvasRef: RefObject<HTMLCanvasElement | null>;
 }
 
 export function useCanvasDrawing({

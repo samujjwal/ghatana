@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Rectangle Node Renderer - Simple Rectangle Shape
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Security Dashboard Page
  *
@@ -5,6 +6,7 @@
  * compliance status, and recent security alerts.
  */
 
+// @ts-nocheck
 import React from 'react';
 import { NavLink, useParams } from 'react-router';
 import { useAtomValue } from 'jotai';

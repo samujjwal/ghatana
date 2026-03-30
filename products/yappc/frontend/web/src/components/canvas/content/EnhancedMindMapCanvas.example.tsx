@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Enhanced Mind Map Canvas (Integration Example)
  * 

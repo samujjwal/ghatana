@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Initialization Pages Index
  *

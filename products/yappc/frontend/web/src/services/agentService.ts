@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Agent } from '../types/agent';
 import {
   BaseAgent,

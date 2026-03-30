@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';

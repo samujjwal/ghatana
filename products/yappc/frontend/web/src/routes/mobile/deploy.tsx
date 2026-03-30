@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams } from 'react-router';
 import { useIsDarkMode } from '@ghatana/theme';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -46,7 +46,6 @@ interface Deployment {
  */
 export default function MobileDeployRoute() {
     const { projectId } = useParams();
-    const navigate = useNavigate();
     const isDarkMode = useIsDarkMode();
     const [deployments, setDeployments] = useState<Deployment[]>([]);
     const [loading, setLoading] = useState(true);

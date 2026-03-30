@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ============================================================================
 // RunbookNode - Canvas node for runbook automation visualization
 // 

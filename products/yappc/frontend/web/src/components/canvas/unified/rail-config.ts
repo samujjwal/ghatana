@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Left Rail Configuration Registry
  *

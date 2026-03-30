@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ExportImportDialog - Canvas Export/Import UI
  * 

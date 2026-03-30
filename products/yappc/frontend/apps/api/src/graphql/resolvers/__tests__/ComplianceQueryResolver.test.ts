@@ -22,7 +22,7 @@ import { ComplianceQueryResolver } from '../ComplianceQueryResolver';
 import { PrismaClient } from '@prisma/client';
 
 // Mock dependencies
-jest.mock('@prisma/client');
+vi.mock('@prisma/client');
 
 describe('ComplianceQueryResolver', () => {
   let resolver: ComplianceQueryResolver;

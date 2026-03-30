@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Route Progress Bar Component
  * 

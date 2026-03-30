@@ -1,0 +1,249 @@
+{
+  "id": null,
+  "uid": "yappc-agent-exec-001",
+  "title": "YAPPC — Agent Execution",
+  "description": "Business KPI dashboard for YAPPC agent dispatch, success/failure rates, latency, and registry activity.",
+  "tags": ["yappc", "agents", "product", "ghatana"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-3h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "tenant",
+        "label": "Tenant",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(yappc_agent_execution_dispatched_total{job=\"yappc-platform\"}, tenant)",
+        "multi": true,
+        "includeAll": true,
+        "current": { "selected": true, "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "agent_id",
+        "label": "Agent",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(yappc_agent_execution_dispatched_total{job=\"yappc-platform\", tenant=~\"$tenant\"}, agent_id)",
+        "multi": true,
+        "includeAll": true,
+        "current": { "selected": true, "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Agent Execution Overview",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Dispatch Rate (dispatches/s)",
+      "description": "Rate of agent dispatch calls per second, by agent and tenant.",
+      "gridPos": { "x": 0, "y": 1, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "tooltip": { "mode": "multi" } },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" } }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(yappc_agent_execution_dispatched_total{job=\"yappc-platform\", tenant=~\"$tenant\", agent_id=~\"$agent_id\"}[1m])) by (agent_id, tenant)",
+          "legendFormat": "{{agent_id}} / {{tenant}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Success vs Failure Rate (dispatches/s)",
+      "description": "Per-second rate of successful and failed agent dispatches.",
+      "gridPos": { "x": 8, "y": 1, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "tooltip": { "mode": "multi" } },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" } }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(yappc_agent_execution_succeeded_total{job=\"yappc-platform\", tenant=~\"$tenant\", agent_id=~\"$agent_id\"}[1m]))",
+          "legendFormat": "Succeeded"
+        },
+        {
+          "expr": "sum(rate(yappc_agent_execution_failed_total{job=\"yappc-platform\", tenant=~\"$tenant\", agent_id=~\"$agent_id\"}[1m]))",
+          "legendFormat": "Failed"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Failure Rate (%)",
+      "description": "Percentage of agent dispatches that fail. Red threshold at 5%.",
+      "gridPos": { "x": 16, "y": 1, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "tooltip": { "mode": "multi" } },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(yappc_agent_execution_failed_total{job=\"yappc-platform\", tenant=~\"$tenant\", agent_id=~\"$agent_id\"}[5m])) / (sum(rate(yappc_agent_execution_dispatched_total{job=\"yappc-platform\", tenant=~\"$tenant\", agent_id=~\"$agent_id\"}[5m])) > 0)",
+          "legendFormat": "Failure Rate"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Performance",
+      "gridPos": { "x": 0, "y": 9, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Dispatch Latency p50 / p95 / p99 (ms)",
+      "description": "Timer histogram quantiles for agent execution duration.",
+      "gridPos": { "x": 0, "y": 10, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "tooltip": { "mode": "multi" } },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(yappc_agent_execution_duration_seconds_bucket{job=\"yappc-platform\", tenant=~\"$tenant\", agent_id=~\"$agent_id\"}[5m])) by (le)) * 1000",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(yappc_agent_execution_duration_seconds_bucket{job=\"yappc-platform\", tenant=~\"$tenant\", agent_id=~\"$agent_id\"}[5m])) by (le)) * 1000",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(yappc_agent_execution_duration_seconds_bucket{job=\"yappc-platform\", tenant=~\"$tenant\", agent_id=~\"$agent_id\"}[5m])) by (le)) * 1000",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Failure Breakdown by Error Type",
+      "description": "Failed dispatch rate per error type, helping triage whether failures are timeouts, validation errors, or infrastructure issues.",
+      "gridPos": { "x": 12, "y": 10, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "tooltip": { "mode": "multi" } },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" } }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(yappc_agent_execution_failed_total{job=\"yappc-platform\", tenant=~\"$tenant\", agent_id=~\"$agent_id\"}[1m])) by (error_type)",
+          "legendFormat": "{{error_type}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "Registry Activity",
+      "gridPos": { "x": 0, "y": 18, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Agent Registrations / Unregistrations (events/s)",
+      "description": "Rate of agents being registered and unregistered in the tenant registry.",
+      "gridPos": { "x": 0, "y": 19, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "tooltip": { "mode": "multi" } },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "color": { "mode": "palette-classic" } }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(yappc_agent_registry_registered_total{job=\"yappc-platform\", tenant=~\"$tenant\"}[5m])) by (tenant)",
+          "legendFormat": "Registered / {{tenant}}"
+        },
+        {
+          "expr": "sum(rate(yappc_agent_registry_unregistered_total{job=\"yappc-platform\", tenant=~\"$tenant\"}[5m])) by (tenant)",
+          "legendFormat": "Unregistered / {{tenant}}"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Total Agents Registered (all tenants)",
+      "description": "Cumulative count of agent registration events since service start.",
+      "gridPos": { "x": 12, "y": 19, "w": 6, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(yappc_agent_registry_registered_total{job=\"yappc-platform\", tenant=~\"$tenant\"})",
+          "legendFormat": "Registered"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Total Dispatches (all tenants)",
+      "description": "Cumulative count of agent dispatch calls since service start.",
+      "gridPos": { "x": 18, "y": 19, "w": 6, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(yappc_agent_execution_dispatched_total{job=\"yappc-platform\", tenant=~\"$tenant\", agent_id=~\"$agent_id\"})",
+          "legendFormat": "Dispatched"
+        }
+      ]
+    }
+  ]
+}

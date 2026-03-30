@@ -37,6 +37,15 @@ interface ProjectItem {
     workspaceName?: string;
 }
 
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+        return error.message;
+    }
+    return String(error);
+}
+
 export default function ProjectsRoute() {
     const navigate = useNavigate();
     const {
@@ -46,7 +55,7 @@ export default function ProjectsRoute() {
         isLoading,
         error
     } = useWorkspaceContext();
-
+    const errorMessage = getErrorMessage(error);
     const [viewMode, setViewMode] = useState<ViewMode>('grid');
     const [filter, setFilter] = useState<FilterType>('all');
     const [sortBy, setSortBy] = useState<SortBy>('updated');
@@ -127,7 +136,6 @@ export default function ProjectsRoute() {
 
     // Check if error is a service unavailability error
     if (error) {
-        const errorMessage = typeof error === 'string' ? error : error.message || String(error);
         if (errorMessage.includes('unavailable') || errorMessage.includes('connection') || errorMessage.includes('database')) {
             return (
                 <ApiUnavailableFallback

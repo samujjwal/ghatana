@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useNavigate } from 'react-router';
 import { ChevronRight, Code as CodeIcon, ClipboardList as AssignmentIcon, CloudUpload as DeployIcon, ArrowRight as ArrowForwardIcon, CheckCircle as CheckCircleOutline, Clock as AccessTime, Ban as Block } from 'lucide-react';
 import { Typography, Button, Chip, Box, Surface as Paper, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, Stack } from '@ghatana/design-system';

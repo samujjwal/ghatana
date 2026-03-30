@@ -16,7 +16,8 @@ import com.ghatana.yappc.agent.StepContext;
 import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.StepResult;
 import com.ghatana.yappc.agent.YAPPCAgentBase;
-import com.ghatana.yappc.agent.YAPPCAgentRegistry;
+import com.ghatana.yappc.agent.YappcAgentRegistryAdapter;
+import com.ghatana.agent.registry.InMemoryAgentRegistry;
 import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.List;
@@ -41,13 +42,13 @@ import static org.mockito.Mockito.mock;
 @DisplayName("PlatformDeliveryCoordinator Tests")
 class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
 
-  private YAPPCAgentRegistry agentRegistry;
+  private YappcAgentRegistryAdapter agentRegistry;
   private EventLogMemoryStore memoryStore;
   private PlatformDeliveryCoordinator coordinator;
 
   @BeforeEach
   void setUp() {
-    agentRegistry = new YAPPCAgentRegistry();
+    agentRegistry = new YappcAgentRegistryAdapter(new InMemoryAgentRegistry());
     memoryStore = new EventLogMemoryStore();
     DelegationManager delegationManager = mock(DelegationManager.class);
     OrchestrationStrategy orchestrationStrategy = mock(OrchestrationStrategy.class);

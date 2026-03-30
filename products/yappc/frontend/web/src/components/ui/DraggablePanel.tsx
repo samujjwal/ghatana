@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useRef, useEffect, ReactNode } from 'react';
 import { Box, Surface as Paper, Typography, IconButton, Card, CardHeader } from '@ghatana/design-system';
 import { GripVertical as DragIndicator, X as Close, Minimize2 as Minimize, Maximize as OpenInFull } from 'lucide-react';

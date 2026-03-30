@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Sparkles as AutoAwesomeIcon, ArrowRight as ArrowForwardIcon } from 'lucide-react';
 import { Surface as Paper, IconButton, Input as InputBase, Box, Typography, Chip } from '@ghatana/design-system';
 

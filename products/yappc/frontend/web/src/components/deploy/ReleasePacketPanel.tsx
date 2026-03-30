@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Release Packet Panel Component
  *

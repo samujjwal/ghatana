@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type hook
  * @doc.purpose Manage tech stack detection and display

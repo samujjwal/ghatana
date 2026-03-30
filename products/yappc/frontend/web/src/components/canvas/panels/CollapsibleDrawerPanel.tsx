@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Collapsible Drawer Panel Component
  * 

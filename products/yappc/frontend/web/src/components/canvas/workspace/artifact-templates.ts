@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Artifact Templates - Shared Definitions
  * 

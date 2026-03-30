@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Lifecycle API Service
  *

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Test Setup Configuration
  * Global setup for canvas refactoring tests

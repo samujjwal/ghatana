@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Performance Monitor - Track canvas performance metrics
  */

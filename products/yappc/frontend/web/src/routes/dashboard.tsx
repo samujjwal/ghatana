@@ -89,7 +89,7 @@ export default function Component() {
 
         // Find all workspaces this project belongs to
         const relatedWorkspaces = workspaces.filter(ws => {
-            return project.workspaceId === ws.id;
+            return project.ownerWorkspaceId === ws.id;
         });
 
         if (relatedWorkspaces.length > 1) {
@@ -99,12 +99,12 @@ export default function Component() {
                 id: ws.id,
                 name: ws.name,
                 description: ws.description,
-                isOwner: project.workspaceId === ws.id,
+                isOwner: project.ownerWorkspaceId === ws.id,
             })));
             setWorkspaceDialogOpen(true);
         } else {
             // Direct navigation
-            const workspaceId = project.workspaceId || workspaces[0]?.id;
+            const workspaceId = project.ownerWorkspaceId || workspaces[0]?.id;
             if (workspaceId) {
                 setLastOpenedProject(workspaceId, projectId);
             }
@@ -134,7 +134,7 @@ export default function Component() {
         }
 
         // Fallback: open first project in workspace
-        const workspaceProjects = allProjects.filter(p => p.workspaceId === workspaceId);
+        const workspaceProjects = allProjects.filter(p => p.ownerWorkspaceId === workspaceId);
         if (workspaceProjects.length > 0) {
             const firstProject = workspaceProjects[0];
             setLastOpenedProject(workspaceId, firstProject.id);

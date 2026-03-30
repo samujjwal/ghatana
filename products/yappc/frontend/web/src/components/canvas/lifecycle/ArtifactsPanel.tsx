@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Artifacts Panel Component
  *

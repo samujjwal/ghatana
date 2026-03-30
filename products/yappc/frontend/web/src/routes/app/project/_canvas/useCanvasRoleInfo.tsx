@@ -21,12 +21,18 @@ import {
   Rocket as RocketLaunch,
   ClipboardList as Assignment,
 } from 'lucide-react';
+import type { ReactNode } from 'react';
 import type { CanvasMode } from '../../../../types/canvasMode';
 
 interface RoleInfo {
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   color: string;
+}
+
+interface CanvasProjectInfo {
+  currentPhase?: string;
+  phaseProgress?: number;
 }
 
 const ROLE_MAP: Record<string, RoleInfo> = {
@@ -41,7 +47,10 @@ const ROLE_MAP: Record<string, RoleInfo> = {
   plan: { label: 'Product Owner', icon: <Assignment size={16} />, color: '#f57c00' },
 };
 
-export function useCanvasRoleInfo(currentMode: CanvasMode, project: unknown) {
+export function useCanvasRoleInfo(
+  currentMode: CanvasMode,
+  project?: CanvasProjectInfo | null
+) {
   const roleInfo = useMemo(() => ROLE_MAP[currentMode], [currentMode]);
 
   const phaseInfo = useMemo(

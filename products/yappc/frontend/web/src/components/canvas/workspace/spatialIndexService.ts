@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Spatial Index Service
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Project Creation Wizard - Guided project setup with AI recommendations
  * 

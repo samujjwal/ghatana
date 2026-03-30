@@ -11,6 +11,7 @@
 
 import { FastifyPluginAsync } from 'fastify';
 import { PrismaClient } from '../generated/prisma';
+import { requirePermission } from '../middleware/rbac.middleware';
 
 const prisma = new PrismaClient();
 
@@ -51,7 +52,7 @@ const codeAssociationsRoutes: FastifyPluginAsync = async (fastify) => {
      * POST /api/code-associations
      * Create a new code association
      */
-    fastify.post('/api/code-associations', async (request, reply) => {
+    fastify.post('/api/code-associations', { preHandler: requirePermission('workflow', 'create') }, async (request, reply) => {
         const { artifactId, codeArtifactId, relationship, metadata } = request.body as {
             artifactId: string;
             codeArtifactId: string;
@@ -118,7 +119,7 @@ const codeAssociationsRoutes: FastifyPluginAsync = async (fastify) => {
      * DELETE /api/code-associations/:associationId
      * Delete a code association
      */
-    fastify.delete('/api/code-associations/:associationId', async (request, reply) => {
+    fastify.delete('/api/code-associations/:associationId', { preHandler: requirePermission('workflow', 'delete') }, async (request, reply) => {
         const { associationId } = request.params as { associationId: string };
 
         try {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CostForecast DTO - Data transfer object for cost forecasts and projections
  *

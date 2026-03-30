@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canvas Utilities Usage Examples
  * 

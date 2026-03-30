@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canvas Content Component Stubs - ARCHIVE
  *

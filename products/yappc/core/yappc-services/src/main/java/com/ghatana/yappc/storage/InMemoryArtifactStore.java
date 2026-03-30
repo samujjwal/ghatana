@@ -125,4 +125,20 @@ public class InMemoryArtifactStore implements ArtifactStore {
     public int size() {
         return artifacts.size();
     }
+
+    /**
+     * Deletes the artifact and associated metadata at {@code path}.
+     *
+     * <p>No-op if the path does not exist.
+     *
+     * @param path versioned artifact path
+     * @return completed promise
+     */
+    @Override
+    public Promise<Void> delete(String path) {
+        artifacts.remove(path);
+        metadata.remove(path);
+        log.info("Deleted artifact: {}", path);
+        return Promise.complete();
+    }
 }

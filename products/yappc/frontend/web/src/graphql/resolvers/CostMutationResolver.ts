@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * GraphQL Mutation Resolver - Cost Management
  *

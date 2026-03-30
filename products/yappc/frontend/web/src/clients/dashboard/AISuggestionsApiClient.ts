@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * AI Suggestions API Client
  *

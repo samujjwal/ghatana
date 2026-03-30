@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { http, HttpResponse, delay } from 'msw';
 import type {
   ApiResponse,

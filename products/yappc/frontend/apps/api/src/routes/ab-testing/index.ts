@@ -12,6 +12,7 @@
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { abTestingService, Experiment, ExperimentStatus, AllocationStrategy } from '../../services/ab-testing/ABTestingService';
+import { requirePermission, requireRole } from '../../middleware/rbac.middleware';
 
 // ============================================================================
 // Request/Response Types
@@ -74,6 +75,7 @@ export async function abTestingRoutes(fastify: FastifyInstance): Promise<void> {
     fastify.post<{ Body: CreateExperimentRequest }>(
         '/experiments',
         {
+            preHandler: requireRole('ADMIN'),
             schema: {
                 body: {
                     type: 'object',
@@ -202,6 +204,7 @@ export async function abTestingRoutes(fastify: FastifyInstance): Promise<void> {
      */
     fastify.post<{ Params: { id: string } }>(
         '/experiments/:id/start',
+        { preHandler: requireRole('ADMIN') },
         async (request, reply) => {
             try {
                 const experiment = abTestingService.startExperiment(request.params.id);
@@ -225,6 +228,7 @@ export async function abTestingRoutes(fastify: FastifyInstance): Promise<void> {
      */
     fastify.post<{ Params: { id: string } }>(
         '/experiments/:id/pause',
+        { preHandler: requireRole('ADMIN') },
         async (request, reply) => {
             try {
                 const experiment = abTestingService.pauseExperiment(request.params.id);
@@ -248,6 +252,7 @@ export async function abTestingRoutes(fastify: FastifyInstance): Promise<void> {
      */
     fastify.post<{ Params: { id: string }; Body: { winnerId?: string } }>(
         '/experiments/:id/complete',
+        { preHandler: requireRole('ADMIN') },
         async (request, reply) => {
             try {
                 const results = abTestingService.completeExperiment(

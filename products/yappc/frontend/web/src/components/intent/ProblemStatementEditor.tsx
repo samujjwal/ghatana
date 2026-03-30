@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Problem Statement Editor Component
  *

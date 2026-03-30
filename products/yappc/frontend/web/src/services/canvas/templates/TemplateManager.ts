@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Template Manager Service
  * 

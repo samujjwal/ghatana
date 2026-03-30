@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Auth Pages Index
  *

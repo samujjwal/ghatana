@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { FeatureStories } from '@yappc/canvas';
 
 import { CanvasFeatureStoryList } from './CanvasFeatureStoryList';

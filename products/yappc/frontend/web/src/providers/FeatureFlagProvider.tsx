@@ -90,10 +90,12 @@ function createGrowthBookInstance(): GrowthBook {
     // Track feature usage for analytics
     trackingCallback: (experiment: unknown, result: unknown) => {
       if (ENABLE_DEV_MODE) {
+        const exp = (experiment ?? {}) as { key?: string };
+        const res = (result ?? {}) as { variationId?: number; value?: unknown };
         console.log('[FeatureFlags] Experiment viewed:', {
-          experimentId: experiment.key,
-          variationId: result.variationId,
-          value: result.value,
+          experimentId: exp.key,
+          variationId: res.variationId,
+          value: res.value,
         });
       }
       
@@ -171,7 +173,7 @@ export function useFeatureFlag() {
   };
 
   const getFeatureValue = <T,>(flag: FeatureFlag, defaultValue: T): T => {
-    return growthbook.getFeatureValue(flag, defaultValue);
+    return growthbook.getFeatureValue(flag, defaultValue) as T;
   };
 
   return {

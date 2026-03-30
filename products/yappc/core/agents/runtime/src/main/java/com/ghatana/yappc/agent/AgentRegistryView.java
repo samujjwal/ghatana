@@ -6,9 +6,8 @@ import java.util.List;
  * Read-only query view over any YAPPC agent registry implementation.
  *
  * <p>Allows coordinator classes like {@link com.ghatana.yappc.agent.coordinator.DeliveryCoordinatorGenerator}
- * and {@link com.ghatana.yappc.agent.coordinator.PlatformDeliveryCoordinator} to work with both
- * {@link YAPPCAgentRegistry} (in-memory, test-friendly) and
- * {@link YappcAgentRegistryAdapter} (platform-backed, production).
+ * and {@link com.ghatana.yappc.agent.coordinator.PlatformDeliveryCoordinator} to work with
+ * {@link YappcAgentRegistryAdapter} and test doubles through one contract.
  *
  * @doc.type interface
  * @doc.purpose Unified query contract for YAPPC agent registries

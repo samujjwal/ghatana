@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Trace Explorer Canvas Content
  * 

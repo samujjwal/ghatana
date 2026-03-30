@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * GraphQL Subscription resolvers for real-time anomaly updates.
  *

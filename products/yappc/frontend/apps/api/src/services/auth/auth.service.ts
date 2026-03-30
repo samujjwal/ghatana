@@ -11,7 +11,7 @@
  */
 
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { PrismaClient } from '../../generated/prisma';
 import type { Role } from '../../generated/prisma';
 

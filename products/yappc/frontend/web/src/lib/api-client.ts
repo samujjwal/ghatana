@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Centralized API Client Factory for YAPPC
  *

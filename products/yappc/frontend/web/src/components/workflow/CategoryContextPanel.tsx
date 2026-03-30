@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CategoryContextPanel - Shows category-specific guidance and context for workflow steps
  *

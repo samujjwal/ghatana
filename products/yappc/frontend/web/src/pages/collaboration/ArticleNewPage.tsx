@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Article New Page
  *

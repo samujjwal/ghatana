@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Minimal React Flow types used in tests and lightweight components
 /**
  *

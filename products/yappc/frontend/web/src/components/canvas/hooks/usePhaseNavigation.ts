@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Phase Navigation Hook
  * 

@@ -11,6 +11,7 @@
  */
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../db';
+import { requirePermission } from '../middleware/rbac.middleware';
 
 // ============================================================================
 // Types
@@ -505,7 +506,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
      * POST /api/devsecops/items
      * Create new item
      */
-    fastify.post('/devsecops/items', async (request: FastifyRequest<{ Body: CreateItemBody }>, reply: FastifyReply) => {
+    fastify.post('/devsecops/items', { preHandler: requirePermission('workflow', 'create') }, async (request: FastifyRequest<{ Body: CreateItemBody }>, reply: FastifyReply) => {
         const body = request.body;
         console.log('[DEVSECOPS] POST /devsecops/items', body);
 
@@ -552,7 +553,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
      * PATCH /api/devsecops/items/:id
      * Update item
      */
-    fastify.patch('/devsecops/items/:id', async (request: FastifyRequest<{ Params: ItemParams; Body: UpdateItemBody }>, reply: FastifyReply) => {
+    fastify.patch('/devsecops/items/:id', { preHandler: requirePermission('workflow', 'update') }, async (request: FastifyRequest<{ Params: ItemParams; Body: UpdateItemBody }>, reply: FastifyReply) => {
         const { id } = request.params;
         const body = request.body;
         console.log('[DEVSECOPS] PATCH /devsecops/items/', id, body);
@@ -607,7 +608,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
      * DELETE /api/devsecops/items/:id
      * Delete item
      */
-    fastify.delete('/devsecops/items/:id', async (request: FastifyRequest<{ Params: ItemParams }>, reply: FastifyReply) => {
+    fastify.delete('/devsecops/items/:id', { preHandler: requirePermission('workflow', 'delete') }, async (request: FastifyRequest<{ Params: ItemParams }>, reply: FastifyReply) => {
         const { id } = request.params;
         console.log('[DEVSECOPS] DELETE /devsecops/items/', id);
 
@@ -626,7 +627,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
      * POST /api/devsecops/items/bulk-update
      * Bulk update multiple items
      */
-    fastify.post('/devsecops/items/bulk-update', async (request: FastifyRequest<{ Body: BulkUpdateBody }>, reply: FastifyReply) => {
+    fastify.post('/devsecops/items/bulk-update', { preHandler: requirePermission('workflow', 'update') }, async (request: FastifyRequest<{ Body: BulkUpdateBody }>, reply: FastifyReply) => {
         const { itemIds, updates } = request.body;
         console.log('[DEVSECOPS] POST /devsecops/items/bulk-update', { itemIds, updates });
 

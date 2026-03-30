@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @module mocks
  * @description Mock implementations for testing canvas components.

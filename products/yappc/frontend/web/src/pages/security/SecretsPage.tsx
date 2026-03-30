@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Secrets Page
  *

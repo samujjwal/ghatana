@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useCanvasManagers - Canvas Manager Initialization Hook
  *

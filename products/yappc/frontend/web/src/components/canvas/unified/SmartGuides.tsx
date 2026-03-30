@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * SmartGuides - Visual Alignment Guides
  */

@@ -3,6 +3,15 @@ import { UnifiedCanvasToolbar } from '@/components/canvas/toolbar/UnifiedCanvasT
 import { performanceMonitor } from '@/services/canvas/CanvasPerformanceMonitor';
 import type { CanvasElement } from '@/components/canvas/workspace/canvasAtoms';
 
+interface CanvasPersistenceBridge {
+  save: (
+    projectId: string,
+    canvasId: string,
+    state: { elements: CanvasElement[]; connections: unknown[] },
+    meta: { label: string }
+  ) => Promise<unknown>;
+}
+
 export interface CanvasToolbarProps {
   currentMode: unknown;
   setMode: (mode: unknown) => void;
@@ -50,7 +59,7 @@ export interface CanvasToolbarProps {
   params: { projectId?: string; canvasId?: string };
   nodes: unknown[];
   edges: unknown[];
-  persistenceRef: React.MutableRefObject<unknown>;
+  persistenceRef: React.MutableRefObject<CanvasPersistenceBridge | null>;
 
   // Sketch
   sketchTool: unknown;

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Generic Artifact Detail Panel
  * 

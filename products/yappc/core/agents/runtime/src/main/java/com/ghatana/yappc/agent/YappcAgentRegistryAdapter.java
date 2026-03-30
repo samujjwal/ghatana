@@ -42,7 +42,7 @@ public final class YappcAgentRegistryAdapter implements AgentHealthProvider, Age
   private final Map<String, YAPPCAgentBase<?, ?>> agentsById = new ConcurrentHashMap<>();
 
   /** Local status index for heartbeat monitoring. */
-  private final Map<String, YAPPCAgentRegistry.AgentStatus> statusById = new ConcurrentHashMap<>();
+  private final Map<String, AgentLifecycleStatus> statusById = new ConcurrentHashMap<>();
 
   /**
    * Creates the adapter.
@@ -70,7 +70,7 @@ public final class YappcAgentRegistryAdapter implements AgentHealthProvider, Age
     // Update local YAPPC indexes
     agentsByStepName.put(stepName, agent);
     agentsById.put(agentId, agent);
-    statusById.put(agentId, YAPPCAgentRegistry.AgentStatus.REGISTERED);
+    statusById.put(agentId, AgentLifecycleStatus.REGISTERED);
 
     String phase = extractPhase(stepName);
     agentsByPhase.computeIfAbsent(phase, k -> Collections.synchronizedList(new ArrayList<>()))
@@ -157,11 +157,11 @@ public final class YappcAgentRegistryAdapter implements AgentHealthProvider, Age
     List<Promise<Void>> promises = agentsById.values().stream()
         .map(agent -> Promise.<Void>complete()
             .whenResult(v -> {
-              statusById.put(agent.getAgentId(), YAPPCAgentRegistry.AgentStatus.READY);
+              statusById.put(agent.getAgentId(), AgentLifecycleStatus.READY);
               log.info("Agent initialized: {}", agent.stepName());
             })
             .whenException(e -> {
-              statusById.put(agent.getAgentId(), YAPPCAgentRegistry.AgentStatus.FAILED);
+              statusById.put(agent.getAgentId(), AgentLifecycleStatus.FAILED);
               log.error("Agent initialization failed: {}", agent.stepName(), e);
             }))
         .collect(Collectors.toList());
@@ -178,14 +178,14 @@ public final class YappcAgentRegistryAdapter implements AgentHealthProvider, Age
     log.info("Shutting down {} agents", agentsById.size());
     List<Promise<Void>> promises = agentsById.entrySet().stream()
         .map(entry -> {
-          statusById.put(entry.getKey(), YAPPCAgentRegistry.AgentStatus.STOPPING);
+          statusById.put(entry.getKey(), AgentLifecycleStatus.STOPPING);
           return platformRegistry.deregister(entry.getKey())
               .whenResult(v -> {
-                statusById.put(entry.getKey(), YAPPCAgentRegistry.AgentStatus.STOPPED);
+                statusById.put(entry.getKey(), AgentLifecycleStatus.STOPPED);
                 log.info("Agent stopped: {}", entry.getValue().stepName());
               })
               .whenException(e -> {
-                statusById.put(entry.getKey(), YAPPCAgentRegistry.AgentStatus.FAILED);
+                statusById.put(entry.getKey(), AgentLifecycleStatus.FAILED);
                 log.error("Agent shutdown failed: {}", entry.getValue().stepName(), e);
               });
         })
@@ -202,7 +202,7 @@ public final class YappcAgentRegistryAdapter implements AgentHealthProvider, Age
   /** Returns a snapshot of agent health status keyed by agent ID. */
   @Override
   @NotNull
-  public Map<String, YAPPCAgentRegistry.AgentStatus> getHealthStatus() {
+  public Map<String, AgentLifecycleStatus> getHealthStatus() {
     return Map.copyOf(statusById);
   }
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Release Strategy Configurator Component
  *

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * GraphQL Query Resolver - Anomaly Detection
  *

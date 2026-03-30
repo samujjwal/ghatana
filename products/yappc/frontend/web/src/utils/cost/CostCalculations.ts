@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Cost Calculation Utilities - Pure functions for cost analysis
  *

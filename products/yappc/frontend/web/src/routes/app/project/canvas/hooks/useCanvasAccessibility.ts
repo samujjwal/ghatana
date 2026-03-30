@@ -21,7 +21,16 @@ export function useCanvasAccessibility({ nodes }: UseCanvasAccessibilityOptions)
 
   const runAccessibilityCheck = useCallback(() => {
     const issues = nodes.length
-      ? nodes.map((node) => `Element "${node.data?.label || node.id}" is missing a label`)
+      ? nodes.map((node) => {
+          const label =
+            typeof node.data === 'object' &&
+            node.data !== null &&
+            'label' in node.data &&
+            typeof node.data.label === 'string'
+              ? node.data.label
+              : node.id;
+          return `Element "${label}" is missing a label`;
+        })
       : ['No elements found. Add components to run accessibility checks.'];
     setAccessibilityIssues(issues);
     setAccessibilityPanelOpen(true);

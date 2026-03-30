@@ -1,0 +1,79 @@
+groups:
+  - name: yappc-agent-execution
+    interval: 30s
+    rules:
+      - alert: YappcAgentHighFailureRate
+        expr: |
+          (
+            sum(rate(yappc_agent_execution_failed_total{job="yappc-platform"}[5m])) by (tenant, agent_id)
+            /
+            sum(rate(yappc_agent_execution_dispatched_total{job="yappc-platform"}[5m])) by (tenant, agent_id)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC agent failure rate > 5% for {{ $labels.agent_id }} in tenant {{ $labels.tenant }}"
+          description: >
+            Agent {{ $labels.agent_id }} (tenant {{ $labels.tenant }}) has a dispatch failure rate of
+            {{ $value | humanizePercentage }} over the last 5 minutes.
+            Check error_type labels and application logs for root cause.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-agent-high-failure-rate"
+
+      - alert: YappcAgentHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(yappc_agent_execution_duration_seconds_bucket{job="yappc-platform"}[5m])) by (le, tenant, agent_id)
+          ) > 10.0
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC agent p95 latency > 10s for {{ $labels.agent_id }} in tenant {{ $labels.tenant }}"
+          description: >
+            Agent {{ $labels.agent_id }} (tenant {{ $labels.tenant }}) has a p95 execution latency of
+            {{ $value | humanizeDuration }} over the last 5 minutes.
+            Investigate LLM gateway timeouts, slow tool calls, or resource contention.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-agent-high-latency"
+
+      - alert: YappcAgentDispatchStopped
+        expr: |
+          sum(rate(yappc_agent_execution_dispatched_total{job="yappc-platform"}[10m])) == 0
+            unless absent(yappc_agent_execution_dispatched_total{job="yappc-platform"})
+        for: 10m
+        labels:
+          severity: warning
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC agent dispatch rate dropped to zero"
+          description: >
+            No agent dispatch events have been emitted in the last 10 minutes.
+            The platform may be unhealthy or have no active traffic.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-agent-dispatch-stopped"
+
+  - name: yappc-agent-registry
+    interval: 60s
+    rules:
+      - alert: YappcAgentRegistrationFlapping
+        expr: |
+          (
+            increase(yappc_agent_registry_registered_total{job="yappc-platform"}[5m])
+            + increase(yappc_agent_registry_unregistered_total{job="yappc-platform"}[5m])
+          ) > 50
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC agent registry churn > 50 events/5m for tenant {{ $labels.tenant }}"
+          description: >
+            Tenant {{ $labels.tenant }} is experiencing high agent registry churn:
+            {{ $value | humanize }} registration/unregistration events in the last 5 minutes.
+            This may indicate unstable agent lifecycle management or a deployment loop.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-agent-registry-flapping"

@@ -22,7 +22,7 @@ import { ComplianceReportService } from '../ComplianceReportService';
 import { PrismaClient } from '@prisma/client';
 
 // Mock dependencies
-jest.mock('@prisma/client');
+vi.mock('@prisma/client');
 
 describe('ComplianceReportService', () => {
   let service: ComplianceReportService;

@@ -14,9 +14,9 @@ import { FlowService } from '../../../services/FlowService';
 // Mocks
 // ---------------------------------------------------------------------------
 
-jest.mock('../../../services/ConfigService');
-jest.mock('../../../services/DashboardService');
-jest.mock('../../../services/FlowService');
+vi.mock('../../../services/ConfigService');
+vi.mock('../../../services/DashboardService');
+vi.mock('../../../services/FlowService');
 
 const mockConfigService = ConfigService.getInstance as jest.Mock;
 const mockDashboardService = DashboardService.getInstance as jest.Mock;

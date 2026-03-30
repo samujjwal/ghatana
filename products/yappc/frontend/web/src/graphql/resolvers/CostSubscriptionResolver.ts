@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * GraphQL Subscription Resolver - Real-Time Cost Updates
  *

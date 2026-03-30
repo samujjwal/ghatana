@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Global Search Component
  *

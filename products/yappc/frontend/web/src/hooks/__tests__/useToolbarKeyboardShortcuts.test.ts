@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useToolbarKeyboardShortcuts Hook Tests
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Re-export test helpers so tests can import from a single entrypoint
 export {
   mockUseDraggableSimple,

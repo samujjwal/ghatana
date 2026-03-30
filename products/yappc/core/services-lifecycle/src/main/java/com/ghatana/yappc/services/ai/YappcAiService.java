@@ -5,7 +5,9 @@ import com.ghatana.yappc.ai.router.AIModelRouter;
 import com.ghatana.yappc.ai.service.YAPPCAIService;
 import com.ghatana.yappc.ai.canvas.CanvasService;
 import com.ghatana.yappc.ai.canvas.CanvasGenerationService;
+import com.ghatana.yappc.services.security.YappcApiSecurity;
 import io.activej.http.HttpHeaders;
+import io.activej.http.AsyncServlet;
 import io.activej.http.HttpServer;
 import io.activej.inject.Injector;
 import io.activej.inject.module.ModuleBuilder;
@@ -73,16 +75,7 @@ public class YappcAiService extends UnifiedApplicationLauncher {
 
         io.activej.eventloop.Eventloop eventloop = injector.getInstance(io.activej.eventloop.Eventloop.class);
 
-        var router = io.activej.http.RoutingServlet.builder(eventloop)
-                .with(GET, "/health", request ->
-                        io.activej.http.HttpResponse.ok200().withPlainText("OK").toPromise())
-                .with(GET, "/metrics", request -> {
-                    String metricsOutput = prometheusRegistry.scrape();
-                    return io.activej.http.HttpResponse.ok200()
-                            .withBody(metricsOutput.getBytes(java.nio.charset.StandardCharsets.UTF_8))
-                            .withHeader(HttpHeaders.CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")
-                            .toPromise();
-                })
+        AsyncServlet apiServlet = io.activej.http.RoutingServlet.builder(eventloop)
                 .with(GET, "/api/v1/ai/info", request ->
                         io.activej.http.HttpResponse.ok200()
                                 .withPlainText("{\"service\":\"yappc-ai\",\"version\":\"2.0.0\"}")
@@ -94,7 +87,7 @@ public class YappcAiService extends UnifiedApplicationLauncher {
                 .with(POST, "/api/v1/ai/analyze", request ->
                         request.loadBody().map($ -> request.getBody().asString(java.nio.charset.StandardCharsets.UTF_8))
                                 .then(body -> aiService.analyzeCode(body)
-                                        .map(result -> (io.activej.http.HttpResponse) io.activej.http.HttpResponse.ok200()
+                                        .map(result -> io.activej.http.HttpResponse.ok200()
                                                 .withBody(result.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8))
                                                 .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
                                                 .build()))
@@ -138,6 +131,24 @@ public class YappcAiService extends UnifiedApplicationLauncher {
                                     logger.error("Canvas generation failed", e);
                                     return io.activej.http.HttpError.ofCode(500);
                                 }))
+                .build();
+
+        YappcApiSecurity.SecurityRoutes securedApi =
+                YappcApiSecurity.secureApi(apiServlet, "yappc:ai-api");
+        AsyncServlet securedMetrics = YappcApiSecurity.secureReadEndpoint(request -> {
+            String metricsOutput = prometheusRegistry.scrape();
+            return io.activej.http.HttpResponse.ok200()
+                    .withBody(metricsOutput.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                    .withHeader(HttpHeaders.CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")
+                    .toPromise();
+        }, "yappc:ai-metrics");
+
+        var router = io.activej.http.RoutingServlet.builder(eventloop)
+                .with(GET, "/health", request ->
+                        io.activej.http.HttpResponse.ok200().withPlainText("OK").toPromise())
+                .with(GET, "/metrics", securedMetrics)
+                .with(GET, "/api/*", securedApi.readApi())
+                .with(POST, "/api/*", securedApi.writeApi())
                 .build();
 
         logger.info("Creating YAPPC AI HTTP server on port {}", port);

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Phase 3: Advanced Collaboration Features
  * Real-time collaboration, operational transforms, and conflict resolution

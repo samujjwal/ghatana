@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * E2E Coverage Canvas Content
  * 

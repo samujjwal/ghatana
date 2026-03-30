@@ -31,6 +31,18 @@ agent:
     ttl: 1800
     key_fields: [codeSnippet, language]
   
+  # AEP Event Processing Integration
+  event_processing:
+    input_event_types:
+      - "code.review.requested"
+      - "pull.request.opened"
+    output_event_types:
+      - "code.review.completed"
+      - "pull.request.review.posted"
+    dead_letter_queue: "yappc.dlq.code-reviewer"
+    ordering: per_tenant
+    max_in_flight: 10
+
   metadata:
     cost_per_request: 0.04
     average_tokens: 2000

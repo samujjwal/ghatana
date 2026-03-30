@@ -5,7 +5,6 @@ import fastifyWebsocket from '@fastify/websocket';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fetch from 'node-fetch';
 
 // Import Observability
 import {
@@ -28,7 +27,10 @@ import projectRoutes from './routes/projects';
 import devsecopsRoutes from './routes/devsecops';
 import canvasRoutes from './routes/canvas';
 import lifecycleRoutes from './routes/lifecycle';
+import telemetryRoutes from './routes/telemetry';
 import { devAuthBypass } from './middleware/devAuth';
+import { authMiddleware } from './middleware/auth.middleware';
+import { authRoutes } from './routes/auth';
 
 // Import WebSocket Service
 import { RealTimeService } from './services/RealTimeService';
@@ -141,9 +143,18 @@ app.get('/metrics', async (request, reply) => {
 const realTimeService = new RealTimeService();
 realTimeService.registerRoutes(app);
 
-// Register dev auth bypass FIRST (development only)
-// This must be registered before routes to apply to all contexts
-await devAuthBypass(app);
+// Register auth middleware before routes so protected endpoints enforce JWT.
+await authMiddleware(app);
+
+// Optional dev auth bypass. Must be explicitly enabled to avoid accidental open access.
+if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEV_AUTH_BYPASS === 'true') {
+  await devAuthBypass(app);
+  app.log.warn('Development auth bypass is enabled. Do not use in production.');
+}
+
+// Register auth routes.
+app.register(authRoutes, { prefix: '/api' });
+app.register(authRoutes, { prefix: '/v1' });
 
 // Register REST API routes
 app.register(workspaceRoutes, { prefix: '/api' });
@@ -151,6 +162,7 @@ app.register(projectRoutes, { prefix: '/api' });
 app.register(devsecopsRoutes, { prefix: '/api' });
 app.register(canvasRoutes, { prefix: '/api' });
 app.register(lifecycleRoutes, { prefix: '/api' });
+app.register(telemetryRoutes, { prefix: '/api' });
 
 // Compatibility aliases (legacy docs): /v1/* maps to the same handlers as /api/*
 app.register(workspaceRoutes, { prefix: '/v1' });
@@ -158,6 +170,7 @@ app.register(projectRoutes, { prefix: '/v1' });
 app.register(devsecopsRoutes, { prefix: '/v1' });
 app.register(canvasRoutes, { prefix: '/v1' });
 app.register(lifecycleRoutes, { prefix: '/v1' });
+app.register(telemetryRoutes, { prefix: '/v1' });
 
 // Catch-all route for Java backend proxying
 // Handles /api/rail, /api/agents, and other Java backend routes

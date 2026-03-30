@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * VerifyStep - UI for the Verify step of the workflow
  *

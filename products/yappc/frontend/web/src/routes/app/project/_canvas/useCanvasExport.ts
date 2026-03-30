@@ -11,6 +11,7 @@
  */
 
 import { useCallback } from 'react';
+import type { RefObject } from 'react';
 
 interface UseCanvasExportOptions {
   canvas: {
@@ -20,7 +21,7 @@ interface UseCanvasExportOptions {
     importFromJSON: (json: string) => void;
   };
   projectId: string | undefined;
-  canvasRef: React.RefObject<HTMLDivElement | null>;
+  canvasRef: RefObject<HTMLDivElement | null>;
   setExportMenuAnchor: (v: null) => void;
 }
 
@@ -59,14 +60,17 @@ export function useCanvasExport({
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
+    input.onchange = (event: Event) => {
+      const target = event.target as HTMLInputElement | null;
+      const file = target?.files?.[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = (loadEvent: ProgressEvent<FileReader>) => {
           try {
-            const json = event.target?.result as string;
-            canvas.importFromJSON(json);
+            const json = loadEvent.target?.result;
+            if (typeof json === 'string') {
+              canvas.importFromJSON(json);
+            }
           } catch (error) {
             console.error('Import failed:', error);
           }

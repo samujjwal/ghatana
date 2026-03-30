@@ -38,7 +38,7 @@ dependencies {
 
     // Absorbed from services:ai (merged)
     implementation(project(":products:yappc:core:ai"))
-    implementation(project(":products:yappc:core:agents"))
+    implementation(project(":products:yappc:core:yappc-agents"))
     implementation("dev.langchain4j:langchain4j:0.25.0")
 
     // Absorbed from services:scaffold (merged)

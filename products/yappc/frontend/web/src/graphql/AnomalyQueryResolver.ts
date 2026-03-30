@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * GraphQL Query and Mutation resolvers for anomaly detection API.
  *

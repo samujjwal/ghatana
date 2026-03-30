@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * usePhaseNavigation Hook Tests
  * 

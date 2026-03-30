@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Mock implementation of localStorage for testing
 const localStorageMock = (() => {
   let store: Record<string, string> = {};

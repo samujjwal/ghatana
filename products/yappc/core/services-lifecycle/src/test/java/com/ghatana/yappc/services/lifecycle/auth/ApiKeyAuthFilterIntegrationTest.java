@@ -3,8 +3,12 @@ package com.ghatana.yappc.services.lifecycle.auth;
 import com.ghatana.platform.governance.security.ApiKeyAuthFilter;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.platform.governance.security.RateLimitFilter;
 import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.governance.security.TenantIsolationHttpFilter;
+import com.ghatana.platform.security.rbac.InMemoryPolicyRepository;
+import com.ghatana.platform.security.rbac.PolicyService;
+import com.ghatana.platform.security.rbac.RBACFilter;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -134,6 +138,28 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
         }
 
         @Test
+        @DisplayName("valid resolver-based key attaches Principal to request for downstream RBAC")
+        void shouldAttachPrincipalForDownstreamAuthorization() {
+            // GIVEN
+            ApiKeyAuthFilter filter = new ApiKeyAuthFilter(RESOLVER);
+            AtomicReference<Principal> capturedPrincipal = new AtomicReference<>();
+            AsyncServlet delegate = req -> {
+                capturedPrincipal.set(req.getAttachment(Principal.class));
+                return HttpResponse.ok200().toPromise();
+            };
+            HttpRequest request = requestWithApiKey(HttpMethod.GET, "/api/v1/agents", VALID_KEY);
+
+            // WHEN
+            HttpResponse response = runPromise(() -> filter.secure(delegate).serve(request));
+
+            // THEN
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(capturedPrincipal.get()).isNotNull();
+            assertThat(capturedPrincipal.get().getTenantId()).isEqualTo(TENANT_ALPHA);
+            assertThat(capturedPrincipal.get().getRoles()).contains("agent");
+        }
+
+        @Test
         @DisplayName("TenantContext is cleared after the request scope, preventing context leakage")
         void tenantContextIsClearedAfterRequest() {
             // GIVEN
@@ -170,6 +196,75 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
             assertThat(capturedTenant.get())
                     .as("Allowlist filter (no resolver) does not set TenantContext")
                     .isEqualTo("default-tenant");
+        }
+    }
+
+    @Nested
+    @DisplayName("RBAC enforcement with resolver principals")
+    class RbacEnforcement {
+
+        @Test
+        @DisplayName("viewer role can read but cannot write")
+        void viewerRoleReadOnly() {
+            ApiKeyResolver viewerResolver = key ->
+                    "viewer-key".equals(key)
+                            ? Optional.of(new Principal("viewer-user", List.of("viewer"), TENANT_ALPHA))
+                            : Optional.empty();
+
+            PolicyService policyService = new PolicyService(new InMemoryPolicyRepository());
+            policyService.createPolicy("viewer-read", "viewer read policy", "viewer", "yappc:lifecycle-api", Set.of("read"));
+
+            ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(viewerResolver);
+            RBACFilter readFilter = new RBACFilter(policyService, "read", "yappc:lifecycle-api");
+            RBACFilter writeFilter = new RBACFilter(policyService, "write", "yappc:lifecycle-api");
+
+            AsyncServlet delegate = req -> HttpResponse.ok200().toPromise();
+
+            HttpRequest readRequest = requestWithApiKey(HttpMethod.GET, "/api/v1/lifecycle/phases", "viewer-key");
+            HttpResponse readResponse = runPromise(() -> authFilter.secure(readFilter.secure(delegate)).serve(readRequest));
+            assertThat(readResponse.getCode()).isEqualTo(200);
+
+            HttpRequest writeRequest = requestWithApiKey(HttpMethod.POST, "/api/v1/lifecycle/advance", "viewer-key");
+            HttpResponse writeResponse = runPromise(() -> authFilter.secure(writeFilter.secure(delegate)).serve(writeRequest));
+            assertThat(writeResponse.getCode()).isEqualTo(403);
+        }
+
+        @Test
+        @DisplayName("read-only endpoint chain protects metrics-like endpoint")
+        void readOnlyChainProtectsMetricsEndpoint() {
+            ApiKeyResolver resolver = key ->
+                "metrics-viewer-key".equals(key)
+                    ? Optional.of(new Principal("metrics-viewer", List.of("viewer"), TENANT_ALPHA))
+                    : Optional.empty();
+
+            PolicyService policyService = new PolicyService(new InMemoryPolicyRepository());
+            policyService.createPolicy(
+                "viewer-read-metrics",
+                "viewer read metrics policy",
+                "viewer",
+                    "yappc:lifecycle-api",
+                Set.of("read"));
+
+            ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(resolver);
+                RBACFilter readFilter = new RBACFilter(policyService, "read", "yappc:lifecycle-api");
+            RateLimitFilter rateLimitFilter = new RateLimitFilter(100, 60);
+
+            AsyncServlet metricsDelegate = req -> HttpResponse.ok200().withPlainText("metrics").toPromise();
+            AsyncServlet securedMetrics = authFilter.secure(readFilter.secure(rateLimitFilter.wrap(metricsDelegate)));
+
+            HttpRequest missingKeyRequest = HttpRequest.builder(HttpMethod.GET, "http://localhost/metrics")
+                    .withHeader(HttpHeaders.of("X-Forwarded-For"), "127.0.0.1")
+                    .build();
+            HttpResponse missingKey = runPromise(() ->
+                    securedMetrics.serve(missingKeyRequest));
+            assertThat(missingKey.getCode()).isEqualTo(401);
+
+            HttpRequest validKeyRequest = HttpRequest.builder(HttpMethod.GET, "http://localhost/metrics")
+                    .withHeader(HttpHeaders.of("X-Forwarded-For"), "127.0.0.1")
+                    .withHeader(HttpHeaders.of("X-API-Key"), "metrics-viewer-key")
+                    .build();
+            HttpResponse validKey = runPromise(() -> securedMetrics.serve(validKeyRequest));
+            assertThat(validKey.getCode()).isEqualTo(200);
         }
     }
 
