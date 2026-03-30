@@ -62,7 +62,7 @@
     "tslib": "^2.6.2"
   },
   "devDependencies": {
-    "@types/react": "^19.2.10",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@storybook/addon-essentials": "^8.6.0",
     "@storybook/react": "^8.6.0",
