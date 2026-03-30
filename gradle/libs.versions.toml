@@ -94,10 +94,10 @@ pdfbox = "3.0.3"         # Apache PDFBox — PDF generation for audit evidence p
 
 # Testing
 junit-platform = "1.10.2"
-junit-jupiter = "5.10.2"
+junit-jupiter = "6.0.3"
 mockito = "5.11.0"
 testcontainers = "1.21.3"
-assertj = "3.25.3"
+assertj = "3.27.7"
 awaitility = "4.3.0"
 
 # Codegen / Mapping
