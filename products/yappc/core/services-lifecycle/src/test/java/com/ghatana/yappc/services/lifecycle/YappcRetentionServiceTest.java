@@ -103,12 +103,12 @@ class YappcRetentionServiceTest extends EventloopTestBase {
         @DisplayName("does not purge versions younger than maxAge")
         void sparesFreshVersions() {
             // GIVEN — fresh artifact tagged just now
-            String version = runPromise(() -> repository.storeArtifact("proj-2", PhaseType.CONTEXT, "payload".getBytes()));
-            runPromise(() -> retentionService.tagCreatedAt("proj-2", PhaseType.CONTEXT, version));
+            String version = runPromise(() -> repository.storeArtifact("proj-2", PhaseType.SHAPE, "payload".getBytes()));
+            runPromise(() -> retentionService.tagCreatedAt("proj-2", PhaseType.SHAPE, version));
 
             // WHEN — purge with 7-day max age (fresh artifact is < 1 second old)
             int purged = runPromise(() -> retentionService.purgeExpiredArtifacts(
-                    "proj-2", PhaseType.CONTEXT, Duration.ofDays(7)));
+                    "proj-2", PhaseType.SHAPE, Duration.ofDays(7)));
 
             // THEN — version must survive
             assertThat(purged).isZero();
@@ -118,19 +118,19 @@ class YappcRetentionServiceTest extends EventloopTestBase {
         @DisplayName("purges versions older than maxAge and returns count")
         void purgesStaleVersions() {
             // GIVEN — two artifacts with an artificially old created_at timestamp
-            String v1 = runPromise(() -> repository.storeArtifact("proj-3", PhaseType.DESIGN, "old1".getBytes()));
-            String v2 = runPromise(() -> repository.storeArtifact("proj-3", PhaseType.DESIGN, "old2".getBytes()));
+            String v1 = runPromise(() -> repository.storeArtifact("proj-3", PhaseType.VALIDATE, "old1".getBytes()));
+            String v2 = runPromise(() -> repository.storeArtifact("proj-3", PhaseType.VALIDATE, "old2".getBytes()));
 
             // Stamp both versions as 90 days old
             Instant ninetyDaysAgo = Instant.now().minus(Duration.ofDays(90));
-            runPromise(() -> repository.storeMetadata("proj-3", PhaseType.DESIGN, v1,
+                runPromise(() -> repository.storeMetadata("proj-3", PhaseType.VALIDATE, v1,
                     Map.of(YappcRetentionService.CREATED_AT_KEY, ninetyDaysAgo.toString())));
-            runPromise(() -> repository.storeMetadata("proj-3", PhaseType.DESIGN, v2,
+                runPromise(() -> repository.storeMetadata("proj-3", PhaseType.VALIDATE, v2,
                     Map.of(YappcRetentionService.CREATED_AT_KEY, ninetyDaysAgo.toString())));
 
             // WHEN — purge with 30-day max age
             int purged = runPromise(() -> retentionService.purgeExpiredArtifacts(
-                    "proj-3", PhaseType.DESIGN, Duration.ofDays(30)));
+                    "proj-3", PhaseType.VALIDATE, Duration.ofDays(30)));
 
             // THEN — both stale versions are purged
             assertThat(purged).isEqualTo(2);
@@ -140,18 +140,18 @@ class YappcRetentionServiceTest extends EventloopTestBase {
         @DisplayName("purges only stale versions, spares fresh ones in the same project/phase")
         void purgesOnlyStaleMixed() {
             // GIVEN — one fresh and one stale version
-            String fresh = runPromise(() -> repository.storeArtifact("proj-4", PhaseType.IMPLEMENTATION, "new".getBytes()));
-            String stale = runPromise(() -> repository.storeArtifact("proj-4", PhaseType.IMPLEMENTATION, "old".getBytes()));
+            String fresh = runPromise(() -> repository.storeArtifact("proj-4", PhaseType.GENERATE, "new".getBytes()));
+            String stale = runPromise(() -> repository.storeArtifact("proj-4", PhaseType.GENERATE, "old".getBytes()));
 
-            runPromise(() -> retentionService.tagCreatedAt("proj-4", PhaseType.IMPLEMENTATION, fresh));
+            runPromise(() -> retentionService.tagCreatedAt("proj-4", PhaseType.GENERATE, fresh));
 
             Instant sixtyDaysAgo = Instant.now().minus(Duration.ofDays(60));
-            runPromise(() -> repository.storeMetadata("proj-4", PhaseType.IMPLEMENTATION, stale,
+            runPromise(() -> repository.storeMetadata("proj-4", PhaseType.GENERATE, stale,
                     Map.of(YappcRetentionService.CREATED_AT_KEY, sixtyDaysAgo.toString())));
 
             // WHEN — purge with 30-day max age
             int purged = runPromise(() -> retentionService.purgeExpiredArtifacts(
-                    "proj-4", PhaseType.IMPLEMENTATION, Duration.ofDays(30)));
+                    "proj-4", PhaseType.GENERATE, Duration.ofDays(30)));
 
             // THEN — only the stale version is purged
             assertThat(purged).isEqualTo(1);
@@ -161,13 +161,13 @@ class YappcRetentionServiceTest extends EventloopTestBase {
         @DisplayName("skips versions with a malformed created_at value")
         void skipsMalformedTimestamp() {
             // GIVEN — artifact with a broken timestamp
-            String version = runPromise(() -> repository.storeArtifact("proj-5", PhaseType.TESTING, "data".getBytes()));
-            runPromise(() -> repository.storeMetadata("proj-5", PhaseType.TESTING, version,
+            String version = runPromise(() -> repository.storeArtifact("proj-5", PhaseType.RUN, "data".getBytes()));
+            runPromise(() -> repository.storeMetadata("proj-5", PhaseType.RUN, version,
                     Map.of(YappcRetentionService.CREATED_AT_KEY, "not-a-date")));
 
             // WHEN
             int purged = runPromise(() -> retentionService.purgeExpiredArtifacts(
-                    "proj-5", PhaseType.TESTING, Duration.ZERO));
+                    "proj-5", PhaseType.RUN, Duration.ZERO));
 
             // THEN — malformed stamp is skipped gracefully
             assertThat(purged).isZero();

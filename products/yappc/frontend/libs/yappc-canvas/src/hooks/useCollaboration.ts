@@ -111,11 +111,11 @@ export function useCollaboration(
   let setEdges: (e: unknown) => void = () => {};
 
   try {
-    // Try to get the hook factory from reactflow. Tests can mock this module
+    // Try to get the hook factory from @xyflow/react. Tests can mock this module
     // to return a test-friendly implementation. Calling the hook may throw
     // if the provider isn't mounted (that's fine — we'll catch and fallback).
 
-    const rf = require('reactflow');
+    const rf = require('@xyflow/react');
     const useReactFlow = rf?.useReactFlow;
     if (typeof useReactFlow === 'function') {
       try {
@@ -128,7 +128,7 @@ export function useCollaboration(
         }
       } catch (err) {
         // If calling useReactFlow throws (e.g. missing provider), keep stubs.
-        // Tests that want real behaviour should mock `reactflow` to provide
+        // Tests that want real behaviour should mock `@xyflow/react` to provide
         // a test-friendly `useReactFlow` implementation.
       }
     }

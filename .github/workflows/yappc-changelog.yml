@@ -1,0 +1,179 @@
+name: YAPPC Changelog Automation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "products/yappc/**"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run — print changelog entry without committing"
+        required: false
+        default: "false"
+
+# Only one changelog update should run at a time to avoid write conflicts.
+concurrency:
+  group: yappc-changelog
+  cancel-in-progress: false
+
+jobs:
+  update-changelog:
+    name: Update YAPPC Changelog
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ─────────────────────────────────────────────────────────────
+      # Determine the commit / PR that triggered this run
+      # ─────────────────────────────────────────────────────────────
+      - name: Collect merged PR metadata
+        id: pr_meta
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          # Find the PR that introduced this commit (if any)
+          PR_NUMBER=$(gh pr list \
+            --state merged \
+            --search "$COMMIT_SHA" \
+            --json number \
+            --jq '.[0].number // empty' 2>/dev/null || true)
+
+          if [[ -n "$PR_NUMBER" ]]; then
+            PR_TITLE=$(gh pr view "$PR_NUMBER" --json title --jq '.title')
+            PR_LABELS=$(gh pr view "$PR_NUMBER" --json labels --jq '[.labels[].name] | join(",")')
+            PR_URL=$(gh pr view "$PR_NUMBER" --json url --jq '.url')
+            echo "pr_number=$PR_NUMBER"   >> "$GITHUB_OUTPUT"
+            echo "pr_title=$PR_TITLE"     >> "$GITHUB_OUTPUT"
+            echo "pr_labels=$PR_LABELS"   >> "$GITHUB_OUTPUT"
+            echo "pr_url=$PR_URL"         >> "$GITHUB_OUTPUT"
+          else
+            # Direct push without a PR — use the commit message
+            COMMIT_MSG=$(git log -1 --pretty=format:"%s" "$COMMIT_SHA")
+            echo "pr_number="            >> "$GITHUB_OUTPUT"
+            echo "pr_title=$COMMIT_MSG"  >> "$GITHUB_OUTPUT"
+            echo "pr_labels="            >> "$GITHUB_OUTPUT"
+            echo "pr_url=https://github.com/${{ github.repository }}/commit/$COMMIT_SHA" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ─────────────────────────────────────────────────────────────
+      # Determine change category from labels
+      # ─────────────────────────────────────────────────────────────
+      - name: Determine change category
+        id: category
+        env:
+          LABELS: ${{ steps.pr_meta.outputs.pr_labels }}
+        run: |
+          CATEGORY="Changed"
+          if echo "$LABELS" | grep -qi "breaking"; then     CATEGORY="Breaking"; fi
+          if echo "$LABELS" | grep -qi "feat\|feature";     then CATEGORY="Added"; fi
+          if echo "$LABELS" | grep -qi "fix\|bugfix";       then CATEGORY="Fixed"; fi
+          if echo "$LABELS" | grep -qi "deprecat";          then CATEGORY="Deprecated"; fi
+          if echo "$LABELS" | grep -qi "remov\|delete";     then CATEGORY="Removed"; fi
+          if echo "$LABELS" | grep -qi "security";          then CATEGORY="Security"; fi
+          if echo "$LABELS" | grep -qi "perf\|performance"; then CATEGORY="Performance"; fi
+          if echo "$LABELS" | grep -qi "docs\|document";    then CATEGORY="Docs"; fi
+          echo "category=$CATEGORY" >> "$GITHUB_OUTPUT"
+
+      # ─────────────────────────────────────────────────────────────
+      # Build the new changelog entry
+      # ─────────────────────────────────────────────────────────────
+      - name: Build changelog entry
+        id: entry
+        env:
+          CATEGORY:   ${{ steps.category.outputs.category }}
+          TITLE:      ${{ steps.pr_meta.outputs.pr_title }}
+          URL:        ${{ steps.pr_meta.outputs.pr_url }}
+          PR_NUMBER:  ${{ steps.pr_meta.outputs.pr_number }}
+          COMMIT_SHA: ${{ github.sha }}
+          DATE:       ""
+        run: |
+          DATE=$(date -u +"%Y-%m-%d")
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+
+          if [[ -n "$PR_NUMBER" ]]; then
+            REF="[#${PR_NUMBER}](${URL})"
+          else
+            REF="[\`${SHORT_SHA}\`](${URL})"
+          fi
+
+          ENTRY="- **${CATEGORY}**: ${TITLE} ${REF}"
+          echo "entry=$ENTRY" >> "$GITHUB_OUTPUT"
+          echo "date=$DATE"   >> "$GITHUB_OUTPUT"
+
+      # ─────────────────────────────────────────────────────────────
+      # Inject the entry into products/yappc/CHANGELOG.md
+      # ─────────────────────────────────────────────────────────────
+      - name: Inject into CHANGELOG.md
+        env:
+          ENTRY: ${{ steps.entry.outputs.entry }}
+          DATE:  ${{ steps.entry.outputs.date }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          CHANGELOG="products/yappc/CHANGELOG.md"
+
+          # Create the file with a header if it does not exist yet
+          if [[ ! -f "$CHANGELOG" ]]; then
+            cat > "$CHANGELOG" <<'EOF'
+          # YAPPC Changelog
+
+          All notable changes to the YAPPC Lifecycle Platform are documented here.
+          This file is automatically maintained by CI. Format follows [Keep a Changelog](https://keepachangelog.com/).
+
+          EOF
+          fi
+
+          # Check whether an ## [Unreleased] section exists; if not, add one
+          SECTION_HEADER="## [Unreleased]"
+          if ! grep -qF "$SECTION_HEADER" "$CHANGELOG"; then
+            # Insert after the first blank line following the title
+            awk -v header="$SECTION_HEADER" '
+              /^# / && !inserted { print; print ""; print header; inserted=1; next }
+              { print }
+            ' "$CHANGELOG" > /tmp/changelog_tmp && mv /tmp/changelog_tmp "$CHANGELOG"
+          fi
+
+          # Insert the new entry on the line immediately after ## [Unreleased]
+          awk -v entry="$ENTRY" '
+            /^## \[Unreleased\]/ { print; getline; print entry; print; next }
+            { print }
+          ' "$CHANGELOG" > /tmp/changelog_tmp && mv /tmp/changelog_tmp "$CHANGELOG"
+
+          echo "=== Changelog entry to be committed ==="
+          echo "$ENTRY"
+          echo "========================================"
+
+          if [[ "$DRY_RUN" == "true" ]]; then
+            echo "Dry run — skipping commit."
+            exit 0
+          fi
+
+      # ─────────────────────────────────────────────────────────────
+      # Commit the updated changelog back to main
+      # ─────────────────────────────────────────────────────────────
+      - name: Commit changelog update
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add products/yappc/CHANGELOG.md
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit — changelog already up to date."
+            exit 0
+          fi
+
+          git commit -m "chore(yappc): update CHANGELOG for ${{ github.sha }} [skip ci]"
+          git push origin main

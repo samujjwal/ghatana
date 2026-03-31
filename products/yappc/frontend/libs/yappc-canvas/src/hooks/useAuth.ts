@@ -447,7 +447,21 @@ export function useAuth() {
  */
 async function validateTokenWithServer(token: string): Promise<boolean> {
   try {
-    const response = await fetch('/api/auth/validate', {
+    // Primary contract used by web app provider: authenticated identity endpoint.
+    const meResponse = await fetch('/api/auth/me', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (meResponse.ok) {
+      return true;
+    }
+
+    // Compatibility fallback for modules still exposing /api/auth/validate.
+    const validateResponse = await fetch('/api/auth/validate', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -455,7 +469,7 @@ async function validateTokenWithServer(token: string): Promise<boolean> {
       },
     });
 
-    return response.ok;
+    return validateResponse.ok;
   } catch (error) {
     console.error('Token validation failed:', error);
     return false;

@@ -1,0 +1,297 @@
+{
+  "id": null,
+  "uid": "yappc-lifecycle-kpi-001",
+  "title": "YAPPC — Lifecycle KPIs & Business Metrics",
+  "description": "Business KPI dashboard for the YAPPC lifecycle service: phase transitions, approval workflows, AI suggestions, feature flag evaluations, and SLO burn rates.",
+  "tags": ["yappc", "lifecycle", "kpi", "slo"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "type": "custom",
+        "label": "Environment",
+        "query": "production,staging,dev",
+        "current": { "text": "production", "value": "production" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Phase Transition Health",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Phase Advances per Minute",
+      "description": "Rate of successful lifecycle phase transitions across all tenants.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(yappc_lifecycle_phase_advances_total{job=\"yappc-lifecycle\",status=\"success\"}[5m])) by (target_phase)",
+          "legendFormat": "{{target_phase}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(yappc_lifecycle_phase_advances_total{job=\"yappc-lifecycle\",status=\"blocked\"}[5m]))",
+          "legendFormat": "Blocked",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Phase Gate Validation Latency (p50 / p95 / p99)",
+      "description": "Latency distribution for PhaseGateValidator.validate() calls.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "fieldConfig": {
+        "defaults": { "unit": "ms" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(yappc_phase_gate_validation_duration_ms_bucket{job=\"yappc-lifecycle\"}[5m])) by (le))",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(yappc_phase_gate_validation_duration_ms_bucket{job=\"yappc-lifecycle\"}[5m])) by (le))",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(yappc_phase_gate_validation_duration_ms_bucket{job=\"yappc-lifecycle\"}[5m])) by (le))",
+          "legendFormat": "p99",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "Approval Workflow",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Pending Approvals",
+      "description": "Current number of approval requests awaiting human decision.",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 10 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(yappc_approvals_pending_total{job=\"yappc-lifecycle\"})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Approval Decision Rate (approve / reject, last 1h)",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 10 },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "targets": [
+        {
+          "expr": "sum(rate(yappc_approvals_decided_total{job=\"yappc-lifecycle\",decision=\"approved\"}[1h]))",
+          "legendFormat": "Approved",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(yappc_approvals_decided_total{job=\"yappc-lifecycle\",decision=\"rejected\"}[1h]))",
+          "legendFormat": "Rejected",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Approval Submission Latency (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(yappc_approval_submit_duration_ms_bucket{job=\"yappc-lifecycle\"}[5m])) by (le))",
+          "legendFormat": "p95 submit",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "AI Suggestions",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "AI Suggestion Requests (by type)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "targets": [
+        {
+          "expr": "sum(rate(yappc_ai_suggestion_requests_total{job=\"yappc-lifecycle\"}[5m])) by (type)",
+          "legendFormat": "{{type}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "AI Suggestion Latency p95 (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(yappc_ai_suggestion_duration_ms_bucket{job=\"yappc-lifecycle\"}[5m])) by (le))",
+          "legendFormat": "p95",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "SLO Burn Rates",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "SLO Error Budget Burn Rate (1h / 6h)",
+      "description": "Burn rate > 1 means the error budget is burning faster than the SLO target replenishes it.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 14.4 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "(1 - job:yappc_request_success_rate:1h) / (1 - 0.999)",
+          "legendFormat": "Burn rate 1h",
+          "refId": "A"
+        },
+        {
+          "expr": "(1 - job:yappc_request_success_rate:6h) / (1 - 0.999)",
+          "legendFormat": "Burn rate 6h",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Availability (last 24h)",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 28 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.99 },
+              { "color": "green", "value": 0.999 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "avg_over_time(job:yappc_request_success_rate:1h[24h])",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "row",
+      "title": "Feature Flag & Circuit Breaker",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 }
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Feature Flag Evaluation Rate",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 33 },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "targets": [
+        {
+          "expr": "sum(rate(yappc_feature_flag_evaluations_total{job=\"yappc-lifecycle\"}[5m])) by (flag, result)",
+          "legendFormat": "{{flag}} = {{result}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "AI Circuit Breaker State",
+      "description": "0 = CLOSED (healthy), 1 = HALF_OPEN, 2 = OPEN (failing).",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 33 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "yappc_ai_circuit_breaker_state{job=\"yappc-lifecycle\"}",
+          "legendFormat": "{{provider}}",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

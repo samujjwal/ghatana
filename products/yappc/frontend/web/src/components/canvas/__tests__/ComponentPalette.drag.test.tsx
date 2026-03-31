@@ -9,9 +9,12 @@ import { mockUseDraggableWithPayload } from '../../../test-utils';
 // Ensure draggable exposes payload attribute
 mockUseDraggableWithPayload();
 
-// Stub reactflow project helper (used by the canvas drop handler in real app)
-vi.mock('reactflow', () => ({
-    project: (point: unknown) => ({ x: (point.x || 0) / 2, y: (point.y || 0) / 2 }),
+// Stub ReactFlow v12 project helper (used by the canvas drop handler in real app)
+vi.mock('@xyflow/react', () => ({
+    project: (point: { x?: number; y?: number }) => ({
+        x: (point.x || 0) / 2,
+        y: (point.y || 0) / 2,
+    }),
 }));
 
 // Import the mocked project helper so TypeScript and the test use the mock
@@ -32,7 +35,7 @@ describe.skip('ComponentPalette drag integration', () => {
         const listItem = labelNode.closest('li') as HTMLElement;
         expect(listItem).toBeTruthy();
 
-        // Read the mock payload and emulate computing a drop point via reactflow.project
+        // Read the mock payload and emulate computing a drop point via @xyflow/react project
         const payloadAttr = listItem.getAttribute('data-dndkit-payload');
         expect(payloadAttr).toBeTruthy();
         const payload = JSON.parse(payloadAttr || '{}');

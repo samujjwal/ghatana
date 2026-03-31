@@ -1,0 +1,1025 @@
+openapi: "3.1.0"
+
+info:
+  title: YAPPC Lifecycle API
+  version: "2.0.0"
+  description: |
+    REST API for the YAPPC (Yet Another Product Platform Creator) lifecycle service.
+
+    All `/api/*` endpoints require a valid API key supplied in the
+    `X-API-Key` request header, or a valid JWT Bearer token in the
+    `Authorization` header. Tenant isolation is enforced automatically via
+    the `TenantContextFilter`.
+  contact:
+    name: YAPPC Platform Team
+    url: https://github.com/ghatana/ghatana
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://yappc-lifecycle.ghatana.internal
+    description: Internal staging
+
+tags:
+  - name: auth
+    description: Authentication and token management
+  - name: lifecycle
+    description: Project lifecycle phase management
+  - name: intent
+    description: INTENT phase — capture and analyse product intent
+  - name: shape
+    description: SHAPE phase — domain model and system design
+  - name: generate
+    description: GENERATE phase — artefact generation
+  - name: validate
+    description: VALIDATE phase — validation rules and policies
+  - name: approvals
+    description: Human approval workflow
+  - name: suggestions
+    description: AI-powered lifecycle suggestions
+  - name: workflows
+    description: Durable workflow engine
+  - name: health
+    description: Liveness and readiness probes
+
+# ─────────────────────────────────────────────────────────────────────────────
+paths:
+
+  # ── Health ──────────────────────────────────────────────────────────────────
+
+  /health:
+    get:
+      tags: [health]
+      summary: Liveness probe
+      description: Returns 200 when the process is alive. Used by Kubernetes liveness checks.
+      operationId: liveness
+      security: []
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            text/plain:
+              example: "OK"
+
+  /ready:
+    get:
+      tags: [health]
+      summary: Readiness probe
+      description: |
+        Returns 200 when the service is ready to accept traffic. Includes a lightweight
+        DataCloud connectivity ping.
+      operationId: readiness
+      security: []
+      responses:
+        "200":
+          description: Service is ready
+          content:
+            text/plain:
+              example: "READY"
+        "503":
+          description: Service not ready (dependency unavailable)
+
+  # ── Observability ──────────────────────────────────────────────────────────
+
+  /metrics:
+    get:
+      tags: [health]
+      summary: Prometheus metrics scrape endpoint
+      description: Exposes all Micrometer metrics in Prometheus text format.
+      operationId: scrapeMetrics
+      responses:
+        "200":
+          description: Prometheus metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  # ── Auth ───────────────────────────────────────────────────────────────────
+
+  /api/auth/login:
+    post:
+      tags: [auth]
+      summary: Authenticate user and issue JWT
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              email: alice@example.com
+              password: "s3cr3t"
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/auth/logout:
+    post:
+      tags: [auth]
+      summary: Invalidate the current session
+      operationId: logout
+      responses:
+        "204":
+          description: Session invalidated
+
+  /api/auth/validate:
+    get:
+      tags: [auth]
+      summary: Validate the current JWT
+      operationId: validateToken
+      responses:
+        "200":
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenValidationResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/auth/me:
+    get:
+      tags: [auth]
+      summary: Return information about the authenticated user
+      operationId: currentUser
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Service Info ────────────────────────────────────────────────────────────
+
+  /api/v1/yappc/info:
+    get:
+      tags: [lifecycle]
+      summary: Service metadata
+      operationId: serviceInfo
+      responses:
+        "200":
+          description: Service info
+          content:
+            application/json:
+              example:
+                name: YAPPC Lifecycle API
+                version: "2.0.0"
+                status: operational
+
+  # ── Lifecycle ───────────────────────────────────────────────────────────────
+
+  /api/v1/lifecycle/phases:
+    get:
+      tags: [lifecycle]
+      summary: List all lifecycle phases
+      operationId: listPhases
+      responses:
+        "200":
+          description: Ordered list of phases
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhaseList"
+
+  /api/v1/lifecycle/advance:
+    post:
+      tags: [lifecycle]
+      summary: Advance a project to the next lifecycle phase
+      description: |
+        Runs all three gate checks (entry criteria, exit criteria, required artefacts).
+        Returns 200 if the gate passes, 409 if any blocker is present.
+      operationId: advancePhase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdvancePhaseRequest"
+      responses:
+        "200":
+          description: Phase advanced successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhaseTransitionResult"
+        "409":
+          description: Gate check failed — phase not advanced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhaseTransitionResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ── Intent ──────────────────────────────────────────────────────────────────
+
+  /api/v1/yappc/intent/capture:
+    post:
+      tags: [intent]
+      summary: Capture product intent
+      operationId: captureIntent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CaptureIntentRequest"
+      responses:
+        "200":
+          description: Intent captured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntentResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/intent/analyze:
+    post:
+      tags: [intent]
+      summary: AI-analyse captured intent
+      description: Sends the captured intent through the LLM pipeline for enrichment and decomposition.
+      operationId: analyzeIntent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeIntentRequest"
+      responses:
+        "200":
+          description: Intent analysis result
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/intent/{id}:
+    get:
+      tags: [intent]
+      summary: Get a captured intent by ID
+      operationId: getIntent
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Intent record
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Shape ───────────────────────────────────────────────────────────────────
+
+  /api/v1/yappc/shape/derive:
+    post:
+      tags: [shape]
+      summary: Derive system shape from intent
+      operationId: deriveShape
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeriveShapeRequest"
+      responses:
+        "200":
+          description: Shape derived
+
+  /api/v1/yappc/shape/model:
+    post:
+      tags: [shape]
+      summary: Generate system model (domain entities, APIs)
+      operationId: generateSystemModel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateModelRequest"
+      responses:
+        "200":
+          description: System model generated
+
+  /api/v1/yappc/shape/{id}:
+    get:
+      tags: [shape]
+      summary: Get a shape record by ID
+      operationId: getShape
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Shape record
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Generate ─────────────────────────────────────────────────────────────────
+
+  /api/v1/yappc/generate:
+    post:
+      tags: [generate]
+      summary: Generate project artefacts (code, config, CI)
+      operationId: generateArtifacts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateArtifactsRequest"
+      responses:
+        "200":
+          description: Artefacts generated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/generate/diff:
+    post:
+      tags: [generate]
+      summary: Regenerate artefacts with a change diff
+      operationId: regenerateWithDiff
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegenerateDiffRequest"
+      responses:
+        "200":
+          description: Differential regeneration result
+
+  /api/v1/yappc/generate/artifacts/{id}:
+    get:
+      tags: [generate]
+      summary: Get generated artefacts for a run
+      operationId: getArtifacts
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Artefact manifest
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Validate ─────────────────────────────────────────────────────────────────
+
+  /api/v1/yappc/validate:
+    post:
+      tags: [validate]
+      summary: Run default validation suite
+      operationId: validate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateRequest"
+      responses:
+        "200":
+          description: Validation result
+
+  /api/v1/yappc/validate/with-config:
+    post:
+      tags: [validate]
+      summary: Run validation with a custom config
+      operationId: validateWithConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateWithConfigRequest"
+      responses:
+        "200":
+          description: Validation result
+
+  /api/v1/yappc/validate/with-policy:
+    post:
+      tags: [validate]
+      summary: Run validation against a named policy
+      operationId: validateWithPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateWithPolicyRequest"
+      responses:
+        "200":
+          description: Validation result
+
+  # ── Approvals ────────────────────────────────────────────────────────────────
+
+  /api/v1/approvals/pending:
+    get:
+      tags: [approvals]
+      summary: List pending approvals for the authenticated user
+      operationId: listPendingApprovals
+      parameters:
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Tenant scoping header
+      responses:
+        "200":
+          description: List of pending approval requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/approvals/{id}/approve:
+    post:
+      tags: [approvals]
+      summary: Approve an approval request
+      operationId: approveRequest
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalDecisionRequest"
+      responses:
+        "200":
+          description: Approval recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Approval already decided
+
+  /api/v1/approvals/{id}/reject:
+    post:
+      tags: [approvals]
+      summary: Reject an approval request
+      operationId: rejectRequest
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalDecisionRequest"
+      responses:
+        "200":
+          description: Rejection recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── AI Suggestions ────────────────────────────────────────────────────────────
+
+  /api/v1/projects/{projectId}/suggestions:
+    post:
+      tags: [suggestions]
+      summary: Generate AI lifecycle suggestions
+      description: |
+        Calls `AISuggestionService` with the current project phase and context,
+        returning up to 5 typed suggestions.  The AI model is selected by the
+        `AIModelRouter` based on `TaskType.REASONING`.
+      operationId: generateSuggestions
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuggestionRequest"
+            example:
+              phase: SHAPE
+              context:
+                title: "Add dark mode to the web app"
+                stakeholders: "design team, frontend engineers"
+      responses:
+        "200":
+          description: AI suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Suggestion"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/projects/{projectId}/suggestions/{suggestionId}:
+    delete:
+      tags: [suggestions]
+      summary: Dismiss a suggestion
+      operationId: dismissSuggestion
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: suggestionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Suggestion dismissed
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Workflows ─────────────────────────────────────────────────────────────────
+
+  /api/v1/workflows/templates:
+    get:
+      tags: [workflows]
+      summary: List registered workflow templates
+      operationId: listWorkflowTemplates
+      responses:
+        "200":
+          description: Template IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example:
+                - "lifecycle-advance"
+                - "approval-review"
+                - "code-generation"
+
+  /api/v1/workflows/{templateId}/start:
+    post:
+      tags: [workflows]
+      summary: Start a workflow run
+      operationId: startWorkflow
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Workflow input payload (template-specific)
+      responses:
+        "202":
+          description: Workflow started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowStartResponse"
+        "404":
+          description: Unknown template
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/workflows/{runId}/status:
+    get:
+      tags: [workflows]
+      summary: Get workflow run status
+      operationId: getWorkflowStatus
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Run status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowStatus"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Bad request — invalid or missing parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+
+    # ── Auth schemas ──────────────────────────────────────────────────────────
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+        expiresIn:
+          type: integer
+          description: Token TTL in seconds
+        tenantId:
+          type: string
+        userId:
+          type: string
+
+    TokenValidationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        userId:
+          type: string
+        tenantId:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        tenantId:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+
+    # ── Lifecycle schemas ─────────────────────────────────────────────────────
+
+    PhaseList:
+      type: object
+      properties:
+        phases:
+          type: array
+          items:
+            type: string
+          example:
+            - intent
+            - shape
+            - validate
+            - generate
+            - run
+            - observe
+            - learn
+            - evolve
+
+    AdvancePhaseRequest:
+      type: object
+      required: [projectId, targetPhase]
+      properties:
+        projectId:
+          type: string
+        tenantId:
+          type: string
+        targetPhase:
+          type: string
+          enum: [INTENT, SHAPE, VALIDATE, GENERATE, RUN, OBSERVE, LEARN, EVOLVE]
+        conditions:
+          type: object
+          additionalProperties:
+            type: boolean
+          description: Gate condition verdicts keyed by criterion ID
+
+    PhaseTransitionResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        targetPhase:
+          type: string
+        blockers:
+          type: array
+          items:
+            type: string
+        artifactBlockers:
+          type: array
+          items:
+            type: string
+        criteriaBlockers:
+          type: array
+          items:
+            type: string
+
+    # ── Approval schemas ──────────────────────────────────────────────────────
+
+    ApprovalRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        tenantId:
+          type: string
+        requesterId:
+          type: string
+        approverId:
+          type: string
+        phase:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED, EXPIRED]
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ApprovalDecisionRequest:
+      type: object
+      properties:
+        notes:
+          type: string
+          description: Optional reviewer notes
+
+    # ── Suggestion schemas ────────────────────────────────────────────────────
+
+    SuggestionRequest:
+      type: object
+      required: [phase]
+      properties:
+        phase:
+          type: string
+          enum: [INTENT, SHAPE, VALIDATE, GENERATE, RUN, OBSERVE, LEARN, EVOLVE]
+        context:
+          type: object
+          additionalProperties: true
+          description: Additional domain context forwarded to the AI model
+
+    Suggestion:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        phase:
+          type: string
+        type:
+          type: string
+          enum: [REQUIREMENT, DESIGN, TEST, RISK, ACTION]
+        text:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    # ── Workflow schemas ──────────────────────────────────────────────────────
+
+    WorkflowStartResponse:
+      type: object
+      properties:
+        runId:
+          type: string
+        templateId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, RUNNING]
+        startedAt:
+          type: string
+          format: date-time
+
+    WorkflowStatus:
+      type: object
+      properties:
+        runId:
+          type: string
+        templateId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED]
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        error:
+          type: string
+          nullable: true
+
+    # ── Intent schemas ────────────────────────────────────────────────────────
+
+    CaptureIntentRequest:
+      type: object
+      required: [projectId, content]
+      properties:
+        projectId:
+          type: string
+        content:
+          type: string
+          description: Free-form product intent description
+        persona:
+          type: string
+          description: Submitting persona type (e.g. PRODUCT_MANAGER, DEVELOPER)
+
+    AnalyzeIntentRequest:
+      type: object
+      required: [intentId]
+      properties:
+        intentId:
+          type: string
+
+    IntentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        content:
+          type: string
+        analysis:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── Shape schemas ─────────────────────────────────────────────────────────
+
+    DeriveShapeRequest:
+      type: object
+      required: [intentId]
+      properties:
+        intentId:
+          type: string
+        options:
+          type: object
+
+    GenerateModelRequest:
+      type: object
+      required: [shapeId]
+      properties:
+        shapeId:
+          type: string
+
+    # ── Generate schemas ──────────────────────────────────────────────────────
+
+    GenerateArtifactsRequest:
+      type: object
+      required: [projectId, phase]
+      properties:
+        projectId:
+          type: string
+        phase:
+          type: string
+        techStack:
+          type: array
+          items:
+            type: string
+        options:
+          type: object
+
+    RegenerateDiffRequest:
+      type: object
+      required: [runId, diff]
+      properties:
+        runId:
+          type: string
+        diff:
+          type: string
+          description: Description of changes to apply
+
+    # ── Validate schemas ──────────────────────────────────────────────────────
+
+    ValidateRequest:
+      type: object
+      required: [projectId]
+      properties:
+        projectId:
+          type: string
+
+    ValidateWithConfigRequest:
+      type: object
+      required: [projectId, config]
+      properties:
+        projectId:
+          type: string
+        config:
+          type: object
+
+    ValidateWithPolicyRequest:
+      type: object
+      required: [projectId, policyId]
+      properties:
+        projectId:
+          type: string
+        policyId:
+          type: string
+
+    # ── Common ────────────────────────────────────────────────────────────────
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        correlationId:
+          type: string
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []

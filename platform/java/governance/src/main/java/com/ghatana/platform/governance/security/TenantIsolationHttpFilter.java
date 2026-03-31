@@ -132,6 +132,15 @@ public final class TenantIsolationHttpFilter {
     }
 
     private Promise<HttpResponse> serve(HttpRequest request) throws Exception {
+        // If an upstream filter (e.g. ApiKeyAuthFilter) already attached a Principal and
+        // established tenant context, honour that and pass through without overriding it.
+        Principal upstream = request.getAttachment(Principal.class);
+        if (upstream != null) {
+            log.debug("Tenant context already established upstream: tenantId={}, principal={}",
+                    upstream.getTenantId(), upstream.getName());
+            return delegate.serve(request);
+        }
+
         Optional<String> tenantId = extractTenantId(request);
 
         if (tenantId.isEmpty() && strictMode) {
@@ -142,17 +151,15 @@ public final class TenantIsolationHttpFilter {
         String resolvedTenant = tenantId.orElse("default-tenant");
         Principal principal = buildPrincipal(request, resolvedTenant);
 
-        try (var ignored = TenantContext.scope(principal)) {
-            log.debug("Tenant context set: tenantId={}, principal={}",
-                    resolvedTenant, principal.getName());
-            return delegate.serve(request)
-                    .whenComplete((response, ex) -> {
-                        if (ex != null) {
-                            log.warn("Request failed for tenant {}: {}",
-                                    resolvedTenant, ex.getMessage());
-                        }
-                    });
-        }
+        TenantContext.Scope scope = TenantContext.scope(principal);
+        log.debug("Tenant context set: tenantId={}, principal={}", resolvedTenant, principal.getName());
+        return delegate.serve(request)
+                .whenComplete((response, ex) -> {
+                    if (ex != null) {
+                        log.warn("Request failed for tenant {}: {}", resolvedTenant, ex.getMessage());
+                    }
+                    scope.close();
+                });
     }
 
     private Optional<String> extractTenantId(HttpRequest request) {

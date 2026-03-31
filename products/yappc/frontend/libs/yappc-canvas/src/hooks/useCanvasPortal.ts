@@ -103,7 +103,7 @@ export function useCanvasPortal() {
   let initialUseReactFlow: unknown = undefined;
   try {
 
-    const rf = require('reactflow');
+    const rf = require('@xyflow/react');
     initialUseReactFlow = rf.useReactFlow;
     if (rf && typeof rf.useReactFlow === 'function') {
       try {
@@ -123,7 +123,7 @@ export function useCanvasPortal() {
   const tryRefreshFromTestMock = () => {
     try {
 
-      const rf = require('reactflow');
+      const rf = require('@xyflow/react');
       if (rf && typeof rf.useReactFlow === 'function' && rf.useReactFlow !== initialUseReactFlow) {
         try {
           const hook = rf.useReactFlow();
@@ -201,7 +201,7 @@ export function useCanvasPortal() {
       }
     };
 
-    // Allow tests to swap in mocked reactflow functions after render
+    // Allow tests to swap in mocked @xyflow/react functions after render
     tryRefreshFromTestMock();
     setNodes((nodes: unknown) => [...nodes, newNode]);
 

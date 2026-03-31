@@ -26,6 +26,9 @@ dependencies {
     // Domain models
     implementation(project(":products:yappc:libs:java:yappc-domain"))
 
+    // Data-Cloud SPI (for ConversationRepository and PromptVersioningService)
+    implementation(project(":products:data-cloud:spi"))
+
     // ActiveJ
     implementation(libs.activej.promise)
     implementation(libs.activej.http)

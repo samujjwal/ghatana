@@ -9,10 +9,14 @@ import com.ghatana.audit.AuditLogger;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.yappc.api.GenerationApiController;
 import com.ghatana.yappc.api.IntentApiController;
 import com.ghatana.yappc.api.ShapeApiController;
 import com.ghatana.yappc.api.ValidationApiController;
+import com.ghatana.yappc.services.security.JwtAuthController;
+import com.ghatana.yappc.services.security.LifecycleLoginController;
+import com.ghatana.yappc.services.security.SecurityHeadersServlet;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.generate.GenerationService;
@@ -240,6 +244,40 @@ public class LifecycleServiceModule extends AbstractModule {
             MetricsCollector metrics) {
         logger.info("Creating ValidationService");
         return new ValidationServiceImpl(policyEngine, auditLogger, metrics);
+    }
+
+    /** Provides JwtTokenProvider for bearer token validation endpoints. */
+    @Provides
+    JwtTokenProvider jwtTokenProvider() {
+        String secret = System.getenv().getOrDefault(
+                "YAPPC_JWT_SECRET",
+                "yappc-dev-secret-key-change-in-production-2026");
+        long validityMillis = Long.parseLong(System.getenv().getOrDefault(
+                "YAPPC_JWT_VALIDITY_MS", "3600000"));
+
+        logger.info("Creating JwtTokenProvider for lifecycle auth endpoints");
+        return new com.ghatana.platform.security.jwt.JwtTokenProvider(secret, validityMillis);
+    }
+
+    /** Provides JwtAuthController for /api/auth/me and /api/auth/validate endpoints. */
+    @Provides
+    JwtAuthController jwtAuthController(JwtTokenProvider tokenProvider) {
+        logger.info("Creating JwtAuthController");
+        return new JwtAuthController(tokenProvider);
+    }
+
+    /** Provides LifecycleLoginController for POST /api/auth/login and /api/auth/logout. */
+    @Provides
+    LifecycleLoginController lifecycleLoginController(JwtTokenProvider tokenProvider) {
+        logger.info("Creating LifecycleLoginController");
+        return LifecycleLoginController.fromEnvironment(tokenProvider);
+    }
+
+    /** Provides LifecycleTracingConfig — initializes OpenTelemetry for all lifecycle spans. */
+    @Provides
+    com.ghatana.yappc.services.lifecycle.config.LifecycleTracingConfig lifecycleTracingConfig() {
+        logger.info("Initializing OpenTelemetry distributed tracing for lifecycle service");
+        return com.ghatana.yappc.services.lifecycle.config.LifecycleTracingConfig.fromEnvironment();
     }
 
     // ========== HTTP API Controllers ==========
@@ -747,13 +785,14 @@ public class LifecycleServiceModule extends AbstractModule {
 
     /**
      * Provides HumanApprovalService — manages phase-advance human-approval gates.
-     * Uses in-memory storage; a future JdbcHumanApprovalService will extend this
-     * class to persist to the {@code yappc.approval_requests} table (V18 migration).
+     * Uses {@link JdbcHumanApprovalService} for durable persistence to the
+     * {@code approval_requests} table (V2_0_0__YAPPC_APPROVAL_REQUESTS migration).
+     * Falls back gracefully to the in-memory store when the DB is unavailable.
      */
     @Provides
-    HumanApprovalService humanApprovalService(AepEventPublisher publisher) {
-        logger.info("Creating HumanApprovalService");
-        return new HumanApprovalService(publisher);
+    HumanApprovalService humanApprovalService(AepEventPublisher publisher, DataSource dataSource) {
+        logger.info("Creating JdbcHumanApprovalService (durable approval persistence)");
+        return new JdbcHumanApprovalService(publisher, dataSource, new ObjectMapper());
     }
 
     // ========== Lifecycle Pipeline Operators (7.1) ==========
@@ -1194,5 +1233,39 @@ public class LifecycleServiceModule extends AbstractModule {
             Eventloop eventloop) {
         logger.info("Creating AgentHeartbeatService (YAPPC-2.3) with 30s interval");
         return new AgentHeartbeatService(registry, eventloop);
+    }
+
+    // ========== GDPR Compliance (Dimension 5) ==========
+
+    /**
+     * Provides GdprDataService wired with all persistable collections.
+     *
+     * @doc.type method
+     * @doc.purpose Provides GDPR erasure and export service
+     * @doc.layer product
+     * @doc.pattern Factory
+     */
+    @Provides
+    com.ghatana.yappc.services.lifecycle.gdpr.GdprDataService gdprDataService() {
+        logger.info("Creating GdprDataService");
+        // Register in-memory stubs for all YAPPC data collections.
+        // Each real storage adapter should be injected here once JDBC collections are finalized.
+        return new com.ghatana.yappc.services.lifecycle.gdpr.GdprDataService();
+    }
+
+    /**
+     * Provides GdprController for GDPR HTTP routes.
+     *
+     * @doc.type method
+     * @doc.purpose Provides GDPR HTTP controller
+     * @doc.layer product
+     * @doc.pattern Factory
+     */
+    @Provides
+    com.ghatana.yappc.services.lifecycle.gdpr.GdprController gdprController(
+            com.ghatana.yappc.services.lifecycle.gdpr.GdprDataService gdprDataService) {
+        logger.info("Creating GdprController");
+        return new com.ghatana.yappc.services.lifecycle.gdpr.GdprController(
+                gdprDataService, new com.fasterxml.jackson.databind.ObjectMapper());
     }
 }

@@ -54,17 +54,98 @@ subprojects {
         withSourcesJar()
     }
 
+    apply(plugin = "jacoco")
+
     tasks.withType<Test> {
         useJUnitPlatform()
         testLogging {
             events("passed", "skipped", "failed")
         }
+        finalizedBy(tasks.named("jacocoTestReport"))
+    }
+
+    // ========================================================================
+    // JaCoCo: 80 % branch + 80 % line coverage enforced on every submodule.
+    // Exclude generated, config, package-info, and boilerplate classes.
+    // ========================================================================
+    configure<JacocoPluginExtension> {
+        toolVersion = "0.8.11"
+    }
+
+    tasks.named<JacocoReport>("jacocoTestReport") {
+        dependsOn(tasks.named("test"))
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
+        classDirectories.setFrom(
+            fileTree(layout.buildDirectory.dir("classes/java/main")) {
+                exclude(
+                    "**/package-info.class",
+                    "**/*Config.class",
+                    "**/*Module.class",
+                    "**/*Launcher.class",
+                    "**/*Bootstrapper.class",
+                    "**/generated/**"
+                )
+            }
+        )
+    }
+
+    tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
+        violationRules {
+            rule {
+                limit {
+                    counter = "BRANCH"
+                    value   = "COVEREDRATIO"
+                    minimum = "0.80".toBigDecimal()
+                }
+                limit {
+                    counter = "LINE"
+                    value   = "COVEREDRATIO"
+                    minimum = "0.80".toBigDecimal()
+                }
+            }
+        }
+        classDirectories.setFrom(
+            fileTree(layout.buildDirectory.dir("classes/java/main")) {
+                exclude(
+                    "**/package-info.class",
+                    "**/*Config.class",
+                    "**/*Module.class",
+                    "**/*Launcher.class",
+                    "**/*Bootstrapper.class",
+                    "**/generated/**"
+                )
+            }
+        )
+    }
+
+    tasks.named("check") {
+        dependsOn(tasks.named("jacocoTestCoverageVerification"))
     }
 
     tasks.withType<JavaCompile> {
         sourceCompatibility = "21"
         targetCompatibility = "21"
         options.encoding = "UTF-8"
+    }
+
+    // ========================================================================
+    // 9.4: Javadoc Enforcement
+    // Fail the build if public-API Javadoc is missing or malformed.
+    // -Xdoclint:all,-missing allows internal helpers to be undocumented,
+    // while still flagging malformed tags on what IS documented.
+    // ========================================================================
+    tasks.withType<Javadoc> {
+        (options as StandardJavadocDocletOptions).apply {
+            encoding = "UTF-8"
+            addStringOption("Xdoclint:all,-missing", "-quiet")
+        }
+    }
+
+    tasks.named("check") {
+        dependsOn(tasks.named("javadoc"))
     }
 
     val spotbugsProjects = setOf(

@@ -14,9 +14,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { ReactFlow, ReactFlowProvider, Panel } from '@xyflow/react';
-import { Background } from '@reactflow/background';
-import { Controls } from '@reactflow/controls';
+import { Background, Controls, ReactFlow, ReactFlowProvider, Panel } from '@xyflow/react';
 import { Box, Typography } from '@ghatana/design-system';
 import { GroupingToolbar } from '../components/GroupingToolbar';
 import { NodeGroup } from '../components/NodeGroup';

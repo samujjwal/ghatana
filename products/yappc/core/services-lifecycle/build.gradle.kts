@@ -32,6 +32,10 @@ dependencies {
     // Platform: Agent Runtime — MemoryPlane, MemoryStoreAdapter, Jdbc stores
     implementation(project(":products:aep:aep-agent-runtime"))  // Migrated from agent-memory
 
+    // YAPPC agents runtime — provides AepEventPublisher used by AepEventBridge and HumanApprovalService
+    // (yappc-agents uses `implementation` for agents:runtime, so it is not transitively visible here)
+    implementation(project(":products:yappc:core:agents:runtime"))
+
     // YAPPC lifecycle module (full monorepo path)
     implementation(project(":products:yappc:core:yappc-services"))
     implementation(project(":products:yappc:core:yappc-infrastructure"))
@@ -74,6 +78,10 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // JMH benchmarks
+    testImplementation(libs.jmh.core)
+    testAnnotationProcessor(libs.jmh.generator.annprocess)
 }
 
 // YAPPC-8.4: Configuration schema validation task

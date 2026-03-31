@@ -1,0 +1,70 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: yappc-lifecycle-hpa
+  namespace: yappc
+  labels:
+    app: yappc-lifecycle
+    component: lifecycle-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: yappc-lifecycle
+  minReplicas: 2
+  maxReplicas: 12
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 20
+          periodSeconds: 120
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+      selectPolicy: Min
+  metrics:
+    # CPU-based scaling — lifecycle service is CPU-bound during AI prompt processing
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+
+    # Memory-based scaling — JVM heap pressure
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+
+    # HTTP request throughput (requires Prometheus Adapter)
+    - type: Pods
+      pods:
+        metric:
+          name: http_server_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "80"
+
+    # Pending lifecycle approvals backlog drives scale-out
+    - type: Pods
+      pods:
+        metric:
+          name: yappc_lifecycle_approvals_pending
+        target:
+          type: AverageValue
+          averageValue: "5"

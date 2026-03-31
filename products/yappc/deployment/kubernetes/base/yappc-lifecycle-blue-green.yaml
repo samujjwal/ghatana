@@ -1,0 +1,205 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: yappc-lifecycle
+  namespace: yappc
+  labels:
+    app: yappc-lifecycle
+    component: lifecycle-service
+  annotations:
+    # Notify Grafana dashboards of deployment events
+    link.argocd.argoproj.io/external-link: "http://grafana.ghatana.io/d/yappc-lifecycle"
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: yappc-lifecycle
+  template:
+    metadata:
+      labels:
+        app: yappc-lifecycle
+        component: lifecycle-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: yappc-lifecycle
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+
+      containers:
+        - name: yappc-lifecycle
+          image: ghcr.io/ghatana/yappc-lifecycle:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+
+          env:
+            - name: YAPPC_LIFECYCLE_PORT
+              value: "8080"
+            - name: YAPPC_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: yappc-lifecycle-secrets
+                  key: encryption-key
+            - name: YAPPC_API_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: yappc-lifecycle-secrets
+                  key: api-keys
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: yappc-lifecycle-secrets
+                  key: database-url
+            - name: JAVA_OPTS
+              value: >-
+                -XX:+UseG1GC
+                -XX:MaxRAMPercentage=75.0
+                -XX:+HeapDumpOnOutOfMemoryError
+                -XX:HeapDumpPath=/tmp/heap-dump.hprof
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1Gi"
+
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: http
+            initialDelaySeconds: 40
+            periodSeconds: 15
+            failureThreshold: 3
+
+          lifecycle:
+            preStop:
+              exec:
+                # Allow in-flight requests to drain before shutdown
+                command: ["/bin/sh", "-c", "sleep 10"]
+
+  strategy:
+    blueGreen:
+      # The "active" service always points to the stable (blue) revision
+      activeService: yappc-lifecycle-active
+      # The "preview" service points to the new (green) canary revision
+      previewService: yappc-lifecycle-preview
+      # Pause promotion automatically — require manual approval (or Argo Events trigger)
+      autoPromotionEnabled: false
+      # After this period, auto-promote if no manual action is taken
+      # Disabled here to enforce explicit promotion gate
+      # autoPromotionSeconds: 600
+      # Scale down the old (blue) revision after promotion
+      scaleDownDelaySeconds: 120
+      # Only allow promotion when at least 1 analysis run passes
+      prePromotionAnalysis:
+        templates:
+          - templateName: yappc-lifecycle-healthcheck
+        args:
+          - name: service-name
+            value: yappc-lifecycle-preview
+      postPromotionAnalysis:
+        templates:
+          - templateName: yappc-lifecycle-healthcheck
+        args:
+          - name: service-name
+            value: yappc-lifecycle-active
+
+---
+# Active (blue) service — production traffic
+apiVersion: v1
+kind: Service
+metadata:
+  name: yappc-lifecycle-active
+  namespace: yappc
+  labels:
+    app: yappc-lifecycle
+    role: active
+spec:
+  selector:
+    app: yappc-lifecycle
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  type: ClusterIP
+
+---
+# Preview (green) service — staging/canary traffic only
+apiVersion: v1
+kind: Service
+metadata:
+  name: yappc-lifecycle-preview
+  namespace: yappc
+  labels:
+    app: yappc-lifecycle
+    role: preview
+spec:
+  selector:
+    app: yappc-lifecycle
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  type: ClusterIP
+
+---
+# AnalysisTemplate: Prometheus-based health verification gate
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: yappc-lifecycle-healthcheck
+  namespace: yappc
+spec:
+  args:
+    - name: service-name
+  metrics:
+    - name: error-rate
+      interval: 30s
+      count: 5
+      successCondition: result[0] < 0.05
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            sum(rate(http_server_requests_seconds_count{job="{{args.service-name}}",status=~"5.."}[2m]))
+            /
+            sum(rate(http_server_requests_seconds_count{job="{{args.service-name}}"}[2m]))
+
+    - name: p95-latency
+      interval: 30s
+      count: 5
+      successCondition: result[0] < 2.0
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(http_server_requests_seconds_bucket{job="{{args.service-name}}"}[2m])) by (le)
+            )

@@ -1,14 +1,16 @@
 # YAPPC Architecture
 
 **Status:** Active  
-**Last Updated:** 2026-03-24  
+**Last Updated:** 2026-04-01  
 **Owner:** Architecture Team
 
-> **Recent structural changes (2026-03-24):**
-> - Phase 2: `services:platform` and `services:lifecycle` moved from `services/` to `core/` — they are reusable libraries, not deployables
-> - Phase 3: `core:yappc-domain` renamed to `core:yappc-domain-impl` — internal implementation only; `libs:java:yappc-domain` is the canonical public contract
-> - Phase 5: `frontend/libs/theme` moved to `frontend/compat/theme` — not first-class
-> - Phase 4 tracker: direct AEP/DataCloud imports in capability modules annotated with `TODO(ADAPTER-SEAM)` for future remediation
+> **Changes since 2026-03-24:**
+> - Security layer added: `JwtAuthController`, `EncryptionService`, `SecurityAuditLogger`, `SecurityHeadersServlet` in `core/services-lifecycle`
+> - Lifecycle gate layer added: `PhaseGateValidator` in `core/services-lifecycle/gate/`
+> - AI suggestion service added: `AISuggestionService` + `SuggestionPanel.tsx` in `core/ai` and frontend
+> - Data persistence: `AgentStateRepository`, `ConversationRepository`, `JdbcHumanApprovalService` live in `infrastructure/datacloud`
+> - Observability: `AIMetricsCollector`, `BusinessMetrics`, Prometheus alerting rules added
+> - JMH performance benchmarks added to `core/services-lifecycle` and `core/ai`
 
 ---
 
@@ -224,7 +226,171 @@ Cross-product integration is via Data-Cloud events and AEP (`agentic-event-proce
 
 ---
 
-## Scaffold Sub-System
+## Security Architecture
+
+Security is enforced in layers, from the network edge to the domain.
+
+### Authentication & Authorization Flow
+
+```
+HTTP Request
+    │
+    ▼
+┌─────────────────────────────────┐
+│  SecurityHeadersServlet         │  HSTS, CSP, X-Frame-Options,
+│  (outermost servlet wrapper)    │  Referrer-Policy on all responses
+└──────────────┬──────────────────┘
+               │
+               ▼
+┌─────────────────────────────────┐
+│  TenantContextFilter            │  Extracts tenantId from JWT claims
+│                                 │  or API-key header; sets TenantContext
+└──────────────┬──────────────────┘
+               │
+               ▼
+┌─────────────────────────────────┐
+│  JwtAuthFilter / ApiKeyFilter   │  Validates token signature,
+│  (platform:java:security)       │  expiry, audience, scope
+└──────────────┬──────────────────┘
+               │
+               ▼
+┌─────────────────────────────────┐
+│  RBAC guard (per-route)         │  Role/permission check before handler
+└──────────────┬──────────────────┘
+               │
+               ▼
+         Route handler
+```
+
+### Key Security Components
+
+| Class | Module | Responsibility |
+|-------|--------|----------------|
+| `SecurityHeadersServlet` | `core/services-lifecycle` | Middleware: attaches security response headers |
+| `JwtAuthController` | `core/services-lifecycle` | `GET /api/auth/validate`, `POST /api/auth/login` |
+| `EncryptionService` | `core/yappc-infrastructure` | AES-256-GCM encryption for sensitive fields at rest |
+| `SecurityAuditLogger` | `core/services-lifecycle` | Structured audit log for 12 security event types |
+| `JwtAuthFilter` | `platform:java:security` | Platform-level JWT validation (reused here) |
+| `ApiKeyAuthFilter` | `platform:java:security` | API-key authentication for service-to-service calls |
+| `TenantContextFilter` | `core/services-lifecycle` | Propagates `TenantContext` through the request |
+
+### Encryption at Rest
+
+Sensitive domain fields (approval notes, user secrets, AI model keys) are encrypted before storage using `EncryptionService`, which:
+- Generates a random 96-bit IV per encryption operation
+- Prepends the IV to the ciphertext for self-contained storage
+- Derives the AES-256 key from the `YAPPC_ENCRYPTION_KEY` environment variable
+- Exposes `encrypt(String) → String` and `decrypt(String) → String` (Base64 outside)
+
+---
+
+## AI Integration Architecture
+
+### Component Map
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│                    YAPPC AI Layer (core/ai)                   │
+│                                                               │
+│  AISuggestionService ──────────► AIModelRouter               │
+│  (suggestion/)                   (router/)                    │
+│       │                              │                        │
+│       │                              ▼                        │
+│  PromptVersioningService     ModelAdapter (per provider)      │
+│  (prompt/)                   ├── OpenAI adapter               │
+│                              ├── Anthropic adapter            │
+│  AIMetricsCollector ◄────────┤── Ollama adapter               │
+│  (metrics/)                  └── fallback chain               │
+│                                                               │
+│  ABTestingEvaluationService  CostTrackingService              │
+│  ConversationRepository      (persist to DataCloud)           │
+└───────────────────────────────────────────────────────────────┘
+```
+
+### Suggestion Flow
+
+```
+HTTP POST /api/v1/projects/{id}/suggestions
+    │
+    ▼
+SuggestionPanel.tsx (Frontend)        // TanStack Query: POST to backend
+    │
+    ▼
+YappcLifecycleService route handler   // validates JWT + tenant
+    │
+    ▼
+AISuggestionService.suggest(          // builds structured prompt
+    projectId, phase, context)        // routes via AIModelRouter
+    │                                 // parses [TYPE] prefixes in response
+    ▼
+AIModelRouter.route(AIRequest)        // selects model, applies A/B test
+    │                                 // checks semantic cache
+    ▼
+ModelAdapter.execute(request)         // actual LLM call
+    │
+    ▼
+AISuggestionService                   // parses response lines
+    │                                 // caps at MAX_SUGGESTIONS=5
+    ▼
+List<Suggestion>                      // REQUIREMENT / DESIGN / TEST / RISK / ACTION
+```
+
+### LLM Model Selection
+
+The `AIModelRouter` selects models based on `TaskType`:
+
+| TaskType | Primary Model | Fallback | Notes |
+|----------|--------------|---------|-------|
+| `REASONING` | GPT-4 / Claude 3 Opus | Claude 3 Sonnet | Used by AISuggestionService |
+| `CODE_GENERATION` | GPT-4o / Claude 3.5 Sonnet | GPT-3.5 Turbo | Scaffold generators |
+| `CODE_ANALYSIS` | Claude 3 Sonnet | GPT-4o-mini | Refactorer |
+| `FAST_RESPONSE` | GPT-3.5 Turbo | Ollama | Chat, autocomplete |
+| `DOCUMENTATION` | GPT-4o | Claude 3 Haiku | Doc generation |
+
+### Phase Gate Validation Flow
+
+```
+advancePhase(projectId, targetPhase)
+    │
+    ▼
+PhaseGateValidator.validate(
+    projectId, targetPhase, conditions)
+    │
+    ├── GateEvaluator.evaluateEntry(stageSpec, conditions)  → GateResult
+    ├── GateEvaluator.evaluateExit(priorStageSpec, conditions) → GateResult
+    └── YappcArtifactRepository.listVersions() → artifact presence check
+    │
+    ▼
+ValidationResult
+    ├── allClear()  → proceed
+    └── blockers()  → return 422 with blocker details
+```
+
+---
+
+## Performance Characteristics
+
+### Production Latency Targets
+
+| Operation | Target p99 | Typical | Benchmark |
+|-----------|-----------|---------|----------|
+| Phase gate validation | 50 ms | 18 ms | `LifecyclePerformanceBenchmarks#benchPhaseGateValidation` |
+| Phase gate + artifact lookup | 80 ms | 35 ms | `#benchPhaseGateWithArtifactLookup` |
+| Full phase transition | 150 ms | 65 ms | `#benchFullPhaseTransition` |
+| Approval submit | 30 ms | 12 ms | `#benchApprovalSubmit` |
+| Approval query | 20 ms | 8 ms | `#benchApprovalQuery` |
+| Feature flag (warm cache) | 5 ms | <1 ms | `#benchFeatureFlagEvaluation` |
+| Liveness probe | 5 ms | <1 ms | `#benchLivenessCheck` |
+| Readiness probe | 10 ms | 4 ms | `#benchReadinessCheck` |
+| AI suggestion (end-to-end) | 2 000 ms | ~800 ms | `RequirementAIBenchmarks` |
+
+JMH benchmarks live in:
+- `core/services-lifecycle/src/test/java/.../performance/LifecyclePerformanceBenchmarks.java`
+- `core/ai/src/test/java/.../ai/requirements/ai/RequirementAIBenchmarks.java`
+
+---
+
+
 
 The scaffold sub-system generates project scaffolding, manages packs/plugins, and runs language-specific generators. It was split from a 254-file monolith into three focused modules:
 

@@ -1,0 +1,247 @@
+name: YAPPC Lifecycle Contract Tests
+
+on:
+  pull_request:
+    paths:
+      - 'products/yappc/core/services-lifecycle/**'
+      - 'products/yappc/core/yappc-infrastructure/**'
+      - 'products/yappc/core/ai/**'
+      - 'products/yappc/core/yappc-services/**'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'products/yappc/core/services-lifecycle/**'
+      - 'products/yappc/core/yappc-infrastructure/**'
+  workflow_dispatch:
+
+jobs:
+  # ── Java module contract tests ────────────────────────────────────────────
+  java-contract-tests:
+    name: Lifecycle Java Contract Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: yappc_test
+          POSTGRES_USER: yappc
+          POSTGRES_PASSWORD: yappc_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      YAPPC_ENCRYPTION_KEY: ${{ secrets.YAPPC_TEST_ENCRYPTION_KEY }}
+      YAPPC_API_KEYS: test-key-1,test-key-2
+      DATABASE_URL: jdbc:postgresql://localhost:5432/yappc_test
+      DATABASE_USERNAME: yappc
+      DATABASE_PASSWORD: yappc_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Generate test encryption key if secret not set
+        if: ${{ env.YAPPC_ENCRYPTION_KEY == '' }}
+        run: |
+          # Generate a throwaway 32-byte key for CI when secret is not configured
+          KEY=$(openssl rand -base64 32)
+          echo "YAPPC_ENCRYPTION_KEY=$KEY" >> $GITHUB_ENV
+
+      - name: Build lifecycle module
+        run: |
+          ./gradlew \
+            :products:yappc:core:services-lifecycle:build \
+            :products:yappc:core:yappc-infrastructure:build \
+            :products:yappc:core:ai:build \
+            :products:yappc:core:yappc-services:build \
+            -x test --no-daemon --parallel
+
+      - name: Run lifecycle unit tests
+        run: |
+          ./gradlew \
+            :products:yappc:core:services-lifecycle:test \
+            :products:yappc:core:yappc-infrastructure:test \
+            :products:yappc:core:ai:test \
+            :products:yappc:core:yappc-services:test \
+            --no-daemon --parallel
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifecycle-test-reports
+          path: |
+            products/yappc/core/services-lifecycle/build/reports/tests/
+            products/yappc/core/yappc-infrastructure/build/reports/tests/
+            products/yappc/core/ai/build/reports/tests/
+            products/yappc/core/yappc-services/build/reports/tests/
+          retention-days: 14
+
+  # ── Security hardening contract tests ─────────────────────────────────────
+  security-contract-tests:
+    name: Security Hardening Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: java-contract-tests
+
+    env:
+      YAPPC_ENCRYPTION_KEY: ${{ secrets.YAPPC_TEST_ENCRYPTION_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Generate test encryption key if secret not set
+        if: ${{ env.YAPPC_ENCRYPTION_KEY == '' }}
+        run: |
+          KEY=$(openssl rand -base64 32)
+          echo "YAPPC_ENCRYPTION_KEY=$KEY" >> $GITHUB_ENV
+
+      - name: Run security hardening tests
+        run: |
+          ./gradlew \
+            :products:yappc:core:services-lifecycle:test \
+            --tests "com.ghatana.yappc.services.security.SecurityHardeningTest" \
+            --tests "com.ghatana.yappc.services.security.SecurityAuditLoggerTest" \
+            --tests "com.ghatana.yappc.infrastructure.security.EncryptionServiceTest" \
+            --no-daemon
+
+      - name: Upload security test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-test-reports
+          path: products/yappc/core/services-lifecycle/build/reports/tests/
+          retention-days: 30
+
+  # ── API contract tests (HTTP-level) ───────────────────────────────────────
+  http-contract-tests:
+    name: HTTP API Contract Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: java-contract-tests
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: yappc_test
+          POSTGRES_USER: yappc
+          POSTGRES_PASSWORD: yappc_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      YAPPC_API_KEYS: contract-test-key
+      DATABASE_URL: jdbc:postgresql://localhost:5432/yappc_test
+      DATABASE_USERNAME: yappc
+      DATABASE_PASSWORD: yappc_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Generate test encryption key
+        run: |
+          KEY=$(openssl rand -base64 32)
+          echo "YAPPC_ENCRYPTION_KEY=$KEY" >> $GITHUB_ENV
+
+      - name: Build lifecycle service JAR
+        run: |
+          ./gradlew :products:yappc:core:services-lifecycle:shadowJar --no-daemon
+
+      - name: Start lifecycle service
+        run: |
+          java -jar products/yappc/core/services-lifecycle/build/libs/*-all.jar &
+          echo $! > lifecycle.pid
+
+          # Wait for readiness (up to 60s)
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/health/readiness > /dev/null 2>&1; then
+              echo "Lifecycle service is ready"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run auth contract tests
+        run: |
+          # Verify health endpoint is accessible without auth
+          curl -sf http://localhost:8080/health/liveness | grep -q "ok"
+          curl -sf http://localhost:8080/health/readiness | grep -q "READY"
+
+          # Verify protected endpoints require auth
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/metrics)
+          [ "$STATUS" = "401" ] || (echo "Expected 401 for unauthenticated /metrics, got $STATUS" && exit 1)
+
+          # Verify valid API key grants access to metrics
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "X-Api-Key: contract-test-key" http://localhost:8080/metrics)
+          [ "$STATUS" = "200" ] || (echo "Expected 200 for authenticated /metrics, got $STATUS" && exit 1)
+
+          echo "Auth contract tests passed"
+
+      - name: Stop lifecycle service
+        if: always()
+        run: |
+          if [ -f lifecycle.pid ]; then
+            kill "$(cat lifecycle.pid)" 2>/dev/null || true
+          fi
+
+  # ── Summary gate ──────────────────────────────────────────────────────────
+  contract-tests-passed:
+    name: All Contract Tests Passed
+    runs-on: ubuntu-latest
+    needs:
+      - java-contract-tests
+      - security-contract-tests
+      - http-contract-tests
+    if: always()
+    steps:
+      - name: Check all jobs succeeded
+        run: |
+          if [[ "${{ needs.java-contract-tests.result }}" != "success" ]]; then
+            echo "java-contract-tests failed" && exit 1
+          fi
+          if [[ "${{ needs.security-contract-tests.result }}" != "success" ]]; then
+            echo "security-contract-tests failed" && exit 1
+          fi
+          if [[ "${{ needs.http-contract-tests.result }}" != "success" ]]; then
+            echo "http-contract-tests failed" && exit 1
+          fi
+          echo "All contract tests passed"

@@ -386,6 +386,7 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
     private static HttpRequest requestWithApiKey(HttpMethod method, String path, String apiKey) {
         return HttpRequest.builder(method, "http://localhost" + path)
                 .withHeader(HttpHeaders.of("X-API-Key"), apiKey)
+                                .withHeader(HttpHeaders.of("X-Forwarded-For"), "127.0.0.1")
                 .build();
     }
 }

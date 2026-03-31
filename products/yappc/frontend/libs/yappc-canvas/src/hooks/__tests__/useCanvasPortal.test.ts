@@ -6,8 +6,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useCanvasPortal } from '../useCanvasPortal';
 
 
-// Mock React Flow
-vi.mock('reactflow', () => ({
+// Mock XYFlow (React Flow v12)
+vi.mock('@xyflow/react', () => ({
   useReactFlow: () => ({
     getNodes: vi.fn(() => []),
     getEdges: vi.fn(() => []),
@@ -72,7 +72,7 @@ describe('useCanvasPortal', () => {
     const mockSetNodes = vi.fn();
     
     // Mock the React Flow setNodes function by assigning the hook implementation on the module
-    const rf = require('reactflow');
+    const rf = require('@xyflow/react');
     rf.useReactFlow = () => ({
       getNodes: vi.fn(() => []),
       getEdges: vi.fn(() => []),
@@ -270,7 +270,7 @@ describe('useCanvasPortal', () => {
     const mockSetNodes = vi.fn();
 
     // Mock React Flow to capture the exit portal creation by assigning the hook implementation
-    const rf = require('reactflow');
+    const rf = require('@xyflow/react');
     rf.useReactFlow = () => ({
       getNodes: vi.fn(() => []),
       getEdges: vi.fn(() => []),

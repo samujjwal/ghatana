@@ -36,5 +36,9 @@ export type { AIPredictionBadgeProps, AIPrediction } from './AIPredictionBadge';
 export { AiWorkflowWizard } from './AiWorkflowWizard';
 export type { AiWorkflowWizardProps } from './AiWorkflowWizard';
 
+// Phase lifecycle AI suggestions
+export { SuggestionPanel } from './SuggestionPanel';
+export type { SuggestionPanelProps, Suggestion, SuggestionType } from './SuggestionPanel';
+
 // Workflow step components
 export * from './workflow';

@@ -1,0 +1,213 @@
+groups:
+  # ── Lifecycle Service Health ─────────────────────────────────────────────────
+  - name: yappc-lifecycle-health
+    interval: 30s
+    rules:
+      - alert: YappcLifecycleHighErrorRate
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{job="yappc-lifecycle",status=~"5.."}[5m]))
+            /
+            sum(rate(http_server_requests_seconds_count{job="yappc-lifecycle"}[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC lifecycle service HTTP 5xx error rate > 5%"
+          description: >
+            The yappc-lifecycle service is returning HTTP 5xx errors at
+            {{ $value | humanizePercentage }} over the last 5 minutes.
+            Check application logs and database connectivity.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-lifecycle-high-error-rate"
+
+      - alert: YappcLifecycleHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_server_requests_seconds_bucket{job="yappc-lifecycle"}[5m])) by (le)
+          ) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC lifecycle service p95 latency > 2s"
+          description: >
+            The yappc-lifecycle service p95 request latency is
+            {{ $value | humanizeDuration }} over the last 5 minutes.
+            Investigate slow database queries, LLM latency, or resource contention.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-lifecycle-high-latency"
+
+      - alert: YappcLifecycleDown
+        expr: |
+          up{job="yappc-lifecycle"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC lifecycle service is down"
+          description: >
+            The yappc-lifecycle service at {{ $labels.instance }} has been unreachable
+            for more than 2 minutes. Check pod status and deployment health.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-lifecycle-down"
+
+  # ── Phase Transition Business KPIs ──────────────────────────────────────────
+  - name: yappc-lifecycle-kpis
+    interval: 60s
+    rules:
+      - alert: YappcPhaseTransitionsStopped
+        expr: |
+          sum(rate(yappc_lifecycle_phase_transitions_total{job="yappc-lifecycle"}[30m])) == 0
+            unless absent(yappc_lifecycle_phase_transitions_total{job="yappc-lifecycle"})
+        for: 30m
+        labels:
+          severity: warning
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC phase transitions have stopped"
+          description: >
+            No lifecycle phase transitions have been recorded in the last 30 minutes.
+            This may indicate a stalled workflow pipeline or a business-layer issue.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-phase-transitions-stopped"
+
+      - alert: YappcPendingApprovalBacklog
+        expr: |
+          yappc_lifecycle_approvals_pending{job="yappc-lifecycle"} > 20
+        for: 15m
+        labels:
+          severity: warning
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC approval queue backlog > 20"
+          description: >
+            There are {{ $value }} pending lifecycle approval gates.
+            A large backlog may block project progress. Review human-approval queue.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-approval-backlog"
+
+      - alert: YappcHighPolicyViolationRate
+        expr: |
+          sum(rate(yappc_lifecycle_policy_violations_total{job="yappc-lifecycle"}[10m])) by (tenant, policy_id) > 5
+        for: 10m
+        labels:
+          severity: warning
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC policy violations spike for tenant {{ $labels.tenant }}"
+          description: >
+            Policy {{ $labels.policy_id }} is being violated at a high rate
+            ({{ $value }}/min) by tenant {{ $labels.tenant }}.
+            This may indicate a misconfigured policy or an abnormal usage pattern.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-high-policy-violations"
+
+  # ── AI / LLM Metrics ────────────────────────────────────────────────────────
+  - name: yappc-ai-quality
+    interval: 60s
+    rules:
+      - alert: YappcAIHighErrorRate
+        expr: |
+          (
+            sum(rate(yappc_ai_llm_errors_total{job="yappc-lifecycle"}[5m])) by (model)
+            /
+            sum(rate(yappc_ai_llm_requests_total{job="yappc-lifecycle"}[5m])) by (model)
+          ) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC AI LLM error rate > 10% for model {{ $labels.model }}"
+          description: >
+            The {{ $labels.model }} LLM is failing at
+            {{ $value | humanizePercentage }} over the last 5 minutes.
+            Check LLM gateway health, rate limits, and API key validity.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-ai-high-error-rate"
+
+      - alert: YappcAIHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(yappc_ai_llm_latency_seconds_bucket{job="yappc-lifecycle"}[5m])) by (le, model)
+          ) > 30.0
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC AI p95 LLM latency > 30s for model {{ $labels.model }}"
+          description: >
+            Model {{ $labels.model }} has a p95 latency of {{ $value | humanizeDuration }}.
+            This likely impacts user experience — investigate LLM gateway timeout settings.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-ai-high-latency"
+
+      - alert: YappcAIHighCostSpike
+        expr: |
+          sum(rate(yappc_ai_llm_cost_usd_sum{job="yappc-lifecycle"}[1h])) by (tenant) > 10.0
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC AI cost spike for tenant {{ $labels.tenant }}"
+          description: >
+            Tenant {{ $labels.tenant }} is spending at a rate of ${{ $value }}/hour on LLM calls.
+            Check for runaway agents, infinite-loop prompts, or unexpected high usage.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-ai-high-cost"
+
+      - alert: YappcAIFallbackSpiking
+        expr: |
+          sum(rate(yappc_ai_fallback_total{job="yappc-lifecycle"}[5m])) by (model) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC AI fallback triggering > 1/s for model {{ $labels.model }}"
+          description: >
+            The AI fallback path is being triggered at {{ $value }}/s for model {{ $labels.model }}.
+            Primary model may be overloaded or unavailable.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-ai-fallback-spike"
+
+  # ── Security Events ──────────────────────────────────────────────────────────
+  - name: yappc-security
+    interval: 60s
+    rules:
+      - alert: YappcHighAuthFailureRate
+        expr: |
+          sum(rate(yappc_lifecycle_auth_failure_total{job="yappc-lifecycle"}[5m])) > 10
+        for: 3m
+        labels:
+          severity: critical
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC experiencing high authentication failure rate"
+          description: >
+            Authentication failures are occurring at {{ $value }}/s.
+            This may indicate a credential stuffing attack or system misconfiguration.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-high-auth-failures"
+
+      - alert: YappcTenantIsolationViolation
+        expr: |
+          sum(rate(yappc_security_tenant_isolation_violation_total{job="yappc-lifecycle"}[1m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+          team: yappc
+          product: yappc
+        annotations:
+          summary: "YAPPC tenant isolation violation detected"
+          description: >
+            A cross-tenant data access violation has been detected.
+            Immediately review security logs for unauthorized data access.
+          runbook_url: "https://wiki.ghatana.io/runbooks/yappc-tenant-isolation-violation"

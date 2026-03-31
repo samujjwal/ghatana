@@ -193,6 +193,18 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 injector.getInstance(HumanApprovalService.class);
         LifecycleWorkflowService workflowService =
                 injector.getInstance(LifecycleWorkflowService.class);
+        com.ghatana.yappc.services.security.JwtAuthController jwtAuthController =
+                injector.getInstance(com.ghatana.yappc.services.security.JwtAuthController.class);
+        com.ghatana.yappc.services.security.LifecycleLoginController loginController =
+                injector.getInstance(com.ghatana.yappc.services.security.LifecycleLoginController.class);
+        com.ghatana.yappc.services.lifecycle.gdpr.GdprController gdprController =
+                injector.getInstance(com.ghatana.yappc.services.lifecycle.gdpr.GdprController.class);
+
+        // ── Distributed Tracing (Dimension 7.1) ──────────────────────────
+        // Initialize OpenTelemetry tracing; LifecycleTracingConfig is eagerly constructed
+        // so the TracingManager is ready before any spans are emitted.
+        com.ghatana.yappc.services.lifecycle.config.LifecycleTracingConfig tracingConfig =
+                injector.getInstance(com.ghatana.yappc.services.lifecycle.config.LifecycleTracingConfig.class);
 
         // ── Config hot-reload watcher (Dimension 8.3) ─────────────────────
         // Eagerly instantiating ConfigWatchService starts its background thread.
@@ -225,8 +237,20 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         var router = RoutingServlet.builder(eventloop)
                 .with(GET, "/health",
                         request -> HttpResponse.ok200().withPlainText("OK").toPromise())
+                .with(GET, "/ready",
+                        request -> HttpResponse.ok200().withPlainText("READY").toPromise())
+                // Public bearer-token auth helpers used by frontend session checks.
+                .with(GET, "/api/auth/me", jwtAuthController::currentUser)
+                .with(GET, "/api/auth/validate", jwtAuthController::validate)
+                // Login/logout (credential issuance — public, no prior JWT required)
+                .with(POST, "/api/auth/login", loginController::login)
+                .with(POST, "/api/auth/logout", loginController::logout)
                 // Prometheus scrape endpoint (Observability 6.1)
                 .with(GET, "/metrics", securedMetrics)
+                // GDPR compliance endpoints (Dimension 5: Data Cloud)
+                .with(io.activej.http.HttpMethod.DELETE, "/api/v1/gdpr/tenant/:tenantId", gdprController::deleteTenantData)
+                .with(GET,  "/api/v1/gdpr/tenant/:tenantId/export", gdprController::exportTenantData)
+                .with(io.activej.http.HttpMethod.DELETE, "/api/v1/gdpr/user/:userId", gdprController::deleteUserData)
                 // Secured API routes (read/write permissions)
                 .with(GET,  "/api/*", securedApi.readApi())
                 .with(POST, "/api/*", securedApi.writeApi())
@@ -269,7 +293,8 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
 
         logger.info("Creating YAPPC Lifecycle HTTP server on port {}", port);
 
-        return HttpServer.builder(eventloop, correlationWrapper)
+        return HttpServer.builder(eventloop,
+                        new com.ghatana.yappc.services.security.SecurityHeadersServlet(correlationWrapper))
                 .withListenPort(port)
                 .build();
     }

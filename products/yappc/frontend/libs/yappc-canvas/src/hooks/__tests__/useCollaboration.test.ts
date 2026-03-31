@@ -51,8 +51,8 @@ vi.mock('y-indexeddb', () => ({
   IndexeddbPersistence: vi.fn(() => mockIndexeddbProvider)
 }));
 
-// Mock React Flow
-vi.mock('reactflow', () => ({
+// Mock XYFlow (React Flow v12)
+vi.mock('@xyflow/react', () => ({
   useReactFlow: () => ({
     getNodes: vi.fn(() => []),
     getEdges: vi.fn(() => []),
@@ -341,7 +341,7 @@ describe('useCollaboration', () => {
     const mockGetEdges = vi.fn(() => []);
 
     // Mock useReactFlow return value by assigning a replacement function on the module
-    const rf = require('reactflow');
+    const rf = require('@xyflow/react');
     rf.useReactFlow = () => ({
       getNodes: mockGetNodes,
       getEdges: mockGetEdges,
