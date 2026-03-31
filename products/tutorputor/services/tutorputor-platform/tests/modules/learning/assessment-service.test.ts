@@ -7,6 +7,16 @@ const mockPrisma = {
   module: {
     findFirst: vi.fn(),
   },
+  learnerProfile: {
+    findUnique: vi.fn(),
+  },
+  learnerMastery: {
+    findMany: vi.fn(),
+  },
+  knowledgeGap: {
+    findMany: vi.fn(),
+  },
+  $transaction: vi.fn(),
   assessment: {
     findMany: vi.fn(),
     findFirst: vi.fn(),
@@ -29,6 +39,26 @@ describe("AssessmentService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPrisma.learnerProfile.findUnique.mockResolvedValue({
+      id: "lp-1",
+      tenantId: "t1",
+      userId: "u1",
+      preferredDifficulty: "medium",
+      preferredModality: "visual",
+      preferredPacing: "balanced",
+      preferredSessionMinutes: 30,
+      notificationFrequency: "daily",
+      preferredTimeOfDay: null,
+      visualLearningScore: 0.6,
+      auditoryLearningScore: 0.4,
+      kinestheticLearningScore: 0.5,
+      readingLearningScore: 0.55,
+    });
+    mockPrisma.learnerMastery.findMany.mockResolvedValue([]);
+    mockPrisma.knowledgeGap.findMany.mockResolvedValue([]);
+    mockPrisma.$transaction.mockImplementation(async (ops: any[]) =>
+      Promise.all(ops),
+    );
     service = createAssessmentService(mockPrisma);
   });
 

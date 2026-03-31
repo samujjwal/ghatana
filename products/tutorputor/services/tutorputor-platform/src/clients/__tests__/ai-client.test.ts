@@ -35,10 +35,10 @@ vi.mock("@grpc/grpc-js", () => ({
   loadPackageDefinition: vi.fn().mockImplementation(() => ({
     tutorputor: {
       ai_learning: {
-        AiLearningService: vi.fn().mockImplementation(() => ({})),
+        AiLearningService: class MockAiLearningService {},
       },
       content_generation: {
-        ContentGenerationService: vi.fn().mockImplementation(() => ({})),
+        ContentGenerationService: class MockContentGenerationService {},
       },
     },
   })),

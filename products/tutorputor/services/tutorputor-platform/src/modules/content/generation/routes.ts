@@ -23,8 +23,8 @@ import { GenerationPlannerService } from "./planner-service.js";
 import {
   GenerationExecutionService,
   getGenerationExecutionChannel,
-  type JobExecutionResult,
   type GenerationExecutionStreamMessage,
+  type JobExecutionResult,
 } from "./execution-service.js";
 type GenerationRequestConfig = Record<string, unknown>;
 import { GenerationQueueDispatcher } from "./queue-dispatcher.js";

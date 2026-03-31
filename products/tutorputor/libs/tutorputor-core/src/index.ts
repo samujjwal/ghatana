@@ -16,3 +16,4 @@ export * from './kernel';
 export * from './errors';
 export * from './types/prisma-helpers';
 export * from './auth/tenant-access-validator';
+export * from './logger';

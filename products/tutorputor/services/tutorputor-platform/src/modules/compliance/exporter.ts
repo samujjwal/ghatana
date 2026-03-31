@@ -181,13 +181,13 @@ export class DataExporter {
             orderBy: { startedAt: 'desc' },
         });
 
-        const data = attempts.map((a: any) => ({
+        const data = attempts.map((a) => ({
             assessmentId: a.assessment.id,
             assessmentTitle: a.assessment.title,
-            score: a.score ?? a.points ?? null,
-            maxScore: a.maxScore ?? a.totalPoints ?? null,
+            score: a.scorePercent ?? null,
+            maxScore: null,
             startedAt: a.startedAt,
-            completedAt: a.completedAt ?? a.gradedAt ?? null,
+            completedAt: a.submittedAt ?? a.gradedAt ?? null,
         }));
 
         const filePath = join(exportPath, 'assessment_attempts.json');
