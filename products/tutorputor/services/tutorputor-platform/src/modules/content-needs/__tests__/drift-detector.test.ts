@@ -14,7 +14,9 @@ function makeMockPrisma() {
     return {
         enrollment: { findMany: vi.fn() },
         assessmentAttempt: { findMany: vi.fn() },
-        learningExperience: { findMany: vi.fn() },
+        learningExperience: { findMany: vi.fn(), findFirst: vi.fn() },
+        contentAsset: { findMany: vi.fn() },
+        explorerEvent: { findMany: vi.fn() },
         driftSignal: { create: vi.fn() },
         regenerationInsight: { create: vi.fn() },
     } as unknown as PrismaClient;
@@ -43,6 +45,11 @@ describe('ContentDriftDetector', () => {
         vi.clearAllMocks();
         prisma = makeMockPrisma();
         detector = new ContentDriftDetector(prisma);
+        (prisma.learningExperience.findFirst as any).mockResolvedValue({
+            moduleId: 'module-1',
+        });
+        (prisma.contentAsset.findMany as any).mockResolvedValue([]);
+        (prisma.explorerEvent.findMany as any).mockResolvedValue([]);
     });
 
     // =========================================================================
@@ -276,6 +283,70 @@ describe('ContentDriftDetector', () => {
             const result = await detector.scanExperience('t1', 'exp-1');
 
             expect(result.scanDurationMs).toBeGreaterThanOrEqual(0);
+        });
+    });
+
+    describe('adaptive thresholds and anomaly detection', () => {
+        it('derives adaptive thresholds from published experiences', async () => {
+            (prisma.learningExperience.findMany as any).mockResolvedValue([
+                { id: 'exp-1' },
+                { id: 'exp-2' },
+                { id: 'exp-3' },
+            ]);
+            (prisma.enrollment.findMany as any)
+                .mockResolvedValueOnce(makeEnrolments(20, { COMPLETED: 16 }))
+                .mockResolvedValueOnce(makeEnrolments(20, { COMPLETED: 12, DROPPED: 4 }))
+                .mockResolvedValueOnce(makeEnrolments(20, { COMPLETED: 8, ABORTED: 6 }));
+            (prisma.assessmentAttempt.findMany as any)
+                .mockResolvedValueOnce([{ scorePercent: 85 }])
+                .mockResolvedValueOnce([{ scorePercent: 70 }])
+                .mockResolvedValueOnce([{ scorePercent: 55 }]);
+
+            const thresholds = await detector.adjustThresholds('t1');
+
+            expect(thresholds.minCompletionRate).toBeGreaterThan(0);
+            expect(thresholds.maxAbortRate).toBeGreaterThan(0);
+        });
+
+        it('adds anomaly signals during adaptive scans', async () => {
+            (prisma.learningExperience.findMany as any).mockResolvedValue([
+                { id: 'exp-1' },
+                { id: 'exp-2' },
+            ]);
+            (prisma.learningExperience.findFirst as any)
+                .mockResolvedValueOnce({ moduleId: 'module-1' })
+                .mockResolvedValueOnce({ moduleId: 'module-2' })
+                .mockResolvedValueOnce({ moduleId: 'module-2' });
+            (prisma.enrollment.findMany as any)
+                .mockResolvedValueOnce(makeEnrolments(20, { COMPLETED: 15 }))
+                .mockResolvedValueOnce(makeEnrolments(20, { COMPLETED: 2, DROPPED: 12 }))
+                .mockResolvedValueOnce(makeEnrolments(20, { COMPLETED: 2, DROPPED: 12 }))
+                .mockResolvedValueOnce(makeEnrolments(20, { COMPLETED: 2, DROPPED: 12, ABORTED: 4 }));
+            (prisma.assessmentAttempt.findMany as any)
+                .mockResolvedValueOnce([{ scorePercent: 80 }])
+                .mockResolvedValueOnce([{ scorePercent: 25 }])
+                .mockResolvedValueOnce([{ scorePercent: 25 }])
+                .mockResolvedValueOnce([{ scorePercent: 25 }]);
+            (prisma.contentAsset.findMany as any).mockResolvedValue([
+                { id: 'asset-1' },
+            ]);
+            (prisma.explorerEvent.findMany as any).mockResolvedValue([
+                { eventType: 'RANKING_FEEDBACK', feedbackLabel: 'negative', sessionId: 's1' },
+                { eventType: 'RANKING_FEEDBACK', feedbackLabel: 'negative', sessionId: 's2' },
+                { eventType: 'RANKING_FEEDBACK', feedbackLabel: 'negative', sessionId: 's3' },
+                { eventType: 'IMPRESSION', feedbackLabel: null, sessionId: 's1' },
+            ]);
+
+            const result = await detector.scanExperienceAdaptive('t1', 'exp-2');
+
+            expect(result.thresholds.minCompletionRate).toBeGreaterThan(0);
+            expect(
+                result.signals.some(
+                    (signal) =>
+                        signal.signalType === 'negative_feedback' ||
+                        signal.signalType === 'high_abort_rate',
+                ),
+            ).toBe(true);
         });
     });
 });

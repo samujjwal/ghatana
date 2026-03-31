@@ -345,10 +345,12 @@ export class EvaluationService {
     const recommendation = deriveRecommendation(overall, allIssues);
     const status: "passed" | "failed" =
       recommendation === "block" ? "failed" : "passed";
+    const assetId = resolveAssetId(job);
 
     const created = await (this.prisma as any).evaluationRecord.create({
       data: {
         tenantId,
+        assetId,
         generationJobId: job.id,
         generationRequestId: generationRequestId ?? null,
         coherenceScore: coherence.score,
@@ -363,6 +365,22 @@ export class EvaluationService {
         diagnostics: { jobType, jobId: job.id },
       },
     });
+
+    if (assetId) {
+      await (this.prisma as any).contentAsset.update({
+        where: { id: assetId },
+        data: {
+          qualityScore: overall,
+          reviewState: JSON.stringify({
+            source: "evaluation",
+            status,
+            recommendation,
+            overallScore: overall,
+            updatedAt: new Date().toISOString(),
+          }),
+        },
+      });
+    }
 
     return mapRecord(created);
   }
@@ -402,4 +420,24 @@ export class EvaluationService {
 function avg(values: number[]): number {
   if (values.length === 0) return 0;
   return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+function resolveAssetId(job: {
+  outputAssetId?: string | null;
+  outputData?: Record<string, unknown> | null;
+}): string | null {
+  if (typeof job.outputAssetId === "string" && job.outputAssetId.length > 0) {
+    return job.outputAssetId;
+  }
+
+  const outputData = job.outputData;
+  if (
+    outputData &&
+    typeof outputData["assetId"] === "string" &&
+    outputData["assetId"].length > 0
+  ) {
+    return outputData["assetId"] as string;
+  }
+
+  return null;
 }

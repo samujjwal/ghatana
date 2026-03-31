@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { register, Counter, Histogram, Gauge } from "prom-client";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
+import type { LearnerProfileGrpcRuntimeState } from "../../modules/learning/grpc-runtime-state.js";
 
 /**
  * Setup Prometheus metrics collection.
@@ -34,6 +35,28 @@ export async function setupMetrics(app: FastifyInstance) {
     help: "Duration of database queries",
     labelNames: ["operation", "model"],
     buckets: [0.001, 0.01, 0.05, 0.1, 0.5, 1],
+  });
+
+  // Database connection pool metrics
+  const dbConnectionsActive = new Gauge({
+    name: "tutorputor_db_connections_active",
+    help: "Number of active database connections",
+  });
+
+  const dbConnectionsIdle = new Gauge({
+    name: "tutorputor_db_connections_idle",
+    help: "Number of idle database connections",
+  });
+
+  const dbConnectionsTotal = new Gauge({
+    name: "tutorputor_db_connections_total",
+    help: "Total number of database connections in pool",
+  });
+
+  const dbConnectionAcquisitions = new Counter({
+    name: "tutorputor_db_connection_acquisitions_total",
+    help: "Total number of connection acquisitions from pool",
+    labelNames: ["result"], // "success" | "timeout" | "error"
   });
 
   // Cache metrics
@@ -83,6 +106,10 @@ export async function setupMetrics(app: FastifyInstance) {
   // Decorate app with metrics
   app.decorate("metrics", {
     dbQueryDuration,
+    dbConnectionsActive,
+    dbConnectionsIdle,
+    dbConnectionsTotal,
+    dbConnectionAcquisitions,
     cacheHits,
     cacheMisses,
   });
@@ -106,11 +133,23 @@ export async function setupHealthChecks(
   prisma: PrismaClient,
   redis: Redis,
 ) {
+  const getLearnerProfileGrpcRuntimeState =
+    (): LearnerProfileGrpcRuntimeState | null =>
+      app.learnerProfileGrpcRuntimeState ?? null;
+
   // Main health check (deep checks)
   app.get("/health", async (request, reply) => {
     const checks: Record<
       string,
-      { status: "ok" | "failed"; latency?: number; error?: string }
+      {
+        status: "ok" | "failed";
+        latency?: number;
+        error?: string;
+        poolSize?: number;
+        mode?: string;
+        address?: string;
+        port?: number;
+      }
     > = {};
     let isHealthy = true;
 
@@ -119,6 +158,15 @@ export async function setupHealthChecks(
       const start = Date.now();
       await prisma.$queryRaw`SELECT 1`;
       checks.database = { status: "ok", latency: Date.now() - start };
+
+      // Add connection pool info if available
+      try {
+        // Get connection pool metrics (Prisma doesn't expose this directly, but we can infer)
+        const poolSize = process.env.DATABASE_POOL_SIZE || "10";
+        checks.database.poolSize = parseInt(poolSize, 10);
+      } catch (_poolError) {
+        // Pool info not available, that's ok
+      }
     } catch (error) {
       checks.database = {
         status: "failed",
@@ -138,6 +186,31 @@ export async function setupHealthChecks(
         error: error instanceof Error ? error.message : "Unknown error",
       };
       isHealthy = false;
+    }
+
+    const learnerProfileGrpcRuntime = getLearnerProfileGrpcRuntimeState();
+    if (learnerProfileGrpcRuntime) {
+      const runtimeIsHealthy =
+        !learnerProfileGrpcRuntime.enabled ||
+        learnerProfileGrpcRuntime.status === "running";
+
+      checks.learnerProfileGrpc = {
+        status: runtimeIsHealthy ? "ok" : "failed",
+        mode: learnerProfileGrpcRuntime.status,
+        ...(learnerProfileGrpcRuntime.address
+          ? { address: learnerProfileGrpcRuntime.address }
+          : {}),
+        ...(learnerProfileGrpcRuntime.port
+          ? { port: learnerProfileGrpcRuntime.port }
+          : {}),
+        ...(learnerProfileGrpcRuntime.lastError
+          ? { error: learnerProfileGrpcRuntime.lastError }
+          : {}),
+      };
+
+      if (!runtimeIsHealthy) {
+        isHealthy = false;
+      }
     }
 
     return reply.code(isHealthy ? 200 : 503).send({
@@ -160,6 +233,22 @@ export async function setupHealthChecks(
     try {
       await prisma.$queryRaw`SELECT 1`;
       await redis.ping();
+
+      const learnerProfileGrpcRuntime = getLearnerProfileGrpcRuntimeState();
+      if (
+        learnerProfileGrpcRuntime?.enabled &&
+        learnerProfileGrpcRuntime.status !== "running"
+      ) {
+        return reply.code(503).send({
+          status: "not-ready",
+          timestamp: new Date().toISOString(),
+          error: "Learner-profile gRPC runtime is not running",
+          checks: {
+            learnerProfileGrpc: learnerProfileGrpcRuntime,
+          },
+        });
+      }
+
       return { status: "ready", timestamp: new Date().toISOString() };
     } catch (error) {
       return reply.code(503).send({

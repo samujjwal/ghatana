@@ -12,8 +12,12 @@ import { PrismaClient } from '@tutorputor/core/db';
 import { Logger } from 'pino';
 import { RealContentGenerationClient } from '../grpc/RealContentGenerationClient';
 import * as crypto from 'crypto';
+import {
+    type CorrelatedGenerationJobData,
+    ContentWorkerTelemetryPublisher,
+} from '../generation-telemetry';
 
-export interface AnimationGenerationJobData {
+export interface AnimationGenerationJobData extends CorrelatedGenerationJobData {
     experienceId: string;
     tenantId: string;
     claimRef: string;
@@ -27,7 +31,8 @@ export class AnimationGenerationProcessor {
     constructor(
         private grpcClient: RealContentGenerationClient,
         private prisma: PrismaClient,
-        private logger: Logger
+        private logger: Logger,
+        private telemetry?: ContentWorkerTelemetryPublisher,
     ) { }
 
     async process(job: Job<AnimationGenerationJobData>): Promise<void> {
@@ -47,6 +52,13 @@ export class AnimationGenerationProcessor {
         );
 
         try {
+            await this.telemetry?.publishForJob(job, {
+                stage: 'grpc_request_started',
+                message: 'Submitting animation generation request',
+                progressPercent: 20,
+                status: 'running',
+            });
+
             const requestId = crypto.randomUUID();
             const response = await this.grpcClient.generateAnimation({
                 requestId,
@@ -61,6 +73,19 @@ export class AnimationGenerationProcessor {
             if (!animation) {
                 throw new Error('No animation specification returned');
             }
+
+            const responseCost = ContentWorkerTelemetryPublisher.extractCostFromMetadata(response?.metadata);
+            await this.telemetry?.publishForJob(job, {
+                stage: 'grpc_response_received',
+                message: 'Animation generation response received',
+                progressPercent: 55,
+                status: 'running',
+                ...(responseCost ? { cost: responseCost } : {}),
+                diagnostics: {
+                    animationId: animation.animation_id ?? animation.animationId ?? null,
+                    keyframeCount: Array.isArray(animation.keyframes) ? animation.keyframes.length : 0,
+                },
+            });
 
             const persistedDuration = this.resolveDuration(animation, durationSeconds);
             const persistedType = this.mapAnimationType(animation.type ?? animationType);
@@ -103,6 +128,18 @@ export class AnimationGenerationProcessor {
                 { jobId: job.id, experienceId, claimRef, type: persistedType },
                 'Animation generation job completed'
             );
+
+            await this.telemetry?.publishForJob(job, {
+                stage: 'persistence_completed',
+                message: 'Animation artifact persisted',
+                progressPercent: 90,
+                status: 'running',
+                diagnostics: {
+                    experienceId,
+                    claimRef,
+                    type: persistedType,
+                },
+            });
         } catch (error: any) {
             this.logger.error(
                 { jobId: job.id, experienceId, claimRef, error: error?.message },

@@ -7,6 +7,16 @@ import { createRequire } from "node:module";
 import { PrismaClient, Prisma } from "../../generated/prisma/index.js";
 
 export { PrismaClient, Prisma };
+export type {
+  LearnerProfile,
+  LearnerMastery,
+  KnowledgeGap,
+  LearnerDifficultyPreference,
+  LearnerModalityPreference,
+  LearnerPacingPreference,
+  KnowledgeGapSeverity,
+  KnowledgeGapDetectionMethod,
+} from "../../generated/prisma/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

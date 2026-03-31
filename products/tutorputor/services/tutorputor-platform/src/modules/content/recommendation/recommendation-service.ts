@@ -306,6 +306,42 @@ export class RecommendationService {
     return { processedAssets, updatedEdges, skippedEdges };
   }
 
+  async recomputeOutcomeAwareEdgesForExperience(
+    tenantId: string,
+    experienceId: string,
+    options: { limitPerAsset?: number } = {},
+  ): Promise<{
+    processedAssets: number;
+    updatedEdges: number;
+    skippedEdges: number;
+  }> {
+    const assets = await (this.prisma as any).contentAsset.findMany({
+      where: {
+        tenantId,
+        legacyExperienceId: experienceId,
+        status: "PUBLISHED",
+      },
+      orderBy: { updatedAt: "desc" },
+      select: { id: true },
+    });
+
+    let processedAssets = 0;
+    let updatedEdges = 0;
+    let skippedEdges = 0;
+
+    for (const asset of assets) {
+      const result = await this.recomputeOutcomeAwareEdges(tenantId, {
+        sourceAssetId: asset.id,
+        limit: options.limitPerAsset ?? 12,
+      });
+      processedAssets += result.processedAssets;
+      updatedEdges += result.updatedEdges;
+      skippedEdges += result.skippedEdges;
+    }
+
+    return { processedAssets, updatedEdges, skippedEdges };
+  }
+
   /**
    * Get all recommendation edges from a source asset, grouped by type.
    */
@@ -566,49 +602,85 @@ export class RecommendationService {
   }
 
   private mapAsset(raw: Record<string, unknown>): ContentAsset {
-    return {
+    const asset: ContentAsset = {
       id: raw.id as string,
       tenantId: raw.tenantId as string,
       slug: raw.slug as string,
       title: raw.title as string,
       assetType: (raw.assetType as string).toLowerCase() as ContentAssetType,
       domain: raw.domain as string,
-      conceptId: (raw.conceptId as string) ?? undefined,
       status: (raw.status as string).toLowerCase() as ContentAsset["status"],
       currentVersion: raw.currentVersion as number,
-      qualityScore: (raw.qualityScore as number) ?? undefined,
-      semanticIndexStatus:
-        ((
-          raw.semanticIndexStatus as string | null | undefined
-        )?.toLowerCase() as ContentAsset["semanticIndexStatus"]) ?? undefined,
-      recommendationStatus:
-        ((
-          raw.recommendationStatus as string | null | undefined
-        )?.toLowerCase() as ContentAsset["recommendationStatus"]) ?? undefined,
-      tags: (raw.tags as string[]) ?? undefined,
       targetGrades: Array.isArray(raw.targetGrades)
         ? (raw.targetGrades as string[])
         : [],
-      difficultyLevel: (raw.difficultyLevel as string) ?? undefined,
       authorId: raw.authorId as string,
-      lastEditedBy: (raw.lastEditedBy as string) ?? undefined,
-      publishedAt: raw.publishedAt
-        ? (raw.publishedAt as Date).toISOString()
-        : undefined,
       createdAt: raw.createdAt
         ? (raw.createdAt as Date).toISOString()
         : new Date().toISOString(),
       updatedAt: raw.updatedAt
         ? (raw.updatedAt as Date).toISOString()
         : new Date().toISOString(),
-      promptHash: (raw.promptHash as string) ?? undefined,
       riskLevel: (
         (raw.riskLevel as string | null | undefined) ?? "LOW"
       ).toUpperCase() as ContentAsset["riskLevel"],
-      confidenceScore: (raw.confidenceScore as number) ?? undefined,
-      legacyModuleId: (raw.legacyModuleId as string) ?? undefined,
-      legacyExperienceId: (raw.legacyExperienceId as string) ?? undefined,
     };
+
+    if (typeof raw.conceptId === "string" && raw.conceptId.length > 0) {
+      asset.conceptId = raw.conceptId;
+    }
+    if (typeof raw.qualityScore === "number") {
+      asset.qualityScore = raw.qualityScore;
+    }
+    if (typeof raw.semanticIndexStatus === "string") {
+      const semanticIndexStatus = raw.semanticIndexStatus.toLowerCase();
+      if (
+        semanticIndexStatus === "pending" ||
+        semanticIndexStatus === "indexed" ||
+        semanticIndexStatus === "stale"
+      ) {
+        asset.semanticIndexStatus = semanticIndexStatus;
+      }
+    }
+    if (typeof raw.recommendationStatus === "string") {
+      const recommendationStatus = raw.recommendationStatus.toLowerCase();
+      if (
+        recommendationStatus === "pending" ||
+        recommendationStatus === "computed" ||
+        recommendationStatus === "stale"
+      ) {
+        asset.recommendationStatus = recommendationStatus;
+      }
+    }
+    if (Array.isArray(raw.tags)) {
+      asset.tags = raw.tags as string[];
+    }
+    if (typeof raw.difficultyLevel === "string" && raw.difficultyLevel.length > 0) {
+      asset.difficultyLevel = raw.difficultyLevel;
+    }
+    if (typeof raw.lastEditedBy === "string" && raw.lastEditedBy.length > 0) {
+      asset.lastEditedBy = raw.lastEditedBy;
+    }
+    if (raw.publishedAt instanceof Date) {
+      asset.publishedAt = raw.publishedAt.toISOString();
+    }
+    if (typeof raw.promptHash === "string" && raw.promptHash.length > 0) {
+      asset.promptHash = raw.promptHash;
+    }
+    if (typeof raw.confidenceScore === "number") {
+      asset.confidenceScore = raw.confidenceScore;
+    }
+    if (typeof raw.legacyModuleId === "string" && raw.legacyModuleId.length > 0) {
+      asset.legacyModuleId = raw.legacyModuleId;
+    }
+    if (
+      typeof raw.legacyExperienceId === "string" &&
+      raw.legacyExperienceId.length > 0
+    ) {
+      asset.legacyExperienceId = raw.legacyExperienceId;
+    }
+
+    return asset;
   }
 
   private mapEdge(raw: Record<string, unknown>): RecommendationEdge {

@@ -461,5 +461,36 @@ describe("RecommendationService", () => {
       expect(result.skippedEdges).toBe(1);
       expect(prisma.recommendationEdge.create).not.toHaveBeenCalled();
     });
+
+    it("can recompute outcome-aware edges for all assets linked to an experience", async () => {
+      prisma.contentAsset.findMany
+        .mockResolvedValueOnce([{ id: "asset-1" }, { id: "asset-2" }])
+        .mockResolvedValueOnce([makeAsset({ id: "asset-1" })])
+        .mockResolvedValueOnce([makeAsset({ id: "asset-peer-1", conceptId: "concept-motion" })])
+        .mockResolvedValueOnce([makeAsset({ id: "asset-2" })])
+        .mockResolvedValueOnce([makeAsset({ id: "asset-peer-2", conceptId: "concept-motion" })]);
+      prisma.explorerEvent.findMany.mockResolvedValue([
+        { assetId: "asset-peer-1", eventType: "IMPRESSION" },
+        { assetId: "asset-peer-1", eventType: "CLICK" },
+        { assetId: "asset-peer-1", eventType: "ASSET_COMPLETE" },
+        { assetId: "asset-peer-2", eventType: "IMPRESSION" },
+        { assetId: "asset-peer-2", eventType: "CLICK" },
+        { assetId: "asset-peer-2", eventType: "ASSET_COMPLETE" },
+      ]);
+
+      const result = await service.recomputeOutcomeAwareEdgesForExperience(
+        "tenant-1",
+        "experience-1",
+      );
+
+      expect(result.processedAssets).toBe(2);
+      expect(prisma.contentAsset.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            legacyExperienceId: "experience-1",
+          }),
+        }),
+      );
+    });
   });
 });

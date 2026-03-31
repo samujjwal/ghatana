@@ -11,6 +11,8 @@ import { ContentNeedsAnalyzer } from "./service";
 import { createContentStudioService } from "../content/studio/service";
 import { registerContentNeedsRoutes } from "./routes";
 import type { ContentNeedsModuleConfig } from "./types";
+import { createContentDriftDetector } from "./drift-detector";
+import { ContentQualityMLPipeline } from "../content/quality-ml/pipeline";
 
 // Content Needs Analyzer module plugin
 export const contentNeedsModule: FastifyPluginAsync = async (fastify) => {
@@ -24,6 +26,8 @@ export const contentNeedsModule: FastifyPluginAsync = async (fastify) => {
 
   // Initialize content needs analyzer
   const contentNeedsAnalyzer = new ContentNeedsAnalyzer(prisma, contentStudio);
+  const contentDriftDetector = createContentDriftDetector(prisma);
+  const qualityPipeline = new ContentQualityMLPipeline(prisma);
 
   // Get configuration from environment or use defaults
   const config: ContentNeedsModuleConfig = {
@@ -50,7 +54,12 @@ export const contentNeedsModule: FastifyPluginAsync = async (fastify) => {
   };
 
   // Register routes
-  await registerContentNeedsRoutes(fastify, contentNeedsAnalyzer);
+  await registerContentNeedsRoutes(
+    fastify,
+    contentNeedsAnalyzer,
+    contentDriftDetector,
+    qualityPipeline,
+  );
 
   if (config.enabled) {
     // Add health check endpoint

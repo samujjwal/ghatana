@@ -17,6 +17,8 @@ import { ContentWorkerService } from "./workers/content/index.js";
 // Core Modules
 import { contentModule } from "./modules/content/index.js";
 import { learningModule } from "./modules/learning/index.js";
+import { startLearnerProfileGrpcRuntime } from "./modules/learning/grpc-runtime.js";
+import { createLearnerProfileGrpcRuntimeState } from "./modules/learning/grpc-runtime-state.js";
 import { collaborationModule } from "./modules/collaboration/index.js";
 import { userModule } from "./modules/user/index.js";
 import { engagementModule } from "./modules/engagement/index.js";
@@ -82,6 +84,8 @@ export interface PlatformOptions {
   startContentWorker?: boolean;
   grpcServerAddress?: string;
   grpcUseTls?: boolean;
+  startLearnerProfileGrpcServer?: boolean;
+  learnerProfileGrpcAddress?: string;
 }
 
 /**
@@ -125,12 +129,41 @@ export async function setupPlatform(
     });
   }
 
-  // Database
+  // Database with connection pooling
   const prisma = new PrismaClient({
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
         : ["error"],
+    // Connection pool configuration
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+    // Connection pool limits based on environment
+    __internal: {
+      engine: {
+        // Connection pool configuration
+        connectionLimit: parseInt(process.env.DATABASE_POOL_SIZE || "10", 10),
+        // Pool timeout in seconds
+        poolTimeout: parseInt(process.env.DATABASE_POOL_TIMEOUT || "10", 10),
+        // Connection timeout in seconds
+        connectTimeout: parseInt(
+          process.env.DATABASE_CONNECT_TIMEOUT || "5",
+          10,
+        ),
+        // How long to wait for a connection from the pool (milliseconds)
+        acquireConnectionTimeout: parseInt(
+          process.env.DATABASE_ACQUIRE_TIMEOUT || "30000",
+          10,
+        ),
+        // How long a connection can be idle before being closed (seconds)
+        idleTimeout: parseInt(process.env.DATABASE_IDLE_TIMEOUT || "600", 10),
+        // How long a connection can live before being closed (seconds)
+        maxLifetime: parseInt(process.env.DATABASE_MAX_LIFETIME || "1800", 10),
+      },
+    },
   });
   app.decorate("prisma", prisma);
 
@@ -141,6 +174,10 @@ export async function setupPlatform(
     lazyConnect: false,
   });
   app.decorate("redis", redis);
+  app.decorate(
+    "learnerProfileGrpcRuntimeState",
+    createLearnerProfileGrpcRuntimeState(),
+  );
 
   // Observability
   await setupMetrics(app);
@@ -201,6 +238,61 @@ export async function setupPlatform(
   // Routes within module use /learning/dashboard, /enrollments, /pathways etc.
   await app.register(learningModule, { prefix: "/api/v1" });
 
+  const shouldStartLearnerProfileGrpcServer =
+    options.startLearnerProfileGrpcServer ??
+    process.env.LEARNER_PROFILE_GRPC_ENABLED === "true";
+  const learnerProfileGrpcAddress =
+    options.learnerProfileGrpcAddress ||
+    process.env.LEARNER_PROFILE_GRPC_ADDRESS ||
+    "127.0.0.1:50052";
+  let learnerProfileGrpcRuntime:
+    | Awaited<ReturnType<typeof startLearnerProfileGrpcRuntime>>
+    | null = null;
+
+  if (shouldStartLearnerProfileGrpcServer) {
+    app.learnerProfileGrpcRuntimeState = {
+      enabled: true,
+      status: "starting",
+      address: learnerProfileGrpcAddress,
+    };
+
+    const learnerProfileService = (app as typeof app & {
+      learnerProfileService?: unknown;
+    }).learnerProfileService;
+
+    if (!learnerProfileService) {
+      throw new Error(
+        "Learner profile service not found on Fastify instance after learning module registration.",
+      );
+    }
+
+    try {
+      learnerProfileGrpcRuntime = await startLearnerProfileGrpcRuntime({
+        learnerProfileService: learnerProfileService as Parameters<
+          typeof startLearnerProfileGrpcRuntime
+        >[0]["learnerProfileService"],
+        address: learnerProfileGrpcAddress,
+        logger: app.log,
+      });
+
+      app.learnerProfileGrpcRuntimeState = {
+        enabled: true,
+        status: "running",
+        address: learnerProfileGrpcRuntime.address,
+        port: learnerProfileGrpcRuntime.port,
+        startedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      app.learnerProfileGrpcRuntimeState = {
+        enabled: true,
+        status: "failed",
+        address: learnerProfileGrpcAddress,
+        lastError: error instanceof Error ? error.message : "Unknown error",
+      };
+      throw error;
+    }
+  }
+
   // User: /api/v1/teacher/... and /api/v1/admin/...
   await app.register(userModule, { prefix: "/api/v1" });
 
@@ -246,7 +338,7 @@ export async function setupPlatform(
   const stripeKey = requireEnv("STRIPE_SECRET_KEY");
   validateStripeKey(stripeKey);
   const stripe = new Stripe(stripeKey, {
-    apiVersion: "2023-10-16" as any,
+    apiVersion: "2023-10-16" as const,
   });
   const subscriptionService = new SubscriptionServiceImpl(prisma, stripe);
   await app.register(
@@ -285,7 +377,7 @@ export async function setupPlatform(
           "localhost:50051",
         useTls: options.grpcUseTls ?? process.env.GRPC_USE_TLS === "true",
       },
-      logger: app.log as any,
+      logger: app.log,
       prisma,
     });
 
@@ -299,8 +391,21 @@ export async function setupPlatform(
     if (contentWorker) {
       await contentWorker.close();
     }
-    if ((instance as any).hasDecorator?.("autoRevisionWorkerManager")) {
-      await (instance as any).autoRevisionWorkerManager.stop();
+    if (learnerProfileGrpcRuntime) {
+      await learnerProfileGrpcRuntime.stop();
+      instance.learnerProfileGrpcRuntimeState = {
+        ...instance.learnerProfileGrpcRuntimeState,
+        enabled: true,
+        status: "stopped",
+      };
+    }
+    const instanceWithDecorators = instance as typeof instance & {
+      hasDecorator?: (name: string) => boolean;
+      autoRevisionWorkerManager?: { stop: () => Promise<void> };
+    };
+
+    if (instanceWithDecorators.hasDecorator?.("autoRevisionWorkerManager")) {
+      await instanceWithDecorators.autoRevisionWorkerManager.stop();
     }
     await instance.prisma.$disconnect();
     instance.redis.disconnect();

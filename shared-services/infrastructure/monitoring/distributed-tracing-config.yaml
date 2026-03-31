@@ -1,0 +1,253 @@
+# Enhanced Distributed Tracing Configuration
+# OpenTelemetry Collector Configuration for Ghatana Services
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  
+  jaeger:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:14250
+      thrift_http:
+        endpoint: 0.0.0.0:14268
+  
+  zipkin:
+    endpoint: 0.0.0.0:9411
+
+processors:
+  # Batch processor for efficient export
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+  
+  # Memory limiter to prevent OOM
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+  
+  # Resource detection
+  resourcedetection:
+    detectors: [env, system, docker]
+    timeout: 5s
+  
+  # Span metrics generation
+  spanmetrics:
+    metrics_exporter: prometheus
+    latency_histogram_buckets: [2ms, 4ms, 8ms, 16ms, 32ms, 64ms, 128ms, 256ms, 512ms, 1s, 2s, 4s, 8s]
+    dimensions:
+      - name: service.name
+      - name: span.kind
+      - name: status.code
+  
+  # Tail sampling for intelligent trace retention
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 100
+    expected_new_traces_per_sec: 10
+    policies:
+      # Always sample errors
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      
+      # Sample slow requests
+      - name: slow-requests
+        type: latency
+        latency:
+          threshold_ms: 1000
+      
+      # Sample specific services
+      - name: critical-services
+        type: string_attribute
+        string_attribute:
+          key: service.name
+          values: [aep-engine, flashit-gateway, data-cloud-api]
+      
+      # Probabilistic sampling for normal traffic
+      - name: probabilistic
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  
+  # Attribute processing
+  attributes:
+    actions:
+      - key: environment
+        value: ${env:ENVIRONMENT}
+        action: insert
+      - key: deployment.version
+        value: ${env:VERSION}
+        action: insert
+      - key: cluster
+        value: ${env:CLUSTER_NAME}
+        action: insert
+  
+  # Filter out health check spans
+  filter:
+    spans:
+      exclude:
+        match_type: regexp
+        span_names:
+          - ".*health.*"
+          - ".*ping.*"
+          - ".*readiness.*"
+          - ".*liveness.*"
+
+exporters:
+  # Jaeger exporter
+  jaeger:
+    endpoint: jaeger-collector:14250
+    tls:
+      insecure: false
+      cert_file: /etc/otel/certs/cert.pem
+      key_file: /etc/otel/certs/key.pem
+  
+  # Tempo exporter (Grafana)
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: false
+  
+  # Prometheus exporter for span metrics
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: traces
+    const_labels:
+      cluster: ${env:CLUSTER_NAME}
+  
+  # Logging exporter for debugging
+  logging:
+    loglevel: info
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  
+  pprof:
+    endpoint: 0.0.0.0:1777
+  
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, pprof, zpages]
+  
+  pipelines:
+    # Main traces pipeline
+    traces:
+      receivers: [otlp, jaeger, zipkin]
+      processors:
+        - memory_limiter
+        - resourcedetection
+        - attributes
+        - filter
+        - tail_sampling
+        - spanmetrics
+        - batch
+      exporters: [jaeger, otlp/tempo, logging]
+    
+    # Metrics from spans
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus]
+
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      level: detailed
+      address: 0.0.0.0:8888
+
+---
+# Service-specific trace propagation configuration
+
+# Java Services (AEP, Data Cloud backend)
+# Add to application.properties or application.yml
+otel:
+  service:
+    name: ${SERVICE_NAME}
+  traces:
+    exporter: otlp
+  exporter:
+    otlp:
+      endpoint: http://otel-collector:4317
+  resource:
+    attributes:
+      service.namespace: ghatana
+      deployment.environment: ${ENVIRONMENT}
+  propagators: tracecontext,baggage,b3multi
+  instrumentation:
+    http:
+      client:
+        enabled: true
+      server:
+        enabled: true
+    jdbc:
+      enabled: true
+    redis:
+      enabled: true
+
+# Node.js Services (Flashit, Audio-Video)
+# Add to service initialization
+instrumentation:
+  serviceName: ${SERVICE_NAME}
+  traceExporter:
+    type: otlp
+    endpoint: http://otel-collector:4317
+  propagators:
+    - tracecontext
+    - baggage
+    - b3multi
+  instrumentations:
+    - '@opentelemetry/instrumentation-http'
+    - '@opentelemetry/instrumentation-express'
+    - '@opentelemetry/instrumentation-pg'
+    - '@opentelemetry/instrumentation-redis'
+    - '@opentelemetry/instrumentation-fastify'
+
+# Cross-service trace context propagation
+trace-context-headers:
+  - traceparent      # W3C Trace Context
+  - tracestate       # W3C Trace State
+  - b3              # Zipkin B3 (single header)
+  - x-b3-traceid    # Zipkin B3 (multi-header)
+  - x-b3-spanid
+  - x-b3-sampled
+  - x-request-id    # Custom request ID
+  - x-correlation-id # Custom correlation ID
+
+# Sampling strategies per service
+sampling:
+  aep-engine:
+    type: parent_based_trace_id_ratio
+    ratio: 0.1  # 10% sampling
+  
+  flashit-gateway:
+    type: parent_based_trace_id_ratio
+    ratio: 0.2  # 20% sampling
+  
+  data-cloud-api:
+    type: parent_based_trace_id_ratio
+    ratio: 0.15  # 15% sampling
+  
+  audio-video-stream:
+    type: parent_based_trace_id_ratio
+    ratio: 0.05  # 5% sampling (high volume)
+  
+  # Always sample errors and slow requests
+  error_sampling:
+    type: always_on
+    conditions:
+      - status_code: ERROR
+      - latency_ms: ">1000"

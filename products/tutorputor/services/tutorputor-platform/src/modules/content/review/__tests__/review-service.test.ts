@@ -186,4 +186,47 @@ describe("GenerationReviewService", () => {
       expect(decision!.id).toBe("dec-1");
     });
   });
+
+  describe("ensurePendingDecision", () => {
+    it("reuses an existing pending review decision", async () => {
+      prisma.generationReviewDecision.findFirst.mockResolvedValue(
+        makeDecisionRow({ status: "PENDING" }),
+      );
+
+      const decision = await service.ensurePendingDecision("tenant-1", "req-1");
+
+      expect(decision.status).toBe("pending");
+      expect(prisma.generationReviewDecision.create).not.toHaveBeenCalled();
+    });
+
+    it("creates a pending review decision when one does not exist", async () => {
+      prisma.generationReviewDecision.findFirst.mockResolvedValueOnce(null);
+      prisma.generationReviewDecision.create.mockResolvedValue(
+        makeDecisionRow({
+          status: "PENDING",
+          reviewedBy: null,
+          reviewedAt: null,
+          decisionNote: "Awaiting reviewer",
+        }),
+      );
+
+      const decision = await service.ensurePendingDecision(
+        "tenant-1",
+        "req-1",
+        "Awaiting reviewer",
+      );
+
+      expect(prisma.generationReviewDecision.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            tenantId: "tenant-1",
+            requestId: "req-1",
+            status: "PENDING",
+            decisionNote: "Awaiting reviewer",
+          }),
+        }),
+      );
+      expect(decision.status).toBe("pending");
+    });
+  });
 });

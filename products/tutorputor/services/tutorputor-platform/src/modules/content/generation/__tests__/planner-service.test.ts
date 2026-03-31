@@ -170,6 +170,29 @@ describe("GenerationPlannerService", () => {
       expect(callData.targetGrades).toEqual(["5", "6"]);
     });
 
+    it("should persist requestConfig when provided", async () => {
+      await service.createRequest({
+        tenantId: "tenant-1",
+        title: "Fractions",
+        domain: "math",
+        requestedBy: "author-2",
+        requestConfig: {
+          minQualityScore: 0.92,
+          maxBudgetUsd: 1.5,
+          urgent: true,
+          learnerArchetype: "high-rigor",
+        },
+      });
+
+      const callData = prisma.generationRequest.create.mock.calls[0][0].data;
+      expect(callData.requestConfig).toEqual({
+        minQualityScore: 0.92,
+        maxBudgetUsd: 1.5,
+        urgent: true,
+        learnerArchetype: "high-rigor",
+      });
+    });
+
     it("should default optional fields to null", async () => {
       await service.createRequest({
         tenantId: "tenant-1",
@@ -198,7 +221,17 @@ describe("GenerationPlannerService", () => {
     });
 
     it("should return request with jobs", async () => {
-      const req = makeRequest({ jobs: [] });
+      const req = makeRequest({
+        jobs: [],
+        requestConfig: { minQualityScore: 0.88, learnerArchetype: "balanced" },
+        routingDecision: {
+          selectedModel: "gpt-4o-mini",
+          provider: "openai",
+          useCache: false,
+          cacheKey: "cache-key",
+          estimatedSpendUsd: 0.041,
+        },
+      });
       prisma.generationRequest.findFirst.mockResolvedValue(req);
 
       const result = await service.getRequest("tenant-1", "req-1");
@@ -206,6 +239,8 @@ describe("GenerationPlannerService", () => {
       expect(result).not.toBeNull();
       expect(result!.id).toBe("req-1");
       expect(result!.jobs).toEqual([]);
+      expect(result!.requestConfig?.minQualityScore).toBe(0.88);
+      expect(result!.routingDecision?.selectedModel).toBe("gpt-4o-mini");
     });
 
     it("should map jobs correctly", async () => {
@@ -389,6 +424,22 @@ describe("GenerationPlannerService", () => {
       expect(prisma._txProxy.generationJob.create).toHaveBeenCalledTimes(5);
     });
 
+    it("should persist dependency refs into job parameters", async () => {
+      prisma.generationRequest.findFirst.mockResolvedValue(makeRequest());
+
+      await service.planRequest("tenant-1", "req-1");
+
+      const createdJobs = prisma._txProxy.generationJob.create.mock.calls.map(
+        (call: any) => call[0].data,
+      );
+      const evaluationJob = createdJobs.find(
+        (job: any) => job.jobType === "EVALUATION",
+      );
+
+      expect(Array.isArray(evaluationJob.parameters.dependsOn)).toBe(true);
+      expect(evaluationJob.parameters.dependsOn).toContain("req-1/claim");
+    });
+
     it("should transition status from DRAFT → PLANNING → PLANNED", async () => {
       prisma.generationRequest.findFirst.mockResolvedValue(
         makeRequest({ domain: "math" }),
@@ -434,6 +485,54 @@ describe("GenerationPlannerService", () => {
 
       const result = await service.planRequest("tenant-1", "req-1");
       expect(result.totalJobs).toBe(5);
+    });
+
+    it("should include routing decision for premium planning requests", async () => {
+      prisma.generationRequest.findFirst.mockResolvedValue(
+        makeRequest({
+          domain: "math",
+          requestConfig: {
+            minQualityScore: 0.95,
+            maxBudgetUsd: 5,
+          },
+        }),
+      );
+
+      const result = await service.planRequest("tenant-1", "req-1");
+
+      expect(result.routingDecision.selectedModel).toBe("gpt-4");
+      expect(result.routingDecision.useCache).toBe(false);
+      expect(result.estimatedCost.estimatedSpendUsd).toBeGreaterThan(0);
+    });
+
+    it("should reuse cached blueprints without leaking request-scoped refs", async () => {
+      prisma.generationRequest.findFirst
+        .mockResolvedValueOnce(
+          makeRequest({
+            id: "req-1",
+            title: "Newton's Laws Explainer",
+            domain: "physics",
+          }),
+        )
+        .mockResolvedValueOnce(
+          makeRequest({
+            id: "req-2",
+            title: "Newton's Laws Explainer",
+            domain: "physics",
+          }),
+        );
+
+      await service.planRequest("tenant-1", "req-1");
+      const result = await service.planRequest("tenant-1", "req-2");
+
+      expect(result.routingDecision.useCache).toBe(true);
+      expect(result.routingDecision.selectedModel).toBe("cache");
+      expect(result.plannedAssets.every((asset) => asset.targetRef.startsWith("req-2/"))).toBe(true);
+      expect(
+        result.plannedAssets
+          .flatMap((asset) => asset.dependsOn ?? [])
+          .every((dependency) => dependency.startsWith("req-2/")),
+      ).toBe(true);
     });
   });
 

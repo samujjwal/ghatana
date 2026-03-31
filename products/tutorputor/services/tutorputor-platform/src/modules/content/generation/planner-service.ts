@@ -20,6 +20,7 @@
 import type { PrismaClient } from "@tutorputor/core/db";
 import type {
   CreateGenerationRequestInput,
+  GenerationRequestConfig,
   GenerationRequest,
   GenerationRequestWithJobs,
   GenerationJob,
@@ -28,8 +29,15 @@ import type {
   GenerationCostEstimate,
   PlanningResult,
   ReviewPath,
+  GenerationRoutingDecision,
 } from "@tutorputor/contracts/v1/content-studio";
 import type { RiskLevel } from "@tutorputor/contracts/v1/types";
+import {
+  IntelligentContentCache,
+  type CachedPlanningBlueprint,
+} from "../cache/intelligent-cache.js";
+import { CostAwareGenerationRouter } from "../routing/cost-aware-router.js";
+import type Redis from "ioredis";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -96,7 +104,15 @@ const MEDIUM_RISK_KEYWORDS = [
 // ---------------------------------------------------------------------------
 
 export class GenerationPlannerService {
-  constructor(private readonly prisma: PrismaClient) {}
+  private readonly cache: IntelligentContentCache;
+  private readonly router = new CostAwareGenerationRouter();
+
+  constructor(
+    private readonly prisma: PrismaClient,
+    redis?: Redis,
+  ) {
+    this.cache = new IntelligentContentCache(redis);
+  }
 
   /**
    * Create a new generation request in DRAFT status.
@@ -113,6 +129,7 @@ export class GenerationPlannerService {
         conceptId: input.conceptId ?? null,
         targetGrades: input.targetGrades ?? null,
         requestedBy: input.requestedBy,
+        requestConfig: input.requestConfig ?? null,
         status: "DRAFT",
       },
     });
@@ -200,12 +217,52 @@ export class GenerationPlannerService {
       data: { status: "PLANNING" },
     });
 
-    // Determine what to generate
-    const plannedAssets = this.determinePlannedAssets(request);
-    const artifactNeeds = this.computeArtifactNeeds(plannedAssets);
-    const riskAssessment = this.assessRisk(request);
-    const reviewPath = this.determineReviewPath(riskAssessment.riskLevel);
-    const estimatedCost = this.estimateCost(plannedAssets);
+    const requestConfig = this.normalizeRequestConfig(
+      (request.requestConfig as GenerationRequestConfig | null) ?? null,
+    );
+    const cacheRequest = {
+      domain: request.domain,
+      title: request.title,
+      requestConfig,
+      ...(request.conceptId ? { conceptId: request.conceptId } : {}),
+      ...((request.targetGrades as string[] | null)?.length
+        ? { targetGrades: request.targetGrades as string[] }
+        : {}),
+    };
+    const cacheKey = this.cache.generatePlanningCacheKey(cacheRequest);
+    const cachedBlueprint = await this.cache.getPlanningBlueprint(cacheKey);
+    const blueprint = cachedBlueprint
+      ? this.rehydrateBlueprint(request.id, cachedBlueprint)
+      : this.buildBlueprint(request, requestConfig);
+    const routingDecision = this.router.routeRequest(
+      {
+        cacheKey,
+        estimatedTokens: blueprint.estimatedCost.totalTokens,
+        requestConfig,
+        cacheAvailable: cachedBlueprint !== null,
+      },
+      {
+        remainingDailyBudgetUsd: requestConfig.maxBudgetUsd ?? 5,
+      },
+    );
+    const plannedAssets = blueprint.plannedAssets;
+    const artifactNeeds = blueprint.artifactNeeds;
+    const riskAssessment = {
+      riskLevel: blueprint.riskLevel,
+      riskFactors: blueprint.riskFactors,
+    };
+    const reviewPath = blueprint.reviewPath;
+    const estimatedCost = {
+      ...blueprint.estimatedCost,
+      estimatedSpendUsd: routingDecision.estimatedSpendUsd,
+      ...(routingDecision.useCache
+        ? {
+            cacheSavingsUsd:
+              blueprint.estimatedCost.estimatedSpendUsd ??
+              routingDecision.estimatedSpendUsd,
+          }
+        : {}),
+    };
 
     // Create jobs for each planned asset
     const jobData = plannedAssets.map((planned) => ({
@@ -213,7 +270,10 @@ export class GenerationPlannerService {
       jobType: planned.jobType.toUpperCase(),
       targetRef: planned.targetRef,
       inputPrompt: planned.description,
-      parameters: { estimatedTokens: planned.estimatedTokens },
+      parameters: {
+        estimatedTokens: planned.estimatedTokens,
+        dependsOn: planned.dependsOn ?? [],
+      },
       status: "PENDING",
     }));
 
@@ -232,11 +292,28 @@ export class GenerationPlannerService {
           riskFactors: riskAssessment.riskFactors,
           reviewPath: reviewPathToEnum(reviewPath),
           estimatedCost: JSON.parse(JSON.stringify(estimatedCost)),
+          routingDecision: JSON.parse(JSON.stringify(routingDecision)),
           totalJobs: plannedAssets.length,
           plannedAt: new Date(),
         },
       });
     });
+
+    if (!cachedBlueprint) {
+      const storableBlueprint: CachedPlanningBlueprint = {
+        plannedAssets: this.stripRequestScopedRefs(plannedAssets),
+        artifactNeeds,
+        riskLevel: riskAssessment.riskLevel,
+        riskFactors: riskAssessment.riskFactors,
+        reviewPath,
+        estimatedCost,
+        routingDecision,
+      };
+
+      if (this.cache.shouldCacheBlueprint(storableBlueprint)) {
+        await this.cache.setPlanningBlueprint(cacheKey, storableBlueprint);
+      }
+    }
 
     return {
       requestId,
@@ -246,6 +323,7 @@ export class GenerationPlannerService {
       riskFactors: riskAssessment.riskFactors,
       reviewPath,
       estimatedCost,
+      routingDecision,
       totalJobs: plannedAssets.length,
     };
   }
@@ -429,6 +507,7 @@ export class GenerationPlannerService {
    */
   private estimateCost(
     planned: PlannedAssetDescriptor[],
+    requestConfig: GenerationRequestConfig,
   ): GenerationCostEstimate {
     let totalTokens = 0;
     let llmCalls = 0;
@@ -443,9 +522,125 @@ export class GenerationPlannerService {
     }
 
     // Rough duration estimate: ~2s per 1000 tokens
-    const estimatedDurationMs = Math.ceil((totalTokens / 1000) * 2000);
+    const estimatedDurationMs = Math.ceil(
+      (totalTokens / 1000) * (requestConfig.urgent ? 1200 : 2000),
+    );
 
-    return { totalTokens, embeddingCalls, llmCalls, estimatedDurationMs };
+    const baselineSpendUsd = Number(
+      (
+        (totalTokens / 1000) *
+        ((requestConfig.minQualityScore ?? 0.75) >= 0.9 ? 0.04 : 0.01)
+      ).toFixed(4),
+    );
+
+    return {
+      totalTokens,
+      embeddingCalls,
+      llmCalls,
+      estimatedDurationMs,
+      estimatedSpendUsd: baselineSpendUsd,
+      cacheSavingsUsd: 0,
+    };
+  }
+
+  private normalizeRequestConfig(
+    requestConfig: GenerationRequestConfig | null,
+  ): GenerationRequestConfig {
+    return {
+      minQualityScore: clamp(requestConfig?.minQualityScore ?? 0.75, 0.5, 1),
+      urgent: requestConfig?.urgent ?? false,
+      learnerArchetype:
+        requestConfig?.learnerArchetype?.trim() ||
+        this.cache.classifyLearnerArchetype(requestConfig ?? undefined),
+      ...(requestConfig?.maxBudgetUsd !== undefined
+        ? { maxBudgetUsd: Math.max(requestConfig.maxBudgetUsd, 0) }
+        : {}),
+    };
+  }
+
+  private buildBlueprint(
+    request: {
+      id: string;
+      domain?: string | null;
+      title?: string | null;
+      description?: string | null;
+      targetGrades?: unknown;
+    },
+    requestConfig: GenerationRequestConfig,
+  ): {
+    plannedAssets: PlannedAssetDescriptor[];
+    artifactNeeds: Record<string, number>;
+    riskLevel: RiskLevel;
+    riskFactors: string[];
+    reviewPath: ReviewPath;
+    estimatedCost: GenerationCostEstimate;
+  } {
+    const plannedAssets = this.determinePlannedAssets(request);
+    const artifactNeeds = this.computeArtifactNeeds(plannedAssets);
+    const { riskLevel, riskFactors } = this.assessRisk(request);
+    const reviewPath = this.determineReviewPath(riskLevel);
+    const estimatedCost = this.estimateCost(plannedAssets, requestConfig);
+
+    return {
+      plannedAssets,
+      artifactNeeds,
+      riskLevel,
+      riskFactors,
+      reviewPath,
+      estimatedCost,
+    };
+  }
+
+  private rehydrateBlueprint(
+    requestId: string,
+    cachedBlueprint: {
+      plannedAssets: PlannedAssetDescriptor[];
+      artifactNeeds: Record<string, number>;
+      riskLevel: RiskLevel;
+      riskFactors: string[];
+      reviewPath: ReviewPath;
+      estimatedCost: GenerationCostEstimate;
+    },
+  ): {
+    plannedAssets: PlannedAssetDescriptor[];
+    artifactNeeds: Record<string, number>;
+    riskLevel: RiskLevel;
+    riskFactors: string[];
+    reviewPath: ReviewPath;
+    estimatedCost: GenerationCostEstimate;
+  } {
+    return {
+      ...cachedBlueprint,
+      plannedAssets: cachedBlueprint.plannedAssets.map((asset) => ({
+        ...asset,
+        targetRef: this.restoreRequestScopedRef(requestId, asset.targetRef),
+        ...(asset.dependsOn
+          ? {
+              dependsOn: asset.dependsOn.map((dependency) =>
+                this.restoreRequestScopedRef(requestId, dependency),
+              ),
+            }
+          : {}),
+      })),
+    };
+  }
+
+  private stripRequestScopedRefs(
+    plannedAssets: PlannedAssetDescriptor[],
+  ): PlannedAssetDescriptor[] {
+    return plannedAssets.map((asset) => ({
+      ...asset,
+      targetRef: stripRequestRef(asset.targetRef),
+      ...(asset.dependsOn
+        ? { dependsOn: asset.dependsOn.map(stripRequestRef) }
+        : {}),
+    }));
+  }
+
+  private restoreRequestScopedRef(requestId: string, ref: string): string {
+    return ref.startsWith("__REQUEST__/")
+      ? ref.replace("__REQUEST__/", `${requestId}/`)
+      : ref;
   }
 }
 
@@ -479,35 +674,46 @@ function reviewPathToEnum(path: ReviewPath): string {
   }
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function stripRequestRef(ref: string): string {
+  const slashIndex = ref.indexOf("/");
+  return slashIndex === -1 ? ref : `__REQUEST__/${ref.slice(slashIndex + 1)}`;
+}
+
 function mapRequest(row: any): GenerationRequest {
   return {
     id: row.id,
     tenantId: row.tenantId,
     title: row.title,
-    description: row.description ?? undefined,
+    ...(row.description ? { description: row.description } : {}),
     domain: row.domain,
-    conceptId: row.conceptId ?? undefined,
-    targetGrades: row.targetGrades ?? undefined,
+    ...(row.conceptId ? { conceptId: row.conceptId } : {}),
+    ...(row.targetGrades ? { targetGrades: row.targetGrades } : {}),
     requestedBy: row.requestedBy,
+    ...(row.requestConfig ? { requestConfig: row.requestConfig } : {}),
     status: (row.status as string).toLowerCase() as GenerationRequest["status"],
-    plannedAssets: row.plannedAssets ?? undefined,
-    artifactNeeds: row.artifactNeeds ?? undefined,
+    ...(row.plannedAssets ? { plannedAssets: row.plannedAssets } : {}),
+    ...(row.artifactNeeds ? { artifactNeeds: row.artifactNeeds } : {}),
     riskLevel: (row.riskLevel as string).toLowerCase() as RiskLevel,
-    riskFactors: row.riskFactors ?? undefined,
+    ...(row.riskFactors ? { riskFactors: row.riskFactors } : {}),
     reviewPath: enumToReviewPath(row.reviewPath as string),
-    estimatedCost: row.estimatedCost ?? undefined,
+    ...(row.estimatedCost ? { estimatedCost: row.estimatedCost } : {}),
+    ...(row.routingDecision ? { routingDecision: row.routingDecision } : {}),
     totalJobs: row.totalJobs,
     completedJobs: row.completedJobs,
     failedJobs: row.failedJobs,
-    plannedAt: row.plannedAt
-      ? (row.plannedAt as Date).toISOString()
-      : undefined,
-    startedAt: row.startedAt
-      ? (row.startedAt as Date).toISOString()
-      : undefined,
-    completedAt: row.completedAt
-      ? (row.completedAt as Date).toISOString()
-      : undefined,
+    ...(row.plannedAt
+      ? { plannedAt: (row.plannedAt as Date).toISOString() }
+      : {}),
+    ...(row.startedAt
+      ? { startedAt: (row.startedAt as Date).toISOString() }
+      : {}),
+    ...(row.completedAt
+      ? { completedAt: (row.completedAt as Date).toISOString() }
+      : {}),
     createdAt: (row.createdAt as Date).toISOString(),
     updatedAt: (row.updatedAt as Date).toISOString(),
   };
@@ -518,23 +724,23 @@ function mapJob(row: any): GenerationJob {
     id: row.id,
     requestId: row.requestId,
     jobType: (row.jobType as string).toLowerCase() as GenerationJob["jobType"],
-    targetRef: row.targetRef ?? undefined,
-    inputPrompt: row.inputPrompt ?? undefined,
-    parameters: row.parameters ?? undefined,
+    ...(row.targetRef ? { targetRef: row.targetRef } : {}),
+    ...(row.inputPrompt ? { inputPrompt: row.inputPrompt } : {}),
+    ...(row.parameters ? { parameters: row.parameters } : {}),
     status: (row.status as string).toLowerCase() as GenerationJob["status"],
     progress: row.progress,
-    outputAssetId: row.outputAssetId ?? undefined,
-    outputData: row.outputData ?? undefined,
-    diagnostics: row.diagnostics ?? undefined,
-    errorMessage: row.errorMessage ?? undefined,
+    ...(row.outputAssetId ? { outputAssetId: row.outputAssetId } : {}),
+    ...(row.outputData ? { outputData: row.outputData } : {}),
+    ...(row.diagnostics ? { diagnostics: row.diagnostics } : {}),
+    ...(row.errorMessage ? { errorMessage: row.errorMessage } : {}),
     retryCount: row.retryCount,
     maxRetries: row.maxRetries,
-    startedAt: row.startedAt
-      ? (row.startedAt as Date).toISOString()
-      : undefined,
-    completedAt: row.completedAt
-      ? (row.completedAt as Date).toISOString()
-      : undefined,
+    ...(row.startedAt
+      ? { startedAt: (row.startedAt as Date).toISOString() }
+      : {}),
+    ...(row.completedAt
+      ? { completedAt: (row.completedAt as Date).toISOString() }
+      : {}),
     createdAt: (row.createdAt as Date).toISOString(),
     updatedAt: (row.updatedAt as Date).toISOString(),
   };

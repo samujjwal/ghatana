@@ -3,6 +3,7 @@ import type {
   ModuleId,
   TenantId,
   UserId,
+  LtiPlatformId,
 } from "@tutorputor/contracts/v1/types";
 import {
   getTenantId,
@@ -11,6 +12,9 @@ import {
 } from "../../../core/http/requestContext.js";
 import { createLTIService } from "../../lti/service.js";
 import { createLtiServices } from "../../lti/lti-full-service.js";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
+import { AuthorizationError, ValidationError } from "@tutorputor/core";
+import { LTIValidator } from "../../lti/validation.js";
 
 /**
  * LTI integration routes - LMS interoperability.
@@ -21,44 +25,63 @@ import { createLtiServices } from "../../lti/lti-full-service.js";
  * @doc.pattern REST API
  */
 export const ltiRoutes: FastifyPluginAsync = async (app) => {
-  const prisma = app.prisma as any;
+  const prisma = app.prisma as TutorPrismaClient;
   const ltiService = createLTIService(prisma);
   const fullLtiServices = await createLtiServices(prisma);
+  const ltiValidator = new LTIValidator(fullLtiServices.launchService);
 
   /**
    * POST /launch
-   * LTI 1.3 launch endpoint
+   * LTI 1.3 launch endpoint with proper signature verification
    */
   app.post("/launch", async (request, reply) => {
-    const { id_token, state, nonce } = request.body as {
-      id_token: string;
-      state: string;
-      nonce?: string;
-    };
+    try {
+      const validation = await ltiValidator.validateLaunchRequest(
+        request.body,
+        "public" as TenantId,
+      );
 
-    if (!id_token || !state) {
-      return reply.code(400).send({ error: "ID token and state are required" });
-    }
+      app.log.info(
+        {
+          state: validation.state,
+          platformId: validation.launchContext?.platformId,
+          contextId: validation.launchContext?.contextId,
+          userSub: validation.userClaims?.sub,
+        },
+        "LTI launch validated successfully",
+      );
 
-    const result = await ltiService.validateLaunch({
-      token: id_token,
-      nonce: nonce ?? state,
-    });
-
-    if (!result.valid) {
-      return reply.code(401).send({
-        error: "Invalid LTI launch",
-        message: result.error ?? "Unknown error",
-        state,
+      return reply.code(200).send({
+        ...validation,
+        timestamp: new Date().toISOString(),
       });
-    }
+    } catch (error) {
+      app.log.warn(
+        {
+          err: error,
+          ip: request.ip,
+          userAgent: request.headers["user-agent"],
+        },
+        "LTI launch validation failed",
+      );
 
-    return reply.code(200).send({
-      state,
-      verified: true,
-      timestamp: new Date().toISOString(),
-      payload: result.payload,
-    });
+      if (error instanceof ValidationError) {
+        return reply.code(error.statusCode).send({
+          error: error.code,
+          message: error.message,
+        });
+      }
+
+      if (error instanceof AuthorizationError) {
+        return reply.code(error.statusCode).send({
+          error: "Invalid LTI launch",
+          message: error.message,
+          details: error.details,
+        });
+      }
+
+      throw error;
+    }
   });
 
   /**
@@ -173,23 +196,43 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
-    const validActivityProgress = [
+    const validActivityProgress:
+      | "Completed"
+      | "Initialized"
+      | "Started"
+      | "InProgress"
+      | "Submitted" = [
       "Completed",
       "Initialized",
       "Started",
       "InProgress",
       "Submitted",
     ].includes(activityProgress || "")
-      ? (activityProgress as any)
+      ? (activityProgress as
+          | "Completed"
+          | "Initialized"
+          | "Started"
+          | "InProgress"
+          | "Submitted")
       : "Completed";
-    const validGradingProgress = [
+    const validGradingProgress:
+      | "FullyGraded"
+      | "Pending"
+      | "PendingManual"
+      | "Failed"
+      | "NotReady" = [
       "FullyGraded",
       "Pending",
       "PendingManual",
       "Failed",
       "NotReady",
     ].includes(gradingProgress || "")
-      ? (gradingProgress as any)
+      ? (gradingProgress as
+          | "FullyGraded"
+          | "Pending"
+          | "PendingManual"
+          | "Failed"
+          | "NotReady")
       : "FullyGraded";
 
     await respondWithErrors(reply, () =>
@@ -204,7 +247,7 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
           activityProgress: validActivityProgress,
           gradingProgress: validGradingProgress,
           timestamp: timestamp ?? new Date().toISOString(),
-          comment,
+          ...(comment ? { comment } : {}),
         },
       }),
     );
@@ -327,7 +370,7 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
     await respondWithErrors(reply, async () => {
       const platform = await fullLtiServices.platformService.getPlatform({
         tenantId: tenantId as TenantId,
-        platformId: platformId as any,
+        platformId: platformId as LtiPlatformId,
       });
       if (!platform) {
         reply.code(404);
@@ -360,7 +403,7 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
     await respondWithErrors(reply, () =>
       fullLtiServices.platformService.updatePlatform({
         tenantId: tenantId as TenantId,
-        platformId: platformId as any,
+        platformId: platformId as LtiPlatformId,
         updates,
       }),
     );
@@ -378,7 +421,7 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
     await respondWithErrors(reply, async () => {
       await fullLtiServices.platformService.deactivatePlatform({
         tenantId: tenantId as TenantId,
-        platformId: platformId as any,
+        platformId: platformId as LtiPlatformId,
       });
       return { deactivated: true, platformId };
     });

@@ -11,12 +11,14 @@ import type { FastifyInstance } from "fastify";
 import { getTenantId, roleGuard } from "../../../core/http/requestContext.js";
 import type { PrismaClient } from "@tutorputor/core/db";
 import { EvaluationService } from "./evaluation-service.js";
+import { SearchSystemValidator } from "./search-validator.js";
 
 export function registerEvaluationRoutes(
   app: FastifyInstance,
   deps: { prisma: PrismaClient },
 ): void {
   const service = new EvaluationService(deps.prisma);
+  const discoveryValidator = new SearchSystemValidator(deps.prisma);
   const adminGuard = roleGuard(["admin", "content_creator", "superadmin"]);
 
   // ---------------------------------------------------------------------------
@@ -74,6 +76,19 @@ export function registerEvaluationRoutes(
       }
 
       return reply.status(200).send(record);
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // GET /evaluation/discovery-system/validate — Validate search/recommendation quality
+  // ---------------------------------------------------------------------------
+  app.get(
+    "/evaluation/discovery-system/validate",
+    { preHandler: [adminGuard] },
+    async (request, reply) => {
+      const tenantId = getTenantId(request);
+      const report = await discoveryValidator.validateDiscoverySystem(tenantId);
+      return reply.status(200).send({ discovery: report });
     },
   );
 }

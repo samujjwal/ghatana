@@ -1,0 +1,430 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "audio-video-quality",
+    "title": "Audio-Video Quality Monitoring",
+    "tags": ["audio-video", "streaming", "quality"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "5s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Stream Quality Score",
+        "type": "gauge",
+        "gridPos": {"x": 0, "y": 0, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "avg(audio_video_stream_quality_score)",
+            "legendFormat": "Quality Score",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 50, "color": "yellow"},
+                {"value": 80, "color": "green"}
+              ]
+            },
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Active Streams",
+        "type": "stat",
+        "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "count(audio_video_stream_status{status=\"live\"})",
+            "legendFormat": "Live Streams",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "blue"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Total Viewers",
+        "type": "stat",
+        "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "sum(audio_video_stream_viewers)",
+            "legendFormat": "Total Viewers",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Average Bitrate",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "avg(audio_video_stream_bitrate_kbps)",
+            "legendFormat": "Avg Bitrate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Kbps",
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 1000, "color": "yellow"},
+                {"value": 2000, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Bitrate Over Time",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "audio_video_stream_bitrate_kbps",
+            "legendFormat": "{{stream_id}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "Kbps"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Frame Rate (FPS)",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "audio_video_stream_fps",
+            "legendFormat": "{{stream_id}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "fps",
+            "min": 0,
+            "max": 60
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Dropped Frames",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(audio_video_stream_dropped_frames_total[5m])",
+            "legendFormat": "{{stream_id}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "fps"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Buffering Events",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(audio_video_buffering_events_total[5m])",
+            "legendFormat": "{{stream_id}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "bars",
+              "fillOpacity": 80
+            },
+            "unit": "events/s"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Resolution Distribution",
+        "type": "piechart",
+        "gridPos": {"x": 0, "y": 24, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "count by (resolution) (audio_video_stream_resolution)",
+            "legendFormat": "{{resolution}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Codec Distribution",
+        "type": "piechart",
+        "gridPos": {"x": 8, "y": 24, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "count by (codec) (audio_video_stream_codec)",
+            "legendFormat": "{{codec}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right"
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Viewer Engagement",
+        "type": "timeseries",
+        "gridPos": {"x": 16, "y": 24, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "audio_video_stream_viewers",
+            "legendFormat": "{{stream_id}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 20,
+              "stacking": {"mode": "normal"}
+            },
+            "unit": "viewers"
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Transcription Accuracy",
+        "type": "gauge",
+        "gridPos": {"x": 0, "y": 32, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "avg(audio_video_transcription_confidence)",
+            "legendFormat": "Confidence",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 0.7, "color": "yellow"},
+                {"value": 0.9, "color": "green"}
+              ]
+            },
+            "unit": "percentunit"
+          }
+        }
+      },
+      {
+        "id": 13,
+        "title": "Transcription Latency",
+        "type": "timeseries",
+        "gridPos": {"x": 6, "y": 32, "w": 9, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, audio_video_transcription_latency_seconds_bucket)",
+            "legendFormat": "p95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, audio_video_transcription_latency_seconds_bucket)",
+            "legendFormat": "p50",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            },
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 14,
+        "title": "Error Rate",
+        "type": "timeseries",
+        "gridPos": {"x": 15, "y": 32, "w": 9, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(audio_video_errors_total[5m])",
+            "legendFormat": "{{error_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "errors/s"
+          }
+        }
+      },
+      {
+        "id": 15,
+        "title": "Bandwidth Usage",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 40, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(audio_video_bandwidth_bytes_total[5m]))",
+            "legendFormat": "Total Bandwidth",
+            "refId": "A"
+          },
+          {
+            "expr": "sum by (direction) (rate(audio_video_bandwidth_bytes_total[5m]))",
+            "legendFormat": "{{direction}}",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "Bps"
+          }
+        }
+      },
+      {
+        "id": 16,
+        "title": "Recording Status",
+        "type": "table",
+        "gridPos": {"x": 12, "y": 40, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "audio_video_recording_status",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true, "__name__": true},
+              "indexByName": {},
+              "renameByName": {
+                "stream_id": "Stream ID",
+                "status": "Status",
+                "duration": "Duration",
+                "file_size": "File Size"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Stream Events",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "ALERTS{alertname=~\"StreamQuality.*\"}",
+          "iconColor": "red",
+          "tagKeys": "alertname,stream_id"
+        }
+      ]
+    }
+  }
+}

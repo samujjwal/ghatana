@@ -12,8 +12,12 @@ import { PrismaClient } from '@tutorputor/core/db';
 import { Logger } from 'pino';
 import { RealContentGenerationClient } from '../grpc/RealContentGenerationClient';
 import * as crypto from 'crypto';
+import {
+    type CorrelatedGenerationJobData,
+    ContentWorkerTelemetryPublisher,
+} from '../generation-telemetry';
 
-export interface ContentValidationJobData {
+export interface ContentValidationJobData extends CorrelatedGenerationJobData {
     experienceId: string;
     checkCorrectness: boolean;
     checkCompleteness: boolean;
@@ -26,7 +30,8 @@ export class ContentValidationProcessor {
     constructor(
         private grpcClient: RealContentGenerationClient,
         private prisma: PrismaClient,
-        private logger: Logger
+        private logger: Logger,
+        private telemetry?: ContentWorkerTelemetryPublisher,
     ) { }
 
     async process(job: Job<ContentValidationJobData>): Promise<void> {
@@ -38,6 +43,13 @@ export class ContentValidationProcessor {
         );
 
         try {
+            await this.telemetry?.publishForJob(job, {
+                stage: 'validation_loading',
+                message: 'Loading experience content for validation',
+                progressPercent: 10,
+                status: 'running',
+            });
+
             // Fetch experience with all content
             const experience = await this.prisma.learningExperience.findUnique({
                 where: { id: experienceId },
@@ -111,6 +123,19 @@ export class ContentValidationProcessor {
                 'Content validated successfully'
             );
 
+            const responseCost = ContentWorkerTelemetryPublisher.extractCostFromMetadata(response.metadata);
+            await this.telemetry?.publishForJob(job, {
+                stage: 'validation_completed',
+                message: 'Validation response received',
+                progressPercent: 70,
+                status: 'running',
+                ...(responseCost ? { cost: responseCost } : {}),
+                diagnostics: {
+                    passed: response.report?.passed,
+                    overallScore: response.report?.overall_score,
+                },
+            });
+
             // Store validation results
             // Schema has changed: uses specific scores and ValidationStatus enum
             const overallStatus = response.report?.passed ? 'PASS' : 'FAIL';
@@ -153,6 +178,18 @@ export class ContentValidationProcessor {
                 { jobId: job.id, experienceId },
                 'Content validation job completed'
             );
+
+            await this.telemetry?.publishForJob(job, {
+                stage: 'validation_persisted',
+                message: 'Validation record persisted',
+                progressPercent: 90,
+                status: 'running',
+                diagnostics: {
+                    experienceId,
+                    passed: response.report?.passed,
+                    issueCount: response.report?.issues?.length || 0,
+                },
+            });
 
         } catch (error: any) {
             this.logger.error(

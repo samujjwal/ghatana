@@ -12,6 +12,7 @@ import {
   respondWithErrors,
 } from "../../../core/http/requestContext.js";
 import { createBillingService } from "./service.js";
+import { createPaymentCircuitBreaker } from "../../../utils/circuit-breaker.js";
 
 /**
  * Billing routes - subscriptions and payments.
@@ -24,6 +25,30 @@ import { createBillingService } from "./service.js";
 export const billingRoutes: FastifyPluginAsync = async (app) => {
   const prisma = app.prisma as any;
   const billingService = createBillingService(prisma);
+
+  // Create circuit breakers for external services
+  const stripeCircuitBreaker = createPaymentCircuitBreaker(
+    "stripe-webhook",
+    async (...args: unknown[]) => {
+      const [stripeSecretKey, bodyString, signature, webhookSecret] = args as [
+        string,
+        string,
+        string,
+        string,
+      ];
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(stripeSecretKey, {
+        apiVersion: "2026-02-25.clover",
+        maxNetworkRetries: 3,
+      });
+      return stripe.webhooks.constructEvent(
+        bodyString,
+        signature,
+        webhookSecret,
+      );
+    },
+    app.log,
+  );
 
   /**
    * POST /checkout
@@ -122,36 +147,52 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
   /**
    * POST /webhook
    * Receive and process Stripe events (checkout.session.completed, etc.).
-   * Must be registered with raw body parsing – add `rawBody: true` to Fastify
-   * instance options to enable stripe signature verification.
+   * Authenticity is verified via Stripe-Signature header.
    */
   app.post(
     "/webhook",
     {
-      config: { rawBody: true },
+      config: {
+        rawBody: true,
+        // Add rate limiting for webhooks to prevent abuse
+        rateLimit: {
+          max: 100,
+          timeWindow: "1 minute",
+        },
+      },
     },
     async (req, reply) => {
       const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
       if (!webhookSecret) {
-        // Stripe webhook secret not configured – log and ignore
-        app.log.warn("STRIPE_WEBHOOK_SECRET is not set; webhook ignored");
-        return reply.code(200).send({ received: true });
+        app.log.error(
+          "STRIPE_WEBHOOK_SECRET is not set; webhook processing disabled",
+        );
+        return reply.code(500).send({
+          error: "Webhook not configured",
+          received: false,
+        });
       }
 
       const signature = req.headers["stripe-signature"] as string | undefined;
       if (!signature) {
+        app.log.warn("Webhook request missing stripe-signature header");
         return reply
           .code(400)
           .send({ error: "Missing stripe-signature header" });
       }
 
-      // Retrieve the raw body written by fastify-raw-body or the built-in rawBody option.
-      const rawBody: Buffer | string | undefined =
-        (req as any).rawBody ?? (req as any).body;
+      // Retrieve the raw body - Fastify 5.x provides it via req.body when rawBody is enabled
+      const rawBody = req.body as string | Buffer;
 
-      if (!rawBody) {
-        return reply.code(400).send({ error: "Raw request body unavailable" });
+      if (!rawBody || rawBody.length === 0) {
+        app.log.warn("Webhook request missing body");
+        return reply.code(400).send({ error: "Request body is required" });
       }
+
+      // Convert Buffer to string if needed
+      const bodyString = Buffer.isBuffer(rawBody)
+        ? rawBody.toString("utf8")
+        : rawBody;
 
       let event: { type: string; data: { object: any } };
       try {
@@ -165,23 +206,32 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
             .send({ error: "Stripe webhook is not configured" });
         }
 
-        // Dynamic require avoids a hard Stripe SDK dependency if the key is absent.
-        const Stripe = (await import("stripe")).default;
-        const stripe = new Stripe(stripeSecretKey, {
-          apiVersion: "2023-10-16" as any,
-        });
-        event = stripe.webhooks.constructEvent(
-          rawBody,
+        // Verify webhook signature using circuit breaker
+        event = await stripeCircuitBreaker.execute(
+          stripeSecretKey,
+          bodyString,
           signature,
           webhookSecret,
-        ) as any;
-      } catch (err) {
-        app.log.warn({ err }, "Stripe webhook signature verification failed");
+        );
+
+        app.log.info(
+          { eventType: event.type, eventId: (event as any).id },
+          "Stripe webhook signature verified successfully",
+        );
+      } catch (err: any) {
+        app.log.warn(
+          {
+            err: err.message,
+            signature: signature.substring(0, 20) + "...",
+          },
+          "Stripe webhook signature verification failed",
+        );
         return reply
           .code(400)
           .send({ error: "Webhook signature verification failed" });
       }
 
+      // Process the verified event
       try {
         switch (event.type) {
           case "checkout.session.completed": {
@@ -189,19 +239,124 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
               id: string;
               metadata?: { tenantId?: string; sessionId?: string };
               payment_status: string;
+              customer?: string;
+              amount_total?: number;
             };
+
             const sessionId = session.metadata?.sessionId ?? session.id;
             const tenantId = session.metadata?.tenantId;
 
-            if (tenantId && sessionId && session.payment_status === "paid") {
+            if (!tenantId) {
+              app.log.error(
+                { sessionId, eventId: (event as any).id },
+                "Stripe webhook: missing tenantId in metadata",
+              );
+              break;
+            }
+
+            if (session.payment_status === "paid") {
               // Mark the checkout session as paid and create a purchase record
-              await prisma.checkoutSession.updateMany({
-                where: { id: sessionId, tenantId },
-                data: { status: "COMPLETED" },
+              const result = await prisma.checkoutSession.updateMany({
+                where: { id: sessionId, tenantId, status: "PENDING" },
+                data: {
+                  status: "COMPLETED",
+                  completedAt: new Date(),
+                  stripeSessionId: session.id,
+                  stripeCustomerId: session.customer,
+                },
               });
+
+              if (result.count === 0) {
+                app.log.warn(
+                  { sessionId, tenantId },
+                  "Stripe webhook: no pending checkout session found",
+                );
+              } else {
+                app.log.info(
+                  { sessionId, tenantId, amount: session.amount_total },
+                  "Stripe webhook: checkout.session.completed processed",
+                );
+              }
+            } else {
+              app.log.warn(
+                { sessionId, tenantId, paymentStatus: session.payment_status },
+                "Stripe webhook: payment not successful",
+              );
+            }
+            break;
+          }
+
+          case "checkout.session.expired": {
+            const session = event.data.object as {
+              id: string;
+              metadata?: { tenantId?: string; sessionId?: string };
+            };
+
+            const sessionId = session.metadata?.sessionId ?? session.id;
+            const tenantId = session.metadata?.tenantId;
+
+            if (tenantId && sessionId) {
+              await prisma.checkoutSession.updateMany({
+                where: { id: sessionId, tenantId, status: "PENDING" },
+                data: { status: "EXPIRED" },
+              });
+
               app.log.info(
                 { sessionId, tenantId },
-                "Stripe webhook: checkout.session.completed processed",
+                "Stripe webhook: checkout.session.expired processed",
+              );
+            }
+            break;
+          }
+
+          case "customer.subscription.created":
+          case "customer.subscription.updated": {
+            const sub = event.data.object as {
+              id: string;
+              metadata?: { tenantId?: string };
+              status: string;
+              current_period_start: number;
+              current_period_end: number;
+              trial_start?: number;
+              trial_end?: number;
+            };
+
+            const tenantId = sub.metadata?.tenantId;
+            if (tenantId) {
+              await prisma.subscription.upsert({
+                where: { tenantId },
+                update: {
+                  status: sub.status as any,
+                  stripeSubscriptionId: sub.id,
+                  currentPeriodStart: new Date(sub.current_period_start * 1000),
+                  currentPeriodEnd: new Date(sub.current_period_end * 1000),
+                  trialStart: sub.trial_start
+                    ? new Date(sub.trial_start * 1000)
+                    : null,
+                  trialEnd: sub.trial_end
+                    ? new Date(sub.trial_end * 1000)
+                    : null,
+                },
+                create: {
+                  tenantId,
+                  planId: "pro", // Default plan - should be configurable
+                  tier: "pro",
+                  status: sub.status as any,
+                  stripeSubscriptionId: sub.id,
+                  currentPeriodStart: new Date(sub.current_period_start * 1000),
+                  currentPeriodEnd: new Date(sub.current_period_end * 1000),
+                  trialStart: sub.trial_start
+                    ? new Date(sub.trial_start * 1000)
+                    : null,
+                  trialEnd: sub.trial_end
+                    ? new Date(sub.trial_end * 1000)
+                    : null,
+                },
+              });
+
+              app.log.info(
+                { tenantId, subscriptionId: sub.id, status: sub.status },
+                `Stripe webhook: ${event.type} processed`,
               );
             }
             break;
@@ -212,32 +367,69 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
               id: string;
               metadata?: { tenantId?: string };
             };
+
             const tenantId = sub.metadata?.tenantId;
             if (tenantId) {
-              await prisma.subscription
-                ?.updateMany?.({
-                  where: { stripeSubscriptionId: sub.id, tenantId },
-                  data: { status: "canceled" },
-                })
-                .catch((err: unknown) => {
-                  app.log.warn({ err }, "subscription model not available");
-                });
+              await prisma.subscription.updateMany({
+                where: { tenantId },
+                data: { status: "canceled", canceledAt: new Date() },
+              });
+
+              app.log.info(
+                { tenantId, subscriptionId: sub.id },
+                "Stripe webhook: customer.subscription.deleted processed",
+              );
+            }
+            break;
+          }
+
+          case "invoice.payment_succeeded":
+          case "invoice.payment_failed": {
+            const invoice = event.data.object as {
+              id: string;
+              subscription?: string;
+              metadata?: { tenantId?: string };
+              status: string;
+            };
+
+            const tenantId = invoice.metadata?.tenantId;
+            if (tenantId && invoice.subscription) {
+              // Update subscription payment status
+              await prisma.subscription.updateMany({
+                where: {
+                  tenantId,
+                  stripeSubscriptionId: invoice.subscription,
+                },
+                data: {
+                  lastPaymentStatus: invoice.status,
+                  lastPaymentAt: new Date(),
+                },
+              });
+
+              app.log.info(
+                { tenantId, invoiceId: invoice.id, status: invoice.status },
+                `Stripe webhook: ${event.type} processed`,
+              );
             }
             break;
           }
 
           default:
             app.log.debug(
-              { type: event.type },
+              { type: event.type, eventId: (event as any).id },
               "Unhandled Stripe webhook event",
             );
         }
-      } catch (processingErr) {
+      } catch (processingErr: any) {
         app.log.error(
-          { processingErr, eventType: event.type },
+          {
+            processingErr: processingErr.message,
+            eventType: event.type,
+            eventId: (event as any).id,
+          },
           "Error processing Stripe webhook event",
         );
-        // Return 200 to Stripe so it does not retry; log for manual investigation.
+        // Return 200 to Stripe so it does not retry; log for manual investigation
       }
 
       return reply.code(200).send({ received: true });

@@ -10,6 +10,18 @@ import type {
 } from "@tutorputor/contracts/v1/types";
 
 /**
+ * Gamification Service
+ *
+ * Provides gamification features including badges, achievements, points,
+ * leaderboards, and user progress tracking to enhance learner engagement.
+ *
+ * @doc.type service
+ * @doc.purpose Gamification and engagement features
+ * @doc.layer product
+ * @doc.pattern Domain Service
+ */
+
+/**
  * Badge creation input.
  */
 export interface CreateBadgeInput {
@@ -412,9 +424,7 @@ export class GamificationService {
       where: { tenantId, userId: { in: userIds } },
       _count: { id: true },
     });
-    const badgeMap = new Map(
-      badgeCounts.map((b) => [b.userId, b._count.id]),
-    );
+    const badgeMap = new Map(badgeCounts.map((b) => [b.userId, b._count.id]));
 
     return pointsEntries.map((p, index: number) => ({
       rank: offset + index + 1,

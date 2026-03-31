@@ -28,12 +28,14 @@ function mapDecision(row: any): GenerationReviewDecision {
     status: (row.status as string)
       .toLowerCase()
       .replace(/_/g, "_") as GenerationReviewDecision["status"],
-    reviewedBy: row.reviewedBy ?? undefined,
-    decisionNote: row.decisionNote ?? undefined,
-    regenerateJobIds: row.regenerateJobIds ?? undefined,
-    reviewedAt: row.reviewedAt
-      ? (row.reviewedAt as Date).toISOString()
-      : undefined,
+    ...(row.reviewedBy != null ? { reviewedBy: row.reviewedBy } : {}),
+    ...(row.decisionNote != null ? { decisionNote: row.decisionNote } : {}),
+    ...(row.regenerateJobIds != null
+      ? { regenerateJobIds: row.regenerateJobIds as string[] }
+      : {}),
+    ...(row.reviewedAt
+      ? { reviewedAt: (row.reviewedAt as Date).toISOString() }
+      : {}),
     createdAt: (row.createdAt as Date).toISOString(),
     updatedAt: (row.updatedAt as Date).toISOString(),
   };
@@ -125,5 +127,37 @@ export class GenerationReviewService {
       },
     );
     return decision ? mapDecision(decision) : null;
+  }
+
+  /**
+   * Ensure there is at least one pending review decision record for the request.
+   * This keeps manual-review work visible without duplicating pending rows.
+   */
+  async ensurePendingDecision(
+    tenantId: string,
+    requestId: string,
+    decisionNote?: string,
+  ): Promise<GenerationReviewDecision> {
+    const existing = await (this.prisma as any).generationReviewDecision.findFirst(
+      {
+        where: { tenantId, requestId, status: "PENDING" },
+        orderBy: { createdAt: "desc" },
+      },
+    );
+
+    if (existing) {
+      return mapDecision(existing);
+    }
+
+    const created = await (this.prisma as any).generationReviewDecision.create({
+      data: {
+        tenantId,
+        requestId,
+        status: "PENDING",
+        decisionNote: decisionNote ?? null,
+      },
+    });
+
+    return mapDecision(created);
   }
 }

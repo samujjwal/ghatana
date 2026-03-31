@@ -16,7 +16,9 @@ import {
   roleGuard,
 } from "../../../core/http/requestContext.js";
 import type { PrismaClient } from "@tutorputor/core/db";
+import type { GenerationQualityLoopSummary } from "@tutorputor/contracts/v1/content-studio";
 import { GenerationReviewService } from "./review-service.js";
+import { GenerationQualityLoopService } from "./quality-loop-service.js";
 import type { SubmitReviewDecisionInput } from "@tutorputor/contracts/v1/content-studio";
 
 export function registerReviewRoutes(
@@ -24,6 +26,7 @@ export function registerReviewRoutes(
   deps: { prisma: PrismaClient },
 ): void {
   const service = new GenerationReviewService(deps.prisma);
+  const qualityLoopService = new GenerationQualityLoopService(deps.prisma);
   const adminGuard = roleGuard(["admin", "superadmin"]);
 
   // ---------------------------------------------------------------------------
@@ -80,6 +83,53 @@ export function registerReviewRoutes(
         return reply.status(404).send({ error: "No review decision found" });
       }
       return reply.status(200).send(decision);
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // GET /review/requests/:requestId/quality-summary — Evaluate and summarize next action
+  // ---------------------------------------------------------------------------
+  app.get<{ Params: { requestId: string } }>(
+    "/review/requests/:requestId/quality-summary",
+    { preHandler: [adminGuard] },
+    async (request, reply) => {
+      const tenantId = getTenantId(request);
+      const { requestId } = request.params;
+
+      const summary = await qualityLoopService.processRequestOutcome(
+        tenantId,
+        requestId,
+        {
+          autoPublish: false,
+        },
+      );
+      return reply.status(200).send(summary satisfies GenerationQualityLoopSummary);
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // POST /review/requests/:requestId/process-quality-loop — Apply evaluation outcome
+  // ---------------------------------------------------------------------------
+  app.post<{
+    Params: { requestId: string };
+    Body: { autoPublish?: boolean };
+  }>(
+    "/review/requests/:requestId/process-quality-loop",
+    { preHandler: [adminGuard] },
+    async (request, reply) => {
+      const tenantId = getTenantId(request);
+      const reviewedBy = getUserId(request);
+      const { requestId } = request.params;
+
+      const summary = await qualityLoopService.processRequestOutcome(
+        tenantId,
+        requestId,
+        {
+          autoPublish: request.body?.autoPublish ?? true,
+          actorId: reviewedBy,
+        },
+      );
+      return reply.status(200).send(summary satisfies GenerationQualityLoopSummary);
     },
   );
 }

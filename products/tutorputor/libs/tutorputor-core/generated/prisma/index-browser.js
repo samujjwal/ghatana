@@ -1153,6 +1153,87 @@ exports.Prisma.UserScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.LearnerProfileScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  preferredDifficulty: 'preferredDifficulty',
+  preferredModality: 'preferredModality',
+  preferredPacing: 'preferredPacing',
+  preferredSessionMinutes: 'preferredSessionMinutes',
+  notificationFrequency: 'notificationFrequency',
+  visualLearningScore: 'visualLearningScore',
+  auditoryLearningScore: 'auditoryLearningScore',
+  kinestheticLearningScore: 'kinestheticLearningScore',
+  readingLearningScore: 'readingLearningScore',
+  avgSessionMinutes: 'avgSessionMinutes',
+  preferredTimeOfDay: 'preferredTimeOfDay',
+  streakDays: 'streakDays',
+  lastActiveAt: 'lastActiveAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.LearnerMasteryScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  profileId: 'profileId',
+  conceptId: 'conceptId',
+  masteryProbability: 'masteryProbability',
+  confidenceScore: 'confidenceScore',
+  attempts: 'attempts',
+  correctAttempts: 'correctAttempts',
+  incorrectAttempts: 'incorrectAttempts',
+  hintsUsed: 'hintsUsed',
+  totalTimeSeconds: 'totalTimeSeconds',
+  lastObservedAt: 'lastObservedAt',
+  nextReviewAt: 'nextReviewAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.KnowledgeGapScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  profileId: 'profileId',
+  conceptId: 'conceptId',
+  prerequisiteId: 'prerequisiteId',
+  severity: 'severity',
+  detectedBy: 'detectedBy',
+  status: 'status',
+  evidence: 'evidence',
+  detectionCount: 'detectionCount',
+  lastDetectedAt: 'lastDetectedAt',
+  resolvedAt: 'resolvedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PreferenceChangeScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  profileId: 'profileId',
+  changedBy: 'changedBy',
+  reason: 'reason',
+  changes: 'changes',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.LearningPathwayScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  profileId: 'profileId',
+  title: 'title',
+  goal: 'goal',
+  status: 'status',
+  recommendedModules: 'recommendedModules',
+  currentModuleId: 'currentModuleId',
+  progressPercent: 'progressPercent',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.IdentityProviderScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -1681,6 +1762,33 @@ exports.Prisma.ABExperimentScalarFieldEnum = {
   priority: 'priority'
 };
 
+exports.Prisma.ABExperimentAssignmentScalarFieldEnum = {
+  id: 'id',
+  experimentId: 'experimentId',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  variant: 'variant',
+  assignedAt: 'assignedAt',
+  lastSeenAt: 'lastSeenAt',
+  metadata: 'metadata'
+};
+
+exports.Prisma.ABExperimentObservationScalarFieldEnum = {
+  id: 'id',
+  experimentId: 'experimentId',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  variant: 'variant',
+  sessionId: 'sessionId',
+  assetId: 'assetId',
+  metricValue: 'metricValue',
+  completed: 'completed',
+  masteryScore: 'masteryScore',
+  feedbackScore: 'feedbackScore',
+  metadata: 'metadata',
+  observedAt: 'observedAt'
+};
+
 exports.Prisma.DriftSignalScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -1956,6 +2064,7 @@ exports.Prisma.GenerationRequestScalarFieldEnum = {
   conceptId: 'conceptId',
   targetGrades: 'targetGrades',
   requestedBy: 'requestedBy',
+  requestConfig: 'requestConfig',
   status: 'status',
   plannedAssets: 'plannedAssets',
   artifactNeeds: 'artifactNeeds',
@@ -1963,6 +2072,7 @@ exports.Prisma.GenerationRequestScalarFieldEnum = {
   riskFactors: 'riskFactors',
   reviewPath: 'reviewPath',
   estimatedCost: 'estimatedCost',
+  routingDecision: 'routingDecision',
   totalJobs: 'totalJobs',
   completedJobs: 'completedJobs',
   failedJobs: 'failedJobs',
@@ -2420,6 +2530,52 @@ exports.SimulationTemplateStatus = exports.$Enums.SimulationTemplateStatus = {
   ARCHIVED: 'ARCHIVED'
 };
 
+exports.LearnerDifficultyPreference = exports.$Enums.LearnerDifficultyPreference = {
+  BEGINNER: 'BEGINNER',
+  EASY: 'EASY',
+  MEDIUM: 'MEDIUM',
+  HARD: 'HARD',
+  EXPERT: 'EXPERT'
+};
+
+exports.LearnerModalityPreference = exports.$Enums.LearnerModalityPreference = {
+  VISUAL: 'VISUAL',
+  AUDITORY: 'AUDITORY',
+  KINESTHETIC: 'KINESTHETIC',
+  READING: 'READING',
+  MIXED: 'MIXED'
+};
+
+exports.LearnerPacingPreference = exports.$Enums.LearnerPacingPreference = {
+  SELF_PACED: 'SELF_PACED',
+  GUIDED: 'GUIDED',
+  ADAPTIVE: 'ADAPTIVE',
+  INTENSIVE: 'INTENSIVE'
+};
+
+exports.KnowledgeGapSeverity = exports.$Enums.KnowledgeGapSeverity = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  CRITICAL: 'CRITICAL'
+};
+
+exports.KnowledgeGapDetectionMethod = exports.$Enums.KnowledgeGapDetectionMethod = {
+  ASSESSMENT: 'ASSESSMENT',
+  PREREQUISITE_CHECK: 'PREREQUISITE_CHECK',
+  ADAPTIVE_ANALYSIS: 'ADAPTIVE_ANALYSIS',
+  LEARNER_REPORTED: 'LEARNER_REPORTED',
+  AI_PREDICTION: 'AI_PREDICTION'
+};
+
+exports.LearnerPathwayStatus = exports.$Enums.LearnerPathwayStatus = {
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  PAUSED: 'PAUSED',
+  COMPLETED: 'COMPLETED',
+  ABANDONED: 'ABANDONED'
+};
+
 exports.AssetType = exports.$Enums.AssetType = {
   MODEL_3D: 'MODEL_3D',
   TEXTURE: 'TEXTURE',
@@ -2750,6 +2906,11 @@ exports.Prisma.ModelName = {
   Tenant: 'Tenant',
   TenantSettings: 'TenantSettings',
   User: 'User',
+  LearnerProfile: 'LearnerProfile',
+  LearnerMastery: 'LearnerMastery',
+  KnowledgeGap: 'KnowledgeGap',
+  PreferenceChange: 'PreferenceChange',
+  LearningPathway: 'LearningPathway',
   IdentityProvider: 'IdentityProvider',
   SsoUserLink: 'SsoUserLink',
   DataExportRequest: 'DataExportRequest',
@@ -2787,6 +2948,8 @@ exports.Prisma.ModelName = {
   ClaimSimulation: 'ClaimSimulation',
   ClaimAnimation: 'ClaimAnimation',
   ABExperiment: 'ABExperiment',
+  ABExperimentAssignment: 'ABExperimentAssignment',
+  ABExperimentObservation: 'ABExperimentObservation',
   DriftSignal: 'DriftSignal',
   RegenerationInsight: 'RegenerationInsight',
   AutoRevisionConfig: 'AutoRevisionConfig',

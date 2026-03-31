@@ -17,6 +17,16 @@ import type {
   TrackExplorerEventInput,
   TrackBatchEventsInput,
 } from "@tutorputor/contracts/v1/content-studio";
+import { createLearnerProfileService } from "../../learning/learner-profile-service.js";
+
+const POSITIVE_FEEDBACK = new Set(["positive", "helpful", "relevant"]);
+const NEGATIVE_FEEDBACK = new Set(["negative", "not_relevant", "unhelpful"]);
+
+interface LearnerSignalAsset {
+  id: string;
+  conceptId: string | null;
+  assetType: string | null;
+}
 
 // ---------------------------------------------------------------------------
 // Mapper
@@ -48,7 +58,11 @@ function mapEvent(row: any): ExplorerEvent {
 // ---------------------------------------------------------------------------
 
 export class TelemetryService {
-  constructor(private readonly prisma: PrismaClient) {}
+  private readonly learnerProfileService;
+
+  constructor(private readonly prisma: PrismaClient) {
+    this.learnerProfileService = createLearnerProfileService(prisma as never);
+  }
 
   /**
    * Record a single explorer interaction event.
@@ -74,6 +88,13 @@ export class TelemetryService {
         occurredAt: input.occurredAt ? new Date(input.occurredAt) : new Date(),
       },
     });
+
+    await this.markRecommendationStateStale(
+      tenantId,
+      input.assetId ? [input.assetId] : [],
+      [input.eventType],
+    );
+    await this.applyLearnerFeedbackSignals(tenantId, [input]);
 
     return mapEvent(row);
   }
@@ -106,6 +127,15 @@ export class TelemetryService {
       skipDuplicates: true,
     });
 
+    await this.markRecommendationStateStale(
+      tenantId,
+      input.events
+        .map((evt) => evt.assetId)
+        .filter((assetId): assetId is string => typeof assetId === "string"),
+      input.events.map((evt) => evt.eventType),
+    );
+    await this.applyLearnerFeedbackSignals(tenantId, input.events);
+
     return { count: result.count };
   }
 
@@ -130,4 +160,136 @@ export class TelemetryService {
 
     return rows.map(mapEvent);
   }
+
+  private async markRecommendationStateStale(
+    tenantId: string,
+    assetIds: string[],
+    eventTypes: string[],
+  ): Promise<void> {
+    const relevantTypes = new Set([
+      "click",
+      "asset_complete",
+      "next_step_select",
+      "ranking_feedback",
+    ]);
+
+    if (
+      assetIds.length === 0 ||
+      !eventTypes.some((eventType) => relevantTypes.has(eventType))
+    ) {
+      return;
+    }
+
+    await (this.prisma as any).contentAsset.updateMany({
+      where: {
+        tenantId,
+        id: { in: [...new Set(assetIds)] },
+      },
+      data: {
+        recommendationStatus: "STALE",
+      },
+    });
+  }
+
+  private async applyLearnerFeedbackSignals(
+    tenantId: string,
+    events: TrackExplorerEventInput[],
+  ): Promise<void> {
+    const actionable = events.filter(
+      (event) =>
+        typeof event.userId === "string" &&
+        typeof event.assetId === "string" &&
+        (event.eventType === "asset_complete" ||
+          event.eventType === "ranking_feedback"),
+    );
+
+    if (actionable.length === 0) {
+      return;
+    }
+
+    const assets = (await (this.prisma as any).contentAsset.findMany({
+      where: {
+        tenantId,
+        id: { in: actionable.map((event) => event.assetId) },
+      },
+      select: {
+        id: true,
+        conceptId: true,
+        assetType: true,
+      },
+    })) as LearnerSignalAsset[];
+    const assetMap = new Map<string, LearnerSignalAsset>(
+      assets.map((asset) => [asset.id, asset]),
+    );
+
+    for (const event of actionable) {
+      const asset = assetMap.get(event.assetId!);
+      if (!asset?.conceptId || !event.userId) {
+        continue;
+      }
+
+      if (event.eventType === "asset_complete") {
+        const durationSeconds =
+          typeof event.metadata?.["durationSeconds"] === "number"
+            ? Number(event.metadata["durationSeconds"])
+            : undefined;
+        await this.learnerProfileService.updateMastery(tenantId, event.userId, {
+          conceptId: asset.conceptId,
+          correct: true,
+          confidence: 0.45,
+          attempts: 1,
+          modalityUsed: inferModalityFromAssetType(asset.assetType),
+          ...(durationSeconds !== undefined
+            ? { timeSpentSeconds: durationSeconds }
+            : {}),
+          ...(event.occurredAt ? { sessionStartedAt: event.occurredAt } : {}),
+        });
+        continue;
+      }
+
+      const label = String(event.feedbackLabel ?? "").toLowerCase();
+      if (POSITIVE_FEEDBACK.has(label)) {
+        await this.learnerProfileService.updateMastery(tenantId, event.userId, {
+          conceptId: asset.conceptId,
+          correct: true,
+          confidence: 0.35,
+          attempts: 1,
+          modalityUsed: inferModalityFromAssetType(asset.assetType),
+          ...(event.occurredAt ? { sessionStartedAt: event.occurredAt } : {}),
+        });
+      } else if (NEGATIVE_FEEDBACK.has(label)) {
+        await this.learnerProfileService.recordKnowledgeGap(
+          tenantId,
+          event.userId,
+          {
+            conceptId: asset.conceptId,
+            prerequisiteId: `${asset.conceptId}-foundation`,
+            severity: "MEDIUM",
+            detectedBy: "LEARNER_REPORTED",
+            evidence: {
+              source: "explorer_telemetry",
+              feedbackLabel: label,
+              assetId: asset.id,
+            },
+          },
+        );
+      }
+    }
+  }
+}
+
+function inferModalityFromAssetType(assetType: string | null | undefined) {
+  const normalized = String(assetType ?? "").toLowerCase();
+  if (
+    normalized === "simulation" ||
+    normalized === "animation" ||
+    normalized === "video" ||
+    normalized === "image"
+  ) {
+    return "VISUAL" as const;
+  }
+  if (normalized === "audio") {
+    return "AUDITORY" as const;
+  }
+  return "READING" as const;
 }

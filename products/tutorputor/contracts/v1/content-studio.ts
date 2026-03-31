@@ -845,6 +845,24 @@ export interface GenerationCostEstimate {
   embeddingCalls: number;
   llmCalls: number;
   estimatedDurationMs: number;
+  estimatedSpendUsd?: number;
+  cacheSavingsUsd?: number;
+}
+
+export interface GenerationRequestConfig {
+  minQualityScore?: number;
+  maxBudgetUsd?: number;
+  urgent?: boolean;
+  learnerArchetype?: string;
+}
+
+export interface GenerationRoutingDecision {
+  selectedModel: string;
+  provider: string;
+  useCache: boolean;
+  cacheKey?: string;
+  estimatedSpendUsd: number;
+  warning?: string;
 }
 
 /**
@@ -859,6 +877,7 @@ export interface GenerationRequest {
   conceptId?: string;
   targetGrades?: string[];
   requestedBy: string;
+  requestConfig?: GenerationRequestConfig;
   status: GenerationRequestStatus;
   plannedAssets?: PlannedAssetDescriptor[];
   artifactNeeds?: Record<string, number>;
@@ -866,6 +885,7 @@ export interface GenerationRequest {
   riskFactors?: string[];
   reviewPath: ReviewPath;
   estimatedCost?: GenerationCostEstimate;
+  routingDecision?: GenerationRoutingDecision;
   totalJobs: number;
   completedJobs: number;
   failedJobs: number;
@@ -911,6 +931,7 @@ export interface PlanningResult {
   riskFactors: string[];
   reviewPath: ReviewPath;
   estimatedCost: GenerationCostEstimate;
+  routingDecision: GenerationRoutingDecision;
   totalJobs: number;
 }
 
@@ -925,6 +946,7 @@ export interface CreateGenerationRequestInput {
   conceptId?: string;
   targetGrades?: string[];
   requestedBy: string;
+  requestConfig?: GenerationRequestConfig;
 }
 
 /**
@@ -932,6 +954,77 @@ export interface CreateGenerationRequestInput {
  */
 export interface GenerationRequestWithJobs extends GenerationRequest {
   jobs: GenerationJob[];
+}
+
+export interface GenerationExecutionProgress {
+  totalJobs: number;
+  completedJobs: number;
+  failedJobs: number;
+  runningJobs: number;
+  pendingJobs: number;
+  cancelledJobs: number;
+  completionPercent: number;
+  terminal: boolean;
+  cost?: GenerationExecutionCostSummary;
+  latestWorkerStage?: string;
+  latestWorkerMessage?: string;
+}
+
+export interface GenerationExecutionCostSummary {
+  estimatedTokens: number;
+  actualTokens: number;
+  estimatedCostUsd: number;
+  actualCostUsd: number;
+}
+
+export interface GenerationExecutionWorkerTelemetry {
+  at: string;
+  requestId: string;
+  jobId: string;
+  jobType?: GenerationJobType | undefined;
+  stage: string;
+  message: string;
+  progressPercent?: number | undefined;
+  status?: GenerationJobStatus | undefined;
+  diagnostics?: Record<string, unknown> | undefined;
+  cost?: {
+    model?: string | undefined;
+    estimatedTokens?: number | undefined;
+    actualTokens?: number | undefined;
+    estimatedCostUsd?: number | undefined;
+    actualCostUsd?: number | undefined;
+    generationTimeMs?: number | undefined;
+  } | undefined;
+}
+
+export interface GenerationExecutionEvent {
+  type:
+    | "request_created"
+    | "request_planned"
+    | "request_started"
+    | "job_started"
+    | "job_progress"
+    | "job_cost_updated"
+    | "job_completed"
+    | "job_failed"
+    | "request_completed"
+    | "request_failed";
+  at: string;
+  requestId: string;
+  jobId?: string;
+  jobType?: GenerationJobType;
+  status?: GenerationJobStatus | GenerationRequestStatus;
+  message: string;
+  stage?: string;
+  progressPercent?: number;
+  diagnostics?: Record<string, unknown>;
+  cost?: GenerationExecutionWorkerTelemetry["cost"];
+}
+
+export interface GenerationExecutionSnapshot {
+  request: GenerationRequestWithJobs;
+  progress: GenerationExecutionProgress;
+  events: GenerationExecutionEvent[];
 }
 
 // =============================================================================
@@ -1031,6 +1124,31 @@ export interface SubmitReviewDecisionInput {
   regenerateJobIds?: string[];
 }
 
+export type GenerationQualityLoopNextAction =
+  | "auto_published"
+  | "ready_for_manual_review"
+  | "ready_for_publish"
+  | "regeneration_required"
+  | "awaiting_assets";
+
+export interface GenerationQualityLoopSummary {
+  requestId: string;
+  reviewPath: ReviewPath;
+  evaluation: EvaluationScorecard;
+  latestDecision?: GenerationReviewDecision;
+  openCandidates: RegenerationCandidate[];
+  nextAction: GenerationQualityLoopNextAction;
+  autoPublished: boolean;
+  publishResult?: {
+    published: number;
+    skipped: number;
+    results: PublishResult[];
+  };
+  publishedAssetIds: string[];
+  eligibleAssetIds: string[];
+  blockedAssetIds: string[];
+}
+
 // =============================================================================
 // P4.1 — Explorer Telemetry Events
 // =============================================================================
@@ -1128,6 +1246,308 @@ export interface CreateRegenerationCandidateInput {
   priority?: number;
 }
 
+export type AssetOutcomeHealthStatus = "healthy" | "watch" | "intervene";
+
+export interface AssetOutcomeSummary {
+  assetId: string;
+  assetStatus: ContentAssetStatus;
+  evaluationScore?: number;
+  evaluationRecommendation?: PublishRecommendation;
+  latestReviewStatus?: GenerationReviewDecisionStatus;
+  telemetry: {
+    impressions: number;
+    clicks: number;
+    completions: number;
+    nextStepSelections: number;
+    positiveFeedback: number;
+    negativeFeedback: number;
+    ctr: number;
+    completionRate: number;
+    feedbackRatio: number;
+  };
+  engagementScore: number;
+  confidenceScore: number;
+  healthStatus: AssetOutcomeHealthStatus;
+  openCandidateCount: number;
+  recommendedActions: string[];
+  experimentSummary?: {
+    observationCount: number;
+    controlMean?: number;
+    treatmentMean?: number;
+    relativeLift?: number;
+    dominantVariant?: "control" | "treatment" | "balanced";
+  };
+  recommendationRefresh?: {
+    processedAssets: number;
+    updatedEdges: number;
+    skippedEdges: number;
+  };
+}
+
+export interface ExperienceRemediationSummary {
+  experienceId: string;
+  totalAssets: number;
+  healthyAssets: number;
+  watchAssets: number;
+  interveneAssets: number;
+  driftSignalCount: number;
+  driftInsightCount: number;
+  runningExperiments: number;
+  promotableExperiments: number;
+  recommendedActions: string[];
+  qualityPredictionsApplied?: number;
+  recommendationRefresh?: {
+    processedAssets: number;
+    updatedEdges: number;
+    skippedEdges: number;
+  };
+  policyBreakdown?: {
+    primaryDriver:
+      | "quality"
+      | "outcomes"
+      | "drift"
+      | "experiments"
+      | "recommendations"
+      | "balanced";
+    policySource?: "heuristic" | "trained_empirical" | "trained_causal_blend";
+    qualityPriority: number;
+    outcomePriority: number;
+    driftPriority: number;
+    experimentPriority: number;
+    recommendationPriority: number;
+    learnedWeights?: {
+      quality: number;
+      outcomes: number;
+      drift: number;
+      experiments: number;
+      recommendations: number;
+    };
+    causalWeights?: {
+      quality: number;
+      outcomes: number;
+      drift: number;
+      experiments: number;
+      recommendations: number;
+    };
+    modelConfidence?: number;
+  };
+  executedActions?: string[];
+}
+
+export interface ExperienceRemediationIntervention {
+  action:
+    | "apply_quality_predictions"
+    | "recompute_asset_outcomes"
+    | "refresh_recommendation_edges"
+    | "scan_adaptive_drift"
+    | "evaluate_active_experiments"
+    | "promote_experiment_winners";
+  dimension:
+    | "quality"
+    | "outcomes"
+    | "drift"
+    | "experiments"
+    | "recommendations";
+  score: number;
+  expectedImpact: number;
+  confidence: number;
+  source: "trained_empirical" | "trained_causal" | "causal_proxy";
+  rationale: string;
+}
+
+export interface ExperienceRemediationInterventionPlan {
+  experienceId: string;
+  primaryDriver:
+    | "quality"
+    | "outcomes"
+    | "drift"
+    | "experiments"
+    | "recommendations"
+    | "balanced";
+  interventions: ExperienceRemediationIntervention[];
+}
+
+export interface ExperienceRemediationInterventionExecution {
+  experienceId: string;
+  appliedActions: string[];
+  skippedActions: string[];
+  limit: number;
+  baselineSummary: ExperienceRemediationSummary;
+  summary: ExperienceRemediationSummary;
+  delta: {
+    healthyAssets: number;
+    watchAssets: number;
+    interveneAssets: number;
+    driftSignalCount: number;
+    promotableExperiments: number;
+  };
+}
+
+export interface TenantExperienceRemediationPriority {
+  experienceId: string;
+  title?: string;
+  priorityScore: number;
+  primaryDriver:
+    | "quality"
+    | "outcomes"
+    | "drift"
+    | "experiments"
+    | "recommendations"
+    | "balanced";
+  totalAssets: number;
+  interveneAssets: number;
+  driftSignalCount: number;
+  promotableExperiments: number;
+}
+
+export interface TenantRemediationPortfolio {
+  tenantId: string;
+  generatedAt: string;
+  experiences: TenantExperienceRemediationPriority[];
+}
+
+export interface TenantPortfolioRemediationIntervention
+  extends ExperienceRemediationIntervention {
+  experienceId: string;
+  title?: string;
+  priorityScore: number;
+  primaryDriver:
+    | "quality"
+    | "outcomes"
+    | "drift"
+    | "experiments"
+    | "recommendations"
+    | "balanced";
+}
+
+export interface TenantRemediationPortfolioPlan {
+  tenantId: string;
+  generatedAt: string;
+  interventions: TenantPortfolioRemediationIntervention[];
+}
+
+export interface TenantRemediationPortfolioExecutionItem {
+  experienceId: string;
+  title?: string;
+  selectedActions: ExperienceRemediationIntervention["action"][];
+  result: ExperienceRemediationInterventionExecution;
+}
+
+export interface TenantRemediationPortfolioExecution {
+  tenantId: string;
+  generatedAt: string;
+  processedExperiences: number;
+  appliedExperiences: number;
+  totalAppliedActions: number;
+  items: TenantRemediationPortfolioExecutionItem[];
+}
+
+export interface TenantRemediationPolicyProfile {
+  tenantId: string;
+  totalPublishedAssets: number;
+  staleRecommendationAssets: number;
+  lowConfidenceAssets: number;
+  watchAssets: number;
+  interveneAssets: number;
+  runningExperiments: number;
+  promotableExperiments: number;
+  priorityWeights: {
+    quality: number;
+    outcomes: number;
+    drift: number;
+    experiments: number;
+    recommendations: number;
+  };
+  policyModel?: {
+    source: "trained_empirical";
+    sampleSize: number;
+    confidence: number;
+    weights: {
+      quality: number;
+      outcomes: number;
+      drift: number;
+      experiments: number;
+      recommendations: number;
+    };
+    observedLift: {
+      quality: number;
+      outcomes: number;
+      drift: number;
+      experiments: number;
+      recommendations: number;
+    };
+  };
+  causalModel?: {
+    source: "trained_causal";
+    sampleSize: number;
+    confidence: number;
+    weights: {
+      quality: number;
+      outcomes: number;
+      drift: number;
+      experiments: number;
+      recommendations: number;
+    };
+    observedLift: {
+      quality: number;
+      outcomes: number;
+      drift: number;
+      experiments: number;
+      recommendations: number;
+    };
+  };
+  policyBlend?: {
+    empiricalWeight: number;
+    causalWeight: number;
+  };
+  recommendedFocus:
+    | "quality"
+    | "outcomes"
+    | "drift"
+    | "experiments"
+    | "recommendations"
+    | "balanced";
+}
+
+export interface TenantRemediationPolicyScenario {
+  scenario: "baseline" | "quality_boost" | "outcome_boost" | "drift_boost" | "experiment_boost" | "recommendation_boost";
+  primaryDriver:
+    | "quality"
+    | "outcomes"
+    | "drift"
+    | "experiments"
+    | "recommendations"
+    | "balanced";
+  weights: {
+    quality: number;
+    outcomes: number;
+    drift: number;
+    experiments: number;
+    recommendations: number;
+  };
+  expectedPriority: number;
+}
+
+export interface TenantRemediationPolicyScenarioAnalysis {
+  tenantId: string;
+  baselineFocus:
+    | "quality"
+    | "outcomes"
+    | "drift"
+    | "experiments"
+    | "recommendations"
+    | "balanced";
+  baselineConfidence: number;
+  scenarios: TenantRemediationPolicyScenario[];
+  recommendedScenario:
+    | "baseline"
+    | "quality_boost"
+    | "outcome_boost"
+    | "drift_boost"
+    | "experiment_boost"
+    | "recommendation_boost";
+}
+
 // =============================================================================
 // P4.4 — Closed-Loop Publish & Reindex
 // =============================================================================
@@ -1147,4 +1567,13 @@ export interface PublishResult {
   recommendationStatus?: "pending" | "computed" | "stale";
   semanticIndexQueued?: boolean;
   recommendationRecomputeQueued?: boolean;
+  qualityPredictionApplied?: boolean;
+  outcomeAnalysisApplied?: boolean;
+  recommendationRefresh?: {
+    bootstrapCreated: number;
+    bootstrapSkipped: number;
+    processedAssets: number;
+    updatedEdges: number;
+    skippedEdges: number;
+  };
 }

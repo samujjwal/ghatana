@@ -16,13 +16,24 @@ import type {
   PublishAssetInput,
   PublishResult,
 } from "@tutorputor/contracts/v1/content-studio";
+import { RecommendationService } from "../recommendation/recommendation-service.js";
+import { AssetOutcomeService } from "../recommendation/asset-outcome-service.js";
+import { ContentQualityMLPipeline } from "../quality-ml/pipeline.js";
 
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
 
 export class PublishService {
-  constructor(private readonly prisma: PrismaClient) {}
+  private readonly recommendationService: RecommendationService;
+  private readonly outcomeService: AssetOutcomeService;
+  private readonly qualityPipeline: ContentQualityMLPipeline;
+
+  constructor(private readonly prisma: PrismaClient) {
+    this.recommendationService = new RecommendationService(prisma);
+    this.outcomeService = new AssetOutcomeService(prisma);
+    this.qualityPipeline = new ContentQualityMLPipeline(prisma);
+  }
 
   /**
    * Publish an asset that has passed evaluation.
@@ -82,33 +93,55 @@ export class PublishService {
     }
 
     // Validate manifests for structured content types
-    const MANIFEST_TYPES = ["simulation", "animation", "assessment", "example"];
+    const MANIFEST_TYPES = ["simulation", "animation", "assessment", "example_set"];
     if (MANIFEST_TYPES.includes((asset.assetType ?? "").toLowerCase())) {
-      const manifestData = asset.manifestData as any;
-      if (!manifestData) {
+      const manifests = await (this.prisma as any).artifactManifest.findMany({
+        where: { assetId: input.assetId },
+      });
+      if (manifests.length === 0) {
         return {
           assetId: input.assetId,
           published: false,
           reason: `${asset.assetType} assets require a valid manifest before publishing.`,
         };
       }
-      if (!manifestData.id) {
+      const invalidManifest = manifests.find((manifest: any) => !manifest.isValid);
+      if (invalidManifest) {
         return {
           assetId: input.assetId,
           published: false,
-          reason: "Manifest missing required field: id",
+          reason: "One or more attached manifests failed validation",
         };
       }
     }
+
+    await this.qualityPipeline.applyPrediction(tenantId, input.assetId);
 
     // Publish
     await (this.prisma as any).contentAsset.update({
       where: { id: input.assetId },
       data: {
         status: "PUBLISHED",
+        publishedAt: new Date(),
         semanticIndexStatus: "PENDING",
         recommendationStatus: "STALE",
       },
+    });
+
+    const bootstrap = await this.recommendationService.bootstrapEdges(
+      tenantId,
+      input.assetId,
+    );
+    const refresh = await this.recommendationService.recomputeOutcomeAwareEdges(
+      tenantId,
+      {
+        sourceAssetId: input.assetId,
+        limit: 1,
+      },
+    );
+    await this.outcomeService.analyzeAsset(tenantId, input.assetId, {
+      apply: true,
+      recomputeRecommendations: false,
     });
 
     return {
@@ -116,9 +149,18 @@ export class PublishService {
       published: true,
       publishedAt: new Date().toISOString(),
       semanticIndexStatus: "pending",
-      recommendationStatus: "stale",
+      recommendationStatus: "computed",
       semanticIndexQueued: true,
       recommendationRecomputeQueued: true,
+      qualityPredictionApplied: true,
+      outcomeAnalysisApplied: true,
+      recommendationRefresh: {
+        bootstrapCreated: bootstrap.created,
+        bootstrapSkipped: bootstrap.skipped,
+        processedAssets: refresh.processedAssets,
+        updatedEdges: refresh.updatedEdges,
+        skippedEdges: refresh.skippedEdges,
+      },
     };
   }
 

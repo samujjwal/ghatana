@@ -13,6 +13,12 @@ import type {
 } from '@tutorputor/contracts/v1/simulation';
 
 import type { SimulationTemplate, SimulationParameter } from '../authoring';
+import {
+  getSimulationStarterByLegacyPresetId,
+  listSimulationStarters,
+  type SimulationStarter,
+} from '../starter-catalog';
+import { createSimulationStarterManifest } from '../starter-packaging';
 
 // =============================================================================
 // Types
@@ -66,11 +72,33 @@ export interface SimulationPreset {
   educationalNotes: string;
 }
 
+export type LegacyAutoRuntimeStatus =
+  | 'governed_starter_available'
+  | 'legacy_compatibility_only';
+
+export interface LegacyAutoRuntimePresetSummary {
+  id: string;
+  name: string;
+  description: string;
+  domain: string;
+  retirementStatus: LegacyAutoRuntimeStatus;
+  starterId?: string;
+  audience?: 'k12' | 'undergraduate' | 'graduate' | 'professional';
+}
+
+export interface LegacyAutoRuntimeSummary {
+  totalPresets: number;
+  governedStarterAvailable: number;
+  compatibilityOnly: number;
+  byDomain: Record<string, { total: number; governedStarterAvailable: number; compatibilityOnly: number }>;
+  items: LegacyAutoRuntimePresetSummary[];
+}
+
 // =============================================================================
 // Simulation Presets Library (50+ Presets)
 // =============================================================================
 
-export const SimulationPresets: SimulationPreset[] = [
+const SimulationPresets: SimulationPreset[] = [
   // PHYSICS PRESETS (1-20)
   {
     id: 'preset-newton-first',
@@ -1078,6 +1106,135 @@ export const SimulationPresets: SimulationPreset[] = [
   },
 ];
 
+export function getSimulationPresetById(id: string): SimulationPreset | null {
+  const normalizedId = id.trim().toLowerCase();
+  const preset = SimulationPresets.find(
+    (candidate) => candidate.id.toLowerCase() === normalizedId,
+  );
+  return preset ? structuredClone(preset) : null;
+}
+
+function toLegacyRuntimePresetSummary(
+  preset: SimulationPreset,
+): LegacyAutoRuntimePresetSummary {
+  const starter = getSimulationStarterByLegacyPresetId(preset.id);
+  return {
+    id: preset.id,
+    name: preset.name,
+    description: preset.description,
+    domain: preset.domain,
+    retirementStatus: starter
+      ? 'governed_starter_available'
+      : 'legacy_compatibility_only',
+    ...(starter ? { starterId: starter.id } : {}),
+    ...(starter ? { audience: starter.audience } : {}),
+  };
+}
+
+function toStarterBackedPreset(starter: SimulationStarter): SimulationPreset {
+  return {
+    id: starter.legacyPresetIds[0] ?? starter.id,
+    name: starter.name,
+    description: starter.summary,
+    domain: toAutoDomainFromStarter(starter.domain),
+    manifest: starter.manifest,
+    educationalNotes: starter.summary,
+  };
+}
+
+function toAutoDomainFromStarter(domain: SimulationStarter['domain']): AutoSimulationRequest['domain'] {
+  switch (domain) {
+    case 'PHYSICS':
+      return 'physics';
+    case 'CHEMISTRY':
+      return 'chemistry';
+    case 'BIOLOGY':
+      return 'biology';
+    case 'MEDICINE':
+      return 'medicine';
+    case 'CS_DISCRETE':
+      return 'cs';
+    default:
+      return 'math';
+  }
+}
+
+export function listLegacyRuntimePresetSummaries(input: {
+  domain?: AutoSimulationRequest['domain'];
+  status?: LegacyAutoRuntimeStatus;
+  query?: string;
+} = {}): LegacyAutoRuntimePresetSummary[] {
+  const query = input.query?.trim().toLowerCase();
+  return SimulationPresets.map(toLegacyRuntimePresetSummary)
+    .filter((preset) => (input.domain ? preset.domain === input.domain : true))
+    .filter((preset) => (input.status ? preset.retirementStatus === input.status : true))
+    .filter((preset) =>
+      query
+        ? `${preset.name} ${preset.description} ${preset.domain}`
+            .toLowerCase()
+            .includes(query)
+        : true,
+    );
+}
+
+export function getLegacyAutoRuntimeSummary(): LegacyAutoRuntimeSummary {
+  const items = listLegacyRuntimePresetSummaries();
+  const byDomain = items.reduce<
+    Record<string, { total: number; governedStarterAvailable: number; compatibilityOnly: number }>
+  >((acc, item) => {
+    const bucket = acc[item.domain] ?? {
+      total: 0,
+      governedStarterAvailable: 0,
+      compatibilityOnly: 0,
+    };
+    bucket.total += 1;
+    if (item.retirementStatus === 'governed_starter_available') {
+      bucket.governedStarterAvailable += 1;
+    } else {
+      bucket.compatibilityOnly += 1;
+    }
+    acc[item.domain] = bucket;
+    return acc;
+  }, {});
+
+  return {
+    totalPresets: items.length,
+    governedStarterAvailable: items.filter(
+      (item) => item.retirementStatus === 'governed_starter_available',
+    ).length,
+    compatibilityOnly: items.filter(
+      (item) => item.retirementStatus === 'legacy_compatibility_only',
+    ).length,
+    byDomain,
+    items,
+  };
+}
+
+function dedupePresetList(presets: SimulationPreset[]): SimulationPreset[] {
+  const seen = new Set<string>();
+  const items: SimulationPreset[] = [];
+  for (const preset of presets) {
+    if (seen.has(preset.id)) {
+      continue;
+    }
+    seen.add(preset.id);
+    items.push(preset);
+  }
+  return items;
+}
+
+function isGovernedStarterAvailable(preset: SimulationPreset): boolean {
+  return getSimulationStarterByLegacyPresetId(preset.id) !== null;
+}
+
+function listLegacyCompatibilityFallbacks(
+  domain?: AutoSimulationRequest['domain'],
+): SimulationPreset[] {
+  return SimulationPresets.filter((preset) => !isGovernedStarterAvailable(preset)).filter(
+    (preset) => (domain ? preset.domain === domain : true),
+  );
+}
+
 // =============================================================================
 // Automatic Simulation Generator
 // =============================================================================
@@ -1087,17 +1244,17 @@ export class AutoSimulationService {
    * Generate simulation from natural language description
    */
   async generateFromDescription(request: AutoSimulationRequest): Promise<AutoSimulationResult> {
-    // Analyze request to determine appropriate preset
-    const preset = this.selectPreset(request);
-    
-    // Customize preset based on request parameters
-    const manifest = this.customizePreset(preset, request);
-    
-    // Generate educational content
+    const starter = this.selectStarter(request);
+    const preset = starter
+      ? toStarterBackedPreset(starter)
+      : this.selectLegacyPreset(request);
+    const manifest = starter
+      ? this.customizeStarterManifest(starter, request)
+      : this.customizePreset(preset, request);
     const educational = this.generateEducationalContent(preset, request);
-    
-    // Calculate confidence
-    const confidence = this.calculateConfidence(request, preset);
+    const confidence = starter
+      ? Math.min(0.98, this.calculateConfidence(request, preset) + 0.1)
+      : this.calculateConfidence(request, preset);
     
     return {
       manifest,
@@ -1130,28 +1287,64 @@ export class AutoSimulationService {
    */
   searchPresets(query: string): SimulationPreset[] {
     const lower = query.toLowerCase();
-    return SimulationPresets.filter(
+    const starterBacked = listSimulationStarters({
+      query,
+    }).map(toStarterBackedPreset);
+    const rawFallbacks = listLegacyCompatibilityFallbacks().filter(
       (p) =>
         p.name.toLowerCase().includes(lower) ||
         p.description.toLowerCase().includes(lower) ||
         p.domain.toLowerCase().includes(lower)
     );
+    return dedupePresetList([...starterBacked, ...rawFallbacks]);
   }
 
   /**
    * Get presets by domain
    */
   getPresetsByDomain(domain: string): SimulationPreset[] {
-    return SimulationPresets.filter((p) => p.domain === domain);
+    const starterBacked = listSimulationStarters().filter(
+      (starter) => toAutoDomainFromStarter(starter.domain) === domain,
+    ).map(toStarterBackedPreset);
+    const rawFallbacks = listLegacyCompatibilityFallbacks(
+      domain as AutoSimulationRequest['domain'],
+    );
+    return dedupePresetList([...starterBacked, ...rawFallbacks]);
   }
 
   // =============================================================================
   // Private Methods
   // =============================================================================
 
-  private selectPreset(request: AutoSimulationRequest): SimulationPreset {
+  private selectStarter(request: AutoSimulationRequest): SimulationStarter | null {
+    const starters = listSimulationStarters({
+      ...(request.audience ? { audience: request.audience } : {}),
+      ...(request.description ? { query: request.description } : {}),
+    }).filter((starter) => toAutoDomainFromStarter(starter.domain) === request.domain);
+
+    if (starters.length > 0) {
+      return starters[0] ?? null;
+    }
+
+    const aliasedStarter = listSimulationStarters().find((starter) =>
+      starter.legacyPresetIds.some((legacyId) =>
+        this.extractKeywords(request.description).some((keyword) =>
+          legacyId.toLowerCase().includes(keyword) ||
+          starter.name.toLowerCase().includes(keyword),
+        ),
+      ) &&
+      toAutoDomainFromStarter(starter.domain) === request.domain,
+    );
+
+    return aliasedStarter ?? null;
+  }
+
+  private selectLegacyPreset(request: AutoSimulationRequest): SimulationPreset {
     // Filter by domain
-    let candidates = SimulationPresets.filter((p) => p.domain === request.domain);
+    let candidates = listLegacyCompatibilityFallbacks(request.domain);
+    if (candidates.length === 0) {
+      candidates = SimulationPresets.filter((p) => p.domain === request.domain);
+    }
     
     // Filter by difficulty if specified
     if (request.difficulty) {
@@ -1176,44 +1369,71 @@ export class AutoSimulationService {
     return candidates[0] || SimulationPresets[0];
   }
 
+  private customizeStarterManifest(
+    starter: SimulationStarter,
+    request: AutoSimulationRequest,
+  ): SimulationManifest {
+    const manifest =
+      createSimulationStarterManifest({
+        starterRef: starter.id,
+        title: request.learningObjective ?? starter.name,
+      }) ?? structuredClone(starter.manifest);
+
+    if (request.description) {
+      manifest.description = request.description;
+    }
+
+    return this.customizeManifestShape(manifest, request);
+  }
+
   private customizePreset(
     preset: SimulationPreset,
     request: AutoSimulationRequest
   ): SimulationManifest {
     // Deep clone the manifest
     const manifest: SimulationManifest = JSON.parse(JSON.stringify(preset.manifest)) as SimulationManifest;
-    
-    // Set required fields
-    manifest.id = `auto-${Date.now()}`;
-    manifest.version = '1.0.0';
-    manifest.createdAt = new Date().toISOString();
+    return this.customizeManifestShape(manifest, request);
+  }
+
+  private customizeManifestShape(
+    manifest: SimulationManifest,
+    request: AutoSimulationRequest,
+  ): SimulationManifest {
+    manifest.id = (manifest.id || `auto-${Date.now()}`) as SimulationManifest['id'];
+    manifest.version = manifest.version || '1.0.0';
+    manifest.createdAt = manifest.createdAt || new Date().toISOString();
     manifest.updatedAt = new Date().toISOString();
-    
-    // Adjust entity count if specified
-    if (request.entityCount && manifest.entities) {
-      const currentCount = manifest.entities.length;
+
+    const entities = Array.isArray((manifest as { entities?: SimEntityBase[] }).entities)
+      ? ([...(manifest as { entities?: SimEntityBase[] }).entities!] as SimEntityBase[])
+      : [];
+    const steps = Array.isArray(manifest.steps) ? [...manifest.steps] : [];
+
+    if (request.entityCount) {
+      const currentCount = entities.length;
       if (request.entityCount > currentCount) {
-        // Add generic entities
         for (let i = currentCount; i < request.entityCount; i++) {
-          manifest.entities.push(this.createGenericEntity(i));
+          entities.push(this.createGenericEntity(i));
         }
       } else if (request.entityCount < currentCount) {
-        // Remove excess entities
-        manifest.entities = manifest.entities.slice(0, request.entityCount);
+        entities.splice(request.entityCount);
       }
     }
-    
-    // Adjust duration if specified
-    if (request.duration && manifest.steps) {
-      const totalCurrentDuration = manifest.steps.reduce((sum, s) => sum + (s.duration || 0), 0);
-      const scaleFactor = (request.duration * 1000) / totalCurrentDuration;
-      
-      manifest.steps = manifest.steps.map((step) => ({
+
+    if (request.duration && steps.length > 0) {
+      const totalCurrentDuration = steps.reduce((sum, step) => sum + (step.duration || 0), 0);
+      const scaleFactor = totalCurrentDuration > 0
+        ? (request.duration * 1000) / totalCurrentDuration
+        : 1;
+      manifest.steps = steps.map((step) => ({
         ...step,
         duration: Math.round((step.duration || 1000) * scaleFactor),
       }));
+    } else {
+      manifest.steps = steps;
     }
-    
+
+    (manifest as unknown as { entities?: SimEntityBase[] }).entities = entities;
     return manifest;
   }
 

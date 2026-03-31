@@ -317,7 +317,8 @@ export type AssessmentItemType =
   | "multiple_choice_multi"
   | "short_answer"
   | "code"
-  | "free_response";
+  | "free_response"
+  | "simulation_interaction";
 
 export interface AssessmentItemChoice {
   id: string;
@@ -370,7 +371,23 @@ export type AssessmentResponse =
   | { type: "multiple_choice"; selectedChoiceIds: string[] }
   | { type: "short_answer"; text: string }
   | { type: "code"; language: string; source: string }
-  | { type: "free_response"; text: string };
+  | { type: "free_response"; text: string }
+  | {
+      type: "simulation_interaction";
+      trace: {
+        interactions: Array<{
+          type: string;
+          parameterId?: string;
+          value?: string | number | boolean;
+          predictedOutcome?: string;
+          observedOutcome?: string;
+          note?: string;
+          timestampMs?: number;
+        }>;
+        durationMs?: number;
+        summary?: string;
+      };
+    };
 
 export interface AssessmentFeedback {
   itemId: AssessmentItemId;
@@ -1730,5 +1747,4 @@ export interface LtiGradePassbackResult {
   error?: string;
   passedAt?: string;
 }
-
 

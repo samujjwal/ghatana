@@ -10,6 +10,16 @@
  */
 
 import { createStandaloneLogger } from './logger';
+import {
+  DomainError as BaseDomainError,
+  ValidationError as BaseValidationError,
+  NotFoundError as BaseNotFoundError,
+  AuthorizationError as BaseUnauthorizedError,
+  ForbiddenError as BaseForbiddenError,
+  ConflictError as BaseConflictError,
+  RateLimitError as BaseRateLimitError,
+  ServiceUnavailableError as BaseExternalServiceError,
+} from "./errors/index.js";
 
 const logger = createStandaloneLogger({ component: 'ErrorHandling' });
 
@@ -17,73 +27,45 @@ const logger = createStandaloneLogger({ component: 'ErrorHandling' });
 // Error Types
 // =============================================================================
 
-export class DomainError extends Error {
+export class DomainError extends BaseDomainError {
   constructor(
     message: string,
-    public readonly code: string,
-    public readonly statusCode: number = 400,
-    public readonly details?: Record<string, unknown>,
+    code: string,
+    statusCode: number = 400,
+    details?: Record<string, unknown>,
   ) {
-    super(message);
-    this.name = 'DomainError';
-    Error.captureStackTrace(this, this.constructor);
+    super(code, message, statusCode, details);
   }
 }
 
-export class ValidationError extends DomainError {
+export class ValidationError extends BaseValidationError {
   constructor(message: string, details?: Record<string, unknown>) {
-    super(message, 'VALIDATION_ERROR', 400, details);
-    this.name = 'ValidationError';
+    super(message, undefined, details);
   }
 }
 
-export class NotFoundError extends DomainError {
+export class NotFoundError extends BaseNotFoundError {
   constructor(resource: string, identifier?: string) {
-    super(
-      identifier ? `${resource} not found: ${identifier}` : `${resource} not found`,
-      'NOT_FOUND',
-      404,
-      { resource, identifier },
-    );
-    this.name = 'NotFoundError';
+    super(resource, identifier ?? resource, identifier ? undefined : { resource });
   }
 }
 
-export class UnauthorizedError extends DomainError {
-  constructor(message: string = 'Unauthorized') {
-    super(message, 'UNAUTHORIZED', 401);
-    this.name = 'UnauthorizedError';
-  }
-}
+export class UnauthorizedError extends BaseUnauthorizedError {}
+export class ForbiddenError extends BaseForbiddenError {}
+export class ConflictError extends BaseConflictError {}
 
-export class ForbiddenError extends DomainError {
-  constructor(message: string = 'Forbidden') {
-    super(message, 'FORBIDDEN', 403);
-    this.name = 'ForbiddenError';
-  }
-}
-
-export class ConflictError extends DomainError {
-  constructor(message: string, details?: Record<string, unknown>) {
-    super(message, 'CONFLICT', 409, details);
-    this.name = 'ConflictError';
-  }
-}
-
-export class RateLimitError extends DomainError {
+export class RateLimitError extends BaseRateLimitError {
   constructor(message: string = 'Rate limit exceeded', retryAfter?: number) {
-    super(message, 'RATE_LIMIT_EXCEEDED', 429, { retryAfter });
-    this.name = 'RateLimitError';
+    super(message, retryAfter !== undefined ? { retryAfter } : undefined);
   }
 }
 
-export class ExternalServiceError extends DomainError {
+export class ExternalServiceError extends BaseExternalServiceError {
   constructor(service: string, message: string, details?: Record<string, unknown>) {
-    super(`External service error: ${service} - ${message}`, 'EXTERNAL_SERVICE_ERROR', 502, {
+    super(`External service error: ${service} - ${message}`, {
       service,
       ...details,
     });
-    this.name = 'ExternalServiceError';
   }
 }
 

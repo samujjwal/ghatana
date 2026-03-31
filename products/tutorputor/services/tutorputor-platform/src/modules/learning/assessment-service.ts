@@ -27,10 +27,21 @@ import type {
   AssessmentId,
   Difficulty,
 } from "@tutorputor/contracts/v1/types";
-import type { TutorPrismaClient } from "@tutorputor/core/db";
+import type { Prisma, TutorPrismaClient } from "@tutorputor/core/db";
 
 import { aiClient } from "../../clients/ai-client";
 import { createStandaloneLogger } from '@tutorputor/core/logger';
+import { createLearnerProfileService } from "./learner-profile-service.js";
+import { IRTCalibrationService } from "../assessment/irt/service.js";
+import { MisconceptionDatabase } from "../assessment/misconceptions/database.js";
+import {
+  MisconceptionDetector,
+  type MisconceptionSignal,
+} from "../assessment/misconceptions/detector.js";
+import {
+  createSimulationAssessmentIntegration,
+  scoreSimulationAssessmentResponse,
+} from "../assessment/simulation-integration/service.js";
 
 const logger = createStandaloneLogger({ component: 'AssessmentService' });
 
@@ -42,8 +53,23 @@ export type HealthAwareAssessmentService = AssessmentService & {
   checkHealth: () => Promise<boolean>;
 };
 
-type AssessmentRecord = any;
-type AssessmentAttemptRecord = any;
+type AssessmentRecord = Prisma.AssessmentGetPayload<{
+  include: {
+    items: true;
+    objectives: true;
+  };
+}>;
+
+type AssessmentAttemptRecord = Prisma.AssessmentAttemptGetPayload<{
+  include: {
+    assessment: {
+      include: {
+        items: true;
+        objectives: true;
+      };
+    };
+  };
+}>;
 
 interface DomainError extends Error {
   code: string;
@@ -57,6 +83,9 @@ interface DomainError extends Error {
 const DEFAULT_GENERATOR_MODEL =
   process.env['ASSESSMENT_MODEL_ID'] ?? 'tutorputor-assessment-v1';
 const MAX_GENERATED_ITEMS = 10;
+const irtService = new IRTCalibrationService();
+const misconceptionDatabase = new MisconceptionDatabase();
+const misconceptionDetector = new MisconceptionDetector(misconceptionDatabase);
 
 // =============================================================================
 // Implementation
@@ -65,10 +94,13 @@ const MAX_GENERATED_ITEMS = 10;
 export function createAssessmentService(
   prisma: TutorPrismaClient,
 ): HealthAwareAssessmentService {
+  const learnerProfileService = createLearnerProfileService(prisma);
+  const simulationAssessmentIntegration =
+    createSimulationAssessmentIntegration(prisma);
   return {
     async listAssessments({ tenantId, moduleId, status, cursor, limit = 20 }) {
       const take = Math.min(limit, 50);
-      const where: any = { tenantId };
+      const where: Prisma.AssessmentWhereInput = { tenantId };
       if (moduleId) {
         where.moduleId = moduleId;
       }
@@ -89,8 +121,8 @@ export function createAssessmentService(
       return {
         items: trimmed.map(mapAssessmentSummary),
         nextCursor: hasMore
-          ? (records[records.length - 1]?.id as AssessmentId)
-          : undefined,
+          ? (trimmed[trimmed.length - 1]?.id as AssessmentId)
+          : null,
       };
     },
 
@@ -111,7 +143,12 @@ export function createAssessmentService(
     },
 
     async generateAssessmentItems(args) {
-      const generated = await generateItems(prisma, args);
+      const generated = await generateItems(
+        prisma,
+        learnerProfileService,
+        simulationAssessmentIntegration,
+        args,
+      );
       // Logic assumes draft creation happens here or in caller.
       // Source code had draft creation:
       await prisma.assessmentDraft.create({
@@ -119,7 +156,7 @@ export function createAssessmentService(
           tenantId: args.tenantId,
           moduleId: args.moduleId,
           createdBy: args.userId,
-          payload: generated.items as any,
+          payload: generated.items as unknown as Prisma.InputJsonValue,
         },
       });
       return generated;
@@ -169,6 +206,16 @@ export function createAssessmentService(
       }
 
       const grading = gradeAttempt(attempt.assessment.items, responses);
+      await syncLearnerSignals({
+        prisma,
+        learnerProfileService,
+        tenantId,
+        userId,
+        domain: attempt.assessment.moduleId,
+        items: attempt.assessment.items.map(mapAssessmentItem),
+        responses,
+        feedback: grading.feedback,
+      });
 
       const updated = await prisma.assessmentAttempt.update({
         where: { id: attemptId },
@@ -176,7 +223,7 @@ export function createAssessmentService(
           status: "GRADED",
           responses,
           scorePercent: grading.scorePercent,
-          feedback: grading.feedback as any,
+          feedback: grading.feedback as unknown as Prisma.InputJsonValue,
           submittedAt: new Date(),
           gradedAt: new Date(),
         },
@@ -203,6 +250,10 @@ export function createAssessmentService(
 
 async function generateItems(
   prisma: TutorPrismaClient,
+  learnerProfileService: ReturnType<typeof createLearnerProfileService>,
+  simulationAssessmentIntegration: ReturnType<
+    typeof createSimulationAssessmentIntegration
+  >,
   args: AssessmentGenerationInput & { userId: UserId },
 ): Promise<AssessmentGenerationResult> {
   const module = await prisma.module.findFirst({
@@ -222,43 +273,83 @@ async function generateItems(
       : module.learningObjectives;
 
   const count = Math.min(Math.max(args.count, 1), MAX_GENERATED_ITEMS);
+  const personalization =
+    await learnerProfileService.getPersonalizationSnapshot(
+      args.tenantId,
+      args.userId,
+      module.title,
+    );
+  const targetTheta = irtService.estimateThetaFromMastery(
+    personalization.masterySummary.averageMastery,
+  );
+  const targetDifficulty = mapThetaToDifficulty(targetTheta, args.difficulty);
+  const misconceptionTargets = misconceptionDatabase.findByDomainAndTopic(
+    module.domain,
+    module.title,
+  );
+  const simulationItemTarget = Math.min(2, Math.max(0, Math.floor(count / 3)));
+  const simulationItems =
+    simulationItemTarget > 0
+      ? await simulationAssessmentIntegration.createModuleAssessmentItems({
+          tenantId: args.tenantId,
+          moduleId: args.moduleId,
+          count: simulationItemTarget,
+          difficulty: targetDifficulty,
+          objectiveLabels: objectiveCandidates.map((objective: any) => objective.label),
+        })
+      : [];
 
   // Attempt AI Generation
   try {
     const aiResponse = await aiClient.generateAssessmentItems({
       topic: module.title,
       objectives: objectiveCandidates.map((o: any) => o.label),
-      difficulty: args.difficulty,
+      difficulty: targetDifficulty,
       count: count,
-      learner_level: "intermediate", // Could be dynamic based on user profile
+      learner_level: personalization.adjustedDifficulty,
     });
 
     if (aiResponse && aiResponse.items && aiResponse.items.length > 0) {
-      const items = aiResponse.items.map((aiItem: any, index: number) => {
-        const id = `${module.slug}-ai-${index}`;
-        return {
-          id: id as AssessmentItem["id"],
-          type: "multiple_choice_single", // Force simplified type for now if needed, or map aiItem.type
-          prompt: aiItem.prompt,
-          stimulus: `Objective: ${objectiveCandidates[index % objectiveCandidates.length]?.label ?? module.title}`,
-          points: aiItem.points || 10,
-          choices: aiItem.choices.map((c: any) => ({
-            id: c.id || `${id}-choice-${Math.random()}`,
-            label: c.label,
-            isCorrect: c.is_correct,
-            rationale: c.rationale,
-          })),
-          modelAnswer: aiItem.correct_answer_explanation,
-          metadata: {
-            generated: true,
+      const items = rankAdaptiveItems(
+        aiResponse.items.map((aiItem: any, index: number) => {
+          const adaptiveParams = {
             source: "ai-service",
-          },
-        };
-      });
+            moduleSlug: module.slug,
+            moduleTitle: module.title,
+            itemIndex: index,
+            difficulty: targetDifficulty,
+            prompt: aiItem.prompt,
+            points: aiItem.points || 10,
+            choiceSeed: (aiItem.choices ?? []).map((c: any) => ({
+              label: c.label,
+              isCorrect: c.is_correct,
+              rationale: c.rationale,
+            })),
+            modelAnswer: aiItem.correct_answer_explanation,
+            misconceptionTargets,
+          } satisfies Omit<
+            Parameters<typeof buildAdaptiveItem>[0],
+            "objective"
+          >;
+
+          const objective =
+            objectiveCandidates[index % objectiveCandidates.length] ??
+            objectiveCandidates[0];
+
+          return objective
+            ? buildAdaptiveItem({ ...adaptiveParams, objective })
+            : buildAdaptiveItem(adaptiveParams);
+        }),
+        targetTheta,
+        count,
+      );
 
       return {
-        items,
+        items: mergeAdaptiveItems(items, simulationItems, targetTheta, count),
         model: "tutorputor-ai-v1",
+        ...(simulationItems.length > 0
+          ? { warnings: ["Included simulation-based assessment items."] }
+          : {}),
       };
     }
   } catch (error) {
@@ -279,12 +370,19 @@ async function generateItems(
       taxonomyLevel: objective.taxonomyLevel,
     })),
     count,
-    difficulty: args.difficulty,
+    difficulty: targetDifficulty,
+    misconceptionTargets,
+    targetTheta,
   });
 
   return {
-    items,
-    warnings: ["AI service unavailable, using backup generator."],
+    items: mergeAdaptiveItems(items, simulationItems, targetTheta, count),
+    warnings: [
+      "AI service unavailable, using backup generator.",
+      ...(simulationItems.length > 0
+        ? ["Included simulation-based assessment items."]
+        : []),
+    ],
     model: DEFAULT_GENERATOR_MODEL,
   };
 }
@@ -295,46 +393,64 @@ function buildDeterministicItems(params: {
   objectives: Array<{ label: string; taxonomyLevel: string }>;
   count: number;
   difficulty: Difficulty;
+  misconceptionTargets: Array<{
+    id: string;
+    distractor: string;
+    explanation: string;
+    prerequisiteConceptId?: string;
+  }>;
+  targetTheta: number;
 }): AssessmentItem[] {
-  const { moduleTitle, moduleSlug, objectives, count, difficulty } = params;
+  const {
+    moduleTitle,
+    moduleSlug,
+    objectives,
+    count,
+    difficulty,
+    misconceptionTargets,
+    targetTheta,
+  } = params;
   const baseObjectives =
     objectives.length > 0
       ? objectives
       : [{ label: moduleTitle, taxonomyLevel: "understand" }];
-  const items: AssessmentItem[] = [];
+  const items = rankAdaptiveItems(
+    baseObjectives.map((objective, index) =>
+      buildAdaptiveItem({
+        source: "deterministic-generator",
+        moduleSlug,
+        moduleTitle,
+        itemIndex: index,
+        objective,
+        difficulty,
+        prompt: `(${difficulty}) ${objective.label} – pick the best summary.`,
+        points: 10,
+        misconceptionTargets,
+      }),
+    ),
+    targetTheta,
+    count,
+  );
 
-  for (let index = 0; index < count; index++) {
+  if (items.length >= count) {
+    return items;
+  }
+
+  for (let index = items.length; index < count; index++) {
     const objective = baseObjectives[index % baseObjectives.length]!;
-    const id = `${moduleSlug}-gen-${index}`;
-    const correctChoiceId = `${id}-choice-correct`;
-
-    items.push({
-      id: id as AssessmentItem["id"],
-      type: "multiple_choice_single",
-      prompt: `(${difficulty}) ${objective.label} – pick the best summary.`,
-      stimulus: `Objective: ${objective.label}`,
-      points: 10,
-      choices: [
-        {
-          id: `${id}-choice-a`,
-          label: `Unrelated fact about ${moduleTitle}`,
-        },
-        {
-          id: correctChoiceId,
-          label: `Key concept: ${objective.label}`,
-          isCorrect: true,
-          rationale: "Matches the stated objective.",
-        },
-        {
-          id: `${id}-choice-c`,
-          label: "Placeholder distractor",
-        },
-      ],
-      metadata: {
-        generated: true,
-        taxonomyLevel: objective.taxonomyLevel,
-      },
-    });
+    items.push(
+      buildAdaptiveItem({
+        source: "deterministic-generator",
+        moduleSlug,
+        moduleTitle,
+        itemIndex: index,
+        objective,
+        difficulty,
+        prompt: `(${difficulty}) ${objective.label} – pick the best summary.`,
+        points: 10,
+        misconceptionTargets,
+      }),
+    );
   }
 
   return items;
@@ -375,20 +491,24 @@ function mapAssessment(record: AssessmentRecord): Assessment {
 }
 
 function mapAssessmentItem(item: any): AssessmentItem {
+  const choices = parseChoices(item.choices);
+
   return {
     id: item.id as AssessmentItem["id"],
     type: item.itemType as AssessmentItem["type"],
     prompt: item.prompt,
-    stimulus: item.stimulus ?? undefined,
-    choices: parseChoices(item.choices),
-    modelAnswer: item.modelAnswer ?? undefined,
-    rubric: item.rubric ?? undefined,
     points: item.points,
-    metadata: item.metadata ?? undefined,
+    ...(item.stimulus ? { stimulus: item.stimulus } : {}),
+    ...(choices ? { choices } : {}),
+    ...(item.modelAnswer ? { modelAnswer: item.modelAnswer } : {}),
+    ...(item.rubric ? { rubric: item.rubric } : {}),
+    ...(item.metadata ? { metadata: item.metadata } : {}),
   };
 }
 
 function mapAttempt(record: AssessmentAttemptRecord): AssessmentAttempt {
+  const feedback = parseFeedback(record.feedback);
+
   return {
     id: record.id as AssessmentAttemptId,
     assessmentId: record.assessmentId as AssessmentId,
@@ -396,12 +516,16 @@ function mapAttempt(record: AssessmentAttemptRecord): AssessmentAttempt {
     userId: record.userId as UserId,
     status: record.status as AssessmentAttempt["status"],
     responses: (record.responses as AssessmentAttempt["responses"]) ?? {},
-    scorePercent: record.scorePercent ?? undefined,
-    feedback: parseFeedback(record.feedback),
     startedAt: record.startedAt.toISOString(),
-    submittedAt: record.submittedAt?.toISOString(),
-    gradedAt: record.gradedAt?.toISOString(),
-    timeSpentSeconds: record.timeSpentSeconds ?? undefined,
+    ...(record.scorePercent !== null && record.scorePercent !== undefined
+      ? { scorePercent: record.scorePercent }
+      : {}),
+    ...(feedback ? { feedback } : {}),
+    ...(record.submittedAt ? { submittedAt: record.submittedAt.toISOString() } : {}),
+    ...(record.gradedAt ? { gradedAt: record.gradedAt.toISOString() } : {}),
+    ...(record.timeSpentSeconds !== null && record.timeSpentSeconds !== undefined
+      ? { timeSpentSeconds: record.timeSpentSeconds }
+      : {}),
   };
 }
 
@@ -449,6 +573,246 @@ function gradeAttempt(
   return { scorePercent, feedback };
 }
 
+function buildAdaptiveItem(params: {
+  source: string;
+  moduleSlug: string;
+  moduleTitle: string;
+  itemIndex: number;
+  objective?: { label: string; taxonomyLevel: string };
+  difficulty: string;
+  prompt: string;
+  points: number;
+  choiceSeed?: Array<{ label: string; isCorrect?: boolean; rationale?: string }>;
+  modelAnswer?: string;
+  misconceptionTargets: Array<{
+    id: string;
+    distractor: string;
+    explanation: string;
+    prerequisiteConceptId?: string;
+  }>;
+}): AssessmentItem {
+  const {
+    source,
+    moduleSlug,
+    moduleTitle,
+    itemIndex,
+    objective,
+    difficulty,
+    prompt,
+    points,
+    choiceSeed = [],
+    modelAnswer,
+    misconceptionTargets,
+  } = params;
+  const id = `${moduleSlug}-gen-${itemIndex}`;
+  const correctChoiceId = `${id}-choice-correct`;
+  const misconceptionTarget =
+    misconceptionTargets[itemIndex % Math.max(misconceptionTargets.length, 1)];
+  const objectiveLabel = objective?.label ?? moduleTitle;
+  const taxonomyLevel = objective?.taxonomyLevel ?? "understand";
+  const irt = irtService.calibrateForDifficulty(difficulty, taxonomyLevel);
+
+  const choices: AssessmentItemChoice[] =
+    choiceSeed.length > 0
+      ? choiceSeed.map((choice, choiceIndex) => ({
+          id: `${id}-choice-${choiceIndex}`,
+          label: choice.label,
+          ...(choice.isCorrect !== undefined ? { isCorrect: choice.isCorrect } : {}),
+          ...(choice.rationale ? { rationale: choice.rationale } : {}),
+        }))
+      : [
+          {
+            id: `${id}-choice-a`,
+            label: `Unrelated fact about ${moduleTitle}`,
+          },
+          {
+            id: correctChoiceId,
+            label: `Key concept: ${objectiveLabel}`,
+            isCorrect: true,
+            rationale: "Matches the stated objective.",
+          },
+          {
+            id: `${id}-choice-b`,
+            label:
+              misconceptionTarget?.distractor ?? "Common but incorrect interpretation.",
+            ...(misconceptionTarget
+              ? { rationale: misconceptionTarget.explanation }
+              : {}),
+          },
+        ];
+
+  if (!choices.some((choice) => choice.isCorrect)) {
+    choices.unshift({
+      id: correctChoiceId,
+      label: `Key concept: ${objectiveLabel}`,
+      isCorrect: true,
+      rationale: "Matches the stated objective.",
+    });
+  }
+
+  return {
+    id: id as AssessmentItem["id"],
+    type: "multiple_choice_single",
+    prompt,
+    stimulus: `Objective: ${objectiveLabel}`,
+    points,
+    choices,
+    ...(modelAnswer ? { modelAnswer } : {}),
+    metadata: {
+      generated: true,
+      source,
+      taxonomyLevel,
+      objectiveLabel,
+      topic: moduleTitle,
+      conceptId: slugifyConceptId(objectiveLabel),
+      irt,
+      misconceptionId: misconceptionTarget?.id,
+      prerequisiteConceptId: misconceptionTarget?.prerequisiteConceptId,
+    },
+  };
+}
+
+function rankAdaptiveItems(
+  items: AssessmentItem[],
+  targetTheta: number,
+  count: number,
+): AssessmentItem[] {
+  const ranked = irtService.selectNextItems(
+    items.map((item) => {
+      const metadata = parseItemMetadata(item.metadata);
+      const irt = parseIRTParameters(metadata.irt);
+      return { item, irt };
+    }),
+    targetTheta,
+    Math.min(count, items.length),
+  );
+
+  return ranked.items;
+}
+
+function mergeAdaptiveItems(
+  baseItems: AssessmentItem[],
+  simulationItems: AssessmentItem[],
+  targetTheta: number,
+  count: number,
+): AssessmentItem[] {
+  if (simulationItems.length === 0) {
+    return rankAdaptiveItems(baseItems, targetTheta, count);
+  }
+
+  const rankedBase = rankAdaptiveItems(
+    baseItems,
+    targetTheta,
+    Math.max(0, count - simulationItems.length),
+  );
+  const rankedSimulation = rankAdaptiveItems(
+    simulationItems,
+    targetTheta,
+    Math.min(simulationItems.length, Math.max(1, Math.ceil(count / 3))),
+  );
+  return [...rankedBase, ...rankedSimulation].slice(0, count);
+}
+
+async function syncLearnerSignals(args: {
+  prisma: TutorPrismaClient;
+  learnerProfileService: ReturnType<typeof createLearnerProfileService>;
+  tenantId: TenantId;
+  userId: UserId;
+  domain: string;
+  items: AssessmentItem[];
+  responses: AssessmentAttempt["responses"];
+  feedback: AssessmentFeedback[];
+}) {
+  const {
+    learnerProfileService,
+    tenantId,
+    userId,
+    domain,
+    items,
+    responses,
+    feedback,
+  } = args;
+
+  for (const item of items) {
+    const itemFeedback = feedback.find((entry) => entry.itemId === item.id);
+    const metadata = parseItemMetadata(item.metadata);
+    const conceptId = String(metadata.conceptId ?? item.id);
+    const isCorrect = (itemFeedback?.scorePercent ?? 0) >= 100;
+
+    await learnerProfileService.updateMastery(tenantId, userId, {
+      conceptId,
+      correct: isCorrect,
+      confidence: Math.max((itemFeedback?.scorePercent ?? 0) / 100, 0.2),
+      attempts: 1,
+    });
+  }
+
+  const signals = misconceptionDetector.detectFromAttempt({
+    domain: mapAssessmentDomain(domain),
+    items,
+    responses,
+    feedback,
+  });
+
+  for (const signal of signals) {
+    await learnerProfileService.recordKnowledgeGap(tenantId, userId, {
+      conceptId: signal.conceptId,
+      prerequisiteId:
+        signal.prerequisiteConceptId ?? `${signal.conceptId}-foundation`,
+      severity: signal.confidence >= 0.85 ? "HIGH" : "MEDIUM",
+      detectedBy: "ASSESSMENT",
+      evidence: {
+        misconceptionId: signal.misconceptionId,
+        explanation: signal.explanation,
+        confidence: signal.confidence,
+      },
+    });
+  }
+}
+
+function mapAssessmentDomain(moduleId: string): string {
+  const normalized = moduleId.toLowerCase();
+  if (normalized.includes("math")) return "MATH";
+  if (normalized.includes("tech") || normalized.includes("code")) return "TECH";
+  return "SCIENCE";
+}
+
+function parseItemMetadata(value: AssessmentItem["metadata"]): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
+
+function parseIRTParameters(value: unknown) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const irt = value as Record<string, unknown>;
+    return {
+      discrimination: typeof irt.discrimination === "number" ? irt.discrimination : 1,
+      difficulty: typeof irt.difficulty === "number" ? irt.difficulty : 0,
+      guessing: typeof irt.guessing === "number" ? irt.guessing : 0.2,
+    };
+  }
+
+  return irtService.calibrateForDifficulty("INTERMEDIATE", "understand");
+}
+
+function slugifyConceptId(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function mapThetaToDifficulty(theta: number, requested: Difficulty): Difficulty {
+  if (requested === "ADVANCED" || requested === "INTRO") {
+    return requested;
+  }
+  if (theta <= -0.75) return "INTRO";
+  if (theta >= 0.75) return "ADVANCED";
+  return "INTERMEDIATE";
+}
+
 function evaluateResponse(
   item: any,
   response: any,
@@ -490,6 +854,24 @@ function evaluateResponse(
           : "Review the concept and try again.",
       },
     };
+  }
+
+  if (
+    item.itemType === "simulation_interaction" &&
+    response.type === "simulation_interaction"
+  ) {
+    return scoreSimulationAssessmentResponse({
+      item: {
+        id: item.id,
+        points: item.points,
+        ...(item.metadata &&
+        typeof item.metadata === "object" &&
+        !Array.isArray(item.metadata)
+          ? { metadata: item.metadata as Record<string, unknown> }
+          : {}),
+      },
+      response,
+    });
   }
 
   // For short answer / free response types we flag for instructor review

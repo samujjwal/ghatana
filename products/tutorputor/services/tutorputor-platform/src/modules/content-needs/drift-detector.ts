@@ -15,6 +15,7 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
+import type { Prisma } from "@tutorputor/core/db";
 
 // ============================================================================
 // Types
@@ -70,6 +71,18 @@ export interface GeneratedInsight {
   priority: number;
   evidence: Record<string, unknown>;
   confidence: number;
+}
+
+export interface ExperienceMetrics {
+  learnerCount: number;
+  completionRate: number;
+  abortRate: number;
+  avgMastery: number;
+  engagementScore: number;
+  feedbackCount: number;
+  positiveFeedbackRatio: number;
+  avgTimeOnTaskMinutes: number;
+  claimMasteryDistribution: Record<string, number>;
 }
 
 const DEFAULT_THRESHOLDS: DriftThresholds = {
@@ -262,6 +275,125 @@ export class ContentDriftDetector {
     return results;
   }
 
+  async adjustThresholds(tenantId: string): Promise<DriftThresholds> {
+    const experiences = await this.prisma.learningExperience.findMany({
+      where: { tenantId, status: "PUBLISHED" },
+      select: { id: true },
+      take: 25,
+      orderBy: { updatedAt: "desc" },
+    });
+
+    const historical = (
+      await Promise.all(
+        experiences.map((experience) =>
+          this.gatherMetrics(tenantId, experience.id),
+        ),
+      )
+    ).filter((metrics) => metrics.learnerCount >= this.thresholds.minLearnerCount);
+
+    if (historical.length === 0) {
+      return this.thresholds;
+    }
+
+    return {
+      ...this.thresholds,
+      minCompletionRate: percentile(
+        historical.map((metrics) => metrics.completionRate),
+        0.15,
+      ),
+      maxAbortRate: percentile(
+        historical.map((metrics) => metrics.abortRate),
+        0.85,
+      ),
+      minAverageMastery: percentile(
+        historical.map((metrics) => metrics.avgMastery),
+        0.15,
+      ),
+      minEngagementScore: percentile(
+        historical.map((metrics) => metrics.engagementScore),
+        0.15,
+      ),
+      minPositiveFeedbackRatio: percentile(
+        historical.map((metrics) => metrics.positiveFeedbackRatio),
+        0.2,
+      ),
+    };
+  }
+
+  detectAnomaliesWithHeuristics(
+    metrics: ExperienceMetrics,
+    thresholds: DriftThresholds,
+  ): DetectedSignal[] {
+    const anomalies: DetectedSignal[] = [];
+
+    if (
+      metrics.avgTimeOnTaskMinutes > 0 &&
+      metrics.avgTimeOnTaskMinutes > Math.max(10, thresholds.sampleSize / 3)
+    ) {
+      anomalies.push({
+        signalType: "engagement_drop",
+        severity: "medium",
+        metric: "avg_time_on_task_minutes",
+        value: metrics.avgTimeOnTaskMinutes,
+        threshold: Math.max(10, thresholds.sampleSize / 3),
+        recommendation:
+          "Learners are spending unusually long on this experience. Review pacing, instructions, and checkpoint clarity.",
+        confidence: 0.7,
+      });
+    }
+
+    if (
+      metrics.abortRate > thresholds.maxAbortRate &&
+      metrics.completionRate < thresholds.minCompletionRate
+    ) {
+      anomalies.push({
+        signalType: "high_abort_rate",
+        severity: "high",
+        metric: "compound_abort_completion_risk",
+        value: metrics.abortRate - metrics.completionRate,
+        threshold: 0,
+        recommendation:
+          "Abort and completion signals are jointly degraded. Prioritize content simplification and early learner support.",
+        confidence: 0.85,
+      });
+    }
+
+    if (
+      metrics.feedbackCount >= 3 &&
+      metrics.positiveFeedbackRatio < thresholds.minPositiveFeedbackRatio * 0.8
+    ) {
+      anomalies.push({
+        signalType: "negative_feedback",
+        severity: "high",
+        metric: "positive_feedback_ratio",
+        value: metrics.positiveFeedbackRatio,
+        threshold: thresholds.minPositiveFeedbackRatio,
+        recommendation:
+          "Learner feedback is materially worse than the tenant baseline. Audit examples, explanations, and alignment to learner intent.",
+        confidence: 0.8,
+      });
+    }
+
+    return anomalies;
+  }
+
+  async scanExperienceAdaptive(
+    tenantId: string,
+    experienceId: string,
+  ): Promise<DriftScanResult & { thresholds: DriftThresholds }> {
+    const thresholds = await this.adjustThresholds(tenantId);
+    const metrics = await this.gatherMetrics(tenantId, experienceId);
+    const detector = new ContentDriftDetector(this.prisma, thresholds);
+    const result = await detector.scanExperience(tenantId, experienceId);
+    const anomalies = this.detectAnomaliesWithHeuristics(metrics, thresholds);
+
+    return {
+      ...result,
+      signals: dedupeSignals([...result.signals, ...anomalies]),
+      thresholds,
+    };
+  }
+
   // =========================================================================
   // Private: metrics gathering
   // =========================================================================
@@ -269,21 +401,20 @@ export class ContentDriftDetector {
   private async gatherMetrics(
     tenantId: string,
     experienceId: string,
-  ): Promise<{
-    learnerCount: number;
-    completionRate: number;
-    abortRate: number;
-    avgMastery: number;
-    engagementScore: number;
-    feedbackCount: number;
-    positiveFeedbackRatio: number;
-    avgTimeOnTaskMinutes: number;
-    claimMasteryDistribution: Record<string, number>;
-  }> {
+  ): Promise<ExperienceMetrics> {
+    const experience = await this.prisma.learningExperience.findFirst({
+      where: { id: experienceId, tenantId },
+      select: { moduleId: true },
+    });
+    const moduleId = experience?.moduleId;
+
     // Fetch recent enrolments
-    const enrolments = await this.prisma.enrollment.findMany({
+    const enrolments =
+      moduleId == null
+        ? []
+        : await this.prisma.enrollment.findMany({
       where: {
-        module: { experienceId },
+        moduleId,
         tenantId,
       },
       orderBy: { createdAt: "desc" },
@@ -321,14 +452,17 @@ export class ContentDriftDetector {
     const userIds = [
       ...new Set(enrolments.map((e: { userId: string }) => e.userId)),
     ];
-    const attempts = await this.prisma.assessmentAttempt.findMany({
-      where: {
-        userId: { in: userIds },
-        status: "GRADED",
-        assessment: { module: { experienceId } },
-      },
-      select: { scorePercent: true },
-    });
+    const attempts =
+      userIds.length === 0 || moduleId == null
+        ? []
+        : await this.prisma.assessmentAttempt.findMany({
+            where: {
+              userId: { in: userIds },
+              status: "GRADED",
+              assessment: { moduleId },
+            },
+            select: { scorePercent: true },
+          });
 
     const scores = attempts
       .map((a: { scorePercent: number | null }) => a.scorePercent)
@@ -340,14 +474,43 @@ export class ContentDriftDetector {
           100
         : 0.5;
 
-    // Engagement heuristic: completion rate weighted with time-on-task
-    const engagementScore =
-      (completedCount / learnerCount) * 0.7 +
-      (1 - abortedCount / learnerCount) * 0.3;
+    const linkedAssets = await this.prisma.contentAsset.findMany({
+      where: { tenantId, legacyExperienceId: experienceId },
+      select: { id: true },
+    });
+    const assetIds = linkedAssets.map((asset) => asset.id);
+    const explorerEvents =
+      assetIds.length === 0
+        ? []
+        : await this.prisma.explorerEvent.findMany({
+            where: {
+              tenantId,
+              assetId: { in: assetIds },
+            },
+          });
 
-    // Feedback (simplified — would query a feedback table)
-    const feedbackCount = 0;
-    const positiveFeedbackRatio = 1;
+    const feedbackEvents = explorerEvents.filter(
+      (event) => String(event.eventType).toUpperCase() === "RANKING_FEEDBACK",
+    );
+    const positiveFeedback = feedbackEvents.filter((event) =>
+      ["positive", "helpful", "relevant"].includes(
+        String(event.feedbackLabel ?? "").toLowerCase(),
+      ),
+    ).length;
+    const sessionIds = new Set(
+      explorerEvents
+        .map((event) => event.sessionId)
+        .filter((value): value is string => Boolean(value)),
+    );
+    const engagementScore =
+      (completedCount / learnerCount) * 0.55 +
+      (1 - abortedCount / learnerCount) * 0.2 +
+      (sessionIds.size / learnerCount) * 0.15 +
+      (positiveFeedback / Math.max(1, feedbackEvents.length)) * 0.1;
+
+    const feedbackCount = feedbackEvents.length;
+    const positiveFeedbackRatio =
+      feedbackEvents.length === 0 ? 1 : positiveFeedback / feedbackEvents.length;
 
     return {
       learnerCount,
@@ -357,7 +520,10 @@ export class ContentDriftDetector {
       engagementScore: Math.max(0, Math.min(1, engagementScore)),
       feedbackCount,
       positiveFeedbackRatio,
-      avgTimeOnTaskMinutes: 0,
+      avgTimeOnTaskMinutes:
+        learnerCount === 0
+          ? 0
+          : clamp01(explorerEvents.length / learnerCount) * 12,
       claimMasteryDistribution: {},
     };
   }
@@ -380,7 +546,7 @@ export class ContentDriftDetector {
   private getRecommendation(
     signalType: DriftSignalType,
     severity: DriftSeverity,
-    _metrics: Record<string, unknown>,
+    _metrics: ExperienceMetrics,
   ): string {
     const recommendations: Record<
       DriftSignalType,
@@ -423,7 +589,7 @@ export class ContentDriftDetector {
 
   private signalToInsight(
     signal: DetectedSignal,
-    _metrics: Record<string, unknown>,
+    _metrics: ExperienceMetrics,
   ): GeneratedInsight {
     const categoryMap: Record<DriftSignalType, string> = {
       low_completion: "content_difficulty",
@@ -472,6 +638,11 @@ export class ContentDriftDetector {
           threshold: signal.threshold,
           recommendation: signal.recommendation,
           confidence: signal.confidence,
+          context: {
+            metric: signal.metric,
+            value: signal.value,
+            threshold: signal.threshold,
+          } as Prisma.InputJsonValue,
           status: "detected",
         },
       });
@@ -487,7 +658,7 @@ export class ContentDriftDetector {
           issue: insight.issue,
           suggestedAction: insight.suggestedAction,
           priority: insight.priority,
-          evidence: insight.evidence,
+          evidence: insight.evidence as Prisma.InputJsonValue,
           confidence: insight.confidence,
           status: "identified",
         },
@@ -504,4 +675,30 @@ export function createContentDriftDetector(
   thresholds?: Partial<DriftThresholds>,
 ): ContentDriftDetector {
   return new ContentDriftDetector(prisma, thresholds);
+}
+
+function percentile(values: number[], target: number): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((left, right) => left - right);
+  const index = Math.max(
+    0,
+    Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * target)),
+  );
+  return sorted[index] ?? sorted[sorted.length - 1]!;
+}
+
+function dedupeSignals(signals: DetectedSignal[]): DetectedSignal[] {
+  const seen = new Set<string>();
+  return signals.filter((signal) => {
+    const key = `${signal.signalType}:${signal.metric}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
 }

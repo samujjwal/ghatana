@@ -20,6 +20,10 @@ import type {
   ExperienceStatus as ContractExperienceStatus,
   ValidationCheck,
 } from "@tutorputor/contracts/v1";
+import {
+  getContentGenerationQueue,
+  type ContentGenerationQueueLike,
+} from "../queue/content-generation-queue.js";
 
 export type { ContentStudioService };
 
@@ -228,58 +232,6 @@ type ExperienceTimelineEvent = {
   metadata: Record<string, unknown> | null;
   createdAt: string;
 };
-
-const CONTENT_QUEUE = "content-generation";
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-
-type QueueLike = {
-  add: (
-    name: string,
-    data: Record<string, unknown>,
-    opts?: Record<string, unknown>,
-  ) => Promise<{ id: string | number | null | undefined }>;
-};
-
-let queueSingleton: QueueLike | null = null;
-
-function queueConnectionFromUrl(redisUrl: string): {
-  host: string;
-  port: number;
-  password?: string;
-  db?: number;
-} {
-  const parsed = new URL(redisUrl);
-  const dbPath = parsed.pathname?.replace("/", "");
-  return {
-    host: parsed.hostname,
-    port: parseInt(parsed.port || "6379", 10),
-    password: parsed.password || undefined,
-    db: dbPath ? parseInt(dbPath, 10) || 0 : 0,
-  };
-}
-
-function getQueue(): QueueLike {
-  if (!queueSingleton) {
-    const disableQueue =
-      process.env.CONTENT_QUEUE_DISABLED === "true" ||
-      process.env.NODE_ENV === "test";
-
-    if (disableQueue) {
-      queueSingleton = {
-        async add(_name, _data, opts) {
-          const id =
-            typeof opts?.["jobId"] === "string" ? opts["jobId"] : "noop";
-          return { id };
-        },
-      };
-    } else {
-      queueSingleton = new Queue(CONTENT_QUEUE, {
-        connection: queueConnectionFromUrl(REDIS_URL),
-      });
-    }
-  }
-  return queueSingleton;
-}
 
 function generateSlug(title: string): string {
   return title
@@ -577,7 +529,7 @@ export function createContentStudioService(
   prisma: PrismaClient,
   _config: ContentStudioConfig,
 ): HealthAwareContentStudioService {
-  const queue = getQueue();
+  const queue: ContentGenerationQueueLike = getContentGenerationQueue();
 
   async function checkHealth(): Promise<boolean> {
     try {

@@ -1,0 +1,46 @@
+{
+  "name": "@tutorputor/content-explorer",
+  "version": "1.0.0",
+  "description": "Dedicated content discovery and exploration interface for TutorPutor",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "vite",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tutorputor/contracts": "workspace:*",
+    "@tutorputor/core/ui": "workspace:*",
+    "react": "^18.2.0",
+    "react-router-dom": "^6.8.0",
+    "react-query": "^3.39.3",
+    "axios": "^1.3.4",
+    "lucide-react": "^0.263.1",
+    "clsx": "^1.2.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@typescript-eslint/eslint-plugin": "^5.55.0",
+    "@typescript-eslint/parser": "^5.55.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "eslint": "^8.36.0",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "typescript": "^5.0.2",
+    "vite": "^4.3.0"
+  },
+  "keywords": [
+    "tutorputor",
+    "content",
+    "explorer",
+    "discovery",
+    "search",
+    "learning"
+  ],
+  "author": "TutorPutor Team",
+  "license": "MIT"
+}

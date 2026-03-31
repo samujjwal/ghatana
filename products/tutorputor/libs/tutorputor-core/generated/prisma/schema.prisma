@@ -51,6 +51,52 @@ enum AssessmentAttemptStatus {
   EXPIRED
 }
 
+enum LearnerDifficultyPreference {
+  BEGINNER
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
+}
+
+enum LearnerModalityPreference {
+  VISUAL
+  AUDITORY
+  KINESTHETIC
+  READING
+  MIXED
+}
+
+enum LearnerPacingPreference {
+  SELF_PACED
+  GUIDED
+  ADAPTIVE
+  INTENSIVE
+}
+
+enum KnowledgeGapSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum KnowledgeGapDetectionMethod {
+  ASSESSMENT
+  PREREQUISITE_CHECK
+  ADAPTIVE_ANALYSIS
+  LEARNER_REPORTED
+  AI_PREDICTION
+}
+
+enum LearnerPathwayStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ABANDONED
+}
+
 enum ListingStatus {
   DRAFT
   ACTIVE
@@ -1794,10 +1840,119 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  ssoLinks SsoUserLink[]
+  ssoLinks       SsoUserLink[]
+  learnerProfile LearnerProfile?
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
+}
+
+model LearnerProfile {
+  id                       String                      @id @default(cuid())
+  tenantId                 String
+  user                     User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                   String                      @unique
+  preferredDifficulty      LearnerDifficultyPreference @default(MEDIUM)
+  preferredModality        LearnerModalityPreference   @default(MIXED)
+  preferredPacing          LearnerPacingPreference     @default(ADAPTIVE)
+  preferredSessionMinutes  Int                         @default(30)
+  notificationFrequency    String                      @default("daily")
+  visualLearningScore      Float                       @default(0.25)
+  auditoryLearningScore    Float                       @default(0.25)
+  kinestheticLearningScore Float                       @default(0.25)
+  readingLearningScore     Float                       @default(0.25)
+  avgSessionMinutes        Float                       @default(30)
+  preferredTimeOfDay       String?
+  streakDays               Int                         @default(0)
+  lastActiveAt             DateTime?
+  createdAt                DateTime                    @default(now())
+  updatedAt                DateTime                    @updatedAt
+
+  masteries         LearnerMastery[]
+  knowledgeGaps     KnowledgeGap[]
+  preferenceChanges PreferenceChange[]
+  pathways          LearningPathway[]
+
+  @@index([tenantId, userId])
+  @@index([tenantId, updatedAt])
+}
+
+model LearnerMastery {
+  id                 String         @id @default(cuid())
+  tenantId           String
+  profile            LearnerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId          String
+  conceptId          String
+  masteryProbability Float          @default(0.2)
+  confidenceScore    Float          @default(0.5)
+  attempts           Int            @default(0)
+  correctAttempts    Int            @default(0)
+  incorrectAttempts  Int            @default(0)
+  hintsUsed          Int            @default(0)
+  totalTimeSeconds   Int            @default(0)
+  lastObservedAt     DateTime       @default(now())
+  nextReviewAt       DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@unique([profileId, conceptId])
+  @@index([tenantId, conceptId])
+  @@index([tenantId, masteryProbability])
+}
+
+model KnowledgeGap {
+  id             String                      @id @default(cuid())
+  tenantId       String
+  profile        LearnerProfile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId      String
+  conceptId      String
+  prerequisiteId String
+  severity       KnowledgeGapSeverity        @default(MEDIUM)
+  detectedBy     KnowledgeGapDetectionMethod @default(ADAPTIVE_ANALYSIS)
+  status         String                      @default("OPEN")
+  evidence       Json?
+  detectionCount Int                         @default(1)
+  lastDetectedAt DateTime                    @default(now())
+  resolvedAt     DateTime?
+  createdAt      DateTime                    @default(now())
+  updatedAt      DateTime                    @updatedAt
+
+  @@unique([profileId, conceptId, prerequisiteId, status])
+  @@index([tenantId, conceptId])
+  @@index([tenantId, severity])
+}
+
+model PreferenceChange {
+  id        String         @id @default(cuid())
+  tenantId  String
+  profile   LearnerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId String
+  changedBy String         @default("user")
+  reason    String?
+  changes   Json
+  createdAt DateTime       @default(now())
+
+  @@index([tenantId, profileId])
+  @@index([tenantId, createdAt])
+}
+
+model LearningPathway {
+  id                 String               @id @default(cuid())
+  tenantId           String
+  profile            LearnerProfile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId          String
+  title              String
+  goal               String
+  status             LearnerPathwayStatus @default(ACTIVE)
+  recommendedModules Json                 @default("[]")
+  currentModuleId    String?
+  progressPercent    Int                  @default(0)
+  metadata           Json?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([tenantId, profileId])
+  @@index([tenantId, status])
 }
 
 // =============================================================================
@@ -2826,9 +2981,49 @@ model ABExperiment {
   notes    String?
   priority Int     @default(0)
 
+  assignments  ABExperimentAssignment[]
+  observations ABExperimentObservation[]
+
   @@index([tenantId, status])
   @@index([experienceId])
   @@index([status, createdAt])
+}
+
+model ABExperimentAssignment {
+  id           String       @id @default(cuid())
+  experimentId String
+  experiment   ABExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  tenantId     String
+  userId       String
+  variant      String
+  assignedAt   DateTime     @default(now())
+  lastSeenAt   DateTime     @default(now())
+  metadata     Json?
+
+  @@unique([experimentId, userId])
+  @@index([tenantId, variant])
+  @@index([experimentId, variant])
+}
+
+model ABExperimentObservation {
+  id            String       @id @default(cuid())
+  experimentId  String
+  experiment    ABExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  tenantId      String
+  userId        String
+  variant       String
+  sessionId     String?
+  assetId       String?
+  metricValue   Float
+  completed     Boolean?
+  masteryScore  Float?
+  feedbackScore Float?
+  metadata      Json?
+  observedAt    DateTime     @default(now())
+
+  @@index([experimentId, variant])
+  @@index([tenantId, observedAt])
+  @@index([experimentId, userId])
 }
 
 model DriftSignal {
@@ -3437,21 +3632,23 @@ model GenerationRequest {
   tenantId String
 
   // Request metadata
-  title        String
-  description  String?
-  domain       String
-  conceptId    String?
-  targetGrades Json? // String[]
-  requestedBy  String // authorId
+  title         String
+  description   String?
+  domain        String
+  conceptId     String?
+  targetGrades  Json? // String[]
+  requestedBy   String // authorId
+  requestConfig Json?
 
   // Planning output
-  status        GenerationRequestStatus @default(DRAFT)
-  plannedAssets Json? // Array of planned asset descriptors
-  artifactNeeds Json? // { explainers: N, examples: N, simulations: N, ... }
-  riskLevel     RiskLevel               @default(LOW)
-  riskFactors   Json? // String[] of risk reasons
-  reviewPath    ReviewPath              @default(HUMAN_REVIEW)
-  estimatedCost Json? // { tokens: N, embeddingCalls: N, ... }
+  status          GenerationRequestStatus @default(DRAFT)
+  plannedAssets   Json? // Array of planned asset descriptors
+  artifactNeeds   Json? // { explainers: N, examples: N, simulations: N, ... }
+  riskLevel       RiskLevel               @default(LOW)
+  riskFactors     Json? // String[] of risk reasons
+  reviewPath      ReviewPath              @default(HUMAN_REVIEW)
+  estimatedCost   Json? // { tokens: N, embeddingCalls: N, ... }
+  routingDecision Json?
 
   // Execution tracking
   totalJobs     Int @default(0)

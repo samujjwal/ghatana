@@ -20,6 +20,7 @@ function makeJob(overrides: Record<string, any> = {}) {
     requestId: "req-1",
     jobType: "CLAIM",
     parameters: {},
+    outputAssetId: null,
     outputData: {
       claims: [{ text: "Photosynthesis converts light to energy." }],
       count: 1,
@@ -88,6 +89,9 @@ function makePrisma() {
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
       findMany: vi.fn().mockResolvedValue([]),
       findFirst: vi.fn().mockResolvedValue(null),
+    },
+    contentAsset: {
+      update: vi.fn().mockResolvedValue({ id: "asset-1" }),
     },
   };
 }
@@ -250,6 +254,31 @@ describe("EvaluationService", () => {
       const args = prisma.evaluationRecord.create.mock.calls[0][0];
       expect(args.data.tenantId).toBe("tenant-1");
       expect(args.data.generationJobId).toBe("job-1");
+    });
+
+    it("persists asset-linked evaluation metadata onto the content asset", async () => {
+      const job = makeJob({
+        outputAssetId: "asset-1",
+      });
+
+      await service.evaluateJob("tenant-1", job);
+
+      expect(prisma.evaluationRecord.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            assetId: "asset-1",
+          }),
+        }),
+      );
+      expect(prisma.contentAsset.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "asset-1" },
+          data: expect.objectContaining({
+            qualityScore: expect.any(Number),
+            reviewState: expect.any(String),
+          }),
+        }),
+      );
     });
   });
 

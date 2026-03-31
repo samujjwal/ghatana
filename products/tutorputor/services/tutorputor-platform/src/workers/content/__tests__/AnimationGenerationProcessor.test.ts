@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AnimationGenerationProcessor, type AnimationGenerationJobData } from '../processors/AnimationGenerationProcessor';
+import type { ContentWorkerTelemetryPublisher } from '../generation-telemetry';
 
 describe('AnimationGenerationProcessor', () => {
     const makeJob = (overrides: Partial<AnimationGenerationJobData> = {}) =>
@@ -20,6 +21,7 @@ describe('AnimationGenerationProcessor', () => {
     let grpcClient: { generateAnimation: ReturnType<typeof vi.fn> };
     let prisma: { claimAnimation: { upsert: ReturnType<typeof vi.fn> } };
     let logger: { info: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
+    let telemetry: { publishForJob: ReturnType<typeof vi.fn> };
 
     beforeEach(() => {
         grpcClient = {
@@ -33,6 +35,9 @@ describe('AnimationGenerationProcessor', () => {
         logger = {
             info: vi.fn(),
             error: vi.fn(),
+        };
+        telemetry = {
+            publishForJob: vi.fn().mockResolvedValue(undefined),
         };
     });
 
@@ -49,7 +54,12 @@ describe('AnimationGenerationProcessor', () => {
             validation: { valid: true },
         });
 
-        const processor = new AnimationGenerationProcessor(grpcClient as any, prisma as any, logger as any);
+        const processor = new AnimationGenerationProcessor(
+            grpcClient as any,
+            prisma as any,
+            logger as any,
+            telemetry as unknown as ContentWorkerTelemetryPublisher,
+        );
         await processor.process(makeJob());
 
         expect(grpcClient.generateAnimation).toHaveBeenCalledWith(
@@ -75,11 +85,27 @@ describe('AnimationGenerationProcessor', () => {
                 }),
             }),
         );
+
+        expect(telemetry.publishForJob).toHaveBeenNthCalledWith(
+            2,
+            expect.any(Object),
+            expect.objectContaining({
+                stage: 'grpc_response_received',
+                diagnostics: expect.objectContaining({
+                    animationId: 'anim-1',
+                }),
+            }),
+        );
     });
 
     it('fails when grpc response has no animation payload', async () => {
         grpcClient.generateAnimation.mockResolvedValue({});
-        const processor = new AnimationGenerationProcessor(grpcClient as any, prisma as any, logger as any);
+        const processor = new AnimationGenerationProcessor(
+            grpcClient as any,
+            prisma as any,
+            logger as any,
+            telemetry as unknown as ContentWorkerTelemetryPublisher,
+        );
 
         await expect(processor.process(makeJob())).rejects.toThrow('No animation specification returned');
         expect(prisma.claimAnimation.upsert).not.toHaveBeenCalled();

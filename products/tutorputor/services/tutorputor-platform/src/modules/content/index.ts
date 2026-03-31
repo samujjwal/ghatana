@@ -16,6 +16,9 @@ import { registerReviewRoutes } from "./review/routes.js";
 import { registerTelemetryRoutes } from "./telemetry/routes.js";
 import { registerCandidateRoutes } from "./candidates/routes.js";
 import { registerPublishRoutes } from "./publish/routes.js";
+import { registerModalityConversionRoutes } from "./modality-conversion/routes.js";
+import { registerQualityMLRoutes } from "./quality-ml/routes.js";
+import { registerABTestingRoutes } from "./experiments/ab-testing/routes.js";
 
 /**
  * Content module - consolidates:
@@ -74,7 +77,7 @@ export const contentModule: FastifyPluginAsync = async (app) => {
   registerRecommendationRoutes(app, { prisma });
 
   // Register Generation Planner routes
-  registerGenerationRoutes(app, { prisma });
+  registerGenerationRoutes(app, { prisma, redis: app.redis });
 
   // Register Evaluation & Guardrail Scorecard routes (P3.3)
   registerEvaluationRoutes(app, { prisma });
@@ -90,6 +93,15 @@ export const contentModule: FastifyPluginAsync = async (app) => {
 
   // Register Publish & Reindex routes (P4.4)
   registerPublishRoutes(app, { prisma });
+
+  // Register cross-modal conversion routes
+  registerModalityConversionRoutes(app, { prisma });
+
+  // Register heuristic quality prediction routes
+  registerQualityMLRoutes(app, { prisma });
+
+  // Register experimentation routes
+  registerABTestingRoutes(app, { prisma });
 
   app.log.info("✅ Content module routes registered");
 };

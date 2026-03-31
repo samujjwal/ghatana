@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import type { FastifyInstance, FastifyError } from "fastify";
+import { errorHandler } from "../middleware/error-handler.js";
 
 /**
  * Setup error tracking with Sentry.
@@ -38,50 +39,16 @@ export function setupErrorTracking(app: FastifyInstance) {
     },
   });
 
-  // Capture all unhandled errors
-  app.setErrorHandler((error: FastifyError, request, reply) => {
-    // Don't report validation errors to Sentry
-    if (error.validation) {
-      app.log.warn({ error, validation: error.validation }, "Validation error");
-      return reply.code(400).send({
-        error: "Validation Error",
-        message: error.message,
-        validation: error.validation,
-      });
+  app.addHook("onError", (request, _reply, error, done) => {
+    if (!error.validation) {
+      Sentry.captureException(error);
     }
 
-    // Capture in Sentry
-    Sentry.captureException(error, {
-      tags: {
-        method: request.method,
-        route: request.routeOptions.url || "unknown",
-        tenant_id: (request.headers["x-tenant-id"] as string) || "default",
-      },
-      user: {
-        id: (request as any).user?.id,
-        email: (request as any).user?.email,
-      },
-      extra: {
-        query: request.query,
-        params: request.params,
-        statusCode: error.statusCode,
-      },
-    });
+    done();
+  });
 
-    app.log.error(
-      { error, request: { url: request.url, method: request.method } },
-      "Unhandled error",
-    );
-
-    // Send appropriate response
-    const statusCode = error.statusCode || 500;
-    const isDevelopment = process.env.NODE_ENV === "development";
-
-    reply.code(statusCode).send({
-      error: error.name || "Internal Server Error",
-      message: isDevelopment ? error.message : "An unexpected error occurred",
-      ...(isDevelopment && { stack: error.stack }),
-    });
+  app.setErrorHandler((error: FastifyError, request, reply) => {
+    errorHandler(error, request, reply);
   });
 
   // Capture unhandled promise rejections

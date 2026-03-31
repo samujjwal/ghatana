@@ -14,11 +14,21 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
+import type Redis from "ioredis";
 import type {
   GenerationRequest,
   GenerationJob,
   GenerationRequestWithJobs,
+  GenerationExecutionSnapshot,
+  GenerationExecutionProgress,
+  GenerationExecutionEvent,
+  GenerationExecutionCostSummary,
+  GenerationExecutionWorkerTelemetry,
 } from "@tutorputor/contracts/v1/content-studio";
+import {
+  getGenerationExecutionChannel,
+  type GenerationExecutionStreamMessage,
+} from "./execution-stream.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,6 +37,7 @@ import type {
 export interface JobExecutionResult {
   jobId: string;
   status: "completed" | "failed";
+  outputAssetId?: string;
   outputData?: Record<string, unknown>;
   diagnostics?: Record<string, unknown>;
   errorMessage?: string;
@@ -42,18 +53,49 @@ export interface ExecutionSummary {
   totalDurationMs: number;
 }
 
+export { getGenerationExecutionChannel } from "./execution-stream.js";
+export type { GenerationExecutionStreamMessage } from "./execution-stream.js";
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
 
 export class GenerationExecutionService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly redis?: Redis,
+  ) {}
+
+  async getExecutionSnapshot(
+    tenantId: string,
+    requestId: string,
+  ): Promise<GenerationExecutionSnapshot | null> {
+    const request = await (this.prisma as any).generationRequest.findFirst({
+      where: { id: requestId, tenantId },
+      include: { jobs: true },
+    });
+
+    if (!request) {
+      return null;
+    }
+
+    const mappedRequest: GenerationRequestWithJobs = {
+      ...mapRequest(request),
+      jobs: (request.jobs ?? []).map(mapJob),
+    };
+
+    return {
+      request: mappedRequest,
+      progress: buildExecutionProgress(mappedRequest),
+      events: buildExecutionEvents(mappedRequest),
+    };
+  }
 
   /**
    * Begin execution of a PLANNED generation request.
    *
-   * Transitions the request to EXECUTING and marks all PENDING jobs
-   * as RUNNING.
+   * Transitions the request to EXECUTING. Jobs remain PENDING until the
+   * dispatch layer enqueues dependency-ready work into BullMQ.
    */
   async startExecution(
     tenantId: string,
@@ -80,11 +122,6 @@ export class GenerationExecutionService {
         where: { id: requestId },
         data: { status: "EXECUTING", startedAt: new Date() },
       });
-
-      await tx.generationJob.updateMany({
-        where: { requestId, status: "PENDING" },
-        data: { status: "RUNNING", startedAt: new Date() },
-      });
     });
 
     // Re-fetch with updated statuses
@@ -93,10 +130,13 @@ export class GenerationExecutionService {
       include: { jobs: true },
     });
 
-    return {
+    const mappedRequest = {
       ...mapRequest(updated),
       jobs: (updated.jobs ?? []).map(mapJob),
     };
+
+    await this.publishSnapshot(tenantId, requestId);
+    return mappedRequest;
   }
 
   /**
@@ -116,6 +156,9 @@ export class GenerationExecutionService {
       data: {
         status: jobStatus,
         progress: result.status === "completed" ? 100 : 0,
+        ...(result.outputAssetId !== undefined
+          ? { outputAssetId: result.outputAssetId }
+          : {}),
         outputData: result.outputData ?? null,
         diagnostics: result.diagnostics ?? null,
         errorMessage: result.errorMessage ?? null,
@@ -136,6 +179,8 @@ export class GenerationExecutionService {
 
     // Check if all jobs are done
     await this.maybeCompleteRequest(requestId);
+
+    await this.publishJobResult(requestId, result);
 
     return mapJob(updatedJob);
   }
@@ -204,41 +249,291 @@ export class GenerationExecutionService {
       },
     });
   }
+
+  private async publishSnapshot(
+    tenantId: string,
+    requestId: string,
+  ): Promise<void> {
+    if (!this.redis) {
+      return;
+    }
+
+    const snapshot = await this.getExecutionSnapshot(tenantId, requestId);
+    if (!snapshot) {
+      return;
+    }
+
+    await this.publishMessage(requestId, {
+      kind: "snapshot",
+      requestId,
+      at: new Date().toISOString(),
+      snapshot,
+    });
+  }
+
+  private async publishJobResult(
+    requestId: string,
+    result: JobExecutionResult,
+  ): Promise<void> {
+    if (!this.redis) {
+      return;
+    }
+
+    await this.publishMessage(requestId, {
+      kind: "job_result",
+      requestId,
+      at: new Date().toISOString(),
+      jobResult: result,
+    });
+
+    const request = await (this.prisma as any).generationRequest.findFirst({
+      where: { id: requestId },
+      select: { tenantId: true, status: true, totalJobs: true, completedJobs: true, failedJobs: true },
+    });
+
+    if (!request) {
+      return;
+    }
+
+    await this.publishSnapshot(request.tenantId, requestId);
+
+    if (request.status === "COMPLETED" || request.status === "FAILED") {
+      await this.publishMessage(requestId, {
+        kind: "summary",
+        requestId,
+        at: new Date().toISOString(),
+        summary: {
+          requestId,
+          status: request.status === "COMPLETED" ? "completed" : "failed",
+          totalJobs: request.totalJobs,
+          completedJobs: request.completedJobs,
+          failedJobs: request.failedJobs,
+          totalDurationMs: 0,
+        },
+      });
+    }
+  }
+
+  private async publishMessage(
+    requestId: string,
+    message: GenerationExecutionStreamMessage,
+  ): Promise<void> {
+    if (!this.redis) {
+      return;
+    }
+
+    await this.redis.publish(
+      getGenerationExecutionChannel(requestId),
+      JSON.stringify(message),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Mappers
 // ---------------------------------------------------------------------------
 
+function buildExecutionProgress(
+  request: GenerationRequestWithJobs,
+): GenerationExecutionProgress {
+  const runningJobs = request.jobs.filter((job) => job.status === "running").length;
+  const pendingJobs = request.jobs.filter((job) => job.status === "pending").length;
+  const cancelledJobs = request.jobs.filter(
+    (job) => job.status === "cancelled",
+  ).length;
+  const finishedJobs = request.completedJobs + request.failedJobs + cancelledJobs;
+  const totalJobs = Math.max(request.totalJobs, request.jobs.length, 1);
+  const workerTelemetry = request.jobs
+    .map((job) => getWorkerTelemetry(job))
+    .filter((value): value is GenerationExecutionWorkerTelemetry => value !== null);
+  const latestWorkerTelemetry = workerTelemetry
+    .slice()
+    .sort((left, right) => left.at.localeCompare(right.at))
+    .at(-1);
+  const cost = buildExecutionCostSummary(request);
+
+  return {
+    totalJobs,
+    completedJobs: request.completedJobs,
+    failedJobs: request.failedJobs,
+    runningJobs,
+    pendingJobs,
+    cancelledJobs,
+    completionPercent: Math.min(100, Math.round((finishedJobs / totalJobs) * 100)),
+    terminal:
+      request.status === "completed" ||
+      request.status === "failed" ||
+      request.status === "cancelled",
+    ...(cost ? { cost } : {}),
+    ...(latestWorkerTelemetry?.stage
+      ? { latestWorkerStage: latestWorkerTelemetry.stage }
+      : {}),
+    ...(latestWorkerTelemetry?.message
+      ? { latestWorkerMessage: latestWorkerTelemetry.message }
+      : {}),
+  };
+}
+
+function buildExecutionEvents(
+  request: GenerationRequestWithJobs,
+): GenerationExecutionEvent[] {
+  const events: GenerationExecutionEvent[] = [
+    {
+      type: "request_created",
+      at: request.createdAt,
+      requestId: request.id,
+      status: request.status,
+      message: `Generation request created for ${request.title}`,
+    },
+  ];
+
+  if (request.plannedAt) {
+    events.push({
+      type: "request_planned",
+      at: request.plannedAt,
+      requestId: request.id,
+      status: request.status,
+      message: `${request.totalJobs} generation jobs were planned`,
+    });
+  }
+
+  if (request.startedAt) {
+    events.push({
+      type: "request_started",
+      at: request.startedAt,
+      requestId: request.id,
+      status: request.status,
+      message: "Generation execution started",
+    });
+  }
+
+  for (const job of request.jobs) {
+    const workerTelemetry = getWorkerTelemetry(job);
+
+    if (job.startedAt) {
+      events.push({
+        type: "job_started",
+        at: job.startedAt,
+        requestId: request.id,
+        jobId: job.id,
+        jobType: job.jobType,
+        status: job.status,
+        message: `${job.jobType} job started`,
+      });
+    }
+
+    if (workerTelemetry) {
+      events.push({
+        type: "job_progress",
+        at: workerTelemetry.at,
+        requestId: request.id,
+        jobId: job.id,
+        jobType: job.jobType,
+        status: workerTelemetry.status ?? job.status,
+        message: workerTelemetry.message,
+        stage: workerTelemetry.stage,
+        ...(workerTelemetry.progressPercent != null
+          ? { progressPercent: workerTelemetry.progressPercent }
+          : {}),
+        ...(workerTelemetry.diagnostics
+          ? { diagnostics: workerTelemetry.diagnostics }
+          : {}),
+      });
+
+      if (workerTelemetry.cost) {
+        events.push({
+          type: "job_cost_updated",
+          at: workerTelemetry.at,
+          requestId: request.id,
+          jobId: job.id,
+          jobType: job.jobType,
+          status: workerTelemetry.status ?? job.status,
+          message: `Cost updated for ${job.jobType}`,
+          stage: workerTelemetry.stage,
+          cost: workerTelemetry.cost,
+        });
+      }
+    }
+
+    if (job.completedAt && job.status === "completed") {
+      events.push({
+        type: "job_completed",
+        at: job.completedAt,
+        requestId: request.id,
+        jobId: job.id,
+        jobType: job.jobType,
+        status: job.status,
+        message: `${job.jobType} job completed`,
+      });
+    }
+
+    if (job.completedAt && job.status === "failed") {
+      events.push({
+        type: "job_failed",
+        at: job.completedAt,
+        requestId: request.id,
+        jobId: job.id,
+        jobType: job.jobType,
+        status: job.status,
+        message: job.errorMessage
+          ? `${job.jobType} job failed: ${job.errorMessage}`
+          : `${job.jobType} job failed`,
+      });
+    }
+  }
+
+  if (request.completedAt && request.status === "completed") {
+    events.push({
+      type: "request_completed",
+      at: request.completedAt,
+      requestId: request.id,
+      status: request.status,
+      message: "Generation request completed successfully",
+    });
+  }
+
+  if (request.completedAt && request.status === "failed") {
+    events.push({
+      type: "request_failed",
+      at: request.completedAt,
+      requestId: request.id,
+      status: request.status,
+      message: "Generation request completed with failures",
+    });
+  }
+
+  return events.sort((left, right) => left.at.localeCompare(right.at));
+}
+
 function mapRequest(row: any): GenerationRequest {
   return {
     id: row.id,
     tenantId: row.tenantId,
     title: row.title,
-    description: row.description ?? undefined,
     domain: row.domain,
-    conceptId: row.conceptId ?? undefined,
-    targetGrades: row.targetGrades ?? undefined,
     requestedBy: row.requestedBy,
     status: (row.status as string).toLowerCase() as GenerationRequest["status"],
-    plannedAssets: row.plannedAssets ?? undefined,
-    artifactNeeds: row.artifactNeeds ?? undefined,
     riskLevel: (row.riskLevel as string).toLowerCase() as any,
-    riskFactors: row.riskFactors ?? undefined,
     reviewPath: enumToReviewPath(row.reviewPath as string),
-    estimatedCost: row.estimatedCost ?? undefined,
     totalJobs: row.totalJobs,
     completedJobs: row.completedJobs,
     failedJobs: row.failedJobs,
-    plannedAt: row.plannedAt
-      ? (row.plannedAt as Date).toISOString()
-      : undefined,
-    startedAt: row.startedAt
-      ? (row.startedAt as Date).toISOString()
-      : undefined,
-    completedAt: row.completedAt
-      ? (row.completedAt as Date).toISOString()
-      : undefined,
+    ...(row.description != null ? { description: row.description } : {}),
+    ...(row.conceptId != null ? { conceptId: row.conceptId } : {}),
+    ...(row.targetGrades != null ? { targetGrades: row.targetGrades } : {}),
+    ...(row.plannedAssets != null ? { plannedAssets: row.plannedAssets } : {}),
+    ...(row.artifactNeeds != null ? { artifactNeeds: row.artifactNeeds } : {}),
+    ...(row.riskFactors != null ? { riskFactors: row.riskFactors } : {}),
+    ...(row.estimatedCost != null ? { estimatedCost: row.estimatedCost } : {}),
+    ...(row.plannedAt
+      ? { plannedAt: (row.plannedAt as Date).toISOString() }
+      : {}),
+    ...(row.startedAt
+      ? { startedAt: (row.startedAt as Date).toISOString() }
+      : {}),
+    ...(row.completedAt
+      ? { completedAt: (row.completedAt as Date).toISOString() }
+      : {}),
     createdAt: (row.createdAt as Date).toISOString(),
     updatedAt: (row.updatedAt as Date).toISOString(),
   };
@@ -249,23 +544,23 @@ function mapJob(row: any): GenerationJob {
     id: row.id,
     requestId: row.requestId,
     jobType: (row.jobType as string).toLowerCase() as GenerationJob["jobType"],
-    targetRef: row.targetRef ?? undefined,
-    inputPrompt: row.inputPrompt ?? undefined,
-    parameters: row.parameters ?? undefined,
     status: (row.status as string).toLowerCase() as GenerationJob["status"],
     progress: row.progress,
-    outputAssetId: row.outputAssetId ?? undefined,
-    outputData: row.outputData ?? undefined,
-    diagnostics: row.diagnostics ?? undefined,
-    errorMessage: row.errorMessage ?? undefined,
     retryCount: row.retryCount,
     maxRetries: row.maxRetries,
-    startedAt: row.startedAt
-      ? (row.startedAt as Date).toISOString()
-      : undefined,
-    completedAt: row.completedAt
-      ? (row.completedAt as Date).toISOString()
-      : undefined,
+    ...(row.targetRef != null ? { targetRef: row.targetRef } : {}),
+    ...(row.inputPrompt != null ? { inputPrompt: row.inputPrompt } : {}),
+    ...(row.parameters != null ? { parameters: row.parameters } : {}),
+    ...(row.outputAssetId != null ? { outputAssetId: row.outputAssetId } : {}),
+    ...(row.outputData != null ? { outputData: row.outputData } : {}),
+    ...(row.diagnostics != null ? { diagnostics: row.diagnostics } : {}),
+    ...(row.errorMessage != null ? { errorMessage: row.errorMessage } : {}),
+    ...(row.startedAt
+      ? { startedAt: (row.startedAt as Date).toISOString() }
+      : {}),
+    ...(row.completedAt
+      ? { completedAt: (row.completedAt as Date).toISOString() }
+      : {}),
     createdAt: (row.createdAt as Date).toISOString(),
     updatedAt: (row.updatedAt as Date).toISOString(),
   };
@@ -280,4 +575,122 @@ function enumToReviewPath(value: string): any {
     default:
       return "human_review";
   }
+}
+
+function buildExecutionCostSummary(
+  request: GenerationRequestWithJobs,
+): GenerationExecutionCostSummary | null {
+  const estimatedCost = asRecord(request.estimatedCost);
+  const estimatedTokens = asNumber(estimatedCost?.totalTokens) ?? 0;
+  const estimatedCostUsd =
+    asNumber(estimatedCost?.estimatedSpendUsd) ??
+    asNumber(estimatedCost?.estimatedCostUsd) ??
+    0;
+
+  let actualTokens = 0;
+  let actualCostUsd = 0;
+
+  for (const job of request.jobs) {
+    const telemetry = getWorkerTelemetry(job);
+    if (!telemetry?.cost) {
+      continue;
+    }
+
+    actualTokens += telemetry.cost.actualTokens ?? 0;
+    actualCostUsd += telemetry.cost.actualCostUsd ?? 0;
+  }
+
+  if (
+    estimatedTokens === 0 &&
+    estimatedCostUsd === 0 &&
+    actualTokens === 0 &&
+    actualCostUsd === 0
+  ) {
+    return null;
+  }
+
+  return {
+    estimatedTokens,
+    actualTokens,
+    estimatedCostUsd: roundUsd(estimatedCostUsd),
+    actualCostUsd: roundUsd(actualCostUsd),
+  };
+}
+
+function getWorkerTelemetry(
+  job: Pick<GenerationJob, "diagnostics">,
+): GenerationExecutionWorkerTelemetry | null {
+  const diagnostics = asRecord(job.diagnostics);
+  const telemetry = asRecord(diagnostics?.workerTelemetry);
+  if (!telemetry) {
+    return null;
+  }
+
+  const at = typeof telemetry.at === "string" ? telemetry.at : null;
+  const requestId =
+    typeof telemetry.requestId === "string" ? telemetry.requestId : null;
+  const jobId = typeof telemetry.jobId === "string" ? telemetry.jobId : null;
+  const stage = typeof telemetry.stage === "string" ? telemetry.stage : null;
+  const message =
+    typeof telemetry.message === "string" ? telemetry.message : null;
+
+  if (!at || !requestId || !jobId || !stage || !message) {
+    return null;
+  }
+
+  const cost = asRecord(telemetry.cost);
+  const telemetryDiagnostics = asRecord(telemetry.diagnostics);
+  const costPayload = cost
+    ? {
+        ...(typeof cost.model === "string" ? { model: cost.model } : {}),
+        ...(typeof cost.generationTimeMs === "number"
+          ? { generationTimeMs: cost.generationTimeMs }
+          : {}),
+        ...(typeof cost.estimatedTokens === "number"
+          ? { estimatedTokens: cost.estimatedTokens }
+          : {}),
+        ...(typeof cost.actualTokens === "number"
+          ? { actualTokens: cost.actualTokens }
+          : {}),
+        ...(typeof cost.estimatedCostUsd === "number"
+          ? { estimatedCostUsd: cost.estimatedCostUsd }
+          : {}),
+        ...(typeof cost.actualCostUsd === "number"
+          ? { actualCostUsd: cost.actualCostUsd }
+          : {}),
+      }
+    : null;
+
+  return {
+    at,
+    requestId,
+    jobId,
+    stage,
+    message,
+    ...(typeof telemetry.jobType === "string"
+      ? { jobType: telemetry.jobType as GenerationExecutionWorkerTelemetry["jobType"] }
+      : {}),
+    ...(typeof telemetry.progressPercent === "number"
+      ? { progressPercent: telemetry.progressPercent }
+      : {}),
+    ...(typeof telemetry.status === "string"
+      ? { status: telemetry.status as GenerationExecutionWorkerTelemetry["status"] }
+      : {}),
+    ...(telemetryDiagnostics ? { diagnostics: telemetryDiagnostics } : {}),
+    ...(costPayload ? { cost: costPayload } : {}),
+  } satisfies GenerationExecutionWorkerTelemetry;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function asNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function roundUsd(value: number): number {
+  return Math.round(value * 10000) / 10000;
 }

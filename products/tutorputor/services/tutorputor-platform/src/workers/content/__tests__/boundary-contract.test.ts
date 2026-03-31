@@ -74,15 +74,17 @@ describe("Java Processing Boundary Contract", () => {
       "generate-simulation",
       "generate-animation",
       "validate-content",
+      "execute-generation-job",
     ] as const;
 
-    it("should define all 5 documented job families", () => {
-      expect(DOCUMENTED_JOB_FAMILIES).toHaveLength(5);
+    it("should define all documented job families", () => {
+      expect(DOCUMENTED_JOB_FAMILIES).toHaveLength(6);
       expect(DOCUMENTED_JOB_FAMILIES).toContain("generate-claims");
       expect(DOCUMENTED_JOB_FAMILIES).toContain("generate-examples");
       expect(DOCUMENTED_JOB_FAMILIES).toContain("generate-simulation");
       expect(DOCUMENTED_JOB_FAMILIES).toContain("generate-animation");
       expect(DOCUMENTED_JOB_FAMILIES).toContain("validate-content");
+      expect(DOCUMENTED_JOB_FAMILIES).toContain("execute-generation-job");
     });
 
     it("generate-claims is the only fan-out job (1→N)", () => {
@@ -93,10 +95,11 @@ describe("Java Processing Boundary Contract", () => {
         "generate-simulation",
         "generate-animation",
         "validate-content",
+        "execute-generation-job",
       ] as const;
 
       expect(FAN_OUT_JOBS).toHaveLength(1);
-      expect(TERMINAL_JOBS).toHaveLength(4);
+      expect(TERMINAL_JOBS).toHaveLength(5);
     });
   });
 
@@ -163,6 +166,24 @@ describe("Java Processing Boundary Contract", () => {
       expect(jobData.domain).toBeDefined();
       expect(jobData.gradeLevel).toBeDefined();
       expect(jobData.maxClaims).toBeGreaterThan(0);
+    });
+
+    it("job data can optionally carry generation execution correlation fields", () => {
+      const correlatedJobData: ClaimGenerationJobData = {
+        experienceId: "exp-1",
+        tenantId: "tenant-1",
+        topic: "Newton's Laws",
+        title: "Inertia and Motion",
+        domain: "PHYSICS",
+        gradeLevel: "GRADE_9_12",
+        targetGrades: ["GRADE_9_12"],
+        maxClaims: 5,
+        generationRequestId: "req-1",
+        generationJobId: "job-1",
+      };
+
+      expect(correlatedJobData.generationRequestId).toBe("req-1");
+      expect(correlatedJobData.generationJobId).toBe("job-1");
     });
   });
 

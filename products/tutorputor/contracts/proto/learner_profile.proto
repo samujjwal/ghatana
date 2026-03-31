@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package tutorputor.learner_profile;
+
+option java_package = "com.ghatana.tutorputor.contracts.learner";
+option java_outer_classname = "LearnerProfileProto";
+
+service LearnerProfileService {
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  rpc UpdateMastery(UpdateMasteryRequest) returns (UpdateMasteryResponse);
+  rpc RecordGap(RecordGapRequest) returns (RecordGapResponse);
+  rpc GetRecommendations(GetRecommendationsRequest) returns (GetRecommendationsResponse);
+}
+
+message GetProfileRequest {
+  string tenant_id = 1;
+  string learner_id = 2;
+}
+
+message LearningStyleScores {
+  double visual = 1;
+  double auditory = 2;
+  double kinesthetic = 3;
+  double reading = 4;
+}
+
+message SessionPreferences {
+  int32 preferred_session_minutes = 1;
+  string notification_frequency = 2;
+  string preferred_time_of_day = 3;
+}
+
+message MasterySummary {
+  double average_mastery = 1;
+  int32 concept_count = 2;
+  repeated string low_mastery_concepts = 3;
+}
+
+message LearnerProfileMessage {
+  string learner_id = 1;
+  string preferred_difficulty = 2;
+  string preferred_modality = 3;
+  string preferred_pacing = 4;
+  string adjusted_difficulty = 5;
+  repeated string preferences = 6;
+  repeated string knowledge_gaps = 7;
+  MasterySummary mastery_summary = 8;
+  LearningStyleScores learning_style_scores = 9;
+  SessionPreferences session_preferences = 10;
+}
+
+message GetProfileResponse {
+  LearnerProfileMessage profile = 1;
+}
+
+message UpdateMasteryRequest {
+  string tenant_id = 1;
+  string learner_id = 2;
+  string concept_id = 3;
+  bool correct = 4;
+  double confidence = 5;
+  int32 time_spent_seconds = 6;
+  int32 hints_used = 7;
+  int32 attempts = 8;
+}
+
+message UpdateMasteryResponse {
+  string learner_id = 1;
+  string concept_id = 2;
+  double mastery_probability = 3;
+  int32 next_review_days = 4;
+}
+
+message RecordGapRequest {
+  string tenant_id = 1;
+  string learner_id = 2;
+  string concept_id = 3;
+  string prerequisite_id = 4;
+  string severity = 5;
+  string detected_by = 6;
+}
+
+message RecordGapResponse {
+  string learner_id = 1;
+  string concept_id = 2;
+  string prerequisite_id = 3;
+  string severity = 4;
+  string status = 5;
+}
+
+message GetRecommendationsRequest {
+  string tenant_id = 1;
+  string learner_id = 2;
+  string current_concept_id = 3;
+  string goal_concept_id = 4;
+  int32 available_time_minutes = 5;
+}
+
+message RecommendationMessage {
+  string concept_id = 1;
+  string concept_name = 2;
+  string type = 3;
+  string reason = 4;
+  double confidence = 5;
+  int32 estimated_time_minutes = 6;
+  string suggested_modality = 7;
+}
+
+message GetRecommendationsResponse {
+  repeated RecommendationMessage recommendations = 1;
+}

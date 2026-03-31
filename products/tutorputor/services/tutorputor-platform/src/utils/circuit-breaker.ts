@@ -1,0 +1,212 @@
+/**
+ * Circuit Breaker Utility
+ *
+ * Provides circuit breaker pattern implementation for external services
+ * to prevent cascade failures and provide fallback behavior.
+ *
+ * @doc.type utility
+ * @doc.purpose Implement circuit breaker pattern for external service calls
+ * @doc.layer product
+ * @doc.pattern Circuit Breaker
+ */
+
+import CircuitBreaker from "opossum";
+import type { Logger } from "pino";
+
+export interface CircuitBreakerOptions {
+  // Time in milliseconds that a circuit should remain open before transitioning to half-open
+  resetTimeout?: number;
+  // Percentage of requests that can fail before the circuit opens
+  errorThresholdPercentage?: number;
+  // Minimum number of requests before the circuit starts calculating error percentages
+  rollingCountTimeout?: number;
+  // Minimum number of requests before the circuit starts calculating error percentages
+  rollingCountBuckets?: number;
+  // Whether to track the current state of the circuit
+  trackRunning?: boolean;
+}
+
+export interface ServiceWrapper<T> {
+  name: string;
+  circuitBreaker: CircuitBreaker;
+  execute: (...args: unknown[]) => Promise<T>;
+  healthCheck: () => Promise<boolean>;
+}
+
+const DEFAULT_OPTIONS: CircuitBreakerOptions = {
+  resetTimeout: 30000, // 30 seconds
+  errorThresholdPercentage: 50, // 50% failure rate
+  rollingCountTimeout: 60000, // 1 minute
+  rollingCountBuckets: 12, // 12 buckets of 5 seconds each
+  trackRunning: true,
+};
+
+/**
+ * Create a circuit breaker for an external service
+ */
+export function createCircuitBreaker<T>(
+  serviceName: string,
+  action: (...args: unknown[]) => Promise<T>,
+  options: CircuitBreakerOptions = {},
+  logger?: Logger,
+): ServiceWrapper<T> {
+  const opts = { ...DEFAULT_OPTIONS, ...options };
+
+  const breaker = new CircuitBreaker(action, {
+    resetTimeout: opts.resetTimeout,
+    errorThresholdPercentage: opts.errorThresholdPercentage,
+    rollingCountTimeout: opts.rollingCountTimeout,
+    rollingCountBuckets: opts.rollingCountBuckets,
+    trackRunning: opts.trackRunning,
+  });
+
+  // Setup event listeners for monitoring
+  if (logger) {
+    breaker.on("open", () => {
+      logger.warn({ serviceName }, `Circuit breaker opened for ${serviceName}`);
+    });
+
+    breaker.on("halfOpen", () => {
+      logger.info(
+        { serviceName },
+        `Circuit breaker half-open for ${serviceName}`,
+      );
+    });
+
+    breaker.on("close", () => {
+      logger.info({ serviceName }, `Circuit breaker closed for ${serviceName}`);
+    });
+
+    breaker.on("fallback", (result: unknown) => {
+      logger.warn(
+        {
+          serviceName,
+          result:
+            typeof result === "object"
+              ? JSON.stringify(result)
+              : String(result),
+        },
+        `Fallback triggered for ${serviceName}`,
+      );
+    });
+
+    breaker.on("reject", () => {
+      logger.warn(
+        { serviceName },
+        `Request rejected by circuit breaker for ${serviceName}`,
+      );
+    });
+  }
+
+  return {
+    name: serviceName,
+    circuitBreaker: breaker,
+    execute: async (...args: unknown[]): Promise<T> => {
+      try {
+        return await breaker.fire(...args);
+      } catch (error) {
+        // Re-throw the error after circuit breaker handles it
+        throw error;
+      }
+    },
+    healthCheck: async (): Promise<boolean> => {
+      return breaker.stats?.closed === true;
+    },
+  };
+}
+
+/**
+ * Create a circuit breaker with fallback for AI services
+ */
+export function createAICircuitBreaker<T>(
+  serviceName: string,
+  action: (...args: unknown[]) => Promise<T>,
+  fallbackAction?: (...args: unknown[]) => Promise<T>,
+  logger?: Logger,
+): ServiceWrapper<T> {
+  const wrapper = createCircuitBreaker<T>(
+    serviceName,
+    action,
+    {
+      resetTimeout: 60000, // AI services may need longer recovery time
+      errorThresholdPercentage: 40, // More lenient for AI services
+      rollingCountTimeout: 120000, // 2 minutes rolling window
+    },
+    logger,
+  );
+
+  // Add fallback if provided
+  if (fallbackAction) {
+    wrapper.circuitBreaker.fallback(fallbackAction);
+  }
+
+  return wrapper;
+}
+
+/**
+ * Create a circuit breaker for payment services
+ */
+export function createPaymentCircuitBreaker<T>(
+  serviceName: string,
+  action: (...args: unknown[]) => Promise<T>,
+  logger?: Logger,
+): ServiceWrapper<T> {
+  return createCircuitBreaker<T>(
+    serviceName,
+    action,
+    {
+      resetTimeout: 300000, // 5 minutes for payment services
+      errorThresholdPercentage: 25, // Lower threshold for payment services
+      rollingCountTimeout: 300000, // 5 minutes rolling window
+    },
+    logger,
+  );
+}
+
+/**
+ * Health check for all circuit breakers
+ */
+export async function checkAllCircuitBreakers(
+  circuitBreakers: ServiceWrapper<unknown>[],
+): Promise<Record<string, boolean>> {
+  const results: Record<string, boolean> = {};
+
+  await Promise.allSettled(
+    circuitBreakers.map(async (wrapper) => {
+      try {
+        results[wrapper.name] = await wrapper.healthCheck();
+      } catch (_error) {
+        results[wrapper.name] = false;
+      }
+    }),
+  );
+
+  return results;
+}
+
+/**
+ * Get circuit breaker statistics for monitoring
+ */
+export function getCircuitBreakerStats(wrapper: ServiceWrapper<unknown>): {
+  name: string;
+  state: string;
+  totalRequests: number;
+  totalFailures: number;
+  totalSuccesses: number;
+  totalTimeouts: number;
+  averageResponseTime: number;
+  percentFailure: number;
+} {
+  const stats = wrapper.circuitBreaker.stats;
+
+  return {
+    name: wrapper.name,
+    state: wrapper.circuitBreaker.state,
+    totalRequests: stats?.total || 0,
+    totalFailures: stats?.failures || 0,
+    totalSuccesses: stats?.fires - (stats?.failures || 0) || 0,
+    totalTimeouts: stats?.timeouts || 0,
+    averageResponseTime: stats?.mean || 0,
+    percentFailure: stats?.percentFailures || 0,
+  };
+}

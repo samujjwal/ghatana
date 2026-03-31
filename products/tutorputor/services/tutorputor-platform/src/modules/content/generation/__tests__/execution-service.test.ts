@@ -10,6 +10,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   GenerationExecutionService,
+  getGenerationExecutionChannel,
   type JobExecutionResult,
 } from "../execution-service";
 
@@ -80,9 +81,6 @@ function makePrisma() {
     generationRequest: {
       update: vi.fn().mockResolvedValue(makeRequest({ status: "EXECUTING" })),
     },
-    generationJob: {
-      updateMany: vi.fn().mockResolvedValue({ count: 3 }),
-    },
   };
 
   return {
@@ -108,6 +106,7 @@ function makePrisma() {
     $transaction: vi.fn().mockImplementation(async (fn: any) => {
       return fn(txProxy);
     }),
+    publish: vi.fn().mockResolvedValue(1),
     _txProxy: txProxy,
   };
 }
@@ -122,7 +121,7 @@ describe("GenerationExecutionService", () => {
 
   beforeEach(() => {
     prisma = makePrisma();
-    service = new GenerationExecutionService(prisma as any);
+    service = new GenerationExecutionService(prisma as any, prisma as any);
   });
 
   // =========================================================================
@@ -152,7 +151,7 @@ describe("GenerationExecutionService", () => {
       const planned = makeRequest({ status: "PLANNED" });
       const executing = makeRequest({
         status: "EXECUTING",
-        jobs: planned.jobs.map((j: any) => ({ ...j, status: "RUNNING" })),
+        jobs: planned.jobs,
       });
 
       prisma.generationRequest.findFirst
@@ -165,7 +164,7 @@ describe("GenerationExecutionService", () => {
       expect(result.status).toBe("executing");
     });
 
-    it("should mark all PENDING jobs as RUNNING", async () => {
+    it("should leave jobs pending until the dispatch layer enqueues them", async () => {
       const planned = makeRequest({ status: "PLANNED" });
       const executing = makeRequest({ status: "EXECUTING" });
 
@@ -175,10 +174,12 @@ describe("GenerationExecutionService", () => {
 
       await service.startExecution("tenant-1", "req-1");
 
-      expect(prisma._txProxy.generationJob.updateMany).toHaveBeenCalledWith({
-        where: { requestId: "req-1", status: "PENDING" },
-        data: expect.objectContaining({ status: "RUNNING" }),
-      });
+      expect(prisma._txProxy.generationRequest.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "req-1" },
+          data: expect.objectContaining({ status: "EXECUTING" }),
+        }),
+      );
     });
 
     it("should set startedAt on the request", async () => {
@@ -198,6 +199,26 @@ describe("GenerationExecutionService", () => {
             startedAt: expect.any(Date),
           }),
         }),
+      );
+    });
+
+    it("publishes a snapshot update when execution starts", async () => {
+      const planned = makeRequest({ status: "PLANNED" });
+      const executing = makeRequest({
+        status: "EXECUTING",
+        jobs: planned.jobs.map((j: any) => ({ ...j, status: "RUNNING" })),
+      });
+
+      prisma.generationRequest.findFirst
+        .mockResolvedValueOnce(planned)
+        .mockResolvedValueOnce(executing)
+        .mockResolvedValueOnce(executing);
+
+      await service.startExecution("tenant-1", "req-1");
+
+      expect(prisma.publish).toHaveBeenCalledWith(
+        getGenerationExecutionChannel("req-1"),
+        expect.stringContaining('"kind":"snapshot"'),
       );
     });
   });
@@ -285,6 +306,31 @@ describe("GenerationExecutionService", () => {
         expect.objectContaining({
           where: { id: "req-1" },
           data: { completedJobs: { increment: 1 } },
+        }),
+      );
+    });
+
+    it("persists outputAssetId when a job materializes a canonical asset", async () => {
+      prisma.generationRequest.findFirst.mockResolvedValue(
+        makeRequest({
+          status: "EXECUTING",
+          jobs: [makeJob({ status: "RUNNING" })],
+        }),
+      );
+
+      await service.recordJobResult("req-1", {
+        jobId: "job-1",
+        status: "completed",
+        outputAssetId: "asset-1",
+        outputData: { assetId: "asset-1" },
+        durationMs: 120,
+      });
+
+      expect(prisma.generationJob.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            outputAssetId: "asset-1",
+          }),
         }),
       );
     });
@@ -387,6 +433,46 @@ describe("GenerationExecutionService", () => {
       );
       expect(completionCall).toBeUndefined();
     });
+
+    it("publishes job-result and snapshot messages", async () => {
+      prisma.generationRequest.findFirst
+        .mockResolvedValueOnce(
+          makeRequest({
+            status: "EXECUTING",
+            jobs: [makeJob({ status: "RUNNING" })],
+          }),
+        )
+        .mockResolvedValueOnce({
+          tenantId: "tenant-1",
+          status: "EXECUTING",
+          totalJobs: 3,
+          completedJobs: 1,
+          failedJobs: 0,
+        })
+        .mockResolvedValueOnce(
+          makeRequest({
+            status: "EXECUTING",
+            jobs: [makeJob({ status: "RUNNING" })],
+          }),
+        );
+
+      await service.recordJobResult("req-1", {
+        jobId: "job-1",
+        status: "completed",
+        durationMs: 100,
+      });
+
+      expect(prisma.publish).toHaveBeenNthCalledWith(
+        1,
+        getGenerationExecutionChannel("req-1"),
+        expect.stringContaining('"kind":"job_result"'),
+      );
+      expect(prisma.publish).toHaveBeenNthCalledWith(
+        2,
+        getGenerationExecutionChannel("req-1"),
+        expect.stringContaining('"kind":"snapshot"'),
+      );
+    });
   });
 
   // =========================================================================
@@ -443,6 +529,158 @@ describe("GenerationExecutionService", () => {
 
       expect(summary.completedJobs).toBe(1);
       expect(summary.failedJobs).toBe(1);
+    });
+  });
+
+  // =========================================================================
+  // getExecutionSnapshot
+  // =========================================================================
+
+  describe("getExecutionSnapshot", () => {
+    it("should return null when the request does not exist", async () => {
+      prisma.generationRequest.findFirst.mockResolvedValue(null);
+
+      const snapshot = await service.getExecutionSnapshot("tenant-1", "missing");
+
+      expect(snapshot).toBeNull();
+    });
+
+    it("should compute progress counters from request and jobs", async () => {
+      prisma.generationRequest.findFirst.mockResolvedValue(
+        makeRequest({
+          status: "EXECUTING",
+          totalJobs: 4,
+          completedJobs: 1,
+          failedJobs: 1,
+          jobs: [
+            makeJob({
+              id: "job-1",
+              jobType: "CLAIM",
+              status: "COMPLETED",
+              completedAt: new Date("2025-06-01T10:01:00Z"),
+            }),
+            makeJob({
+              id: "job-2",
+              jobType: "EXPLAINER",
+              status: "FAILED",
+              errorMessage: "LLM timeout",
+              completedAt: new Date("2025-06-01T10:02:00Z"),
+            }),
+            makeJob({
+              id: "job-3",
+              jobType: "ASSESSMENT",
+              status: "RUNNING",
+              startedAt: new Date("2025-06-01T10:03:00Z"),
+            }),
+            makeJob({
+              id: "job-4",
+              jobType: "WORKED_EXAMPLE",
+              status: "PENDING",
+            }),
+          ],
+          startedAt: new Date("2025-06-01T10:00:00Z"),
+        }),
+      );
+
+      const snapshot = await service.getExecutionSnapshot("tenant-1", "req-1");
+
+      expect(snapshot?.progress.completedJobs).toBe(1);
+      expect(snapshot?.progress.failedJobs).toBe(1);
+      expect(snapshot?.progress.runningJobs).toBe(1);
+      expect(snapshot?.progress.pendingJobs).toBe(1);
+      expect(snapshot?.progress.completionPercent).toBe(50);
+      expect(snapshot?.progress.terminal).toBe(false);
+    });
+
+    it("should aggregate worker telemetry cost and latest stage into progress", async () => {
+      prisma.generationRequest.findFirst.mockResolvedValue(
+        makeRequest({
+          status: "EXECUTING",
+          estimatedCost: {
+            totalTokens: 2000,
+            estimatedSpendUsd: 0.01,
+          },
+          jobs: [
+            makeJob({
+              id: "job-1",
+              jobType: "ANIMATION",
+              status: "RUNNING",
+              diagnostics: {
+                workerTelemetry: {
+                  at: "2025-06-01T10:03:00.000Z",
+                  requestId: "req-1",
+                  jobId: "job-1",
+                  jobType: "animation",
+                  stage: "grpc_response_received",
+                  message: "Animation response received",
+                  progressPercent: 60,
+                  status: "running",
+                  cost: {
+                    actualTokens: 850,
+                    actualCostUsd: 0.0017,
+                  },
+                },
+              },
+            }),
+          ],
+        }),
+      );
+
+      const snapshot = await service.getExecutionSnapshot("tenant-1", "req-1");
+
+      expect(snapshot?.progress.cost).toEqual({
+        estimatedTokens: 2000,
+        actualTokens: 850,
+        estimatedCostUsd: 0.01,
+        actualCostUsd: 0.0017,
+      });
+      expect(snapshot?.progress.latestWorkerStage).toBe("grpc_response_received");
+      expect(snapshot?.progress.latestWorkerMessage).toBe(
+        "Animation response received",
+      );
+      expect(
+        snapshot?.events.some((event) => event.type === "job_cost_updated"),
+      ).toBe(true);
+    });
+
+    it("should emit ordered request and job lifecycle events", async () => {
+      prisma.generationRequest.findFirst.mockResolvedValue(
+        makeRequest({
+          status: "COMPLETED",
+          completedJobs: 2,
+          totalJobs: 2,
+          plannedAt: new Date("2025-06-01T10:00:00Z"),
+          startedAt: new Date("2025-06-01T10:01:00Z"),
+          completedAt: new Date("2025-06-01T10:03:00Z"),
+          jobs: [
+            makeJob({
+              id: "job-1",
+              jobType: "CLAIM",
+              status: "COMPLETED",
+              startedAt: new Date("2025-06-01T10:01:30Z"),
+              completedAt: new Date("2025-06-01T10:02:00Z"),
+            }),
+            makeJob({
+              id: "job-2",
+              jobType: "EXPLAINER",
+              status: "COMPLETED",
+              startedAt: new Date("2025-06-01T10:02:05Z"),
+              completedAt: new Date("2025-06-01T10:02:45Z"),
+            }),
+          ],
+        }),
+      );
+
+      const snapshot = await service.getExecutionSnapshot("tenant-1", "req-1");
+
+      expect(snapshot?.events[0].type).toBe("request_created");
+      expect(snapshot?.events.some((event) => event.type === "request_planned")).toBe(
+        true,
+      );
+      expect(snapshot?.events.some((event) => event.type === "job_completed")).toBe(
+        true,
+      );
+      expect(snapshot?.events.at(-1)?.type).toBe("request_completed");
     });
   });
 });

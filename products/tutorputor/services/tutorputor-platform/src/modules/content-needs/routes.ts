@@ -7,10 +7,14 @@
 
 import type { FastifyInstance } from "fastify";
 import type { ContentNeedsAnalyzer } from "./service";
+import type { ContentDriftDetector } from "./drift-detector";
+import type { ContentQualityMLPipeline } from "../content/quality-ml/pipeline";
 
 export function registerContentNeedsRoutes(
   fastify: FastifyInstance,
   contentNeedsAnalyzer: ContentNeedsAnalyzer,
+  contentDriftDetector?: ContentDriftDetector,
+  qualityPipeline?: ContentQualityMLPipeline,
 ): void {
   // Analyze content needs for a specific claim
   fastify.post("/analyze-claim", async (request, reply) => {
@@ -118,4 +122,75 @@ export function registerContentNeedsRoutes(
       return { success: false, error: "Failed to batch analyze claims" };
     }
   });
+
+  if (contentDriftDetector) {
+    fastify.get("/drift/thresholds", async (request, reply) => {
+      const tenantId = request.headers["x-tenant-id"] as string;
+
+      try {
+        const thresholds = await contentDriftDetector.adjustThresholds(tenantId);
+        return { success: true, data: thresholds };
+      } catch (error) {
+        fastify.log.error(error);
+        reply.code(500);
+        return { success: false, error: "Failed to compute adaptive thresholds" };
+      }
+    });
+
+    fastify.post("/drift/scan/:experienceId", async (request, reply) => {
+      const { experienceId } = request.params as { experienceId: string };
+      const tenantId = request.headers["x-tenant-id"] as string;
+
+      try {
+        const result = await contentDriftDetector.scanExperienceAdaptive(
+          tenantId,
+          experienceId,
+        );
+        return { success: true, data: result };
+      } catch (error) {
+        fastify.log.error(error);
+        reply.code(500);
+        return { success: false, error: "Failed to scan content drift" };
+      }
+    });
+
+    if (qualityPipeline) {
+      fastify.post("/drift/scan/:experienceId/apply-quality", async (request, reply) => {
+        const { experienceId } = request.params as { experienceId: string };
+        const tenantId = request.headers["x-tenant-id"] as string;
+
+        try {
+          const result = await contentDriftDetector.scanExperienceAdaptive(
+            tenantId,
+            experienceId,
+          );
+          const shouldApplyQuality =
+            result.signals.length > 0 ||
+            result.insights.length > 0;
+          const predictions = shouldApplyQuality
+            ? await qualityPipeline.applyPredictionsForExperience(
+                tenantId,
+                experienceId,
+              )
+            : [];
+
+          return {
+            success: true,
+            data: {
+              drift: result,
+              qualityPredictionsApplied: predictions.length,
+              predictions,
+            },
+          };
+        } catch (error) {
+          fastify.log.error(error);
+          reply.code(500);
+          return {
+            success: false,
+            error: "Failed to scan content drift and apply quality mitigation",
+          };
+        }
+      });
+    }
+  }
 }

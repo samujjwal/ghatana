@@ -38,6 +38,9 @@ function makePrisma() {
       findFirst: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue({ id: "asset-1" }),
     },
+    artifactManifest: {
+      findMany: vi.fn().mockResolvedValue([{ id: "manifest-1", isValid: true }]),
+    },
     evaluationRecord: {
       findFirst: vi.fn().mockResolvedValue(null),
       findMany: vi.fn().mockResolvedValue([]),
@@ -52,6 +55,48 @@ describe("PublishService", () => {
   beforeEach(() => {
     prisma = makePrisma();
     service = new PublishService(prisma as never);
+    vi.spyOn((service as any).recommendationService, "bootstrapEdges").mockResolvedValue({
+      created: 2,
+      skipped: 1,
+    });
+    vi.spyOn(
+      (service as any).recommendationService,
+      "recomputeOutcomeAwareEdges",
+    ).mockResolvedValue({
+      processedAssets: 1,
+      updatedEdges: 3,
+      skippedEdges: 0,
+    });
+    vi.spyOn((service as any).qualityPipeline, "applyPrediction").mockResolvedValue({
+      assetId: "asset-1",
+      predictedQuality: "high",
+      confidence: 0.82,
+      features: {} as any,
+      featureImportance: {} as any,
+      suggestions: [],
+      applied: true,
+      recommendationStatus: "computed",
+    });
+    vi.spyOn((service as any).outcomeService, "analyzeAsset").mockResolvedValue({
+      assetId: "asset-1",
+      assetStatus: "published",
+      telemetry: {
+        impressions: 0,
+        clicks: 0,
+        completions: 0,
+        nextStepSelections: 0,
+        positiveFeedback: 0,
+        negativeFeedback: 0,
+        ctr: 0,
+        completionRate: 0,
+        feedbackRatio: 0.5,
+      },
+      engagementScore: 0.6,
+      confidenceScore: 0.8,
+      healthStatus: "healthy",
+      openCandidateCount: 0,
+      recommendedActions: ["monitor"],
+    });
   });
 
   it("rejects publish when asset is missing", async () => {
@@ -91,8 +136,9 @@ describe("PublishService", () => {
 
   it("rejects structured assets without manifests", async () => {
     prisma.contentAsset.findFirst.mockResolvedValue(
-      makeAsset({ manifestData: null }),
+      makeAsset(),
     );
+    prisma.artifactManifest.findMany.mockResolvedValue([]);
     prisma.evaluationRecord.findFirst.mockResolvedValue(makeEvaluation());
 
     const result = await service.publishAsset("tenant-1", "admin-1", {
@@ -123,7 +169,28 @@ describe("PublishService", () => {
     );
     expect(result.published).toBe(true);
     expect(result.semanticIndexStatus).toBe("pending");
-    expect(result.recommendationStatus).toBe("stale");
+    expect(result.recommendationStatus).toBe("computed");
+    expect(result.qualityPredictionApplied).toBe(true);
+    expect(result.outcomeAnalysisApplied).toBe(true);
+    expect(result.recommendationRefresh).toEqual({
+      bootstrapCreated: 2,
+      bootstrapSkipped: 1,
+      processedAssets: 1,
+      updatedEdges: 3,
+      skippedEdges: 0,
+    });
+    expect((service as any).qualityPipeline.applyPrediction).toHaveBeenCalledWith(
+      "tenant-1",
+      "asset-1",
+    );
+    expect((service as any).outcomeService.analyzeAsset).toHaveBeenCalledWith(
+      "tenant-1",
+      "asset-1",
+      {
+        apply: true,
+        recomputeRecommendations: false,
+      },
+    );
   });
 
   it("bulk publishes all passing assets for a generation request", async () => {

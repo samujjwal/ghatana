@@ -12,8 +12,12 @@ import { PrismaClient } from '@tutorputor/core/db';
 import { Logger } from 'pino';
 import { RealContentGenerationClient } from '../grpc/RealContentGenerationClient';
 import * as crypto from 'crypto';
+import {
+    type CorrelatedGenerationJobData,
+    ContentWorkerTelemetryPublisher,
+} from '../generation-telemetry';
 
-export interface SimulationGenerationJobData {
+export interface SimulationGenerationJobData extends CorrelatedGenerationJobData {
     experienceId: string;
     tenantId: string;
     claimRef: string;
@@ -28,7 +32,8 @@ export class SimulationGenerationProcessor {
     constructor(
         private grpcClient: RealContentGenerationClient,
         private prisma: PrismaClient,
-        private logger: Logger
+        private logger: Logger,
+        private telemetry?: ContentWorkerTelemetryPublisher,
     ) { }
 
     async process(job: Job<SimulationGenerationJobData>): Promise<void> {
@@ -40,6 +45,13 @@ export class SimulationGenerationProcessor {
         );
 
         try {
+            await this.telemetry?.publishForJob(job, {
+                stage: 'grpc_request_started',
+                message: 'Submitting simulation generation request',
+                progressPercent: 20,
+                status: 'running',
+            });
+
             // Call Java agent to generate simulation
             const requestId = crypto.randomUUID();
             const response = await this.grpcClient.generateSimulation({
@@ -57,6 +69,18 @@ export class SimulationGenerationProcessor {
                 { jobId: job.id, manifestId: response.manifest?.manifest_id },
                 'Simulation generated successfully'
             );
+
+            const responseCost = ContentWorkerTelemetryPublisher.extractCostFromMetadata(response.metadata);
+            await this.telemetry?.publishForJob(job, {
+                stage: 'grpc_response_received',
+                message: 'Simulation generation response received',
+                progressPercent: 55,
+                status: 'running',
+                ...(responseCost ? { cost: responseCost } : {}),
+                diagnostics: {
+                    manifestId: response.manifest?.manifest_id,
+                },
+            });
 
             if (!response.manifest) {
                 throw new Error('No simulation manifest returned');
@@ -133,6 +157,18 @@ export class SimulationGenerationProcessor {
                 { jobId: job.id, experienceId, claimRef },
                 'Simulation generation job completed'
             );
+
+            await this.telemetry?.publishForJob(job, {
+                stage: 'persistence_completed',
+                message: 'Simulation manifest persisted and linked',
+                progressPercent: 90,
+                status: 'running',
+                diagnostics: {
+                    experienceId,
+                    claimRef,
+                    manifestId: manifest.id,
+                },
+            });
 
         } catch (error: any) {
             this.logger.error(

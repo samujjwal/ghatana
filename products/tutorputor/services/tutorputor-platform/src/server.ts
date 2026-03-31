@@ -6,6 +6,9 @@ import { getConfig } from "./config/config.js";
 
 const config = getConfig();
 
+// Global shutdown flag
+let isShuttingDown = false;
+
 async function bootstrap() {
   const app = Fastify({
     logger: {
@@ -33,6 +36,61 @@ async function bootstrap() {
   );
   app.log.info(`Metrics available at http://localhost:${config.PORT}/metrics`);
   app.log.info(`Health checks at http://localhost:${config.PORT}/health`);
+
+  // Setup graceful shutdown handlers
+  setupGracefulShutdown(app);
+}
+
+function setupGracefulShutdown(app: ReturnType<typeof Fastify>) {
+  const logger = app.log;
+
+  const shutdown = async (signal: string) => {
+    if (isShuttingDown) {
+      logger.warn({ signal }, "Shutdown already in progress, ignoring signal");
+      return;
+    }
+
+    isShuttingDown = true;
+    logger.info({ signal }, "Starting graceful shutdown...");
+
+    try {
+      // Set timeout for graceful shutdown
+      const shutdownTimeout = setTimeout(() => {
+        logger.error("Graceful shutdown timeout, forcing exit");
+        process.exit(1);
+      }, 30000); // 30 seconds timeout
+
+      // Stop accepting new requests
+      logger.info("Stopping accepting new requests...");
+      await app.close();
+
+      // Close database connections
+      if (app.prisma) {
+        logger.info("Closing database connections...");
+        await app.prisma.$disconnect();
+      }
+
+      // Close Redis connections
+      if (app.redis) {
+        logger.info("Closing Redis connections...");
+        await app.redis.quit();
+      }
+
+      // Clear timeout
+      clearTimeout(shutdownTimeout);
+
+      logger.info("Graceful shutdown completed successfully");
+      process.exit(0);
+    } catch (error) {
+      logger.error({ error }, "Error during graceful shutdown");
+      process.exit(1);
+    }
+  };
+
+  // Handle shutdown signals
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGUSR2", () => shutdown("SIGUSR2")); // nodemon restart
 }
 
 bootstrap().catch((err) => {

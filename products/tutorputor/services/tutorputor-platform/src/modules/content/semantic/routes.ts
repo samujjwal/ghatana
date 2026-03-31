@@ -16,7 +16,7 @@ import { getTenantId, roleGuard } from "../../../core/http/requestContext.js";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type { ContentAssetType } from "@tutorputor/contracts/v1/content-studio";
 import { SemanticChunkService } from "./chunk-service.js";
-import { HybridSearchService } from "./hybrid-search-service.js";
+import { SemanticSearchService } from "./semantic-search-service.js";
 
 // =============================================================================
 // Types
@@ -59,7 +59,7 @@ export function registerSemanticRoutes(
   context: SemanticRouteContext,
 ): void {
   const service = new SemanticChunkService(context.prisma);
-  const searchService = new HybridSearchService(context.prisma);
+  const searchService = new SemanticSearchService(context.prisma);
 
   const adminGuard = roleGuard(["admin", "content_creator", "superadmin"]);
   const readGuard = roleGuard([
@@ -131,12 +131,12 @@ export function registerSemanticRoutes(
       const result = await searchService.search({
         tenantId,
         query: q,
-        assetTypes: assetTypes
-          ? (assetTypes.split(",") as ContentAssetType[])
-          : undefined,
-        domain,
-        limit: limit ? parseInt(limit, 10) : undefined,
-        offset: offset ? parseInt(offset, 10) : undefined,
+        ...(assetTypes
+          ? { assetTypes: assetTypes.split(",") as ContentAssetType[] }
+          : {}),
+        ...(domain ? { domain } : {}),
+        ...(limit ? { limit: parseInt(limit, 10) } : {}),
+        ...(offset ? { offset: parseInt(offset, 10) } : {}),
         explain: explain === "true",
       });
 

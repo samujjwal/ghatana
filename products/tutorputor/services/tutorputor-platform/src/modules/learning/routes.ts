@@ -14,6 +14,14 @@ import type { HealthAwareLearningService } from "./service";
 import type { HealthAwarePathwaysService } from "./pathways-service";
 import type { HealthAwareAssessmentService } from "./assessment-service";
 import type { HealthAwareAnalyticsService } from "./analytics-service";
+import type { LearnerProfileService } from "./learner-profile-service";
+import type { SessionAdaptationEngine } from "../adaptation/session-engine.js";
+import type { ContentVariationService } from "../content/variation/service.js";
+import {
+  createSimulationAssessmentIntegration,
+  scoreSimulationAssessmentResponse,
+  summarizeSimulationAttempt,
+} from "../assessment/simulation-integration/service.js";
 import type {
   ModuleId,
   EnrollmentId,
@@ -29,6 +37,7 @@ import {
   getUserId,
   roleGuard,
 } from "../../core/http/requestContext.js";
+import { writeSseEvent } from "../../core/http/sse.js";
 
 // =============================================================================
 // Types
@@ -39,13 +48,16 @@ interface LearningRouteContext {
   pathwaysService: HealthAwarePathwaysService;
   assessmentService: HealthAwareAssessmentService;
   analyticsService: HealthAwareAnalyticsService;
+  learnerProfileService: LearnerProfileService;
+  contentVariationService: ContentVariationService;
+  sessionAdaptationEngine: SessionAdaptationEngine;
 }
 
 // =============================================================================
 // Route Factory
 // =============================================================================
 
-export default async function learningRoutes(
+async function learningRoutes(
   fastify: FastifyInstance,
   options: LearningRouteContext,
 ) {
@@ -54,7 +66,12 @@ export default async function learningRoutes(
     pathwaysService,
     assessmentService,
     analyticsService,
+    learnerProfileService,
+    contentVariationService,
+    sessionAdaptationEngine,
   } = options;
+  const simulationAssessmentIntegration =
+    createSimulationAssessmentIntegration(fastify.prisma);
 
   // ---------------------------------------------------------------------------
   // Dashboard
@@ -166,6 +183,192 @@ export default async function learningRoutes(
         }
         throw e;
       }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // Learner Profile
+  // ---------------------------------------------------------------------------
+
+  fastify.get(
+    "/learning/profile",
+    {
+      schema: {
+        description: "Get or create the current learner profile",
+        tags: ["Learning"],
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
+      const profile = await learnerProfileService.getOrCreateProfile(
+        tenantId,
+        userId,
+      );
+      return reply.send(profile);
+    },
+  );
+
+  fastify.patch<{
+    Body: {
+      preferredDifficulty?: "BEGINNER" | "EASY" | "MEDIUM" | "HARD" | "EXPERT";
+      preferredModality?: "VISUAL" | "AUDITORY" | "KINESTHETIC" | "READING" | "MIXED";
+      preferredPacing?: "SELF_PACED" | "GUIDED" | "ADAPTIVE" | "INTENSIVE";
+      preferredSessionMinutes?: number;
+      notificationFrequency?: string;
+      reason?: string;
+    };
+  }>(
+    "/learning/profile/preferences",
+    {
+      schema: {
+        description: "Update learner preferences with audit tracking",
+        tags: ["Learning"],
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
+      const updated = await learnerProfileService.updatePreferences(
+        tenantId,
+        userId,
+        {
+          ...request.body,
+          changedBy: "user",
+        },
+      );
+      return reply.send(updated);
+    },
+  );
+
+  fastify.post<{
+    Body: {
+      conceptId: string;
+      correct: boolean;
+      confidence?: number;
+      timeSpentSeconds?: number;
+      hintsUsed?: number;
+      attempts?: number;
+      modalityUsed?: "VISUAL" | "AUDITORY" | "KINESTHETIC" | "READING";
+      sessionStartedAt?: string;
+    };
+  }>(
+    "/learning/profile/mastery",
+    {
+      schema: {
+        description: "Record learner mastery evidence using Bayesian updates",
+        tags: ["Learning"],
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
+      const mastery = await learnerProfileService.updateMastery(
+        tenantId,
+        userId,
+        request.body,
+      );
+      return reply.status(201).send(mastery);
+    },
+  );
+
+  fastify.post<{
+    Body: {
+      conceptId: string;
+      prerequisiteId: string;
+      severity?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+      detectedBy?:
+        | "ASSESSMENT"
+        | "PREREQUISITE_CHECK"
+        | "ADAPTIVE_ANALYSIS"
+        | "LEARNER_REPORTED"
+        | "AI_PREDICTION";
+      evidence?: Record<string, unknown>;
+    };
+  }>(
+    "/learning/profile/knowledge-gaps",
+    {
+      schema: {
+        description: "Record a learner knowledge gap for personalization",
+        tags: ["Learning"],
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
+      const gap = await learnerProfileService.recordKnowledgeGap(
+        tenantId,
+        userId,
+        request.body,
+      );
+      return reply.status(201).send(gap);
+    },
+  );
+
+  fastify.get<{
+    Querystring: {
+      currentConceptId?: string;
+      goalConceptId?: string;
+      availableTimeMinutes?: string;
+    };
+  }>(
+    "/learning/profile/recommendations",
+    {
+      schema: {
+        description: "Get personalized learning recommendations",
+        tags: ["Learning"],
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
+      const recommendationContext: {
+        currentConceptId?: string;
+        goalConceptId?: string;
+        availableTimeMinutes?: number;
+      } = {};
+
+      if (request.query.currentConceptId) {
+        recommendationContext.currentConceptId = request.query.currentConceptId;
+      }
+      if (request.query.goalConceptId) {
+        recommendationContext.goalConceptId = request.query.goalConceptId;
+      }
+      if (request.query.availableTimeMinutes !== undefined) {
+        recommendationContext.availableTimeMinutes = Number(
+          request.query.availableTimeMinutes,
+        );
+      }
+
+      const recommendations = await learnerProfileService.getRecommendations(
+        tenantId,
+        userId,
+        recommendationContext,
+      );
+      return reply.send({ recommendations });
+    },
+  );
+
+  fastify.get<{
+    Params: { learnerId: string };
+    Querystring: { topic?: string };
+  }>(
+    "/learning/learners/:learnerId/personalization",
+    {
+      preHandler: [roleGuard(["admin", "superadmin", "service"])],
+      schema: {
+        description: "Internal personalization snapshot for AI agent consumers",
+        tags: ["Learning"],
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const snapshot = await learnerProfileService.getPersonalizationSnapshot(
+        tenantId,
+        request.params.learnerId,
+        request.query.topic,
+      );
+      return reply.send(snapshot);
     },
   );
 
@@ -319,13 +522,28 @@ export default async function learningRoutes(
     async (request, reply) => {
       const tenantId = getTenantId(request) as TenantId;
       const { moduleId, status, limit, cursor } = request.query;
-      const result = await assessmentService.listAssessments({
-        tenantId,
-        moduleId: moduleId as ModuleId,
-        status: status as AssessmentStatus,
-        limit,
-        cursor: cursor as AssessmentId,
-      });
+      const assessmentQuery: {
+        tenantId: TenantId;
+        moduleId?: ModuleId;
+        status?: AssessmentStatus;
+        limit?: number;
+        cursor?: AssessmentId | null;
+      } = { tenantId };
+
+      if (moduleId) {
+        assessmentQuery.moduleId = moduleId as ModuleId;
+      }
+      if (status) {
+        assessmentQuery.status = status as AssessmentStatus;
+      }
+      if (limit !== undefined) {
+        assessmentQuery.limit = limit;
+      }
+      if (cursor) {
+        assessmentQuery.cursor = cursor as AssessmentId;
+      }
+
+      const result = await assessmentService.listAssessments(assessmentQuery);
       return reply.send(result);
     },
   );
@@ -399,6 +617,77 @@ export default async function learningRoutes(
     },
   );
 
+  fastify.post<{
+    Body: {
+      moduleId: string;
+      count?: number;
+      difficulty?: "INTRO" | "INTERMEDIATE" | "ADVANCED";
+      objectiveLabels?: string[];
+    };
+  }>(
+    "/assessments/simulations/preview",
+    {
+      preHandler: [roleGuard(["teacher", "admin", "superadmin"])],
+      schema: {
+        description: "Preview simulation-backed assessment items for a module",
+        tags: ["Assessments"],
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const items = await simulationAssessmentIntegration.createModuleAssessmentItems({
+        tenantId,
+        moduleId: request.body.moduleId,
+        count: request.body.count ?? 2,
+        difficulty: request.body.difficulty ?? "INTERMEDIATE",
+        objectiveLabels: request.body.objectiveLabels ?? [],
+      });
+      return reply.send({ items, total: items.length });
+    },
+  );
+
+  fastify.post<{
+    Body: {
+      item: {
+        id: string;
+        points: number;
+        metadata?: Record<string, unknown>;
+      };
+      response: {
+        type: "simulation_interaction";
+        trace: {
+          interactions: Array<{
+            type: string;
+            parameterId?: string;
+            value?: string | number | boolean;
+            predictedOutcome?: string;
+            observedOutcome?: string;
+            note?: string;
+            timestampMs?: number;
+          }>;
+          durationMs?: number;
+          summary?: string;
+        };
+      };
+    };
+  }>(
+    "/assessments/simulations/score",
+    {
+      schema: {
+        description:
+          "Score a simulation interaction trace against a simulation assessment item",
+        tags: ["Assessments"],
+      },
+    },
+    async (request, reply) => {
+      const scoring = scoreSimulationAssessmentResponse({
+        item: request.body.item,
+        response: request.body.response,
+      });
+      return reply.send(scoring);
+    },
+  );
+
   fastify.post<{ Params: { id: string } }>(
     "/assessments/:id/attempt",
     {
@@ -459,6 +748,58 @@ export default async function learningRoutes(
     },
   );
 
+  fastify.get<{ Params: { id: string } }>(
+    "/attempts/:id/simulation-insights",
+    {
+      schema: {
+        description: "Summarize simulation-backed responses for an assessment attempt",
+        tags: ["Assessments"],
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
+      const attempt = await fastify.prisma.assessmentAttempt.findFirst({
+        where: { id: request.params.id, tenantId, userId },
+        include: {
+          assessment: {
+            include: {
+              items: true,
+            },
+          },
+        },
+      });
+
+      if (!attempt) {
+        return reply.status(404).send({ message: "Attempt not found for this user." });
+      }
+
+      const responses =
+        attempt.responses && typeof attempt.responses === "object" && !Array.isArray(attempt.responses)
+          ? (attempt.responses as Record<string, any>)
+          : {};
+      const feedback = Array.isArray(attempt.feedback)
+        ? (attempt.feedback as any[])
+        : undefined;
+
+      const summary = summarizeSimulationAttempt({
+        items: attempt.assessment.items.map((item) => ({
+          id: item.id,
+          type: item.itemType,
+          ...(item.metadata &&
+          typeof item.metadata === "object" &&
+          !Array.isArray(item.metadata)
+            ? { metadata: item.metadata as Record<string, unknown> }
+            : {}),
+        })),
+        responses,
+        ...(feedback ? { feedback } : {}),
+      });
+
+      return reply.send(summary);
+    },
+  );
+
   // ---------------------------------------------------------------------------
   // Analytics
   // ---------------------------------------------------------------------------
@@ -489,6 +830,168 @@ export default async function learningRoutes(
         },
       });
       return reply.status(204).send();
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // Session Adaptation
+  // ---------------------------------------------------------------------------
+
+  fastify.post<{
+    Params: { sessionId: string };
+    Body: {
+      assetId: string;
+      eventType:
+        | "ANSWER_SUBMITTED"
+        | "HINT_REQUESTED"
+        | "CONTENT_VIEWED"
+        | "IDLE"
+        | "CHECKPOINT";
+      correct?: boolean;
+      hintsUsed?: number;
+      responseLatencyMs?: number;
+      inactivityMs?: number;
+      confidence?: number;
+      occurredAt?: string;
+    };
+  }>(
+    "/sessions/:sessionId/events",
+    {
+      schema: {
+        description: "Process a learner session event and evaluate adaptation needs",
+        tags: ["Learning", "Adaptation"],
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
+      const decision = await sessionAdaptationEngine.processEvent({
+        tenantId,
+        userId,
+        sessionId: request.params.sessionId,
+        ...request.body,
+      });
+      return reply.status(200).send(decision);
+    },
+  );
+
+  fastify.get<{
+    Params: { sessionId: string };
+    Querystring: { assetId: string };
+  }>(
+    "/sessions/:sessionId/adaptation",
+    {
+      schema: {
+        description: "Get the current adaptation decision for a session and asset",
+        tags: ["Learning", "Adaptation"],
+      },
+    },
+    async (request, reply) => {
+      const decision = await sessionAdaptationEngine.getCurrentAdaptation(
+        request.params.sessionId,
+        request.query.assetId,
+      );
+      if (!decision) {
+        return reply.status(404).send({ message: "No adaptation available" });
+      }
+      return reply.send(decision);
+    },
+  );
+
+  fastify.get<{
+    Params: { sessionId: string };
+    Querystring: { assetId: string };
+  }>(
+    "/sessions/:sessionId/adaptation/stream",
+    {
+      schema: {
+        description:
+          "Stream the current adaptation decision and adapted content blocks over SSE",
+        tags: ["Learning", "Adaptation"],
+      },
+    },
+    async (request, reply) => {
+      const decision = await sessionAdaptationEngine.getCurrentAdaptation(
+        request.params.sessionId,
+        request.query.assetId,
+      );
+
+      reply.hijack();
+      reply.raw.statusCode = 200;
+      reply.raw.setHeader("Content-Type", "text/event-stream");
+      reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+      reply.raw.setHeader("Connection", "keep-alive");
+
+      writeSseEvent(reply.raw, "decision", decision ?? {
+        sessionId: request.params.sessionId,
+        assetId: request.query.assetId,
+        adapted: false,
+        reason: "No adaptation available",
+        observedSignals: {
+          recentEvents: 0,
+          incorrectStreak: 0,
+          hintRate: 0,
+          rapidGuessCount: 0,
+          inactivityMs: 0,
+        },
+        createdAt: new Date().toISOString(),
+      });
+
+      if (decision?.variant) {
+        for (const block of decision.variant.blocks ?? []) {
+          writeSseEvent(reply.raw, "block", block);
+        }
+      }
+
+      writeSseEvent(reply.raw, "done", {
+        sessionId: request.params.sessionId,
+        assetId: request.query.assetId,
+      });
+      reply.raw.end();
+    },
+  );
+
+  fastify.get<{
+    Params: { assetId: string };
+    Querystring: { family?: "difficulty" | "modality" | "explanation" };
+  }>(
+    "/assets/:assetId/variations",
+    {
+      schema: {
+        description: "Preview deterministic adaptive variants for a content asset",
+        tags: ["Learning", "Adaptation"],
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const { assetId } = request.params;
+      const family = request.query.family ?? "difficulty";
+
+      switch (family) {
+        case "difficulty":
+          return reply.send(
+            await contentVariationService.generateDifficultyVariants(
+              tenantId,
+              assetId,
+            ),
+          );
+        case "modality":
+          return reply.send(
+            await contentVariationService.generateModalityVariants(
+              tenantId,
+              assetId,
+            ),
+          );
+        case "explanation":
+          return reply.send(
+            await contentVariationService.generateExplanationVariants(
+              tenantId,
+              assetId,
+            ),
+          );
+        default:
+          return reply.status(400).send({ message: "Unsupported variation family" });
+      }
     },
   );
 
@@ -563,15 +1066,26 @@ export default async function learningRoutes(
     const pathwaysHealth = await pathwaysService.checkHealth();
     const assessmentHealth = await assessmentService.checkHealth();
     const analyticsHealth = await analyticsService.checkHealth();
+    const learnerProfileGrpc = fastify.learnerProfileGrpcRuntimeState ?? {
+      enabled: false,
+      status: "disabled",
+    };
     return {
       status:
-        learningHealth && pathwaysHealth && assessmentHealth && analyticsHealth
+        learningHealth &&
+        pathwaysHealth &&
+        assessmentHealth &&
+        analyticsHealth &&
+        (!learnerProfileGrpc.enabled || learnerProfileGrpc.status === "running")
           ? "ok"
           : "degraded",
       learning: learningHealth,
       pathways: pathwaysHealth,
       assessment: assessmentHealth,
       analytics: analyticsHealth,
+      learnerProfileGrpc,
     };
   });
 }
+
+export default learningRoutes;

@@ -5,6 +5,7 @@
  * @doc.pattern Service
  */
 
+import { paginate, type Prisma } from "@tutorputor/core";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type {
   CollaborationService,
@@ -51,6 +52,14 @@ export type SharedNoteAccess = {
   addedBy: string;
 };
 
+type ThreadWithPosts = Prisma.ThreadGetPayload<{
+  include: {
+    posts: true;
+  };
+}>;
+
+type PostRecord = Prisma.PostGetPayload<Record<string, never>>;
+
 export class CollaborationServiceImpl implements CollaborationService {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -65,11 +74,11 @@ export class CollaborationServiceImpl implements CollaborationService {
     const thread = await this.prisma.thread.create({
       data: {
         tenantId: args.tenantId,
-        moduleId: args.moduleId,
         title: args.title,
         status: "OPEN",
         authorId: args.userId,
         authorName: args.authorName,
+        ...(args.moduleId ? { moduleId: args.moduleId } : {}),
         posts: {
           create: {
             authorId: args.userId,
@@ -86,7 +95,7 @@ export class CollaborationServiceImpl implements CollaborationService {
       },
     });
 
-    return this.mapToThread(thread);
+    return this.mapToThread(thread as ThreadWithPosts);
   }
 
   async reply(args: {
@@ -133,9 +142,7 @@ export class CollaborationServiceImpl implements CollaborationService {
     cursor?: ThreadId | null;
     limit?: number;
   }): Promise<{ items: Thread[]; nextCursor: ThreadId | null }> {
-    const limit = args.limit ?? 20;
-    const take = Math.min(limit, 50);
-    const where: any = { tenantId: args.tenantId };
+    const where: Prisma.ThreadWhereInput = { tenantId: args.tenantId };
 
     if (args.moduleId) {
       where.moduleId = args.moduleId;
@@ -144,27 +151,35 @@ export class CollaborationServiceImpl implements CollaborationService {
       where.status = args.status;
     }
 
-    const threads = await this.prisma.thread.findMany({
-      where,
-      take: take + 1,
-      orderBy: { createdAt: "desc" },
-      ...(args.cursor ? { cursor: { id: args.cursor }, skip: 1 } : {}),
-      include: {
-        posts: {
-          orderBy: { createdAt: "asc" },
-          take: 3, // Preview first 3 posts
-        },
+    const paged = await paginate<ThreadWithPosts, Prisma.ThreadWhereInput>(
+      {
+        findMany: (input) =>
+          this.prisma.thread.findMany({
+            ...input,
+            include: { posts: true },
+          }) as Promise<ThreadWithPosts[]>,
+        count: (input) => this.prisma.thread.count(input),
       },
-    });
+      where,
+      {
+        take: Math.min(args.limit ?? 20, 50),
+        ...(args.cursor ? { cursor: args.cursor } : {}),
+      },
+      {
+        orderField: "createdAt",
+      },
+    );
 
-    const hasMore = threads.length > take;
-    const trimmed = threads.slice(0, take);
+    const trimmed = paged.items.map((thread) => ({
+      ...thread,
+      posts: [...thread.posts]
+        .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
+        .slice(0, 3),
+    }));
 
     return {
-      items: trimmed.map((t: any) => this.mapToThread(t)),
-      nextCursor: hasMore
-        ? (trimmed[trimmed.length - 1]?.id as ThreadId)
-        : null,
+      items: trimmed.map((thread) => this.mapToThread(thread)),
+      nextCursor: paged.hasMore ? ((paged.nextCursor ?? null) as ThreadId | null) : null,
     };
   }
 
@@ -302,6 +317,7 @@ export class CollaborationServiceImpl implements CollaborationService {
     allowEditing?: boolean;
     allowComments?: boolean;
     moduleId?: string;
+    lessonId?: string;
     studyGroupId?: string;
   }): Promise<SharedNote> {
     const note = await (this.prisma as any).sharedNote.create({
@@ -314,6 +330,7 @@ export class CollaborationServiceImpl implements CollaborationService {
         allowEditing: args.allowEditing ?? true,
         allowComments: args.allowComments ?? true,
         moduleId: args.moduleId ?? null,
+        lessonId: args.lessonId ?? null,
         studyGroupId: args.studyGroupId ?? null,
       },
       include: { sharedWith: true },
@@ -324,29 +341,31 @@ export class CollaborationServiceImpl implements CollaborationService {
   async getSharedNote(args: {
     noteId: string;
     tenantId: TenantId;
-    userId?: UserId;
-  }): Promise<SharedNote | null> {
+    userId: UserId;
+  }): Promise<SharedNote> {
     const note = await (this.prisma as any).sharedNote.findFirst({
       where: { id: args.noteId, tenantId: args.tenantId },
       include: { sharedWith: true },
     });
     if (!note) {
-      return null;
+      throw createHttpError(
+        404,
+        "NOT_FOUND",
+        `Shared note ${args.noteId} not found`,
+      );
     }
 
-    if (args.userId) {
-      const canAccess =
-        note.createdBy === args.userId ||
-        (note.sharedWith ?? []).some(
-          (entry: any) => entry.userId === args.userId,
-        );
-      if (!canAccess) {
-        throw createHttpError(
-          403,
-          "FORBIDDEN",
-          "Insufficient permissions to access this note",
-        );
-      }
+    const canAccess =
+      note.createdBy === args.userId ||
+      (note.sharedWith ?? []).some(
+        (entry: any) => entry.userId === args.userId,
+      );
+    if (!canAccess) {
+      throw createHttpError(
+        403,
+        "FORBIDDEN",
+        "Insufficient permissions to access this note",
+      );
     }
     return this.mapToNote(note);
   }
@@ -354,9 +373,8 @@ export class CollaborationServiceImpl implements CollaborationService {
   async updateSharedNote(args: {
     noteId: string;
     tenantId: TenantId;
-    editorId: UserId;
-    title?: string;
-    content?: string;
+    userId: UserId;
+    content: string;
   }): Promise<SharedNote> {
     const note = await (this.prisma as any).sharedNote.findFirst({
       where: { id: args.noteId, tenantId: args.tenantId },
@@ -371,11 +389,11 @@ export class CollaborationServiceImpl implements CollaborationService {
     }
 
     const canEdit =
-      note.createdBy === args.editorId ||
+      note.createdBy === args.userId ||
       (note.allowEditing &&
         (note.sharedWith ?? []).some(
           (entry: any) =>
-            entry.userId === args.editorId && entry.permission === "edit",
+            entry.userId === args.userId && entry.permission === "edit",
         ));
     if (!canEdit) {
       throw createHttpError(
@@ -388,9 +406,8 @@ export class CollaborationServiceImpl implements CollaborationService {
     const updatedNote = await (this.prisma as any).sharedNote.update({
       where: { id: args.noteId },
       data: {
-        ...(args.title !== undefined && { title: args.title }),
-        ...(args.content !== undefined && { content: args.content }),
-        lastEditedBy: args.editorId,
+        content: args.content,
+        lastEditedBy: args.userId,
         version: { increment: 1 },
         updatedAt: new Date(),
       },
@@ -402,9 +419,11 @@ export class CollaborationServiceImpl implements CollaborationService {
   async shareNote(args: {
     noteId: string;
     tenantId: TenantId;
-    sharedById: UserId;
-    userId: UserId;
-    permission: "view" | "comment" | "edit";
+    sharedBy: UserId;
+    shareWith: Array<{
+      userId: UserId;
+      permission: "view" | "comment" | "edit";
+    }>;
   }): Promise<SharedNote> {
     const note = await (this.prisma as any).sharedNote.findFirst({
       where: { id: args.noteId, tenantId: args.tenantId },
@@ -421,21 +440,27 @@ export class CollaborationServiceImpl implements CollaborationService {
     requireTenantAccess(note.tenantId, args.tenantId);
     requireOwnership(
       note.createdBy,
-      args.sharedById,
+      args.sharedBy,
       "Only the note owner can share this note",
     );
 
-    await (this.prisma as any).sharedNoteAccess.upsert({
-      where: { noteId_userId: { noteId: args.noteId, userId: args.userId } },
-      create: {
-        noteId: args.noteId,
-        userId: args.userId,
-        permission: args.permission,
-        addedBy: args.sharedById,
-        addedAt: new Date(),
-      },
-      update: { permission: args.permission },
-    });
+    await Promise.all(
+      args.shareWith.map((shareTarget) =>
+        (this.prisma as any).sharedNoteAccess.upsert({
+          where: {
+            noteId_userId: { noteId: args.noteId, userId: shareTarget.userId },
+          },
+          create: {
+            noteId: args.noteId,
+            userId: shareTarget.userId,
+            permission: shareTarget.permission,
+            addedBy: args.sharedBy,
+            addedAt: new Date(),
+          },
+          update: { permission: shareTarget.permission },
+        }),
+      ),
+    );
     const updatedNote = await (this.prisma as any).sharedNote.findUniqueOrThrow(
       {
         where: { id: args.noteId },
@@ -447,22 +472,20 @@ export class CollaborationServiceImpl implements CollaborationService {
 
   async listSharedNotes(args: {
     tenantId: TenantId;
-    userId?: UserId;
+    userId: UserId;
     moduleId?: string;
     studyGroupId?: string;
-    pagination?: PaginationArgs;
+    pagination: PaginationArgs;
   }): Promise<PaginatedResult<SharedNote>> {
     const skip = args.pagination?.offset ?? 0;
     const take = args.pagination?.limit ?? 20;
     const where: any = { tenantId: args.tenantId };
     if (args.moduleId) where.moduleId = args.moduleId;
     if (args.studyGroupId) where.studyGroupId = args.studyGroupId;
-    if (args.userId) {
-      where.OR = [
-        { createdBy: args.userId },
-        { sharedWith: { some: { userId: args.userId } } },
-      ];
-    }
+    where.OR = [
+      { createdBy: args.userId },
+      { sharedWith: { some: { userId: args.userId } } },
+    ];
     const [items, total] = await Promise.all([
       (this.prisma as any).sharedNote.findMany({
         where,
@@ -475,6 +498,7 @@ export class CollaborationServiceImpl implements CollaborationService {
     ]);
     return {
       items: items.map((n: any) => this.mapToNote(n)),
+      totalCount: total,
       total,
       hasMore: skip + items.length < total,
     };
@@ -491,6 +515,7 @@ export class CollaborationServiceImpl implements CollaborationService {
       allowEditing: note.allowEditing,
       allowComments: note.allowComments,
       moduleId: note.moduleId,
+      lessonId: note.lessonId,
       studyGroupId: note.studyGroupId,
       sharedWith: (note.sharedWith ?? []).map((a: any) => ({
         userId: a.userId,
@@ -508,22 +533,24 @@ export class CollaborationServiceImpl implements CollaborationService {
   // Helpers
   // ===========================================================================
 
-  private mapToThread(thread: any): Thread {
+  private mapToThread(thread: ThreadWithPosts): Thread {
     return {
       id: thread.id as ThreadId,
       tenantId: thread.tenantId as TenantId,
-      moduleId: thread.moduleId as ModuleId | undefined,
       title: thread.title,
       status: thread.status as ThreadStatus,
       authorId: thread.authorId as UserId,
       authorName: thread.authorName,
-      posts: thread.posts.map((p: any) => this.mapToPost(p)),
+      posts: thread.posts.map((post) => this.mapToPost(post)),
       createdAt: thread.createdAt.toISOString(),
-      resolvedAt: thread.resolvedAt?.toISOString(),
+      ...(thread.moduleId ? { moduleId: thread.moduleId as ModuleId } : {}),
+      ...(thread.resolvedAt
+        ? { resolvedAt: thread.resolvedAt.toISOString() }
+        : {}),
     };
   }
 
-  private mapToPost(post: any): Post {
+  private mapToPost(post: PostRecord): Post {
     return {
       id: post.id as PostId,
       threadId: post.threadId as ThreadId,

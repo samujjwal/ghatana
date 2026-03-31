@@ -1,0 +1,436 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "aep-event-flow",
+    "title": "AEP Event Flow & Agent Performance",
+    "tags": ["aep", "events", "agents", "workflows"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Event Throughput by Tier",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (tier) (rate(aep_events_processed_total[5m]))",
+            "legendFormat": "Tier {{tier}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 20,
+              "stacking": {"mode": "normal"}
+            },
+            "unit": "events/s",
+            "color": {"mode": "palette-classic"}
+          },
+          "overrides": [
+            {"matcher": {"id": "byName", "options": "Tier 0"}, "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]},
+            {"matcher": {"id": "byName", "options": "Tier 1"}, "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]},
+            {"matcher": {"id": "byName", "options": "Tier 2"}, "properties": [{"id": "color", "value": {"fixedColor": "yellow", "mode": "fixed"}}]},
+            {"matcher": {"id": "byName", "options": "Tier 3"}, "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]}
+          ]
+        }
+      },
+      {
+        "id": 2,
+        "title": "Event Processing Latency (p95)",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum by (tier, le) (rate(aep_event_processing_duration_seconds_bucket[5m])))",
+            "legendFormat": "Tier {{tier}} p95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum by (tier, le) (rate(aep_event_processing_duration_seconds_bucket[5m])))",
+            "legendFormat": "Tier {{tier}} p50",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            },
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Agent Execution Rate",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (agent_type) (rate(aep_agent_executions_total[5m]))",
+            "legendFormat": "{{agent_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "executions/s"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Agent Success Rate",
+        "type": "gauge",
+        "gridPos": {"x": 12, "y": 8, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(aep_agent_executions_total{status=\"success\"}[5m])) / sum(rate(aep_agent_executions_total[5m])) * 100",
+            "legendFormat": "Success Rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 90, "color": "yellow"},
+                {"value": 95, "color": "green"}
+              ]
+            },
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Active Workflows",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 8, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "count(aep_workflow_status{status=\"running\"})",
+            "legendFormat": "Active",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "blue"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Workflow Completion Rate",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 12, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "sum(rate(aep_workflow_completed_total{status=\"success\"}[5m])) / sum(rate(aep_workflow_completed_total[5m])) * 100",
+            "legendFormat": "Completion %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 90, "color": "yellow"},
+                {"value": 95, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Event Queue Depth",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "aep_event_queue_depth",
+            "legendFormat": "Tier {{tier}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "events"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Agent Execution Duration",
+        "type": "heatmap",
+        "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (le) (rate(aep_agent_execution_duration_seconds_bucket[5m]))",
+            "format": "heatmap",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "calculate": false,
+          "cellGap": 2,
+          "color": {
+            "exponent": 0.5,
+            "fill": "dark-orange",
+            "mode": "scheme",
+            "scheme": "Spectral",
+            "steps": 128
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Error Rate by Type",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 24, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (error_type) (rate(aep_errors_total[5m]))",
+            "legendFormat": "{{error_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "errors/s"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Pattern Matching Performance",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 24, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(aep_pattern_matching_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(aep_pattern_matching_duration_seconds_bucket[5m]))",
+            "legendFormat": "p50",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            },
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Resource Utilization",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 32, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total{job=\"aep\"}[5m]) * 100",
+            "legendFormat": "CPU %",
+            "refId": "A"
+          },
+          {
+            "expr": "process_resident_memory_bytes{job=\"aep\"} / 1024 / 1024",
+            "legendFormat": "Memory MB",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            }
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Event Type Distribution",
+        "type": "piechart",
+        "gridPos": {"x": 8, "y": 32, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (event_type) (rate(aep_events_processed_total[5m]))",
+            "legendFormat": "{{event_type}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right",
+            "values": ["value", "percent"]
+          }
+        }
+      },
+      {
+        "id": 13,
+        "title": "Workflow Execution Time",
+        "type": "timeseries",
+        "gridPos": {"x": 16, "y": 32, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum by (workflow_type, le) (rate(aep_workflow_duration_seconds_bucket[5m])))",
+            "legendFormat": "{{workflow_type}} p95",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            },
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 14,
+        "title": "Top Agents by Execution Count",
+        "type": "table",
+        "gridPos": {"x": 0, "y": 40, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "topk(10, sum by (agent_type) (rate(aep_agent_executions_total[5m])))",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "renameByName": {
+                "agent_type": "Agent Type",
+                "Value": "Executions/s"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Recent Errors",
+        "type": "table",
+        "gridPos": {"x": 12, "y": 40, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "aep_last_error_info",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"__name__": true, "job": true, "instance": true},
+              "renameByName": {
+                "error_type": "Error Type",
+                "error_message": "Message",
+                "timestamp": "Time"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "ALERTS{alertname=\"AEPDeployment\"}",
+          "iconColor": "blue",
+          "tagKeys": "version"
+        },
+        {
+          "name": "Critical Alerts",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "ALERTS{alertname=~\"AEP.*\",severity=\"critical\"}",
+          "iconColor": "red",
+          "tagKeys": "alertname"
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "tier",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(aep_events_processed_total, tier)",
+          "multi": true,
+          "includeAll": true
+        },
+        {
+          "name": "agent_type",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(aep_agent_executions_total, agent_type)",
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    }
+  }
+}

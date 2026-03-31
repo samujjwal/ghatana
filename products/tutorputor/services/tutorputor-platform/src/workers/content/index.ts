@@ -15,11 +15,15 @@ import { ExampleGenerationProcessor } from "./processors/ExampleGenerationProces
 import { SimulationGenerationProcessor } from "./processors/SimulationGenerationProcessor";
 import { AnimationGenerationProcessor } from "./processors/AnimationGenerationProcessor";
 import { ContentValidationProcessor } from "./processors/ContentValidationProcessor";
+import { GenerationRequestJobProcessor } from "./processors/GenerationRequestJobProcessor";
 import {
   DeadLetterQueueManager,
   createQueueOptionsWithDLQ,
 } from "../../utils/dead-letter-queue";
 import { JobDeduplicator } from "../../utils/job-deduplication";
+import { ContentWorkerTelemetryPublisher } from "./generation-telemetry";
+import { GenerationExecutionService } from "../../modules/content/generation/execution-service";
+import { GenerationQueueDispatcher } from "../../modules/content/generation/queue-dispatcher";
 
 export interface ContentWorkerConfig {
   redis: {
@@ -46,6 +50,7 @@ export class ContentWorkerService {
   private grpcClient: RealContentGenerationClient;
   private dlqManager: DeadLetterQueueManager;
   private jobDeduplicator: JobDeduplicator;
+  private telemetryPublisher: ContentWorkerTelemetryPublisher;
 
   // Processors
   private claimProcessor: ClaimGenerationProcessor;
@@ -53,6 +58,7 @@ export class ContentWorkerService {
   private simulationProcessor: SimulationGenerationProcessor;
   private animationProcessor: AnimationGenerationProcessor;
   private validationProcessor: ContentValidationProcessor;
+  private generationRequestJobProcessor: GenerationRequestJobProcessor;
 
   constructor(config: ContentWorkerConfig) {
     this.logger = config.logger;
@@ -87,37 +93,60 @@ export class ContentWorkerService {
     this.jobDeduplicator = new JobDeduplicator(this.prisma, {
       redis: this.redisConnection,
     });
+    this.telemetryPublisher = new ContentWorkerTelemetryPublisher(
+      this.prisma,
+      this.logger,
+      this.redisConnection,
+    );
 
     this.producerQueue = new Queue("content-generation", {
       connection: this.redisConnection as any,
       defaultJobOptions: createQueueOptionsWithDLQ(3, 5000),
     });
+    const generationExecutionService = new GenerationExecutionService(
+      this.prisma,
+      this.redisConnection,
+    );
+    const generationQueueDispatcher = new GenerationQueueDispatcher(this.prisma);
 
     this.claimProcessor = new ClaimGenerationProcessor(
       this.grpcClient,
       this.prisma,
       this.producerQueue,
       this.logger,
+      this.telemetryPublisher,
     );
     this.exampleProcessor = new ExampleGenerationProcessor(
       this.grpcClient,
       this.prisma,
       this.logger,
+      this.telemetryPublisher,
     );
     this.simulationProcessor = new SimulationGenerationProcessor(
       this.grpcClient,
       this.prisma,
       this.logger,
+      this.telemetryPublisher,
     );
     this.animationProcessor = new AnimationGenerationProcessor(
       this.grpcClient,
       this.prisma,
       this.logger,
+      this.telemetryPublisher,
     );
     this.validationProcessor = new ContentValidationProcessor(
       this.grpcClient,
       this.prisma,
       this.logger,
+      this.telemetryPublisher,
+    );
+    this.generationRequestJobProcessor = new GenerationRequestJobProcessor(
+      this.grpcClient,
+      this.prisma,
+      this.logger,
+      this.telemetryPublisher,
+      generationExecutionService,
+      generationQueueDispatcher,
     );
 
     this.worker = new Worker(
@@ -164,6 +193,7 @@ export class ContentWorkerService {
           },
         );
         await this.jobDeduplicator.updateJobStatus(trackedJobId, "PROCESSING");
+        await this.telemetryPublisher.publishStarted(job as any);
 
         try {
           switch (job.name) {
@@ -182,6 +212,9 @@ export class ContentWorkerService {
             case "generate-animation":
               await this.animationProcessor.process(job as any);
               break;
+            case "execute-generation-job":
+              await this.generationRequestJobProcessor.process(job as any);
+              break;
             default:
               this.logger.warn(
                 { jobId: job.id, name: job.name },
@@ -190,8 +223,15 @@ export class ContentWorkerService {
           }
 
           await this.jobDeduplicator.updateJobStatus(trackedJobId, "COMPLETED");
+          await this.telemetryPublisher.publishCompleted(job as any, {
+            deduplicationJobId: trackedJobId,
+          });
         } catch (error: any) {
           await this.jobDeduplicator.updateJobStatus(trackedJobId, "FAILED");
+          await this.telemetryPublisher.publishFailed(
+            job as any,
+            error instanceof Error ? error : new Error(String(error)),
+          );
           this.logger.error(
             { jobId: job.id, err: error },
             "Job processing failed",

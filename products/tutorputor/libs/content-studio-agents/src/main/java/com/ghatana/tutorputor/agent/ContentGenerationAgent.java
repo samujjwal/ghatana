@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * TutorPutor Content Generation Agent implementing GAA lifecycle.
@@ -43,9 +44,14 @@ import java.util.Map;
  * @doc.gaa.lifecycle perceive|reason|act|capture|reflect
  */
 public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, ContentGenerationResponse> {
+    private static final int MIN_EPISODES_FOR_PATTERN = 1;
+    private static final int MIN_EPISODES_FOR_POLICY_EXTRACTION = 3;
+    private static final double HIGH_CONFIDENCE_THRESHOLD = 0.85;
+    private static final double LOW_QUALITY_THRESHOLD = 0.6;
 
     private final KnowledgeBaseService knowledgeBaseService;
     private final ContentQualityValidator qualityValidator;
+    private final LearnerProfileHttpClient learnerProfileClient;
     
     /**
      * Creates a new ContentGenerationAgent.
@@ -58,9 +64,18 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
             @NotNull OutputGenerator<ContentGenerationRequest, ContentGenerationResponse> generator,
             @NotNull KnowledgeBaseService knowledgeBaseService,
             @NotNull ContentQualityValidator qualityValidator) {
+        this(generator, knowledgeBaseService, qualityValidator, LearnerProfileHttpClient.createFromEnvironment());
+    }
+
+    public ContentGenerationAgent(
+            @NotNull OutputGenerator<ContentGenerationRequest, ContentGenerationResponse> generator,
+            @NotNull KnowledgeBaseService knowledgeBaseService,
+            @NotNull ContentQualityValidator qualityValidator,
+            @NotNull LearnerProfileHttpClient learnerProfileClient) {
         super("tutorputor-content-agent", generator);
         this.knowledgeBaseService = knowledgeBaseService;
         this.qualityValidator = qualityValidator;
+        this.learnerProfileClient = learnerProfileClient;
     }
 
     /**
@@ -229,44 +244,27 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
             @NotNull AgentContext context) {
         
         context.getLogger().debug("REFLECT: Analyzing generation patterns (async)");
+
+        Promise<Void> immediateLearnerReflection = Promise.complete();
+        if (request.learnerId() != null && !request.learnerId().isBlank()) {
+            double qualityScore = analyzeGenerationQuality(response);
+            context.recordMetric("tutorputor.reflection.instant_quality", qualityScore);
+
+            if (qualityScore >= HIGH_CONFIDENCE_THRESHOLD) {
+                immediateLearnerReflection = extractAndStoreStrategy(
+                    request,
+                    response,
+                    qualityScore,
+                    context
+                );
+            }
+
+            immediateLearnerReflection = immediateLearnerReflection.then($ ->
+                updateLearnerModel(request.learnerId(), request, response, qualityScore, context)
+            );
+        }
         
-        // Get recent episodes for this agent
-        MemoryFilter filter = MemoryFilter.builder()
-            .agentId(getAgentId())
-            .build();
-        
-        return context.getMemoryStore().queryEpisodes(filter, 20)
-            .then(episodes -> {
-                // Filter to this domain
-                List<Episode> domainEpisodes = episodes.stream()
-                    .filter(e -> request.domain().equals(e.getContext().get("domain")))
-                    .toList();
-                
-                if (domainEpisodes.size() < 5) {
-                    // Not enough data to reflect
-                    return Promise.complete();
-                }
-                
-                // Analyze quality trends (quality score stored in reward field)
-                double avgQuality = domainEpisodes.stream()
-                    .mapToDouble(e -> e.getReward() != null ? e.getReward() : 0.5)
-                    .average()
-                    .orElse(0.5);
-                
-                context.recordMetric("tutorputor.reflection.avg_quality", avgQuality);
-                
-                // If quality is consistently high, extract successful patterns
-                if (avgQuality >= 0.85) {
-                    return extractSuccessfulPatterns(domainEpisodes, context);
-                }
-                
-                // If quality is low, identify failure patterns
-                if (avgQuality < 0.6) {
-                    return identifyFailurePatterns(domainEpisodes, context);
-                }
-                
-                return Promise.complete();
-            });
+        return immediateLearnerReflection.then($ -> reflectOnRecentEpisodes(request, context));
     }
 
     private void validateRequest(ContentGenerationRequest request) {
@@ -292,15 +290,13 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
             // Anonymous request, no enrichment possible
             return request;
         }
-        
-        // Load learner preferences from memory
-        List<String> preferences = loadLearnerPreferences(request.learnerId(), context);
-        
-        // Adjust difficulty based on past performance
-        String adjustedDifficulty = adjustDifficultyForLearner(request.learnerId(), request, context);
-        
-        // Detect knowledge gaps
-        List<String> knowledgeGaps = detectKnowledgeGaps(request.learnerId(), request.topic(), context);
+
+        Optional<LearnerProfileHttpClient.LearnerPersonalizationSnapshot> snapshot =
+            loadPersonalizationSnapshot(request.learnerId(), request.topic(), context);
+
+        List<String> preferences = loadLearnerPreferences(snapshot, context);
+        String adjustedDifficulty = adjustDifficultyForLearner(snapshot, request, context);
+        List<String> knowledgeGaps = detectKnowledgeGaps(snapshot, request.topic(), context);
         
         return new ContentGenerationRequest(
             request.topic(),
@@ -315,24 +311,53 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
         );
     }
 
-    private List<String> loadLearnerPreferences(String learnerId, AgentContext context) {
-        // In production, this would query the memory store
-        // For now, return default preferences
+    private Optional<LearnerProfileHttpClient.LearnerPersonalizationSnapshot> loadPersonalizationSnapshot(
+            String learnerId,
+            String topic,
+            AgentContext context) {
+        Optional<LearnerProfileHttpClient.LearnerPersonalizationSnapshot> snapshot =
+            learnerProfileClient.getPersonalization(learnerId, topic);
+
+        snapshot.ifPresent(value -> context.recordMetric("tutorputor.content.personalization_lookup", 1));
+        return snapshot;
+    }
+
+    private List<String> loadLearnerPreferences(
+            Optional<LearnerProfileHttpClient.LearnerPersonalizationSnapshot> snapshot,
+            AgentContext context) {
+        if (snapshot.isPresent() && snapshot.get().preferences != null && !snapshot.get().preferences.isEmpty()) {
+            return snapshot.get().preferences;
+        }
+
+        context.recordMetric("tutorputor.content.personalization_fallback", 1);
         return List.of("visual-learning", "step-by-step-explanations");
     }
 
     private String adjustDifficultyForLearner(
-            String learnerId,
+            Optional<LearnerProfileHttpClient.LearnerPersonalizationSnapshot> snapshot,
             ContentGenerationRequest request,
             AgentContext context) {
-        // In production, analyze learner's past performance
-        // and adjust difficulty accordingly
-        return request.difficulty() != null ? request.difficulty() : "medium";
+        if (request.difficulty() != null && !request.difficulty().isBlank()) {
+            return request.difficulty();
+        }
+
+        if (snapshot.isPresent() && snapshot.get().adjustedDifficulty != null && !snapshot.get().adjustedDifficulty.isBlank()) {
+            return snapshot.get().adjustedDifficulty;
+        }
+
+        context.recordMetric("tutorputor.content.personalization_fallback", 1);
+        return "medium";
     }
 
-    private List<String> detectKnowledgeGaps(String learnerId, String topic, AgentContext context) {
-        // In production, analyze learner's interaction history
-        // to identify prerequisite concepts that may be missing
+    private List<String> detectKnowledgeGaps(
+            Optional<LearnerProfileHttpClient.LearnerPersonalizationSnapshot> snapshot,
+            String topic,
+            AgentContext context) {
+        if (snapshot.isPresent() && snapshot.get().knowledgeGaps != null) {
+            return snapshot.get().knowledgeGaps;
+        }
+
+        context.recordMetric("tutorputor.content.personalization_fallback", 1);
         return new ArrayList<>();
     }
 
@@ -355,7 +380,128 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
         );
     }
 
-    private Promise<Void> extractSuccessfulPatterns(List<Episode> episodes, AgentContext context) {
+    private Promise<Void> reflectOnRecentEpisodes(
+            ContentGenerationRequest request,
+            AgentContext context) {
+        MemoryFilter filter = MemoryFilter.builder()
+            .agentId(getAgentId())
+            .build();
+
+        return context.getMemoryStore().queryEpisodes(filter, 20)
+            .then(episodes -> {
+                List<Episode> domainEpisodes = episodes.stream()
+                    .filter(e -> request.domain().equals(e.getContext().get("domain")))
+                    .toList();
+
+                if (domainEpisodes.size() < MIN_EPISODES_FOR_PATTERN) {
+                    return Promise.complete();
+                }
+
+                double avgQuality = domainEpisodes.stream()
+                    .mapToDouble(e -> e.getReward() != null ? e.getReward() : 0.5)
+                    .average()
+                    .orElse(0.5);
+
+                context.recordMetric("tutorputor.reflection.avg_quality", avgQuality);
+
+                if (domainEpisodes.size() >= MIN_EPISODES_FOR_POLICY_EXTRACTION
+                        && avgQuality >= HIGH_CONFIDENCE_THRESHOLD) {
+                    return extractSuccessfulPatterns(domainEpisodes, avgQuality, context);
+                }
+
+                if (avgQuality < LOW_QUALITY_THRESHOLD) {
+                    return identifyFailurePatterns(domainEpisodes, context);
+                }
+
+                return Promise.complete();
+            });
+    }
+
+    private double analyzeGenerationQuality(ContentGenerationResponse response) {
+        double alignmentBoost = response.curriculumAligned() ? 0.1 : 0.0;
+        double validationBoost = (response.validationIssues() == null || response.validationIssues().isEmpty()) ? 0.05 : 0.0;
+        double tokenBoost = response.tokenCount() >= 150 ? 0.05 : 0.0;
+        return Math.min(1.0, response.qualityScore() * 0.8 + alignmentBoost + validationBoost + tokenBoost);
+    }
+
+    private Promise<Void> extractAndStoreStrategy(
+            ContentGenerationRequest request,
+            ContentGenerationResponse response,
+            double qualityScore,
+            AgentContext context) {
+        String action = buildStrategyAction(request, response);
+        Policy policy = Policy.builder()
+            .agentId(getAgentId())
+            .situation(String.format("learner:%s topic:%s content:%s",
+                request.learnerId(),
+                request.topic(),
+                request.contentType().name()))
+            .action(action)
+            .confidence(qualityScore)
+            .metadata(Map.of(
+                "topic", request.topic(),
+                "domain", request.domain(),
+                "gradeLevel", request.gradeLevel(),
+                "difficulty", request.difficulty() != null ? request.difficulty() : "medium",
+                "qualityScore", qualityScore,
+                "aligned", response.curriculumAligned()
+            ))
+            .build();
+
+        context.recordMetric("tutorputor.reflection.immediate_strategy_extracted", 1);
+        return context.getMemoryStore().storePolicy(policy).map($ -> null);
+    }
+
+    private String buildStrategyAction(
+            ContentGenerationRequest request,
+            ContentGenerationResponse response) {
+        List<String> actions = new ArrayList<>();
+        actions.add("target-difficulty:" + (request.difficulty() != null ? request.difficulty() : "medium"));
+        actions.add("content-type:" + request.contentType().name().toLowerCase());
+        if (request.learnerPreferences() != null) {
+            request.learnerPreferences().stream()
+                .limit(3)
+                .forEach(preference -> actions.add("prefer:" + preference));
+        }
+        if (response.curriculumAligned()) {
+            actions.add("retain-curriculum-alignment");
+        }
+        if (response.validationIssues() == null || response.validationIssues().isEmpty()) {
+            actions.add("retain-complete-structure");
+        }
+        return String.join("; ", actions);
+    }
+
+    private Promise<Void> updateLearnerModel(
+            String learnerId,
+            ContentGenerationRequest request,
+            ContentGenerationResponse response,
+            double qualityScore,
+            AgentContext context) {
+        Fact fact = Fact.builder()
+            .agentId(getAgentId())
+            .subject(learnerId)
+            .predicate("responds_well_to")
+            .object(request.contentType().name().toLowerCase())
+            .confidence(qualityScore)
+            .source("reflection")
+            .metadata(Map.of(
+                "topic", request.topic(),
+                "domain", request.domain(),
+                "difficulty", request.difficulty() != null ? request.difficulty() : "medium",
+                "curriculumAligned", response.curriculumAligned(),
+                "qualityScore", qualityScore
+            ))
+            .build();
+
+        context.recordMetric("tutorputor.reflection.learner_model_updated", 1);
+        return context.getMemoryStore().storeFact(fact).map($ -> null);
+    }
+
+    private Promise<Void> extractSuccessfulPatterns(
+            List<Episode> episodes,
+            double avgQuality,
+            AgentContext context) {
         context.getLogger().info("Extracting successful generation patterns from {} episodes", 
             episodes.size());
         
@@ -366,12 +512,12 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
         
         Policy pattern = Policy.builder()
             .agentId("ContentGenerationAgent")
-            .situation("content generation quality >= 0.85")
+            .situation("content generation quality >= " + HIGH_CONFIDENCE_THRESHOLD)
             .action("use-detailed-examples; include-visual-cues; provide-scaffolding")
-            .confidence(0.85)
+            .confidence(avgQuality)
             .metadata(Map.of(
-                "minEpisodes", 5,
-                "avgQuality", 0.85,
+                "minEpisodes", MIN_EPISODES_FOR_POLICY_EXTRACTION,
+                "avgQuality", avgQuality,
                 "actions", List.of(
                     "use-detailed-examples",
                     "include-visual-cues",

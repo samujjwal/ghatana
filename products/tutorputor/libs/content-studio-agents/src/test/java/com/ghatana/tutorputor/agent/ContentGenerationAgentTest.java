@@ -6,6 +6,7 @@ import com.ghatana.agent.framework.api.OutputGenerator;
 import com.ghatana.agent.framework.memory.Episode;
 import com.ghatana.agent.framework.memory.Fact;
 import com.ghatana.agent.framework.memory.MemoryStore;
+import com.ghatana.agent.framework.memory.Policy;
 import com.ghatana.tutorputor.contentstudio.knowledge.KnowledgeBaseService;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -21,6 +22,7 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,8 +58,11 @@ class ContentGenerationAgentTest extends EventloopTestBase {
     @Mock
     private MemoryStore mockMemoryStore;
 
+    @Mock
+    private LearnerProfileHttpClient mockLearnerProfileClient;
+
     private ContentQualityValidator qualityValidator;
-    private ContentGenerationAgent agent;
+    private TestContentGenerationAgent agent;
 
     @BeforeEach
     void setUp() {
@@ -65,7 +70,15 @@ class ContentGenerationAgentTest extends EventloopTestBase {
         qualityValidator = new ContentQualityValidator(registry);
         
         // Set up agent
-        agent = new ContentGenerationAgent(mockGenerator, mockKnowledgeBaseService, qualityValidator);
+        agent = new TestContentGenerationAgent(
+            mockGenerator,
+            mockKnowledgeBaseService,
+            qualityValidator,
+            mockLearnerProfileClient
+        );
+
+        lenient().when(mockLearnerProfileClient.getPersonalization(anyString(), anyString()))
+            .thenReturn(Optional.empty());
     }
 
     @Test
@@ -231,5 +244,141 @@ class ContentGenerationAgentTest extends EventloopTestBase {
         // Then
         assertThat(alignedResponse.curriculumAligned()).isTrue();
         assertThat(alignedResponse.alignedTopics()).containsExactly("Cell Biology", "Organelles");
+    }
+
+    @Test
+    @DisplayName("Should extract a strategy immediately for a strong learner-specific generation")
+    void shouldExtractImmediateStrategyForStrongLearnerOutcome() {
+        ContentGenerationRequest request = new ContentGenerationRequest(
+            "Stoichiometry",
+            "CHEMISTRY",
+            "10",
+            ContentGenerationRequest.ContentType.EXAMPLE,
+            "learner-42",
+            "hard",
+            List.of("visual-learning", "worked-examples"),
+            List.of("unit-conversion"),
+            null
+        );
+
+        ContentGenerationResponse response = ContentGenerationResponse.builder()
+            .content("Worked stoichiometry example with visuals.")
+            .domain("CHEMISTRY")
+            .gradeLevel("10")
+            .contentType(ContentGenerationRequest.ContentType.EXAMPLE)
+            .qualityScore(0.95)
+            .curriculumAligned(true)
+            .alignedTopics(List.of("Stoichiometry"))
+            .generationTimeMs(400)
+            .tokenCount(240)
+            .build();
+
+        when(mockContext.getLogger()).thenReturn(LOG);
+        when(mockContext.getMemoryStore()).thenReturn(mockMemoryStore);
+        when(mockMemoryStore.storePolicy(any()))
+            .thenReturn(Promise.of(Policy.builder()
+                .agentId("test-agent")
+                .situation("s")
+                .action("a")
+                .confidence(0.9)
+                .build()));
+        when(mockMemoryStore.storeFact(any()))
+            .thenReturn(Promise.of(Fact.builder()
+                .agentId("test-agent")
+                .subject("learner-42")
+                .predicate("responds_well_to")
+                .object("example")
+                .build()));
+        when(mockMemoryStore.queryEpisodes(any(), any(Integer.class)))
+            .thenReturn(Promise.of(List.of()));
+
+        runPromise(() -> agent.runReflect(request, response, mockContext));
+
+        verify(mockMemoryStore).storePolicy(any());
+        verify(mockMemoryStore).storeFact(any());
+    }
+
+    @Test
+    @DisplayName("Should extract aggregate successful patterns after three strong episodes")
+    void shouldExtractAggregatePatternsAfterThreeStrongEpisodes() {
+        ContentGenerationRequest request = ContentGenerationRequest.basic(
+            "Cellular Respiration",
+            "SCIENCE",
+            "8",
+            ContentGenerationRequest.ContentType.LESSON
+        );
+
+        ContentGenerationResponse response = ContentGenerationResponse.builder()
+            .content("Structured lesson with examples and checks for understanding.")
+            .domain("SCIENCE")
+            .gradeLevel("8")
+            .contentType(ContentGenerationRequest.ContentType.LESSON)
+            .qualityScore(0.82)
+            .generationTimeMs(550)
+            .tokenCount(180)
+            .build();
+
+        Episode episode1 = Episode.builder()
+            .agentId("tutorputor-content-agent")
+            .turnId("turn-1")
+            .timestamp(Instant.now())
+            .input("input")
+            .output("output")
+            .context(java.util.Map.of("domain", "SCIENCE"))
+            .reward(0.90)
+            .build();
+        Episode episode2 = Episode.builder()
+            .agentId("tutorputor-content-agent")
+            .turnId("turn-2")
+            .timestamp(Instant.now())
+            .input("input")
+            .output("output")
+            .context(java.util.Map.of("domain", "SCIENCE"))
+            .reward(0.88)
+            .build();
+        Episode episode3 = Episode.builder()
+            .agentId("tutorputor-content-agent")
+            .turnId("turn-3")
+            .timestamp(Instant.now())
+            .input("input")
+            .output("output")
+            .context(java.util.Map.of("domain", "SCIENCE"))
+            .reward(0.87)
+            .build();
+
+        when(mockContext.getLogger()).thenReturn(LOG);
+        when(mockContext.getMemoryStore()).thenReturn(mockMemoryStore);
+        when(mockMemoryStore.queryEpisodes(any(), any(Integer.class)))
+            .thenReturn(Promise.of(List.of(episode1, episode2, episode3)));
+        when(mockMemoryStore.storePolicy(any()))
+            .thenReturn(Promise.of(Policy.builder()
+                .agentId("test-agent")
+                .situation("s")
+                .action("a")
+                .confidence(0.88)
+                .build()));
+
+        runPromise(() -> agent.runReflect(request, response, mockContext));
+
+        verify(mockMemoryStore).storePolicy(any());
+    }
+
+    private static final class TestContentGenerationAgent extends ContentGenerationAgent {
+        private TestContentGenerationAgent(
+            OutputGenerator<ContentGenerationRequest, ContentGenerationResponse> generator,
+            KnowledgeBaseService knowledgeBaseService,
+            ContentQualityValidator qualityValidator,
+            LearnerProfileHttpClient learnerProfileClient
+        ) {
+            super(generator, knowledgeBaseService, qualityValidator, learnerProfileClient);
+        }
+
+        private Promise<Void> runReflect(
+            ContentGenerationRequest request,
+            ContentGenerationResponse response,
+            AgentContext context
+        ) {
+            return super.reflect(request, response, context);
+        }
     }
 }
