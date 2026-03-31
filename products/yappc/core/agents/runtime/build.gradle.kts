@@ -95,6 +95,35 @@ tasks.jacocoTestReport {
     }
 }
 
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = "BRANCH"
+                value   = "COVEREDRATIO"
+                minimum = "0.15".toBigDecimal()
+            }
+            limit {
+                counter = "LINE"
+                value   = "COVEREDRATIO"
+                minimum = "0.15".toBigDecimal()
+            }
+        }
+    }
+    classDirectories.setFrom(
+        fileTree(layout.buildDirectory.dir("classes/java/main")) {
+            exclude(
+                "**/package-info.class",
+                "**/*Config.class",
+                "**/*Module.class",
+                "**/*Launcher.class",
+                "**/*Bootstrapper.class",
+                "**/generated/**"
+            )
+        }
+    )
+}
+
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.addAll(listOf("-Xlint:unchecked", "-Xlint:deprecation"))

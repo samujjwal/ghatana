@@ -2,6 +2,7 @@ package com.ghatana.platform.billing;
 
 import com.ghatana.platform.resilience.Bulkhead;
 import com.ghatana.platform.resilience.CircuitBreaker;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @DisplayName("DefaultBillingTransactionCoordinator")
-class DefaultBillingTransactionCoordinatorTest {
+class DefaultBillingTransactionCoordinatorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("succeeds when all postings succeed")
@@ -31,10 +32,8 @@ class DefaultBillingTransactionCoordinatorTest {
         StubLedgerPostingService ledger = new StubLedgerPostingService(Set.of());
         DefaultBillingTransactionCoordinator coordinator = new DefaultBillingTransactionCoordinator(ledger);
 
-        BillingTransactionCoordinator.CoordinationResult result = coordinator.coordinate(
-            "wf-1",
-            List.of(tx("tx-1", "100.00"), tx("tx-2", "200.00"))
-        ).toCompletableFuture().join();
+        BillingTransactionCoordinator.CoordinationResult result = runPromise(
+            () -> coordinator.coordinate("wf-1", List.of(tx("tx-1", "100.00"), tx("tx-2", "200.00")));
 
         assertThat(result.succeeded()).isTrue();
         assertThat(result.postedTransactionIds()).containsExactly("tx-1", "tx-2");
@@ -47,10 +46,8 @@ class DefaultBillingTransactionCoordinatorTest {
         StubLedgerPostingService ledger = new StubLedgerPostingService(Set.of("tx-2"));
         DefaultBillingTransactionCoordinator coordinator = new DefaultBillingTransactionCoordinator(ledger);
 
-        BillingTransactionCoordinator.CoordinationResult result = coordinator.coordinate(
-            "wf-2",
-            List.of(tx("tx-1", "100.00"), tx("tx-2", "200.00"), tx("tx-3", "300.00"))
-        ).toCompletableFuture().join();
+        BillingTransactionCoordinator.CoordinationResult result = runPromise(
+            () -> coordinator.coordinate("wf-2", List.of(tx("tx-1", "100.00"), tx("tx-2", "200.00"), tx("tx-3", "300.00"))));
 
         assertThat(result.succeeded()).isFalse();
         assertThat(result.postedTransactionIds()).containsExactly("tx-1");
@@ -74,17 +71,13 @@ class DefaultBillingTransactionCoordinatorTest {
             Bulkhead.of("billing-coordinator-test", 2)
         );
 
-        BillingTransactionCoordinator.CoordinationResult first = coordinator.coordinate(
-            "wf-open-1",
-            List.of(tx("tx-1", "100.00"))
-        ).toCompletableFuture().join();
+        BillingTransactionCoordinator.CoordinationResult first = runPromise(
+            () -> coordinator.coordinate("wf-open-1", List.of(tx("tx-1", "100.00"))));
         assertThat(first.succeeded()).isFalse();
         assertThat(ledger.postAttempts).isEqualTo(1);
 
-        BillingTransactionCoordinator.CoordinationResult second = coordinator.coordinate(
-            "wf-open-2",
-            List.of(tx("tx-2", "100.00"))
-        ).toCompletableFuture().join();
+        BillingTransactionCoordinator.CoordinationResult second = runPromise(
+            () -> coordinator.coordinate("wf-open-2", List.of(tx("tx-2", "100.00"))));
         assertThat(second.succeeded()).isFalse();
         assertThat(second.failureReason()).contains("Circuit breaker is OPEN");
         assertThat(ledger.postAttempts).isEqualTo(1);

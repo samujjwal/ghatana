@@ -15,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
@@ -47,7 +49,7 @@ class AepAgentRuntimeAdapterTest {
     void dispatch_delegatesToAgentDispatcher() {
         String agentId = "code-gen-v1";
         String input = "write a hello-world function";
-        AgentResult<String> expected = AgentResult.success("function hello() {}");
+        AgentResult<String> expected = AgentResult.success("function hello() {}", agentId, Duration.ofMillis(100));
         when(delegate.<String, String>dispatch(agentId, input, context))
                 .thenReturn(Promise.of(expected));
 
@@ -62,7 +64,7 @@ class AepAgentRuntimeAdapterTest {
     void dispatch_forwardsArbitraryPayloadType() {
         String agentId = "review-agent";
         Integer input = 42;
-        AgentResult<Boolean> expected = AgentResult.success(true);
+        AgentResult<Boolean> expected = AgentResult.success(true, agentId, Duration.ofMillis(50));
         when(delegate.<Integer, Boolean>dispatch(agentId, input, context))
                 .thenReturn(Promise.of(expected));
 

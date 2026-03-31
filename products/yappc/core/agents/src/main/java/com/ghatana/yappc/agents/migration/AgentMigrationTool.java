@@ -375,7 +375,7 @@ public class AgentMigrationTool {
         Files.writeString(file, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
     
-    private String generateAgentId(String agentName) {
+    String generateAgentId(String agentName) {
         // Convert JavaExpertAgent -> expert.java
         String base = agentName.replace("Agent", "");
         base = base.replaceAll("([A-Z])", ".$1").toLowerCase();

@@ -133,7 +133,7 @@ class FhirInteropKernelPluginTest {
         plugin.install().getResult();
         plugin.start().getResult();
 
-        String validObservationJson = "{\"resourceType\":\"Observation\",\"id\":\"1\"}";
+        String validObservationJson = "{\"resourceType\":\"Observation\",\"id\":\"1\",\"status\":\"final\",\"code\":{\"text\":\"test\"},\"subject\":{\"reference\":\"Patient/1\"}}";
 
         Promise<FhirInteropKernelPlugin.ValidationResult> promise = 
             plugin.validateResource("Observation", validObservationJson);
@@ -323,19 +323,24 @@ class FhirInteropKernelPluginTest {
         plugin.install().getResult();
         plugin.start().getResult();
 
-        Set<String> resourceTypes = Set.of(
-            "Patient", "Observation", "Encounter", "Condition", 
-            "Procedure", "Medication", "AllergyIntolerance", "DiagnosticReport"
+        // Test resources with valid FHIR structure for each type
+        Map<String, String> resourceTypes = Map.of(
+            "Patient", "{\"resourceType\":\"Patient\",\"id\":\"1\",\"name\":[{\"family\":\"Test\"}]}",
+            "Observation", "{\"resourceType\":\"Observation\",\"id\":\"1\",\"status\":\"final\",\"code\":{\"text\":\"test\"},\"subject\":{\"reference\":\"Patient/1\"}}",
+            "Encounter", "{\"resourceType\":\"Encounter\",\"id\":\"1\",\"status\":\"finished\",\"class\":{\"code\":\"AMB\"},\"subject\":{\"reference\":\"Patient/1\"}}",
+            "Condition", "{\"resourceType\":\"Condition\",\"id\":\"1\",\"code\":{\"text\":\"test\"},\"subject\":{\"reference\":\"Patient/1\"}}",
+            "Procedure", "{\"resourceType\":\"Procedure\",\"id\":\"1\",\"status\":\"completed\",\"code\":{\"text\":\"test\"},\"subject\":{\"reference\":\"Patient/1\"}}",
+            "Medication", "{\"resourceType\":\"Medication\",\"id\":\"1\"}",
+            "AllergyIntolerance", "{\"resourceType\":\"AllergyIntolerance\",\"id\":\"1\"}",
+            "DiagnosticReport", "{\"resourceType\":\"DiagnosticReport\",\"id\":\"1\",\"status\":\"final\",\"code\":{\"text\":\"test\"},\"subject\":{\"reference\":\"Patient/1\"}}"
         );
 
-        for (String resourceType : resourceTypes) {
-            String json = "{\"resourceType\":\"" + resourceType + "\",\"id\":\"1\"}";
-            
+        for (Map.Entry<String, String> entry : resourceTypes.entrySet()) {
             Promise<FhirInteropKernelPlugin.ValidationResult> promise = 
-                plugin.validateResource(resourceType, json);
+                plugin.validateResource(entry.getKey(), entry.getValue());
             FhirInteropKernelPlugin.ValidationResult result = promise.getResult();
 
-            assertTrue(result.isValid(), "Should validate " + resourceType);
+            assertTrue(result.isValid(), "Should validate " + entry.getKey());
         }
     }
 

@@ -9,10 +9,10 @@ import static org.mockito.Mockito.when;
 
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.AgentResultStatus;
-import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.yappc.agent.spi.AgentRuntimePort;
 import io.activej.promise.Promise;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,13 +32,13 @@ import org.junit.jupiter.api.Test;
 @DisplayName("AgentEvalRunner Tests")
 class AgentEvalRunnerTest extends EventloopTestBase {
 
-  private AgentDispatcher dispatcher;
+  private AgentRuntimePort dispatcher;
   private AgentEvalRunner runner;
   private AgentContext ctx;
 
   @BeforeEach
   void setUp() {
-    dispatcher = mock(AgentDispatcher.class);
+    dispatcher = mock(AgentRuntimePort.class);
     runner = new AgentEvalRunner(dispatcher);
     ctx = AgentContext.builder()
         .agentId("eval-runner")

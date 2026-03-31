@@ -1,5 +1,6 @@
 plugins {
     id("java-library")
+    id("jacoco")
 }
 
 group = "com.ghatana.products.yappc.refactorer"
@@ -71,4 +72,49 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+    }
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+jacoco { toolVersion = "0.8.11" }
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = "BRANCH"
+                value   = "COVEREDRATIO"
+                minimum = "0.15".toBigDecimal()
+            }
+            limit {
+                counter = "LINE"
+                value   = "COVEREDRATIO"
+                minimum = "0.15".toBigDecimal()
+            }
+        }
+    }
+    classDirectories.setFrom(
+        fileTree(layout.buildDirectory.dir("classes/java/main")) {
+            exclude(
+                "**/package-info.class",
+                "**/*Config.class",
+                "**/*Module.class",
+                "**/*Launcher.class",
+                "**/*Bootstrapper.class",
+                "**/generated/**"
+            )
+        }
+    )
 }

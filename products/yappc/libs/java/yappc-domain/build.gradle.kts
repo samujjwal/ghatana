@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    id("jacoco")
 }
 
 group = rootProject.group
@@ -48,6 +49,55 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
+}
+
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+    }
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+jacoco { toolVersion = "0.8.11" }
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = "BRANCH"
+                value   = "COVEREDRATIO"
+                minimum = "0.15".toBigDecimal()
+            }
+            limit {
+                counter = "LINE"
+                value   = "COVEREDRATIO"
+                minimum = "0.15".toBigDecimal()
+            }
+        }
+    }
+    classDirectories.setFrom(
+        fileTree(layout.buildDirectory.dir("classes/java/main")) {
+            exclude(
+                "**/package-info.class",
+                "**/*Config.class",
+                "**/*Module.class",
+                "**/*Launcher.class",
+                "**/*Bootstrapper.class",
+                "**/generated/**"
+            )
+        }
+    )
 }
 
 // The libs module should compile only its local, shared stable domain contracts

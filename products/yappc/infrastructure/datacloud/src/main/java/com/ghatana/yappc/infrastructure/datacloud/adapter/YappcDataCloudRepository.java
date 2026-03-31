@@ -4,8 +4,6 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.products.yappc.domain.Identifiable;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
-import com.ghatana.yappc.infrastructure.datacloud.pagination.PaginatedResult;
-import com.ghatana.yappc.infrastructure.datacloud.pagination.PaginationConfig;
 import com.ghatana.yappc.infrastructure.cache.EntityCache;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -241,8 +239,8 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
         String tenantId = resolveTenantId();
         int validatedPageSize = PaginationConfig.clampPageSize(pageSize);
 
-        // Decode cursor to get offset
-        int offset = 0;
+        // Decode cursor to get offset - use final variable for lambda capture
+        final int offset;
         if (cursor != null && !cursor.isBlank()) {
             try {
                 PaginationConfig.CursorData cursorData = PaginationConfig.decodeCursor(cursor);
@@ -252,6 +250,8 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
                 LOG.warn("Invalid cursor format: {}, starting from beginning", cursor);
                 offset = 0;
             }
+        } else {
+            offset = 0;
         }
 
         List<DataCloudClient.Filter> filters = filter.entrySet().stream()
