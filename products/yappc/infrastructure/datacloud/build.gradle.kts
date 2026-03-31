@@ -15,6 +15,7 @@ dependencies {
     
     // Platform libs
     implementation(project(":platform:java:core"))
+    implementation(project(":platform:java:http"))
     implementation(project(":platform:java:observability"))
     // implementation(project(":libs:types")) - path needs verification
     

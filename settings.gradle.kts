@@ -154,7 +154,7 @@ include(":products:yappc:core:agents:code-specialists")
 include(":products:yappc:core:agents:delivery-specialists")
 include(":products:yappc:core:agents:architecture-specialists")
 include(":products:yappc:core:agents:testing-specialists")
-include(":products:yappc:core:spi")
+// core:spi removed (2026-03-30) — consolidated into yappc-shared
 include(":products:yappc:core:cli-tools")
 include(":products:yappc:core:knowledge-graph")
 // core:lifecycle removed (2026-03-24) — absorbed into core:yappc-services

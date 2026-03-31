@@ -90,7 +90,6 @@ include(":core:refactorer:engine")
 // --- Core: Supplementary ---
 include(":core:cli-tools")
 include(":core:knowledge-graph")
-include(":core:spi")
 // NOTE: core:lifecycle removed — absorbed into core:yappc-services
 // NOTE: core:framework removed — absorbed into core:yappc-infrastructure
 // NOTE: core:domain removed — absorbed into core:yappc-domain
@@ -161,7 +160,6 @@ if (isStandaloneBuild) {
             "core:refactorer:engine",
             "core:cli-tools",
             "core:knowledge-graph",
-            "core:spi",
             // core:lifecycle removed — absorbed into core:yappc-services
             // core:framework removed — absorbed into core:yappc-infrastructure
             // core:domain removed — absorbed into core:yappc-domain-impl (renamed from core:yappc-domain, Phase 3)
