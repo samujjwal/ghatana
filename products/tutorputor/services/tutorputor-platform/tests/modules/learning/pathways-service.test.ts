@@ -85,7 +85,7 @@ describe("PathwaysService", () => {
         }),
       );
       expect(mockPrisma.learningPath.create).toHaveBeenCalled();
-      expect(result.nodes).toHaveLength(2);
+      expect(result.modules).toHaveLength(2);
     });
 
     it("should fallback to heuristic search when AI fails/returns null", async () => {

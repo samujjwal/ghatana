@@ -6,12 +6,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ExampleGenerationProcessor } from '../processors/ExampleGenerationProcessor';
+import { ExampleGenerationProcessor } from '../ExampleGenerationProcessor';
 import {
   createMockLogger,
   createMockPrisma,
   createGrpcExamplesResponse,
-} from '../../test-utils';
+} from '../../../../__tests__/test-utils';
 
 describe('ExampleGenerationProcessor', () => {
   let processor: ExampleGenerationProcessor;
@@ -27,8 +27,8 @@ describe('ExampleGenerationProcessor', () => {
     };
 
     processor = new ExampleGenerationProcessor(
-      mockPrisma as any,
       mockGrpcClient as any,
+      mockPrisma as any,
       mockLogger as any
     );
   });
@@ -42,6 +42,8 @@ describe('ExampleGenerationProcessor', () => {
           tenantId: 'tenant-1',
           claimRef: 'C1',
           claimText: 'Test claim',
+          gradeLevel: 'GRADE_9_12',
+          domain: 'PHYSICS',
           types: ['REAL_WORLD_APPLICATION'],
           count: 2,
         },
@@ -59,13 +61,18 @@ describe('ExampleGenerationProcessor', () => {
 
       await processor.process(job as any);
 
-      expect(mockGrpcClient.generateExamples).toHaveBeenCalledWith({
-        requestId: expect.any(String),
-        tenantId: 'tenant-1',
-        claimText: 'Test claim',
-        types: ['REAL_WORLD_APPLICATION'],
-        count: 2,
-      });
+      expect(mockGrpcClient.generateExamples).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requestId: expect.any(String),
+          tenantId: 'tenant-1',
+          claimRef: 'C1',
+          claimText: 'Test claim',
+          gradeLevel: 'GRADE_9_12',
+          domain: 'PHYSICS',
+          types: ['REAL_WORLD_APPLICATION'],
+          count: 2,
+        }),
+      );
 
       expect(mockPrisma.claimExample.create).toHaveBeenCalledTimes(2);
     });
@@ -78,6 +85,8 @@ describe('ExampleGenerationProcessor', () => {
           tenantId: 'tenant-1',
           claimRef: 'C1',
           claimText: 'Test claim',
+          gradeLevel: 'GRADE_9_12',
+          domain: 'PHYSICS',
           types: ['REAL_WORLD'],
           count: 1,
         },

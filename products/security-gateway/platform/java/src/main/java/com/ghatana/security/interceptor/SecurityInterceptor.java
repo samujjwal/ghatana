@@ -24,6 +24,11 @@ import java.util.Set;
  * Interceptor that enforces security policies on incoming HTTP requests.
  * This includes authentication, authorization, and other security-related checks.
  * Migrated to use PolicyService for modern policy-based access control.
+ *
+ * @doc.type class
+ * @doc.purpose HTTP security enforcement — authentication, authorization, rate limiting
+ * @doc.layer product
+ * @doc.pattern Interceptor
  */
 public class SecurityInterceptor {
     private static final Logger logger = LoggerFactory.getLogger(SecurityInterceptor.class);

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs/api",
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/__tests__/**"],
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "includeVersion": true,
+  "readme": "README.md",
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": false
+  },
+  "requiredToBeDocumented": [
+    "Class",
+    "Interface",
+    "Enum",
+    "Function",
+    "TypeAlias"
+  ]
+}

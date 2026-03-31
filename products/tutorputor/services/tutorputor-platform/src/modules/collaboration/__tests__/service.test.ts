@@ -250,17 +250,20 @@ describe("CollaborationServiceImpl", () => {
       const result = await service.getSharedNote({
         noteId: "note-1",
         tenantId: "tenant-1" as any,
+        userId: "user-1" as any,
       });
       expect(result?.id).toBe("note-1");
     });
 
     it("returns null when not found", async () => {
       prisma.sharedNote.findFirst.mockResolvedValue(null);
-      const result = await service.getSharedNote({
-        noteId: "missing",
-        tenantId: "tenant-1" as any,
-      });
-      expect(result).toBeNull();
+      await expect(
+        service.getSharedNote({
+          noteId: "missing",
+          tenantId: "tenant-1" as any,
+          userId: "user-1" as any,
+        }),
+      ).rejects.toThrow("not found");
     });
 
     it("rejects unauthorized note access when user context is provided", async () => {
@@ -284,7 +287,7 @@ describe("CollaborationServiceImpl", () => {
       await service.updateSharedNote({
         noteId: "note-1",
         tenantId: "tenant-1" as any,
-        editorId: "user-1" as any,
+        userId: "user-1" as any,
         content: "Updated",
       });
       expect(prisma.sharedNote.update).toHaveBeenCalledOnce();
@@ -315,9 +318,8 @@ describe("CollaborationServiceImpl", () => {
       const result = await service.shareNote({
         noteId: "note-1",
         tenantId: "tenant-1" as any,
-        sharedById: "user-1" as any,
-        userId: "user-2" as any,
-        permission: "view",
+        sharedBy: "user-1" as any,
+        shareWith: [{ userId: "user-2" as any, permission: "view" }],
       });
       expect(prisma.sharedNoteAccess.upsert).toHaveBeenCalledOnce();
       expect(prisma.sharedNote.findUniqueOrThrow).toHaveBeenCalledOnce();

@@ -343,8 +343,7 @@ export function smartMemo<P extends object>(
 /**
  * Memoize expensive calculations
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useMemoize<T extends (...args: any[]) => any>(
+export function useMemoize<T extends (...args: unknown[]) => unknown>(
   fn: T,
   deps: React.DependencyList = [],
 ): T {

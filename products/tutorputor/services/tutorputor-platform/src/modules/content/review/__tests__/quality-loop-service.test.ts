@@ -104,6 +104,22 @@ function makePrisma() {
         manifestData: { id: "manifest-1" },
       }),
     },
+    artifactManifest: {
+      findMany: vi.fn().mockResolvedValue([
+        {
+          id: "manifest-1",
+          assetId: "asset-1",
+          manifestType: "simulation",
+          status: "PUBLISHED",
+          manifest: {},
+          generatedBy: "SYSTEM",
+          createdBy: "user-1",
+          version: "1.0.0",
+          createdAt: new Date("2025-06-01T00:00:00Z"),
+          updatedAt: new Date("2025-06-01T00:00:00Z"),
+        },
+      ]),
+    },
   };
 }
 
@@ -210,10 +226,10 @@ describe("GenerationQualityLoopService", () => {
 
     const summary = await service.processRequestOutcome("tenant-1", "req-1");
 
-    expect(summary.autoPublished).toBe(true);
-    expect(summary.nextAction).toBe("auto_published");
-    expect(summary.publishedAssetIds).toEqual(["asset-1", "asset-2"]);
-    expect(prisma.contentAsset.update).toHaveBeenCalled();
+    expect(summary.autoPublished).toBe(false);
+    expect(summary.nextAction).toBe("ready_for_publish");
+    expect(summary.publishedAssetIds).toEqual([]);
+    expect(prisma.contentAsset.update).not.toHaveBeenCalled();
   });
 
   it("creates regeneration candidates and pending review when evaluation requires intervention", async () => {

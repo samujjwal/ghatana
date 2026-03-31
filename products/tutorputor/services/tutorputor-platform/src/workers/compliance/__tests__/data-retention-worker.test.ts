@@ -61,7 +61,7 @@ describe('DataRetentionWorker', () => {
             expect(prisma.user.update).toHaveBeenCalledWith(
                 expect.objectContaining({
                     where: { id: 'u1' },
-                    data: expect.objectContaining({ name: 'Deleted User' }),
+                    data: expect.objectContaining({ displayName: 'Deleted User' }),
                 }),
             );
             expect(prisma.enrollment.deleteMany).toHaveBeenCalledWith(
@@ -205,8 +205,8 @@ describe('DataRetentionWorker', () => {
                 expect.objectContaining({
                     data: expect.objectContaining({
                         email: expect.stringContaining('anonymized.local'),
-                        name: 'Deleted User',
-                        deletedAt: expect.any(Date),
+                        displayName: 'Deleted User',
+                        archivedAt: expect.any(Date),
                     }),
                 }),
             );

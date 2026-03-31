@@ -26,16 +26,20 @@ describe("startLearnerProfileGrpcRuntime", () => {
   });
 
   it("starts the grpc server and returns a stoppable runtime", async () => {
-    const logger = { info: vi.fn() };
+    const logger = { info: vi.fn(), error: vi.fn() };
     const runtime = await startLearnerProfileGrpcRuntime({
-      learnerProfileService: {} as never,
+      learnerProfileService: {
+        getProfile: vi.fn(),
+        updateProfile: vi.fn(),
+        trackProgress: vi.fn(),
+      } as never,
       address: "127.0.0.1:50052",
       logger: logger as never,
     });
 
     expect(mocks.create).toHaveBeenCalled();
     expect(mocks.bind).toHaveBeenCalledWith(
-      expect.objectContaining({ start: mocks.start }),
+      expect.objectContaining({ start: expect.any(Function) }),
       "127.0.0.1:50052",
     );
     expect(mocks.start).toHaveBeenCalled();

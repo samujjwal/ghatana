@@ -1,7 +1,7 @@
 /**
  * Unified Data Cloud API Client
  *
- * Production-ready API client that replaces mock-api-client.
+ * Production-ready API client for all Data Cloud operations.
  * Provides a unified interface for all Data Cloud API operations.
  *
  * @doc.type service
@@ -82,7 +82,6 @@ export interface DataCloudApiConfig {
  */
 class DataCloudApiClient {
   private tenantId: string = 'default';
-  private useMockData: boolean = false;
 
   constructor(config?: DataCloudApiConfig) {
     if (config?.tenantId) {
@@ -91,8 +90,6 @@ class DataCloudApiClient {
     if (config?.baseUrl) {
       collectionDataClient.setBaseURL(config.baseUrl);
     }
-    // Check if we should use mock data (for development)
-    this.useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
   }
 
   /**
@@ -104,17 +101,7 @@ class DataCloudApiClient {
   }
 
   /**
-   * Enable/disable mock data mode
-   */
-  setMockMode(enabled: boolean): void {
-    this.useMockData = enabled;
-  }
 
-  // ═══════════════════════════════════════════════════════════════
-  // Collections API
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
    * Get all collections
    */
   async getCollections(): Promise<ApiResponse<Collection[]>> {

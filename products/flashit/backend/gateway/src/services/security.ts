@@ -686,7 +686,10 @@ export class SecurityService {
 
   private signHMAC(data: string): string {
     const crypto = require('crypto');
-    const key = process.env.JWT_SECRET || 'test-secret';
+    const key = process.env.JWT_SECRET;
+    if (!key) {
+      throw new Error('CRITICAL: JWT_SECRET environment variable is required. Do not start the service without it.');
+    }
     return crypto.createHmac('sha256', key).update(data).digest('hex');
   }
 }

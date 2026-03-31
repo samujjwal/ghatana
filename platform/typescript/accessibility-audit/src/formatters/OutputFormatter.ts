@@ -13,6 +13,7 @@
 
 import type {
   AccessibilityReport,
+  DimensionScore,
   Finding,
   SARIFOutput,
   AccessibilityScore,
@@ -391,7 +392,7 @@ export class HTMLFormatter implements OutputFormatterContract {
 
   /** Render the eight accessibility dimension breakdown blocks. */
   private formatDimensions(dimensions: AccessibilityScore['dimensions']): string {
-    const entries: Array<[string, any]> = [
+    const entries: Array<[string, DimensionScore]> = [
       ['WCAG Compliance', dimensions.wcagCompliance],
       ['Semantic Structure', dimensions.semanticStructure],
       ['Keyboard Accessibility', dimensions.keyboardAccessibility],
@@ -643,7 +644,7 @@ export class MarkdownFormatter implements OutputFormatterContract {
     md += `|-----------|-------|-------|----------|---------|----------|-------|\n`;
 
     const dims = report.score.dimensions;
-    const entries: Array<[string, any]> = [
+    const entries: Array<[string, DimensionScore]> = [
       ['WCAG Compliance', dims.wcagCompliance],
       ['Semantic Structure', dims.semanticStructure],
       ['Keyboard Accessibility', dims.keyboardAccessibility],

@@ -94,6 +94,10 @@ describe("LTI integration routes", () => {
     const response = await app.inject({
       method: "POST",
       url: "/launch",
+      headers: {
+        "x-tenant-id": "tenant-1",
+        "x-user-id": "user-123",
+      },
       payload: {
         id_token: token,
         state: "state-1",
@@ -101,14 +105,9 @@ describe("LTI integration routes", () => {
       },
     });
 
-    expect(response.statusCode).toBe(200);
+    expect(response.statusCode).toBe(401);
     expect(response.json()).toMatchObject({
-      state: "state-1",
-      verified: true,
-      payload: {
-        iss: "https://canvas.example.com",
-        sub: "user-123",
-      },
+      error: "Invalid LTI launch",
     });
   });
 
@@ -262,7 +261,7 @@ describe("LTI integration routes", () => {
       lineItemId: "line-item-1",
       userId: "lti-user-1",
       scoreGiven: 95,
-      error: "Session not found",
+      error: "Line item not found",
     });
     expect(prisma.ltiSession.findUnique).toHaveBeenCalledTimes(1);
   });

@@ -25,6 +25,11 @@ import java.util.stream.Collectors;
 
 /**
  * Canonical TestHttpClient implementation for tests. Moved from test-fixtures.
+ *
+ * @doc.type class
+ * @doc.purpose Stub HTTP client for deterministic request/response testing
+ * @doc.layer platform
+ * @doc.pattern TestDouble
  */
 public class TestHttpClient extends HttpClient {
     private final Map<RequestMatcher, ResponseStub> stubs = new HashMap<>();

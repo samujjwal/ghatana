@@ -946,3 +946,5 @@ export class KnowledgeBaseServiceImpl {
     return [...new Set(recommendations)];
   }
 }
+
+export { KnowledgeBaseServiceImpl as KnowledgeBaseService };

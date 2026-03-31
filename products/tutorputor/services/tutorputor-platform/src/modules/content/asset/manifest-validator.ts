@@ -11,42 +11,14 @@
  * @doc.pattern Service
  */
 
-type ManifestValidationRule = {
-  field: string;
-  rule:
-    | "required"
-    | "min_length"
-    | "max_length"
-    | "min_value"
-    | "max_value"
-    | "pattern"
-    | "custom";
-  expected?: unknown;
-  severity?: "error" | "warning";
-};
-
-type ManifestValidationResult = {
-  isValid: boolean;
-  manifestType: string;
-  violations: Array<ManifestValidationRule & { actualValue: unknown }>;
-  validatedAt: string;
-};
-
-type ManifestPayloadMap = {
-  worked_example: Record<string, unknown>;
-  animation: Record<string, unknown>;
-  assessment: Record<string, unknown>;
-};
-
-type WorkedExampleManifest = Record<string, unknown>;
-type AnimationManifest = Record<string, unknown>;
-type AssessmentManifest = Record<string, unknown>;
-
-const MANIFEST_VALIDATION_RULES: Record<string, ManifestValidationRule[]> = {
-  worked_example: [],
-  animation: [],
-  assessment: [],
-};
+import {
+  MANIFEST_VALIDATION_RULES,
+  type ManifestValidationRule,
+  type ManifestValidationResult,
+  type WorkedExampleManifest,
+  type AnimationManifest,
+  type AssessmentManifest,
+} from "../../../../../../contracts/v1/artifact-manifests";
 
 // ---------------------------------------------------------------------------
 // Field-path accessor
@@ -97,7 +69,9 @@ function evaluateRule(value: any, rule: ManifestValidationRule): boolean {
 /**
  * Validate a manifest payload against canonical rules for its type.
  */
-export function validateManifest<T extends keyof ManifestPayloadMap>(
+export function validateManifest<
+  T extends "worked_example" | "animation" | "assessment",
+>(
   manifestType: T,
   payload: Record<string, unknown>,
 ): ManifestValidationResult {

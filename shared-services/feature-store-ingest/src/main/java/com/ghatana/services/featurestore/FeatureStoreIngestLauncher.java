@@ -5,6 +5,7 @@ import com.ghatana.platform.types.identity.Identifier;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
+import com.ghatana.platform.observability.TracingConfiguration;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpResponse;
@@ -70,6 +71,19 @@ public class FeatureStoreIngestLauncher {
     static final String VERSION = "1.0.0";
 
     public static void main(String[] args) {
+        // Initialize distributed tracing (OTel SDK → Jaeger via OTLP)
+        String env = System.getenv().getOrDefault("DEPLOYMENT_ENV", "development");
+        boolean tracingEnabled = Boolean.parseBoolean(System.getenv().getOrDefault("TRACING_ENABLED", "true"));
+        String otlpEndpoint = System.getenv().getOrDefault("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317");
+        TracingConfiguration.initialize(
+                TracingConfiguration.TracingConfig.builder()
+                        .enabled(tracingEnabled)
+                        .serviceName("feature-store-ingest")
+                        .serviceVersion(VERSION)
+                        .environment(env)
+                        .otlpEndpoint(otlpEndpoint)
+                        .build());
+
         // Initialize metrics
         MeterRegistry meterRegistry = new SimpleMeterRegistry();
         MetricsCollector metrics = MetricsCollectorFactory.create(meterRegistry);

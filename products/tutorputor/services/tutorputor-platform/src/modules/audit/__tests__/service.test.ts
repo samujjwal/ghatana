@@ -25,7 +25,7 @@ function makeAuditRow(overrides: Record<string, unknown> = {}) {
     return {
         id: 'audit-1',
         tenantId: 'tenant-1',
-        createdAt: new Date('2025-01-15T10:00:00Z'),
+        timestamp: new Date('2025-01-15T10:00:00Z'),
         actorId: 'user-1',
         actorEmail: 'user@example.com',
         action: 'module.create',
@@ -128,8 +128,8 @@ describe('AuditServiceImpl', () => {
             });
 
             const callArgs = (prisma.auditLog.findMany as any).mock.calls[0][0];
-            expect(callArgs.where.createdAt.gte).toEqual(new Date('2025-01-01'));
-            expect(callArgs.where.createdAt.lte).toEqual(new Date('2025-01-31'));
+            expect(callArgs.where.timestamp.gte).toEqual(new Date('2025-01-01'));
+            expect(callArgs.where.timestamp.lte).toEqual(new Date('2025-01-31'));
         });
 
         it('caps limit at 200', async () => {
@@ -200,7 +200,7 @@ describe('AuditServiceImpl', () => {
             await service.getAuditSummary({ tenantId: 'tenant-1' as any });
 
             const countCall = (prisma.auditLog.count as any).mock.calls[0][0];
-            const startDate = countCall.where.createdAt.gte;
+            const startDate = countCall.where.timestamp.gte;
             const daysDiff = (Date.now() - startDate.getTime()) / (24 * 60 * 60 * 1000);
             expect(daysDiff).toBeCloseTo(30, 0);
         });

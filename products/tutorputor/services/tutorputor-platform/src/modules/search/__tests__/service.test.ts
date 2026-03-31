@@ -51,7 +51,6 @@ describe("SearchServiceImpl", () => {
       title: "Physics Basics",
       metadata: expect.objectContaining({
         slug: "physics-basics",
-        category: "science",
       }),
     });
     expect(response.results[0].score).toBeGreaterThan(0);

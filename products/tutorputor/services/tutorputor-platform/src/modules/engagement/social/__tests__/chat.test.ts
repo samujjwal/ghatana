@@ -373,7 +373,7 @@ describe("ChatServiceImpl", () => {
   // =========================================================================
   describe("sendMessage", () => {
     it("creates message and publishes to Redis", async () => {
-      (prisma.chatRoom.findUnique as any).mockResolvedValue(makeRoomRow());
+      (prisma.chatRoom.findFirst as any).mockResolvedValue(makeRoomRow());
       (prisma.chatMessage.create as any).mockResolvedValue(makeMessageRow());
       (prisma.chatRoom.update as any).mockResolvedValue({});
 
@@ -396,7 +396,7 @@ describe("ChatServiceImpl", () => {
     });
 
     it("throws for non-participant sender", async () => {
-      (prisma.chatRoom.findUnique as any).mockResolvedValue(makeRoomRow());
+      (prisma.chatRoom.findFirst as any).mockResolvedValue(makeRoomRow());
 
       await expect(
         service.sendMessage({
@@ -474,7 +474,7 @@ describe("ChatServiceImpl", () => {
     it("sends message without Redis publish", async () => {
       const noRedisService = new ChatServiceImpl({ prisma });
 
-      (prisma.chatRoom.findUnique as any).mockResolvedValue(makeRoomRow());
+      (prisma.chatRoom.findFirst as any).mockResolvedValue(makeRoomRow());
       (prisma.chatMessage.create as any).mockResolvedValue(makeMessageRow());
       (prisma.chatRoom.update as any).mockResolvedValue({});
 

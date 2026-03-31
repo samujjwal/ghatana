@@ -44,7 +44,16 @@ export class ClaimGenerationProcessor {
     ) { }
 
     async process(job: Job<ClaimGenerationJobData>): Promise<void> {
-        const { experienceId, tenantId, topic, domain, gradeLevel, maxClaims, title, targetGrades } = job.data;
+        const {
+            experienceId,
+            tenantId,
+            topic,
+            domain,
+            gradeLevel,
+            maxClaims,
+            title,
+            targetGrades = [],
+        } = job.data;
 
         this.logger.info(
             { jobId: job.id, experienceId, topic },

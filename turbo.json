@@ -54,6 +54,18 @@
     "clean": {
       "cache": false,
       "outputs": []
+    },
+    "bundle-size": {
+      "dependsOn": ["build"],
+      "outputs": [],
+      "cache": true,
+      "outputLogs": "new-only"
+    },
+    "docs:api": {
+      "dependsOn": ["build"],
+      "outputs": ["docs/api/**"],
+      "cache": true,
+      "outputLogs": "new-only"
     }
   },
   "remoteCache": {

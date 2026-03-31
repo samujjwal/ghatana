@@ -6,12 +6,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SimulationGenerationProcessor } from '../processors/SimulationGenerationProcessor';
+import { SimulationGenerationProcessor } from '../SimulationGenerationProcessor';
 import {
   createMockLogger,
   createMockPrisma,
   createGrpcSimulationResponse,
-} from '../../test-utils';
+} from '../../../../__tests__/test-utils';
 
 describe('SimulationGenerationProcessor', () => {
   let processor: SimulationGenerationProcessor;
@@ -27,8 +27,8 @@ describe('SimulationGenerationProcessor', () => {
     };
 
     processor = new SimulationGenerationProcessor(
-      mockPrisma as any,
       mockGrpcClient as any,
+      mockPrisma as any,
       mockLogger as any
     );
   });
@@ -42,6 +42,8 @@ describe('SimulationGenerationProcessor', () => {
           tenantId: 'tenant-1',
           claimRef: 'C1',
           claimText: 'Test claim',
+          gradeLevel: 'GRADE_9_12',
+          domain: 'PHYSICS',
           interactionType: 'INTERACTIVE_EXPLORATION',
           complexity: 'INTERMEDIATE',
         },
@@ -64,13 +66,18 @@ describe('SimulationGenerationProcessor', () => {
 
       await processor.process(job as any);
 
-      expect(mockGrpcClient.generateSimulation).toHaveBeenCalledWith({
-        requestId: expect.any(String),
-        tenantId: 'tenant-1',
-        claimText: 'Test claim',
-        interactionType: 'INTERACTIVE_EXPLORATION',
-        complexity: 'INTERMEDIATE',
-      });
+      expect(mockGrpcClient.generateSimulation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requestId: expect.any(String),
+          tenantId: 'tenant-1',
+          claimRef: 'C1',
+          claimText: 'Test claim',
+          gradeLevel: 'GRADE_9_12',
+          domain: 'PHYSICS',
+          interactionType: 'INTERACTIVE_EXPLORATION',
+          complexity: 'INTERMEDIATE',
+        }),
+      );
 
       expect(mockPrisma.simulationManifest.upsert).toHaveBeenCalled();
       expect(mockPrisma.claimSimulation.upsert).toHaveBeenCalled();
@@ -84,6 +91,8 @@ describe('SimulationGenerationProcessor', () => {
           tenantId: 'tenant-1',
           claimRef: 'C1',
           claimText: 'Test claim',
+          gradeLevel: 'GRADE_9_12',
+          domain: 'PHYSICS',
           interactionType: 'INTERACTIVE_EXPLORATION',
         },
       };
@@ -93,7 +102,7 @@ describe('SimulationGenerationProcessor', () => {
         interaction_type: 'INTERACTIVE_EXPLORATION',
       });
 
-      await expect(processor.process(job as any)).rejects.toThrow('No manifest returned');
+      await expect(processor.process(job as any)).rejects.toThrow('No simulation manifest returned');
     });
   });
 });

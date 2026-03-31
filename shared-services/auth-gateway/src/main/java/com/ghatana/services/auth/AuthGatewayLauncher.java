@@ -10,8 +10,10 @@ import com.ghatana.platform.http.server.servlet.HealthCheckServlet;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;
 import com.ghatana.platform.security.model.User;
+import com.ghatana.platform.observability.CorrelationContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
+import com.ghatana.platform.observability.TracingConfiguration;
 import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
@@ -98,6 +100,22 @@ public class AuthGatewayLauncher extends Launcher {
     @Provides
     MetricsCollector metricsCollector(MeterRegistry registry) {
         return MetricsCollectorFactory.create(registry);
+    }
+
+    @Provides
+    io.opentelemetry.api.OpenTelemetry openTelemetry(ConfigManager config) {
+        String env = config.getString("DEPLOYMENT_ENV").orElse("development");
+        boolean enabled = config.getBoolean("TRACING_ENABLED").orElse(true);
+        String otlpEndpoint = config.getString("OTEL_EXPORTER_OTLP_ENDPOINT").orElse("http://localhost:4317");
+
+        return TracingConfiguration.initialize(
+                TracingConfiguration.TracingConfig.builder()
+                        .enabled(enabled)
+                        .serviceName("auth-gateway")
+                        .serviceVersion("1.0.0")
+                        .environment(env)
+                        .otlpEndpoint(otlpEndpoint)
+                        .build());
     }
 
     @Provides

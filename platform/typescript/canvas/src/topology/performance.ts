@@ -187,7 +187,7 @@ export interface ThrottleOptions {
  * Create a throttled version of a function.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
     fn: T,
     options: ThrottleOptions
 ): T & { cancel: () => void; flush: () => void } {

@@ -7,6 +7,7 @@ import type {
     TenantId
 } from "@tutorputor/contracts/v1/types";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
+import * as jose from "jose";
 
 export type HealthAwareLTIService = LTIService & {
     checkHealth: () => Promise<boolean>;
@@ -35,41 +36,45 @@ export function createLTIService(
                     return { valid: false, error: "Nonce has already been used" };
                 }
 
-                // Parse JWT token (in production, verify signature with platform's JWKS)
-                const payload = parseJWT(token);
-
-                if (!payload) {
-                    return { valid: false, error: "Invalid token format" };
+                // Decode header to get issuer for JWKS lookup (without verification)
+                const decoded = jose.decodeJwt(token);
+                const issuer = decoded.iss;
+                if (!issuer) {
+                    return { valid: false, error: "Missing issuer claim" };
                 }
 
-                // Validate required claims
-                if (!payload.iss || !payload.sub || !payload.aud) {
-                    return { valid: false, error: "Missing required claims" };
-                }
-
-                // Check token expiration
-                const now = Math.floor(Date.now() / 1000);
-                if (payload.exp && payload.exp < now) {
-                    return { valid: false, error: "Token has expired" };
-                }
-
-                // Validate nonce matches
-                if (payload.nonce !== nonce) {
-                    return { valid: false, error: "Nonce mismatch" };
-                }
-
-                // Look up platform registration
+                // Look up platform registration to get JWKS URL
                 const platform = await prisma.lTIPlatform.findFirst({
-                    where: { issuer: payload.iss }
+                    where: { issuer }
                 });
 
                 if (!platform) {
                     return { valid: false, error: "Platform not registered" };
                 }
 
-                // Validate audience
-                if (payload.aud !== platform.clientId) {
-                    return { valid: false, error: "Invalid audience" };
+                // Verify JWT signature using platform's JWKS endpoint
+                const jwks = jose.createRemoteJWKSet(new URL(platform.jwksUrl));
+                const { payload: verified } = await jose.jwtVerify(token, jwks, {
+                    issuer: platform.issuer,
+                    audience: platform.clientId,
+                });
+
+                // Extract LTI payload from verified claims
+                const payload: LTILaunchPayload = {
+                    iss: verified.iss!,
+                    sub: verified.sub!,
+                    aud: typeof verified.aud === "string" ? verified.aud : verified.aud![0]!,
+                    exp: verified.exp,
+                    iat: verified.iat,
+                    nonce: verified.nonce as string | undefined,
+                    context: verified["https://purl.imsglobal.org/spec/lti/claim/context"] as LTILaunchPayload["context"],
+                    resourceLink: verified["https://purl.imsglobal.org/spec/lti/claim/resource_link"] as LTILaunchPayload["resourceLink"],
+                    roles: verified["https://purl.imsglobal.org/spec/lti/claim/roles"] as string[] | undefined,
+                };
+
+                // Validate nonce matches
+                if (payload.nonce !== nonce) {
+                    return { valid: false, error: "Nonce mismatch" };
                 }
 
                 // Mark nonce as used
@@ -81,6 +86,12 @@ export function createLTIService(
 
                 return { valid: true, payload };
             } catch (error) {
+                if (error instanceof jose.errors.JWTExpired) {
+                    return { valid: false, error: "Token has expired" };
+                }
+                if (error instanceof jose.errors.JWSSignatureVerificationFailed) {
+                    return { valid: false, error: "Invalid token signature" };
+                }
                 return {
                     valid: false,
                     error: error instanceof Error ? error.message : "Validation failed"
@@ -151,34 +162,3 @@ export function createLTIService(
 // =============================================================================
 // Helper Functions
 // =============================================================================
-
-/**
- * Parse a JWT token without verification (for structure validation).
- * In production, use a proper JWT library with signature verification.
- */
-function parseJWT(token: string): LTILaunchPayload | null {
-    try {
-        const parts = token.split(".");
-        if (parts.length !== 3) {
-            return null;
-        }
-
-        const payload = JSON.parse(
-            Buffer.from(parts[1]!, "base64url").toString("utf-8")
-        );
-
-        return {
-            iss: payload.iss,
-            sub: payload.sub,
-            aud: payload.aud,
-            exp: payload.exp,
-            iat: payload.iat,
-            nonce: payload.nonce,
-            context: payload["https://purl.imsglobal.org/spec/lti/claim/context"],
-            resourceLink: payload["https://purl.imsglobal.org/spec/lti/claim/resource_link"],
-            roles: payload["https://purl.imsglobal.org/spec/lti/claim/roles"]
-        };
-    } catch {
-        return null;
-    }
-}

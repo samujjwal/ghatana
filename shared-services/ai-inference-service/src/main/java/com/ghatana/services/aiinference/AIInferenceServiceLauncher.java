@@ -12,10 +12,13 @@ import com.ghatana.aiplatform.gateway.RateLimiter;
 import com.ghatana.core.state.HybridStateStore;
 import com.ghatana.core.state.InMemoryStateStore;
 import com.ghatana.core.state.SyncStrategy;
+import com.ghatana.platform.observability.CorrelationContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
+import com.ghatana.platform.observability.TracingConfiguration;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;
+import io.opentelemetry.api.OpenTelemetry;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpClient;
 import io.activej.http.HttpServer;
@@ -118,6 +121,25 @@ public class AIInferenceServiceLauncher extends Launcher {
     @Provides
     MetricsCollector metricsCollector(MeterRegistry registry) {
         return MetricsCollectorFactory.create(registry);
+    }
+
+    /**
+     * Provides OpenTelemetry with environment-aware tracing configuration.
+     */
+    @Provides
+    OpenTelemetry openTelemetry() {
+        String env = System.getenv().getOrDefault("DEPLOYMENT_ENV", "development");
+        boolean enabled = Boolean.parseBoolean(System.getenv().getOrDefault("TRACING_ENABLED", "true"));
+        String otlpEndpoint = System.getenv().getOrDefault("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317");
+
+        return TracingConfiguration.initialize(
+                TracingConfiguration.TracingConfig.builder()
+                        .enabled(enabled)
+                        .serviceName("ai-inference-service")
+                        .serviceVersion("1.0.0")
+                        .environment(env)
+                        .otlpEndpoint(otlpEndpoint)
+                        .build());
     }
 
     /**

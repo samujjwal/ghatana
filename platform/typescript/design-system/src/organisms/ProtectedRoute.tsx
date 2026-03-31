@@ -8,9 +8,9 @@ interface NavigateProps {
   state?: unknown;
 }
 
-// Runtime component references
-const Navigate = (ReactRouter as any).Navigate;
-const Outlet = (ReactRouter as any).Outlet;
+// Runtime component references — react-router star import requires indexed access
+const Navigate = (ReactRouter as Record<string, unknown>).Navigate as React.ComponentType<NavigateProps>;
+const Outlet = (ReactRouter as Record<string, unknown>).Outlet as React.ComponentType<Record<string, never>>;
 
 /**
  * Authentication check result.

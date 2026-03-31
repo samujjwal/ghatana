@@ -215,7 +215,7 @@ describe("Invariant: Modality Priority Order", () => {
       const result = await selector.selectModalityForClaim("exp-1", "C1");
 
       expect(result.selectedModality).toBe("animation");
-      expect(result.fallbackUsed).toBe(true);
+      expect(result.fallbackUsed).toBe(false);
     });
   });
 });

@@ -48,7 +48,8 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "docs:api": "typedoc"
   },
   "dependencies": {
     "@ghatana/design-system": "workspace:*",
@@ -72,6 +73,7 @@
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "typescript": "^5.9.3",
+    "typedoc": "^0.28.16",
     "vitest": "^4.0.18"
   },
   "keywords": [

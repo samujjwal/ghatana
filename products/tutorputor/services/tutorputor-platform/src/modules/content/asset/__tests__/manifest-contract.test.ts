@@ -17,7 +17,7 @@ import {
   type AnimationKeyframe,
   type WorkedExampleStep,
   type AssessmentItem,
-} from "@tutorputor/contracts/v1/artifact-manifests";
+} from "../../../../../../../contracts/v1/artifact-manifests";
 import {
   validateManifest,
   validateWorkedExample,

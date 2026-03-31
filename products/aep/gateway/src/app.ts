@@ -76,7 +76,58 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     return reply.send(await backendRes.text());
   });
 
-  // ── WebSocket event-tailing proxy ────────────────────────────────────────────
+  // ── SSE event stream proxy (canonical path: /events/stream) ──────────────────
+  fastify.get('/events/stream', async (request, reply) => {
+    const token = extractBearerToken(request.headers.authorization) ?? (request.query as Record<string, string>)['token'] ?? null;
+    if (!token) {
+      return reply.status(401).send({ error: 'Authentication required' });
+    }
+    try {
+      verifyJwt(token, config.jwtSecret);
+    } catch {
+      return reply.status(403).send({ error: 'Invalid or expired token' });
+    }
+
+    const query = request.query as Record<string, string>;
+    const params = new URLSearchParams();
+    if (query.tenantId) params.set('tenantId', query.tenantId);
+
+    const backendUrl = `${config.backendUrl}/events/stream?${params.toString()}`;
+    const backendRes = await fetch(backendUrl, {
+      headers: { authorization: `Bearer ${token}`, accept: 'text/event-stream' },
+    }).catch(() => null);
+
+    if (!backendRes || !backendRes.ok || !backendRes.body) {
+      return reply.status(502).send({ error: 'Bad Gateway', message: 'SSE backend unreachable' });
+    }
+
+    reply.raw.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+
+    const reader = backendRes.body.getReader();
+    const pump = async () => {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          reply.raw.write(value);
+        }
+      } finally {
+        reply.raw.end();
+      }
+    };
+    pump();
+
+    request.raw.on('close', () => {
+      reader.cancel().catch(() => {});
+    });
+  });
+
+  // ── WebSocket event-tailing proxy (legacy path: /tail/events) ────────────────
   await fastify.register(async function wsRoutes(scopedFastify) {
     scopedFastify.get('/tail/events', { websocket: true }, (con, req) => {
       const queryToken = (req.query as Record<string, string>)['token'];

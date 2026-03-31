@@ -46,8 +46,11 @@ const APP_NAME = 'Flashit';
 const BACKUP_CODES_COUNT = 10;
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 
-// Get encryption key from environment
-const ENCRYPTION_KEY = process.env.TWO_FACTOR_ENCRYPTION_KEY || 'default-key-change-in-production';
+// Get encryption key from environment — must be set, no unsafe defaults
+const ENCRYPTION_KEY = process.env.TWO_FACTOR_ENCRYPTION_KEY;
+if (!ENCRYPTION_KEY) {
+  throw new Error('CRITICAL: TWO_FACTOR_ENCRYPTION_KEY environment variable is required. 2FA secrets cannot be encrypted without it.');
+}
 
 // ============================================================================
 // Encryption Helpers
@@ -59,7 +62,8 @@ const ENCRYPTION_KEY = process.env.TWO_FACTOR_ENCRYPTION_KEY || 'default-key-cha
  */
 function encrypt(text: string): string {
   const iv = randomBytes(16);
-  const key = scryptSync(ENCRYPTION_KEY, 'salt', 32);
+  const salt = randomBytes(16);
+  const key = scryptSync(ENCRYPTION_KEY, salt, 32);
   const cipher = createCipheriv(ENCRYPTION_ALGORITHM, key, iv);
   
   let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -67,7 +71,7 @@ function encrypt(text: string): string {
   
   const authTag = cipher.getAuthTag();
   
-  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+  return `${salt.toString('hex')}:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
 }
 
 /**
@@ -75,11 +79,12 @@ function encrypt(text: string): string {
  * @doc.purpose Decrypt TOTP secrets and backup codes
  */
 function decrypt(encryptedText: string): string {
-  const [ivHex, authTagHex, encrypted] = encryptedText.split(':');
+  const [saltHex, ivHex, authTagHex, encrypted] = encryptedText.split(':');
   
+  const salt = Buffer.from(saltHex, 'hex');
   const iv = Buffer.from(ivHex, 'hex');
   const authTag = Buffer.from(authTagHex, 'hex');
-  const key = scryptSync(ENCRYPTION_KEY, 'salt', 32);
+  const key = scryptSync(ENCRYPTION_KEY, salt, 32);
   
   const decipher = createDecipheriv(ENCRYPTION_ALGORITHM, key, iv);
   decipher.setAuthTag(authTag);

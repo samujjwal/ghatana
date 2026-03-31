@@ -37,6 +37,7 @@ import { cn, bgStyles, borderStyles, textStyles } from '../lib/theme';
 import { GlobalSearch, useGlobalSearch } from '../components/common/GlobalSearch';
 import { KeyboardShortcuts, useKeyboardShortcuts } from '../components/common/KeyboardShortcuts';
 import { AiAssistant, useAiAssistant, AiAssistantTrigger } from '../components/ai/AiAssistant';
+import { useNotificationCenter, NotificationTrigger, NotificationPanel } from '../components/notifications/NotificationCenter';
 import { useWebSocketAutoConnect, useWebSocketState } from '../lib/websocket';
 
 /**
@@ -226,9 +227,11 @@ function Sidebar({
 function Header({
     onMenuClick,
     onSearchClick,
+    notificationCenter,
 }: {
     onMenuClick: () => void;
     onSearchClick: () => void;
+    notificationCenter: ReturnType<typeof useNotificationCenter>;
 }) {
     return (
         <header className={cn('h-16 sticky top-0 z-30 border-b', bgStyles.surface, borderStyles.divider)}>
@@ -271,6 +274,23 @@ function Header({
                         <span className="hidden sm:inline">AI Powered</span>
                     </div>
 
+                    {/* Notification Center */}
+                    <div className="relative">
+                        <NotificationTrigger
+                            unreadCount={notificationCenter.unreadCount}
+                            onClick={() => notificationCenter.setIsOpen(!notificationCenter.isOpen)}
+                        />
+                        {notificationCenter.isOpen && (
+                            <NotificationPanel
+                                notifications={notificationCenter.notifications}
+                                onRead={notificationCenter.markAsRead}
+                                onReadAll={notificationCenter.markAllAsRead}
+                                onDismiss={notificationCenter.dismiss}
+                                onClose={() => notificationCenter.setIsOpen(false)}
+                            />
+                        )}
+                    </div>
+
                     {/* User menu */}
                     <button
                         type="button"
@@ -301,6 +321,7 @@ export default function DefaultLayout(): React.ReactElement {
     const globalSearch = useGlobalSearch();
     const keyboardShortcuts = useKeyboardShortcuts();
     const aiAssistant = useAiAssistant();
+    const notificationCenter = useNotificationCenter();
     const wsState = useWebSocketState();
 
     const wsEnabled = import.meta.env.PROD || Boolean(import.meta.env.VITE_WS_URL);
@@ -329,6 +350,7 @@ export default function DefaultLayout(): React.ReactElement {
                 <Header
                     onMenuClick={() => setMobileMenuOpen(true)}
                     onSearchClick={globalSearch.open}
+                    notificationCenter={notificationCenter}
                 />
 
                 {/* Main content */}

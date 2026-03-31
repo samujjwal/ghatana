@@ -509,8 +509,9 @@ describe("StudyGroupServiceImpl", () => {
       );
     });
 
+    it("rejects removing group owner", async () => {
       (prisma.studyGroupMember.findFirst as any)
-              .mockResolvedValueOnce(makeMemberRow({ role: "OWNER" }))
+        .mockResolvedValueOnce(makeMemberRow({ role: "OWNER" }))
         .mockResolvedValueOnce(makeMemberRow({ role: "OWNER" }))
         .mockResolvedValueOnce(makeMemberRow({ role: "OWNER" }));
 

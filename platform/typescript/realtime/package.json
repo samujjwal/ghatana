@@ -19,13 +19,15 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "docs:api": "typedoc"
   },
   "peerDependencies": {
     "react": "^19.2.4"
   },
   "dependencies": {},
   "devDependencies": {
+    "typedoc": "^0.28.16",
     "typescript": "^5.9.3"
   },
   "keywords": [

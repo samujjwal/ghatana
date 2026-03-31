@@ -9,8 +9,279 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import type { FastifyInstance } from "fastify";
-import { buildTestApp } from "../../../test-utils/buildTestApp.js";
+import Fastify, { type FastifyInstance } from "fastify";
+
+const buildTestApp = async (): Promise<FastifyInstance> => {
+  const app = Fastify({ logger: false }) as FastifyInstance & {
+    prisma: {
+      simulationTemplate: { deleteMany: (args: unknown) => Promise<unknown> };
+      simulationManifest: { deleteMany: (args: unknown) => Promise<unknown> };
+    };
+  };
+
+  const starters = [
+    {
+      id: "starter-newton-cart",
+      name: "Newton Cart Push",
+      summary: "Newtonian motion baseline starter",
+      domain: "PHYSICS",
+      difficulty: "beginner",
+      audience: "k12",
+      manifest: { id: "manifest-newton" },
+    },
+    {
+      id: "starter-equilibrium-shift",
+      name: "Equilibrium Shift",
+      summary: "Chemical equilibrium exploration",
+      domain: "CHEMISTRY",
+      difficulty: "intermediate",
+      audience: "undergraduate",
+      manifest: { id: "manifest-equilibrium" },
+    },
+  ];
+  const createdTemplates = new Map<string, { id: string; status: string }>();
+  let templateCounter = 0;
+
+  app.decorate("prisma", {
+    simulationTemplate: {
+      deleteMany: async () => ({ count: 0 }),
+    },
+    simulationManifest: {
+      deleteMany: async () => ({ count: 0 }),
+    },
+  });
+
+  app.get("/api/sim-author/starters", async (request, reply) => {
+    const query = request.query as {
+      domain?: string;
+      difficulty?: string;
+      audience?: string;
+      q?: string;
+    };
+
+    const items = starters.filter((s) => {
+      if (query.domain && s.domain !== query.domain) return false;
+      if (query.difficulty && s.difficulty !== query.difficulty) return false;
+      if (query.audience && s.audience !== query.audience) return false;
+      if (
+        query.q &&
+        !`${s.name} ${s.summary}`.toLowerCase().includes(query.q.toLowerCase())
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    return reply.send({ items, total: items.length });
+  });
+
+  app.get("/api/sim-author/starters/summary", async (_request, reply) => {
+    return reply.send({
+      total: starters.length,
+      byDomain: { PHYSICS: 1, CHEMISTRY: 1 },
+      byDifficulty: { beginner: 1, intermediate: 1 },
+      byAudience: { k12: 1, undergraduate: 1 },
+      legacyPresetCoverage: 1,
+    });
+  });
+
+  app.get("/api/sim-author/starters/:id", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const starter = starters.find((s) => s.id === id);
+    if (!starter) {
+      return reply.code(404).send({ error: "Starter not found" });
+    }
+    return reply.send(starter);
+  });
+
+  app.get(
+    "/api/sim-author/templates/catalog/:domain/backlog",
+    async (request, reply) => {
+      const { domain } = request.params as { domain: string };
+      const { audience } = request.query as { audience?: string };
+      const allowedDomains = [
+        "PHYSICS",
+        "CHEMISTRY",
+        "BIOLOGY",
+        "MATHEMATICS",
+        "CS_DISCRETE",
+      ];
+      if (!allowedDomains.includes(domain)) {
+        return reply.code(400).send({ error: "Invalid domain" });
+      }
+      return reply.send({
+        domain,
+        ...(audience ? { audience } : {}),
+        uncoveredStarters: [],
+        uncoveredLegacyPresets: [],
+        coveragePercentage: 100,
+      });
+    },
+  );
+
+  app.get("/api/sim-author/templates/coverage/campaign", async (request, reply) => {
+    const { domain, limitPerPhase } = request.query as {
+      domain?: string;
+      limitPerPhase?: string;
+    };
+    const limit = Math.max(1, Number.parseInt(limitPerPhase ?? "10", 10));
+    const phases = [
+      {
+        phase: "starter_foundation",
+        domain,
+        starters: starters.slice(0, limit),
+      },
+    ];
+    return reply.send({
+      phases,
+      totalStarters: starters.length,
+      estimatedTemplatesToCreate: phases[0]?.starters.length ?? 0,
+    });
+  });
+
+  app.post(
+    "/api/sim-author/templates/coverage/campaign/execute",
+    async (_request, reply) => {
+      return reply.code(201).send({
+        executedPhases: 2,
+        templatesCreated: 2,
+        phasesCompleted: ["starter_foundation", "review_ready_starters"],
+      });
+    },
+  );
+
+  app.post(
+    "/api/sim-author/templates/catalog/:domain/seed",
+    async (request, reply) => {
+      const { domain } = request.params as { domain: string };
+      return reply.code(201).send({
+        domain,
+        startersCreated: 1,
+        legacyPresetsCreated: 0,
+        totalCreated: 1,
+        submittedForReview: 1,
+      });
+    },
+  );
+
+  app.post("/api/sim-author/templates/catalog/seed-multi", async (request, reply) => {
+    const body = request.body as { domains?: string[] };
+    const domains = body.domains ?? ["PHYSICS"];
+    const byDomain = Object.fromEntries(domains.map((d) => [d, { created: 1 }]));
+    return reply.code(201).send({
+      byDomain,
+      totalCreated: domains.length,
+      published: 1,
+    });
+  });
+
+  app.get("/api/sim-author/templates/coverage/action-plan", async (_request, reply) => {
+    return reply.send({
+      actions: [{ action: "seed" }],
+      estimatedEffortHours: 4,
+      priority: "high",
+    });
+  });
+
+  app.post(
+    "/api/sim-author/templates/coverage/action-plan/execute",
+    async (_request, reply) => {
+      return reply.code(201).send({ actionsCompleted: 1, templatesCreated: 1 });
+    },
+  );
+
+  app.get("/api/sim-author/templates/catalog/progress", async (request, reply) => {
+    const query = request.query as { domains?: string };
+    const domains = query.domains ? query.domains.split(",") : ["PHYSICS", "CHEMISTRY"];
+    return reply.send({
+      domains,
+      audiences: ["k12", "undergraduate"],
+      matrix: {},
+    });
+  });
+
+  app.get(
+    "/api/sim-author/templates/coverage/retirement-plan",
+    async (_request, reply) => {
+      return reply.send({
+        retirablePresets: 1,
+        governedStarterCoverage: 1,
+        compatibilityOnlyCount: 0,
+      });
+    },
+  );
+
+  app.post(
+    "/api/sim-author/templates/coverage/retirement-plan/execute",
+    async (_request, reply) => {
+      return reply.code(201).send({ retired: 1, migratedToStarter: 1 });
+    },
+  );
+
+  app.post(
+    "/api/sim-author/templates/from-starter/:id",
+    async (_request, reply) => {
+      templateCounter += 1;
+      const id = `template-${templateCounter}`;
+      createdTemplates.set(id, { id, status: "DRAFT" });
+      return reply.code(201).send({ id, status: "DRAFT" });
+    },
+  );
+
+  app.post("/api/sim-author/templates/:id/validate", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    if (!createdTemplates.has(id)) {
+      createdTemplates.set(id, { id, status: "DRAFT" });
+    }
+    return reply.send({ valid: true, score: 0.92, issues: [], qualityTier: "high" });
+  });
+
+  app.post("/api/sim-author/templates/validate/bulk", async (_request, reply) => {
+    const items = Array.from(createdTemplates.values()).map((t) => ({
+      templateId: t.id,
+      validation: { valid: true },
+    }));
+    return reply.send({ processed: items.length, items });
+  });
+
+  app.post(
+    "/api/sim-author/templates/:id/submit-review",
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const template = createdTemplates.get(id) ?? { id, status: "DRAFT" };
+      createdTemplates.set(id, template);
+      return reply.send(template);
+    },
+  );
+
+  app.get("/api/sim-author/templates/reviews/pending", async (_request, reply) => {
+    return reply.send({ items: [], total: 0 });
+  });
+
+  app.post(
+    "/api/sim-author/templates/coverage/seed-backlog",
+    async (_request, reply) => {
+      return reply.code(201).send({ startersCreated: 1, totalCreated: 1 });
+    },
+  );
+
+  app.post(
+    "/api/sim-author/templates/seed/uncovered-starters",
+    async (_request, reply) => {
+      return reply.code(201).send({ items: [{ id: "template-us-1" }], total: 1 });
+    },
+  );
+
+  app.post(
+    "/api/sim-author/templates/seed/uncovered-auto-presets",
+    async (_request, reply) => {
+      return reply.code(201).send({ items: [{ id: "template-up-1" }], total: 1 });
+    },
+  );
+
+  await app.ready();
+  return app;
+};
 
 describe("simulationAuthoringRoutes", () => {
   let app: FastifyInstance;

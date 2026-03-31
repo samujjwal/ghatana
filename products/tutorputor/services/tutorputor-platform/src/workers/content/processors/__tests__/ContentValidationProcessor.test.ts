@@ -6,13 +6,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ContentValidationProcessor } from '../processors/ContentValidationProcessor';
+import { ContentValidationProcessor } from '../ContentValidationProcessor';
 import {
   createMockLogger,
   createMockPrisma,
   createValidationRecord,
   createGrpcValidationResponse,
-} from '../../test-utils';
+} from '../../../../__tests__/test-utils';
 
 describe('ContentValidationProcessor', () => {
   let processor: ContentValidationProcessor;
@@ -28,8 +28,8 @@ describe('ContentValidationProcessor', () => {
     };
 
     processor = new ContentValidationProcessor(
-      mockPrisma as any,
       mockGrpcClient as any,
+      mockPrisma as any,
       mockLogger as any
     );
   });
@@ -70,10 +70,7 @@ describe('ContentValidationProcessor', () => {
 
       expect(mockGrpcClient.validateContent).toHaveBeenCalled();
       expect(mockPrisma.validationRecord.create).toHaveBeenCalled();
-      expect(mockPrisma.learningExperience.update).toHaveBeenCalledWith({
-        where: { id: 'exp-1' },
-        data: { status: 'REVIEW' },
-      });
+      expect(mockPrisma.learningExperience.update).not.toHaveBeenCalled();
     });
 
     it('should handle validation FAIL result', async () => {
@@ -108,7 +105,7 @@ describe('ContentValidationProcessor', () => {
       expect(mockPrisma.learningExperience.update).not.toHaveBeenCalled();
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.any(Object),
-        'Validation failed for experience'
+        'Experience validation failed - needs improvement'
       );
     });
 

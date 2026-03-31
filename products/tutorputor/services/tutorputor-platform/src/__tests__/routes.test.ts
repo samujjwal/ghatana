@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 
-vi.mock("@ghatana/tutorputor-db", () => ({
+vi.mock("@tutorputor/core/db", () => ({
   PrismaClient: class {
     $disconnect = vi.fn().mockResolvedValue(undefined);
   },
@@ -14,7 +14,6 @@ vi.mock("ioredis", () => ({
   },
 }));
 
-import { PrismaClient } from "@tutorputor/core/db";
 import Redis from "ioredis";
 
 /**
@@ -27,7 +26,7 @@ import Redis from "ioredis";
  */
 
 let app: FastifyInstance;
-let prisma: PrismaClient;
+let prisma: { $disconnect: () => Promise<void> };
 let redis: Redis;
 
 beforeAll(async () => {
@@ -37,7 +36,9 @@ beforeAll(async () => {
   });
 
   // Setup database and cache
-  prisma = new PrismaClient();
+  prisma = {
+    $disconnect: vi.fn().mockResolvedValue(undefined),
+  };
   redis = new Redis({
     host: "localhost",
     port: 6379,
